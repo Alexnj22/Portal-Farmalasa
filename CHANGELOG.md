@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.6 — Traslados: la tarjeta de lo que viene en camino
+
+Reportado sobre una captura de «En camino»: *«mejora esta vista, hazla canónica,
+mejora las cards»*.
+
+La tarjeta estaba escrita aparte de `RequestCard`, que es la canónica del portal
+para «un asunto y qué hacer con él», y se notaba: la misma cosa contada con otro
+ritmo. Ahora comparte su geometría —`px-4 py-3.5`, `gap-2.5`, y el pie separado
+por su propia línea— y arregla cuatro cosas concretas:
+
+**El botón medía el ancho entero.** No estaba pedido: el contenedor es
+`flex-col`, que estira a sus hijos, así que en un monitor «Ya llegó, recibir»
+ocupaba 1.700 px para una acción de una sala. Se mudó al pie y sólo se estira en
+el teléfono, donde eso sí es el canon (§32).
+
+**El nombre del producto iba detrás de la cuenta.** «6 UNIDAD · CREMA
+COMBINADA…» empieza por el dato que se repite en todas las filas; lo que
+distingue una de otra es el nombre. Se invirtió: el nombre es el ancla y la
+cuenta es una insignia. Lo parte `piezasDe`, que lee `meta.items` —la misma
+fuente que `resumenItems`— en vez de cortar su texto por el « · », que se
+rompería el día que una descripción traiga uno.
+
+**El recorrido estaba en tinta terciaria, del tamaño más chico y pegado a la
+hora.** Es el dato que dice si el traslado es tuyo: con alcance de todas las
+salas la lista mezcla siete.
+
+**No se veía cuánto llevaba en camino**, sólo la hora de salida — un traslado
+parado tres días se leía igual que uno de hace diez minutos. Ahora dice «hace 20
+min», y **pasado un día la tarjeta se tiñe de rojo**: esta lista existe
+justamente porque había 20 traslados parados, el más viejo de más de una semana.
+
+Además muestra **los lotes**, que sólo salían del lado de quien despacha. Quien
+recibe tiene la caja en la mano: es el único que puede comprobar que el lote que
+llegó es el que se pidió.
+
+Y la lista pasa a **dos columnas desde `xl`**. En una sola, cada tarjeta se
+estira a todo el monitor para dos renglones de texto y el nombre del producto
+queda flotando en una línea que nadie recorre.
+
+El reloj viaja desde la vista y no desde la tarjeta —un `setInterval` por
+tarjeta serían N relojes pintando el mismo minuto—, y se le pasa también desde
+el widget del tablero: las dos pantallas comparten esta tarjeta, y dejarlo en
+una sola es la deriva que el encabezado de `FilasTraslado` viene a evitar.
+
+**No verificado en pantalla:** la extensión del navegador no estaba conectada.
+Pasan lint, `gate:design`, build y las 348 pruebas, pero eso no prueba nada
+sobre lo que se ve.
+
 ## v2.656.5 — Las ventas anuladas se cuentan pero no suman
 
 El encabezado de Ventas describía una lista distinta de la que se veía. La

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftRight, Loader2, PackageCheck, Truck } from 'lucide-react';
+import { ArrowLeftRight, Clock, Loader2, PackageCheck, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
+import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos } from './trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, piezasDe } from './trasladoTexto';
+import { desdeHace } from '../solicitudes/movimientoTexto';
 
 // Las filas de un traslado, en un solo lugar.
 //
@@ -221,11 +223,53 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
     );
 }
 
-/* ─── Lo que pedí y ya salió ──────────────────────────────────────────────── */
-export function FilaPorRecibir({ fila, onHecho }) {
+/* ─── Lo que pedí y ya salió ──────────────────────────────────────────────────
+ *
+ * Rehecha el 2026-08-17 sobre la geometría de `RequestCard` —`px-4 py-3.5`,
+ * `gap-2.5`, y el pie separado por su propia línea—, que es la tarjeta canónica
+ * del portal para «un asunto y qué hacer con él». Antes era una versión más
+ * chica y escrita aparte, y se notaba: la misma cosa contada con otro ritmo.
+ *
+ * Cuatro cosas que estaban mal y por qué importan:
+ *
+ *  1. **El botón ocupaba el ancho entero.** No estaba pedido: el contenedor es
+ *     `flex-col`, que estira a sus hijos, así que en un monitor el botón medía
+ *     1.700 px para una acción de una sala. Hoy va en el pie y sólo se estira en
+ *     el teléfono, donde eso SÍ es el canon (§32).
+ *  2. **El nombre del producto iba detrás de la cuenta.** «6 UNIDAD · CREMA…»
+ *     empieza por el dato que se repite en todas las filas; lo que distingue una
+ *     de otra es el nombre, y quedaba desplazado. Se invirtió: el nombre es el
+ *     ancla y la cuenta es una insignia.
+ *  3. **El recorrido estaba en tinta terciaria, del tamaño más chico y pegado a
+ *     la hora.** Es el dato que dice si el traslado es tuyo — con alcance de
+ *     todas las salas la lista mezcla siete.
+ *  4. **No se veía cuánto llevaba en camino**, sólo la hora de salida. Un
+ *     traslado parado tres días se leía igual que uno de hace diez minutos, y
+ *     esta lista existe justamente porque había 20 parados, el más viejo de más
+ *     de una semana.
+ *
+ * Y muestra los lotes, que sólo salían del lado de quien despacha. Quien recibe
+ * es quien tiene la caja en la mano: es el único que puede comprobar que el lote
+ * que llegó es el que se pidió.
+ *
+ * @param ahora  El reloj de `useNowTick`, para «hace 20 min». Opcional: sin él
+ *               la tarjeta muestra la hora de salida y nada más, en vez de un
+ *               número congelado en el último render.
+ */
+export function FilaPorRecibir({ fila, onHecho, ahora = null }) {
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
-    const meta = fila.metadata ?? {};
+    const meta   = fila.metadata ?? {};
+    const piezas = piezasDe(meta);
+    const lotes  = lotesPedidos(meta);
+
+    // Salió cuando se despachó, que es lo que `updated_at` guarda en esta etapa.
+    const salio  = fila.updated_at ?? fila.created_at;
+    const espera = desdeHace(salio, ahora);
+    // Más de un día en camino ya no es «en camino»: es un traslado trabado. Se
+    // tiñe solo para que la cola se lea sin contar horas — mismo recurso que la
+    // espera larga de `RequestCard`.
+    const trabado = Boolean(ahora) && (ahora - new Date(salio).getTime()) > 86400000;
 
     const recibir = async () => {
         setError(''); setOcupado(true);
@@ -236,25 +280,74 @@ export function FilaPorRecibir({ fila, onHecho }) {
     };
 
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <div className="flex items-start gap-2">
-                <Truck size={13} className="text-warning-text shrink-0 mt-0.5" strokeWidth={2.5} />
+        <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2.5">
+            <div className="flex items-start gap-3">
+                {/* El ícono en su disco: a 13px suelto no se leía como estado,
+                    y el estado es justo lo que esta lista viene a decir. */}
+                <span className={`shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center
+                                  ring-1 ring-inset ${trabado ? 'bg-danger/12 ring-danger/25' : 'bg-warning/12 ring-warning/25'}`}>
+                    <Truck size={16} strokeWidth={2.5}
+                        className={trabado ? 'text-danger-text' : 'text-warning-text'} />
+                </span>
+
                 <div className="flex-1 min-w-0">
-                    <p className="text-label font-black text-content leading-tight">{resumenItems(meta)}</p>
-                    {/* La sala a la que va, SIEMPRE. Quien tiene alcance de
-                        todas las sucursales ve traslados que no son suyos, y sin
-                        el destino escrito no hay cómo distinguirlos. */}
-                    <p className="text-micro text-content-3 mt-0.5 flex gap-1">
-                        <Recorrido meta={meta} />
-                        <span className="shrink-0">· {fmtCuando(fila.updated_at)}</span>
+                    {/* El ancla: qué es. `line-clamp-2` y no `truncate` porque
+                        los nombres de producto se distinguen por el final
+                        —presentación y laboratorio— y cortarlos en una línea
+                        deja dos filas idénticas. */}
+                    <p className="text-body font-bold text-content leading-snug line-clamp-2"
+                        title={piezas?.nombre ?? resumenItems(meta)}>
+                        {piezas?.nombre ?? resumenItems(meta)}
                     </p>
+
+                    {/* Cuánto, y de dónde a dónde. El destino va SIEMPRE: quien
+                        tiene alcance de todas las sucursales ve traslados que no
+                        son suyos, y sin él no hay cómo distinguirlos. */}
+                    <div className="mt-1.5 flex items-center gap-2 flex-wrap min-w-0">
+                        {piezas && <Badge variant="neutral" size="sm">{piezas.cuenta}</Badge>}
+                        {/* Sin envoltorio: `Recorrido` ya es el `span` y ya trae
+                            su `truncate`; meterlo dentro de otro flex le quita
+                            el ancho contra el que recortar. */}
+                        <Recorrido meta={meta} className="text-label font-semibold text-content-2 min-w-0" />
+                    </div>
+
+                    {/* Los lotes que se pidieron. Quien recibe tiene la caja en
+                        la mano y es el único que puede comprobarlos. */}
+                    {lotes.length > 0 && (
+                        <div className="mt-1.5 flex flex-col gap-0.5">
+                            {lotes.map((l, i) => (
+                                <p key={i} className="text-micro text-content-2 font-semibold">
+                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
+                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
+                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                </p>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
+
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
-            <Button size="sm" disabled={ocupado} onClick={recibir}>
-                {ocupado ? <Loader2 size={13} className="animate-spin" /> : <PackageCheck size={13} />}
-                {ocupado ? 'Recibiendo...' : 'Ya llegó, recibir'}
-            </Button>
+
+            {/* El pie, como en `RequestCard`: a la izquierda cuándo salió y
+                cuánto lleva, a la derecha qué se hace con eso. El botón sólo se
+                estira en el teléfono. */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-divider">
+                <span className="flex items-center gap-1 min-w-0 text-micro text-content-3">
+                    <Clock size={11} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">Salió {fmtCuando(salio)}</span>
+                    {espera && (
+                        <span className={`shrink-0 font-bold ${trabado ? 'text-danger-text' : 'text-content-3'}`}>
+                            · {espera}
+                        </span>
+                    )}
+                </span>
+
+                <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
+                    onClick={recibir} className="w-full sm:w-auto">
+                    {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
+                </Button>
+            </div>
         </div>
     );
 }

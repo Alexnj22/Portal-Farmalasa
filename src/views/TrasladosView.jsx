@@ -8,6 +8,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
+import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';
 import { FilaPorRecibir } from './traslados/FilasTraslado';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
@@ -124,6 +125,11 @@ export default function TrasladosView() {
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
     const [error,        setError]        = useState('');
+
+    /* Un solo reloj para toda la lista: cada tarjeta dice cuánto lleva el
+     * traslado en camino, y un `setInterval` por tarjeta serían N relojes
+     * pintando el mismo minuto. Mismo recurso que la bandeja de Solicitudes. */
+    const ahora = useNowTick(60_000);
 
     const nombrePor = useCallback((id) => {
         const e = (employees ?? []).find(x => x.id === id);
@@ -313,8 +319,12 @@ export default function TrasladosView() {
                 </div>
             ) : (
                 /* «En camino»: tarjetas y no tabla, porque cada fila lleva su
-                   botón de recibir adentro. Son las MISMAS del widget. */
-                <div className="p-4 md:p-5 flex flex-col gap-2">
+                   botón de recibir adentro. Son las MISMAS del widget.
+                   En dos columnas a partir de `xl` y no una sola siempre: en un
+                   monitor, una columna estira cada tarjeta a 1.700 px para dos
+                   renglones de texto, y el nombre del producto termina flotando
+                   solo en una línea que nadie puede recorrer. */
+                <div className="p-4 md:p-5 flex flex-col gap-3">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
                     {cargando && <SkeletonText lines={4} />}
@@ -328,9 +338,13 @@ export default function TrasladosView() {
                         />
                     )}
 
-                    {!cargando && lista.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} />
-                    ))}
+                    {!cargando && lista.length > 0 && (
+                        <div className="grid gap-3 xl:grid-cols-2 items-start">
+                            {lista.map(f => (
+                                <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} />
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </GlassViewLayout>

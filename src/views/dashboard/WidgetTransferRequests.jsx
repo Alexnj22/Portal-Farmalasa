@@ -5,6 +5,7 @@ import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
+import { useNowTick } from '../../hooks/useNowTick';
 import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
 import {
     fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
@@ -51,6 +52,11 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
         const e = (employees ?? []).find(x => x.id === id);
         return e?.name ?? 'Alguien';
     }, [employees]);
+
+    /* El mismo reloj que la vista: la tarjeta dice cuánto lleva el traslado en
+     * camino, y las dos pantallas comparten la tarjeta — dejarlo sólo en una
+     * sería la deriva que el encabezado de `FilasTraslado` viene a evitar. */
+    const ahora = useNowTick(60_000);
 
     const cargando = porConfirmar === null || porRecibir === null;
     const vacio = !cargando
@@ -108,7 +114,7 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                             : 'En camino'}
                     </p>
                     {porRecibir.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} />
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} />
                     ))}
                 </div>
             )}

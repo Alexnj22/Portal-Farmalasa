@@ -32,6 +32,40 @@ export function resumenItems(meta) {
 }
 
 /**
+ * Lo mismo que `resumenItems`, pero PARTIDO en sus dos mitades.
+ *
+ * `resumenItems` devuelve una sola línea —«6 UNIDAD · CREMA COMBINADA X 20 GR»—
+ * y sirve donde hay un renglón y nada más: una celda de tabla, un aviso. En una
+ * tarjeta esa línea es el problema: el nombre del producto es lo que distingue
+ * una de la de al lado, y va detrás de una cuenta que se repite en todas.
+ *
+ * Se arma desde `meta.items`, la MISMA fuente, y no cortando el texto que
+ * devuelve la otra: partir por el « · » se rompería el día que una descripción
+ * traiga uno.
+ *
+ * Devuelve `null` cuando no hay detalle, para que quien la use caiga a
+ * `resumenItems` en vez de pintar un hueco.
+ */
+export function piezasDe(meta) {
+    const items = Array.isArray(meta?.items) ? meta.items : [];
+    if (items.length === 0) return null;
+    if (items.length === 1) {
+        const i = items[0];
+        return {
+            cuenta: `${i.cantidad} ${i.presentacion_tipo ?? ''}`.trim(),
+            nombre: i.descripcion ?? String(i.erp_product_id ?? 'Sin nombre'),
+        };
+    }
+    // Con varios no hay UN nombre que mostrar, así que el ancla pasa a ser
+    // cuántos productos son, y la cuenta, las unidades que suman.
+    const unidades = meta?.total_unidades ?? 0;
+    return {
+        cuenta: `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`,
+        nombre: `${items.length} productos`,
+    };
+}
+
+/**
  * Los lotes que el pedido pide, si los trae.
  *
  * Desde el 2026-08-07 quien pide puede elegir de qué lote quiere que salga —y

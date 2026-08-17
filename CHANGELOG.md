@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.2 — fix(traslados): «En camino» muestra lo que llega a la sala, no lo que salió de ella
+
+Reportado como urgente: *«en traslados entre salas salen de todas las salas, no
+sólo la de los empleados de esa sala»*. Es cierto, y medido sobre las filas de
+hoy — cuántos traslados ve cada sala en «En camino», y cuántos le llegan de
+verdad:
+
+| sala | veía | son suyos |
+|---|---|---|
+| Bodega | 7 | **0** |
+| Salud 5 | 3 | **0** |
+| Salud 1 | 1 | **0** |
+| Salud 3 | 3 | 2 |
+| Salud 4 | 2 | 1 |
+| Salud 2 | 6 | 6 |
+
+Bodega abría la pestaña con **siete traslados en camino y ninguno venía a
+Bodega**: eran los que ella misma había despachado. Con su botón de recibir
+encima, que el servidor rebota con 403 porque «el traslado lo recibe la sala que
+lo pidió» — o sea, ruido puro, y del que hace dudar del dato.
+
+**La causa no es el RLS, es la pregunta.** El RLS contesta *este traslado te
+incumbe* y por eso deja ver los de la sala **por los dos extremos**: tiene que
+hacerlo, porque una sala es origen de unos y destino de otros, y las dos puntas
+necesitan mirarlo. Estas listas son direccionales —una es «me piden» y la otra
+«me llega»— y se apoyaban en ese filtro como si contestara lo mismo. Encima el
+recorte por sucursal de la vista sólo corría con alcance de todas las salas: con
+alcance de una, no se aplicaba nunca.
+
+Ahora cada consulta pide su extremo: «En camino» filtra por **destino**, y ese
+criterio no se está inventando en el navegador — es el mismo que exige la Edge
+Function al recibir, y la sala de respaldo (v2.657.0) cubre sólo el despacho.
+
+**«Te piden de tu sala» también se recortó, pero con la regla de la base.** Era
+el otro lado del mismo problema: La Popular veía 3 solicitudes bajo ese título y
+las 3 las había pedido ella. El recorte obvio —«origen = mi sala»— habría
+dejado a Salud 3 sin los traslados de Bodega que desde hoy puede despachar
+mientras Bodega está cerrada, que es justo lo que la versión anterior acababa de
+habilitar. Así que la lista de salas sale de `salas_que_cubre_ahora`, **la misma
+función que consulta la policy**: una fuente, dos lectores. Se pregunta en cada
+carga porque la respuesta depende de la hora — a las 17:00 Bodega cierra y sus
+traslados pasan a ser de quien la cubre.
+
+Nada de esto movió inventario mal: las dos escrituras ya validaban la sala en el
+servidor. Lo que se arregla es lo que cada sala tiene delante.
+
+_(La entrada `v2.656.15` que estaba acá se quitó: ese número nunca salió — se lo
+llevó otra sesión mientras se redactaba, y su contenido es éste.)_
+
 ## v2.657.1 — Un pedido no se cierra solo con hojas sin contar
 
 Salió al verificar el circuito de devoluciones sobre el pedido 116 de La Popular,
@@ -147,10 +196,6 @@ lleva ese filtro.
 Migraciones `20260817205059` y `20260817205505`, la primera probada antes en el
 branch de staging. Edge function redesplegada con `verify_jwt=true` — el 401 del
 curl lo confirma.
-
-## v2.656.15 — fix(traslados): cada sala ve lo suyo — el que pide no confirma y el que despacha no recibe
-
-_(pendiente de redactar)_
 
 ## v2.656.14 — La sala sigue contando aunque un renglón salga con diferencia
 

@@ -39,10 +39,33 @@ export function crearSolicitudTraslado(payload) {
  * Los traslados que esta sala tiene que confirmar.
  *
  * No filtra por sala: **el RLS ya lo hace**, y con una regla que el navegador no
- * podría reproducir —estar entre los destinatarios que dejó la cascada, o ser
- * jefatura de la sala de origen—. Filtrar de nuevo acá con un criterio parecido
- * pero no idéntico es la forma de que las dos se separen y una esconda lo que
- * la otra muestra.
+ * podría reproducir —estar entre los destinatarios que dejó la cascada, ser la
+ * sala de origen, o **cubrirla mientras está cerrada** (`salas_que_cubre_ahora`,
+ * la sala de respaldo)—. Filtrar de nuevo acá con un criterio parecido pero no
+ * idéntico es la forma de que las dos se separen y una esconda lo que la otra
+ * muestra.
+ *
+ * ── El recorte que sí se puede hacer, y de dónde sale (2026-08-17) ─────────
+ * Medido: La Popular veía 3 traslados bajo «Te piden de tu sala» y **los 3 los
+ * había pedido ella misma** a Bodega, con los botones de confirmar y rechazar
+ * encima de su propia solicitud. El recorte obvio —«origen = mi sala»— es
+ * justamente el criterio parecido-pero-no-idéntico contra el que avisa el
+ * párrafo de arriba: dejaría a Salud 3 sin ver los traslados de Bodega que
+ * desde v2.657.0 puede despachar mientras Bodega está cerrada.
+ *
+ * Por eso `branchIds` no se arma con una regla escrita acá: sale de
+ * `fetchSalasQueCubro`, que llama a **la misma función que llama la policy**
+ * (`salas_que_cubre_ahora`). Una fuente, dos lectores.
+ *
+ * Queda un caso fuera del recorte: quien esté en `destinatarios` sin ser de la
+ * sala de origen ni cubrirla. Hoy no existe —la cascada nombra gente de la sala
+ * de origen, verificado sobre las 10 filas de la historia— y si apareciera, la
+ * solicitud se contesta igual desde Solicitudes, que no lleva este filtro.
+ *
+ * El servidor, mientras tanto, nunca dejó pasar la acción: `aplicar-traslado-
+ * inventario` corta con 403 «lo confirma la sala que tiene el producto». Lo que
+ * había era una lista con filas que no le tocaban a esa sala, no un movimiento
+ * de inventario ajeno.
  */
 // Devuelve las filas Y el total exacto en UNA sola consulta: `count: 'exact'`
 // sin `head` hace que PostgREST mande el `Content-Range` junto con el cuerpo.
@@ -51,15 +74,42 @@ export function crearSolicitudTraslado(payload) {
 // que el número sea el REAL, no `filas.length`, que mentiría en cuanto se
 // crucen las 201 del `range`. Contar por el largo de una lista topada es
 // exactamente el tipo de tope silencioso que no queremos.
-export async function fetchTrasladosPorConfirmar() {
-    const { data, count, error } = await supabase
+export async function fetchTrasladosPorConfirmar({ branchIds = null } = {}) {
+    let q = supabase
         .from('approval_requests')
         .select('id, employee_id, note, metadata, created_at', { count: 'exact' })
         .eq('type', 'INVENTORY_TRANSFER_REQUEST')
         .eq('status', 'PENDING')
         .order('created_at', { ascending: true })
         .range(0, 200);
+    // Texto adentro del jsonb: los ids van como cadenas o no matchean nada.
+    if (branchIds?.length) q = q.in('metadata->>origen_branch_id', branchIds.map(String));
+    const { data, count, error } = await q;
     return { filas: data ?? [], total: count ?? 0, error };
+}
+
+/**
+ * Las salas que ESTA sala cubre ahora mismo, porque están cerradas.
+ *
+ * Es la función que consulta la policy de `approval_requests` para decidir
+ * quién puede despachar un traslado fuera del horario de la sala que tiene el
+ * producto (v2.657.0). La pantalla la llama para recortar su lista con el MISMO
+ * criterio: si acá se escribiera una versión propia, el día que cambie el
+ * horario o el respaldo una de las dos dejaría de coincidir — y la que se
+ * equivoque hacia abajo esconde traslados que alguien tiene que atender.
+ *
+ * Devuelve `[]` cuando no cubre a nadie, que es lo normal en horario.
+ */
+export async function fetchSalasQueCubro(branchId) {
+    if (!branchId) return [];
+    const { data, error } = await supabase.rpc('salas_que_cubre_ahora', {
+        p_branch_id: Number(branchId),
+    });
+    if (error) {
+        console.error('traslados: fetchSalasQueCubro failed:', error.message);
+        return [];
+    }
+    return data ?? [];
 }
 
 // `contarTrasladosPorConfirmar` se eliminó el 2026-08-07. Contaba exactamente
@@ -70,9 +120,30 @@ export async function fetchTrasladosPorConfirmar() {
 // `contar_facturas_sala` (v2.515.2), con la diferencia de que acá el viaje
 // desperdiciado era barato.
 
-/** Lo que esta sala pidió y ya salió: sirve para saber qué falta recibir. */
-export async function fetchTrasladosPorRecibir() {
-    const { data, error } = await supabase
+/**
+ * Lo que esta sala pidió y ya salió: sirve para saber qué falta recibir. O sea
+ * **donde MI sala es el DESTINO**.
+ *
+ * ── Por qué acá el RLS no alcanza (2026-08-17) ─────────────────────────────
+ * El RLS contesta *este traslado te incumbe* y deja ver los de la sala por los
+ * DOS lados —tiene que hacerlo: una sala es origen de unos y destino de otros—.
+ * Esta lista es direccional: es lo que ME LLEGA. Sin el recorte, la sala que
+ * despacha veía lo que mandó a otra como si estuviera por llegarle. Medido
+ * sobre las filas reales: **Salud 5 abría «En camino» con 2 traslados y ninguno
+ * venía a Salud 5** —los había despachado ella, a Salud 3 y a La Popular—, y
+ * Salud 3 veía 2 de los cuales sólo 1 era suyo. Reportado así: «salen de todas
+ * las salas, no sólo la de los empleados de esa sala».
+ *
+ * Y el criterio no se está inventando acá: recibir es del destino y punto —lo
+ * dice la misma Edge Function («el traslado lo recibe la sala que lo pidió») y
+ * la decisión sobre la sala de respaldo, que cubre SÓLO el despacho. Ese es el
+ * motivo de que este recorte sí se pueda escribir y el de «por confirmar» no.
+ *
+ * `branchId` en `null` significa ver todo, que es lo correcto para alcance ALL:
+ * gerencia mira las siete salas y recorta con el filtro de la pantalla.
+ */
+export async function fetchTrasladosPorRecibir({ branchId = null } = {}) {
+    let q = supabase
         .from('approval_requests')
         // `approver_id` y `created_at` para poder decir el circuito entero:
         // quién lo pidió y cuándo, y quién lo despachó. Sin ellos la tarjeta
@@ -83,6 +154,10 @@ export async function fetchTrasladosPorRecibir() {
         .eq('status', 'APPROVED')
         .order('updated_at', { ascending: true })
         .range(0, 200);
+    // El destino, cuando el alcance es de una sola sala. Texto adentro del
+    // jsonb, igual que arriba.
+    if (branchId) q = q.eq('metadata->>branch_id', String(branchId));
+    const { data, error } = await q;
     // Ya despachado y todavía sin recibir. Se filtra acá y no en la consulta
     // porque son dos claves dentro del mismo jsonb y el filtro de PostgREST
     // sobre ausencia de clave anidada no distingue «no existe» de «es null».

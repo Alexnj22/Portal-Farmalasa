@@ -9,7 +9,7 @@ import { useNowTick } from '../../hooks/useNowTick';
 import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
 import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
 import {
-    fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
+    fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '../../data/traslados';
 
 // Widget «Traslados entre Salas».
@@ -154,18 +154,38 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
 // misma consulta. La lista está topada en 201 filas, así que contar por su largo
 // sería un tope silencioso esperando a que alguien lo cruce.
 export default function WidgetTransferRequests() {
+    const { user, getScope } = useAuth();
     const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [pendientes,   setPendientes]   = useState(null);
     const [error,        setError]        = useState('');
 
+    /* Cada lista mira UN extremo del traslado: «te piden» es donde está el
+     * producto y «en camino» es lo que llega a mi sala. El RLS deja ver los dos
+     * —tiene que hacerlo: una sala es origen de unos y destino de otros—, así
+     * que sin recorte la baldosa mezclaba lo ajeno con lo propio. Medido el
+     * 17-ago: La Popular veía sus 3 propias solicitudes bajo «Te piden de tu
+     * sala», y Salud 5 tenía dos «en camino» y ninguno venía a Salud 5.
+     *
+     * Y «te piden» no se recorta por «origen = mi sala»: eso dejaría afuera a la
+     * sala de respaldo, que despacha por la que está cerrada. Las salas que uno
+     * cubre las dice la base — la misma función que consulta la policy. */
+    const miBranch = user?.branchId ?? user?.branch_id ?? null;
+    const branchId = getScope('traslados') === 'ALL' ? null : miBranch;
+
     const cargar = useCallback(async () => {
-        const [a, b] = await Promise.all([fetchTrasladosPorConfirmar(), fetchTrasladosPorRecibir()]);
+        // La cobertura depende de la HORA, así que se pregunta en cada carga: a
+        // las 17:00 Bodega cierra y sus traslados pasan a ser de quien la cubre.
+        const cubiertas = branchId ? await fetchSalasQueCubro(branchId) : [];
+        const [a, b] = await Promise.all([
+            fetchTrasladosPorConfirmar({ branchIds: branchId ? [branchId, ...cubiertas] : null }),
+            fetchTrasladosPorRecibir({ branchId }),
+        ]);
         if (a.error || b.error) setError((a.error ?? b.error).message ?? 'No se pudo leer.');
         setPorConfirmar(a.filas);
         setPorRecibir(b.filas);
         setPendientes(a.total);
-    }, []);
+    }, [branchId]);
 
     // El `setState` ocurre DESPUÉS del `await`, no en el cuerpo del efecto, así
     // que no encadena renders — la regla no puede distinguirlo. Misma anotación

@@ -128,9 +128,10 @@ export default function TrasladosView() {
 
     const [activeTab, setActiveTab] = useState('recibir');
     const [busqueda,  setBusqueda]  = useState('');
-    // Con alcance de una sola sala el filtro de sucursal no se ofrece: el RLS ya
-    // recortó y un desplegable de siete que sólo funciona con una es un control
-    // que miente. El de tipo se ofrece siempre — es del historial, no del alcance.
+    // Con alcance de una sola sala el filtro de sucursal no se ofrece: las
+    // consultas ya salen recortadas a la sala propia, y un desplegable de siete
+    // que sólo funciona con una es un control que miente. El de tipo se ofrece
+    // siempre — es del historial, no del alcance.
     const [sala, setSala] = useState('');
     const [tipo, setTipo] = useState('');
 
@@ -160,19 +161,24 @@ export default function TrasladosView() {
     // `personaPor` + `ChipPersona`, que es el canónico.
     const nombrePor = useCallback((id) => personaPor(id)?.name ?? (id ? 'Alguien' : null), [personaPor]);
 
+    // La sala que recorta: la elegida si se pueden ver todas, y si no la propia.
+    // Es la misma para las dos listas — «en camino» mira el DESTINO y el
+    // historial los dos extremos, y esa diferencia la resuelve cada consulta.
+    const salaQueRecorta = alcanceTodas ? (sala || null) : miBranch;
+
     // Nada de `setError('')` antes del primer `await`: sería un setState
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
     // se resuelve cuando llega la respuesta, que es cuando se sabe.
     const cargar = useCallback(async () => {
         const [b, c] = await Promise.all([
-            fetchTrasladosPorRecibir(),
-            fetchTrasladosHistorial({ branchId: alcanceTodas ? (sala || null) : miBranch }),
+            fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
+            fetchTrasladosHistorial({ branchId: salaQueRecorta }),
         ]);
         const fallo = b.error ?? c.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
         setHistorial(c.filas);
-    }, [alcanceTodas, sala, miBranch]);
+    }, [salaQueRecorta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
@@ -187,21 +193,18 @@ export default function TrasladosView() {
         if (faltan.length > 0) resolverPersonas(faltan);
     }, [porRecibir, historial, employees, resolverPersonas]);
 
-    // Las dos listas en vuelo salen sin filtro de sala —el RLS ya decide qué se
-    // ve— así que el recorte por sucursal se aplica acá, contra los dos
-    // extremos del traslado. El historial ya viene recortado del servidor.
-    const recortaSala = useCallback((filas) => {
-        if (!alcanceTodas || !sala) return filas ?? [];
-        return (filas ?? []).filter(f =>
-            String(f.metadata?.branch_id ?? '') === sala
-            || String(f.metadata?.origen_branch_id ?? '') === sala);
-    }, [alcanceTodas, sala]);
-
+    // El recorte por sucursal lo hace la CONSULTA, no esta pantalla. Estaba acá
+    // y miraba los dos extremos del traslado, que es lo correcto para un
+    // historial y lo incorrecto para «en camino»: una sala veía lo que ella
+    // misma despachó a otra como si estuviera por llegarle. Y para alcance de
+    // una sola sala no se aplicaba nunca —se confiaba en el RLS, que deja ver
+    // los dos lados a propósito—, así que Salud 5 abría la pestaña con dos
+    // traslados y ninguno era suyo (medido el 2026-08-17).
     const filtrar = useCallback((filas) => {
-        const base = recortaSala(filas);
+        const base = filas ?? [];
         if (!busqueda.trim()) return base;
         return smartFilter(busqueda, base, f => [textoBuscable(f, nombrePor)]).results;
-    }, [busqueda, nombrePor, recortaSala]);
+    }, [busqueda, nombrePor]);
 
     const vistas = useMemo(() => ({
         recibir:   filtrar(porRecibir),
@@ -216,7 +219,7 @@ export default function TrasladosView() {
     // número que baja al escribir en el buscador deja de decir cuánto falta.
     // El historial no lleva: es un archivo, no una cola que alguien vacía.
     const conCuenta = TABS.map(t => {
-        const total = recortaSala(t.key === 'recibir' ? porRecibir : null).length;
+        const total = t.key === 'recibir' ? (porRecibir ?? []).length : 0;
         return { ...t, label: total > 0 ? `${t.label} · ${total}` : t.label };
     });
 

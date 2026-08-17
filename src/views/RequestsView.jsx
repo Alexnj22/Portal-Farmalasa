@@ -353,18 +353,16 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
     /* Qué se le pide a la base, según el alcance.
      *
-     * `ownId` es lo que faltaba y no daba error: con `approverId` la consulta
-     * trae «lo que me toca decidir», y una solicitud PROPIA tiene a otro de
-     * aprobador. O sea que la pantalla que ahora también es «Mis Solicitudes»
-     * habría llegado sin ninguna de las mías. */
+     * Sólo el alcance, y a propósito. Acá viajaba además un `approverId` que
+     * pedía «lo que me toca decidir» por `approver_id` — el sello de a quién
+     * enrutó la jerarquía, que no es lo mismo que quién puede decidir. Con
+     * permiso de aprobar y alcance sobre todas, esa consulta le devolvía CERO
+     * filas a Talento Humano teniendo cinco pendientes en la tabla, y la
+     * campana le avisaba de cada una. Ver `fetchApprovalRequestsList`. */
     const criterios = useMemo(() => (soloMio
         ? { soloMiasId: user?.id }
-        : {
-            branchId:   alcance === 'BRANCH' ? user?.branchId : null,
-            approverId: canApprove ? user?.id : null,
-            ownId:      user?.id,
-        }
-    ), [soloMio, alcance, canApprove, user?.id, user?.branchId]);
+        : { branchId: alcance === 'BRANCH' ? user?.branchId : null }
+    ), [soloMio, alcance, user?.branchId, user?.id]);
 
     useEffect(() => { fetchRequests(criterios); }, [criterios, fetchRequests]);
 
@@ -465,6 +463,20 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         // que ya pasó por la línea de arriba.
         if (soloMio) return paraQuien(r) === miId;
         if (soloMira) return true;
+        /* Lo que uno puede DECIDIR es lo que uno tiene que ver.
+         *
+         * Es el MISMO criterio con el que la base reparte el aviso
+         * (`puede_aprobar_modulo(…, modulo_de_notificacion(type))`, dentro de
+         * `notificar_solicitud_creada`) y el mismo que cobra la policy de
+         * UPDATE. Acá se miraba en cambio `approver_id`, que es a quién enrutó
+         * la jerarquía: una definición más angosta que las otras dos, así que
+         * el aviso llegaba y la bandeja no tenía la solicitud. Le pasaba a
+         * Talento Humano con las cuatro familias.
+         *
+         * Debajo sigue el caso de quien puede aprobar el ámbito pero NO esta
+         * familia: ve lo que le enrutaron y lo huérfano, y nada más. Ampliarlo
+         * sería repartir poder sin querer. */
+        if (puedeDecidir(r)) return true;
         if (r.status === 'PENDING') return !r.approver || paraQuien(r) === miId;
         return paraQuien(r) === miId;
     };

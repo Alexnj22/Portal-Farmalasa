@@ -115,26 +115,36 @@ export function fetchBranchActiveEmployeeIds(branchId) {
 /**
  * La lista del centro de solicitudes.
  *
- * `ownId` es lo que faltaba al fusionar «Mis Solicitudes» adentro de la vista
- * (2026-08-11): con `approverId` la consulta pedía «las que me toca decidir»,
- * y una solicitud PROPIA tiene a otro de aprobador, así que las mías quedaban
- * fuera de mi propia pantalla. No daba error — devolvía una lista sin ellas.
- *
  * `soloMiasId` es el alcance «sólo míos», y son DOS cosas: las que mandé y las
  * que me toca contestar como compañero (el primer nivel de un cambio de turno
  * lo responde el otro, no una jefatura). Sin la segunda mitad, encender el
  * alcance nuevo apagaba los cambios de turno sin decirlo.
+ *
+ * ── Acá vivía un filtro por `approver_id`, y vaciaba la bandeja ────────────
+ * Con permiso de aprobar, la consulta pedía «lo que me tocaba a MÍ»:
+ * `approver_id = yo`, sin asignar, o mía. Pero `approver_id` es a quién
+ * ENRUTÓ la jerarquía, no quién puede decidir: la policy de UPDATE cobra
+ * `can_approve` del módulo de la familia y no mira ese sello, y el aviso lo
+ * reparte `notificar_solicitud_creada` entre TODOS los que pueden aprobar esa
+ * familia. O sea que había tres definiciones de «esto es tuyo» y la más
+ * angosta era la única que decidía qué se veía.
+ *
+ * Medido en prod el 2026-08-17 con la sesión de Talento Humano —alcance ALL,
+ * `can_approve` en las cuatro familias—: 35 solicitudes en la tabla, 5
+ * pendientes, y la consulta le devolvía **0**. Recibía la notificación de cada
+ * una y llegaba a una pantalla vacía; ni el enlace `?solicitud=` abría nada,
+ * porque busca dentro de una lista que nunca la trajo. Cero filas y «no hay
+ * solicitudes» se ven idénticos, así que el fallo era mudo.
+ *
+ * Hoy el recorte lo hace el RLS —que es el que de verdad manda— y el alcance
+ * por sala; la bandeja se ordena después, en `visible()` de la vista. Por eso
+ * tampoco hace falta `ownId`: lo propio pasa la policy por `employee_id`.
  */
-export function fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId, ownId, soloMiasId }) {
+export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId }) {
     let q = supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT).order('created_at', { ascending: false });
     if (employeeId) q = q.eq('employee_id', employeeId);
     if (soloMiasId) return q.or(`employee_id.eq.${soloMiasId},approver_id.eq.${soloMiasId}`);
     if (branchEmpIds && branchEmpIds.length > 0) q = q.in('employee_id', branchEmpIds);
-    if (approverId) {
-        const ramas = [`approver_id.eq.${approverId}`, 'approver_id.is.null'];
-        if (ownId) ramas.push(`employee_id.eq.${ownId}`);
-        q = q.or(ramas.join(','));
-    }
     return q;
 }
 

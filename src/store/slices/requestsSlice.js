@@ -532,7 +532,13 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
         body: isApproved
             ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
             : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
-        link: '/requests-personales',
+        /* La pantalla depende del TIPO, no del aviso. Acá estaba fijo en
+         * `/requests-personales`, así que a quien pidió una anulación o un
+         * descarte —un dependiente de sala, que no tiene permiso sobre lo
+         * personal— el aviso «tu solicitud fue aprobada» lo mandaba a una
+         * pantalla que le rebota. Y es el aviso que más se toca: es el que
+         * cierra el asunto. */
+        link: esOperativa(requestType) ? '/requests' : '/requests-personales',
         push: true,
         metadata: {
             requestType,
@@ -778,13 +784,17 @@ export const createRequestsSlice = (set, get) => ({
     // ── Fetch ──────────────────────────────────────────────────────────────
     /**
      * Pasó de tres parámetros posicionales a un objeto el 2026-08-11, al
-     * fusionar «Mis Solicitudes»: los criterios ya son cinco y en posicional
-     * el cuarto y el quinto se confunden entre sí a simple vista. `ownId` mete
-     * las propias además de las asignadas; `soloMiasId` es el alcance «sólo
-     * míos» y reemplaza a todo lo demás. Ver `fetchApprovalRequestsList`.
+     * fusionar «Mis Solicitudes»: en posicional se confundían entre sí a
+     * simple vista. `soloMiasId` es el alcance «sólo míos» y reemplaza a todo
+     * lo demás. Ver `fetchApprovalRequestsList`.
+     *
+     * `approverId`/`ownId` se fueron el 2026-08-17: pedían «lo que me tocaba a
+     * mí» por `approver_id`, que es a quién enrutó la jerarquía y no quién
+     * puede decidir. A Talento Humano le dejaban la bandeja en cero mientras
+     * la campana le avisaba de todo.
      */
-    fetchRequests: async ({ employeeId = null, branchId = null, approverId = null,
-                            ownId = null, soloMiasId = null } = {}) => {
+    fetchRequests: async ({ employeeId = null, branchId = null,
+                            soloMiasId = null } = {}) => {
         set({ isLoadingRequests: true });
         try {
             // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
@@ -795,12 +805,10 @@ export const createRequestsSlice = (set, get) => ({
                 branchEmpIds = (branchEmps || []).map(e => e.id);
             }
 
-            // 1. Fetch solicitudes sin joins
-            // Incluye huérfanas (approver_id null) como red de seguridad — no deberían
-            // existir tras el fallback de createRequest, pero si alguna se cuela no
-            // debe quedar invisible para todo aprobador (RLS ya permite verlas: la
-            // policy de SELECT da acceso total a can_approve, este filtro es solo UI).
-            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId, ownId, soloMiasId });
+            // 1. Fetch solicitudes sin joins. El recorte lo hace el RLS —que es
+            // el que de verdad manda— más el alcance por sala; la bandeja se
+            // ordena después, en `visible()` de la vista.
+            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId });
             if (error) throw error;
 
             // 2. IDs únicos de empleados y aprobadores

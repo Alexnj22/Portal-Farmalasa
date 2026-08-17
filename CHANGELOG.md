@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.6 — Solicitudes: la bandeja de quien aprueba deja de estar vacia
+
+Talento Humano recibía el aviso de cada solicitud y llegaba a una pantalla sin
+una sola fila. Medido en prod el 2026-08-17 con su cargo —alcance sobre todas
+las salas, permiso de aprobar en las cuatro familias—: **35 solicitudes en la
+tabla, 5 pendientes, y la consulta le devolvía 0**.
+
+El motivo es que «esto es tuyo» estaba escrito tres veces y no decían lo mismo:
+
+| quién decide | criterio |
+|---|---|
+| el aviso (`notificar_solicitud_creada`) | todos los que pueden aprobar esa familia |
+| la policy de UPDATE | `can_approve` del módulo de la familia |
+| **la lista** | `approver_id = yo` |
+
+`approver_id` es a quién **enrutó la jerarquía**, no quién puede decidir — y en
+la práctica cae casi siempre en la misma persona. Como era la definición más
+angosta de las tres y era la única que decidía qué se pintaba, cualquier otro
+aprobador quedaba mirando una bandeja vacía. Y el fallo era mudo por partida
+doble: cero filas se ve igual que «no hay solicitudes», y el enlace
+`?solicitud=` de la notificación busca dentro de esa misma lista, así que
+tampoco abría nada ni dejaba error.
+
+Estaba filtrado en dos lugares —la consulta y `visible()` de la vista— y los dos
+tenían que caer. Ahora el recorte lo hace el RLS, que es el que de verdad manda,
+y la bandeja se ordena después con el mismo criterio que usa la base para
+repartir el aviso: **lo que uno puede decidir es lo que uno tiene que ver**.
+Quien puede aprobar el ámbito pero no esa familia sigue viendo sólo lo que le
+enrutaron y lo huérfano — ampliar eso sería repartir poder sin querer.
+
+**Y el aviso de que la solicitud se resolvió llevaba a la pantalla equivocada.**
+`link` estaba fijo en `/requests-personales` para todo tipo, así que a quien
+pidió una anulación o un descarte —gente de sala, sin permiso sobre lo
+personal— el «tu solicitud fue aprobada» lo mandaba a una pantalla que le
+rebota. No es un caso de borde: **13 de 13** avisos de resolución en la tabla,
+11 personas distintas, todos a una pantalla que su cargo no puede abrir. Hoy la
+pantalla sale del tipo.
+
 ## v2.655.5 — El freno de intentos de identidad vuelve a contar
 
 `probar_identidad` —la que comprueba a quién se le entrega el efectivo en «Sacar

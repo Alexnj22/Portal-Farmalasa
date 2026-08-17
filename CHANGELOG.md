@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.650.3 — Bitácoras: el selector de médico se puede deshacer y el modal queda parejo
+
+**Un médico elegido por error ya se puede quitar.** Antes quedaba puesto y sin
+salida. Ahora la tarjeta verde trae **Cambiar**, que lo borra y devuelve la
+búsqueda.
+
+**Y con el médico ya elegido, la búsqueda desaparece.** Seguía en pantalla
+pidiendo un número que ya no hacía falta, al lado del médico que ya estaba
+confirmado.
+
+**Una búsqueda por nombre ya no elige sola.** Buscando «José Roberto» + «Nuñez
+Joya» el registro devolvió un solo resultado —**Carlos Eduardo** Nuñez Joya— y la
+pantalla lo daba por bueno: un único resultado no significa que sea el correcto.
+Ahora por nombre siempre se elige de la lista; sólo la búsqueda **por número**
+elige sola, porque ahí la coincidencia es exacta.
+
+**Tres inconsistencias del modal**, las tres visibles en la misma pantalla:
+
+- **«Quién recetó» no tenía etiqueta.** `LiquidSelect` no acepta `label` y la
+  prop se tiraba en silencio, así que el desplegable quedaba con «Médico» suelto
+  al lado de «Cómo buscarlo», que sí la tenía.
+- **«1 entregadas».** Ahora concuerda en singular.
+- **«Vence 01-ene», sin año** — que puede ser de hace tres años o del que viene,
+  y es justo el dato con el que se decide si ese lote se podía dispensar.
+
+Verificado en el navegador: el botón Cambiar aparece, la búsqueda se oculta con
+el médico puesto, y vuelve al deshacerlo.
+
 ## v2.650.2 — Cerrar el cargo desde la barra de acciones
 
 **La × de la tarjeta no se encuentra** (reportado por el usuario): vive en la

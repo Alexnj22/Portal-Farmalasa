@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BadgeCheck, Camera, Search, Stethoscope, User } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Camera, Search, Stethoscope, User, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
@@ -56,6 +56,13 @@ const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 
 const fmtFecha = (f) => (f
     ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    : '—');
+
+// El vencimiento SIEMPRE con año: «vence 01-ene» no dice nada — puede ser de
+// hace tres años o del que viene, y es justo el dato con el que se decide si un
+// lote se pudo dispensar.
+const fmtVence = (f) => (f
+    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
     : '—');
 
 export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
@@ -143,12 +150,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
             }
         } else {
             const { medicos } = await buscarMedicosLocalPorNombre(nom, ape, junta);
-            if (medicos.length === 1) {
-                setMedico(medicos[0]); setNombreMedico(medicos[0].nombre);
-                setBuscando(false); setBuscado(true);
-                return;
-            }
-            if (medicos.length > 1) {
+            if (medicos.length > 0) {
                 setCandidatos(medicos.map(m => ({ ...m, local: true })));
                 setBuscando(false); setBuscado(true);
                 return;
@@ -165,7 +167,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         if (e) { setAvisoBusqueda(e); return; }
         if (!profesionales.length) return;
 
-        if (profesionales.length === 1) {
+        if (porNumero && profesionales.length === 1) {
             const p0 = profesionales[0];
             setMedico({ nombre: p0.nombre, numero_junta: p0.numero_junta, carrera: p0.carrera, delConsejo: true });
             setNombreMedico(p0.nombre);
@@ -186,6 +188,16 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     // médico anterior con el número nuevo.
     const invalidar = useCallback(() => {
         setMedico(null);
+        setBuscado(false);
+        setCandidatos([]);
+        setAvisoBusqueda(null);
+    }, []);
+
+    // Deshacer una elección equivocada: se limpia todo lo del médico y vuelve la
+    // búsqueda. Sin esto, un médico puesto por error no se podía sacar.
+    const quitarMedico = useCallback(() => {
+        setMedico(null);
+        setNombreMedico('');
         setBuscado(false);
         setCandidatos([]);
         setAvisoBusqueda(null);
@@ -302,7 +314,9 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     </p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <span className="text-body font-black text-brand-text tabular-nums">
-                            {num(renglon.cantidad)} <span className="text-body-sm font-bold text-content-2">entregadas</span>
+                            {num(renglon.cantidad)} <span className="text-body-sm font-bold text-content-2">
+                                {Number(renglon.cantidad) === 1 ? 'entregada' : 'entregadas'}
+                            </span>
                         </span>
                         {renglon.laboratorio && (
                             <span className="text-body-sm text-content-2">{renglon.laboratorio}</span>
@@ -311,7 +325,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                             <Badge variant="chart-3" size="sm" uppercase={false}>Lote {renglon.lote}</Badge>
                         )}
                         {renglon.vence && (
-                            <Badge variant="neutral" size="sm" uppercase={false}>Vence {fmtFecha(renglon.vence)}</Badge>
+                            <Badge variant="neutral" size="sm" uppercase={false}>Vence {fmtVence(renglon.vence)}</Badge>
                         )}
                     </div>
                     <p className="text-label text-content-3">
@@ -379,11 +393,15 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     Enfermería y químico farmacéutico NO prescriben, y ofrecerlas
                     invitaría a registrar una receta que la ley no reconoce. */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <LiquidSelect
-                        label="Quién recetó"
-                        value={junta} onChange={(v) => { setJunta(v || 'P01'); invalidar(); }}
-                        options={JUNTAS_QUE_PRESCRIBEN} clearable={false}
-                    />
+                    <div>
+                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                            Quién recetó
+                        </p>
+                        <LiquidSelect
+                            value={junta} onChange={(v) => { setJunta(v || 'P01'); invalidar(); }}
+                            options={JUNTAS_QUE_PRESCRIBEN} clearable={false}
+                        />
+                    </div>
                     <div>
                         <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
                             Cómo buscarlo
@@ -396,7 +414,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     </div>
                 </div>
 
-                {modo === 'numero' ? (
+                {!medico && (modo === 'numero' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                         <PortalInput
                             label="N.º de junta" name="numero_junta" icon={Stethoscope} required
@@ -416,7 +434,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                             pantalla se lee igual que «ese médico no existe». */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                             <PortalInput
-                                label="Nombres" name="med_nombres" icon={Stethoscope}
+                                label="Nombres" name="med_nombres" icon={User}
                                 value={nombresBusca} onChange={(e) => { setNombresBusca(e.target.value); invalidar(); }}
                                 placeholder="José Roberto"
                             />
@@ -435,10 +453,15 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                             apellido también busca.
                         </p>
                     </>
-                )}
+                ))}
 
                 {medico && (
-                    <Notice variant="success" icon={BadgeCheck}>
+                    <Notice variant="success" icon={BadgeCheck}
+                        action={(
+                            <Button variant="ghost" size="xs" icon={X} onClick={quitarMedico}>
+                                Cambiar
+                            </Button>
+                        )}>
                         <span className="font-bold">{medico.nombre}</span>
                         <span className="block mt-0.5 font-normal text-content-2">
                             N.º {medico.numero_junta}

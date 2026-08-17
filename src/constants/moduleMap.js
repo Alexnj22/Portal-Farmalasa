@@ -11,7 +11,8 @@ import { CalendarCheck,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer, Wallet, Landmark, PackagePlus
+    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer, Wallet, Landmark, PackagePlus,
+    Thermometer
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -78,6 +79,10 @@ export const MODULE_MAP = {
     corte_z:           { path: '/corte-z',              label: 'Corte Z',                  icon: Receipt       },
     proveedores:       { path: '/proveedores',        label: 'Proveedores',              icon: Truck         },
     conteo_inventario: { path: '/conteo-inventario',  label: 'Conteo de inventario',     icon: ClipboardCheck },
+    // Vecindario: el conteo. Las dos describen el estado FÍSICO de lo que hay
+    // guardado —una cuenta unidades, la otra vigila las condiciones en que se
+    // guardan— y las dos se llenan de pie, en la sala, con el teléfono.
+    bitacoras:         { path: '/bitacoras',           label: 'Bitácoras',                icon: Thermometer   },
 };
 
 

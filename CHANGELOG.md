@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.645.1 — Bitácoras: la pantalla, el libro y el widget
+
+**El módulo ya se ve y se usa.** Cuatro secciones: el registro diario, el libro
+bajo receta, el cierre de mes y la configuración.
+
+**Registro diario.** La grilla completa del día, área por área: cada franja tiene
+su casilla tenga lectura o no, y el hueco se ve como hueco. Una bitácora que sólo
+lista lo que se anotó no puede contestar «¿nos falta alguna?», que es la pregunta
+del inspector. Cada casilla dice quién anotó, a qué hora real, y si la carga cayó
+fuera de su ventana. Una lectura fuera de rango **no se puede guardar sin escribir
+qué se hizo** (RTS 5.6.5), y corregir agrega la corrección con su motivo — el
+valor viejo nunca se pierde.
+
+**No hay pestaña «Historial»**: mirar el martes pasado es la misma pantalla con
+otra fecha, o sea un recorte, y va en la ranura de fecha del filtro (§16.9). Una
+pestaña habría sido la misma lista dos veces, que es lo que Cortes de caja tuvo
+que deshacer.
+
+**El libro bajo receta**, con su buscador: se busca por folio (`2026-00007`, o
+sólo `7`), por medicamento, lote, paciente, médico o documento. Abrir un renglón
+muestra las cuatro caras completas — medicamento con lote y vencimiento, la venta
+con su comprobante, paciente y receta, y el médico con su número de junta — y
+dice cuál falta en vez de dejar el hueco mudo. **Un lote vencido al momento de
+dispensar se marca en la propia fila**: si hay que abrir el renglón para
+enterarse, no se entera nadie.
+
+**Cierre de mes.** El resumen de conformidad que el regente mira antes de firmar:
+cumplimiento, faltantes, cargas fuera de hora, desvíos con y sin acción, y los
+instrumentos con calibración vencida. **Un mes imperfecto se puede cerrar y el
+cierre guarda cuán imperfecto era** — exigir perfección para poder firmar enseña
+a inventar las lecturas que faltan. Reabrir queda registrado con quién y por qué.
+
+**Widget en el Inicio**, en la pestaña Operación: qué toca ahora, qué se pasó de
+hora y cuántos renglones esperan su receta. **Sin selector de sucursal ni con
+alcance total**: una bitácora se llena estando en la sala, con el termómetro
+delante.
+
+**Lo que los gates encontraron y se corrigió antes de entrar**: cuatro usos
+míos contra el canon —`data-tono` con valores inventados, `variant="soft"` que
+no existe, `DataTable` con props que no tiene y `EmptyState`/`LoadingState` con
+el nombre de prop equivocado—, más voseo en cinco textos (el portal usa tuteo,
+§26.7), un `chart-2` retirado y una moneda formateada a mano. Y el gate de
+permisos levantó dos interruptores declarados que nada consultaba: uno se
+construyó (el widget) y el otro —imprimir el libro— se quitó del registro hasta
+que exista, porque un permiso que no gatea nada es exactamente el caso
+`staff_salary` que la auditoría dejó anotado.
+
+**Falta**, y es la siguiente entrega: completar el renglón desde la pantalla
+(paciente, médico y foto de la receta), la consulta al CSSP y el mes impreso.
+
 ## v2.645.0 — Las sesiones vencidas se cierran solas y Conexiones recuerda la última vez
 
 **Dos huecos medidos en el vencimiento por inactividad, y los dos dejaban que un

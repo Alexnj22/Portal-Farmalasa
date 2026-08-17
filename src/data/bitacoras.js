@@ -247,3 +247,90 @@ export const TIPO_AREA = {
     bodega:       'Bodega',
     refrigerador: 'Refrigerador',
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// El libro de dispensación bajo receta
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * El libro de una sala en un rango de fechas.
+ *
+ * Devuelve JSON armado en la base y no filas: son ~100 renglones al mes por
+ * sala y cada uno arrastra su receta, su paciente y su médico. Con filas planas
+ * habría que reconstruir ese anidado acá, y además el tope de 1000 de PostgREST
+ * cortaría el año sin avisar.
+ */
+export async function fetchLibro(branchId, { desde, hasta, estado = null } = {}) {
+    if (!branchId) return { renglones: [], error: null };
+    const { data, error } = await supabase.rpc('get_bitacora_dispensaciones', {
+        p_branch_id: Number(branchId),
+        p_desde: desde,
+        p_hasta: hasta,
+        p_estado: estado,
+    });
+    if (error) return { renglones: [], error };
+    return { renglones: data ?? [], error: null };
+}
+
+/**
+ * Un folio, con TODO lo que cuelga de él.
+ *
+ * «Al buscar uno, se tiene toda la información»: el producto con su lote y su
+ * vencimiento, la venta con su documento y su PDF, el cliente, quién vendió, el
+ * paciente, el médico con su número de junta, la receta con su foto, y cuánto
+ * queda pendiente de entregar.
+ */
+export async function fetchFolio(branchId, anio, folio) {
+    const { data, error } = await supabase.rpc('get_dispensacion_por_folio', {
+        p_branch_id: Number(branchId),
+        p_anio: Number(anio),
+        p_folio: Number(folio),
+    });
+    if (error) return { renglon: null, error };
+    return { renglon: data ?? null, error: null };
+}
+
+/**
+ * Partir un folio escrito a mano.
+ *
+ * Se acepta `2026-00007`, `2026-7` y `7` a secas — con el año en curso cuando
+ * no se escribe. Quien busca un folio lo está leyendo de un papel o lo recuerda
+ * a medias; exigir el formato exacto convierte «no existe» en «lo escribiste
+ * distinto», y esos dos se ven igual en pantalla.
+ */
+export function partirFolio(texto, anioPorDefecto = new Date().getUTCFullYear()) {
+    const t = String(texto || '').trim();
+    if (!t) return null;
+    const conAnio = t.match(/^(\d{4})\s*[-/]\s*(\d{1,6})$/);
+    if (conAnio) return { anio: Number(conAnio[1]), folio: Number(conAnio[2]) };
+    const soloNumero = t.match(/^(\d{1,6})$/);
+    if (soloNumero) return { anio: anioPorDefecto, folio: Number(soloNumero[1]) };
+    return null;
+}
+
+/** El rótulo de un folio: `2026-00007`. */
+export const rotularFolio = (anio, folio) => `${anio}-${String(folio).padStart(5, '0')}`;
+
+/**
+ * ¿Qué le falta a este renglón para estar completo?
+ *
+ * Se calcula acá, sobre el renglón que ya está en pantalla, y no se pide a la
+ * base: la lista de faltantes tiene que decir exactamente lo que el formulario
+ * va a pedir, y ésos son la misma cosa dicha una vez.
+ */
+export function faltantesDelRenglon(r) {
+    if (!r) return [];
+    if (r.estado === 'anulada') return [];
+    const faltan = [];
+    if (!r.paciente) faltan.push('paciente');
+    if (!r.medico) faltan.push('médico');
+    if (!r.tiene_foto) faltan.push('foto de la receta');
+    return faltan;
+}
+
+export const ESTADO_RENGLON = {
+    pendiente:  { label: 'Falta completar', variant: 'warning' },
+    completa:   { label: 'Completa',        variant: 'success' },
+    anulada:    { label: 'Anulada',         variant: 'neutral' },
+    sin_receta: { label: 'Sin receta',      variant: 'danger'  },
+};

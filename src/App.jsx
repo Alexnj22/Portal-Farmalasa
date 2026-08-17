@@ -72,6 +72,7 @@ const MetasView = lazy(IMPORTADORES.MetasView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
+const BitacorasView = lazy(IMPORTADORES.BitacorasView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
 const FacturacionView = lazy(IMPORTADORES.FacturacionView);
 const CotizacionesView = lazy(IMPORTADORES.CotizacionesView);
@@ -714,6 +715,7 @@ function MainApp() {
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
+                                    <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
@@ -842,6 +844,7 @@ const ROUTE_TITLES = {
     '/resumen-fiscal':    'Resumen fiscal',
     '/corte-z':           'Corte Z',
     '/conteo-inventario': 'Conteo de inventario',
+    '/bitacoras':         'Bitácoras',
     '/branches':          'Sucursales',
     '/roles':             'Jerarquía institucional',
     '/permissions':       'Permisos de acceso',

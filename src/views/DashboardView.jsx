@@ -27,7 +27,7 @@ import {
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
-  ReceiptText, Upload, Eye, Lock,
+  ReceiptText, Upload, Eye, Lock, Thermometer,
   Wallet
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
@@ -52,6 +52,7 @@ import WidgetAnnulmentRequest from './dashboard/baldosas/BaldosaFacturacion';
 import WidgetMinMaxRequest from './dashboard/baldosas/BaldosaMinMax';
 import WidgetInventoryMovement from './dashboard/baldosas/BaldosaInventario';
 import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
+import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import WidgetCortesSala from './dashboard/WidgetCortesSala';
@@ -167,6 +168,9 @@ const WIDGET_SIZES = {
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
   facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
+  // Dos renglones: arriba los avisos del día (hasta tres franjas) y abajo los
+  // botones. Con uno solo, el aviso de lo vencido tapaba el de lo que toca ahora.
+  bitacoras:     { minCols: 1, minRows: 2, label: 'Bitácoras'      },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // Lista con botones: sin alto no entra ni un corte (mismo motivo que
   // `vendedores` y `traslados`, abajo). Tres renglones desde el 2026-08-14:
@@ -581,6 +585,7 @@ const WIDGET_DEFS = [
   { id: 'inv_movement', label: 'Ajuste de inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'facturas_sala',label: 'Facturas de mi sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
+  { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
@@ -3262,6 +3267,17 @@ const DashboardView = ({ openModal }) => {
           )}
         />
       , staggerIdx);
+    }
+
+    /* ── BITÁCORAS DE MI SALA ── */
+    // Sin selector de sucursal, ni con alcance ALL: una bitácora se llena
+    // ESTANDO en la sala, con el termómetro delante. Ofrecer «mirá la de Salud
+    // 3» desde otra sala invitaría a anotar una lectura que no se tomó — y el
+    // ítem 6.1.14 del RTS pide justamente que el registro sea contemporáneo.
+    // Para revisar las demás está el módulo, que sí tiene la ranura.
+    if (wid === 'bitacoras') {
+      if (!showWidget('bitacoras', 'dash_bitacoras')) return null;
+      return wrapWidget('bitacoras', <WidgetBitacoras />, staggerIdx);
     }
 
     /* ── FACTURAS DE MI SALA ── */

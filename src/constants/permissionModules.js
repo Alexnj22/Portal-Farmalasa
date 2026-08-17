@@ -31,7 +31,8 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
-    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark, PackagePlus
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark, PackagePlus,
+    Thermometer
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -269,6 +270,31 @@ const GRUPOS_CRUDOS = [
                 // firmada con el nombre de quién contó cada renglón.
                 { key: 'conteo_inventario_eliminar',   label: 'Eliminar un conteo ya empezado o finalizado', tipo: 'cap' },
             ]},
+            // Va pegado al Conteo: las dos describen el estado FÍSICO de lo que
+            // hay guardado —una cuenta unidades, la otra vigila las condiciones
+            // en que se guardan— y las dos se llenan de pie, en la sala.
+            //
+            // `hasScope` porque el reparto tiene dos públicos que no se
+            // parecen: la sala anota lo suyo, y el REGENTE mira las siete. Su
+            // alcance es ALL aunque no sea un cargo de dirección — es el
+            // responsable de la Dirección Técnica (RTS 5.2.2) y cubre varias
+            // salas a la vez.
+            { key: 'bitacoras', label: 'Bitácoras', desc: 'Los registros que exige la Superintendencia de Regulación Sanitaria en cada sala: temperatura y humedad, limpieza y orden, refrigerador, y el libro foliado de dispensación bajo receta. Editar = anotar la lectura o completar un renglón del libro', icon: Thermometer, hasApprove: false, hasScope: true, sub: [
+                // No hay pestaña «Historial»: mirar otro día es la MISMA
+                // pantalla con otra fecha, o sea un filtro (§16.9). La pestaña
+                // que existe de verdad es el libro — otras filas, otro trabajo.
+                { key: 'bitacoras_tab_libro',     label: 'Bajo receta',   tipo: 'tab' },
+                { key: 'bitacoras_tab_cierre',    label: 'Cierre de mes', tipo: 'tab' },
+                // Firmar el mes es del regente, no de quien anota. Con un solo
+                // permiso, darle a la sala lo suyo le daría además el poder de
+                // dar por buena su propia bitácora — el mismo motivo por el que
+                // `bolsas_conteo` está separado de `bolsas`.
+                { key: 'bitacoras_cerrar_mes',    label: 'Dar por finalizado el mes (regente)', tipo: 'cap' },
+                // Cambiar franjas, rangos o el instrumento reescribe qué se le
+                // va a exigir a la sala TODOS los días, y de rebote cambia el
+                // número que el regente firma al cerrar.
+                { key: 'bitacoras_configurar',    label: 'Configurar áreas, franjas y rangos',  tipo: 'cap' },
+            ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [
                 { key: 'pedidos_tab_generar',   label: 'Generar',             tipo: 'tab' },
@@ -394,6 +420,7 @@ const GRUPOS_CRUDOS = [
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
             { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja que quedan sin confirmar en la sala —de los últimos 7 días, no sólo de hoy— con la diferencia de cada tramo, más cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icon: Wallet, hasApprove: false, hasScope: true },
             { key: 'dash_bolsas_sala',    label: 'Widget: Bolsas de efectivo de mi sala', desc: 'El efectivo que espera el retiro en la sala y los cortes confirmados a los que todavía no se les guardó el dinero, con la alarma de la bolsa que lleva 4 días o más', icon: Package, hasApprove: false, hasScope: true },
+            { key: 'dash_bitacoras',      label: 'Widget: Bitácoras de mi sala', desc: 'Las lecturas de temperatura y humedad que están abiertas ahora mismo y las que se pasaron de hora, la limpieza del turno, y cuántos renglones del libro bajo receta esperan que se les agregue el paciente y la receta', icon: Thermometer, hasApprove: false, hasScope: true },
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el

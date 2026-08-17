@@ -45,4 +45,10 @@ export const MODULE_SEARCH_KEYWORDS = {
     proveedores:        ['suppliers', 'contactos de proveedor', 'maestro de proveedores'],
     clientes:           ['customers', 'ficha del cliente', 'ficha fiscal', 'receptor', 'dui', 'nit', 'nrc', 'contribuyente', 'consumidor final', 'distrito', 'municipio'],
     conteo_inventario:  ['auditoria de inventario', 'conteo fisico', 'cuadre de stock'],
+    // Las palabras con las que la sala y el regente la buscan de verdad. «SRS»,
+    // «DNM» y «BPA» van porque el inspector las nombra así, y «antibiotico»
+    // porque es como se le dice al libro aunque cubra todo lo bajo receta.
+    bitacoras:          ['temperatura', 'humedad', 'termometro', 'refrigerador', 'cadena de frio',
+                         'limpieza', 'orden', 'libro de antibioticos', 'antibiotico', 'bajo receta',
+                         'receta', 'dispensacion', 'folio', 'regente', 'inspeccion', 'srs', 'dnm', 'bpa'],
 };

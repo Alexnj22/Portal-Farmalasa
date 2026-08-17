@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.651.1 — Faltaba el archivo del editor de receta
+
+`git commit -- <ruta>` **no toma un archivo nuevo sin rastrear**, aunque la ruta
+lo contenga: sólo commitea lo que ya está en el índice o versionado. Así que
+v2.651.0 subió el `import` del editor y no el módulo — un clon nuevo no
+compilaba.
+
+Lo que lo hizo pasar desapercibido: el build local **sí** funcionaba, porque el
+archivo estaba en disco. La única señal fue el «4 archivos modificados» del
+propio commit, que para un componente de 230 líneas no daba.
+
 ## v2.651.0 — Bitácoras: la foto de la receta se recorta, se aclara y sale de un solo tamaño
 
 **Hasta ahora la foto se subía tal cual**: torcida, con medio mostrador adentro

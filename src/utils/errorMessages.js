@@ -125,7 +125,10 @@ const REGLAS = [
     // inventario, metas— y solo `lock_module`/`unlock_module` tienen que ver con
     // bloquear un módulo. El mensaje decía «no podés bloquear o liberar este
     // módulo» a las otras 22: no significaba nada en su contexto.
-    [/PERMISSION_DENIED/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    // `FORBIDDEN` viaja igual de crudo y no lo atrapa `esTextoTecnico` (es una
+    // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
+    // `identificar_por_carne` y `get_kiosk_auth_code`.
+    [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
 
     // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
     [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,
@@ -192,7 +195,19 @@ export function mensajeAmigable(err, fallback = MENSAJE_GENERICO) {
 
     // Sin traducción conocida: si el texto es presentable, se muestra; si tiene
     // forma de volcado técnico, se cambia por el genérico.
-    return esTextoTecnico(crudo) ? fallback : crudo.trim();
+    //
+    // Lo que se MUESTRA es sólo el mensaje, no la tira que se armó para
+    // comparar. Los dos usos son distintos y hasta ahora se confundían: las
+    // REGLAS de arriba necesitan el `code` adentro (matchean `23505`, `22P02`),
+    // pero un `RAISE EXCEPTION` de Postgres trae siempre `code: 'P0001'`, así
+    // que toda frase escrita para una persona salía a pantalla con un « · P0001»
+    // pegado atrás — el código no dice nada y ninguna regla lo atrapa (necesita
+    // dos puntos detrás para contar como técnico). Se compara con todo; se
+    // muestra el mensaje.
+    const visible = typeof err === 'string'
+        ? err
+        : (err.message || err.error_description || crudo);
+    return esTextoTecnico(visible) ? fallback : visible.trim();
 }
 
 /**

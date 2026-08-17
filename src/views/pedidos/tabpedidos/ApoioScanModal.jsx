@@ -41,10 +41,15 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
         setError('');
         try {
             const { data, error } = await fetchEmployeeByKioskPin(code.toUpperCase().trim());
-            if (error) console.error('lookupPin: fetch employee failed:', error.message);
+            // El servidor tiene DOS respuestas distintas y antes se mostraban
+            // como una sola: «no reconozco ese carné» y «llevas demasiados
+            // carnés seguidos sin reconocer, espera unos minutos». La segunda
+            // llega como error y decía «Error al buscar empleado», que no dice
+            // qué hacer — y es justo la que aparece después de insistir.
+            if (error) { setError(mensajeAmigable(error, 'No se pudo confirmar el carné.')); return; }
             if (data) { await signPhotosDeep(data); setEmployee(data); setManualWarn(false); }
-            else       setError(error ? 'Error al buscar empleado.' : 'No se encontró ningún empleado con ese carnet.');
-        } catch { setError('Error al buscar empleado.'); }
+            else       setError('Ese carné no es de nadie de esta sucursal.');
+        } catch (err) { setError(mensajeAmigable(err, 'No se pudo confirmar el carné.')); }
         finally   { setLoading(false); }
     }, []);
 
@@ -124,7 +129,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         </div>
                         <div>
                             <h3 className="font-bold text-content text-subtitle">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
-                            <p className="text-body-sm text-content-2 mt-0.5">Escanea el carnet del empleado</p>
+                            <p className="text-body-sm text-content-2 mt-0.5">Escanea el carné del empleado</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -157,7 +162,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             )}
 
                             <p className="text-body-sm text-content-2 text-center">
-                                Apunta el escáner al código de barras<br />del carnet del empleado
+                                Apunta el escáner al código de barras<br />del carné del empleado
                             </p>
                         </div>
                     )}

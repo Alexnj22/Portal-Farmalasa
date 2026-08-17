@@ -876,8 +876,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             </>
                         ) : (
                             <>
+                                {/* Sin marca de lector no se promete «lector activo» —
+                                    no hay forma de preguntárselo al navegador—, pero el
+                                    carné sí se ofrece: el lector físico funciona igual
+                                    (el código entra por «usuario» y se valida al enviar,
+                                    ver `loEscribioUnLector`). El subtítulo nombra la
+                                    cámara sólo si este equipo tiene una. */}
                                 <p className="text-label font-black uppercase tracking-widest text-content-2">Escanear carné</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Con la cámara de este equipo</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">
+                                    {hasCamera ? 'Con el lector o con la cámara' : 'Pasa el carné por el lector'}
+                                </p>
                             </>
                         )}
                     </div>
@@ -924,10 +932,23 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     //     móvil y tiene lector igual. Sin esta prioridad, esa terminal se
     //     quedaba los 30s con el foco fuera de los campos y sin un solo cartel
     //     que dijera por qué.
-    //   · En un equipo sin lector pero con cámara: sólo el botón de cámara,
-    //     sin cartel de «lector activo» ni cuenta regresiva. Pedir un escaneo
-    //     que nadie puede hacer no es una opción, es un estorbo.
-    const mostrarEscaneo = conLector || (!enMovil && hasCamera);
+    //   · En CUALQUIER otra computadora: el bloque también, sin cartel de
+    //     «lector activo» ni cuenta regresiva.
+    //
+    // Esa última línea decía `hasCamera` hasta el 2026-08-17, y con eso el
+    // carné desaparecía de la pantalla en las computadoras de sala: son
+    // equipos viejos, sin cámara web, y `hayLector()` sólo se enciende DESPUÉS
+    // del primer carné que abre sesión — o sea que ahí no se cumplía ninguna
+    // de las dos condiciones y la única puerta que esa gente usa no se veía.
+    // Reportado por el usuario como «aun en monitores con baja resolución no
+    // aparece el carné para escanear»: la resolución no era la causa, era qué
+    // equipo tiene cámara.
+    //
+    // Lo que NO vuelve es el estorbo que motivó la regla de v2.638.0 («si no
+    // hay lector conectado, que no pida escanear»): sin marca de lector no hay
+    // cuenta regresiva ni robo de foco — el foco arranca en «usuario» igual
+    // que antes. Se muestra la puerta; no se obliga a nadie a usarla.
+    const mostrarEscaneo = conLector || !enMovil;
 
     const renderLoginForm = (compact) => (
         <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-4'}`}>

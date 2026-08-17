@@ -246,3 +246,46 @@ test.describe('Login · pegar', () => {
         await expect(page.locator('#password')).toHaveValue('Sup3rSecreta!');
     });
 });
+
+// ── La computadora de sala: sin cámara y sin marca de lector ────────────────
+// El bloque del carné se pedía con `conLector || (!enMovil && hasCamera)`, y
+// esas máquinas no cumplen ninguna de las dos: son equipos viejos sin cámara
+// web, y la marca de lector sólo se enciende DESPUÉS del primer carné que abre
+// sesión. O sea que la única puerta que esa gente usa no aparecía en pantalla.
+// Reportado como «aun en monitores con baja resolución no aparece el carné»;
+// la resolución no era la causa —por eso esta prueba corre a 1366×768, que es
+// justo el monitor donde se vio, y el bloque tiene que estar igual—.
+test.describe('Login · el carné en una computadora sin cámara', () => {
+    const sinCamara = async (page) => {
+        await page.setViewportSize({ width: 1366, height: 768 });
+        await page.addInitScript(() => {
+            // Se deja `enumerateDevices`, pero sin ninguna cámara: es el camino
+            // real del login, no un atajo que saltee el efecto.
+            Object.defineProperty(navigator, 'mediaDevices', {
+                configurable: true,
+                value: { enumerateDevices: async () => ([{ kind: 'audioinput', deviceId: 'x' }]) },
+            });
+        });
+        await page.goto('/login');
+        await expect(page.locator('#username')).toBeVisible();
+    };
+
+    test('el bloque del carné se ve, sin cámara y sin marca de lector', async ({ page }) => {
+        await sinCamara(page);
+        await expect(page.getByText('Escanear carné')).toBeVisible();
+        await expect(page.getByText(/Pasa el carné por el lector/i)).toBeVisible();
+        // El botón de cámara no se ofrece: este equipo no tiene una.
+        await expect(page.getByTitle(/Escanear con cámara/i)).toHaveCount(0);
+    });
+
+    test('no se pide un escaneo ni se le roba el foco a nadie', async ({ page }) => {
+        // Lo que motivó la regla de v2.638.0 («si no hay lector, que no pida
+        // escanear») era el estorbo: 30 segundos con el foco fuera de los
+        // campos y un cartel de «lector activo» que no se podía cumplir. Eso
+        // NO vuelve — se muestra la puerta, no se obliga a usarla.
+        await sinCamara(page);
+        await focoAsentado(page);
+        await expect(page.getByText(/Lector activo/i)).toHaveCount(0);
+        await expect(page.getByText(/usuario en \d+s/i)).toHaveCount(0);
+    });
+});

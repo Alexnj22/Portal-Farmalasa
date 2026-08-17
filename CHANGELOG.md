@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.4 — El carné vuelve a la pantalla de entrada, y el apoyo de un pedido reconoce el carné
+
+**El carné no aparecía en las computadoras de sala, y no era la resolución.** El
+bloque de escaneo de la pantalla de entrada se pedía con «hay lector _o_ hay
+cámara», y una computadora de sala no cumple ninguna de las dos: son equipos sin
+cámara web, y la marca de «este equipo tiene lector» sólo se enciende **después**
+del primer carné que abre sesión. O sea que la única puerta que esa gente usa no
+se veía. La resolución del monitor no tenía nada que ver: se notó ahí porque son
+justamente esas máquinas. Ahora el bloque está en cualquier computadora.
+
+Lo que **no** vuelve es el estorbo que motivó la regla de v2.638.0 («si no hay
+lector conectado, que no pida escanear»): donde no consta que haya lector no hay
+cuenta regresiva ni cartel de «lector activo», y el foco arranca en «usuario»
+como hasta ahora. Se muestra la puerta; no se obliga a nadie a usarla. Dos casos
+nuevos en `tests/e2e/login-lector.spec.js` (17 en total, todos en verde), a
+1366×768 y sin cámara — y verificados al revés: con la condición vieja, el
+primero falla.
+
+**El carné lleva el PIN de 8 caracteres, no el código de empleado** — y la
+búsqueda de apoyo comparaba el código. Está medido desde el 2026-08-14 en el
+kiosco: «46 carnés con PIN, CERO coinciden con su código». El 16-ago esa búsqueda
+pasó a resolverse en el servidor y quedó mirando sólo el código, así que ningún
+carné real podía reconocerse: **16 escaneos el 17-ago en Bodega, cero
+reconocidos**, y el último apoyo registrado era del 15-ago. Ensayado contra la
+base sin escribir nada: con el código, 0 de los 6 de Bodega se encuentran a sí
+mismos; con el PIN, 6 de 6.
+
+`identificar_por_carne` ahora hace lo mismo que el kiosco —PIN primero, código
+después, y todos los espacios fuera, no sólo los de las puntas—, y quién puede
+salir en la búsqueda lo decide `kiosco_cubre_empleado`, que es la misma
+definición de «esta persona trabaja acá» que ya usaba el kiosco (su sucursal,
+sus sucursales adicionales, o una cobertura de horario reciente). La misma falla
+estaba en `verificar_persona`, que es la prueba de identidad para retirar
+efectivo: todavía no se había usado en producción, así que se corrigió antes de
+que estrenara el error.
+
+**Tres mensajes que no decían nada.** Cuando el servidor frena por demasiados
+carnés sin reconocer seguidos, la pantalla mostraba «Error al buscar empleado» —
+que no dice qué hacer, y es justo el que sale después de insistir. Ahora se ve el
+aviso real. «No se encontró» pasa a decir lo que de verdad comprueba: **ese carné
+no es de nadie de esta sucursal**. Y el traductor de errores dejó de pegarle un
+« · P0001» a toda frase escrita para una persona: compara contra el error entero
+—varias reglas matchean por código— pero muestra sólo el mensaje. Anclado en
+`tests/unit/mensajeAmigable.test.js`.
+
 ## v2.653.3 — Bitácoras: la temperatura acepta decimales y las franjas caben en el horario
 
 **La temperatura no rechazaba el decimal: se comía la coma.** Medido en el

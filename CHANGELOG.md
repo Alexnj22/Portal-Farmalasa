@@ -21,6 +21,151 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.0 — La sala ya no espera al sistema para confirmar una recepción
+
+Reportado como *«se tarda bastante»*, con tres preguntas alrededor: qué pasa si
+se toca afuera mientras confirma, cómo evitar que se cierre, y qué pasa con el
+pedido si se va el internet.
+
+**Dónde estaba el tiempo, medido.** Sobre las líneas ya recibidas de los últimos
+30 días: **0.49 a 1.20 segundos por producto** —37 productos en 17.8 s, 76 en
+49.3 s—, porque cada uno son **dos viajes al sistema**, y eso no se baja desde
+acá. Lo que sí era nuestro: «Confirmar todo» hacía **un conteo y una llamada al
+sistema POR HOJA**, y otro par por cada caja especial, en fila. Un pedido de 4
+hojas y 3 especiales pagaba siete arranques y siete sesiones del sistema para el
+mismo trabajo. Ahora es **un solo conteo** —una transacción: o queda todo
+contado o no queda nada— **una sola marca de hojas y un solo encargo de
+ingreso**.
+
+**Y ese encargo ya no se espera.** Lo que la sala está haciendo es contar, y eso
+queda guardado antes. El ingreso al inventario sigue del lado del servidor: la
+pantalla se cierra enseguida con «entrando al inventario», la tarjeta del pedido
+lo muestra en curso y pasa sola a «en el inventario» cuando termina —se le
+pregunta cada 12 s, sólo por ese pedido, hasta que no queda nada pendiente—. Si
+algo queda afuera, la tarjeta lo dice en rojo con su **Reintentar**, que ya
+existía. **Recibir UN producto suelto sigue esperando**: quien lo aprieta lo
+necesita para venderlo ahora, y sin saber si entró no puede facturarlo.
+
+**Lo que se cierra con este cambio, además:**
+
+- **Tocar afuera nunca canceló nada** —el modal ya se pasa `onClose={undefined}`
+  mientras guarda, y con eso mueren el clic en el fondo, Escape y el arrastre—
+  pero no había forma de saberlo: el diálogo se cerraba un instante ANTES de
+  arrancar y sólo quedaba un spinner de 14px dentro del botón. Ahora el diálogo
+  se queda puesto y pinta **«Procesando… No cierres esta ventana»**, que es una
+  pantalla que ya estaba escrita y no se usaba. Y cerrar la pestaña o recargar
+  mientras guarda **pregunta**, que antes no lo frenaba nada.
+- **El corte por presupuesto se declaraba como éxito.** La recepción tiene un
+  techo de 110 s; al agotarse cortaba y devolvía `ok: true` con la mitad de las
+  líneas adentro, y el portal sólo miraba `ok`. Ahora viaja `completo`, y
+  «entraron 20 de 37» se dice así.
+- **Una línea que quedaba tomada era un callejón sin salida.** `recibiendo` es
+  el candado que impide recibir dos veces; si la corrida moría entre tomarla y
+  escribir el resultado, quedaba tomada para siempre — el reintento sólo levanta
+  las `enviada`, así que la tarjeta se quedaba en «sin ingresar» sin arreglo
+  posible desde el portal. Ahora se re-encola a los 15 minutos, y **no es un
+  reintento a ciegas**: antes de recibirla se abre su pantalla en el sistema, y
+  un traslado ya recibido no muestra líneas — ese caso ya estaba contemplado y
+  se anota como recibido sin volver a mover nada. Hoy no había ninguna en ese
+  estado (0 de 710 líneas), así que es una red antes de que haga falta.
+
+**Qué pasa si se va el internet, para que quede escrito**: el trabajo corre en el
+servidor, no en el navegador, así que sigue — lo único que se pierde es la
+respuesta. El conteo no se duplica ni queda a medias: la función de recepción
+sólo toca renglones `pendiente`, y volver a confirmar se saltea lo que ya entró.
+
+## v2.656.2 — Solicitudes: ninguna consulta se corta en 1000 en silencio
+
+Al ensanchar la bandeja en v2.655.6 —sacarle el filtro por `approver_id` para
+que Talento Humano viera lo suyo— la consulta pasó a traer todo lo que el RLS
+deja pasar, **sin paginar**. Se dejó anotado como riesgo en vez de arreglarlo,
+que fue el error: PostgREST corta en 1000 sin error ni aviso, así que una
+bandeja incompleta se vería exactamente igual que una completa. Es el mismo
+fallo mudo que esa versión venía a corregir, reaparecido por la puerta de al
+lado.
+
+Ahora **ninguna consulta sobre `approval_requests` puede cortarse en silencio**:
+
+| dónde | qué traía sin tope |
+|---|---|
+| la bandeja de Solicitudes | todo lo que el RLS deja ver |
+| ausencias vigentes (tablero) | toda vacación, incapacidad y permiso aprobado desde siempre |
+| excepciones de turno (auditoría) | todas las pendientes |
+| cambios de vacaciones | todas las pendientes |
+| historial de un empleado | su expediente entero, en dos pantallas |
+| pendientes de facturación (baldosa) | la cola completa |
+
+Las seis van por `fetchAllRows`. Tres de ellas son peores de lo que parecen
+porque **filtran DESPUÉS de traer** —la fecha de la ausencia, la quincena y el
+año viven dentro de `metadata`, que es jsonb y no se filtra en la base—: con un
+corte en 1000, lo que faltaría no sería «lo viejo» sino cualquier cosa, incluida
+una ausencia de HOY. El tablero habría mostrado como presente a alguien de
+vacaciones.
+
+Todas llevan además un **orden total** (desempate por `id`). `range()` corta por
+posición, así que con empates la base puede repartir dos filas iguales entre dos
+páginas y devolver una repetida y perder otra. Hoy `created_at` no empata
+—medido: 36 filas, 36 instantes distintos— pero eso es una propiedad de los
+datos de hoy y no una garantía: el default es `now()`, el instante de la
+transacción.
+
+Y para que no dependa de que alguien se acuerde, `approval_requests` queda
+registrada en `scripts/db/boolean-columns.json` como tabla que **requiere**
+paginación. Entra por la segunda mitad del criterio —«creciendo sin tope»— y no
+por tamaño: hoy son 36 filas. Con eso, `npm run gate:data` vigila la tabla sola.
+
+## v2.655.8 — El filtro «Receta Médica» de Ventas mostraba una de cada cuatro
+
+En Ventas, la píldora **Receta Médica** enseñaba una parte de las ventas y
+callaba el resto. En agosto salían **8 de 93**; en julio, 45 de 217; en junio,
+78 de 220. El conteo y el monto del encabezado salían de la misma lista, así
+que tampoco eran ciertos. Es un año y medio de historia: 901 ventas visibles
+sobre 3,655 reales.
+
+**Cómo se veía.** La venta `0000064559_COF` del 16 de agosto —La Popular,
+$82.75, lleva ROCEFORT— aparece en la lista con su etiqueta roja «Receta
+Médica». Al encender la píldora, desaparecía. Igual `0000055570_COF`,
+`0000060725_COF` y `0000081778_COF`, del mismo día.
+
+**Qué pasaba.** El portal armaba la lista de ventas con receta en el navegador:
+pedía los renglones de los 79 productos bajo receta y se quedaba con sus
+números de venta. Esa consulta trae **1000 filas como máximo** y no avisa
+cuando corta; los renglones reales son 4,013. Encima no llevaba fechas, así que
+barría año y medio y después cruzaba contra el mes en pantalla — por eso el
+recorte caía repartido y ningún mes se salvaba.
+
+Traer la lista entera tampoco servía: en un rango de un año son ~1,700 números
+de venta, y esos números viajaban dentro de la dirección de la consulta. La
+lista correcta rompía la consulta por el otro lado.
+
+**Qué se hizo.** El filtro pasó a resolverse en la base, que es donde el
+conjunto no tiene que caber en ningún lado. Dos funciones gemelas —una dibuja
+la lista, la otra los totales— parten del mismo bloque, así que el encabezado
+describe lo que se está viendo. Verificado contra seis escenarios (mes,
+mes+sucursal, anuladas, sólo anuladas, año, historia completa): cuadra al
+número exacto en los seis.
+
+**De paso, ordenar por Tipo, Sucursal, Vendedor o Método de pago vaciaba la
+lista.** La tabla mandaba el rótulo de la columna y la base espera el nombre
+real (`tipo_documento`, `branch_id`, `cod_vendedor`, `tipo_pago`); la consulta
+fallaba y, como nadie miraba el error, se pintaba «sin resultados». Cuatro de
+las ocho columnas ordenables. Ya hay un mapa entre rótulo y columna, y la misma
+lista vive en la función de la base.
+
+**Y el detector que lo dejó pasar.** `npm run gate:data` daba por acotada
+cualquier consulta que tuviera un `.in(`, porque si la entrada tiene ≤1000
+elementos la salida también… siempre que la columna sea una clave. Acá era
+`erp_product_id`, que se repite: 79 de entrada, 4,013 de salida. El gate estaba
+en verde y encima señalaba la consulta de al lado, que devuelve 79 filas y no
+molesta a nadie. Hay una categoría nueva, `in-columna-repetida`, y los 10 casos
+que encontró se revisaron uno por uno contra los volúmenes reales: ninguno cruza
+el tope hoy — el de recetas era el único que ya lo había cruzado.
+
+Arreglar el detector destapó dos fallas suyas: la ventana de lectura no
+alcanzaba a ver el `.range()` de una consulta que sí paginaba (la marcaba mal),
+y avanzaba tragándose las consultas siguientes, que por eso nunca se
+examinaban.
+
 ## v2.655.7 — El aviso de una solicitud personal ya lleva a su pantalla
 
 La otra mitad del arreglo de v2.655.6, esta vez en la base. En

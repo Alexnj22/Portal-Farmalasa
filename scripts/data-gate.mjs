@@ -14,6 +14,15 @@
  *                   cap exacto: el día que la tabla lo cruza, trunca en silencio.
  *   sin-paginar     SELECT sobre tabla grande sin range/limit/in/single/count
  *                   ni fetchAllRows.
+ *   in-columna-repetida  `.in(<columna que se repite>, …)` sin paginar. El
+ *                   detector de arriba da por acotada cualquier consulta con un
+ *                   `.in(`, que es el «Patrón A» del CLAUDE.md; pero acotar la
+ *                   entrada sólo acota la salida si la columna es una clave.
+ *                   El filtro «Receta Médica» de Ventas pedía
+ *                   `.in('erp_product_id', <79 ids>)` sobre sales_invoice_items
+ *                   y recibía 1000 de 4,013 filas: mostraba 8 ventas de 93 en
+ *                   agosto/2026 y el gate estaba verde. Arreglado el 2026-08-17
+ *                   bajando el filtro a la base (get_ventas_con_receta).
  *   error-ignorado  `const { data } = await supabase...` sin mirar `error`.
  *                   Un select que falla en silencio deja Maps vacíos (pasó con
  *                   presentaciones.descripcion: un mes sin detectarse).
@@ -36,6 +45,30 @@
  * el riesgo de `--no-verify-jwt` que describe CLAUDE.md; no se hace de paso.
  * En `src/` la categoría arrancó y quedó en CERO, así que cualquier escritura
  * a ciegas nueva del portal falla el gate el mismo día. El tope sólo baja.
+ *
+ * `in-columna-repetida` nace con tope 10 por el mismo motivo: es deuda vieja
+ * que recién ahora algo mira. Los diez se revisaron uno por uno contra los
+ * volúmenes REALES de prod el 2026-08-17, y ninguno cruza las 1000 filas hoy —
+ * el de recetas era el único que ya las había cruzado, y por eso se arregló en
+ * vez de anotarse. Los que más cerca están, para cuando alguien los retome:
+ *
+ *   stockParams.js  fetchStockParamsForRevision cruza productos × sucursales,
+ *                   así que un pedido grande lo lleva al tope antes que nadie.
+ *   ventas.js:110   fetchInvoiceItemsByIds: 100 facturas por página × 1.7
+ *                   renglones de promedio ≈ 170 filas, pero el máximo medido
+ *                   por factura es 28.
+ *
+ * El resto trabaja sobre conjuntos chicos por construcción (798 filas de canje
+ * de puntos en toda la tabla, 36 solicitudes, los lotes de UN producto). El
+ * tope sólo baja.
+ *
+ * El tope queda en 10 y no en el conteo del día porque tres de esos diez son
+ * sobre `approval_requests`, que entró a `tablas_grandes` el mismo 2026-08-17
+ * y desde otra sesión, y que esa misma sesión estaba paginando mientras esto se
+ * escribía. Según qué mitades hayan llegado a `main`, el conteo real da 8 o 10.
+ * El gate sólo falla al SUBIR, así que en los dos casos queda verde; el tope
+ * está flojo hasta que las dos mitades se junten. Cuando eso pase, bajarlo al
+ * número medido — que es lo que hay que hacer siempre con este archivo.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -44,15 +77,38 @@ import { dirname, join } from 'node:path';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE = join(RAIZ, 'scripts', 'data-gate-baseline.json');
-const SCHEMA = JSON.parse(readFileSync(join(RAIZ, 'scripts', 'db', 'boolean-columns.json'), 'utf8'));
+
+// `--hook` se declara acá arriba y no junto al resto porque los RETRATOS de la
+// base —abajo— también tienen que salir del índice, y se leen antes.
+const soloIndexado = process.argv.includes('--hook');
+
+/* Los retratos (`boolean-columns.json`, `request-types.json`) definen QUÉ mira
+ * el gate, así que en modo hook tienen que venir del índice igual que los
+ * fuentes. Leerlos del disco mientras los fuentes salen del índice mezcla dos
+ * árboles y produce hallazgos que no existen en ninguno de los dos: pasó el
+ * 2026-08-17, cuando otra sesión agregó `approval_requests` a `tablas_grandes`
+ * en su disco y todavía no había commiteado las seis consultas que ese mismo
+ * cambio venía a exigir. El gate contaba la tabla nueva (disco) contra el
+ * código viejo (índice) y culpaba a un commit que no tocaba ni una ni otro.
+ *
+ * Es exactamente el agujero que `--hook` vino a cerrar, en la mitad que faltaba:
+ * la lista de archivos y su contenido ya salían del índice; el criterio no. */
+const leerRetrato = (ruta) => {
+  if (soloIndexado) {
+    try { return execSync(`git show :${ruta}`, { cwd: RAIZ, encoding: 'utf8' }); }
+    catch { /* sin versión en el índice (archivo nuevo sin preparar): cae al disco */ }
+  }
+  return readFileSync(join(RAIZ, ruta), 'utf8');
+};
+
+const SCHEMA = JSON.parse(leerRetrato('scripts/db/boolean-columns.json'));
 
 const BOOLEANAS = SCHEMA.tablas;
 const GRANDES = Object.keys(SCHEMA.tablas_grandes).filter(k => !k.startsWith('_'));
 
 /* Los tipos de solicitud que la base admite, con el nombre que ELLA les da.
  * Retrato de prod; ver el `_comment` del JSON para regenerarlo. */
-const TIPOS_DE_SOLICITUD = JSON.parse(
-  readFileSync(join(RAIZ, 'scripts', 'db', 'request-types.json'), 'utf8')).tipos;
+const TIPOS_DE_SOLICITUD = JSON.parse(leerRetrato('scripts/db/request-types.json')).tipos;
 
 if (process.argv.includes('--regen-tipos')) {
   console.log(`
@@ -126,7 +182,7 @@ const exento = (archivo, cat) => Boolean(EXCEPTIONS[archivo]?.[cat]);
 // prepara antes de disparar el hook), y excluye lo ajeno sin commitear. En modo
 // manual (`npm run gate:data`) se sigue viendo TODO, que es lo que uno quiere
 // al auditar o antes de regenerar el baseline.
-const soloIndexado = process.argv.includes('--hook');
+// (`soloIndexado` se declara arriba, junto a los retratos, que necesitan lo mismo.)
 
 let archivos = execSync(
   "find src supabase/functions -type f \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' \\) ! -name 'version.js'",
@@ -190,7 +246,7 @@ const leerFuente = (archivo) => (soloIndexado
   ? (desdeIndice.get(archivo) ?? '')
   : readFileSync(join(RAIZ, archivo), 'utf8'));
 
-const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [] };
+const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-columna-repetida': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [] };
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
   hallazgos[cat].push({ archivo, linea, detalle });
@@ -260,6 +316,59 @@ for (const archivo of archivos) {
     if (/fetchAllRows\s*\(/.test(ctx.split('\n').slice(-7).join('\n'))) continue;
     push('sin-paginar', archivo, lineaDe(src, m.index),
       `select sobre ${tabla} sin paginar — envolver en fetchAllRows()`);
+  }
+
+  /* 3b. in-columna-repetida — el punto ciego que dejó pasar el filtro «Receta
+   *     Médica» de Ventas durante toda su vida.
+   *
+   * El detector de arriba trata cualquier `.in(` como prueba de que la consulta
+   * está acotada. Esa es la lectura del «Patrón A» del CLAUDE.md: si la ENTRADA
+   * tiene ≤1000 elementos, la SALIDA también. Pero eso sólo vale cuando la
+   * columna del `.in()` es única en esa tabla — una clave. Si se repite, cada
+   * elemento de la entrada trae N filas y el techo desaparece:
+   *
+   *     .from('sales_invoice_items').select('invoice_id').in('erp_product_id', ids)
+   *
+   * 79 ids de entrada, 4,013 filas de salida, 1000 entregadas. El filtro veía
+   * 901 de 3,655 facturas y agosto/2026 mostraba 8 ventas de 93. El gate estaba
+   * verde: había un `.in(`. Peor todavía, marcaba la línea de al lado —un select
+   * sobre `products` que devuelve 79 filas— así que señalaba la sana.
+   *
+   * `id` es la única columna que en este esquema es clave en todas las tablas
+   * grandes, así que es la única que exime. Para el resto hace falta paginar
+   * (fetchAllRows), acotar a mano, o mover el filtro a la base — que es lo que
+   * terminó haciendo Ventas.
+   */
+  /* La ventana es de 1500 y no de 450 como la de arriba, y se corta también en
+   * el `}` a columna cero: el `.range()` de `fetchInvoicesList` vive DESPUÉS de
+   * un if/else de veinte líneas, o sea fuera de 450 caracteres. Con la ventana
+   * corta esa consulta —que sí pagina— se reportaba igual, y un detector que
+   * grita sobre código sano se termina apagando. El corte por fin de función
+   * evita el problema opuesto: tomar prestado el `.range()` de la consulta que
+   * viene después.
+   *
+   * Y la ventana va en un LOOKAHEAD, que no consume. Con `([\s\S]{0,1500})` a
+   * secas cada coincidencia se comía 1500 caracteres, o sea los `.from(` que
+   * venían justo después: `fetchInvoiceItemsByIds` y `fetchStockParamsForRevision`
+   * nunca llegaban a examinarse porque la consulta anterior se los había
+   * tragado. Un detector puede quedar ciego por su propio avance de cursor, y
+   * eso no se ve en el resultado — se ve contando a mano lo que debería salir. */
+  for (const m of src.matchAll(/\.from\(\s*['"](\w+)['"]\s*\)(?=([\s\S]{0,1500}))/g)) {
+    const tabla = m[1];
+    if (!GRANDES.includes(tabla)) continue;
+    const frag = m[2].split(/\.from\(/)[0].split(/\n\}/)[0];
+    if (!/\.select\(/.test(frag)) continue;
+    if (/head:\s*true/.test(frag)) continue;
+    if (/\.range\(|\.limit\(|\.single\(|\.maybeSingle\(/.test(frag)) continue;
+    if (/\.(update|upsert|insert|delete)\(/.test(frag.split('.select(')[0])) continue;
+    const ctx = src.slice(Math.max(0, m.index - 260), m.index);
+    if (/fetchAllRows\s*\(/.test(ctx.split('\n').slice(-7).join('\n'))) continue;
+    for (const q of frag.matchAll(/\.in\(\s*['"](\w+)['"]/g)) {
+      if (q[1] === 'id') continue;                                        // clave: acota de verdad
+      push('in-columna-repetida', archivo, lineaDe(src, m.index),
+        `.in('${q[1]}', …) sobre ${tabla}: la columna se repite, así que acotar `
+        + `la entrada NO acota la salida — paginar con fetchAllRows() o filtrar en la base`);
+    }
   }
 
   // 4. error-ignorado

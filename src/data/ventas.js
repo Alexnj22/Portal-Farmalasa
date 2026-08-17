@@ -4,12 +4,52 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
+// Los productos bajo receta, para pintar el badge de cada renglón y para saber
+// si la píldora «Receta Médica» tiene sentido. Son 79 sobre 5,212 — cabe de
+// sobra bajo el tope de PostgREST, y aun así el filtro NO se resuelve con esta
+// lista: ver el comentario de fetchVentasConReceta.
 export function fetchAntibioticProductIds() {
     return supabase.from('products').select('id').eq('es_antibiotico', true);
 }
 
-export function fetchInvoiceIdsByProductIds(productIds) {
-    return supabase.from('sales_invoice_items').select('invoice_id').in('erp_product_id', productIds);
+/*
+ * El filtro «Receta Médica» vive en la base, no acá.
+ *
+ * La versión anterior pedía los `invoice_id` de `sales_invoice_items` con un
+ * `.in('erp_product_id', …)` sin paginar y los reinyectaba como `.in('id', …)`.
+ * PostgREST corta en 1000 filas sin avisar: contra 4,013 renglones reales el
+ * navegador veía 901 facturas de 3,655, y como la consulta tampoco llevaba
+ * fechas, el recorte caía repartido por toda la historia. Agosto/2026 mostraba
+ * 8 ventas de 93.
+ *
+ * Y traer la lista completa tampoco servía: con «Este año» son ~1,700 ids, y
+ * esos ids viajan dentro de la URL del `.in()`.
+ *
+ * `p_anuladas` es 'todas' | 'solo' | 'excluir' porque la lista y los totales
+ * NO piden lo mismo — ver dónde los llama VentasView.
+ */
+export function fetchVentasConReceta({ fini, ffin, branchFilter, anuladas, searchTerm, sortCol, sortDir, page, pageSize }) {
+    return supabase.rpc('get_ventas_con_receta', {
+        p_fini:      fini,
+        p_ffin:      ffin,
+        p_branch_id: branchFilter ? Number(branchFilter) : null,
+        p_anuladas:  anuladas,
+        p_search:    searchTerm?.trim() || null,
+        p_sort_col:  sortCol,
+        p_sort_dir:  sortDir,
+        p_limit:     pageSize,
+        p_offset:    (page - 1) * pageSize,
+    });
+}
+
+export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, searchTerm }) {
+    return supabase.rpc('get_ventas_receta_stats', {
+        p_fini:      fini,
+        p_ffin:      ffin,
+        p_branch_id: branchFilter ? Number(branchFilter) : null,
+        p_anuladas:  anuladas,
+        p_search:    searchTerm?.trim() || null,
+    });
 }
 
 export function fetchPuntosLineItems(invoiceIds) {
@@ -22,7 +62,7 @@ export function fetchPuntosLineItems(invoiceIds) {
 // Usado por fetchStats con filtros especiales (anuladas/antibiótico/búsqueda) —
 // fetchAllRows evita el cap silencioso de 1000 filas: sin esto, el monto
 // mostrado podía quedar truncado aunque el conteo (count exact) fuera correcto.
-export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, filterAntibiotico, abInvoiceIds, isSearching, searchTerm }) {
+export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, isSearching, searchTerm }) {
     let searchIds = null;
     if (isSearching) {
         const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });
@@ -34,7 +74,6 @@ export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, f
         if (branchFilter) q = q.eq('branch_id', branchFilter);
         if (filterAnuladas) q = q.in('estado', cancelledEstados);
         else q = q.not('estado', 'in', `(${cancelledEstados.join(',')})`);
-        if (filterAntibiotico) q = q.in('id', abInvoiceIds);
         if (isSearching) q = q.in('id', searchIds.length > 0 ? searchIds : [0]);
         return q;
     });
@@ -49,16 +88,41 @@ const COLUMNAS_LISTA = 'id, branch_id, erp_invoice_id, correlativo, tipo_documen
     'fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, retencion, total, ' +
     'estado, recibido_mh, has_puntos';
 
-export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, abIdsFilter, isSearching, searchTerm, page, pageSize }) {
+/*
+ * El rótulo de la columna NO es el nombre de la columna.
+ *
+ * `DataTable` emite `onSort(col.key)` con la clave que se le declaró, y cuatro
+ * de las ocho de esta tabla no existen en `sales_invoices`: Tipo es
+ * `tipo_documento`, Sucursal es `branch_id`, Vendedor es `cod_vendedor` y
+ * Método pago es `tipo_pago`. Sin este mapa, `.order('tipo')` devuelve 400 y
+ * `fetchRows` sólo desestructura `data` — o sea que ordenar por cualquiera de
+ * esas cuatro vaciaba la lista sin decir por qué.
+ *
+ * Es la regla de «un rótulo no es una clave» del CLAUDE.md, en su versión de
+ * ordenamiento. La MISMA lista vive en la whitelist de `get_ventas_con_receta`
+ * (migración 20260817175559) y las dos se mueven juntas.
+ */
+const COLUMNA_DE_ORDEN = {
+    fecha:    'fecha',
+    id:       'id',
+    tipo:     'tipo_documento',
+    sucursal: 'branch_id',
+    vendedor: 'cod_vendedor',
+    cliente:  'cliente',
+    metodo:   'tipo_pago',
+    total:    'total',
+};
+
+export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, isSearching, searchTerm, page, pageSize }) {
+    const col = COLUMNA_DE_ORDEN[sortCol] || 'fecha';
     let q = supabase
         .from('sales_invoices')
         .select(COLUMNAS_LISTA)
         .gte('fecha', fini).lte('fecha', ffin)
-        .order(sortCol, { ascending: asc });
-    if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
+        .order(col, { ascending: asc });
+    if (col === 'fecha') q = q.order('hora', { ascending: asc });
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
     if (filterAnuladas) q = q.in('estado', cancelledEstados);
-    if (abIdsFilter) q = q.in('id', abIdsFilter);
     if (isSearching) {
         const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });
         if (error) throw error;

@@ -28,7 +28,7 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
 import {
-    fetchAntibioticProductIds, fetchInvoiceIdsByProductIds, fetchPuntosLineItems,
+    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats, fetchPuntosLineItems,
     fetchInvoicesForStatsSpecial, fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
     fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
     fetchProductPreciosDetail, fetchProductPreciosHistory,
@@ -363,7 +363,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [loadingRows, setLoadingRows]   = useState(true);
     const [antibioticIds, setAntibioticIds] = useState(new Set());
     const [filterAntibiotico, setFilterAntibiotico] = useState(false);
-    const [abInvoiceIds, setAbInvoiceIds] = useState(null); // null=not loaded, []|[ids]=loaded
     const [filterAnuladas, setFilterAnuladas] = useState(false);
     const [changelogCache, setChangelogCache] = useState({});
     const fetchRowsRef = useRef(0);
@@ -383,16 +382,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         fetchAntibioticProductIds()
             .then(({ data }) => { if (data) setAntibioticIds(new Set(data.map(p => p.id))); });
     }, []);
-
-    useEffect(() => {
-        if (!filterAntibiotico || antibioticIds.size === 0) { setAbInvoiceIds(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar filtro
-        const ids = [...antibioticIds];
-        fetchInvoiceIdsByProductIds(ids)
-            .then(({ data }) => {
-                const uniq = [...new Set((data || []).map(i => i.invoice_id))];
-                setAbInvoiceIds(uniq);
-            });
-    }, [filterAntibiotico, antibioticIds]);
 
     const [fini, ffin] = monthRange.split('|');
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
@@ -444,25 +433,40 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         setLoadingStats(true);
         const branchFilter = filterBranch ? Number(filterBranch) : null;
         const horaCorte = currentHoraCorte(ffin);
-        const hasSpecialFilter = filterAnuladas || filterAntibiotico || isSearching;
+        // «Receta Médica» tiene su propio camino: el conjunto lo arma la base, así
+        // que conteo, monto y puntos llegan en UNA llamada y sobre exactamente las
+        // mismas filas que va a dibujar la lista. `'excluir'` reproduce lo que
+        // hacía esta función antes del cambio (la lista sí las mezcla — ver
+        // fetchRows, y el desajuste está anotado ahí).
+        if (filterAntibiotico) {
+            const { data, error } = await fetchVentasRecetaStats({
+                fini, ffin, branchFilter,
+                anuladas:   filterAnuladas ? 'solo' : 'excluir',
+                searchTerm: isSearching ? searchTerm : null,
+            });
+            if (error) console.error('fetchStats: get_ventas_receta_stats failed:', error.message);
+            const r = data?.[0] || {};
+            setTotalCount(parseInt(r.total_count || 0));
+            setTotalAmount(parseFloat(r.total_sum || 0));
+            setTotalPuntos(parseFloat(r.total_puntos || 0));
+            // Sin comparativo de período anterior, igual que el resto de las vistas
+            // filtradas: compararía universos distintos.
+            setPrevStats({ count: 0, sum: 0, puntos: 0 });
+            setLoadingStats(false);
+            return;
+        }
+
+        const hasSpecialFilter = filterAnuladas || isSearching;
 
         if (hasSpecialFilter) {
-            if (filterAntibiotico && abInvoiceIds === null) { setLoadingStats(false); return; } // aún cargando ids
-            if (filterAntibiotico && abInvoiceIds.length === 0) {
-                setTotalCount(0); setTotalAmount(0); setTotalPuntos(0);
-                setPrevStats({ count: 0, sum: 0, puntos: 0 });
-                setLoadingStats(false);
-                return;
-            }
             // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — con
-            // filtros amplios (búsqueda de texto, antibióticos en rangos largos) el
-            // total de facturas coincidentes puede superar 1000, y antes de este fix
-            // la SUMA/puntos se calculaban solo sobre las primeras 1000 aunque el
-            // conteo mostrado (count exact) sí fuera el real — monto silenciosamente
-            // incorrecto en pantalla.
+            // una búsqueda de texto amplia el total de facturas coincidentes puede
+            // superar 1000, y antes de este fix la SUMA/puntos se calculaban solo
+            // sobre las primeras 1000 aunque el conteo mostrado (count exact) sí
+            // fuera el real — monto silenciosamente incorrecto en pantalla.
             const invoices = await fetchInvoicesForStatsSpecial({
                 fini, ffin, branchFilter, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
-                filterAntibiotico, abInvoiceIds, isSearching, searchTerm,
+                isSearching, searchTerm,
             }) || [];
             const sum = invoices.reduce((acc, r) => acc + Number(r.total || 0), 0);
             const puntos = await sumPuntosForIds(invoices.map(r => r.id));
@@ -496,7 +500,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             puntos: parseFloat(puntosPrev.data || 0),
         });
         setLoadingStats(false);
-    }, [fini, ffin, filterBranch, prevMonthRange, filterAnuladas, filterAntibiotico, abInvoiceIds, isSearching, searchTerm]);
+    }, [fini, ffin, filterBranch, prevMonthRange, filterAnuladas, filterAntibiotico, isSearching, searchTerm]);
 
     // 6-month history for tooltip
 
@@ -519,19 +523,27 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             if (error) console.error('fetchRows: get_ventas_con_puntos failed:', error.message);
             fetched = data || [];
             setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
+        } else if (filterAntibiotico) {
+            // `'todas'` y no `'excluir'`: la lista sin filtrar mezcla las anuladas,
+            // así que encender la píldora no debería hacerlas desaparecer. Ojo que
+            // el encabezado SÍ las descuenta (fetchStats pide `'excluir'`) — es un
+            // desajuste que ya existía entre fetchInvoicesList y
+            // fetchInvoicesForStatsSpecial, y se reproduce a propósito para no
+            // mezclar dos cambios en uno. Cuando se decida cuál manda, se corrigen
+            // los dos lados juntos.
+            const { data, error } = await fetchVentasConReceta({
+                fini, ffin, branchFilter: filterBranch,
+                anuladas:   filterAnuladas ? 'solo' : 'todas',
+                searchTerm: isSearching ? searchTerm : null,
+                sortCol, sortDir, page, pageSize,
+            });
+            if (error) console.error('fetchRows: get_ventas_con_receta failed:', error.message);
+            fetched = data || [];
         } else {
             const asc = sortDir === 'asc';
-            let abIdsFilter = null;
-            if (filterAntibiotico && abInvoiceIds !== null) {
-                if (abInvoiceIds.length === 0) {
-                    if (rid === fetchRowsRef.current) { setRows([]); setLoadingRows(false); }
-                    return;
-                }
-                abIdsFilter = abInvoiceIds;
-            }
             const { data } = await fetchInvoicesList({
                 fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
-                abIdsFilter, isSearching, searchTerm, page, pageSize,
+                isSearching, searchTerm, page, pageSize,
             });
             fetched = data || [];
         }
@@ -588,7 +600,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     setChangelogCache(prev => ({ ...prev, ...grouped }));
                 });
         }
-    }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, abInvoiceIds, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
+    }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
     useEffect(() => { fetchRows(); }, [fetchRows]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros

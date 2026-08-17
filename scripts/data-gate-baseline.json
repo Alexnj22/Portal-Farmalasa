@@ -2,6 +2,8 @@
   "tipo-booleano": 0,
   "cap-1000": 3,
   "sin-paginar": 9,
+  "in-columna-repetida": 10,
   "error-ignorado": 0,
-  "escritura-a-ciegas": 26
+  "escritura-a-ciegas": 26,
+  "tipo-sin-rotulo": 0
 }

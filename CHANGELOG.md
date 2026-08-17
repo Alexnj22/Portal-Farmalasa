@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.12 — Traslados: caras, alturas parejas y el detalle en un modal
+
+Reportado con captura: *«las cards deben medir lo mismo de alto»*, *«no hay foto
+de quien solicitó, y quien confirmó en la sucursal»*, y después *«si hay muchos
+lotes, que permita las cards abrirse en modales para ver bien todo el detalle»*.
+
+**Las caras, por el canónico.** `ChipPersona` —el mismo que usan la bandeja y el
+detalle de Solicitudes— en las dos puntas del circuito: «Pidió» y «Envió» en la
+tarjeta, y las columnas «Pidió» y «Resolvió» del historial. Nació de un reclamo
+idéntico en Solicitudes, así que acá no había nada que inventar. Las personas se
+resuelven contra el maestro **y** contra el mapa de personas escondidas: quien
+despacha suele tener un cargo `is_su`, que `employees_select` no muestra.
+
+**Alturas parejas**, y son tres piezas que sólo funcionan juntas: `auto-rows-fr`
+en la rejilla iguala todas las filas —no sólo las de una misma—, `h-full` hace
+que la tarjeta llene su celda, y `mt-auto` en el pie manda el botón abajo. Sin
+las tres, una tarjeta con lotes y otra sin ellos siguen desparejas.
+
+**El detalle en un modal.** Los lotes de la tarjeta quedan topados en dos, con
+«+N lotes más»: con la rejilla igualando alturas, un traslado de doce lotes
+estiraba a TODAS las demás y empujaba el botón fuera de la pantalla. El resto se
+lee entero al abrirla — todos los lotes con su vencimiento y sus unidades, la
+nota, y las dos fichas de persona con la hora exacta y cuánto tardó, que es lo
+que contesta «¿por qué tarda?».
+
+La cara de la tarjeta abre; la acción se queda afuera. Lleva
+`data-filo="ceder"`, que es lo que hace que el destello del canto recorra el
+rectángulo de la TARJETA y no el del botón: sin él corta la tarjeta justo encima
+del pie (§5.bis). Y el ojo de `OjoDeTarjeta` avisa que hay algo que abrir, que
+es su regla: en el teléfono no hay puntero que lo insinúe.
+
+Recibir se puede desde el modal, con el **mismo** `recibir` de la tarjeta pasado
+por prop. Copiarlo habría creado dos caminos que se separan en cuanto alguien
+toque uno.
+
+**Verificado en pantalla, por fin.** Las tres entregas anteriores se cerraron a
+ciegas porque la extensión del navegador no conecta; ésta se levantó con
+Playwright —el mismo patrón que ya usa `docs/audits/`— en modo sólo lectura, sin
+tocar un solo control que escriba. Y valió: el primer intento de igualar alturas
+metió un comentario JSX donde no puede ir y **rompía la vista entera** con un
+error de compilación que el lint no vio y el build de ese momento no alcanzó a
+tomar. Eso no se detecta leyendo el diff.
+
 ## v2.656.11 — Solicitudes: se quita el corte de traslados, la bandeja muestra todo
 
 Decisión del usuario, un día después de estrenarlo: **fuera el corte**. La

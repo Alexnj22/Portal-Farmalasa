@@ -9,7 +9,17 @@ import {
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
 import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, piezasDe } from './trasladoTexto';
-import { desdeHace } from '../solicitudes/movimientoTexto';
+import { desdeHace, cuantoTardo } from '../solicitudes/movimientoTexto';
+import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
+import ModalShell from '../../components/common/ModalShell';
+import CuerpoDialogo from '../../components/common/CuerpoDialogo';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
+
+/* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
+ * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
+ * y empuja el botón fuera de la pantalla. Dos es lo que cabe sin que la tarjeta
+ * con lotes y la que no los tiene se vean de dos familias distintas. */
+const LOTES_EN_TARJETA = 2;
 
 // Las filas de un traslado, en un solo lugar.
 //
@@ -255,15 +265,18 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
  * @param ahora      El reloj de `useNowTick`, para «hace 20 min». Opcional: sin
  *                   él la tarjeta muestra la hora de salida y nada más, en vez
  *                   de un número congelado en el último render.
- * @param nombrePor  Resuelve un id de empleado a su nombre. Opcional: sin él la
+ * @param personaPor Resuelve un id de empleado a su FILA —con foto y cargo—,
+ *                   cayendo al mapa de personas escondidas. Opcional: sin él la
  *                   tarjeta no inventa el circuito, simplemente no lo dibuja.
  */
-export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }) {
+export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null }) {
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
+    const [abierto, setAbierto] = useState(false);
     const meta   = fila.metadata ?? {};
     const piezas = piezasDe(meta);
     const lotes  = lotesPedidos(meta);
+    const lotesDeMas = Math.max(0, lotes.length - LOTES_EN_TARJETA);
 
     // Salió cuando se despachó, que es lo que `updated_at` guarda en esta etapa.
     const salio  = fila.updated_at ?? fila.created_at;
@@ -273,12 +286,11 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }
     // espera larga de `RequestCard`.
     const trabado = Boolean(ahora) && (ahora - new Date(salio).getTime()) > 86400000;
 
-    /* El id se comprueba ACÁ y no dentro de `nombrePor`: los dos llamadores
-     * traen el suyo y el del tablero contesta «Alguien» a cualquier cosa, así
-     * que sin esta guarda una fila vieja sin despachante diría «Envió Alguien»
-     * — un nombre inventado donde no hay registro. */
-    const quienPidio = nombrePor && fila.employee_id ? nombrePor(fila.employee_id) : null;
-    const quienEnvio = nombrePor && fila.approver_id ? nombrePor(fila.approver_id) : null;
+    /* Las PERSONAS, no sus nombres: `ChipPersona` necesita la fila entera para
+     * poner la cara. El id se comprueba acá para que una fila vieja sin
+     * despachante no dibuje el rótulo «Envió» sobre un vacío. */
+    const quienPidio = personaPor ? personaPor(fila.employee_id) : null;
+    const quienEnvio = personaPor ? personaPor(fila.approver_id) : null;
 
     const recibir = async () => {
         setError(''); setOcupado(true);
@@ -288,9 +300,21 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }
         onHecho();
     };
 
+    /* `h-full` + el `mt-auto` del pie: en la rejilla de la vista las tarjetas
+     * miden lo mismo de alto aunque una traiga lotes y la otra no, y el botón de
+     * todas queda a la misma altura. Sin esto cada una se encoge a su contenido
+     * y la fila se ve rota — reportado: «las cards deben medir lo mismo de
+     * alto». Suelta (en el widget del tablero) `h-full` no hace nada. */
     return (
-        <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2.5">
-            <div className="flex items-start gap-3">
+      <>
+        <div data-surface="card" className="group px-4 py-3.5 flex flex-col gap-2.5 h-full">
+            {/* La cara de la tarjeta ABRE el detalle, y la acción se queda
+                afuera. `data-filo="ceder"` es lo que hace que el destello del
+                canto corra el rectángulo de la TARJETA y no el del botón: sin
+                él, el filo cortaba la tarjeta justo encima del pie (§5.bis). */}
+            <button type="button" data-filo="ceder" onClick={() => setAbierto(true)}
+                className="text-left flex items-start gap-3 w-full"
+                aria-label={`Ver el detalle de ${piezas?.nombre ?? 'este traslado'}`}>
                 {/* El ícono en su disco: a 13px suelto no se leía como estado,
                     y el estado es justo lo que esta lista viene a decir. */}
                 <span className={`shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center
@@ -321,27 +345,38 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }
                     </div>
 
                     {/* Los lotes que se pidieron. Quien recibe tiene la caja en
-                        la mano y es el único que puede comprobarlos. */}
+                        la mano y es el único que puede comprobarlos — pero en
+                        la tarjeta van TOPADOS: un traslado de doce lotes
+                        empujaba el botón fuera de la pantalla y estiraba a
+                        todas las demás, porque la rejilla iguala alturas. El
+                        resto se lee entero en el detalle. */}
                     {lotes.length > 0 && (
                         <div className="mt-1.5 flex flex-col gap-0.5">
-                            {lotes.map((l, i) => (
+                            {lotes.slice(0, LOTES_EN_TARJETA).map((l, i) => (
                                 <p key={i} className="text-micro text-content-2 font-semibold">
                                     <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
                                     {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
                                     {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
                                 </p>
                             ))}
+                            {lotesDeMas > 0 && (
+                                <p className="text-micro font-bold text-brand-text">
+                                    +{lotesDeMas} {lotesDeMas === 1 ? 'lote más' : 'lotes más'}
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
-            </div>
+
+                <OjoDeTarjeta className="self-start mt-1" />
+            </button>
 
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
 
             {/* El pie, como en `RequestCard`: a la izquierda cuándo salió y
                 cuánto lleva, a la derecha qué se hace con eso. El botón sólo se
                 estira en el teléfono. */}
-            <div className="flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-divider">
+            <div className="mt-auto flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-divider">
                 <div className="flex flex-col gap-0.5 min-w-0">
                     {/* El circuito: quién lo pidió y quién lo despachó. Faltaba
                         entero —«no sale quién solicitó, quién lo aprobó»— y es
@@ -351,17 +386,17 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }
                         que despacha suele tener un cargo que el maestro de
                         personal no muestra. */}
                     {(quienPidio || quienEnvio) && (
-                        <span className="flex items-center gap-1.5 min-w-0 text-micro text-content-2 flex-wrap">
+                        <span className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
                             {quienPidio && (
-                                <span className="truncate">
-                                    <span className="font-black uppercase tracking-widest text-content-3">Pidió </span>
-                                    <span className="font-semibold">{quienPidio}</span>
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">Pidió</span>
+                                    <ChipPersona persona={quienPidio} />
                                 </span>
                             )}
                             {quienEnvio && (
-                                <span className="truncate">
-                                    <span className="font-black uppercase tracking-widest text-content-3">Envió </span>
-                                    <span className="font-semibold">{quienEnvio}</span>
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">Envió</span>
+                                    <ChipPersona persona={quienEnvio} />
                                 </span>
                             )}
                         </span>
@@ -383,6 +418,98 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }
                 </Button>
             </div>
         </div>
+
+        {abierto && (
+            <ModalTraslado fila={fila} piezas={piezas} lotes={lotes} salio={salio}
+                quienPidio={quienPidio} quienEnvio={quienEnvio} ahora={ahora}
+                ocupado={ocupado} error={error} onRecibir={recibir}
+                onCerrar={() => setAbierto(false)} />
+        )}
+      </>
+    );
+}
+
+/* ─── El detalle de un traslado en camino ─────────────────────────────────────
+ *
+ * Existe porque los lotes no caben. La tarjeta los topa en dos —un traslado de
+ * doce empujaba el botón fuera de la pantalla, y como la rejilla iguala
+ * alturas, estiraba también a todas las demás—; acá van todos, con su
+ * vencimiento y sus unidades, que es lo que hay que cotejar contra la caja que
+ * uno tiene en la mano.
+ *
+ * Y de paso contesta lo que la tarjeta sólo insinúa: las horas exactas de las
+ * dos puntas del circuito, con `FichaPersona`, que es el mismo bloque con que
+ * Solicitudes muestra quién pidió y quién resolvió.
+ *
+ * Recibir se puede desde acá también. No es una segunda forma de hacerlo: es el
+ * MISMO `recibir` de la tarjeta, pasado por prop — copiarlo habría creado dos
+ * caminos que se separan en cuanto alguien toque uno.
+ */
+function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, ahora,
+                         ocupado, error, onRecibir, onCerrar }) {
+    const meta = fila.metadata ?? {};
+    return (
+        <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-lg"
+            zClass="z-toast" closeOnEsc={!ocupado} surface={null}
+            ariaLabel={`Traslado de ${piezas?.nombre ?? 'un producto'}`}>
+            <CuerpoDialogo
+                titulo={piezas?.nombre ?? resumenItems(meta)}
+                subtitulo={[piezas?.cuenta, `Salió ${fmtCuando(salio)}`].filter(Boolean).join(' · ')}
+                icono={Truck}
+                tono="warning"
+                anchoEscritorio="max-w-lg"
+                pie={<>
+                    <Button icon={PackageCheck} loading={ocupado} disabled={ocupado} onClick={onRecibir}>
+                        {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
+                    </Button>
+                    <Button variant="secondary" disabled={ocupado} onClick={onCerrar}>Cerrar</Button>
+                </>}>
+                <div className="flex flex-col gap-3 text-left">
+                    <div className="flex items-center justify-center gap-2 text-body-sm font-bold text-content-2">
+                        <Recorrido meta={meta} />
+                    </div>
+
+                    {/* Los lotes, TODOS y en su propia superficie: es la lista
+                        que se coteja renglón por renglón contra lo que llegó. */}
+                    {lotes.length > 0 && (
+                        <div data-surface="card" className="px-3 py-2.5">
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">
+                                {lotes.length === 1 ? 'El lote que se pidió' : `Los ${lotes.length} lotes que se pidieron`}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {lotes.map((l, i) => (
+                                    <p key={i} className="flex items-baseline justify-between gap-2 text-label text-content-2 font-semibold">
+                                        <span className="min-w-0 truncate">
+                                            <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
+                                            {l.vence && <span className="text-content-3"> · vence {fmtFechaLarga(l.vence)}</span>}
+                                        </span>
+                                        <span className="shrink-0 tabular-nums">
+                                            {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                        </span>
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {fila.note && (
+                        <p className="text-label text-content-2 leading-snug">{fila.note}</p>
+                    )}
+
+                    {/* Las dos puntas, con hora. En la tarjeta sólo caben los
+                        nombres; acá se ve cuándo pidió y cuándo salió, que es
+                        lo que contesta «¿por qué tarda?». */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <FichaPersona rotulo="Pidió" persona={quienPidio} vacio="Sin registro"
+                            cuando={fila.created_at} apunte={desdeHace(fila.created_at, ahora)} />
+                        <FichaPersona rotulo="Envió" persona={quienEnvio} vacio="Sin registro"
+                            cuando={salio} apunte={cuantoTardo(fila.created_at, salio)} tono="warning" />
+                    </div>
+
+                    {error && <p className="text-label text-danger-text font-medium">{error}</p>}
+                </div>
+            </CuerpoDialogo>
+        </ModalShell>
     );
 }
 

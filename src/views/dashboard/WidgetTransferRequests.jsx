@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { useNowTick } from '../../hooks/useNowTick';
 import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
+import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
 import {
     fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '../../data/traslados';
@@ -52,6 +53,25 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
         const e = (employees ?? []).find(x => x.id === id);
         return e?.name ?? 'Alguien';
     }, [employees]);
+
+    /* La PERSONA entera —con su foto— para las caras de la tarjeta, con el mismo
+     * respaldo que la vista: `employees_select` esconde a los cargos `is_su`, y
+     * quien despacha un traslado suele ser uno de ésos. Las dos pantallas
+     * comparten la tarjeta, así que comparten también de dónde saca las caras —
+     * es la deriva que el encabezado de `FilasTraslado` viene a evitar. */
+    const personasDeSolicitudes = useStaffStore(s => s.personasDeSolicitudes);
+    const resolverPersonas      = useStaffStore(s => s.resolverPersonasDeSolicitudes);
+    const personaPor = useMemo(() => {
+        const enElMaestro = buscadorDePersonas(employees);
+        return (id) => (id ? (enElMaestro(id) ?? personasDeSolicitudes?.[String(id)] ?? null) : null);
+    }, [employees, personasDeSolicitudes]);
+
+    useEffect(() => {
+        const faltan = [...new Set([...(porConfirmar ?? []), ...(porRecibir ?? [])]
+            .flatMap(f => [f.employee_id, f.approver_id])
+            .filter(id => id && !(employees ?? []).some(e => e.id === id)))];
+        if (faltan.length > 0) resolverPersonas(faltan);
+    }, [porConfirmar, porRecibir, employees, resolverPersonas]);
 
     /* El mismo reloj que la vista: la tarjeta dice cuánto lleva el traslado en
      * camino, y las dos pantallas comparten la tarjeta — dejarlo sólo en una
@@ -114,7 +134,7 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                             : 'En camino'}
                     </p>
                     {porRecibir.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} nombrePor={nombrePor} />
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
                     ))}
                 </div>
             )}

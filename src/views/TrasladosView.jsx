@@ -11,6 +11,8 @@ import { useStaffStore } from '../store/staffStore';
 import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';
 import { FilaPorRecibir } from './traslados/FilasTraslado';
+import { ChipPersona } from './solicitudes/PersonasSolicitud';
+import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial } from '../data/traslados';
 
@@ -149,11 +151,14 @@ export default function TrasladosView() {
      * qué. La RPC devuelve sólo a los que participan de alguna solicitud y sólo
      * lo que se pinta. Es el mismo hueco que ya tapó la bandeja de Solicitudes.
      */
-    const nombrePor = useCallback((id) => {
-        if (!id) return null;
-        const e = (employees ?? []).find(x => x.id === id);
-        return e?.name ?? personasDeSolicitudes?.[String(id)]?.name ?? 'Alguien';
+    const personaPor = useMemo(() => {
+        const enElMaestro = buscadorDePersonas(employees);
+        return (id) => (id ? (enElMaestro(id) ?? personasDeSolicitudes?.[String(id)] ?? null) : null);
     }, [employees, personasDeSolicitudes]);
+
+    // El nombre suelto, para el buscador y los `title`. La FOTO va por
+    // `personaPor` + `ChipPersona`, que es el canónico.
+    const nombrePor = useCallback((id) => personaPor(id)?.name ?? (id ? 'Alguien' : null), [personaPor]);
 
     // Nada de `setError('')` antes del primer `await`: sería un setState
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
@@ -334,12 +339,18 @@ export default function TrasladosView() {
                                         ésta no había forma de saber cuánto
                                         tardó — que es la mitad de lo que un
                                         historial contesta. */}
+                                    {/* Con su CARA, por `ChipPersona` — el
+                                        canónico que ya usan la bandeja y el
+                                        detalle de Solicitudes. Un nombre pelado
+                                        en una tabla obliga a leerlo; una cara se
+                                        reconoce de reojo, que es como se recorre
+                                        un historial. Y cuándo lo pidió: la fecha
+                                        de la derecha es la del CIERRE, así que
+                                        sin ésta no había cómo saber cuánto
+                                        tardó. */}
                                     <DataCell hideBelow="lg">
-                                        <span className="block line-clamp-1 text-label text-content-3"
-                                            title={nombrePor(f.employee_id)}>
-                                            {nombrePor(f.employee_id)}
-                                        </span>
-                                        <span className="block text-micro text-content-3 tabular-nums whitespace-nowrap">
+                                        <ChipPersona persona={personaPor(f.employee_id)} vacio="Sin registro" />
+                                        <span className="block text-micro text-content-3 tabular-nums whitespace-nowrap mt-0.5">
                                             {fmtFechaLarga(f.created_at)}
                                         </span>
                                     </DataCell>
@@ -347,13 +358,11 @@ export default function TrasladosView() {
                                         `approver_id` no debería existir —lo
                                         escribe la misma función que lo despacha
                                         o lo rechaza— pero si aparece uno viejo,
-                                        se dice «Sin registro» y no un nombre
-                                        inventado. */}
+                                        `ChipPersona` dice «Sin registro» y no
+                                        dibuja un disco gris que se leería como
+                                        una foto que no cargó. */}
                                     <DataCell hideBelow="xl">
-                                        <span className="block line-clamp-1 text-label text-content-3"
-                                            title={nombrePor(f.approver_id) ?? 'Sin registro'}>
-                                            {nombrePor(f.approver_id) ?? 'Sin registro'}
-                                        </span>
+                                        <ChipPersona persona={personaPor(f.approver_id)} vacio="Sin registro" />
                                     </DataCell>
                                     <DataCell hideBelow="lg">
                                         {/* El motivo del rechazo con lo que se sugirió: era el
@@ -402,10 +411,18 @@ export default function TrasladosView() {
                         />
                     )}
 
+                    {/* `auto-rows-fr`: todas las tarjetas miden lo mismo, no
+                        sólo las de una misma fila. Sin él la rejilla dimensiona
+                        cada fila por su contenido, así que una con lotes y otra
+                        sin ellos quedan desparejas en cuanto hay más de dos —
+                        reportado: «las cards deben medir lo mismo de alto». El
+                        `h-full` de la tarjeta y el `mt-auto` de su pie son la
+                        otra mitad: sin ellos la tarjeta no llena la celda que
+                        esto le da. */}
                     {!cargando && lista.length > 0 && (
-                        <div className="grid gap-3 xl:grid-cols-2 items-start">
+                        <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
                             {lista.map(f => (
-                                <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} nombrePor={nombrePor} />
+                                <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                             ))}
                         </div>
                     )}

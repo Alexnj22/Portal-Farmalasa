@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.651.2 — Bitácoras: la fecha va en el selector del portal, no en el del navegador
+
+**Auditoría de los canónicos del módulo, pedida antes de seguir.** El hallazgo
+real: **la fecha usaba el campo nativo del navegador** en dos sitios —la fecha de
+la receta y el «calibrado hasta» de un instrumento—. Se veía `08/16/2026`, mes
+antes que día, que en El Salvador se lee como el 8 de dieciséis; y el calendario
+que abría era el del sistema operativo, no el del portal. El índice de canónicos
+lo dice sin ambigüedad: la fecha va en `LiquidDatePicker`. Ahora muestra
+`15 / 08 / 2026` y abre el selector del portal.
+
+Lo demás de la auditoría salió limpio: los cinco modales del módulo usan
+`LiquidModal` con sus tres ranuras, todos bloquean el cierre mientras guardan,
+todos llevan `ariaLabel` y `maxWidth`, no hay ningún `<input>`, `<select>` ni
+`<textarea>` nativo fuera del deslizador de zoom del editor —que sigue el mismo
+patrón que el editor de fotos de producto— y no hay ni un aro de foco escrito a
+mano.
+
+También se quitó un icono importado y nunca usado en el editor.
+
+
+
 ## v2.651.1 — Faltaba el archivo del editor de receta
 
 `git commit -- <ruta>` **no toma un archivo nuevo sin rastrear**, aunque la ruta

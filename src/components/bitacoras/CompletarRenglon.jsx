@@ -3,6 +3,7 @@ import { AlertTriangle, BadgeCheck, Camera, Search, Stethoscope, User, X } from 
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
+import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidModal from '../common/LiquidModal';
 import ListRow from '../common/ListRow';
 import LiquidSelect from '../common/LiquidSelect';
@@ -541,10 +542,12 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                         hasError={entregoDeMas}
                         readOnly={Boolean(recetaElegida)}
                     />
-                    <PortalInput
-                        label="Fecha de la receta" name="fecha_receta" type="date"
-                        value={fechaReceta} onChange={(e) => setFechaReceta(e.target.value)}
-                    />
+                    <div>
+                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                            Fecha de la receta
+                        </p>
+                        <LiquidDatePicker value={fechaReceta} onChange={(v) => setFechaReceta(v || '')} />
+                    </div>
                 </div>
 
                 {/* Parcial o total no se elige: se ve. Y el tercer caso —haber

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
-import { Check, Crop, RotateCw, Sparkles, ZoomIn } from 'lucide-react';
+import { Check, RotateCw, Sparkles, ZoomIn } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -207,7 +207,7 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
                         <input
                             type="range" min="1" max="4" step="0.05" value={zoom}
                             onChange={(e) => setZoom(Number(e.target.value))}
-                            className="w-full accent-[var(--brand)]"
+                            className="w-full accent-brand cursor-pointer"
                             aria-label="Acercar"
                         />
                     </label>

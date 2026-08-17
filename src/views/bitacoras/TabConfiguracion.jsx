@@ -3,6 +3,7 @@ import { AlertTriangle, Check, Droplets, Snowflake, Store, Thermometer, Warehous
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import { LoadingState } from '../../components/common/StateViews';
@@ -95,11 +96,15 @@ function Area({ area, puedeEditar, onGuardado }) {
                             placeholder="Termohigrómetro TH-01"
                             helperText="Cómo se identifica el aparato de esta área"
                         />
-                        <PortalInput
-                            label="Calibrado hasta" name={`cal-${area.id}`} type="date"
-                            value={calibrado} onChange={(e) => setCalibrado(e.target.value)}
-                            helperText="Un certificado vencido invalida las lecturas"
-                        />
+                        <div>
+                            <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                                Calibrado hasta
+                            </p>
+                            <LiquidDatePicker value={calibrado} onChange={(v) => setCalibrado(v || '')} />
+                            <p className="text-label text-content-3 mt-1">
+                                Un certificado vencido invalida las lecturas
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-3">

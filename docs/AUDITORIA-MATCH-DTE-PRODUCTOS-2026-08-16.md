@@ -919,3 +919,87 @@ que llega en el momento correcto y no es el que se estaba buscando.
   no se ha corrido con plata de verdad.
 - **Nada se escribió nunca en el sistema de origen.** Sigue siendo la pieza que
   falta, y hasta que exista, «Cargar compra» arma la compra y la muestra.
+
+---
+
+# Parte 12 — «Por confirmar»: la lista completa (v2.643.0)
+
+## El problema que resuelve
+
+El diccionario arranca vacío, y la única forma de sembrarlo era abrir factura
+por factura. Con **615 documentos esperando carga** eso no lo iba a hacer nadie
+— y encima repetía trabajo: la misma pregunta («¿qué producto es el código
+`21AG` de GAMMA?») vuelve a aparecer en cada factura de ese proveedor.
+
+Pero **el trabajo real es mucho menor que las facturas**. Medido: 2,697 códigos
+distintos en 6,920 renglones, 2.36 documentos cada uno, y el **86.9%** de los
+renglones usan un código que se repite. O sea que la lista de preguntas
+*distintas* es varias veces más corta que la de renglones, y cada respuesta
+sirve para siempre.
+
+Entonces la pregunta se hace **una vez por `(proveedor, su código)`**, en una
+pantalla ordenada **por cuánto destraba cada una**. Responder las primeras diez
+resuelve muchos más renglones que responder diez cualesquiera.
+
+## Cómo está armado
+
+| pieza | qué hace |
+|---|---|
+| `compra_renglon_pendiente` | una fila por pregunta distinta: peso (renglones, facturas, unidades) y lo que propuso el emparejador |
+| `compra_documento_leido` | el freno de la doble lectura |
+| `registrar_renglones_pendientes()` | recibe los renglones de UN documento y los acumula |
+| `get_productos_por_confirmar()` | la lista, ya cruzada contra el diccionario |
+| `ignorar_renglon_pendiente()` | aparta un flete o un servicio, con motivo |
+| `leer-dte-json` modo `barrido` | lee los documentos nuevos, por tandas |
+
+**La sugerencia se guarda, no se recalcula.** Correr el parecido de ~1,200
+llaves contra 18 mil productos en cada carga de pantalla sería inusable. Se
+calcula una vez, cuando la llave aparece por primera vez.
+
+**El emparejamiento corre adentro de Postgres**, no desde la Edge Function: son
+~15 llamadas por documento, o sea unos 9,000 viajes de red para el barrido
+entero si se hicieran desde afuera.
+
+**El barrido es incremental y los conteos se SUMAN**, así que leer dos veces el
+mismo documento inflaría el peso de sus renglones. `compra_documento_leido` lo
+impide, y de paso hace que la segunda corrida sólo mire lo nuevo. Como un
+archivo ilegible no se marca leído, la pantalla corta cuando una tanda **no
+avanza**, no cuando la cuenta llega a cero — si no, el bucle no terminaría.
+
+## Los renglones sin código también se aprenden
+
+El 4% de los renglones no traen `codigo`. Con la llave `(NIT, código)` esos se
+habrían preguntado **para siempre**: no hay dónde guardar la respuesta. Ahora
+usan una llave derivada del nombre —`#` + el nombre normalizado— y el paso 2 del
+emparejador la prueba cuando el código no viene. Verificado en el entorno de
+pruebas: confirmado una vez, el mismo renglón vuelve como `aprendido`.
+
+Detalle que conviene conocer: la llave se arma con el **nombre limpio**, el mismo
+que se le pasa al emparejador. Si alguna vez las dos limpiezas se separan, el
+mismo producto tendría dos llaves. Por eso el barrido llama a `nombreLimpio()`,
+que es la función con pruebas, y no a una limpieza propia.
+
+## Un aviso que se contradecía
+
+La factura de LABORATORIOS SUIZOS mostraba «**6 a confirmar**» con los seis
+renglones marcados «**Ya confirmado**». No era un error de datos: `a_confirmar`
+contaba todo renglón que no estuviera `listo`, y `listo` exige producto **más
+lote más vencimiento**. SUIZOS no manda lote ni vencimiento, así que los mismos
+6 renglones se contaban tres veces y con el rótulo que menos correspondía.
+
+Hoy `a_confirmar` cuenta **sólo el producto que es una adivinanza**
+(`producto_id && !seguro`), el aviso nombra únicamente lo que de verdad falta, y
+`seguro` viaja como campo propio para que no se vuelvan a confundir las dos
+preguntas.
+
+## Lo verificado, y lo que falta
+
+Verificado contra el entorno de pruebas: agrega bien (3 renglones de 2 facturas
+en una sola fila), no suma dos veces el mismo documento, la llave sintética
+queda aprendida, y las tres acciones —**Es correcto**, **Es otro**, **No es un
+producto**— escriben lo que dicen, con quién y con motivo.
+
+**El barrido nunca corrió contra los documentos de verdad.** El entorno de
+pruebas no tiene archivos en el bucket, así que la parte de leer y parsear el
+JSON está probada por los otros modos, no por éste. La primera corrida real es
+un botón —**Actualizar lista**— y es reversible: se vacían las dos tablas.

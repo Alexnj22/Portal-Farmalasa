@@ -129,7 +129,19 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
 
     const { solicitante, aprobador } = personasDe(req, empleadosPorId);
     const meta        = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
-    const sala        = meta.branch_name || solicitante?.branch_name || null;
+    /* La sala de la tarjeta. En un traslado son DOS y la del metadata es la de
+     * DESTINO —la que pidió—, así que mostrarla sola decía justo lo contrario de
+     * lo que hay que saber para contestarlo: de dónde sale el producto. Se leía
+     * «TRASLADO ENTRE SALAS · La Popular» cuando el producto salía de Bodega.
+     *
+     * Importa desde v2.657.0, cuando una sala pasó a poder confirmar traslados
+     * de la sala que cubre mientras está cerrada: hasta entonces el origen era
+     * siempre la sala propia y no hacía falta decirlo. El detalle ya mostraba el
+     * recorrido; la tarjeta, no. */
+    const esTraslado  = req.type === 'INVENTORY_TRANSFER_REQUEST';
+    const sala        = esTraslado
+        ? ([meta.origen_branch_name, meta.branch_name].filter(Boolean).join(' → ') || null)
+        : (meta.branch_name || solicitante?.branch_name || null);
     const decidida    = req.status === 'APPROVED' || req.status === 'REJECTED';
     /* Un ajuste de Min/Max no tiene aprobador asignado: su tabla no guarda uno y
      * lo resuelve quien tenga el permiso del módulo. Decir «Espera a: Sin

@@ -49,11 +49,6 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
     // encabezado de una lista que siempre va a estar vacía.
     const puedeConfirmar = hasPermission('traslados', 'can_approve');
 
-    const nombrePor = useCallback((id) => {
-        const e = (employees ?? []).find(x => x.id === id);
-        return e?.name ?? 'Alguien';
-    }, [employees]);
-
     /* La PERSONA entera —con su foto— para las caras de la tarjeta, con el mismo
      * respaldo que la vista: `employees_select` esconde a los cargos `is_su`, y
      * quien despacha un traslado suele ser uno de ésos. Las dos pantallas
@@ -65,6 +60,16 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
         const enElMaestro = buscadorDePersonas(employees);
         return (id) => (id ? (enElMaestro(id) ?? personasDeSolicitudes?.[String(id)] ?? null) : null);
     }, [employees, personasDeSolicitudes]);
+
+    /* El nombre suelto, resuelto por `personaPor` — o sea con el mismo respaldo
+     * que las caras, y como ya lo hace la vista `/traslados`.
+     *
+     * Salía del maestro de personal a secas y por eso decía «Alguien» SIEMPRE en
+     * esta lista, no por casualidad: el maestro trae a la gente de la sala
+     * propia, y quien pide un traslado es por definición de OTRA sala —pide la
+     * que no tiene, confirma la que sí—. Es el mismo hueco que la bandeja de
+     * Solicitudes ya tapaba y esta tarjeta no. */
+    const nombrePor = useCallback((id) => personaPor(id)?.name ?? 'Alguien', [personaPor]);
 
     useEffect(() => {
         const faltan = [...new Set([...(porConfirmar ?? []), ...(porRecibir ?? [])]
@@ -112,11 +117,20 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
 
             {!cargando && puedeConfirmar && porConfirmar.length > 0 && (
                 <div className="flex flex-col gap-2">
+                    {/* «de tu sala» sólo si TODOS salen de la sala propia —el
+                        mismo cuidado que el encabezado de acá abajo—. Desde
+                        v2.657.0 esta lista puede traer los de una sala que uno
+                        está CUBRIENDO mientras está cerrada, y ahí el producto
+                        no sale de tu sala: sale de la de al lado. Cuál es cada
+                        uno lo dice la píldora de la tarjeta. */}
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                        Te piden de tu sala
+                        {porConfirmar.every(f => String(f.metadata?.origen_branch_id ?? '') === String(miBranch ?? ''))
+                            ? 'Te piden de tu sala'
+                            : 'Te piden'}
                     </p>
                     {porConfirmar.map(f => (
-                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio} />
+                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
+                            miBranch={miBranch} />
                     ))}
                 </div>
             )}

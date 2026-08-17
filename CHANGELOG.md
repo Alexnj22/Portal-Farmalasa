@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.3 — La tarjeta dice de qué sala sale el producto
+
+Preguntado por el usuario mirando la sala de respaldo de v2.657.0: *«¿tienen
+algún indicador diferenciador para saber que la solicitud es para bodega y no
+para la sucursal? ¿podríamos cambiar el color de la card o agregar algo?»*.
+
+Tenía razón en que no había ninguno. Hasta v2.657.0 el origen de un traslado
+por confirmar era **siempre la sala propia**, así que ninguna de las dos
+tarjetas lo decía: la del tablero mostraba «quién pidió · sala · hora» —donde
+esa sala es el DESTINO— y la de Solicitudes rotulaba «TRASLADO ENTRE SALAS ·
+La Popular» cuando el producto salía de Bodega. O sea que las dos nombraban a
+la sala que pide y ninguna a la que entrega, que es de la que hay que ir a
+sacar el producto.
+
+**El color no**, y no por gusto: en esta familia de tarjetas el color está
+reservado al **estado** —pendiente, aprobada, rechazada— y el tipo se dice por
+ícono y por nombre. Es una decisión de la auditoría de tema, escrita en
+`TarjetaSolicitud`: nueve tintes compitiendo ya la habían roto una vez. Así que
+el diferenciador es una **píldora**, que es el recurso canónico para eso.
+
+- **Tablero**: cuando el traslado sale de una sala que no es la tuya, la
+  tarjeta lleva una píldora ámbar **«Sale de Bodega»** bajo el producto. En el
+  caso normal —el producto es tuyo— no aparece nada.
+- **Encabezado de la lista**: «Te piden de tu sala» pasa a «Te piden» en cuanto
+  entra uno de otra sala. Mismo cuidado que ya tenía «En camino a tu sala» de
+  ahí abajo, por la misma razón: un encabezado que dice algo falso.
+- **Solicitudes**: la línea del tipo muestra el **recorrido** —«TRASLADO ENTRE
+  SALAS · Bodega → La Popular»— en vez de la sala de destino sola. El detalle
+  ya lo mostraba; la tarjeta era la que no.
+
+Y de paso, el mismo bug del nombre que se corrigió en la bandeja: el widget
+resolvía a quien pidió contra el maestro de personal **a secas**, que trae sólo
+a la gente de la sala propia — y quien pide un traslado es por definición de
+otra sala. Decía «Alguien» en todas las filas, siempre. Ahora resuelve por
+`personaPor`, con el mismo respaldo que ya usaban las caras y que la vista
+`/traslados` usaba desde antes.
+
+Sin cambios de base ni de servidor. Gates: design y build en verde.
+
 ## v2.657.2 — fix(traslados): «En camino» muestra lo que llega a la sala, no lo que salió de ella
 
 Reportado como urgente: *«en traslados entre salas salen de todas las salas, no

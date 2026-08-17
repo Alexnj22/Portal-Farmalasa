@@ -211,9 +211,31 @@ export function DecisionTraslado({ fila, onHecho }) {
  * La tarjeta del widget del tablero: qué se pide, quién lo pide, y debajo la
  * decisión. En Solicitudes esos tres primeros datos ya los pinta el detalle, así
  * que allá se usa `DecisionTraslado` a secas.
+ *
+ * @param miBranch La sala de quien mira. Sirve para UNA cosa: saber si el
+ *                 producto sale de acá o de otra sala. Desde v2.657.0 esta
+ *                 lista puede traer las dos —una sala cubre a otra mientras
+ *                 está cerrada— y hasta entonces el origen no hacía falta
+ *                 decirlo porque siempre era el mismo. Opcional: sin él la
+ *                 tarjeta se ve como antes en vez de afirmar lo que no sabe.
  */
-export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
+export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) {
     const meta = fila.metadata ?? {};
+
+    /* De dónde sale el producto, cuando NO es de esta sala.
+     *
+     * Sale del metadata de la solicitud, que es un hecho —quién despacha lo
+     * decide el servidor, y eso ya se dice adentro de la decisión—. Acá sólo se
+     * nombra la sala de la que va a salir el producto, que es lo que cambia lo
+     * que hay que ir a buscar y de qué estante.
+     *
+     * Píldora y no color de tarjeta: en esta familia **el color está reservado
+     * al estado** —pendiente, aprobada, rechazada— y el tipo se dice por ícono
+     * y por nombre. Es la decisión de la auditoría de tema, escrita en
+     * `TarjetaSolicitud`: nueve tintes compitiendo ya la habían roto una vez. */
+    const origenId = Number(meta.origen_branch_id ?? 0);
+    const deOtraSala = Boolean(miBranch) && origenId > 0 && origenId !== Number(miBranch);
+
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
             <div className="flex items-start gap-2">
@@ -222,6 +244,13 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                     <p className="text-label font-black text-content leading-tight">
                         {resumenItems(meta)}
                     </p>
+                    {deOtraSala && (
+                        <div className="mt-1">
+                            <Badge variant="warning" size="sm">
+                                Sale de {meta.origen_branch_name ?? 'otra sala'}
+                            </Badge>
+                        </div>
+                    )}
                     {/* Los lotes que pidieron, cuando el pedido los trae. Van
                         ACÁ —bajo lo que se pide y antes de quién lo pide—
                         porque son parte de qué se pide, no del contexto. */}

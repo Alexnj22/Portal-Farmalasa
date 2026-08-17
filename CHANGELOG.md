@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.11 — Solicitudes: se quita el corte de traslados, la bandeja muestra todo
+
+Decisión del usuario, un día después de estrenarlo: **fuera el corte**. La
+bandeja de la sala muestra todas las solicitudes, traslados incluidos, y ya no
+hay nada que elegir para verlas.
+
+Con eso desaparece la tercera ranura de la barra. Quedan la sucursal, el
+«Todos / Sólo yo» y el botón de crear.
+
+**Lo que se fue con él**, porque un filtro que esconde por defecto nunca es una
+sola pieza:
+
+- el conteo de lo que tapaba (existía sólo para avisar de lo tapado);
+- el arranque distinto para la sala que surte, que sin esa excepción se quedaba
+  con la bandeja vacía;
+- la salvedad en el enlace de los avisos, que tenía que apagar el corte al abrir
+  un traslado para que la solicitud no desapareciera al cerrar la ventana;
+- el módulo que decidía todo eso y su prueba.
+
+Cuatro piezas para esconder una familia de solicitudes, cada una con su manera
+de fallar en silencio. Queda anotado en el código y en `DESIGN.md`: antes de
+esconder algo por defecto, probar si alcanza con poder filtrarlo.
+
 ## v2.656.10 — En un traslado, la tarjeta dice la sala y no un nombre
 
 Pedido: *«en vez que diga que espera a el jefe en traslados entre salas, que

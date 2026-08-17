@@ -3495,31 +3495,33 @@ nunca.
 
 **`tone` se reenvía al segmentado (2026-08-17), y esa prop faltante costaba el
 canónico entero.** Solicitudes tenía DOS `SegmentedControl` escritos a mano
-—«Todos/Sólo yo» y «Sin traslados/Todo/Sólo traslados·N»— porque necesitaba
-`tone="neutro"` y `FilterBar.Opciones` no lo aceptaba. O sea que una prop de
-menos empujó a la vista a saltarse el componente **y con él el umbral**, que es
-justo lo que el umbral existe para impedir. Al portar los dos, el segundo bajó a
-select.
+porque necesitaba `tone="neutro"` y `FilterBar.Opciones` no lo aceptaba. O sea
+que una prop de menos empujó a la vista a saltarse el componente **y con él el
+umbral**, que es justo lo que el umbral existe para impedir. Antes de escribir un
+control a mano, mirar si lo que falta es una prop del canónico.
 
-⚠️ Las medidas del ANTES (~1770px de píldora, ~710 el riel) salen de una captura
-del 2026-08-17; las del DESPUÉS son estimadas del código y **están sin verificar
-en pantalla**. Quien retome esto: los dos anchos de §17.0 (1280 y 1600) antes de
-darlo por cerrado.
-
-**Por qué un riel de 3 mide 710px y el mismo texto en select mide 235.** No es
+**Por qué un riel de 3 mide 710px y el mismo texto en select mide ~235.** No es
 el texto: `SegmentedControl` pinta `font-black uppercase tracking-widest
 whitespace-nowrap` —tres decisiones que multiplican el ancho y ninguna cede— y
 `LiquidSelect` compacto pinta `text-body-sm` normal con `truncate`. Al estimar
-si un riel entra, contar MAYÚSCULAS con tracking, no caracteres.
+si un riel entra, contar MAYÚSCULAS con tracking, no caracteres. Los 710 están
+medidos sobre una captura del 2026-08-17 (píldora de ~1770); el 235 es estimado.
 
-**Un conteo que vive en una opción apagada obliga a mirar dónde queda al
-plegar.** El riel de Solicitudes llevaba el número en «Sólo traslados · 5»
-estando esa opción apagada, para que se viera cuánto tapaba el corte. Un select
-sólo muestra la opción ACTIVA, así que plegarlo tal cual habría borrado el único
-motivo por el que ese número existía. Se movió a la etiqueta de la opción que
-está puesta: con el corte activo se lee «Sin traslados · 5 ocultos». Y la
-palabra sobra sólo en apariencia — sin ella, el mismo `· 5` significa «vas a
-ver 5» en una opción y «no vas a ver 5» en la otra.
+**Un conteo que vive en una opción APAGADA se pierde al plegar el control a
+select.** Un select sólo muestra la opción activa, así que un número que estaba
+ahí para avisar de lo que el filtro tapa desaparece justo cuando hace falta. Si
+hay que plegarlo, el conteo se muda a la etiqueta de la opción PUESTA — y con una
+palabra que diga de qué lado está, porque el mismo `· 5` significa «vas a ver 5»
+en una opción y «no vas a ver 5» en la contraria.
+
+> El caso que enseñó las tres cosas —el corte de traslados de Solicitudes— se
+> **quitó por decisión del usuario el mismo 2026-08-17**, un día después de
+> estrenarlo: la bandeja muestra todas las solicitudes. Las lecciones quedan
+> porque son del canónico, no de ese control; el ejemplo ya no está en el código.
+> La de fondo es la cuarta: esconder por defecto una familia entera obliga a
+> construirle alrededor un conteo de lo tapado, una opción para destaparlo, un
+> arranque por sucursal y una excepción en el enlace del aviso. Antes de esconder
+> algo por defecto, probar si alcanza con poder filtrarlo.
 
 #### Muchos chips en una ranura: casi siempre son UN select
 

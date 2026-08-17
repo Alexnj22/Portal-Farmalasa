@@ -56,7 +56,7 @@ const CLAVE_DE_ORDEN = {
     paciente: 'paciente', medico: 'medico', vendedor: 'vendedor', estado: 'estado',
 };
 
-export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre }) {
+export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre, onRecargar }) {
     // Se guarda el ID, no la fila. Con la fila entera haría falta un efecto que
     // la cierre cuando la lista se recarga y ese renglón ya no está — y un panel
     // abierto sobre una fila que no existe muestra datos viejos como si fueran
@@ -212,7 +212,7 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                 subtitulo={abierto ? `${sucursalNombre} · ${fmtFecha(abierto.fecha)}` : ''}
                 variante="pantalla"
             >
-                {(fila) => <DetalleDeFolio renglon={fila} branchId={branchId} />}
+                {(fila) => <DetalleDeFolio renglon={fila} branchId={branchId} onCambio={onRecargar} />}
             </ExpedienteMovil>
         </div>
     );

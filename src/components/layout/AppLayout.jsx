@@ -9,7 +9,8 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen,
+    Thermometer
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -84,6 +85,14 @@ const MENU_GROUPS = [
     // vende sin parámetros, y qué existencia hay hoy—. Min/Max y el Conteo son
     // lo que se hace *después* de haberlas mirado.
     { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['gestion_stock', 'inventario', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
+    // Bitácoras va en grupo PROPIO (pedido del usuario, 2026-08-17) y no dentro
+    // de Inventario. No es una pregunta sobre la existencia: es el expediente
+    // que la Superintendencia de Regulación Sanitaria pide ver en una
+    // inspección, y quien lo abre —el dependiente que anota la lectura, el
+    // regente que firma el mes— entra por eso y no por otra cosa. Con un solo
+    // módulo el grupo se pinta plano, así que queda a un clic desde cualquier
+    // pantalla en vez de detrás de un acordeón.
+    { key: 'bitacoras',    label: 'Bitácoras',     icon: Thermometer,   modules: ['bitacoras'] },
     // «Facturas de Sala» entra acá y no en Datos Contables: quien revisa que la
     // factura tomada haya quedado cargada como compra trabaja en este grupo, no
     // en el de los documentos que llegan por correo. Decisión del usuario

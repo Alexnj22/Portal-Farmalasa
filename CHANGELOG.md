@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.648.0 — Bitácoras: completar el renglón, anular sin borrar y menú propio
+
+**El libro ya se completa desde la pantalla.** Un renglón pendiente pide cuatro
+cosas y ni una más: paciente, médico, cuánto recetó el médico, y la foto de la
+receta. Todo lo demás —producto, cantidad, lote, vencimiento, documento, cliente
+y quién vendió— ya vino de la venta y se muestra para comparar contra el papel.
+
+**El paciente sale del cliente, pero sólo cuando el cliente es una persona.**
+Medido sobre los 103 renglones de agosto: 92 personas, 7 entidades (una
+aseguradora, una diócesis) y 4 genéricos («Cliente Frecuente»). Con un cliente
+genérico o una empresa el campo arranca **vacío y con su aviso**: prellenarlo
+igual habría sembrado el libro de pacientes llamados «Cliente Frecuente», y eso
+no se detecta después — se lee como un dato. El aviso aparece al abrir el
+formulario, no al intentar guardar, que es cuando el nombre equivocado ya está
+escrito.
+
+**El médico se busca por número de junta** contra el registro del portal. Si el
+número no está, se escribe el nombre del sello y queda guardado: la próxima vez
+que ese médico recete, ya está. Nunca traba el registro — lo que la norma exige
+es que la receta traiga los datos del prescriptor, y esa receta se está
+fotografiando.
+
+**Parcial o total no se elige: se ve.** El formulario muestra la resta en vivo
+mientras se escribe cuánto recetó el médico. Y si el paciente vuelve por el
+resto, la entrega se liga a la **misma receta** en vez de crear una nueva — que
+es lo que rompería el cálculo.
+
+**Anular sí; borrar no.** Un renglón se anula por devolución del paciente, por
+carga equivocada o por otro motivo escrito, y el folio **sigue en el libro**
+tachado con su razón, su autor y su hora. Un número que falta es una pregunta
+que hay que contestar delante de un inspector. La devolución además no es
+opcional: el ítem 3.2 de la guía pide que las devoluciones de antibióticos
+queden registradas. Anular puede **reabrir una receta**: si se devolvió lo
+último que se entregó, esa receta vuelve a tener pendiente.
+
+**Bitácoras tiene menú propio**, entre Inventario y Compras. No es una pregunta
+sobre la existencia: es el expediente que se muestra en una inspección.
+
+**Dos defectos que la prueba del flujo destapó**, los dos corregidos antes de
+producción:
+
+- **Dejaba entregar 12 de una receta de 10.** La guarda miraba sólo el renglón
+  que se completaba, no el acumulado de la receta — y ligar cuatro entregas de 3
+  pasaba sin chistar. Es exactamente lo que el control de antibióticos existe
+  para impedir, y nadie lo habría notado porque la suma no se muestra hasta
+  abrir la receta. Ahora el rechazo dice las tres cifras: lo recetado, lo ya
+  entregado y lo que suma este renglón.
+- **Una receta ligada al libro se podía borrar** y dejaba el renglón en un
+  estado que la propia tabla prohíbe. Ahora no se borra: la receta es la
+  evidencia que la norma manda retener por un año.
+
+Y el barrido del propio libro encontró que el registro automático habría fallado
+entero la noche siguiente: creaba renglones anulados sin motivo, contra la
+restricción nueva.
+
+La foto va a un bucket **privado y propio** —no comparte el de las fotos de
+producto—: una receta trae el nombre de un paciente, su tratamiento y la firma
+de un médico.
+
 ## v2.647.0 — El tiempo de inactividad se configura por cargo en Permisos
 
 **El límite de inactividad se deducía de los permisos, y deducía mal.** Se daban

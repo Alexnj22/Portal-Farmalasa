@@ -237,7 +237,7 @@ export default function BitacorasView() {
                         puedeAnotar={puedeAnotar} onRecargar={cargarDia} />
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
-                        branchId={sala} sucursalNombre={nombreSala} />
+                        branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

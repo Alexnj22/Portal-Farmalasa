@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Camera, FileText, Package, Stethoscope, Store, User } from 'lucide-react';
+import { AlertTriangle, Ban, Camera, FileText, Package, PenLine, Stethoscope, Store, User } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
@@ -7,6 +7,8 @@ import { LoadingState } from '../common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { openStoredFile } from '../../utils/storageFiles';
+import AnularRenglon from './AnularRenglon';
+import CompletarRenglon from './CompletarRenglon';
 import { ESTADO_RENGLON, fetchFolio } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -28,6 +30,15 @@ const fmtFecha = (f) => (f
     : '—');
 
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
+
+// Qué dice cada motivo de anulación. El del barrido —`dte_invalidado`— no es
+// una decisión de la sala: es Hacienda invalidando el documento.
+const MOTIVO_ANULADA = {
+    devolucion:     'Anulado por devolución del paciente.',
+    error_de_carga: 'Anulado: se había cargado por error.',
+    dte_invalidado: 'Anulado: el documento de venta fue invalidado ante Hacienda.',
+    otro:           'Anulado.',
+};
 
 const money = (v) => (v === null || v === undefined ? '—' : formatMoney(v));
 
@@ -59,14 +70,18 @@ function Dato({ label, children, mono = false, ancho = false }) {
     );
 }
 
-export default function DetalleDeFolio({ renglon, branchId }) {
+export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
     const { hasPermission } = useAuth();
     const puedeVerMontos = hasPermission('bitacoras', 'can_view');
+    const puedeEditar = hasPermission('bitacoras', 'can_edit');
 
     const [detalle, setDetalle] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [abriendo, setAbriendo] = useState(false);
+    const [completando, setCompletando] = useState(false);
+    const [anulando, setAnulando] = useState(false);
+    const [recargas, setRecargas] = useState(0);
 
     useEffect(() => {
         let vivo = true;
@@ -81,7 +96,7 @@ export default function DetalleDeFolio({ renglon, branchId }) {
                 setCargando(false);
             });
         return () => { vivo = false; };
-    }, [renglon, branchId]);
+    }, [renglon, branchId, recargas]);
 
     const abrirComprobante = useCallback(async () => {
         if (!detalle?.venta?.pdf_path) return;
@@ -120,13 +135,32 @@ export default function DetalleDeFolio({ renglon, branchId }) {
                 </span>
             </div>
 
+            {/* Lo que se puede HACER va arriba, antes de las cuatro secciones:
+                quien abre un folio pendiente viene a completarlo, no a leerlo. */}
+            {puedeEditar && detalle.estado !== 'anulada' && (
+                <div className="flex flex-wrap gap-2">
+                    <Button variant={detalle.estado === 'pendiente' ? 'primary' : 'secondary'}
+                        icon={PenLine} onClick={() => setCompletando(true)}>
+                        {detalle.estado === 'pendiente' ? 'Completar la receta' : 'Rehacer la receta'}
+                    </Button>
+                    <Button variant="ghost" icon={Ban} onClick={() => setAnulando(true)}>
+                        Anular
+                    </Button>
+                </div>
+            )}
+
             {detalle.estado === 'anulada' && (
-                <Notice variant="neutral">
-                    <span className="font-bold">Este renglón está anulado.</span>
+                <Notice variant="neutral" icon={Ban}>
+                    <span className="font-bold">{MOTIVO_ANULADA[detalle.motivo_anulacion] || 'Este renglón está anulado.'}</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        El documento de venta fue invalidado ante Hacienda. El renglón NO se borra:
-                        un libro foliado anota, no borra — y la norma pide registrar las devoluciones.
+                        {detalle.detalle_anulacion || 'El renglón NO se borra: un libro foliado anota, no borra.'}
                     </span>
+                    {detalle.anulada_por && (
+                        <span className="block mt-1 font-normal text-content-3">
+                            {detalle.anulada_por}
+                            {detalle.anulada_at ? ` · ${new Date(detalle.anulada_at).toLocaleString('es-SV')}` : ''}
+                        </span>
+                    )}
                 </Notice>
             )}
 
@@ -252,6 +286,20 @@ export default function DetalleDeFolio({ renglon, branchId }) {
                     </p>
                 )}
             </Seccion>
+
+            {completando && (
+                <CompletarRenglon
+                    renglon={{ ...renglon, id: detalle.id ?? renglon.id }}
+                    branchId={branchId}
+                    onCerrar={(hubo) => { setCompletando(false); if (hubo) { setRecargas(n => n + 1); onCambio?.(); } }}
+                />
+            )}
+            {anulando && (
+                <AnularRenglon
+                    renglon={{ ...renglon, id: detalle.id ?? renglon.id }}
+                    onCerrar={(hubo) => { setAnulando(false); if (hubo) { setRecargas(n => n + 1); onCambio?.(); } }}
+                />
+            )}
 
             {detalle.completada_por && (
                 <p className="text-label text-content-3">

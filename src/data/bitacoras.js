@@ -334,3 +334,134 @@ export const ESTADO_RENGLON = {
     anulada:    { label: 'Anulada',         variant: 'neutral' },
     sin_receta: { label: 'Sin receta',      variant: 'danger'  },
 };
+
+// ── El paciente sale del cliente, pero sólo cuando el cliente es una persona ─
+//
+// Medido sobre los 103 renglones de agosto: 92 personas, 7 entidades (MAPFRE,
+// la Diócesis) y 4 genéricos («Cliente Frecuente»). Copiar el nombre sin mirar
+// habría llenado el libro con pacientes llamados «Cliente Frecuente» — y una
+// aseguradora no se enferma.
+//
+// La clase la decide la base (`clase_de_cliente`) y viaja en cada renglón: si
+// el aviso apareciera recién al intentar guardar, la sala ya escribió el
+// nombre equivocado en el campo del paciente.
+export const CLASE_CLIENTE = {
+    persona:   {
+        sirve: true,
+        titulo: null,
+        aviso: null,
+    },
+    generico:  {
+        sirve: false,
+        titulo: 'La venta quedó a nombre de un cliente genérico.',
+        aviso: 'Un nombre como «Cliente Frecuente» no es un paciente. Escribe el nombre real de quien '
+             + 'se lleva el medicamento, o pide el cambio de cliente en la factura.',
+    },
+    entidad:   {
+        sirve: false,
+        titulo: 'La venta está a nombre de una empresa o institución.',
+        aviso: 'Una empresa no es un paciente. Escribe el nombre de la persona que se lleva el medicamento.',
+    },
+    sin_ficha: {
+        sirve: false,
+        titulo: 'Esta venta no tiene una ficha de cliente ligada.',
+        aviso: 'Escribe el nombre del paciente tal como está en la receta.',
+    },
+};
+
+export const MOTIVOS_ANULACION = [
+    { value: 'devolucion',      label: 'Devolución del paciente' },
+    { value: 'error_de_carga',  label: 'Se cargó por error' },
+    { value: 'otro',            label: 'Otro' },
+];
+
+/** Las recetas que todavía tienen algo pendiente en esa sala. */
+export async function fetchRecetasAbiertas(branchId) {
+    if (!branchId) return { recetas: [], error: null };
+    const { data, error } = await supabase.rpc('get_recetas_abiertas', { p_branch_id: Number(branchId) });
+    if (error) return { recetas: [], error };
+    return { recetas: data ?? [], error: null };
+}
+
+/** Busca el médico en nuestra tabla por número de junta. */
+export async function buscarMedicoLocal(numeroJunta, junta = 'P01') {
+    const { data, error } = await supabase.from('medicos')
+        .select('id, nombre, numero_junta, junta, carrera, origen, verificado_at')
+        .eq('junta', junta)
+        .eq('numero_junta', String(numeroJunta).trim())
+        .maybeSingle();
+    if (error) return { medico: null, error: error.message };
+    return { medico: data ?? null, error: null };
+}
+
+export async function guardarMedico({ numeroJunta, nombre, junta = 'P01', carrera = null, verificado = false }) {
+    const { data, error } = await supabase.rpc('buscar_o_crear_medico', {
+        p_numero_junta: String(numeroJunta).trim(),
+        p_nombre: nombre,
+        p_junta: junta,
+        p_carrera: carrera,
+        p_origen: verificado ? 'cssp' : 'manual',
+        p_verificado: verificado,
+    });
+    if (error) return { id: null, error: error.message ?? 'No se pudo guardar el médico.' };
+    return { id: data, error: null };
+}
+
+export async function completarRenglon({
+    dispensacionId, pacienteNombre, medicoId, cantidadPrescrita,
+    fechaPrescripcion = null, pacienteEdad = null, pacienteDocumento = null,
+    fotoUrl = null, recetaId = null, motivoPendiente = null, notas = null,
+}) {
+    const { data, error } = await supabase.rpc('completar_dispensacion', {
+        p_dispensacion_id: Number(dispensacionId),
+        p_paciente_nombre: pacienteNombre,
+        p_medico_id: Number(medicoId),
+        p_cantidad_prescrita: Number(cantidadPrescrita),
+        p_fecha_prescripcion: fechaPrescripcion || null,
+        p_paciente_edad: pacienteEdad === '' || pacienteEdad === null ? null : Number(pacienteEdad),
+        p_paciente_documento: pacienteDocumento || null,
+        p_foto_url: fotoUrl || null,
+        p_receta_id: recetaId ? Number(recetaId) : null,
+        p_motivo_pendiente: motivoPendiente || null,
+        p_notas: notas || null,
+    });
+    if (error) return { resultado: null, error: error.message ?? 'No se pudo completar el renglón.' };
+    return { resultado: data, error: null };
+}
+
+/**
+ * Anular un renglón. NUNCA se borra.
+ *
+ * Un libro foliado no pierde renglones: los tacha con el motivo al lado. Y la
+ * devolución no es opcional — el ítem 3.2 de la guía pide que las devoluciones
+ * de antibióticos queden registradas.
+ */
+export async function anularRenglon({ dispensacionId, motivo, detalle = null }) {
+    const { data, error } = await supabase.rpc('anular_dispensacion', {
+        p_dispensacion_id: Number(dispensacionId),
+        p_motivo: motivo,
+        p_detalle: detalle || null,
+    });
+    if (error) return { resultado: null, error: error.message ?? 'No se pudo anular.' };
+    return { resultado: data, error: null };
+}
+
+/** El bucket de las recetas es PRIVADO: acá se sube y se guarda su URL formato-public. */
+export const BUCKET_RECETAS = 'recetas';
+
+export async function subirFotoDeReceta(file, branchId) {
+    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+    const hoy = hoySV();
+    // La ruta lleva sucursal y mes: una carpeta plana con miles de recetas es
+    // imposible de auditar, y el mes es la unidad con la que se cierra el libro.
+    const path = `${branchId}/${hoy.slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from(BUCKET_RECETAS)
+        .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) return { url: null, error: error.message ?? 'No se pudo subir la foto.' };
+
+    // En la base va la URL formato-public como IDENTIFICADOR — nunca una
+    // firmada, que expira. `openStoredFile` la firma al mostrarla.
+    const base = supabase.storageUrl?.replace(/\/storage\/v1$/, '')
+        || import.meta.env.VITE_SUPABASE_URL;
+    return { url: `${base}/storage/v1/object/public/${BUCKET_RECETAS}/${path}`, error: null };
+}

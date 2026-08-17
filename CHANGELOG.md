@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.651.0 — Bitácoras: la foto de la receta se recorta, se aclara y sale de un solo tamaño
+
+**Hasta ahora la foto se subía tal cual**: torcida, con medio mostrador adentro
+y de cualquier peso. Ahora, al elegirla, se abre un editor: se recorta a la
+hoja, se endereza, y con **«Aclarada»** el papel queda blanco y la tinta negra
+—que es lo que en un documento se llama «limpiar el fondo»—. **Todas salen del
+mismo tamaño**, 1600 px de lado largo: una carpeta con recetas de 4 MB y de 80
+kB no se puede hojear ni imprimir pareja, y el peso es lo que después hace
+inviable exportar un mes entero.
+
+**No se reusó el editor de fotos de producto.** Sus dos herramientas grandes
+—quitar el fondo con un modelo de IA y el pincel para repasarlo— están hechas
+para recortar un objeto de su entorno. Una receta es una hoja: no hay objeto que
+recortar, hay papel que enderezar y tinta que hacer legible. Ofrecer «quitar
+fondo» sobre un documento invita a borrarle la mitad, y arrastra 8 MB de modelo
+a una pantalla que se abre en el teléfono de una sala. El editor nuevo pesa
+**2 kB comprimido** y se baja recién al elegir el archivo.
+
+**Un PDF no pasa por el editor**: ya viene de un escáner, y meterlo por ahí lo
+convertiría en una imagen peor que el original.
+
+**Se probó la técnica «buena» de iluminación y salió peor.** Lo canónico para
+una foto con luz despareja es dividir por el campo de luz (una versión muy
+desenfocada de la propia imagen). Medido sobre una receta torcida en un
+mostrador oscuro: **halo gris en el medio de la hoja y borde negro difuminado**
+— porque el desenfoque toma el mostrador como parte del campo, y en el centro de
+una hoja grande el campo *es* la hoja. Esa técnica sirve cuando el marco entero
+es documento, no cuando el documento es la mitad de la foto. Quedó el estirón
+global, que sobre la misma imagen deja el texto y el sello legibles.
+
+**Lo que NO hace, a propósito:** no busca solo los bordes del papel. Se puede,
+pero pesa varios megabytes y acierta a medias con una foto movida. Un recorte
+automático equivocado es peor que uno manual: corta media receta y nadie lo mira
+antes de guardar.
+
 ## v2.650.3 — Bitácoras: el selector de médico se puede deshacer y el modal queda parejo
 
 **Un médico elegido por error ya se puede quitar.** Antes quedaba puesto y sin

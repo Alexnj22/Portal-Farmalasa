@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BadgeCheck, Camera, Search, Stethoscope, User, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
@@ -11,6 +11,10 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
+
+/* El editor se baja al ELEGIR el archivo, no al abrir el formulario: arrastra
+ * el canónico de recorte y no hace falta hasta que hay una foto. */
+const EditorDeReceta = lazy(() => import('./EditorDeReceta'));
 import {
     CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, buscarMedicoLocal, buscarMedicosLocalPorNombre,
     completarRenglon, consultarConsejo, fetchRecetasAbiertas, guardarMedico, subirFotoDeReceta,
@@ -92,6 +96,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     const [abiertas, setAbiertas] = useState([]);
 
     const [archivo, setArchivo]   = useState(null);
+    const [porEditar, setPorEditar] = useState(null);   // el archivo recién elegido
     const [notas, setNotas]       = useState(() => borrador.notas ?? '');
     const [guardando, setGuardando] = useState(false);
     const [error, setError]       = useState(null);
@@ -568,11 +573,27 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 <FileField
                     label="Foto de la receta"
                     file={archivo}
-                    onChange={setArchivo}
+                    onChange={(f) => {
+                        // Un PDF ya viene de un escáner: no hay nada que
+                        // recortar ni aclarar, y meterlo por el editor lo
+                        // convertiría en una imagen peor que el original.
+                        if (f && f.type?.startsWith('image/')) setPorEditar(f);
+                        else setArchivo(f);
+                    }}
                     accept="image/*,application/pdf"
                     maxSizeMB={10}
-                    hint="La norma manda retener una copia de la receta por al menos un año."
+                    hint="Se recorta y se endereza antes de guardarla, y todas salen del mismo tamaño. La norma manda retener una copia por al menos un año."
                 />
+
+                {porEditar && (
+                    <Suspense fallback={null}>
+                        <EditorDeReceta
+                            file={porEditar}
+                            onCancel={() => setPorEditar(null)}
+                            onConfirm={(lista) => { setArchivo(lista); setPorEditar(null); }}
+                        />
+                    </Suspense>
+                )}
 
                 <PortalTextarea
                     label="Notas (opcional)" name="notas"

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.8 — El traslado recibido sale de la lista aunque el sistema conteste mal
+
+Reportado por el usuario: *«al confirmar uno como llegado se carga, pero no se
+quita»*.
+
+Es cierto y se pudo medir. El 2026-08-17 dos traslados —el 29444 (Salud 3 →
+Salud 2, VASOTRATE) y el 29446 (Bodega → Salud 3, DOXICICLINA)— estaban
+**FINALIZADOS en el sistema y seguían en «En camino» del portal**: el producto
+había entrado a la sala y la tarjeta no se iba. Ese mismo día la función de
+traslados devolvió **diez** respuestas 502 («el sistema no aceptó la
+recepción»), y sobre el 29446 se apretó «ya llegó» tres veces seguidas
+(19:56:10, 19:56:31, 19:56:53).
+
+**La causa: el portal preguntaba lo que la pantalla no sabe contestar.** Para
+saber si un traslado seguía en tránsito miraba si `recibir_traslado.php` traía
+líneas — y esa pantalla **sigue mostrando las líneas de un traslado ya
+recibido**, con las mismas cantidades y el mismo botón (medido sobre el 29445 y
+el 29444, los dos recibidos). El comentario del código afirmaba lo contrario
+desde el día uno. De ahí salían dos daños distintos:
+
+1. Cuando el sistema recibía el traslado pero contestaba algo que no se pudo
+   leer como éxito, la solicitud se quedaba en la lista **para siempre**, sobre
+   producto ya cargado.
+2. Apretar «ya llegó» por segunda vez **volvía a cargar el producto**. El
+   candado que existía (`erp_recibido`) es posterior a la escritura: evitaba la
+   segunda anotación, no la segunda carga.
+
+**Quien sí sabe el estado es el listado.** Con la sesión puesta en la sala que
+recibe, `pro=rec` + `estado=pe` devuelve exactamente lo que le falta entrar —
+medido: 142 filas para La Popular, 5 para Salud 2, 3 para Salud 3, entre 90 y
+200 ms. Eso es `estadoDeRecepcion` en `_shared/erp-traslado.ts`, y se consulta
+en los dos bordes de la recepción:
+
+- **Antes de escribir.** Si el traslado ya no espera entrar, no se vuelve a
+  cargar: se anota y la tarjeta se va. Si está anulado, se dice que el producto
+  no entró y hay que pedirlo de nuevo.
+- **Después de un fallo.** Un «no» del sistema deja de darse por bueno sin
+  verificarlo: si el traslado ya salió de la cola de entrada, entró — se anota
+  con el mensaje que el sistema devolvió, que es la única pista de por qué
+  contestó lo que contestó.
+
+`desconocido` no frena nada: si no se pudo preguntar, se hace lo de siempre. Una
+guarda que corta con lo que no sabe deja de recibir por culpa de una consulta
+secundaria — misma falla segura que `pendientesDeOrigen`.
+
+Anotado además, porque también era falso: la pantalla de recepción **puede
+ofrecer más de una presentación** (el 29452 daba «CAJA (1)» y «CAJA X 30 (1)»).
+Se toma la primera, que es exactamente lo que manda la pantalla del sistema.
+
+Sin tocar: `trasladar-pedido-erp` y `devolver-pedido-erp` reciben por el mismo
+camino y comparten la suposición. Se corrige el circuito reportado primero.
+
 ## v2.657.7 — El motivo arma el panel: nada aparece antes de elegirlo
 
 Reportado por el usuario: *«remesadora debe salir sólo si se seleccionó remesa,

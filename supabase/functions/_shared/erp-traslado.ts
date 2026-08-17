@@ -383,6 +383,63 @@ export async function pendientesDeOrigen(
 }
 
 /**
+ * Si un traslado sigue esperando entrar a la sala en la que está la sesión.
+ *
+ * ── Por qué hace falta preguntarlo, y por qué no se puede leer de la pantalla ─
+ * `recibir_traslado.php` **sigue pintando las líneas de un traslado que YA se
+ * recibió**, con las mismas cantidades y el mismo botón. Medido el 2026-08-17
+ * sobre el 29445 (recibido a la 1:50 PM) y el 29444 (recibido más tarde): los
+ * dos devuelven una fila con `class="id_p"` igual que uno en tránsito. O sea
+ * que la pantalla NO distingue, y apretar «ya llegó» dos veces cargaría el
+ * producto dos veces. El código de `aplicar-traslado-inventario` daba por hecho
+ * lo contrario —«un traslado recibido deja de mostrar líneas»— y esa frase era
+ * falsa desde el día uno.
+ *
+ * Quien sí lo sabe es el listado: con la sesión puesta en la sala que recibe,
+ * `pro=rec` + `estado=pe` devuelve exactamente lo que le falta entrar. Medido:
+ * 142 filas para La Popular, 5 para Salud 2, 3 para Salud 3, y entre 90 y 200
+ * ms. `origen=gen` porque la ubicación ya la fija la sesión — pasarle una que
+ * la sesión no tiene devuelve cero y parecería que ya entró.
+ *
+ * Devuelve `"desconocido"` cuando no se pudo preguntar. Es a propósito: quien
+ * llama tiene que seguir haciendo lo de siempre, no dar por buena una respuesta
+ * que no tuvo. Es la misma falla segura que `pendientesDeOrigen`.
+ */
+export type EstadoDeRecepcion = "pendiente" | "recibido" | "anulado" | "desconocido";
+
+export async function estadoDeRecepcion(
+  cookie: string, idTraslado: string,
+): Promise<EstadoDeRecepcion> {
+  // Un filtro con un valor que el listado no entiende NO falla: contesta las
+  // 28,000 filas con cara de éxito. `recordsFiltered === recordsTotal` es la
+  // señal de que no se aplicó, y entonces la respuesta no dice nada.
+  const idsCon = async (estado: string): Promise<Set<string> | null> => {
+    try {
+      const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
+        draw: "0", start: "0", length: "5000",
+        origen: "gen", pro: "rec", estado,
+      }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
+      const j = JSON.parse(cuerpo);
+      if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return null;
+      return new Set((j.data as unknown[][]).map((f) => String(f?.[0] ?? "")).filter(Boolean));
+    } catch {
+      return null;
+    }
+  };
+
+  const pendientes = await idsCon("pe");
+  if (!pendientes) return "desconocido";
+  if (pendientes.has(String(idTraslado))) return "pendiente";
+  // Ya no está en la cola de entrada. Falta separar las dos formas de salir de
+  // ella: entró, o lo anularon. Se pregunta recién acá —y no siempre— porque en
+  // el camino normal el traslado SÍ está pendiente y esta segunda vuelta no se
+  // gasta nunca.
+  const anulados = await idsCon("an");
+  if (!anulados) return "desconocido";
+  return anulados.has(String(idTraslado)) ? "anulado" : "recibido";
+}
+
+/**
  * La dirección de cada sucursal, según el propio sistema.
  *
  * El `<select id="id_sucursal">` de la pantalla de traslado es el único lugar

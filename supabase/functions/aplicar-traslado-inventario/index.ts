@@ -59,6 +59,7 @@ import {
   contenidoDeTraslado,
   direccionesPorSucursal,
   disponibleEnBodega,
+  estadoDeRecepcion,
   hayEnTexto,
   hoySV,
   norm,
@@ -225,22 +226,90 @@ Deno.serve(async (req) => {
           }, 403);
       }
 
+      /* Anotar que entró, y sacarlo de la lista.
+       *
+       * Es UNA función y no dos escrituras sueltas porque hay DOS caminos que
+       * terminan acá —el que recibe y el que descubre que ya estaba recibido— y
+       * el día que uno de los dos deje de escribir `erp_recibido`, su traslado
+       * se queda «en camino» para siempre sin que nada falle.
+       *
+       * `is: null` en la condición y no un chequeo previo: dos personas de la
+       * sala que aprieten «ya llegó» a la vez pasan las dos la lectura de más
+       * arriba, y acá la segunda no escribe. */
+      const marcarRecibido = async (recibido: Record<string, unknown>) => {
+        const { error: updErr } = await admin
+          .from("approval_requests")
+          .update({ metadata: { ...meta, erp_recibido: recibido }, updated_at: new Date().toISOString() })
+          .eq("id", sol.id)
+          .is("metadata->erp_recibido", null);
+        if (updErr) throw updErr;
+        return json({ ok: true, recibido });
+      };
+
       const cookie = await sesionEn(erpDestino);
+
+      /* ── ¿Sigue esperando entrar? ─────────────────────────────────────────
+       *
+       * Esto se preguntaba mirando la pantalla de recepción, y la pantalla no
+       * lo sabe: **sigue mostrando las líneas de un traslado ya recibido**, con
+       * las mismas cantidades (medido el 2026-08-17 sobre el 29444 y el 29445).
+       * Confiar en eso tenía dos costos, y los dos se pagaron el mismo día:
+       *
+       *  1. Apretar «ya llegó» por segunda vez volvía a cargar el producto. No
+       *     había NADA que lo frenara antes de escribir en el sistema — el
+       *     candado de `erp_recibido` es posterior, así que evitaba la segunda
+       *     anotación y no la segunda carga.
+       *  2. Cuando el sistema recibía el traslado pero contestaba algo que no
+       *     se pudo leer como éxito, la solicitud se quedaba «en camino» para
+       *     siempre. Medido: el 29444 (Salud 3 → Salud 2) y el 29446 (Bodega →
+       *     Salud 3) estaban FINALIZADOS en el sistema y seguían en la lista del
+       *     portal, sobre producto ya cargado. Reportado por el usuario así:
+       *     «al confirmar uno como llegado se carga, pero no se quita».
+       *
+       * `desconocido` no frena nada: si no se pudo preguntar, se hace lo de
+       * siempre. Una guarda que corta con lo que no sabe deja de recibir por
+       * culpa de una consulta secundaria. */
+      const antesDeRecibir = await estadoDeRecepcion(cookie, idTraslado);
+      if (antesDeRecibir === "anulado")
+        return json({
+          ok: false, codigo: "TRASLADO_ANULADO",
+          error: `El traslado ${idTraslado} está anulado en el sistema: el producto no entró a tu sala. `
+               + `Pídelo de nuevo.`,
+        }, 409);
+      if (antesDeRecibir === "recibido")
+        return await marcarRecibido({
+          at: new Date().toISOString(), by: quien.id, by_name: quien.name,
+          id_traslado: idTraslado,
+          // Quién lo recibió no lo dice el sistema, así que no se inventa. Lo
+          // que sí se sabe —y es lo que hay que poder leer después— es que la
+          // carga NO la hizo esta llamada: acá no se escribió inventario.
+          via: "sistema",
+          msg: "El sistema ya lo tenía recibido; no se volvió a cargar.",
+        });
+
       const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idTraslado)}`,
         undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
 
-      // El servidor pre-rellena la tabla entera: producto, presentación ya
-      // resuelta (una sola opción), costo, precio, lo esperado y el vencimiento.
-      // Acá no hay nada que elegir — de ahí que esta mitad no tenga ni la trampa
-      // de la presentación ni la del lote.
+      // El servidor pre-rellena la tabla entera: producto, presentación, costo,
+      // precio, lo esperado y el vencimiento. Acá no hay nada que elegir, así
+      // que esta mitad no tiene la trampa del lote.
+      //
+      // ⚠️ Lo que sí puede tener es MÁS DE UNA presentación: el `<select>` del
+      // 29452 ofrecía «CAJA (1)» y «CAJA X 30 (1)». Se toma la PRIMERA, que es
+      // exactamente lo que envía la pantalla del sistema (`$('.sel').val()`
+      // sobre un select sin opción marcada). Hacer otra cosa sería recibir
+      // distinto de como recibe el sistema; si algún día dos opciones traen
+      // factores distintos, este es el lugar.
       const filas = [...pagina.matchAll(/<tr>[\s\S]*?<\/tr>/g)]
         .map((m) => m[0])
         .filter((tr) => /class="id_p"/.test(tr));
+      // Con líneas o sin ellas, acá ya se sabe que el traslado está esperando
+      // entrar —se preguntó más arriba—, así que quedarse sin filas es que la
+      // pantalla no se pudo leer, no que el traslado ya no esté.
       if (filas.length === 0)
         return json({
           ok: false, codigo: "TRASLADO_SIN_LINEAS",
-          error: `El traslado ${idTraslado} no muestra líneas para recibir. `
-               + `Puede haberse recibido o anulado desde el sistema.`,
+          error: `El traslado ${idTraslado} no muestra líneas para recibir.`,
         }, 409);
 
       const partes: string[] = [];
@@ -297,27 +366,37 @@ Deno.serve(async (req) => {
         destino: String(ubicDestino),
         id_traslado: idTraslado,
       }), { extra: { Referer: RECIBIR } }));
-      if (!resp.ok)
+      /* ── Un «no» del sistema no siempre significa que no entró ────────────
+       *
+       * Es la otra mitad de lo mismo: el 2026-08-17 hubo DIEZ respuestas 502 de
+       * esta función, y dos de esos traslados terminaron FINALIZADOS igual. O
+       * sea que el producto entró y la respuesta no se pudo leer como éxito —y
+       * como acá se cortaba con un error, la solicitud se quedaba «en camino»
+       * sobre producto ya cargado, y quien apretaba lo volvía a intentar.
+       *
+       * Así que antes de dar el fallo por bueno se le vuelve a preguntar al
+       * listado, que es quien sabe. Si el traslado ya salió de la cola de
+       * entrada, entró: se anota y se saca de la lista. El mensaje del sistema
+       * se guarda igual — es la única pista de por qué contestó lo que
+       * contestó. */
+      if (!resp.ok) {
+        if (await estadoDeRecepcion(cookie, idTraslado) === "recibido")
+          return await marcarRecibido({
+            at: new Date().toISOString(), by: quien.id, by_name: quien.name,
+            id_traslado: idTraslado, concepto,
+            lineas: partes.length, unidades, total: Number(total.toFixed(4)),
+            via: "sistema",
+            msg: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+          });
         return json({ ok: false, error: `El sistema no aceptó la recepción: ${resp.msg || "sin detalle"}` }, 502);
+      }
 
-      const recibido = {
+      return await marcarRecibido({
         at: new Date().toISOString(), by: quien.id, by_name: quien.name,
         id_traslado: idTraslado, concepto,
         lineas: partes.length, unidades, total: Number(total.toFixed(4)),
         msg: resp.msg,
-      };
-      // `is: null` en la condición y no un chequeo previo: dos personas de la
-      // sala que aprieten «ya llegó» a la vez pasan las dos la lectura de más
-      // arriba. Acá la segunda no escribe — aunque en la práctica el sistema ya
-      // la habría frenado, porque un traslado recibido deja de mostrar líneas.
-      const { error: updErr } = await admin
-        .from("approval_requests")
-        .update({ metadata: { ...meta, erp_recibido: recibido }, updated_at: new Date().toISOString() })
-        .eq("id", sol.id)
-        .is("metadata->erp_recibido", null);
-      if (updErr) throw updErr;
-
-      return json({ ok: true, recibido });
+      });
     }
 
     // ══════════════════════════════════════════════════════════════════════

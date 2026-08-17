@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.651.3 — Bitácoras: dos medicamentos en una receta son UNA receta
+
+**Una venta con dos antibióticos genera dos folios** —uno por renglón, no uno
+por venta—, y eso está bien: el libro anota lote, vencimiento y cantidad **por
+medicamento**, que es lo que exige el ítem 3.5. En agosto pasó 10 veces. Incluso
+el mismo medicamento en **dos lotes distintos** son dos folios: si fueran uno
+solo, el libro no podría decir qué lote se entregó.
+
+**Pero el segundo medicamento no se podía ligar a la misma receta.** El
+formulario sólo ofrecía recetas abiertas *de ese mismo medicamento*, así que
+completar el segundo renglón obligaba a crear una receta nueva — y entonces el
+correlativo del libro dejaba de corresponder a un papel. Un caso real de Salud 2:
+RANITIDINA y ROCEFORT al mismo paciente en el mismo documento, casi con
+seguridad la misma receta.
+
+Ahora se ofrecen **todas** las recetas abiertas de la sala, y cada una dice cuál
+es cuál: «faltan 2 de este medicamento» (es la segunda entrega) o «otro
+medicamento de esta receta». Y en el segundo caso la cantidad recetada se
+pregunta en vez de heredarse — heredarla sería copiar la cantidad de otro
+fármaco.
+
+
+
 ## v2.651.2 — Bitácoras: la fecha va en el selector del portal, no en el del navegador
 
 **Auditoría de los canónicos del módulo, pedida antes de seguir.** El hallazgo

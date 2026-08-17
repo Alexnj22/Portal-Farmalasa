@@ -123,11 +123,26 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     }, [claveBorrador, paciente, edad, documento, junta, numJunta, nombreMedico,
         prescrita, fechaReceta, recetaId, notas, modo, nombresBusca, apellidosBusca]);
 
-    // Sólo las que tienen pendiente de ESTE medicamento: ofrecer una receta de
-    // otro producto invita a ligar cosas que no van juntas.
-    const compatibles = useMemo(() => abiertas.filter(r =>
-        (r.items || []).some(i => i.erp_product_id === renglon.erp_product_id
-            && Number(i.entregado) < Number(i.prescrito))), [abiertas, renglon.erp_product_id]);
+    // ── Se ofrecen TODAS las recetas abiertas, no sólo las de este medicamento
+    //
+    // Una receta trae varios medicamentos. Medido en agosto: 10 facturas con más
+    // de un renglón bajo receta, y una de ellas es RANITIDINA + ROCEFORT al
+    // mismo paciente, en el mismo documento — o sea, casi con seguridad la misma
+    // receta con dos renglones.
+    //
+    // El filtro anterior sólo ofrecía las recetas con pendiente de ESTE
+    // producto, así que el segundo medicamento no podía ligarse a la receta que
+    // acababa de crearse: obligaba a inventar una receta nueva por medicamento,
+    // y entonces el correlativo del libro dejaba de corresponder a un papel.
+    //
+    // Cada una se rotula con lo que la distingue: si ya tiene este medicamento
+    // pendiente es una CONTINUACIÓN (la segunda entrega); si no, es OTRO
+    // medicamento de la misma receta.
+    const compatibles = useMemo(() => abiertas.map((r) => {
+        const item = (r.items || []).find(i => i.erp_product_id === renglon.erp_product_id);
+        const pendiente = item ? Number(item.prescrito) - Number(item.entregado) : 0;
+        return { ...r, item, pendiente, continuacion: Boolean(item && pendiente > 0) };
+    }), [abiertas, renglon.erp_product_id]);
 
     // Primero NUESTRA tabla, después el registro del Consejo. Ese orden no es
     // por velocidad: un médico que ya recetó acá tiene el nombre con el que se
@@ -231,14 +246,18 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         setRecetaId(v || null);
         const r = compatibles.find(x => String(x.id) === String(v));
         if (!r) return;
+        // Si la receta ya trae este medicamento, lo prescrito lo manda ella. Si
+        // es otro medicamento del mismo papel, la cantidad es propia y se
+        // pregunta — heredarla sería copiar la cantidad de otro fármaco.
         const item = (r.items || []).find(i => i.erp_product_id === renglon.erp_product_id);
         if (item) setPrescrita(String(Number(item.prescrito)));
+        else setPrescrita(String(Number(renglon.cantidad ?? 0)));
         setPaciente(r.paciente || '');
         if (r.medico_id) {
             setMedico({ id: r.medico_id, nombre: r.medico });
             setNombreMedico(r.medico || '');
         }
-    }, [compatibles, renglon.erp_product_id]);
+    }, [compatibles, renglon.erp_product_id, renglon.cantidad]);
 
     const faltaMedico = !medico && !(numJunta.trim() && nombreMedico.trim());
 
@@ -343,18 +362,22 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 {compatibles.length > 0 && (
                     <div data-surface="card" className="p-3 space-y-2">
                         <p className="text-body-sm font-bold text-content">
-                            Hay {compatibles.length === 1 ? 'una receta abierta' : `${compatibles.length} recetas abiertas`} de este medicamento
+                            Hay {compatibles.length === 1 ? 'una receta abierta' : `${compatibles.length} recetas abiertas`} en esta sala
                         </p>
                         <p className="text-label text-content-3">
-                            Si esta entrega es el resto de una receta que ya se empezó, ligala a la misma
-                            en vez de crear una nueva: de ahí sale que la dispensación sea parcial o total.
+                            Ligala a la misma receta si es el resto de una entrega que ya se empezó,
+                            <strong className="font-bold"> o si es otro medicamento del mismo papel</strong> —
+                            una receta con dos medicamentos es UNA receta. De ahí sale que la dispensación
+                            sea parcial o total.
                         </p>
                         <LiquidSelect
                             value={recetaId ? String(recetaId) : ''}
                             onChange={elegirReceta}
                             options={compatibles.map(r => ({
                                 value: String(r.id),
-                                label: `${r.correlativo_txt} · ${r.paciente}`,
+                                label: r.continuacion
+                                    ? `${r.correlativo_txt} · ${r.paciente} — faltan ${num(r.pendiente)} de este medicamento`
+                                    : `${r.correlativo_txt} · ${r.paciente} — otro medicamento de esta receta`,
                             }))}
                             placeholder="Es una receta nueva"
                         />
@@ -540,7 +563,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                         value={prescrita} onChange={(e) => setPrescrita(e.target.value)}
                         inputClassName="tabular-nums"
                         hasError={entregoDeMas}
-                        readOnly={Boolean(recetaElegida)}
+                        readOnly={Boolean(recetaElegida?.item)}
                     />
                     <div>
                         <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">

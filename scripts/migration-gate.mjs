@@ -23,6 +23,11 @@
  * Uso:
  *   npm run gate:migrations              solo chequeos locales (sin red, sin credenciales)
  *   npm run gate:migrations -- --remote  además cruza contra el registro de prod
+ *
+ * `--remote` FALLA si no puede leer prod. Es a propósito: pedir el cruce y que no
+ * se haga no puede terminar en el mismo tilde verde que un cruce que sí encontró
+ * todo — «sin deriva» es una afirmación sobre prod, no sobre el disco. El hook de
+ * pre-commit usa `--hook`, así que esto no bloquea ningún commit.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, renameSync } from 'node:fs';
@@ -160,6 +165,7 @@ console.log(`\n  ${DIR}/: baseline + ${post.length} migración(es) post-baseline
 console.log(`  ${LEGACY}/: ${(sqls(LEGACY) ?? []).length} archivo(s) de historia pre-baseline`);
 
 // ── 6. Cruce contra el registro de prod (--remote) ──────────────────────────────
+let cruceHecho = false;
 if (process.argv.includes('--remote')) {
   // El CLI se traga el .env del repo si tiene un nombre de variable con `-` y aborta.
   // Workaround conocido (ver reference_edge_function_deploy_workaround): moverlo.
@@ -193,14 +199,33 @@ if (process.argv.includes('--remote')) {
       `select count(*) as n from supabase_migrations.schema_migrations
        where version <> '${BASELINE}' and version < '${CORTE}'`)[0]?.n ?? 0);
   } catch (e) {
-    console.log(`\n  ⚠ No pude leer el registro de prod (${e.message.split('\n')[0]}).`);
-    console.log('    Los chequeos locales de arriba sí corrieron. Para el cruce hace falta');
-    console.log('    el CLI de Supabase logueado y el proyecto linkeado.');
+    // Que el cruce no se pueda hacer es un HALLAZGO, no una nota al pie.
+    //
+    // Hasta el 2026-08-17 esto imprimía un ⚠ y seguía: `filas` quedaba
+    // undefined, el bloque de comparación se salteaba entero y el veredicto de
+    // abajo igual anunciaba «✓ Sin deriva» con salida 0. O sea que pedir
+    // `--remote` con el CLI deslogueado devolvía la MISMA respuesta que un
+    // cruce que sí encontró todo — y «sin deriva» es una afirmación sobre prod,
+    // no sobre el disco. Lo levantó otra sesión, cuyo `supabase db query` falló
+    // y aun así vio el tilde verde.
+    //
+    // Es el mismo criterio que ya está escrito veinte líneas más abajo para el
+    // conteo pre-baseline: un gate que reporta un número que no midió miente
+    // incluso estando en verde. El hook de pre-commit corre `--hook`, no
+    // `--remote`, así que fallar acá no bloquea ningún commit: sólo hace que
+    // quien pidió el cruce se entere de que no hubo cruce.
+    err(`No pude leer el registro de prod: ${e.message.split('\n')[0]}`,
+      ['Los chequeos LOCALES de arriba sí corrieron y pasaron; lo que no se hizo es',
+       'el cruce contra prod, que es lo único que `--remote` agrega.',
+       'Hace falta el CLI de Supabase logueado y el proyecto linkeado:',
+       '  supabase login && supabase link --project-ref sacecdkdmsdvgqnrsett',
+       'Si sólo querías los chequeos locales, corré `npm run gate:migrations` sin --remote.']);
   } finally {
     restaurar();
   }
 
   if (filas) {
+    cruceHecho = true;
     const remotas = new Map(filas.map(f => [f.version, f.name]));
     const nota = preBaseline === 0
       ? 'sin filas pre-baseline'
@@ -227,8 +252,14 @@ if (process.argv.includes('--remote')) {
 }
 
 // ── Veredicto ───────────────────────────────────────────────────────────────────
+//
+// El tilde dice QUÉ se verificó. «Sin deriva» a secas es una afirmación sobre
+// prod, y sin el cruce no se puede sostener: el mismo texto para las dos
+// corridas es lo que dejó pasar el hueco de arriba durante dos semanas.
 if (!errores.length) {
-  console.log('\n  ✓ Sin deriva.\n');
+  console.log(cruceHecho
+    ? '\n  ✓ Sin deriva: los archivos locales y el registro de prod coinciden.\n'
+    : '\n  ✓ Sin deriva local. El cruce contra prod NO se hizo — pedilo con `-- --remote`.\n');
   process.exit(0);
 }
 console.log(`\n  ✗ ${errores.length} hallazgo(s):\n`);

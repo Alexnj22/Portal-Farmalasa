@@ -77,7 +77,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
 
     useEffect(() => {
         if (!abierto) return;
-        fetchTiposDeSalida().then((t) => { setTipos(t); setTipo((v) => v || t[0]?.codigo || ''); });
+        // El motivo NO viene elegido de fábrica. Elegirlo por alguien mostraba
+        // «Remesadora», «Número de boleta» y «Foto del comprobante» sobre una
+        // decisión que nadie tomó —la más común no es la única—, y un motivo
+        // preseleccionado se registra sin mirarlo. El panel se arma DESPUÉS de
+        // la selección: hasta que no hay motivo, no hay campos de motivo.
+        fetchTiposDeSalida().then(setTipos);
         fetchEntidadesDeSalida().then(setEntidades);
 
         // ── El motor de impresión se baja ANTES de escribir ─────────────────
@@ -96,9 +101,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
 
     // Al cerrar se olvida TODO, y la clave la primera. Un secreto que sobrevive
     // al diálogo es un secreto que alguien puede volver a mandar sin saberlo.
+    // El motivo también: si sobrevive, la próxima apertura muestra los campos de
+    // la salida anterior y vuelve a ser una decisión que nadie tomó.
     useEffect(() => {
         if (abierto) return;
-        setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
+        setTipo(''); setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
         setQuien(''); setSecreto(''); setError(null);
     }, [abierto]);
 
@@ -220,13 +227,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                     </Notice>
                 )}
 
+                {/* El motivo va PRIMERO porque gobierna el resto del panel:
+                    de él dependen la remesadora, la boleta, la foto y si hay
+                    que identificar a alguien. Leerlo después de rellenar
+                    campos que él mismo decide es leerlo al revés. */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <PortalInput
-                        label="Cuánto" name="monto" type="number" inputMode="decimal"
-                        step="0.01" min="0" icon={HandCoins}
-                        value={monto} onChange={(e) => setMonto(e.target.value)}
-                        placeholder="0.00" inputClassName="tabular-nums"
-                    />
                     <div>
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
                             Motivo
@@ -237,6 +242,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             placeholder="Elegir…" ariaLabel="Motivo de la salida"
                         />
                     </div>
+                    <PortalInput
+                        label="Cuánto" name="monto" type="number" inputMode="decimal"
+                        step="0.01" min="0" icon={HandCoins}
+                        value={monto} onChange={(e) => setMonto(e.target.value)}
+                        placeholder="0.00" inputClassName="tabular-nums"
+                    />
                 </div>
 
                 {/* De dónde sale. Se muestra y no sólo se calcula: el papel que
@@ -277,8 +288,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                     </div>
                 )}
 
-                {/* Lo que pide el motivo elegido — sale del catálogo. Y si ese
-                    campo tiene lista propia (las remesadoras), es un
+                {/* ── De acá abajo, todo lo pide el MOTIVO ─────────────────────
+                    Sin motivo elegido no se pinta ninguno: la remesadora es de
+                    una remesa, no del formulario. Cuál aparece y cómo se rotula
+                    sale del catálogo (`bolsas_tipos_salida`), no de `if`s acá.
+
+                    Y si el campo tiene lista propia —las remesadoras—, es un
                     desplegable: así lo que se guarda coincide con el catálogo
                     por construcción y no por cómo lo escribió cada quien. */}
                 {t?.etiqueta_entidad && (opciones.length ? (

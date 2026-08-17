@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.7 — El motivo arma el panel: nada aparece antes de elegirlo
+
+Reportado por el usuario: *«remesadora debe salir sólo si se seleccionó remesa,
+ajusta el panel según la selección»*. Y tenía razón por un motivo que no se ve
+leyendo el formulario: **el motivo venía elegido de fábrica**. Al abrir «Sacar
+dinero de una bolsa» quedaba puesto el primero del catálogo —«Remesa entregada a
+un cliente»— y con él aparecían Remesadora, Número de boleta y Foto del
+comprobante sobre una decisión que nadie había tomado.
+
+Ahora el desplegable arranca en «Elegir…» y **de ahí para abajo no hay nada
+hasta que se elige**: cuál campo aparece y cómo se rotula lo sigue diciendo el
+catálogo, no un `if`. Un anticipo no pide boleta ni foto; una remesa pide las
+tres. Y al cerrar el diálogo también se olvida el motivo — si sobrevivía, la
+próxima apertura mostraba los campos de la salida anterior y volvía a ser una
+decisión de nadie.
+
+De paso, **el motivo pasó a ser el primer campo del panel**, antes de «Cuánto»:
+es el que gobierna todo lo demás, y leerlo después de rellenar campos que él
+mismo decide es leerlo al revés.
+
+El riesgo que cierra no es sólo de orden: un motivo preseleccionado es un motivo
+que se registra sin mirarlo, y el motivo es lo que después explica el faltante
+dentro de la bolsa.
+
 ## v2.657.6 — Los faltantes de la sala arrancan por los candidatos
 
 Segunda parte del arreglo de lentitud que empezó en v2.657.4.

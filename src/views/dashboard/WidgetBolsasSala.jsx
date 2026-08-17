@@ -95,7 +95,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     const [imprimiendo, setImprimiendo] = useState(null);
     const [sacando, setSacando] = useState(false);
 
-    const { cerrar, imprimir, imprimirVale, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
+    const { cerrar, imprimir, imprimirTrasLaSalida, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
 
     const cargar = useCallback(async () => {
         const hasta = hoySV();
@@ -182,26 +182,14 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     /**
      * Después de una remesa salen dos papeles por bolsa: el vale de adentro y la
      * etiqueta nueva de afuera. La etiqueta se reimprime sola porque la anterior
-     * dejó de ser cierta en ese mismo momento.
+     * dejó de ser cierta en ese mismo momento. Los dos los arma
+     * `imprimirTrasLaSalida`, que es el mismo código que corre la pestaña de
+     * Cortes — acá estaba copiado.
      */
     const trasLaSalida = useCallback(async (_oper, repartos) => {
-        for (const r of repartos || []) {
-            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
-            if (!bolsa) continue;
-            const filas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
-            const ultima = filas[filas.length - 1];
-            // El saldo lo dice el SERVIDOR (`bolsa_saldo`). Ver el gemelo de
-            // esta función en `TabBolsas`: la suma hecha acá era una segunda
-            // definición de cuánto hay en la bolsa, y era la que se imprimía.
-            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
-            if (ultima) await imprimirVale(ultima, bolsa, saldo);
-            await imprimir({ ...bolsa, saldo }, {
-                cerradaPor: nombrePersona.get(bolsa.cerrada_por),
-                salidas: (await import('../../utils/bolsaComprobante')).salidasParaEtiqueta(filas),
-            });
-        }
+        await imprimirTrasLaSalida(repartos, bolsas, nombrePersona);
         cargar();
-    }, [bolsas, imprimir, imprimirVale, nombrePersona, cargar]);
+    }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 

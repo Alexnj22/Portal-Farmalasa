@@ -665,9 +665,16 @@ export function seccionesParaElPrograma(ticket) {
         // El origen manda acá sólo los códigos y pone las cifras en el cuerpo.
         totales: DOBLE_ALTO + LETRA_NORMAL,
         total_letras: CENTRO,
+        // El `\n` después de los códigos es **un renglón en blanco a propósito**,
+        // el único del ticket: separa el total —la cifra que alguien va a contar
+        // con las manos— del pie, que en el rollo salía pegado abajo. En la
+        // vista previa ese corte lo hace una línea, que el papel térmico no
+        // puede pagar. No sacarlo creyendo que es de los cuatro que se quitaron
+        // en v2.654.2: aquéllos eran códigos sueltos que nadie pidió.
+        //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
+        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
         img: '', qr: '', qr_farmalasa: '',
     };
 }

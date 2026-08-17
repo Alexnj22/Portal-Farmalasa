@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import { cerrarBolsa, marcarEtiquetaImpresa, marcarValeImpreso } from '../data/bolsas';
+import {
+    cerrarBolsa, fetchSaldos, fetchSalidasDeBolsa, marcarEtiquetaImpresa, marcarValeImpreso,
+} from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -122,6 +124,60 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     }, [showToast, nombreSala]);
 
     /**
+     * **Los DOS papeles de una salida**, por cada bolsa de la que salió dinero.
+     *
+     * Vive acá y no en cada pantalla porque estaba escrito dos veces —la
+     * baldosa del Inicio y la pestaña de Cortes— y las dos hacían lo mismo con
+     * diferencias de una línea. Es la lección de `useResolverCorte` otra vez:
+     * dos copias de una regla son dos reglas, y la que se rompa lo va a hacer
+     * en la sala, sobre una bolsa con el número equivocado pegado encima.
+     *
+     * **Cada papel va en su propio intento.** Encadenados —que es como estaban—
+     * un fallo del vale se llevaba la etiqueta con él: `onHecho` corre dentro
+     * del `try` del modal, así que la excepción moría allá arriba mostrando
+     * «no se pudo registrar» sobre una salida que SÍ se registró, y la etiqueta
+     * nueva no se imprimía nunca. La bolsa quedaba con la etiqueta vieja, que
+     * dice un monto que ya no tiene.
+     *
+     * El orden es el del mostrador: primero el vale —que alguien está
+     * esperando para firmar— y después la etiqueta que se pega afuera.
+     *
+     * @param repartos  [{ bolsa_id, monto }] tal como los devuelve `registrarSalida`
+     * @param bolsas    las filas que la pantalla ya tiene en memoria
+     * @param nombrePersona  Map de empleado → nombre, para el «Guardo» de la etiqueta
+     */
+    const imprimirTrasLaSalida = useCallback(async (repartos, bolsas = [], nombrePersona) => {
+        for (const r of repartos || []) {
+            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
+            if (!bolsa) continue;
+
+            // El saldo lo dice el SERVIDOR (`bolsa_saldo`), no una suma hecha
+            // acá: sumar `monto_inicial + Σ salidas` en el navegador era una
+            // segunda definición de cuánto dinero hay en una bolsa, y era la
+            // que salía impresa.
+            const vivas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
+            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
+            const { salidasParaEtiqueta } = await import('../utils/bolsaComprobante');
+            const ultima = vivas[vivas.length - 1];
+
+            if (ultima) {
+                try { await imprimirVale(ultima, bolsa, saldo); }
+                catch (e) { console.error('bolsas: el vale no se pudo imprimir:', e?.message); }
+            }
+            try {
+                await imprimir({ ...bolsa, saldo }, {
+                    cerradaPor: nombrePersona?.get?.(bolsa.cerrada_por),
+                    salidas: salidasParaEtiqueta(vivas),
+                });
+            } catch (e) {
+                console.error('bolsas: la etiqueta nueva no se pudo imprimir:', e?.message);
+                showToast?.('Falta la etiqueta nueva',
+                    `${bolsa.folio} - la de afuera dice un monto que ya no es. Reimprimila.`, 'error');
+            }
+        }
+    }, [imprimir, imprimirVale, showToast]);
+
+    /**
      * Cierra la bolsa del corte y manda la etiqueta a imprimir.
      *
      * @param corte  fila de `get_cortes_por_embolsar` (trae `corte_id` y `sugerida`)
@@ -152,5 +208,5 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         return data;
     }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen, imprimir]);
 
-    return { cerrar, imprimir, imprimirVale, ocupadoId };
+    return { cerrar, imprimir, imprimirVale, imprimirTrasLaSalida, ocupadoId };
 }

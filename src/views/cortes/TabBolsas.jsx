@@ -12,7 +12,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     contarBolsa, fetchBolsas, fetchEntrega, fetchPersonasDeBolsas, fetchSaldos,
-    fetchSalidasDeBolsa, recibirBolsas, resolverDiferenciaBolsa,
+    recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
@@ -309,7 +309,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
     // comprobante, la bitácora y las dos anulaciones.
     const [abierta, setAbierta] = useState(null);
 
-    const { imprimir, imprimirVale } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
+    const { imprimir, imprimirTrasLaSalida } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
     const nombrePersona = useMemo(() => {
         const m = new Map();
         for (const e of empleados || []) m.set(e.id, e.name);
@@ -444,26 +444,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
      * pendiente sería dejar una bolsa con un número equivocado pegado encima.
      */
     const traslimSalida = useCallback(async (_oper, repartos) => {
-        for (const r of repartos || []) {
-            const salidas = await fetchSalidasDeBolsa(r.bolsa_id);
-            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
-            const vivas = salidas.filter((s) => !s.anulado_at);
-            const ultima = vivas[vivas.length - 1];
-            // El saldo lo dice el SERVIDOR (`bolsa_saldo`), no una suma hecha
-            // acá. Sumar `monto_inicial + Σ salidas` en el navegador era una
-            // segunda definición de cuánto dinero hay en una bolsa, y la que
-            // iba impresa en la etiqueta y en el vale era justamente ésta.
-            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
-            if (ultima && bolsa) await imprimirVale(ultima, bolsa, saldo);
-            if (bolsa) {
-                await imprimir({ ...bolsa, saldo }, {
-                    cerradaPor: nombrePersona.get(bolsa.cerrada_por),
-                    salidas: (await import('../../utils/bolsaComprobante')).salidasParaEtiqueta(vivas),
-                });
-            }
-        }
+        await imprimirTrasLaSalida(repartos, bolsas, nombrePersona);
         cargar();
-    }, [bolsas, imprimirVale, imprimir, nombrePersona, cargar]);
+    }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
     const resolver = useCallback((bolsa, via, causa) => correr(`resolver-${bolsa.id}`,
         () => resolverDiferenciaBolsa(bolsa.id, via, causa),

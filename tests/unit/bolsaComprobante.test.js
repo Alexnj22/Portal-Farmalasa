@@ -59,7 +59,8 @@ const pie = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).pie;
 // columnas. Van ENTEROS: `ESC a n` mide tres bytes y sacarle dos deja el tercero
 // contando como una columna que en el papel no existe.
 // eslint-disable-next-line no-control-regex
-const renglones = (t) => cuerpo(t).split('\n').map((l) => l.replace(/\x1b(?:[!aRt].|@)/g, ''));
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
+const renglones = (t) => cuerpo(t).split('\n').map(sinCodigos);
 
 describe.each([
     ['la etiqueta de la bolsa', etiqueta],
@@ -93,15 +94,23 @@ describe.each([
         expect(todoElTexto(armar())).not.toContain('NIT');
     });
 
-    it('no gasta un renglon en blanco en ningun lado', () => {
+    it('no gasta un renglon en blanco, salvo el que separa el total del pie', () => {
         // El salto del final de cada seccion no es un renglon: cierra el
         // ultimo. Por eso se recorta antes de contar, en las dos. Y el pie
-        // termina ademas con el margen de corte —cinco saltos— que SI tiene que
-        // estar: es lo que salva la ultima linea de la cuchilla.
-        const sinCierre = (texto) => texto.replace(/\n+$/, '').split('\n');
+        // termina ademas con el margen de corte, que SI tiene que estar: es lo
+        // que salva la ultima linea de la cuchilla.
+        // Sin los codigos: un renglon que solo los lleva imprime UN BLANCO, asi
+        // que para contar blancos hay que sacarlos antes.
+        const sinCierre = (texto) => texto.replace(/\n+$/, '').split('\n').map(sinCodigos);
 
         expect(sinCierre(cuerpo(armar())).filter((l) => l.trim() === '')).toEqual([]);
-        expect(sinCierre(pie(armar())).filter((l) => l.trim() === '')).toEqual([]);
+
+        // El pie arranca con UNO, a proposito (pedido del usuario el
+        // 2026-08-17): sin el, el numero de etiqueta salia pegado al total. Es
+        // el primero y no hay otro.
+        const lineasDelPie = sinCierre(pie(armar()));
+        expect(lineasDelPie[0].trim()).toBe('');
+        expect(lineasDelPie.slice(1).filter((l) => l.trim() === '')).toEqual([]);
     });
 
     it('pone dos datos por renglon donde entran', () => {

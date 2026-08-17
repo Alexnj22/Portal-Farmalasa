@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.4 — Un espacio antes del pie, y los dos papeles de una salida en un solo lugar
+
+**Un renglón en blanco entre el total y el pie.** Pedido del usuario mirando el
+papel: el número de etiqueta salía pegado abajo del `EFECTIVO ADENTRO`. En la
+vista previa ese corte lo hace una línea; en el rollo no había nada, porque una
+línea de tinta corrida es lo que el papel térmico no puede pagar. Es el único
+renglón vacío del ticket y está puesto a propósito — no confundirlo con los
+cuatro que se sacaron en v2.654.2, que eran códigos de impresora sueltos.
+
+**Los dos papeles de una salida, en un solo lugar.** Al sacar dinero de una
+bolsa salen dos: el vale que queda adentro y la etiqueta nueva de afuera —la
+anterior dejó de ser cierta en ese mismo momento—. Estaba escrito dos veces, en
+la baldosa del Inicio y en la pestaña de Cortes, y ahora vive una sola vez en
+`useCerrarBolsa.imprimirTrasLaSalida`.
+
+Y **cada papel va en su propio intento**, que es el defecto que la copia
+escondía: encadenados, un fallo del vale se llevaba la etiqueta con él.
+`onHecho` corre dentro del `try` del modal, así que la excepción moría allá
+arriba mostrando «no se pudo registrar» sobre una salida que **sí** se
+registró, y la etiqueta nueva no se imprimía nunca: la bolsa se quedaba con la
+vieja pegada encima, diciendo un monto que ya no tenía. Ahora, si la etiqueta
+falla, la pantalla lo dice con el folio y pide reimprimirla.
+
 ## v2.655.3 — Recepción: el nombre completo en las cajas especiales, el aviso de que el producto se recibe entero, y la hoja con más lista y menos encabezado
 
 Tres arreglos de pantalla en el modal de recepción, pedidos por el usuario.

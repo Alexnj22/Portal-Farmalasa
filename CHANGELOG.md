@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.652.0 — Bitácoras: cada minuto, médico sólo del registro, y la tabla del libro más limpia
+
+**El libro se actualiza cada minuto**, no cada cinco. La venta llega al portal en
+menos de un minuto y completar la receta es una tarea de memoria: cinco minutos
+de espera ya rompen el «lo hago ahora que me acuerdo».
+
+**El médico sólo se puede tomar del registro del Consejo.** Se quitó el alta a
+mano: si no está ahí, no existe. Un prescriptor inventado es peor que un renglón
+incompleto — el incompleto se ve y se corrige, el inventado se lee como un dato
+bueno y sostiene una dispensación que quizá nadie recetó. La guarda está también
+en la base, no sólo en la pantalla. **Y si el sitio del Consejo falla, le llega
+un aviso a Edwin**: mientras no responda, la sala no puede completar nada. Un
+aviso por hora como mucho.
+
+**Dos medicamentos de la misma receta ya se anexan a la misma receta.** Estaba
+mal de raíz: al completar un renglón se miraba sólo *ese* medicamento y con eso
+se decidía el estado de la receta entera, así que una receta de dos quedaba
+«cerrada» apenas se entregaba el primero — el libro decía completa con la mitad
+sin entregar, y el segundo medicamento ya no se le podía anexar. Ahora la receta
+se cierra cuando **ningún** renglón queda pendiente, y el selector ofrece las
+recetas de los últimos 30 días con su estado a la vista. Las que la regla vieja
+cerró de más quedaron corregidas.
+
+**El comprobante no se baja dos veces**: dos folios de la misma venta comparten
+el archivo, porque la clave es el código de generación. Verificado en producción
+— 103 renglones, 93 documentos, 93 archivos.
+
+**La tabla del libro, más limpia.** El folio pasa a texto chico —son diez
+caracteres fijos, se reconocen por la forma—, el vendedor baja bajo la fecha,
+paciente y médico van juntos y el vencimiento baja bajo el medicamento. La
+última columna deja de ser un rótulo repetido —«Falta completar» veintiséis
+veces no dice nada que la fila vacía no diga— y pasa a ser el **botón de
+Completar**, que abre el formulario sin entrar al expediente primero.
+
+**Se quitó el botón de anular.** La anulación llega sola cuando se anula la
+venta; un segundo camino manual para lo mismo se desincroniza e invita a anular
+un renglón cuya venta sigue viva.
+
 ## v2.651.3 — Bitácoras: dos medicamentos en una receta son UNA receta
 
 **Una venta con dos antibióticos genera dos folios** —uno por renglón, no uno

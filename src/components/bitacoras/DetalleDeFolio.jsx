@@ -7,7 +7,6 @@ import { LoadingState } from '../common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { openStoredFile } from '../../utils/storageFiles';
-import AnularRenglon from './AnularRenglon';
 import CompletarRenglon from './CompletarRenglon';
 import { ESTADO_RENGLON, fetchFolio } from '../../data/bitacoras';
 
@@ -80,7 +79,6 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
     const [error, setError] = useState(null);
     const [abriendo, setAbriendo] = useState(false);
     const [completando, setCompletando] = useState(false);
-    const [anulando, setAnulando] = useState(false);
     const [recargas, setRecargas] = useState(0);
 
     useEffect(() => {
@@ -142,9 +140,6 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                     <Button variant={detalle.estado === 'pendiente' ? 'primary' : 'secondary'}
                         icon={PenLine} onClick={() => setCompletando(true)}>
                         {detalle.estado === 'pendiente' ? 'Completar la receta' : 'Rehacer la receta'}
-                    </Button>
-                    <Button variant="ghost" icon={Ban} onClick={() => setAnulando(true)}>
-                        Anular
                     </Button>
                 </div>
             )}
@@ -294,13 +289,6 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                     onCerrar={(hubo) => { setCompletando(false); if (hubo) { setRecargas(n => n + 1); onCambio?.(); } }}
                 />
             )}
-            {anulando && (
-                <AnularRenglon
-                    renglon={{ ...renglon, id: detalle.id ?? renglon.id }}
-                    onCerrar={(hubo) => { setAnulando(false); if (hubo) { setRecargas(n => n + 1); onCambio?.(); } }}
-                />
-            )}
-
             {detalle.completada_por && (
                 <p className="text-label text-content-3">
                     Completado por {detalle.completada_por}

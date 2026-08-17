@@ -1,11 +1,16 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen } from 'lucide-react';
+import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { AlertTriangle, BookOpen, Check, PenLine } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import LiquidModal from '../../components/common/LiquidModal';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import DetalleDeFolio from '../../components/bitacoras/DetalleDeFolio';
+
+/* El formulario se baja al apretar «Completar», no al abrir el libro: arrastra
+ * el canónico de archivo, el recorte de la foto y el buscador de médico. */
+const CompletarRenglon = lazy(() => import('../../components/bitacoras/CompletarRenglon'));
 import { ESTADO_RENGLON, faltantesDelRenglon } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -32,19 +37,21 @@ const fmtFecha = (f) => (f
 // número por el que se entra a este libro es el folio. Sin declararlo, la
 // inferencia elegiría la primera columna útil y el orden de la ficha quedaría
 // al azar.
-const MOVIL = { ancla: 'folio_txt', identidad: 'producto_nombre', chips: ['estado', 'paciente'] };
+const MOVIL = { ancla: 'folio_txt', identidad: 'producto_nombre', chips: ['cantidad', 'lote'] };
 
+// El folio manda pero no necesita ser grande: son 10 caracteres fijos y
+// tabulares, y se reconocen por la forma. Lo que sí necesita aire es el
+// medicamento, que es lo que se lee de un vistazo para saber de qué fila se
+// habla. Y «Vendió» se fusionó con la fecha: quién atendió es contexto de
+// CUÁNDO, no una columna propia — así entra el botón sin sacar nada útil.
 const COLUMNAS = [
     { key: 'folio_txt',       label: 'Folio',       sortable: true },
     { key: 'fecha',           label: 'Fecha',       sortable: true },
     { key: 'producto_nombre', label: 'Medicamento', sortable: true },
     { key: 'cantidad',        label: 'Cant.',       align: 'right', sortable: true },
-    { key: 'lote',            label: 'Lote',        hideBelow: 'md' },
-    { key: 'vence',           label: 'Vence',       hideBelow: 'lg' },
-    { key: 'paciente',        label: 'Paciente' },
-    { key: 'medico',          label: 'Médico',      hideBelow: 'lg' },
-    { key: 'vendedor',        label: 'Vendió',      hideBelow: '2xl' },
-    { key: 'estado',          label: 'Estado' },
+    { key: 'lote',            label: 'Lote',        hideBelow: 'lg' },
+    { key: 'paciente',        label: 'Paciente y médico' },
+    { key: 'estado',          label: '', align: 'right' },
 ];
 
 // Qué campo crudo ordena cada columna. Las columnas compuestas se pintan como
@@ -52,11 +59,14 @@ const COLUMNAS = [
 // peor que uno visiblemente roto, porque no se nota.
 const CLAVE_DE_ORDEN = {
     folio_txt: 'folio', fecha: 'fecha', producto_nombre: 'producto_nombre',
-    cantidad: 'cantidad', lote: 'lote', vence: 'vence',
-    paciente: 'paciente', medico: 'medico', vendedor: 'vendedor', estado: 'estado',
+    cantidad: 'cantidad', lote: 'lote', paciente: 'paciente', estado: 'estado',
 };
 
-export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre, onRecargar }) {
+export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre, onRecargar, puedeCompletar }) {
+    // Completar desde la FILA, sin abrir el expediente primero: con 26
+    // pendientes, el camino «abrir → leer → completar → cerrar» son tres clics
+    // de más por renglón. El expediente sigue estando para mirar el detalle.
+    const [completando, setCompletando] = useState(null);
     // Se guarda el ID, no la fila. Con la fila entera haría falta un efecto que
     // la cierre cuando la lista se recarga y ese renglón ya no está — y un panel
     // abierto sobre una fila que no existe muestra datos viejos como si fueran
@@ -124,7 +134,7 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                 onSort={ordenar}
                 sortKey={sortKey}
                 sortDir={sortDir}
-                minWidth="980px"
+                minWidth="820px"
                 movil={MOVIL}
                 empty={{
                     icon: BookOpen,
@@ -140,63 +150,85 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                     // nadie.
                     const vencidoAlVender = r.vence && r.fecha && r.vence < r.fecha;
 
+                    const pendiente = r.estado === 'pendiente';
+
                     return (
                         <DataRow key={r.id} index={i} onClick={() => setAbiertoId(r.id)}
                             className={r.estado === 'anulada' ? 'opacity-60' : ''}>
                             <DataCell>
-                                <span className="text-body-sm font-black tabular-nums text-content whitespace-nowrap">{r.folio_txt}</span>
+                                <span className="text-label font-black tabular-nums text-content-2 whitespace-nowrap">
+                                    {r.folio_txt}
+                                </span>
                             </DataCell>
                             <DataCell>
-                                <p className="text-body-sm text-content-2 tabular-nums">{fmtFecha(r.fecha)}</p>
-                                {r.hora && <p className="text-caption text-content-3 tabular-nums">{String(r.hora).slice(0, 5)}</p>}
+                                <p className="text-body-sm text-content-2 tabular-nums whitespace-nowrap">{fmtFecha(r.fecha)}</p>
+                                <p className="text-caption text-content-3 truncate">
+                                    {r.hora ? String(r.hora).slice(0, 5) : ''}
+                                    {r.vendedor ? ` · ${r.vendedor}` : ''}
+                                </p>
                             </DataCell>
                             <DataCell>
                                 <p className="text-body-sm font-bold text-content-2 leading-snug">{r.producto_nombre}</p>
-                                {r.laboratorio && <p className="text-caption text-content-3">{r.laboratorio}</p>}
+                                <p className="text-caption text-content-3">
+                                    {r.laboratorio || ''}
+                                    {r.vence ? (
+                                        <span className={vencidoAlVender ? 'text-danger-text font-bold' : ''}>
+                                            {r.laboratorio ? ' · ' : ''}vence {fmtFecha(r.vence)}
+                                        </span>
+                                    ) : ''}
+                                </p>
                             </DataCell>
                             <DataCell align="right">
-                                <span className="tabular-nums">{num(r.cantidad)}</span>
+                                <span className="text-body-sm font-bold tabular-nums text-content-2">{num(r.cantidad)}</span>
                             </DataCell>
-                            <DataCell hideBelow="md">
+                            <DataCell hideBelow="lg">
                                 {r.lote
                                     ? <Badge variant="chart-3" size="sm" uppercase={false}>{r.lote}</Badge>
                                     : <span className="text-content-3">—</span>}
                             </DataCell>
-                            <DataCell hideBelow="lg">
-                                <span className={`tabular-nums ${vencidoAlVender ? 'text-danger-text font-bold' : ''}`}>
-                                    {fmtFecha(r.vence)}
-                                </span>
-                            </DataCell>
+                            {/* Paciente y médico en una sola columna: son las dos
+                                caras del mismo dato —quién se lo llevó y quién lo
+                                recetó— y separadas obligaban a esconder el médico
+                                bajo `lg`, que es donde más falta hace. */}
                             <DataCell>
-                                {r.paciente
-                                    ? <span className="text-body-sm text-content-2">{r.paciente}</span>
-                                    : <span className="text-body-sm text-content-3">—</span>}
-                            </DataCell>
-                            <DataCell hideBelow="lg">
-                                {r.medico ? (
+                                {r.paciente ? (
                                     <>
-                                        <p className="text-body-sm text-content-2 leading-snug">{r.medico}</p>
-                                        {r.numero_junta && <p className="text-caption text-content-3 tabular-nums">JVPM {r.numero_junta}</p>}
+                                        <p className="text-body-sm text-content-2 leading-snug truncate">{r.paciente}</p>
+                                        {r.medico && (
+                                            <p className="text-caption text-content-3 truncate">
+                                                {r.medico}{r.numero_junta ? ` · ${r.numero_junta}` : ''}
+                                            </p>
+                                        )}
                                     </>
-                                ) : <span className="text-body-sm text-content-3">—</span>}
+                                ) : (
+                                    <span className="text-body-sm text-content-3">Sin completar</span>
+                                )}
                             </DataCell>
-                            <DataCell hideBelow="2xl">
-                                <span className="text-body-sm text-content-3">{r.vendedor || '—'}</span>
-                            </DataCell>
-                            <DataCell>
-                                <div className="flex flex-wrap items-center gap-1">
-                                    <Badge variant={est.variant} size="sm" uppercase={false}>{est.label}</Badge>
-                                    {vencidoAlVender && <Badge variant="danger" size="sm" uppercase={false}>Lote vencido</Badge>}
-                                    {/* Sólo cuántos, no cuáles. La lista entera
-                                        —«falta paciente, médico, foto de la
-                                        receta»— ocupaba tres renglones en CADA
-                                        fila y duplicaba el alto de la tabla; el
-                                        detalle está en el renglón abierto, que
-                                        es donde se va a completar. */}
-                                    {faltan.length > 0 && r.estado === 'pendiente' && (
-                                        <span className="text-label text-content-3 whitespace-nowrap">
+                            {/* La última columna es la ACCIÓN, no un rótulo: en un
+                                libro con 26 pendientes, leer «Falta completar» 26
+                                veces no dice nada que la fila vacía no diga ya. El
+                                estado sólo se pinta cuando NO es lo normal. */}
+                            <DataCell align="right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                    {vencidoAlVender && (
+                                        <Badge variant="danger" size="sm" uppercase={false}>Lote vencido</Badge>
+                                    )}
+                                    {r.estado === 'anulada' && (
+                                        <Badge variant="neutral" size="sm" uppercase={false}>{est.label}</Badge>
+                                    )}
+                                    {r.estado === 'completa' && (
+                                        <Badge variant="success" size="sm" uppercase={false} icon={Check}>Completa</Badge>
+                                    )}
+                                    {pendiente && puedeCompletar && (
+                                        <Button variant="primary" size="xs" icon={PenLine}
+                                            onClick={(e) => { e.stopPropagation(); setCompletando(r); }}>
+                                            Completar
+                                        </Button>
+                                    )}
+                                    {pendiente && !puedeCompletar && (
+                                        <Badge variant="warning" size="sm" uppercase={false}>
                                             faltan {faltan.length}
-                                        </span>
+                                        </Badge>
                                     )}
                                 </div>
                             </DataCell>
@@ -215,6 +247,16 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                 `LiquidModal` ya resuelve los dos: modal centrado con mouse, y
                 hoja con asa que arrastra en táctil. Es el mismo envase que usa
                 el detalle de un corte de caja, que es un detalle igual de rico. */}
+            {completando && (
+                <Suspense fallback={null}>
+                    <CompletarRenglon
+                        renglon={completando}
+                        branchId={branchId}
+                        onCerrar={(hubo) => { setCompletando(null); if (hubo) onRecargar?.(); }}
+                    />
+                </Suspense>
+            )}
+
             {abierto && (
                 <LiquidModal open onClose={() => setAbiertoId(null)}
                     maxWidth="max-w-3xl" ariaLabel={`Folio ${abierto.folio_txt}`}>

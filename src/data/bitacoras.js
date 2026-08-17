@@ -375,12 +375,34 @@ export const MOTIVOS_ANULACION = [
     { value: 'otro',            label: 'Otro' },
 ];
 
-/** Las recetas que todavía tienen algo pendiente en esa sala. */
-export async function fetchRecetasAbiertas(branchId) {
+/**
+ * Las recetas recientes de la sala, para anexarles un renglón.
+ *
+ * No sólo las ABIERTAS: una receta cuyo primer medicamento ya se entregó
+ * completo queda cerrada, y el segundo medicamento del mismo papel igual hay que
+ * anexárselo. Traer sólo las abiertas obligaba a crear una receta nueva por
+ * medicamento — y ahí el correlativo del libro deja de corresponder a un papel.
+ */
+export async function fetchRecetasRecientes(branchId, dias = 30) {
     if (!branchId) return { recetas: [], error: null };
-    const { data, error } = await supabase.rpc('get_recetas_abiertas', { p_branch_id: Number(branchId) });
+    const { data, error } = await supabase.rpc('get_recetas_recientes', {
+        p_branch_id: Number(branchId), p_dias: dias,
+    });
     if (error) return { recetas: [], error };
     return { recetas: data ?? [], error: null };
+}
+
+/**
+ * Avisar que el registro del Consejo no responde.
+ *
+ * El médico sólo se puede tomar del registro, así que un sitio caído deja a la
+ * sala sin poder completar NADA. Eso hay que saberlo el mismo día, no cuando se
+ * acumularon tres. La base limita a un aviso por hora: diez intentos fallidos
+ * en un minuto no son diez noticias.
+ */
+export async function avisarFallaDelConsejo(detalle = null) {
+    const { data, error } = await supabase.rpc('avisar_falla_del_consejo', { p_detalle: detalle });
+    return { avisado: Boolean(data), error: error?.message ?? null };
 }
 
 // ── Quién puede prescribir ─────────────────────────────────────────────────
@@ -464,14 +486,23 @@ export async function buscarMedicoLocal(numeroJunta, junta = 'P01') {
     return { medico: data ?? null, error: null };
 }
 
-export async function guardarMedico({ numeroJunta, nombre, junta = 'P01', carrera = null, verificado = false }) {
+/**
+ * Guardar el médico que devolvió el registro del Consejo.
+ *
+ * `verificado` va SIEMPRE en true porque es la única forma de crear uno: la base
+ * rechaza los que no vienen del registro (decisión del usuario, 2026-08-17 — «si
+ * agregamos un dato irreal sería falso; si no está ahí, no existe»). Un
+ * prescriptor inventado es peor que un renglón incompleto: el incompleto se ve y
+ * se corrige, el inventado se lee como un dato bueno.
+ */
+export async function guardarMedicoDelConsejo({ numeroJunta, nombre, junta = 'P01', carrera = null }) {
     const { data, error } = await supabase.rpc('buscar_o_crear_medico', {
         p_numero_junta: String(numeroJunta).trim(),
         p_nombre: nombre,
         p_junta: junta,
         p_carrera: carrera,
-        p_origen: verificado ? 'cssp' : 'manual',
-        p_verificado: verificado,
+        p_origen: 'cssp',
+        p_verificado: true,
     });
     if (error) return { id: null, error: error.message ?? 'No se pudo guardar el médico.' };
     return { id: data, error: null };

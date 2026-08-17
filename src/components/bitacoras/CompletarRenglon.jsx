@@ -17,8 +17,9 @@ import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
  * el canónico de recorte y no hace falta hasta que hay una foto. */
 const EditorDeReceta = lazy(() => import('./EditorDeReceta'));
 import {
-    CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, buscarMedicoLocal, buscarMedicosLocalPorNombre,
-    completarRenglon, consultarConsejo, fetchRecetasAbiertas, guardarMedico, subirFotoDeReceta,
+    CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, avisarFallaDelConsejo, buscarMedicoLocal,
+    buscarMedicosLocalPorNombre, completarRenglon, consultarConsejo, fetchRecetasRecientes,
+    guardarMedicoDelConsejo, subirFotoDeReceta,
 } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -107,7 +108,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     // receta nueva por cada visita es lo que rompe el cálculo de parcial/total.
     useEffect(() => {
         let vivo = true;
-        fetchRecetasAbiertas(branchId).then(({ recetas }) => {
+        fetchRecetasRecientes(branchId).then(({ recetas }) => {
             if (vivo) setAbiertas(recetas);
         });
         return () => { vivo = false; };
@@ -185,7 +186,14 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         setBuscando(false);
         setBuscado(true);
 
-        if (e) { setAvisoBusqueda(e); return; }
+        if (e) {
+            // El registro caído deja a la sala sin poder completar NADA, porque
+            // el médico sólo se puede tomar de ahí. Se avisa a quien lo pidió;
+            // la base limita a un aviso por hora.
+            setAvisoBusqueda(e);
+            avisarFallaDelConsejo(`Al buscar ${porNumero ? `el N.º ${n}` : `${nom} ${ape}`.trim()}: ${e}`);
+            return;
+        }
         if (!profesionales.length) return;
 
         if (porNumero && profesionales.length === 1) {
@@ -259,7 +267,8 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         }
     }, [compatibles, renglon.erp_product_id, renglon.cantidad]);
 
-    const faltaMedico = !medico && !(numJunta.trim() && nombreMedico.trim());
+    // Sin médico resuelto no se guarda. No hay ruta alternativa.
+    const faltaMedico = !medico;
 
     // Lo entregado en ESTE renglón contra lo que el médico recetó. Negativo
     // significa que se entregó de más, y eso NO es una dispensación total: es un
@@ -275,12 +284,15 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         setGuardando(true);
         setError(null);
 
-        // 1. El médico. Si ya se resolvió contra nuestra tabla se reusa; si no,
-        //    se guarda con lo que dice la receta.
+        // 1. El médico. Si salió de nuestra tabla ya tiene id; si salió del
+        //    registro del Consejo, se guarda ahora con esa confirmación. NO hay
+        //    camino a mano: la base rechaza un prescriptor que el registro no
+        //    confirmó.
         let medicoId = medico?.id ?? null;
         if (!medicoId) {
-            const { id, error: e1 } = await guardarMedico({
-                numeroJunta: numJunta, nombre: nombreMedico, junta,
+            const { id, error: e1 } = await guardarMedicoDelConsejo({
+                numeroJunta: medico.numero_junta, nombre: medico.nombre,
+                junta, carrera: medico.carrera ?? null,
             });
             if (e1) { setGuardando(false); setError(e1); return; }
             medicoId = id;
@@ -311,7 +323,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         if (e3) { setError(e3); return; }
         clearDraft(claveBorrador);
         onCerrar(true);
-    }, [medico, numJunta, nombreMedico, junta, archivo, branchId, renglon.id,
+    }, [medico, junta, archivo, branchId, renglon.id,
         paciente, prescrita, fechaReceta, edad, documento, recetaId, notas,
         claveBorrador, onCerrar]);
 
@@ -528,31 +540,23 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
 
                 {avisoBusqueda && <Notice variant="info" compact>{avisoBusqueda}</Notice>}
 
-                {buscado && !medico && candidatos.length === 0 && (
-                    <>
-                        <Notice variant="info">
-                            <span className="font-bold">No apareció ni en el portal ni en el registro del Consejo.</span>
-                            <span className="block mt-0.5 font-normal text-content-2">
-                                Escribe el nombre y el número como aparecen en el sello de la receta y queda
-                                guardado: la próxima vez que ese médico recete, ya va a estar. La norma pide
-                                los datos del prescriptor en la RECETA, y esa receta se está fotografiando.
-                            </span>
-                        </Notice>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <PortalInput
-                                label="Nombre del médico" name="nombre_medico" icon={Stethoscope} required colSpan={2}
-                                value={nombreMedico} onChange={(e) => setNombreMedico(e.target.value)}
-                                placeholder="Como aparece en el sello"
-                                hasError={!nombreMedico.trim()}
-                            />
-                            <PortalInput
-                                label="N.º de junta" name="numero_junta_manual" required
-                                value={numJunta} onChange={(e) => setNumJunta(e.target.value)}
-                                placeholder="12345" inputClassName="tabular-nums"
-                                hasError={!numJunta.trim()}
-                            />
-                        </div>
-                    </>
+                {/* NO hay alta a mano. Decisión del usuario: «si agregamos un
+                    dato irreal sería falso; si no está ahí, no existe». Un
+                    prescriptor inventado es peor que un renglón incompleto — el
+                    incompleto se ve y se corrige, el inventado se lee como un
+                    dato bueno y sostiene una dispensación que quizá nadie
+                    recetó. La base lo rechaza también, no sólo esta pantalla. */}
+                {buscado && !medico && candidatos.length === 0 && !avisoBusqueda && (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span className="font-bold">
+                            Ese profesional no está en el registro del Consejo.
+                        </span>
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            Revisa el número o el apellido del sello — un dígito de más no encuentra a
+                            nadie. Si de verdad no está, esa receta no la firmó un profesional inscrito y
+                            no se puede registrar como tal: hay que hablarlo con el regente.
+                        </span>
+                    </Notice>
                 )}
 
                 {/* ── Lo prescrito ── */}

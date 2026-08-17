@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.2 — Traslados: confirmar y enviar deja de romperse por una constante borrada
+
+Reportado por el usuario apretando el botón: «le di confirmar y me salió:
+presupuesto_ms is not defined».
+
+`aplicar-traslado-inventario` referenciaba `PRESUPUESTO_MS` —el tope de tiempo
+que corta la verificación de líneas antes de que la Edge Function se quede sin
+vida— y esa constante **no existía**. La borró el refactor del 2026-08-11
+(v2.569.2), que sacó los lectores de HTML a `_shared/erp-traslado.ts`: se fue
+con el bloque, su único uso quedó apuntando a un nombre muerto, y como Deno no
+chequea tipos al desplegar, **no falló al subir — fallaba al apretar**.
+
+Medido en la tabla: **cero traslados APPROVED en toda su historia**, con 5
+pendientes esperando. O sea que desde el 11 de agosto ninguna sala pudo
+despachar producto a otra, y el único síntoma era un mensaje que parecía del
+sistema de origen. Recibir no estaba afectado: el tope vive en la rama de
+enviar.
+
+Se restauró con su valor original (110 s) al lado del `arranque` que mide
+contra ella, y con el motivo escrito para que no se vuelva a ir con un bloque.
+Verificadas además las otras 13 declaraciones que ese refactor borró: 6 sin
+uso y 7 importadas del módulo compartido — `PRESUPUESTO_MS` era la única
+huérfana. Desplegada y confirmada en el código vivo.
+
 ## v2.656.1 — Solicitudes: ninguna consulta se corta en 1000 en silencio
 
 Al ensanchar la bandeja en v2.655.6 —sacarle el filtro por `approver_id` para

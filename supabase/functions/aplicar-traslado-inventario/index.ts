@@ -73,6 +73,20 @@ import {
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
 const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
 
+/* Cuánto se permite tardar verificando líneas antes de cortar sin escribir
+ * nada. Una Edge Function vive 150s; 110s deja margen para armar y mandar el
+ * traslado con lo que ya se verificó, o para contestar el corte.
+ *
+ * ⚠️ Esta constante se BORRÓ por accidente el 2026-08-11 (v2.569.2), al mover
+ * los parsers de HTML a `_shared/erp-traslado.ts`: se fue con el bloque de
+ * arriba y su único uso —el `if` que abre el bucle de líneas— quedó
+ * referenciando un nombre inexistente. Deno no chequea tipos al desplegar, así
+ * que no falló al subir: fallaba al APRETAR, con un `PRESUPUESTO_MS is not
+ * defined` en la cara de quien confirmaba, y desde entonces NINGÚN traslado
+ * pudo despacharse (medido: 0 filas APPROVED en la tabla). Vive acá, junto al
+ * `arranque` que mide contra ella. */
+const PRESUPUESTO_MS = 110_000;
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });

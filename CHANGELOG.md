@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.643.1 — Cargar compra abre en el último mes y la lista deja de tardar 19 segundos
+
+**Compras → Cargar compra.** La pantalla abre en el **último mes**, que es el
+período en el que de verdad se carga una compra. Lo de más atrás sigue estando
+—2 meses, 6 meses— pero se pide a propósito en vez de mirarse de entrada.
+
+**Y dejó de tardar.** La lista se armaba en **18.9 segundos**, y no era el
+volumen: son 1,778 documentos contra 5,260 recibos. Era la forma de la consulta.
+El descarte «este documento ya está registrado» preguntaba por el sello **o** por
+el número, y un «o» no es una igualdad: la base no podía indexar la comparación,
+así que enfrentaba cada documento contra cada recibo normalizando el número de
+documento en cada par. Medido: **5,126,419 comparaciones** para devolver 479
+filas.
+
+Partido en cuatro preguntas de igualdad —que es la misma pregunta, dicha de una
+forma que la base sí sabe resolver— y normalizando cada número una sola vez:
+
+| | antes | después |
+|---|---|---|
+| armar la lista | 18,957 ms | **19.5 ms** |
+
+Verificado sobre la ventana completa de 6 meses, los 1,778 documentos: **616
+filas antes, 616 después, cero diferencias** en ambos sentidos. No cambia qué
+documentos aparecen — cambia cuánto tarda en decirlo.
+
+**«Actualizar lista» se mudó adentro de la píldora de filtros** (pestaña Por
+confirmar). Estaba suelto al lado; ahí no lo alcanzaba el contrato de la píldora,
+que es la que decide cómo se dibuja cada acción en escritorio y cómo baja al
+clúster del teléfono. El avance del barrido ahora se cuenta en su propio aviso
+debajo, y el botón queda deshabilitado mientras corre.
+
 ## v2.643.0 — Por confirmar: la lista completa de productos, en una sola pantalla
 
 **Compras → Cargar compra → Por confirmar.** Sembrar el diccionario abriendo las

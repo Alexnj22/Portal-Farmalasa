@@ -69,10 +69,12 @@ const COLS = [
     { key: 'espera',     label: 'Esperando',  align: 'center' },
 ];
 
+// El primero es el que se abre por defecto. El último mes es lo que se está
+// cargando; lo de más atrás se busca a propósito, no se mira de entrada.
 const PERIODOS = [
-    { value: '30',  label: 'Últimos 30 días' },
-    { value: '60',  label: 'Últimos 60 días' },
-    { value: '180', label: 'Últimos 6 meses' },
+    { value: '30',  label: 'Último mes'       },
+    { value: '60',  label: 'Últimos 2 meses'  },
+    { value: '180', label: 'Últimos 6 meses'  },
 ];
 
 /** «1 renglón» / «3 renglones» — el «(es)» de las plantillas se lee a máquina. */
@@ -417,11 +419,20 @@ function TabPorConfirmar({ puedeEditar }) {
                     valueCls={totales.sinCandidato ? 'text-warning-text' : 'text-content'} />
             </CarrilCards>
 
-            <div className="flex justify-end min-w-0 gap-2 items-center">
-                <Button size="sm" variant="ghost" icon={RefreshCw} loading={!!barriendo} onClick={barrer}>
-                    {barriendo ?? 'Actualizar lista'}
-                </Button>
-                <FilterBar onClear={() => setEstado('pendientes')} activeCount={estado !== 'pendientes' ? 1 : 0}>
+            {/* «Actualizar lista» es una acción de la vista, así que va DENTRO
+                de la píldora (§17): las acciones son descriptores y no JSX
+                porque el mismo botón se dibuja distinto en la píldora de
+                escritorio y en el clúster táctil. Suelto al lado quedaba fuera
+                de ese contrato — y en el teléfono, fuera del clúster.
+                El descriptor no tiene `loading`, así que el avance del barrido
+                se cuenta abajo en su propio aviso y acá sólo se deshabilita: un
+                rótulo que cambia por tanda re-mide la píldora en cada vuelta. */}
+            <div className="flex justify-end min-w-0">
+                <FilterBar onClear={() => setEstado('pendientes')} activeCount={estado !== 'pendientes' ? 1 : 0}
+                    acciones={[{
+                        key: 'barrer', icon: RefreshCw, label: 'Actualizar lista',
+                        disabled: !!barriendo, onClick: barrer,
+                    }]}>
                     <FilterBar.Section active={estado !== 'pendientes'}
                         onClear={() => setEstado('pendientes')} label="estado">
                         <div style={{ width: '160px' }}>
@@ -434,6 +445,8 @@ function TabPorConfirmar({ puedeEditar }) {
         </div>
 
         {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+
+        {barriendo && <Notice variant="info" icon={RefreshCw} compact>{barriendo}</Notice>}
 
         <Notice variant="info" icon={ListChecks} compact>
             Cada línea es <b>un producto de un proveedor</b>, no un renglón: confirmarla resuelve
@@ -576,7 +589,9 @@ export default function CargarCompraView() {
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState('');
     const [busca, setBusca] = useState('');
-    const [dias, setDias]   = useState('60');
+    // Arranca en el último mes: es el período en el que de verdad se carga una
+    // compra, y son ~600 documentos en vez de ~1,400.
+    const [dias, setDias]   = useState('30');
     const [sel, setSel]     = useState(null);
     const [pagina, setPagina] = useState(1);
     const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -640,8 +655,8 @@ export default function CargarCompraView() {
                     </CarrilCards>
 
                     <div className="flex justify-end min-w-0">
-                        <FilterBar onClear={() => setDias('60')} activeCount={dias !== '60' ? 1 : 0}>
-                            <FilterBar.Section active={dias !== '60'} onClear={() => setDias('60')} label="período">
+                        <FilterBar onClear={() => setDias('30')} activeCount={dias !== '30' ? 1 : 0}>
+                            <FilterBar.Section active={dias !== '30'} onClear={() => setDias('30')} label="período">
                                 <div style={{ width: '175px' }}>
                                     <LiquidSelect value={dias} onChange={v => setDias(v || '60')}
                                         options={PERIODOS} icon={CalendarRange} compact bare clearable={false} />

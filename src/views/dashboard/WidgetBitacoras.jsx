@@ -1,24 +1,27 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, BookOpen, CheckCircle2, Sparkles, Thermometer } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Sparkles, Thermometer } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
-import {
-    fetchBitacoraDia, fetchLibro, hoySV, pendientesDelDia,
-} from '../../data/bitacoras';
+import { fetchBitacoraDia, hoySV, pendientesDelDia } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las bitácoras en el Inicio.
 //
 // ── Es el ATAJO, no el proceso ─────────────────────────────────────────────
-// Acá va lo único que hay que saber sin abrir nada: qué toca AHORA, qué se
-// pasó de hora, y cuántos renglones del libro esperan su receta. Anotar la
-// lectura, corregirla y completar el libro viven en el módulo. Es la misma
+// Acá va lo único que hay que saber sin abrir nada: qué toca AHORA y qué se
+// pasó de hora. Anotar la lectura y corregirla viven en el módulo. Es la misma
 // regla que el usuario fijó para las bolsas de efectivo: «el widget es para
 // acceder fácil, pero debe haber una vista donde se haga todo el proceso».
+//
+// ── El libro bajo receta tiene su PROPIA baldosa ───────────────────────────
+// Son dos trabajos que no se parecen: anotar la temperatura es una tarea de
+// reloj y la hace quien esté; completar un renglón del libro es una tarea de
+// memoria que caduca. Y el número vive en UN solo sitio — dos baldosas
+// contando lo mismo terminan discrepando, y entonces ninguna se puede creer.
 //
 // ── Lo que se cuenta sale del MISMO cálculo que la vista ───────────────────
 // `pendientesDelDia` es una sola función y la usan las dos pantallas. Dos
@@ -28,26 +31,18 @@ import {
 
 const REFRESCO_MS = 5 * 60 * 1000;
 
-const primerDiaDelMes = (f) => `${String(f).slice(0, 7)}-01`;
-
 export default function WidgetBitacoras() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const miSala = user?.branchId ?? user?.branch_id ?? null;
 
     const [dia, setDia] = useState(null);
-    const [pendientesLibro, setPendientesLibro] = useState(0);
     const [cargando, setCargando] = useState(true);
 
     const cargar = useCallback(async () => {
         if (!miSala) { setCargando(false); return; }
-        const hoy = hoySV();
-        const [{ dia: d }, { renglones }] = await Promise.all([
-            fetchBitacoraDia(miSala, hoy),
-            fetchLibro(miSala, { desde: primerDiaDelMes(hoy), hasta: hoy, estado: 'pendiente' }),
-        ]);
+        const { dia: d } = await fetchBitacoraDia(miSala, hoySV());
         setDia(d);
-        setPendientesLibro(renglones.length);
         setCargando(false);
     }, [miSala]);
 
@@ -97,29 +92,17 @@ export default function WidgetBitacoras() {
                 </p>
             )}
 
-            {pendientesLibro > 0 && (
-                <Notice variant="warning" icon={BookOpen} compact>
-                    {pendientesLibro} bajo receta {pendientesLibro === 1 ? 'espera' : 'esperan'} su receta
-                </Notice>
-            )}
-
-            {resumen.total === 0 && pendientesLibro === 0 && (
+            {resumen.total === 0 && (
                 <EmptyState icon={Sparkles} compact
                     title="Sin pendientes"
                     subtitle="Hoy no hay nada que anotar." />
             )}
 
-            <div className="mt-auto flex flex-wrap gap-2">
+            <div className="mt-auto">
                 <Button variant="primary" size="sm" icon={Thermometer}
                     onClick={() => navigate('/bitacoras')}>
                     Anotar
                 </Button>
-                {pendientesLibro > 0 && (
-                    <Button variant="secondary" size="sm" icon={BookOpen}
-                        onClick={() => navigate('/bitacoras')}>
-                        Ver el libro
-                    </Button>
-                )}
             </div>
         </div>
     );

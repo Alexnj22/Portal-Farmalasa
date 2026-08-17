@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import ExpedienteMovil from '../../components/common/ExpedienteMovil';
+import LiquidModal from '../../components/common/LiquidModal';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import DetalleDeFolio from '../../components/bitacoras/DetalleDeFolio';
@@ -205,15 +205,32 @@ export default function TabBajoReceta({ renglones, cargando, error, branchId, su
                 })}
             </DataTable>
 
-            <ExpedienteMovil
-                abierto={abierto}
-                onClose={() => setAbiertoId(null)}
-                titulo={abierto ? `Folio ${abierto.folio_txt}` : ''}
-                subtitulo={abierto ? `${sucursalNombre} · ${fmtFecha(abierto.fecha)}` : ''}
-                variante="pantalla"
-            >
-                {(fila) => <DetalleDeFolio renglon={fila} branchId={branchId} onCambio={onRecargar} />}
-            </ExpedienteMovil>
+            {/* `LiquidModal` y NO `ExpedienteMovil`: el segundo es el canónico
+                del TELÉFONO —su mitad de escritorio es la fila expandida dentro
+                de la tabla, que acá no existe—, así que montarlo siempre abría
+                el panel a pantalla completa también en la computadora. Se vio
+                mirando la pantalla, no midiéndola: reportado como «¿por qué en
+                escritorio me abre el modal como en móvil?».
+
+                `LiquidModal` ya resuelve los dos: modal centrado con mouse, y
+                hoja con asa que arrastra en táctil. Es el mismo envase que usa
+                el detalle de un corte de caja, que es un detalle igual de rico. */}
+            {abierto && (
+                <LiquidModal open onClose={() => setAbiertoId(null)}
+                    maxWidth="max-w-3xl" ariaLabel={`Folio ${abierto.folio_txt}`}>
+                    <LiquidModal.Header>
+                        <div className="min-w-0">
+                            <h3 className="text-body font-bold text-content">Folio {abierto.folio_txt}</h3>
+                            <p className="text-caption text-content-3 truncate">
+                                {sucursalNombre} · {fmtFecha(abierto.fecha)}
+                            </p>
+                        </div>
+                    </LiquidModal.Header>
+                    <LiquidModal.Body>
+                        <DetalleDeFolio renglon={abierto} branchId={branchId} onCambio={onRecargar} />
+                    </LiquidModal.Body>
+                </LiquidModal>
+            )}
         </div>
     );
 }

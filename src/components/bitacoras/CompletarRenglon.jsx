@@ -8,6 +8,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
+import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
 import {
     CLASE_CLIENTE, buscarMedicoLocal, completarRenglon, fetchRecetasAbiertas,
     guardarMedico, subirFotoDeReceta,
@@ -35,6 +36,13 @@ import {
 // De esa resta sale parcial o total. Por eso el campo se pide aparte y arranca
 // en lo entregado (el caso más común: se dio todo de una), no porque sean lo
 // mismo.
+//
+// ── Se guarda solo mientras se escribe ─────────────────────────────────────
+// Las sesiones de sala se cierran a los 5 minutos de inactividad, y llenar esto
+// es mirar un papel y teclear: se pasa fácil. El borrador va por FOLIO —dos
+// renglones distintos no comparten lo escrito— y NO incluye la foto: un File no
+// se puede guardar, y prometer que quedó guardada cuando no es cierto es peor
+// que no guardar nada.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const JUNTAS = [
@@ -47,27 +55,33 @@ const JUNTAS = [
 
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 
+const fmtFecha = (f) => (f
+    ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    : '—');
+
 export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     const clase = CLASE_CLIENTE[renglon.clase_cliente] || CLASE_CLIENTE.sin_ficha;
+    const claveBorrador = `bitacora-renglon-${renglon.id}`;
+    const borrador = useMemo(() => loadDraft(claveBorrador) || {}, [claveBorrador]);
 
-    const [paciente, setPaciente] = useState(() => (clase.sirve ? (renglon.cliente || '') : ''));
-    const [edad, setEdad]         = useState('');
-    const [documento, setDocumento] = useState('');
+    const [paciente, setPaciente] = useState(() => borrador.paciente ?? (clase.sirve ? (renglon.cliente || '') : ''));
+    const [edad, setEdad]         = useState(() => borrador.edad ?? '');
+    const [documento, setDocumento] = useState(() => borrador.documento ?? '');
 
-    const [junta, setJunta]       = useState('P01');
-    const [numJunta, setNumJunta] = useState('');
+    const [junta, setJunta]       = useState(() => borrador.junta ?? 'P01');
+    const [numJunta, setNumJunta] = useState(() => borrador.numJunta ?? '');
     const [medico, setMedico]     = useState(null);      // el resuelto
-    const [nombreMedico, setNombreMedico] = useState('');
+    const [nombreMedico, setNombreMedico] = useState(() => borrador.nombreMedico ?? '');
     const [buscando, setBuscando] = useState(false);
     const [buscado, setBuscado]   = useState(false);     // ya se buscó este número
 
-    const [prescrita, setPrescrita] = useState(() => String(Number(renglon.cantidad ?? 0)));
-    const [fechaReceta, setFechaReceta] = useState(renglon.fecha || '');
-    const [recetaId, setRecetaId] = useState(null);
+    const [prescrita, setPrescrita] = useState(() => borrador.prescrita ?? String(Number(renglon.cantidad ?? 0)));
+    const [fechaReceta, setFechaReceta] = useState(() => borrador.fechaReceta ?? (renglon.fecha || ''));
+    const [recetaId, setRecetaId] = useState(() => borrador.recetaId ?? null);
     const [abiertas, setAbiertas] = useState([]);
 
     const [archivo, setArchivo]   = useState(null);
-    const [notas, setNotas]       = useState('');
+    const [notas, setNotas]       = useState(() => borrador.notas ?? '');
     const [guardando, setGuardando] = useState(false);
     const [error, setError]       = useState(null);
 
@@ -81,6 +95,16 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         });
         return () => { vivo = false; };
     }, [branchId]);
+
+    // El borrador se escribe en cada tecla. La foto NO va: un File no se
+    // serializa, y guardar su nombre haría creer que quedó adjunta.
+    useEffect(() => {
+        saveDraft(claveBorrador, {
+            paciente, edad, documento, junta, numJunta, nombreMedico,
+            prescrita, fechaReceta, recetaId, notas,
+        });
+    }, [claveBorrador, paciente, edad, documento, junta, numJunta, nombreMedico,
+        prescrita, fechaReceta, recetaId, notas]);
 
     // Sólo las que tienen pendiente de ESTE medicamento: ofrecer una receta de
     // otro producto invita a ligar cosas que no van juntas.
@@ -133,7 +157,16 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     }, [compatibles, renglon.erp_product_id]);
 
     const faltaMedico = !medico && !(numJunta.trim() && nombreMedico.trim());
-    const puedeGuardar = paciente.trim() && !faltaMedico && Number(prescrita) > 0;
+
+    // Lo entregado en ESTE renglón contra lo que el médico recetó. Negativo
+    // significa que se entregó de más, y eso NO es una dispensación total: es un
+    // dato que no puede ser. El servidor ya lo rechaza, pero decir «TOTAL» en
+    // verde hasta que alguien apriete guardar es una pantalla que miente —
+    // reportado con 1 recetado y 3 entregados.
+    const pendiente = Number(prescrita) - Number(renglon.cantidad ?? 0);
+    const entregoDeMas = Number(prescrita) > 0 && pendiente < 0;
+
+    const puedeGuardar = paciente.trim() && !faltaMedico && Number(prescrita) > 0 && !entregoDeMas;
 
     const guardar = useCallback(async () => {
         setGuardando(true);
@@ -173,11 +206,11 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         });
         setGuardando(false);
         if (e3) { setError(e3); return; }
+        clearDraft(claveBorrador);
         onCerrar(true);
     }, [medico, numJunta, nombreMedico, junta, archivo, branchId, renglon.id,
-        paciente, prescrita, fechaReceta, edad, documento, recetaId, notas, onCerrar]);
-
-    const pendiente = Number(prescrita) - Number(renglon.cantidad ?? 0);
+        paciente, prescrita, fechaReceta, edad, documento, recetaId, notas,
+        claveBorrador, onCerrar]);
 
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
@@ -186,13 +219,40 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">Completar el folio {renglon.folio_txt}</h3>
                     <p className="text-caption text-content-3 truncate">
-                        {renglon.producto_nombre} · {num(renglon.cantidad)} entregadas
-                        {renglon.lote ? ` · lote ${renglon.lote}` : ''}
+                        {fmtFecha(renglon.fecha)}
+                        {renglon.correlativo_doc ? ` · documento ${renglon.correlativo_doc}` : ''}
                     </p>
                 </div>
             </LiquidModal.Header>
 
             <LiquidModal.Body className="space-y-4">
+                {/* Lo que se entregó, en grande y arriba. Es lo que hay que
+                    comparar contra la receta que se tiene en la mano, y estaba
+                    en el subtítulo del encabezado —gris, a 10px y truncado—.
+                    Reportado: «dame más clara la info, casi no se nota ni se ve». */}
+                <div data-surface="card" className="p-3 space-y-2">
+                    <p className="text-body-lg font-black text-content leading-snug">
+                        {renglon.producto_nombre}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span className="text-body font-black text-brand-text tabular-nums">
+                            {num(renglon.cantidad)} <span className="text-body-sm font-bold text-content-2">entregadas</span>
+                        </span>
+                        {renglon.laboratorio && (
+                            <span className="text-body-sm text-content-2">{renglon.laboratorio}</span>
+                        )}
+                        {renglon.lote && (
+                            <Badge variant="chart-3" size="sm" uppercase={false}>Lote {renglon.lote}</Badge>
+                        )}
+                        {renglon.vence && (
+                            <Badge variant="neutral" size="sm" uppercase={false}>Vence {fmtFecha(renglon.vence)}</Badge>
+                        )}
+                    </div>
+                    <p className="text-label text-content-3">
+                        Vendido a {renglon.cliente || 'sin cliente'}
+                        {renglon.vendedor ? ` · atendió ${renglon.vendedor}` : ''}
+                    </p>
+                </div>
                 {/* ── ¿Es la segunda entrega de una receta que ya existe? ── */}
                 {compatibles.length > 0 && (
                     <div data-surface="card" className="p-3 space-y-2">
@@ -303,7 +363,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                         step="0.001" min="0" required alto
                         value={prescrita} onChange={(e) => setPrescrita(e.target.value)}
                         inputClassName="tabular-nums"
-                        helperText={`En este renglón se entregaron ${num(renglon.cantidad)}`}
+                        hasError={entregoDeMas}
                         readOnly={Boolean(recetaElegida)}
                     />
                     <PortalInput
@@ -312,8 +372,21 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     />
                 </div>
 
-                {/* Parcial o total no se elige: se ve. */}
-                {Number(prescrita) > 0 && (
+                {/* Parcial o total no se elige: se ve. Y el tercer caso —haber
+                    entregado de más— no es un estado de la dispensación: es un
+                    error, y por eso corta el guardado en vez de pintarse verde. */}
+                {entregoDeMas ? (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span className="font-bold">
+                            Se entregaron {num(renglon.cantidad)} pero la receta dice {num(prescrita)}.
+                        </span>
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            No se puede entregar más de lo recetado. Revisa la receta: si el médico
+                            recetó {num(renglon.cantidad)} o más, corregí el número; si de verdad se
+                            entregó de más, el renglón se anula y se rehace la venta.
+                        </span>
+                    </Notice>
+                ) : Number(prescrita) > 0 && (
                     <Notice variant={pendiente > 0 ? 'warning' : 'success'}>
                         {pendiente > 0
                             ? `Dispensación PARCIAL — quedan ${num(pendiente)} por entregar de ${num(prescrita)}.`

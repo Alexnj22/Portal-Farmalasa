@@ -238,15 +238,22 @@ const TarjetaTiempoDeInactividad = ({ minutos, onChange, locked }) => {
     };
 
     return (
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
-                    <Clock size={18} className="text-white" strokeWidth={2} />
+        // Misma anatomía que la tarjeta de Super Usuario —ícono de 9, `p-3.5`,
+        // título `body-sm`— para que las tres de la fila midan lo mismo. Antes
+        // esta llevaba ícono de 11 y un párrafo de tres renglones explicando el
+        // aviso previo: al estar en una rejilla `items-stretch`, ese párrafo le
+        // fijaba el alto a TODA la fila y dejaba a Super Usuario con la mitad
+        // vacía. La explicación no se perdió, vive donde se necesita —debajo del
+        // campo— y en una línea.
+        <div data-surface="card" className="rounded-2xl border border-border-card p-3.5 h-full flex flex-col gap-3">
+            <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center flex-shrink-0">
+                    <Clock size={15} className="text-white" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-body font-black text-content leading-tight">Cerrar sesión sin uso</p>
-                    <p className="text-caption text-content-3 font-medium mt-0.5">
-                        Actual: <span className="font-black text-content-2">{enPalabras(minutos)}</span>
+                    <p className="text-body-sm font-black text-content-2 leading-tight">Cerrar sesión sin uso</p>
+                    <p className="text-micro text-content-3 font-medium mt-0.5 leading-snug">
+                        Hoy: <span className="font-black text-content-2">{enPalabras(minutos)}</span> · avisa 1 min antes
                     </p>
                 </div>
             </div>
@@ -263,14 +270,10 @@ const TarjetaTiempoDeInactividad = ({ minutos, onChange, locked }) => {
                 max={MAX_INACTIVIDAD}
                 hasError={!!texto && !valido}
                 errorMessage={`Entre ${MIN_INACTIVIDAD} y ${MAX_INACTIVIDAD} minutos`}
-                helperText={valido && n !== minutos ? `Se guardará como ${enPalabras(n)}` : undefined}
+                helperText={valido && n !== minutos
+                    ? `Se guardará como ${enPalabras(n)}`
+                    : 'No aplica al teléfono con la aplicación instalada'}
             />
-
-            <p className="text-caption text-content-3 font-medium mt-3 leading-relaxed">
-                Un minuto antes se le pregunta si sigue ahí. En el teléfono con la
-                aplicación instalada no aplica: ahí la sesión dura semanas para que le
-                lleguen los avisos.
-            </p>
         </div>
     );
 };
@@ -307,15 +310,15 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
         // tres columnas» desde que se escribió, y nunca lo estuvo — quedaba en
         // una columna con dos vacías al lado. Son cuatro píldoras y dos mandos:
         // apretados en un tercio no se leen.
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full md:col-span-3">
-            <div className="flex items-center gap-3 mb-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
-                    <CheckCircle2 size={18} className="text-white" strokeWidth={2} />
+        <div data-surface="card" className="rounded-2xl border border-border-card p-3.5 h-full md:col-span-3">
+            <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 size={15} className="text-white" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-body font-black text-content leading-tight">Decidir solicitudes</p>
-                    <p className="text-caption text-content-3 font-medium mt-0.5 truncate">
-                        Activo: <span className="font-black text-content-2">{resumen}</span>
+                    <p className="text-body-sm font-black text-content-2 leading-tight">Decidir solicitudes</p>
+                    <p className="text-micro text-content-3 font-medium mt-0.5 leading-snug truncate">
+                        Hoy: <span className="font-black text-content-2">{resumen}</span>
                     </p>
                 </div>
             </div>
@@ -1408,15 +1411,15 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-[var(--dur-slow)]`}>
-                                            <ActiveIcon size={18} className="text-white" strokeWidth={2} />
+                                <div data-surface="card" className="rounded-2xl border border-border-card p-3.5 h-full flex flex-col gap-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 transition-all duration-[var(--dur-slow)]`}>
+                                            <ActiveIcon size={15} className="text-white" strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-body font-black text-content leading-tight">Nivel de Precio Máximo</p>
-                                            <p className="text-caption text-content-3 font-medium mt-0.5">
-                                                Activo: <span className="font-black text-content-2">{activeOpt.label}</span>
+                                            <p className="text-body-sm font-black text-content-2 leading-tight">Nivel de Precio Máximo</p>
+                                            <p className="text-micro text-content-3 font-medium mt-0.5 leading-snug truncate">
+                                                Hoy: <span className="font-black text-content-2">{activeOpt.label}</span>
                                                 {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
                                             </p>
                                         </div>

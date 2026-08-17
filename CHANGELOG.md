@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.649.2 — Bitácoras: widget de recetas pendientes y tres correcciones de uso
+
+**Widget propio para las recetas pendientes.** Lista las ventas bajo receta que
+todavía esperan el paciente, el médico y la foto —**las más viejas primero**,
+porque una venta de hace cuatro días ya casi nadie puede reconstruirla— y se
+completan **desde ahí mismo**, con el mismo formulario del módulo. Un renglón se
+confirma cuando se le agrega toda esa información.
+
+Va **aparte** del widget de bitácoras y no dentro: son dos trabajos que no se
+parecen. Anotar la temperatura es una tarea de reloj y la hace quien esté;
+completar un renglón del libro es una tarea de memoria que caduca. Y el número
+vive en un solo sitio — dos baldosas contando lo mismo terminan discrepando.
+
+**Tres correcciones de uso, las tres reportadas usándolo:**
+
+**El detalle del folio se abría a pantalla completa en la computadora.**
+`ExpedienteMovil` es el canónico del *teléfono* —su mitad de escritorio es la
+fila expandida dentro de la tabla, que en el libro no existe— y estaba montado
+siempre. Ahora es `LiquidModal`, que resuelve los dos solo: modal centrado con
+mouse, hoja con asa que arrastra en táctil. Es el mismo envase que usa el
+detalle de un corte de caja.
+
+**Decía «Dispensación TOTAL» en verde cuando se entregó MÁS de lo recetado.**
+Con 1 recetado y 3 entregados la pantalla daba el visto bueno y el rechazo
+llegaba recién al guardar. Ahora ese tercer caso no es un estado de la
+dispensación sino un error: aviso en rojo que dice las dos cifras y qué hacer, y
+el botón de guardar bloqueado.
+
+**La información de la venta no se veía.** Producto, cantidad, lote y
+vencimiento estaban en el subtítulo del encabezado —gris, a 10px y truncado—, y
+es justo lo que hay que comparar contra la receta que se tiene en la mano. Ahora
+es un bloque arriba de todo, con la cantidad destacada.
+
+**Y el formulario se guarda solo mientras se escribe.** Lo levantó
+`gate:borradores`: tiene 11 campos y las sesiones de sala se cierran a los 5
+minutos. El borrador va por folio y **no incluye la foto** — un archivo no se
+puede guardar, y prometer que quedó adjunta cuando no es cierto es peor que no
+guardar nada.
+
+**Verificado del buscador de médicos del Consejo**, antes de prometerlo: la
+búsqueda por nombre funciona, pero **nombres y apellidos son campos separados**
+y escribir el nombre completo en uno solo devuelve **cero resultados** — que se
+lee igual que «ese médico no existe». La búsqueda por nombre en el portal queda
+para la próxima entrega, con los dos campos.
+
+## v2.649.1 — Las tarjetas del cargo, a la mitad del alto
+
+**El alto de la fila no lo fijaba la columna: lo fijaba un párrafo.** Con el
+select y el campo libre, las tarjetas quedaron cortas pero la fila seguía alta, y
+«Super Usuario» con la mitad inferior vacía. La rejilla es `items-stretch`, así
+que **la tarjeta más alta le fija el alto a las tres** — y la más alta era la del
+tiempo, por una explicación de tres renglones sobre el aviso previo.
+
+Las cuatro pasan a la anatomía que ya tenía Super Usuario —ícono de 9 en vez de
+11, `p-3.5`, título `body-sm`, subtítulo `micro`—, y esa explicación se movió a
+donde se necesita: **debajo del campo, en una línea** (`helperText`), que además
+es donde la lee quien está por escribir el número.
+
+No hizo falta una cuarta columna: sobraba alto, no ancho.
+
 ## v2.649.0 — Gate de borradores, precios en select y tiempo libre en Permisos
 
 **`npm run gate:borradores` — un formulario largo no puede perderse porque se

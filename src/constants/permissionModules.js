@@ -32,7 +32,7 @@ import {
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
     BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark, PackagePlus,
-    Thermometer
+    Thermometer, Pill
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -421,6 +421,7 @@ const GRUPOS_CRUDOS = [
             { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja que quedan sin confirmar en la sala —de los últimos 7 días, no sólo de hoy— con la diferencia de cada tramo, más cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icon: Wallet, hasApprove: false, hasScope: true },
             { key: 'dash_bolsas_sala',    label: 'Widget: Bolsas de efectivo de mi sala', desc: 'El efectivo que espera el retiro en la sala y los cortes confirmados a los que todavía no se les guardó el dinero, con la alarma de la bolsa que lleva 4 días o más', icon: Package, hasApprove: false, hasScope: true },
             { key: 'dash_bitacoras',      label: 'Widget: Bitácoras de mi sala', desc: 'Las lecturas de temperatura y humedad que están abiertas ahora mismo y las que se pasaron de hora, la limpieza del turno, y cuántos renglones del libro bajo receta esperan que se les agregue el paciente y la receta', icon: Thermometer, hasApprove: false, hasScope: true },
+            { key: 'dash_recetas_pendientes', label: 'Widget: Recetas pendientes de mi sala', desc: 'Las ventas bajo receta que todavía esperan el paciente, el médico y la foto de la receta, las más viejas primero, y el formulario para completarlas ahí mismo. Un renglón se confirma cuando se le agrega toda esa información', icon: Pill, hasApprove: false, hasScope: true },
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el

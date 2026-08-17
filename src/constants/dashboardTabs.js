@@ -13,7 +13,7 @@
 export const PESTANAS_TEMATICAS = {
     comercial: ['kpi', 'meta_sala', 'cortes_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
     rrhh:      ['kpi', 'trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
-    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala', 'bitacoras'],
+    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala', 'bitacoras', 'recetas_pend'],
 };
 
 /** Los widgets de una pestaña. General es el resumen: todo el catálogo. */

@@ -122,7 +122,7 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
     const vencidoAlVender = producto?.vence && detalle.fecha && producto.vence < detalle.fecha;
 
     return (
-        <div className="p-4 md:p-6 space-y-4">
+        <div className="space-y-4">
             {/* La cabecera dice QUÉ es este renglón antes que nada: el folio, su
                 estado y la fecha. Es lo que se compara contra el papel. */}
             <div className="flex flex-wrap items-center gap-2">

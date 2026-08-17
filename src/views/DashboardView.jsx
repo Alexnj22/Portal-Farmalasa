@@ -27,7 +27,7 @@ import {
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
-  ReceiptText, Upload, Eye, Lock, Thermometer,
+  ReceiptText, Upload, Eye, Lock, Thermometer, Pill,
   Wallet
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
@@ -53,6 +53,7 @@ import WidgetMinMaxRequest from './dashboard/baldosas/BaldosaMinMax';
 import WidgetInventoryMovement from './dashboard/baldosas/BaldosaInventario';
 import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetBitacoras from './dashboard/WidgetBitacoras';
+import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import WidgetCortesSala from './dashboard/WidgetCortesSala';
@@ -171,6 +172,10 @@ const WIDGET_SIZES = {
   // Dos renglones: arriba los avisos del día (hasta tres franjas) y abajo los
   // botones. Con uno solo, el aviso de lo vencido tapaba el de lo que toca ahora.
   bitacoras:     { minCols: 1, minRows: 2, label: 'Bitácoras'      },
+  // Lista con botones: sin alto no entra ni un renglón (mismo motivo que
+  // `cortes_sala` y `traslados`). Dos columnas porque el nombre de un
+  // medicamento con su presentación no entra en una.
+  recetas_pend:  { minCols: 2, minRows: 3, label: 'Recetas pendientes' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // Lista con botones: sin alto no entra ni un corte (mismo motivo que
   // `vendedores` y `traslados`, abajo). Tres renglones desde el 2026-08-14:
@@ -586,6 +591,7 @@ const WIDGET_DEFS = [
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'facturas_sala',label: 'Facturas de mi sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
+  { id: 'recetas_pend', label: 'Recetas pendientes de mi sala', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
@@ -3267,6 +3273,14 @@ const DashboardView = ({ openModal }) => {
           )}
         />
       , staggerIdx);
+    }
+
+    /* ── RECETAS PENDIENTES DE MI SALA ── */
+    // Sin selector de sucursal, por lo mismo que las bitácoras: quien completa
+    // el renglón es quien atendió la venta y se acuerda del paciente.
+    if (wid === 'recetas_pend') {
+      if (!showWidget('recetas_pend', 'dash_recetas_pendientes')) return null;
+      return wrapWidget('recetas_pend', <WidgetRecetasPendientes />, staggerIdx);
     }
 
     /* ── BITÁCORAS DE MI SALA ── */

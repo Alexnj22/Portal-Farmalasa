@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.6 — Los faltantes de la sala arrancan por los candidatos
+
+Segunda parte del arreglo de lentitud que empezó en v2.657.4.
+`get_faltantes_con_stock_en_otra_sala` —la lista de «esto me falta y otra sala
+lo tiene» del buscador de inventario— era el segundo consumidor de la base:
+**10% del tiempo total**, 3.1 s de promedio, 40.7 s la peor, 442 llamadas por
+día. Éste no tenía el `limit` afuera como el del tablero; el problema era otro y
+resultaron ser dos, encadenados.
+
+**Uno: se leía un log de 108 MB para sacar siete números.** La vista
+`v_inventario_disponible` llama a `traslados_en_vuelo()`, que necesita saber
+cuándo fue la última sincronización buena de cada sala. Lo resolvía con un
+`GROUP BY` sobre `inventory_sync_log` **entero** —779,411 filas— porque no había
+índice capaz de dar un máximo por sucursal: el único que existía arranca por
+`is_vencidos`. Eran **6,766 bloques leídos de disco** en ese solo paso, para
+devolver cero filas. Con el índice nuevo y el `GROUP BY` convertido en un lateral
+por sala, son 13 bloques y 13.5 ms.
+
+Ese arreglo pega mucho más lejos que esta pantalla: la vista es la base de todo
+lo que muestra existencias en el portal.
+
+**Dos: se calculaba todo y después se descartaba casi todo.** La función armaba
+el inventario disponible de las siete salas enteras —13,749 filas producto×sala,
+cada una con su búsqueda de factor— y recién ahí se quedaba con los 82 productos
+que interesan. Y `nombres` recorría los 17,944 productos con existencia para
+ponerle nombre a esos 82. Ahora el orden se invierte: primero los productos que
+la sala tiene en su mínimo (1,363 en Salud 1), y todo lo demás se restringe a
+ésos. No cambia el resultado por construcción — lo que quedaba fuera de esa
+lista lo descartaba igual el cruce del final.
+
+```
+antes                             912 ms · 98,132 bloques · 9,180 de disco
+sólo con el log arreglado         302 ms
+con las dos cosas                 111 ms · 56,497 bloques ·     0 de disco
+```
+
+Verificado contra la versión vieja en las **siete** salas: mismos productos,
+mismos nombres, mismos mínimos, mismo contenido de la lista de salas y mismo
+orden de filas. Cero diferencias.
+
+**Y apareció una inestabilidad que nadie había visto.** La lista de salas de cada
+producto se ordenaba sólo por unidades, así que dos salas con la misma cantidad
+salían en orden arbitrario — y la pantalla muestra las **tres primeras**. O sea
+que cuáles de las tres se veían podía cambiar entre dos cargas de la misma
+pantalla, sin que cambiara ningún dato. Ahora desempata por sala y queda estable.
+
 ## v2.657.5 — Las remesadoras salen de una lista, y el ticket cierra con el efectivo
 
 Tres pedidos del usuario sobre las bolsas de efectivo, más el borrado de los dos

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.643.2 — Por confirmar: apartar es un clic, se pueden ver los apartados y deja de cargar lo que no se mira
+
+**Compras → Cargar compra → Por confirmar.**
+
+**Por qué era lenta, y no era suya.** Medido en producción sobre las llamadas
+reales: su propia consulta contesta en **16 ms**. La que tardaba era la de la
+*otra* pestaña —**10.5 segundos de media, 16.8 la peor**—, y el portal la pedía
+al abrir la vista **mirases la pestaña que mirases**. O sea que entrar por «Por
+confirmar» pagaba entera una consulta que no usaba para nada. Ahora la lista de
+facturas se pide sólo cuando esa pestaña está a la vista. (La consulta en sí ya
+se había arreglado en v2.643.1; esto saca el trabajo que igual sobraba.)
+
+**«No es un producto» ya no pregunta por qué.** Era un campo de texto y una
+segunda decisión por cada flete, cada servicio y cada descuento — justo los
+renglones que uno quiere sacarse de encima rápido. Ahora es un clic. No se
+pierde el rastro: sigue quedando **quién** lo apartó y **cuándo**, y además queda
+anotado en la bitácora del portal.
+
+**Y ahora se pueden ver.** El filtro suma **«No son productos»** y
+**«Confirmados»** a los que ya había. Si algo se apartó por error —o si el
+producto empezó a existir después—, se encuentra y **Devolver a la lista** lo
+pone otra vez a la cola.
+
+**De paso, el filtro «Todos» dejó de mentir.** Recortaba en el navegador sobre
+las 500 filas que traía la consulta, y hay **3,016** renglones distintos con las
+3,003 pendientes ordenadas adelante. Los 13 confirmados quedaban fuera de esas
+500 **siempre**: «Todos» mostraba una sola cosa, y el botón «Es otro» —que existe
+justamente para corregir una confirmación equivocada— era inalcanzable desde la
+pantalla. El recorte ahora lo hace la base, antes del corte de 500.
+
+Las tarjetas de arriba acompañan al filtro: contar «Preguntas» sobre una lista de
+apartados era un número correcto con el nombre de otra cosa.
+
 ## v2.643.1 — Cargar compra abre en el último mes y la lista deja de tardar 19 segundos
 
 **Compras → Cargar compra.** La pantalla abre en el **último mes**, que es el

@@ -61,10 +61,18 @@ export async function confirmarProducto(emisorNit, codigoProveedor, productId) {
  * `(proveedor, su código)`, no `renglón`, y está medido que el 87% de los
  * renglones usan un código que se repite. Responder la primera de la lista
  * resuelve más renglones que responder cualquier otra.
+ *
+ * **El estado lo recorta la BASE, no el navegador**, y no es un detalle: son
+ * 3,016 renglones distintos y la consulta trae 500. Ordenados con los
+ * pendientes adelante —que son 3,003—, un apartado o un confirmado no entraba
+ * nunca en esos 500. El filtro «Todos» mostraba una sola cosa y no había forma
+ * de llegar a los otros dos estados desde la pantalla.
+ *
+ * `estado`: `pendientes` · `apartados` · `resueltos` · `todos`.
  */
-export async function fetchProductosPorConfirmar(soloPendientes = true, limite = 500) {
+export async function fetchProductosPorConfirmar(estado = 'pendientes', limite = 500) {
     const { data, error } = await supabase.rpc('get_productos_por_confirmar', {
-        p_solo_pendientes: soloPendientes, p_limite: limite,
+        p_estado: estado, p_limite: limite,
     });
     if (error) return { filas: [], error };
     return { filas: data ?? [], error: null };
@@ -91,10 +99,17 @@ export async function barrerDocumentos({ dias = 90, tanda = 40 } = {}) {
  *
  * Sin esto la lista no se termina nunca: siempre quedarían abajo las mismas
  * diez líneas que nadie va a emparejar con nada.
+ *
+ * **Es un clic: no pide motivo.** Preguntarle «¿por qué?» a cada flete costaba
+ * una segunda decisión sobre justo los renglones que uno quiere sacarse de
+ * encima rápido. Lo que se pierde no es la trazabilidad —la base guarda quién y
+ * cuándo, y el portal lo anota en la bitácora—: se pierde una excusa escrita que
+ * nadie iba a leer. Y como se ven con el filtro «No son productos», un error se
+ * revisa mirando la lista, no leyendo motivos.
  */
-export async function apartarRenglon(id, motivo, deshacer = false) {
+export async function apartarRenglon(id, deshacer = false) {
     const { error } = await supabase.rpc('ignorar_renglon_pendiente', {
-        p_id: id, p_motivo: motivo || null, p_deshacer: deshacer,
+        p_id: id, p_motivo: null, p_deshacer: deshacer,
     });
     return { error: error?.message ?? null };
 }

@@ -315,10 +315,27 @@ function Dato({ titulo, valor, nota, mono }) {
 
 // El filtro NO se llama «Por confirmar»: así se llama la pestaña, y dos
 // controles con el mismo rótulo en la misma pantalla se leen como uno solo.
+//
+// Los cuatro estados los recorta la BASE. Con dos —«Sin resolver» y «Todos»— no
+// alcanzaba y además «Todos» mentía: la consulta trae 500 filas de 3,016 con
+// las pendientes adelante, así que lo apartado y lo confirmado no entraba nunca
+// y no había forma de llegar a ninguno de los dos desde la pantalla.
 const ESTADOS = [
-    { value: 'pendientes', label: 'Sin resolver' },
-    { value: 'todos',      label: 'Todos'        },
+    { value: 'pendientes', label: 'Sin resolver'     },
+    { value: 'apartados',  label: 'No son productos' },
+    { value: 'resueltos',  label: 'Confirmados'      },
+    { value: 'todos',      label: 'Todos'            },
 ];
+
+// Las tarjetas de arriba cuentan lo que hay en pantalla, así que su rótulo
+// tiene que decir QUÉ están contando. «Preguntas» sobre una lista de apartados
+// es un número correcto con el nombre de otra cosa.
+const RESUMEN = {
+    pendientes: { icon: ListChecks, label: 'Preguntas',   renglones: 'que se destraban' },
+    apartados:  { icon: EyeOff,     label: 'Apartados',   renglones: 'que dejan de preguntarse' },
+    resueltos:  { icon: BookMarked, label: 'Confirmados', renglones: 'ya resueltos' },
+    todos:      { icon: Layers,     label: 'En la lista', renglones: 'en total' },
+};
 
 function TabPorConfirmar({ puedeEditar }) {
     const [filas, setFilas]   = useState(null);
@@ -327,14 +344,12 @@ function TabPorConfirmar({ puedeEditar }) {
     const [estado, setEstado] = useState('pendientes');
     const [barriendo, setBarr] = useState(null);   // texto de progreso
     const [buscando, setBusc] = useState(null);    // id del renglón abierto
-    const [apartando, setAp]  = useState(null);    // id del renglón que pide motivo
-    const [motivo, setMotivo] = useState('');
     const [guardando, setG]   = useState(null);
     const [pagina, setPagina] = useState(1);
     const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
 
     const cargar = useCallback(async () => {
-        const { filas: f, error: e } = await fetchProductosPorConfirmar(estado === 'pendientes');
+        const { filas: f, error: e } = await fetchProductosPorConfirmar(estado);
         setError(e?.message ?? '');
         setFilas(f);
     }, [estado]);
@@ -372,12 +387,19 @@ function TabPorConfirmar({ puedeEditar }) {
         await cargar();
     };
 
+    // Un clic. No pregunta por qué: eran dos decisiones por cada flete, que es
+    // justo lo que uno quiere sacarse de encima rápido. Se sigue sabiendo quién
+    // y cuándo —la base lo guarda y acá queda en la bitácora—, y lo apartado se
+    // revisa con el filtro «No son productos», no leyendo motivos.
     const apartar = async (fila) => {
         setG(fila.id);
-        const { error: e } = await apartarRenglon(fila.id, motivo, false);
+        const { error: e } = await apartarRenglon(fila.id, false);
         setG(null);
         if (e) { setError(e); return; }
-        setAp(null); setMotivo('');
+        useStaffStore.getState().appendAuditLog('COMPRA_RENGLON_APARTADO', String(fila.id), {
+            proveedor: fila.proveedor, codigo: fila.codigo_proveedor,
+            descripcion: fila.descripcion, renglones: fila.renglones,
+        });
         await cargar();
     };
 
@@ -391,16 +413,20 @@ function TabPorConfirmar({ puedeEditar }) {
             || normalizeText(f.sugerido_nombre || '').includes(q));
     }, [filas, busca]);
 
+    // El recorte por estado lo hace la base, así que lo que hay en `filas` ES
+    // lo que se está mirando: contar otra cosa acá sería contar dos veces con
+    // criterios distintos. El salteo sólo tiene sentido en «Sin resolver», donde
+    // la lista puede traer algo que se acaba de confirmar sin recargar.
     const totales = useMemo(() => {
         const t = { preguntas: 0, renglones: 0, sinCandidato: 0 };
         for (const f of filas ?? []) {
-            if (f.resuelto || f.ignorado) continue;
+            if (estado === 'pendientes' && (f.resuelto || f.ignorado)) continue;
             t.preguntas++;
             t.renglones += Number(f.renglones || 0);
             if (!f.sugerido_product_id) t.sinCandidato++;
         }
         return t;
-    }, [filas]);
+    }, [filas, estado]);
 
     const totalPaginas = Math.ceil(visibles.length / porPagina);
     const enPantalla = useMemo(
@@ -410,13 +436,18 @@ function TabPorConfirmar({ puedeEditar }) {
     return (<>
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta confirmar">
-                <StatCard icon={ListChecks} label="Preguntas" value={totales.preguntas}
-                    sub="productos distintos" loading={filas === null} tono="brand" />
+                <StatCard icon={RESUMEN[estado].icon} label={RESUMEN[estado].label}
+                    value={totales.preguntas} sub="productos distintos"
+                    loading={filas === null} tono="brand" />
                 <StatCard icon={Layers} label="Renglones" value={totales.renglones}
-                    sub="que se destraban" loading={filas === null} tono="brand" />
-                <StatCard icon={HelpCircle} label="Sin candidato" value={totales.sinCandidato}
-                    sub="hay que buscarlos a mano" loading={filas === null} tono="warning"
-                    valueCls={totales.sinCandidato ? 'text-warning-text' : 'text-content'} />
+                    sub={RESUMEN[estado].renglones} loading={filas === null} tono="brand" />
+                {/* «Sin candidato» sólo dice algo de lo que falta contestar. En
+                    los otros estados sería un número que nadie va a accionar. */}
+                {estado === 'pendientes' && (
+                    <StatCard icon={HelpCircle} label="Sin candidato" value={totales.sinCandidato}
+                        sub="hay que buscarlos a mano" loading={filas === null} tono="warning"
+                        valueCls={totales.sinCandidato ? 'text-warning-text' : 'text-content'} />
+                )}
             </CarrilCards>
 
             {/* «Actualizar lista» es una acción de la vista, así que va DENTRO
@@ -448,12 +479,20 @@ function TabPorConfirmar({ puedeEditar }) {
 
         {barriendo && <Notice variant="info" icon={RefreshCw} compact>{barriendo}</Notice>}
 
-        <Notice variant="info" icon={ListChecks} compact>
-            Cada línea es <b>un producto de un proveedor</b>, no un renglón: confirmarla resuelve
-            todas las facturas donde aparece, las de hoy y las que vengan. Está ordenada por
-            cuánto destraba cada una. Si la lista se ve corta o vieja, <b>Actualizar lista</b> lee
-            los documentos nuevos.
-        </Notice>
+        {estado === 'apartados' ? (
+            <Notice variant="info" icon={EyeOff} compact>
+                Lo que alguien marcó como <b>que no es un producto</b> —un flete, un servicio, un
+                descuento—. Está acá para poder revisarlo: si fue un error, o si desde entonces
+                el producto empezó a existir, <b>Devolver a la lista</b> lo pone otra vez a la cola.
+            </Notice>
+        ) : (
+            <Notice variant="info" icon={ListChecks} compact>
+                Cada línea es <b>un producto de un proveedor</b>, no un renglón: confirmarla resuelve
+                todas las facturas donde aparece, las de hoy y las que vengan. Está ordenada por
+                cuánto destraba cada una. Si la lista se ve corta o vieja, <b>Actualizar lista</b> lee
+                los documentos nuevos.
+            </Notice>
+        )}
 
         <PortalInput value={busca} onChange={e => setBusca(e.target.value)} tono="brand"
             placeholder="Buscar proveedor, producto o código…" aria-label="Buscar" />
@@ -461,10 +500,22 @@ function TabPorConfirmar({ puedeEditar }) {
         <div className="flex flex-col gap-2">
             {filas === null && <p className="text-label text-content-3">Cargando…</p>}
             {filas !== null && visibles.length === 0 && (
-                <Notice variant="success" icon={CheckCircle2}>
-                    Sin productos por confirmar. Si acaban de llegar facturas nuevas,
-                    tocá <b>Actualizar lista</b>.
-                </Notice>
+                estado === 'apartados' ? (
+                    <Notice variant="info" icon={EyeOff}>
+                        Nadie apartó nada todavía. Acá van a aparecer los renglones que se marquen
+                        como <b>que no son un producto</b>, por si hay que revisarlos.
+                    </Notice>
+                ) : estado === 'resueltos' ? (
+                    <Notice variant="info" icon={BookMarked}>
+                        Todavía no hay ningún producto confirmado. Cada uno que confirmes queda acá,
+                        y desde acá se corrige si te equivocaste.
+                    </Notice>
+                ) : (
+                    <Notice variant="success" icon={CheckCircle2}>
+                        Sin productos por confirmar. Si acaban de llegar facturas nuevas,
+                        tocá <b>Actualizar lista</b>.
+                    </Notice>
+                )
             )}
             {enPantalla.map((f) => {
                 const o = ORIGEN[f.sugerido_origen] ?? null;
@@ -513,11 +564,12 @@ function TabPorConfirmar({ puedeEditar }) {
                                         </Button>
                                     )}
                                     <Button size="xs" variant="ghost"
-                                        onClick={() => { setBusc(buscando === f.id ? null : f.id); setAp(null); }}>
+                                        onClick={() => setBusc(buscando === f.id ? null : f.id)}>
                                         {f.sugerido_product_id ? 'Es otro' : 'Elegir'}
                                     </Button>
                                     <Button size="xs" variant="ghost" icon={EyeOff}
-                                        onClick={() => { setAp(apartando === f.id ? null : f.id); setBusc(null); setMotivo(''); }}>
+                                        loading={guardando === f.id}
+                                        onClick={() => apartar(f)}>
                                         No es un producto
                                     </Button>
                                 </>)}
@@ -536,9 +588,13 @@ function TabPorConfirmar({ puedeEditar }) {
                                     <Button size="xs" variant="ghost" loading={guardando === f.id}
                                         onClick={async () => {
                                             setG(f.id);
-                                            const { error: e } = await apartarRenglon(f.id, null, true);
+                                            const { error: e } = await apartarRenglon(f.id, true);
                                             setG(null);
-                                            if (e) setError(e); else await cargar();
+                                            if (e) { setError(e); return; }
+                                            useStaffStore.getState().appendAuditLog(
+                                                'COMPRA_RENGLON_DEVUELTO', String(f.id),
+                                                { proveedor: f.proveedor, codigo: f.codigo_proveedor });
+                                            await cargar();
                                         }}>
                                         Devolver a la lista
                                     </Button>
@@ -552,20 +608,6 @@ function TabPorConfirmar({ puedeEditar }) {
                                 onCancelar={() => setBusc(null)} />
                         )}
 
-                        {apartando === f.id && (
-                            <div className="mt-2 flex items-end gap-2 flex-wrap">
-                                <div className="flex-1 min-w-[14rem]">
-                                    <PortalInput value={motivo} onChange={e => setMotivo(e.target.value)}
-                                        tono="brand" placeholder="¿Por qué no es un producto? (flete, servicio…)"
-                                        aria-label="Motivo" />
-                                </div>
-                                <Button size="xs" loading={guardando === f.id}
-                                    disabled={!motivo.trim()} onClick={() => apartar(f)}>
-                                    Apartar
-                                </Button>
-                                <Button size="xs" variant="ghost" onClick={() => setAp(null)}>Cancelar</Button>
-                            </div>
-                        )}
                     </div>
                 );
             })}
@@ -602,8 +644,15 @@ export default function CargarCompraView() {
         setFilas(f);
     }, [dias]);
 
+    // **Sólo se pide si se está mirando.** Esta lista no vive en la pestaña «Por
+    // confirmar», pero se pedía igual al montar la vista y en cada cambio de
+    // período: entrar por «Por confirmar» pagaba una consulta que no se usaba
+    // para nada. Medido en producción antes de arreglar la consulta, era lo que
+    // hacía lenta a la OTRA pestaña —10.5 s de media, 16.8 s la peor— mientras
+    // su propio RPC contestaba en 16 ms. La consulta ya está arreglada; pedirla
+    // igual seguiría siendo trabajo tirado.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => { if (tab === 'facturas') cargar(); }, [tab, cargar]);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- el filtro cambió, la página vieja ya no existe
     useEffect(() => { setPagina(1); }, [busca, dias]);
 

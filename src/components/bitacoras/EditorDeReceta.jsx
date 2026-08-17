@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
-import { Check, RotateCw, Sparkles, ZoomIn } from 'lucide-react';
+import { AlertTriangle, Check, RotateCw, Sparkles, ZoomIn } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import SegmentedControl from '../common/SegmentedControl';
+import { avisosDeFoto, medirDocumento } from '../../utils/fotoDocumento';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El editor de la foto de una receta.
@@ -26,6 +27,10 @@ import SegmentedControl from '../common/SegmentedControl';
 //   · Salir SIEMPRE al mismo tamaño. Una carpeta con recetas de 4 MB y de 80 kB
 //     no se puede hojear ni imprimir parejo, y el peso es lo que después hace
 //     inviable exportar un mes entero.
+//   · Revisar el recorte y avisar: si casi no hay tinta, si la hoja quedó
+//     oscura, si el recorte quedó chico, o si hay tinta de color que «Aclarada»
+//     va a pasar a gris. Qué se mide y qué se descartó por no medir bien está
+//     en `src/utils/fotoDocumento.js`.
 //
 // ── Lo que NO hace, y es a propósito ───────────────────────────────────────
 // No busca solo los bordes del papel. Se puede —hay bibliotecas de visión que
@@ -39,6 +44,12 @@ import SegmentedControl from '../common/SegmentedControl';
 // de kB en vez de varios MB.
 const LADO_LARGO = 1600;
 const CALIDAD = 0.85;
+
+// La revisión mide sobre una copia chica. Las tres medidas que se usan —cuán
+// claro es el papel, cuánta tinta hay y cuánto color— son proporciones, así que
+// no cambian con el tamaño, y a 800 px la revisión corre sin trabar el teléfono
+// mientras alguien mueve el recorte.
+const LADO_ANALISIS = 800;
 
 const MODOS = [
     { value: 'original', label: 'Como está' },
@@ -90,8 +101,15 @@ function aclarar(ctx, ancho, alto) {
     ctx.putImageData(img, 0, 0);
 }
 
-/** Recorta, endereza, normaliza el tamaño y devuelve el archivo final. */
-async function componer(src, cropPx, rotacion, modo, nombre) {
+/**
+ * Rota, recorta y escala. Devuelve el lienzo listo, SIN aclarar.
+ *
+ * Lo usan las dos cosas que necesitan la misma imagen: el archivo que se guarda
+ * (a 1600 px) y la revisión que avisa antes de guardar (a 800, que alcanza y
+ * corre sin trabar el teléfono). Una sola tubería para que el aviso hable de la
+ * foto que de verdad se va a guardar.
+ */
+async function dibujar(src, cropPx, rotacion, ladoLargo) {
     const img = await new Promise((res, rej) => {
         const im = new Image();
         im.onload = () => res(im);
@@ -120,21 +138,48 @@ async function componer(src, cropPx, rotacion, modo, nombre) {
 
     // 3 · Un solo tamaño. Nunca se AGRANDA: estirar una foto chica no agrega
     //     información, sólo peso.
-    const escala = Math.min(1, LADO_LARGO / Math.max(recorte.width, recorte.height));
+    const escala = Math.min(1, ladoLargo / Math.max(recorte.width, recorte.height));
     const salida = document.createElement('canvas');
-    salida.width  = Math.round(recorte.width * escala);
-    salida.height = Math.round(recorte.height * escala);
+    salida.width  = Math.max(1, Math.round(recorte.width * escala));
+    salida.height = Math.max(1, Math.round(recorte.height * escala));
     const sctx = salida.getContext('2d');
     sctx.imageSmoothingQuality = 'high';
     sctx.fillStyle = '#ffffff';
     sctx.fillRect(0, 0, salida.width, salida.height);
     sctx.drawImage(recorte, 0, 0, salida.width, salida.height);
 
-    if (modo === 'aclarada') aclarar(sctx, salida.width, salida.height);
+    return { canvas: salida, ctx: sctx, recorte: { ancho: recorte.width, alto: recorte.height } };
+}
 
-    const blob = await new Promise((res) => salida.toBlob(res, 'image/jpeg', CALIDAD));
+/** Recorta, endereza, normaliza el tamaño y devuelve el archivo final. */
+async function componer(src, cropPx, rotacion, modo, nombre) {
+    const { canvas, ctx } = await dibujar(src, cropPx, rotacion, LADO_LARGO);
+    if (modo === 'aclarada') aclarar(ctx, canvas.width, canvas.height);
+
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', CALIDAD));
     const base = String(nombre || 'receta').replace(/\.[^.]+$/, '');
     return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+}
+
+/**
+ * Revisa el recorte actual y devuelve las medidas de la foto FINAL.
+ *
+ * Se mide sobre el lienzo sin aclarar —aclarar lleva todo a gris y borraría
+ * justo el color que se quiere reportar— y las dimensiones se corrigen a las
+ * que va a tener el archivo, que es de lo que habla el aviso del recorte chico.
+ */
+async function revisar(src, cropPx, rotacion) {
+    const { canvas, ctx, recorte } = await dibujar(src, cropPx, rotacion, LADO_ANALISIS);
+    const d = medirDocumento(
+        ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+        canvas.width, canvas.height,
+    );
+    const escalaFinal = Math.min(1, LADO_LARGO / Math.max(recorte.ancho, recorte.alto));
+    return {
+        ...d,
+        ancho: Math.round(recorte.ancho * escalaFinal),
+        alto: Math.round(recorte.alto * escalaFinal),
+    };
 }
 
 export default function EditorDeReceta({ file, onConfirm, onCancel }) {
@@ -145,6 +190,7 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
     const [cropPx, setCropPx] = useState(null);
     const [modo, setModo] = useState('aclarada');
     const [guardando, setGuardando] = useState(false);
+    const [medidas, setMedidas] = useState(null);
     const urlRef = useRef(null);
 
     useEffect(() => {
@@ -157,6 +203,25 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
     }, [file]);
 
     const alRecortar = useCallback((_a, px) => setCropPx(px), []);
+
+    // Se revisa con retardo y no en cada arrastre: mover el recorte dispara
+    // decenas de eventos por segundo y medir en cada uno traba la mano de quien
+    // está encuadrando. Medio segundo después de soltar es cuando la persona
+    // mira la pantalla, que es cuando el aviso sirve.
+    useEffect(() => {
+        if (!src) return undefined;
+        let vivo = true;
+        const t = setTimeout(() => {
+            revisar(src, cropPx, rotacion)
+                .then(d => { if (vivo) setMedidas(d); })
+                // Si la revisión falla, no pasa nada: es un aviso, no un
+                // requisito. Guardar tiene que seguir funcionando igual.
+                .catch(() => { if (vivo) setMedidas(null); });
+        }, 500);
+        return () => { vivo = false; clearTimeout(t); };
+    }, [src, cropPx, rotacion]);
+
+    const avisos = avisosDeFoto(medidas, modo);
 
     const confirmar = useCallback(async () => {
         setGuardando(true);
@@ -215,10 +280,23 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
                     <SegmentedControl value={modo} onChange={setModo} options={MODOS} />
                 </div>
 
-                <Notice variant="info" compact icon={Sparkles}>
-                    «Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra.
-                    Si la receta trae sello a color y se pierde, guardala «como está».
-                </Notice>
+                {/* Los avisos reemplazan a la explicación fija cuando hay algo
+                    que decir: dos carteles apilados no se leen ninguno. */}
+                {avisos.length > 0 ? (
+                    <div className="space-y-2">
+                        {avisos.map((a, i) => (
+                            <Notice key={a.texto} variant={a.tono} compact
+                                icon={i === 0 && a.tono === 'warning' ? AlertTriangle : Sparkles}>
+                                {a.texto}
+                            </Notice>
+                        ))}
+                    </div>
+                ) : (
+                    <Notice variant="info" compact icon={Sparkles}>
+                        «Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra.
+                        Si la receta trae sello a color y se pierde, guárdala «como está».
+                    </Notice>
+                )}
             </LiquidModal.Body>
 
             <LiquidModal.Footer>

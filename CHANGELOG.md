@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.1 — Bitácoras: la foto de la receta se revisa antes de guardarla
+
+Al preparar la foto, el editor mide el recorte y avisa **antes** de guardar:
+
+- **«Casi no se ve tinta en la hoja»** — la foto no es de la receta, o la receta
+  no entró en el encuadre. Cazado sobre la hoja en blanco y sobre la foto del
+  mostrador.
+- **«La hoja quedó oscura»** — con la sugerencia de usar «Aclarada».
+- **«El recorte quedó chico»** — debajo de 900 px de lado corto la letra no
+  sobrevive al archivo.
+- **«La receta trae tinta de color, probablemente el sello»** — sólo cuando
+  «Aclarada» está puesta, porque es el momento en que ese sello se va a perder.
+
+**Del sello se dice sólo lo que se sabe.** Se puede ver que HAY tinta de color;
+no se puede ver que haya un sello. Muchos sellos son negros, y un aviso que
+grita «falta el sello» sobre una receta sellada en negro enseña en una semana a
+ignorar todos los avisos. Por eso no existe el aviso contrario, y hay una prueba
+que lo verifica.
+
+**No hay «la foto está borrosa», y no es un olvido.** Se implementó el detector
+estándar —varianza del laplaciano— y se calibró contra una receta renderizada a
+1600 px, desenfocada por pasos y con ruido de sensor simulado. Normalizando por
+el propio ruido, una foto **nítida** tomada en penumbra puntúa 20.4 y una
+**ilegible** con luz buena puntúa 22. Dentro de una misma luz separa perfecto;
+entre luces distintas no separa nada. Cualquier umbral fijo gritaría sobre fotos
+buenas de una sala oscura y se callaría sobre fotos malas de una sala
+iluminada. La tabla completa quedó escrita en `src/utils/fotoDocumento.js`.
+
+**Tampoco se lee la receta para rellenar campos.** Un modelo que interpreta la
+letra de un médico y completa el nombre convierte una foto borrosa en un dato
+falso, y un dato falso en un registro sanitario es peor que un campo vacío: el
+vacío se ve, el inventado no. Es la misma regla que ya rige al médico —sólo se
+elige de la lista del Consejo, nunca se escribe a mano—, aplicada a la foto.
+
+**Ningún aviso bloquea el guardado.** Un candado que se equivoca deja a alguien
+sin poder adjuntar la única foto que tiene de una receta que ya despachó, y el
+resultado es un renglón sin respaldo.
+
+La medición corre entera en el equipo, medio segundo después de soltar el
+recorte y sobre una copia de 800 px: la foto de la receta no sale del portal.
+
 ## v2.653.0 — Bitácoras: el mes sale impreso
 
 **El mes completo se imprime desde el cierre.** Botón «Imprimir el mes» en la

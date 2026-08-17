@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.1 — Un pedido no se cierra solo con hojas sin contar
+
+Salió al verificar el circuito de devoluciones sobre el pedido 116 de La Popular,
+el mismo de v2.656.14.
+
+Cuando se resuelve la **última** diferencia de un pedido, el portal lo daba por
+**completado** — sin mirar si a la sala le quedaban renglones sin contar. Y de
+ahí no se vuelve: un pedido completado no admite más recepciones (lo rechaza la
+propia base, no sólo la pantalla), así que la sala quedaba encerrada de las dos
+formas a la vez.
+
+En el 116 faltó un clic. A las 14:58 se cerró la primera devolución real del
+portal —1 REFRESH TEARS que no llegó en la caja, vale 29456— con **138 renglones
+todavía sin contar**: las hojas 2 a 5 y las 8 cajas especiales. Lo único que
+evitó el cierre fue que quedaba otra diferencia abierta; al resolverla se habría
+cerrado el pedido con casi la mitad sin recibir.
+
+Ahora `cerrar_pedido_si_todo_resuelto` exige lo mismo que ya exigía la recepción
+para dar un pedido por terminado: que no quede ni un renglón pendiente. Medido
+sobre el 116 con transacción revertida — con 138 sin contar sigue abierto, y con
+todo contado cierra igual que antes.
+
+Migración `20260817210001_cerrar_pedido_exige_nada_pendiente`.
+
 ## v2.657.0 — El traslado que sale de una sala cerrada lo despacha la sala de al lado
 
 Planteado por el usuario: *«las sucursales solicitan traslado a bodega, pero

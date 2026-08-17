@@ -4,14 +4,16 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
 import LiquidModal from '../common/LiquidModal';
+import ListRow from '../common/ListRow';
 import LiquidSelect from '../common/LiquidSelect';
+import SegmentedControl from '../common/SegmentedControl';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
 import {
-    CLASE_CLIENTE, buscarMedicoLocal, completarRenglon, fetchRecetasAbiertas,
-    guardarMedico, subirFotoDeReceta,
+    CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, buscarMedicoLocal, buscarMedicosLocalPorNombre,
+    completarRenglon, consultarConsejo, fetchRecetasAbiertas, guardarMedico, subirFotoDeReceta,
 } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -45,12 +47,9 @@ import {
 // que no guardar nada.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const JUNTAS = [
-    { value: 'P01', label: 'Junta Médica' },
-    { value: 'P02', label: 'Junta Odontológica' },
-    { value: 'P03', label: 'Junta de Enfermería' },
-    { value: 'P06', label: 'Junta Químico Farmacéutica' },
-    { value: 'P07', label: 'Junta Médico Veterinario' },
+const MODOS = [
+    { value: 'numero', label: 'Por número' },
+    { value: 'nombre', label: 'Por nombre' },
 ];
 
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
@@ -72,8 +71,13 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     const [numJunta, setNumJunta] = useState(() => borrador.numJunta ?? '');
     const [medico, setMedico]     = useState(null);      // el resuelto
     const [nombreMedico, setNombreMedico] = useState(() => borrador.nombreMedico ?? '');
+    const [modo, setModo]         = useState(() => borrador.modo ?? 'numero');
+    const [nombresBusca, setNombresBusca]   = useState(() => borrador.nombresBusca ?? '');
+    const [apellidosBusca, setApellidosBusca] = useState(() => borrador.apellidosBusca ?? '');
     const [buscando, setBuscando] = useState(false);
-    const [buscado, setBuscado]   = useState(false);     // ya se buscó este número
+    const [buscado, setBuscado]   = useState(false);     // ya se buscó con estos datos
+    const [candidatos, setCandidatos] = useState([]);    // varios resultados: hay que elegir
+    const [avisoBusqueda, setAvisoBusqueda] = useState(null);
 
     const [prescrita, setPrescrita] = useState(() => borrador.prescrita ?? String(Number(renglon.cantidad ?? 0)));
     const [fechaReceta, setFechaReceta] = useState(() => borrador.fechaReceta ?? (renglon.fecha || ''));
@@ -101,10 +105,10 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     useEffect(() => {
         saveDraft(claveBorrador, {
             paciente, edad, documento, junta, numJunta, nombreMedico,
-            prescrita, fechaReceta, recetaId, notas,
+            prescrita, fechaReceta, recetaId, notas, modo, nombresBusca, apellidosBusca,
         });
     }, [claveBorrador, paciente, edad, documento, junta, numJunta, nombreMedico,
-        prescrita, fechaReceta, recetaId, notas]);
+        prescrita, fechaReceta, recetaId, notas, modo, nombresBusca, apellidosBusca]);
 
     // Sólo las que tienen pendiente de ESTE medicamento: ofrecer una receta de
     // otro producto invita a ligar cosas que no van juntas.
@@ -112,24 +116,86 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         (r.items || []).some(i => i.erp_product_id === renglon.erp_product_id
             && Number(i.entregado) < Number(i.prescrito))), [abiertas, renglon.erp_product_id]);
 
+    // Primero NUESTRA tabla, después el registro del Consejo. Ese orden no es
+    // por velocidad: un médico que ya recetó acá tiene el nombre con el que se
+    // guardó, y pisarlo con el del Consejo cambiaría cómo se lee el mismo
+    // prescriptor en recetas distintas.
     const buscarMedico = useCallback(async () => {
-        const n = numJunta.trim();
-        if (!n) return;
         setBuscando(true);
         setError(null);
-        const { medico: m } = await buscarMedicoLocal(n, junta);
+        setAvisoBusqueda(null);
+        setCandidatos([]);
+
+        const porNumero = modo === 'numero';
+        const n   = numJunta.trim();
+        const nom = nombresBusca.trim();
+        const ape = apellidosBusca.trim();
+
+        if (porNumero ? !n : !(nom || ape)) { setBuscando(false); return; }
+
+        // 1 · Lo nuestro.
+        if (porNumero) {
+            const { medico: m } = await buscarMedicoLocal(n, junta);
+            if (m) {
+                setMedico(m); setNombreMedico(m.nombre);
+                setBuscando(false); setBuscado(true);
+                return;
+            }
+        } else {
+            const { medicos } = await buscarMedicosLocalPorNombre(nom, ape, junta);
+            if (medicos.length === 1) {
+                setMedico(medicos[0]); setNombreMedico(medicos[0].nombre);
+                setBuscando(false); setBuscado(true);
+                return;
+            }
+            if (medicos.length > 1) {
+                setCandidatos(medicos.map(m => ({ ...m, local: true })));
+                setBuscando(false); setBuscado(true);
+                return;
+            }
+        }
+
+        // 2 · El Consejo. Nunca traba: si no responde, se sigue a mano.
+        const { profesionales, total, recortado, error: e } = await consultarConsejo({
+            junta, numero: porNumero ? n : '', nombres: nom, apellidos: ape,
+        });
         setBuscando(false);
         setBuscado(true);
-        if (m) { setMedico(m); setNombreMedico(m.nombre); }
-        else   { setMedico(null); setNombreMedico(''); }
-    }, [numJunta, junta]);
 
-    // Cambiar el número invalida lo encontrado: si no, se guardaría el médico
-    // anterior con el número nuevo.
-    const cambiarNumero = useCallback((v) => {
-        setNumJunta(v);
+        if (e) { setAvisoBusqueda(e); return; }
+        if (!profesionales.length) return;
+
+        if (profesionales.length === 1) {
+            const p0 = profesionales[0];
+            setMedico({ nombre: p0.nombre, numero_junta: p0.numero_junta, carrera: p0.carrera, delConsejo: true });
+            setNombreMedico(p0.nombre);
+            setNumJunta(p0.numero_junta);
+            return;
+        }
+        setCandidatos(profesionales.map(p => ({ ...p, delConsejo: true })));
+        // Una lista recortada en silencio se lee como «éstos son todos».
+        if (recortado) {
+            setAvisoBusqueda(
+                `El registro del Consejo encontró ${total} y muestra ${profesionales.length}. `
+                + 'Agrega el nombre además del apellido, o busca por número de junta.',
+            );
+        }
+    }, [modo, numJunta, nombresBusca, apellidosBusca, junta]);
+
+    // Cambiar cualquier término invalida lo encontrado: si no, se guardaría el
+    // médico anterior con el número nuevo.
+    const invalidar = useCallback(() => {
         setMedico(null);
         setBuscado(false);
+        setCandidatos([]);
+        setAvisoBusqueda(null);
+    }, []);
+
+    const elegirCandidato = useCallback((c) => {
+        setMedico(c);
+        setNombreMedico(c.nombre);
+        if (c.numero_junta) setNumJunta(String(c.numero_junta));
+        setCandidatos([]);
     }, []);
 
     const recetaElegida = useMemo(
@@ -308,24 +374,68 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 </div>
 
                 {/* ── Médico ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-                    <div className="sm:col-span-2">
-                        <LiquidSelect
-                            label="Junta"
-                            value={junta} onChange={(v) => { setJunta(v || 'P01'); setBuscado(false); setMedico(null); }}
-                            options={JUNTAS} clearable={false}
+                {/* Las tres juntas del Art. 19 de la Ley de Medicamentos y
+                    ninguna más: médico, odontólogo y médico veterinario.
+                    Enfermería y químico farmacéutico NO prescriben, y ofrecerlas
+                    invitaría a registrar una receta que la ley no reconoce. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <LiquidSelect
+                        label="Quién recetó"
+                        value={junta} onChange={(v) => { setJunta(v || 'P01'); invalidar(); }}
+                        options={JUNTAS_QUE_PRESCRIBEN} clearable={false}
+                    />
+                    <div>
+                        <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                            Cómo buscarlo
+                        </p>
+                        <SegmentedControl
+                            value={modo}
+                            onChange={(v) => { setModo(v); invalidar(); }}
+                            options={MODOS}
                         />
                     </div>
-                    <PortalInput
-                        label="N.º de junta" name="numero_junta" icon={Stethoscope} required
-                        value={numJunta} onChange={(e) => cambiarNumero(e.target.value)}
-                        placeholder="12345" inputClassName="tabular-nums"
-                    />
-                    <Button variant="secondary" icon={Search} onClick={buscarMedico}
-                        loading={buscando} disabled={!numJunta.trim()}>
-                        Buscar
-                    </Button>
                 </div>
+
+                {modo === 'numero' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                        <PortalInput
+                            label="N.º de junta" name="numero_junta" icon={Stethoscope} required
+                            value={numJunta} onChange={(e) => { setNumJunta(e.target.value); invalidar(); }}
+                            placeholder="12345" inputClassName="tabular-nums"
+                        />
+                        <Button variant="secondary" icon={Search} onClick={buscarMedico}
+                            loading={buscando} disabled={!numJunta.trim()}>
+                            Buscar
+                        </Button>
+                    </div>
+                ) : (
+                    <>
+                        {/* DOS campos y no uno. Medido contra el registro del
+                            Consejo: «JOSE ROBERTO JULE SEGURA» escrito entero en
+                            el campo de nombres devuelve CERO resultados, que en
+                            pantalla se lee igual que «ese médico no existe». */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                            <PortalInput
+                                label="Nombres" name="med_nombres" icon={Stethoscope}
+                                value={nombresBusca} onChange={(e) => { setNombresBusca(e.target.value); invalidar(); }}
+                                placeholder="José Roberto"
+                            />
+                            <PortalInput
+                                label="Apellidos" name="med_apellidos"
+                                value={apellidosBusca} onChange={(e) => { setApellidosBusca(e.target.value); invalidar(); }}
+                                placeholder="Jule Segura"
+                            />
+                            <Button variant="secondary" icon={Search} onClick={buscarMedico}
+                                loading={buscando} disabled={!nombresBusca.trim() && !apellidosBusca.trim()}>
+                                Buscar
+                            </Button>
+                        </div>
+                        <p className="text-label text-content-3">
+                            Nombres y apellidos van separados, como en el registro del Consejo. Con sólo el
+                            apellido también busca.
+                        </p>
+                    </>
+                )}
 
                 {medico && (
                     <Notice variant="success" icon={BadgeCheck}>
@@ -333,26 +443,63 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                         <span className="block mt-0.5 font-normal text-content-2">
                             N.º {medico.numero_junta}
                             {medico.carrera ? ` · ${medico.carrera}` : ''}
-                            {medico.verificado_at ? ' · confirmado contra el registro del Consejo' : ' · tomado de una receta'}
+                            {medico.verificado_at || medico.delConsejo
+                                ? ' · confirmado contra el registro del Consejo'
+                                : ' · tomado de una receta'}
                         </span>
                     </Notice>
                 )}
 
-                {buscado && !medico && (
+                {/* Varios resultados: se elige, no se adivina. Elegir por la
+                    máquina el primero de doce sería guardar otro médico con
+                    apellido parecido. */}
+                {candidatos.length > 0 && !medico && (
+                    <div data-surface="card" className="p-3 space-y-2">
+                        <p className="text-body-sm font-bold text-content">
+                            {candidatos.length} coinciden — elige cuál
+                        </p>
+                        <ul className="space-y-1.5 max-h-56 overflow-y-auto">
+                            {candidatos.map((c) => (
+                                <li key={`${c.junta}-${c.numero_junta}`}>
+                                    <ListRow
+                                        surface="row" density="sm"
+                                        icon={Stethoscope}
+                                        title={c.nombre}
+                                        subtitle={`N.º ${c.numero_junta}${c.carrera ? ` · ${c.carrera}` : ''}${c.local ? ' · ya está en el portal' : ''}`}
+                                        onClick={() => elegirCandidato(c)}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {avisoBusqueda && <Notice variant="info" compact>{avisoBusqueda}</Notice>}
+
+                {buscado && !medico && candidatos.length === 0 && (
                     <>
                         <Notice variant="info">
-                            <span className="font-bold">Ese número todavía no está en el registro del portal.</span>
+                            <span className="font-bold">No apareció ni en el portal ni en el registro del Consejo.</span>
                             <span className="block mt-0.5 font-normal text-content-2">
-                                Escribe el nombre como aparece en el sello de la receta y queda guardado:
-                                la próxima vez que ese médico recete, ya va a estar.
+                                Escribe el nombre y el número como aparecen en el sello de la receta y queda
+                                guardado: la próxima vez que ese médico recete, ya va a estar. La norma pide
+                                los datos del prescriptor en la RECETA, y esa receta se está fotografiando.
                             </span>
                         </Notice>
-                        <PortalInput
-                            label="Nombre del médico" name="nombre_medico" icon={Stethoscope} required
-                            value={nombreMedico} onChange={(e) => setNombreMedico(e.target.value)}
-                            placeholder="Como aparece en el sello"
-                            hasError={!nombreMedico.trim()}
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <PortalInput
+                                label="Nombre del médico" name="nombre_medico" icon={Stethoscope} required colSpan={2}
+                                value={nombreMedico} onChange={(e) => setNombreMedico(e.target.value)}
+                                placeholder="Como aparece en el sello"
+                                hasError={!nombreMedico.trim()}
+                            />
+                            <PortalInput
+                                label="N.º de junta" name="numero_junta_manual" required
+                                value={numJunta} onChange={(e) => setNumJunta(e.target.value)}
+                                placeholder="12345" inputClassName="tabular-nums"
+                                hasError={!numJunta.trim()}
+                            />
+                        </div>
                     </>
                 )}
 

@@ -383,6 +383,76 @@ export async function fetchRecetasAbiertas(branchId) {
     return { recetas: data ?? [], error: null };
 }
 
+// ── Quién puede prescribir ─────────────────────────────────────────────────
+//
+// Art. 19 de la Ley de Medicamentos («Facultad para Prescribir»): «Los
+// Medicamentos con prescripción facultativa sólo podrán ser prescritos por
+// profesionales MÉDICOS, ODONTÓLOGOS y MÉDICOS VETERINARIOS, habilitados para
+// el ejercicio de la profesión y debidamente registrados por la autoridad
+// respectiva». La definición de «Receta Médica» de la misma ley nombra a esos
+// mismos tres.
+//
+// Por eso son tres y no las siete juntas que ofrece el registro del Consejo:
+// enfermería y químico farmacéutico NO prescriben, y ofrecerlas invitaría a
+// registrar una receta que la ley no reconoce. El veterinario sí queda —lo dice
+// el artículo con todas las letras—, aunque a primera vista suene raro en una
+// farmacia de personas.
+export const JUNTAS_QUE_PRESCRIBEN = [
+    { value: 'P01', label: 'Médico' },
+    { value: 'P02', label: 'Odontólogo' },
+    { value: 'P07', label: 'Médico veterinario' },
+];
+
+/**
+ * Busca médicos en NUESTRA tabla por nombre y apellido.
+ *
+ * Nuestra tabla guarda el nombre completo en un solo campo, así que acá los dos
+ * términos se buscan juntos — al revés que el registro del Consejo, donde son
+ * campos separados y no son intercambiables.
+ */
+export async function buscarMedicosLocalPorNombre(nombres, apellidos, junta = 'P01', tope = 15) {
+    const terminos = [nombres, apellidos].map(t => String(t || '').trim()).filter(Boolean);
+    if (!terminos.length) return { medicos: [], error: null };
+
+    let qb = supabase.from('medicos')
+        .select('id, nombre, numero_junta, junta, carrera, origen, verificado_at')
+        .eq('junta', junta)
+        .limit(tope);
+    // Todos los términos tienen que aparecer: con uno solo, buscar «JOSE» trae
+    // media tabla y la lista deja de servir para elegir.
+    for (const t of terminos) qb = qb.ilike('nombre', `%${t}%`);
+
+    const { data, error } = await qb;
+    if (error) return { medicos: [], error: error.message };
+    return { medicos: data ?? [], error: null };
+}
+
+/**
+ * Consulta el registro del Consejo Superior de Salud Pública.
+ *
+ * Va por una función de servidor: el sitio es JSF —hay que traer el ViewState
+ * antes de poder buscar— y no manda cabeceras CORS, así que desde el navegador
+ * no se puede ni intentar.
+ *
+ * **Nunca traba nada.** Si el Consejo no responde, se devuelve el error y la
+ * pantalla sigue dejando escribir el médico a mano: lo que la norma exige es
+ * que la receta traiga los datos del prescriptor, y esa receta se está
+ * fotografiando.
+ */
+export async function consultarConsejo({ junta = 'P01', numero = '', nombres = '', apellidos = '' }) {
+    const { data, error } = await supabase.functions.invoke('consultar-profesional-cssp', {
+        body: { junta, numero, nombres, apellidos },
+    });
+    if (error) return { profesionales: [], total: 0, recortado: false, error: 'No se pudo consultar el registro del Consejo.' };
+    if (!data?.ok) return { profesionales: [], total: 0, recortado: false, error: data?.error || 'No se pudo consultar el registro del Consejo.' };
+    return {
+        profesionales: data.profesionales ?? [],
+        total: data.total ?? 0,
+        recortado: Boolean(data.recortado),
+        error: null,
+    };
+}
+
 /** Busca el médico en nuestra tabla por número de junta. */
 export async function buscarMedicoLocal(numeroJunta, junta = 'P01') {
     const { data, error } = await supabase.from('medicos')

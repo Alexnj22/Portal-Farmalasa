@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.650.0 — Bitácoras: buscar al médico por nombre y sólo las tres juntas que prescriben
+
+**Ahora se puede buscar al médico por nombre, no sólo por número de junta.**
+Primero el registro del portal —un médico que ya recetó acá ya está— y después
+el registro del Consejo Superior de Salud Pública. Si aparecen varios, se elige;
+si no aparece ninguno, se escribe a mano y queda guardado para la próxima.
+
+**Son DOS campos, nombres y apellidos, y no uno.** Medido contra el registro del
+Consejo: escribir «JOSE ROBERTO JULE SEGURA» entero en el campo de nombres
+devuelve **cero resultados** — que en pantalla se lee igual que «ese médico no
+existe». Los dos campos no son intercambiables, así que la pantalla pide los dos
+por separado.
+
+**Quién puede recetar: médico, odontólogo y médico veterinario. Nadie más.**
+Sale del **Art. 19 de la Ley de Medicamentos**: «Los Medicamentos con
+prescripción facultativa sólo podrán ser prescritos por profesionales médicos,
+odontólogos y médicos veterinarios». Enfermería y químico farmacéutico salieron
+de la lista — no prescriben, y ofrecerlas invitaba a registrar una receta que la
+ley no reconoce. **El veterinario se queda**: se verificó contra el texto de la
+ley antes de decidir, y ahí está con todas las letras, igual que en la
+definición de «Receta Médica».
+
+**Tres trampas del registro del Consejo, las tres medidas antes de confiar en
+él:**
+
+- La búsqueda por número es por **coincidencia parcial** — buscar `5000`
+  devuelve también `15000` y `25000`. Se filtra por igualdad exacta, o se
+  guardaría otro médico con el número correcto.
+- La tabla **pagina de a seis**, así que contar las filas que llegaron decía «6
+  resultados» cuando había 12. El total real sale del paginador, y cuando hay
+  más de los que caben la pantalla lo dice y sugiere cómo afinar. Una lista
+  truncada en silencio se lee como «éstos son todos».
+- Es un sitio de gobierno y se cae. **Nunca traba el registro**: lo que la norma
+  exige (ítem 3.13) es que la receta traiga los datos del prescriptor, y esa
+  receta se está fotografiando.
+
+Verificado contra el registro real en las tres juntas: por número (1 resultado
+exacto de 3 coincidencias parciales), por nombre y apellido (2), sólo apellido
+(6 de 12, avisando), odontólogos y veterinarios.
+
 ## v2.649.4 — Cerrar el cargo y elegirlo desde un desplegable en el teléfono
 
 **No había forma de soltar un cargo.** `selectedRoleId` sólo se podía cambiar por

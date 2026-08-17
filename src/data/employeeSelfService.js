@@ -5,6 +5,7 @@
 // insertApprovalRequest (data/requests.js) y updateVacationPlan
 // (data/vacationPlans.js) ya existentes.
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // ── Solicitudes propias ──────────────────────────────────────────────────────
 //
@@ -19,11 +20,16 @@ import { supabase } from '../supabaseClient';
 // `fetchOwnApprovalRequests` se queda: la usa «Mis Documentos», que no tiene
 // nada que ver con esto.
 
+// El historial propio, que sólo crece: paginado y con orden total. El llamador
+// se queda después con las que tienen archivo adjunto, así que un corte en 1000
+// escondería documentos sin decir nada. Devuelve el ARRAY, o `null` si falló la
+// primera página.
 export function fetchOwnApprovalRequests(employeeId) {
-    return supabase.from('approval_requests')
+    return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, type, status, note, approver_note, created_at, current_level, metadata')
         .eq('employee_id', employeeId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }));
 }
 
 export function fetchEmployeeEventsByTypes(employeeId) {

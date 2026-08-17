@@ -52,10 +52,31 @@ export function fetchPendingApprovalRequests() {
         .eq('status', 'PENDING').order('created_at', { ascending: false }).limit(8);
 }
 
+/**
+ * Las ausencias aprobadas, para quedarse con las VIGENTES HOY.
+ *
+ * El recorte por fecha lo hace el navegador, y no por gusto: las fechas viven
+ * dentro de `metadata` —`startDate`/`endDate`, o `permissionDates` cuando el
+ * permiso son días sueltos— y no hay una columna que filtrar. Eso vuelve a esta
+ * consulta un acumulador: trae TODA vacación, incapacidad y permiso aprobado
+ * desde siempre, y sólo crece.
+ *
+ * Por eso va envuelta en `fetchAllRows` y devuelve el ARRAY, no
+ * `{ data, error }`. Sin paginar, el día que crucen las 1000 filas PostgREST
+ * corta ahí sin error, y como el filtro de «vigente hoy» se aplica DESPUÉS del
+ * corte, lo que faltaría no es «lo viejo»: es cualquier cosa, incluida una
+ * ausencia de hoy. El tablero mostraría a alguien como presente estando de
+ * vacaciones, sin una sola señal de que faltó algo.
+ *
+ * El `order` por `id` es lo que hace que las páginas encajen: sin ningún orden,
+ * el reparto entre páginas no está garantizado y `range()` puede repetir una
+ * fila y perder otra.
+ */
 export function fetchActiveLeaveRequests() {
-    return supabase.from('approval_requests')
+    return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, type, employee_id, metadata')
-        .eq('status', 'APPROVED').in('type', ['VACATION', 'DISABILITY', 'PERMIT']);
+        .eq('status', 'APPROVED').in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
+        .order('id', { ascending: true }));
 }
 
 export function fetchTodayHourlySales(dateStr) {

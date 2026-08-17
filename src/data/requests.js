@@ -8,15 +8,20 @@
 // (lectura puntual + upsert) reutiliza fetchEmployeeRosterSchedule/
 // upsertWeeklyRoster ya definidos en data/employees.js y data/system.js.
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export const REQUEST_SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
 
-// EmployeeDetailView.jsx — tab Solicitudes (solo lectura, historial del empleado)
+// EmployeeDetailView.jsx — tab Solicitudes (solo lectura, historial del
+// empleado). Paginada y ordenada de forma total, como todo lo que sale de
+// `approval_requests`: es un historial, o sea que sólo crece. Devuelve el
+// ARRAY, o `null` si falló la primera página.
 export function fetchEmployeeApprovalRequestsDetail(employeeId) {
-    return supabase.from('approval_requests')
+    return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, type, status, note, approver_note, created_at, updated_at')
         .eq('employee_id', employeeId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }));
 }
 
 // ── Disponibilidad del empleado (vacaciones/incapacidad vigentes) ──────────
@@ -139,13 +144,60 @@ export function fetchBranchActiveEmployeeIds(branchId) {
  * Hoy el recorte lo hace el RLS —que es el que de verdad manda— y el alcance
  * por sala; la bandeja se ordena después, en `visible()` de la vista. Por eso
  * tampoco hace falta `ownId`: lo propio pasa la policy por `employee_id`.
+ *
+ * **Devuelve el ARRAY —ya paginado—, no `{ data, error }`, y `null` si falló
+ * la primera página.** Al sacar el filtro de `approver_id` esta consulta pasó
+ * a traer todo lo que el RLS deja pasar, y `approval_requests` sólo crece: sin
+ * paginar, el día que cruce las 1000 filas PostgREST corta ahí sin error ni
+ * aviso. Sería el MISMO fallo mudo que se acaba de arreglar —una bandeja
+ * incompleta se ve igual que una completa—, sólo que reaparecido por la puerta
+ * de al lado.
+ *
+ * El desempate por `id` es la otra mitad de paginar. `range()` corta por
+ * posición, así que necesita un orden TOTAL: con empates, la base puede
+ * repartir dos filas iguales de cualquier modo entre dos páginas y el
+ * resultado es una repetida y otra perdida. Hoy `created_at` no empata
+ * —medido: 36 filas, 36 instantes distintos— pero eso es una propiedad de los
+ * datos de hoy, no una garantía: el default es `now()`, que es el instante de
+ * la TRANSACCIÓN, así que dos filas insertadas juntas nacerían con el mismo
+ * sello. Con la clave primaria de segundo criterio la pregunta no se vuelve a
+ * plantear.
  */
 export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId }) {
-    let q = supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT).order('created_at', { ascending: false });
-    if (employeeId) q = q.eq('employee_id', employeeId);
-    if (soloMiasId) return q.or(`employee_id.eq.${soloMiasId},approver_id.eq.${soloMiasId}`);
-    if (branchEmpIds && branchEmpIds.length > 0) q = q.in('employee_id', branchEmpIds);
-    return q;
+    // El cuerpo va DENTRO de `fetchAllRows` —y no en un `const construir` que
+    // se pasa después— porque así lo lee también el detector de `gate:data`,
+    // que busca la llamada en las líneas de arriba del `.from(`. Con el cierre
+    // con nombre marcaba esta consulta como sin paginar teniéndolo, y un
+    // detector que grita sobre código sano se termina apagando.
+    return fetchAllRows(() => {
+        let q = supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false });
+        if (employeeId) q = q.eq('employee_id', employeeId);
+        if (soloMiasId) return q.or(`employee_id.eq.${soloMiasId},approver_id.eq.${soloMiasId}`);
+        /* ── El traslado NO se recorta por la sala de quien pidió ───────────
+         * Es el único tipo donde quien pide y quien contesta están en salas
+         * DISTINTAS: pide la sala que no tiene y confirma la que sí. Su
+         * `employee_id` es entonces de la otra sala por definición, así que
+         * `employee_id IN (los de mi sala)` lo descarta SIEMPRE — justo en la
+         * bandeja de quien tiene que contestarlo.
+         *
+         * Medido en prod el 2026-08-17 con la sesión de Bodega (alcance
+         * BRANCH): la policy le dejaba ver 4 traslados pendientes y este
+         * filtro dejaba 0. El aviso le llegaba igual, así que el traslado
+         * existía en la campana y en ninguna pantalla. Es el MISMO fallo que
+         * `approver_id` unas líneas más arriba —un recorte del navegador más
+         * angosto que el del servidor— por la puerta de al lado.
+         *
+         * Quién ve cuál lo decide la policy, y para este tipo mira tres cosas
+         * que este filtro no puede reproducir: estar entre los
+         * `metadata.destinatarios`, ser jefatura de la sala de ORIGEN, o ser
+         * jefatura/estar en turno en la de DESTINO. */
+        if (branchEmpIds && branchEmpIds.length > 0) {
+            q = q.or(`employee_id.in.(${branchEmpIds.join(',')}),type.eq.INVENTORY_TRANSFER_REQUEST`);
+        }
+        return q;
+    });
 }
 
 export function fetchEmployeesByIds(ids, columns) {
@@ -278,17 +330,26 @@ export async function aplicarMovimientoInventarioEnErp(requestId, approverNote =
 // vieja. Pedir `head: true` y después otra consulta para el desglose serían dos
 // round-trips para lo que cabe en uno.
 //
-// Sin `fetchAllRows` a propósito: lo pendiente es una cola que alguien vacía. Si
-// alguna vez pasara de 1000 filas, el problema no es la paginación.
+// Acá decía «sin `fetchAllRows` a propósito: lo pendiente es una cola que
+// alguien vacía; si alguna vez pasara de 1000 filas, el problema no es la
+// paginación». Lo primero es cierto y lo segundo mezcla dos cosas: que la cola
+// desbordada sea un problema del negocio no quita que la BALDOSA mienta. Sin
+// paginar, a las 1000 el número se queda clavado ahí y la franja se arma con
+// una muestra — y como no hay error, se lee como el dato bueno. Es un renglón
+// de más y hoy es una sola página; el `.in('type', …)` tampoco acota nada,
+// porque el tipo se repite.
 export async function fetchSolicitudesFacturacionPendientes() {
-    const { data, error } = await supabase
+    const filas = await fetchAllRows(() => supabase
         .from('approval_requests')
         .select('id, type, created_at')
         .eq('status', 'PENDING')
         .in('type', ['ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST',
                      'VENDOR_CHANGE_REQUEST', 'CLIENT_CHANGE_REQUEST'])
-        .order('created_at', { ascending: true });
-    return { filas: data ?? [], error };
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true }));
+    // Se mantiene la forma `{ filas, error }` que espera la baldosa; el motivo
+    // del fallo ya quedó en consola dentro de `fetchAllRows`.
+    return { filas: filas ?? [], error: filas === null ? new Error('No se pudieron cargar las solicitudes pendientes.') : null };
 }
 
 // ── approve/reject/cancel ────────────────────────────────────────────────────

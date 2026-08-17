@@ -82,8 +82,10 @@ export const createVacationPlanSlice = (set, get) => ({
     },
 
     fetchVacationChangeRequests: async (year) => {
-        const { data, error } = await fetchVacationChangeRequestsData();
-        if (error) { console.error('fetchVacationChangeRequests:', error); return []; }
+        // Devuelve el ARRAY —ya paginado—, y `null` si falló la primera página
+        // (el motivo ya quedó en consola).
+        const data = await fetchVacationChangeRequestsData();
+        if (data === null) { console.error('fetchVacationChangeRequests: no se pudo cargar'); return []; }
         const employees = get().employees || [];
         const enriched = (data || [])
             .filter(r => r.metadata?.year === year)

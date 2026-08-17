@@ -70,8 +70,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (!eid) return;
         setIsLoadingEmpReqs(true);
         try {
-            const { data, error } = await fetchEmployeeApprovalRequestsDetail(eid);
-            if (error) console.error('loadEmpRequests failed:', error.message);
+            // Devuelve el ARRAY —ya paginado—, y `null` si falló la primera
+            // página (el motivo ya quedó en consola). Distinguirlo de `[]`
+            // importa: un historial vacío por error se lee como «esta persona
+            // nunca pidió nada».
+            const data = await fetchEmployeeApprovalRequestsDetail(eid);
+            if (data === null) console.error('loadEmpRequests: no se pudo cargar el historial');
             setEmpRequests(data || []);
         } catch { /* silencioso */ }
         finally { setIsLoadingEmpReqs(false); }

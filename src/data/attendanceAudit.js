@@ -5,12 +5,19 @@
 // (mismo query exacto): updateAttendancePunch, updateEmployee,
 // updateApprovalRequest.
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
+// El llamador se queda con las de la quincena filtrando por `metadata.date`,
+// que es jsonb y no se puede filtrar en la base — o sea que el recorte pasa
+// DESPUÉS. Sin paginar, un corte en 1000 se llevaría filas al azar y la
+// quincena saldría incompleta sin una sola señal. Devuelve el ARRAY, o `null`
+// si falló la primera página.
 export function fetchPendingShiftExceptions() {
-    return supabase.from('approval_requests')
+    return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, employee_id, status, note, metadata, created_at')
         .eq('type', 'SHIFT_EXCEPTION')
-        .eq('status', 'PENDING');
+        .eq('status', 'PENDING')
+        .order('id', { ascending: true }));
 }
 
 export function fetchQuincenaTimesheets(startDate, endDate) {

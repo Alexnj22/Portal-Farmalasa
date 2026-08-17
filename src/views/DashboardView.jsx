@@ -1788,16 +1788,21 @@ const DashboardView = ({ openModal }) => {
 
   useEffect(() => {
     const today = localDateStr();
+    // Devuelve el ARRAY (o `null` si falló la primera página), no `{ data }`:
+    // desestructurar `{ data }` de un array da `undefined` y el widget habría
+    // quedado en cero sin decir nada. Mismo contrato que
+    // `fetchTodayInvoicesSummary` más abajo.
     fetchActiveLeaveRequests()
-      .then(({ data }) => {
-        const active = (data||[]).filter(r => {
+      .then((rows) => {
+        const active = (rows||[]).filter(r => {
           const meta = parseMeta(r.metadata);
           const start = meta.startDate || (meta.permissionDates||[])[0];
           const end   = meta.endDate   || (meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
           return start && start <= today && (!end || end >= today);
         });
         setAbsences(active); setAbsLoading(false);
-      });
+      })
+      .catch((e) => { console.error('DashboardView: ausencias vigentes falló:', e?.message ?? e); setAbsLoading(false); });
   }, []);
 
   useEffect(() => {

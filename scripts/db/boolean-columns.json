@@ -44,7 +44,7 @@
     "vacation_plan_headers": ["ai_generated"]
   },
   "tablas_grandes": {
-    "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-07-30.",
+    "_comment": "Tablas que REQUIEREN paginación (>1000 filas o creciendo sin tope). Conteos reales al 2026-07-30, salvo approval_requests (36 al 2026-08-17). approval_requests entra por la SEGUNDA mitad del criterio, no por tamaño: hoy son decenas de filas, pero es un expediente que sólo crece y el día que cruce las 1000 el corte de PostgREST es mudo. Se agregó el 2026-08-17 después de que la bandeja de Solicitudes quedara sin paginar al ensancharla.",
     "products": 5200,
     "sales_invoices": 338013,
     "sales_invoice_items": null,
@@ -55,6 +55,7 @@
     "pedido_item_eventos": null,
     "purchase_dte_documents": null,
     "dte_sales": null,
-    "timesheets": null
+    "timesheets": null,
+    "approval_requests": 36
   }
 }

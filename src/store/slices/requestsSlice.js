@@ -808,8 +808,14 @@ export const createRequestsSlice = (set, get) => ({
             // 1. Fetch solicitudes sin joins. El recorte lo hace el RLS —que es
             // el que de verdad manda— más el alcance por sala; la bandeja se
             // ordena después, en `visible()` de la vista.
-            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId });
-            if (error) throw error;
+            //
+            // Viene PAGINADA de la capa de datos, y devuelve el ARRAY —no
+            // `{ data, error }`— con `null` si falló la primera página (que ya
+            // quedó en consola). Distinguir ese `null` del `[]` importa: una
+            // lista vacía por error se ve idéntica a «no hay solicitudes», que
+            // es justo el fallo mudo que se acaba de corregir.
+            const requests = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId });
+            if (requests === null) throw new Error('No se pudieron cargar las solicitudes.');
 
             // 2. IDs únicos de empleados y aprobadores
             const empIds = [...new Set([

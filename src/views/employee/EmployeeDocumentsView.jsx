@@ -184,13 +184,15 @@ const EmployeeDocumentsView = () => {
     useEffect(() => {
         if (!user?.id) return;
         setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+        // Devuelve el ARRAY —ya paginado—, no `{ data }`.
         fetchOwnApprovalRequests(user.id)
-            .then(({ data }) => {
-                const parsed = (data || []).map(r => ({ ...r, meta: parseMeta(r.metadata) }));
+            .then((rows) => {
+                const parsed = (rows || []).map(r => ({ ...r, meta: parseMeta(r.metadata) }));
                 // Documentos relevantes: constancias + cualquier solicitud con archivo adjunto
                 setAllDocs(parsed.filter(r => r.meta?.docUrl || r.type === 'CERTIFICATE'));
                 setLoading(false);
-            });
+            })
+            .catch((e) => { console.error('EmployeeDocumentsView: documentos falló:', e?.message ?? e); setLoading(false); });
     }, [user?.id]);
 
     // Conteos por tipo para tabs

@@ -3,6 +3,7 @@
 // supabase.from(). El update de approval_requests reutiliza
 // updateApprovalRequest de data/requests.js (mismo query exacto).
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchVacationHeaders() {
     return supabase.from('vacation_plan_headers')
@@ -23,12 +24,17 @@ export function updateVacationPlansBulkPreApprove(headerId) {
         .eq('status', 'DRAFT');
 }
 
+// El llamador se queda con las del año filtrando por `metadata.year`, que es
+// jsonb y no se filtra en la base: el recorte pasa DESPUÉS de traer. Sin
+// paginar, un corte en 1000 dejaría el año incompleto sin avisar. Devuelve el
+// ARRAY, o `null` si falló la primera página.
 export function fetchVacationChangeRequests() {
-    return supabase.from('approval_requests')
+    return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, employee_id, status, note, approver_note, metadata, created_at')
         .eq('type', 'VACATION_CHANGE')
         .eq('status', 'PENDING')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }));
 }
 
 export function updateVacationPlan(planId, patch, returning = false) {

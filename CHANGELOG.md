@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.1 — Solicitudes: ninguna consulta se corta en 1000 en silencio
+
+Al ensanchar la bandeja en v2.655.6 —sacarle el filtro por `approver_id` para
+que Talento Humano viera lo suyo— la consulta pasó a traer todo lo que el RLS
+deja pasar, **sin paginar**. Se dejó anotado como riesgo en vez de arreglarlo,
+que fue el error: PostgREST corta en 1000 sin error ni aviso, así que una
+bandeja incompleta se vería exactamente igual que una completa. Es el mismo
+fallo mudo que esa versión venía a corregir, reaparecido por la puerta de al
+lado.
+
+Ahora **ninguna consulta sobre `approval_requests` puede cortarse en silencio**:
+
+| dónde | qué traía sin tope |
+|---|---|
+| la bandeja de Solicitudes | todo lo que el RLS deja ver |
+| ausencias vigentes (tablero) | toda vacación, incapacidad y permiso aprobado desde siempre |
+| excepciones de turno (auditoría) | todas las pendientes |
+| cambios de vacaciones | todas las pendientes |
+| historial de un empleado | su expediente entero, en dos pantallas |
+| pendientes de facturación (baldosa) | la cola completa |
+
+Las seis van por `fetchAllRows`. Tres de ellas son peores de lo que parecen
+porque **filtran DESPUÉS de traer** —la fecha de la ausencia, la quincena y el
+año viven dentro de `metadata`, que es jsonb y no se filtra en la base—: con un
+corte en 1000, lo que faltaría no sería «lo viejo» sino cualquier cosa, incluida
+una ausencia de HOY. El tablero habría mostrado como presente a alguien de
+vacaciones.
+
+Todas llevan además un **orden total** (desempate por `id`). `range()` corta por
+posición, así que con empates la base puede repartir dos filas iguales entre dos
+páginas y devolver una repetida y perder otra. Hoy `created_at` no empata
+—medido: 36 filas, 36 instantes distintos— pero eso es una propiedad de los
+datos de hoy y no una garantía: el default es `now()`, el instante de la
+transacción.
+
+Y para que no dependa de que alguien se acuerde, `approval_requests` queda
+registrada en `scripts/db/boolean-columns.json` como tabla que **requiere**
+paginación. Entra por la segunda mitad del criterio —«creciendo sin tope»— y no
+por tamaño: hoy son 36 filas. Con eso, `npm run gate:data` vigila la tabla sola.
+
+**Viaja además un tercer recorte del navegador más angosto que el del servidor**,
+encontrado en paralelo sobre la misma consulta: con alcance por sala, el filtro
+`employee_id IN (los de mi sala)` descartaba **siempre** los traslados. Es el
+único tipo donde quien pide y quien contesta están en salas distintas —pide la
+que no tiene, confirma la que sí—, así que el `employee_id` es de la otra sala
+por definición. Medido: los 4 traslados pendientes con origen en Bodega tienen a
+quien pide en las salas 2 y 28, o sea que la bandeja de Bodega mostraba 0 de 4
+mientras la campana avisaba de los cuatro. Mismo patrón que `approver_id`, misma
+consulta, otra puerta.
+
 ## v2.656.0 — La sala ya no espera al sistema para confirmar una recepción
 
 Reportado como *«se tarda bastante»*, con tres preguntas alrededor: qué pasa si
@@ -73,46 +123,6 @@ necesita para venderlo ahora, y sin saber si entró no puede facturarlo.
 servidor, no en el navegador, así que sigue — lo único que se pierde es la
 respuesta. El conteo no se duplica ni queda a medias: la función de recepción
 sólo toca renglones `pendiente`, y volver a confirmar se saltea lo que ya entró.
-
-## v2.656.2 — Solicitudes: ninguna consulta se corta en 1000 en silencio
-
-Al ensanchar la bandeja en v2.655.6 —sacarle el filtro por `approver_id` para
-que Talento Humano viera lo suyo— la consulta pasó a traer todo lo que el RLS
-deja pasar, **sin paginar**. Se dejó anotado como riesgo en vez de arreglarlo,
-que fue el error: PostgREST corta en 1000 sin error ni aviso, así que una
-bandeja incompleta se vería exactamente igual que una completa. Es el mismo
-fallo mudo que esa versión venía a corregir, reaparecido por la puerta de al
-lado.
-
-Ahora **ninguna consulta sobre `approval_requests` puede cortarse en silencio**:
-
-| dónde | qué traía sin tope |
-|---|---|
-| la bandeja de Solicitudes | todo lo que el RLS deja ver |
-| ausencias vigentes (tablero) | toda vacación, incapacidad y permiso aprobado desde siempre |
-| excepciones de turno (auditoría) | todas las pendientes |
-| cambios de vacaciones | todas las pendientes |
-| historial de un empleado | su expediente entero, en dos pantallas |
-| pendientes de facturación (baldosa) | la cola completa |
-
-Las seis van por `fetchAllRows`. Tres de ellas son peores de lo que parecen
-porque **filtran DESPUÉS de traer** —la fecha de la ausencia, la quincena y el
-año viven dentro de `metadata`, que es jsonb y no se filtra en la base—: con un
-corte en 1000, lo que faltaría no sería «lo viejo» sino cualquier cosa, incluida
-una ausencia de HOY. El tablero habría mostrado como presente a alguien de
-vacaciones.
-
-Todas llevan además un **orden total** (desempate por `id`). `range()` corta por
-posición, así que con empates la base puede repartir dos filas iguales entre dos
-páginas y devolver una repetida y perder otra. Hoy `created_at` no empata
-—medido: 36 filas, 36 instantes distintos— pero eso es una propiedad de los
-datos de hoy y no una garantía: el default es `now()`, el instante de la
-transacción.
-
-Y para que no dependa de que alguien se acuerde, `approval_requests` queda
-registrada en `scripts/db/boolean-columns.json` como tabla que **requiere**
-paginación. Entra por la segunda mitad del criterio —«creciendo sin tope»— y no
-por tamaño: hoy son 36 filas. Con eso, `npm run gate:data` vigila la tabla sola.
 
 ## v2.655.8 — El filtro «Receta Médica» de Ventas mostraba una de cada cuatro
 

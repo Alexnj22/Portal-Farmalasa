@@ -930,15 +930,17 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (isDemoMode) { setShiftExceptions([]); return; }
     const qEnd = getQuincenaEnd(selectedQuincena);
     let cancelled = false;
+    // Devuelve el ARRAY —ya paginado—, no `{ data }`.
     fetchPendingShiftExceptions()
-      .then(({ data }) => {
+      .then((rows) => {
         if (cancelled) return;
-        const inQuincena = (data || []).filter(r => {
+        const inQuincena = (rows || []).filter(r => {
           const d = r.metadata?.date;
           return d && d >= selectedQuincena && d <= qEnd;
         });
         setShiftExceptions(inQuincena);
-      });
+      })
+      .catch((e) => console.error('AttendanceAuditView: excepciones de turno falló:', e?.message ?? e));
     return () => { cancelled = true; };
   }, [selectedQuincena, isDemoMode]);
 

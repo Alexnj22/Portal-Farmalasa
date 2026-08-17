@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.5 — El apoyo de un pedido acepta a varios, uno tras otro
+
+**El botón «Apoyo» desaparecía en cuanto vos quedabas anotado.** Probado en
+Bodega el 17-ago: un apoyo registrado a las 15:59 y, después de eso, **ni un solo
+intento más llegó al servidor** — o sea que el segundo escaneo nunca ocurrió,
+porque no quedaba dónde hacerlo.
+
+La condición era `canApoyo && !isApoyoBodega`, donde `isApoyoBodega` significa
+«**yo** ya soy apoyo de este pedido». Pero ese botón no es «me apunto»: abre el
+escáner y anota **a quien sea**. Con las dos ideas cruzadas, el primero que
+pasaba su carné apagaba el botón para todos los demás. El gemelo de recepción
+nunca tuvo esa condición — la asimetría entre los dos era la pista. Los
+repetidos los sigue frenando el modal, que para eso recibe la lista de los que
+ya están.
+
+**Y anotar a alguien ya no cierra el modal.** En Bodega se anotan varios
+seguidos, y hasta ahora cada uno costaba volver a la tarjeta y abrir de nuevo.
+Ahora el escáner queda esperando el carné siguiente, con los que ya entraron a la
+vista —para que la cuenta se pueda mirar en vez de recordar— y se cierra con
+«Listo». No hay nada pendiente de confirmar al cerrar: cada apoyo se guarda
+cuando se confirma, uno por uno.
+
 ## v2.653.4 — El carné vuelve a la pantalla de entrada, y el apoyo de un pedido reconoce el carné
 
 **El carné no aparecía en las computadoras de sala, y no era la resolución.** El

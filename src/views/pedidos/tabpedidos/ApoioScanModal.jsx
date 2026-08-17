@@ -2,6 +2,8 @@
 // registering apoyo (support staff) on a pedido, keydown-based scan capture.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../../../components/common/Button';
+import Badge from '../../../components/common/Badge';
+import LiquidAvatar from '../../../components/common/LiquidAvatar';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
@@ -18,6 +20,10 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
     const [error,       setError]       = useState('');
     const [loading,     setLoading]     = useState(false);
     const [manualWarn,  setManualWarn]  = useState(false);
+    // Cuántos entraron en esta pasada. No es lo mismo que `existingApoyo`, que
+    // trae también a los que ya estaban de antes: esto es lo que acaba de hacer
+    // quien está parado frente a la pantalla.
+    const [anotados,    setAnotados]    = useState([]);
 
     const bufferRef   = useRef('');
     const lastTimeRef = useRef(0);
@@ -33,8 +39,21 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
             setEmployee(null);
             setError('');
             setManualWarn(false);
+            setAnotados([]);
         }
     }, [open]);
+
+    // Queda listo para el carné siguiente, sin cerrar. En Bodega se anotan
+    // varios seguidos y hasta el 2026-08-17 cada uno costaba volver a abrir el
+    // modal desde la tarjeta.
+    const listoParaElSiguiente = useCallback(() => {
+        bufferRef.current = '';
+        isManRef.current  = false;
+        setEmployee(null);
+        setDisplayDots(0);
+        setManualWarn(false);
+        setError('');
+    }, []);
 
     const lookupPin = useCallback(async (code) => {
         setLoading(true);
@@ -104,7 +123,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 `${shortEmployeeName(employee)} ya está registrado en este pedido.`,
                 'warning'
             );
-            onClose();
+            listoParaElSiguiente();
             return;
         }
         setLoading(true);
@@ -115,10 +134,14 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
             if (e) throw e;
             useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
             onSuccess(employee);
-            onClose();
-        } catch (err) { setError(mensajeAmigable(err, 'Error al registrar apoyo.')); }
+            setAnotados(prev => prev.some(a => a.id === employee.id) ? prev : [...prev, employee]);
+            // Anotar a alguien NO cierra: el escáner queda esperando el
+            // siguiente carné. Se cierra desde «Listo», y para entonces cada
+            // apoyo ya está guardado — no hay nada pendiente de confirmar.
+            listoParaElSiguiente();
+        } catch (err) { setError(mensajeAmigable(err, 'No se pudo registrar el apoyo.')); }
         finally  { setLoading(false); }
-    }, [employee, existingApoyo, pedidoId, sucId, currentUserId, tipo, onSuccess, onClose]);
+    }, [employee, existingApoyo, pedidoId, sucId, currentUserId, tipo, onSuccess, listoParaElSiguiente]);
 
     return (
         <PedidoModal open={open} onClose={onClose}>
@@ -129,7 +152,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         </div>
                         <div>
                             <h3 className="font-bold text-content text-subtitle">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
-                            <p className="text-body-sm text-content-2 mt-0.5">Escanea el carné del empleado</p>
+                            <p className="text-body-sm text-content-2 mt-0.5">Escanea los carnés, uno tras otro</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -181,6 +204,29 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         </div>
                     )}
 
+                    {/* Lo que ya quedó guardado en esta pasada. Sin esto, cada
+                        escaneo borraba al anterior de la pantalla y no había
+                        forma de saber cuántos llevabas — y como el modal ya no
+                        se cierra al confirmar, esa cuenta es justamente lo que
+                        dice si falta alguien. Mismo canónico que los chips de
+                        apoyo de la tarjeta: `Badge` neutro + `LiquidAvatar`, y
+                        la foto por `photo` (firmada) antes que `photo_url`. */}
+                    {anotados.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">
+                                {anotados.length === 1 ? 'Anotado:' : `Anotados (${anotados.length}):`}
+                            </span>
+                            {anotados.map(a => (
+                                <Badge key={a.id} variant="success" uppercase={false} className="pl-1">
+                                    <LiquidAvatar src={a.photo || a.photo_url} alt=""
+                                        fallbackText={shortEmployeeName(a)}
+                                        className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                                    {shortEmployeeName(a)}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+
                     {manualWarn && (
                         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
                             <ShieldAlert size={14} className="shrink-0 text-danger" />
@@ -197,9 +243,12 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
 
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">
-                        <Button variant="secondary" onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}>Limpiar</Button>
+                        <Button variant="secondary" onClick={listoParaElSiguiente}>Limpiar</Button>
                         <div className="flex gap-2">
-                            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                            {/* «Cancelar» mientras no se anotó a nadie; «Listo»
+                                en cuanto hay alguien guardado, porque cerrar ya
+                                no deshace nada. */}
+                            <Button variant="secondary" onClick={onClose}>{anotados.length > 0 ? 'Listo' : 'Cancelar'}</Button>
                             {employee && (
                                 <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                                     Confirmar</Button>

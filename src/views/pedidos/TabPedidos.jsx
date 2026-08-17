@@ -316,7 +316,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const apoyoBucket  = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
                             const prepApoyo    = apoyoBucket.preparacion ?? [];
                             const recepApoyo   = apoyoBucket.recepcion   ?? [];
-                            const isApoyoBodega = prepApoyo.some(a => a.id === user?.id);
 
                             const canFinalizar = canActuar && !isBranch && stage === 'preparando';
 
@@ -535,7 +534,18 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         )}
                                         {elapsedTrans && <span className="text-caption text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-                                            {canApoyo && !isApoyoBodega && (
+                                            {/* El botón se pedía además con `!isApoyoBodega`,
+                                                o sea «que YO no esté ya de apoyo» — y esto
+                                                no es «me apunto»: abre el escáner y anota a
+                                                QUIEN SEA. En Bodega, el primero que pasaba
+                                                su carné hacía desaparecer el botón de la
+                                                tarjeta y ya no se podía anotar a nadie más
+                                                (probado en sala el 2026-08-17: un apoyo a
+                                                las 15:59 y ni un intento después). El
+                                                gemelo de recepción nunca tuvo esa condición.
+                                                Los repetidos los frena el modal, que para
+                                                eso recibe `existingApoyo`. */}
+                                            {canApoyo && (
                                                 <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
                                             {/* `icon` + `loading` del canónico, en vez de armar

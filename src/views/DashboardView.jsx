@@ -1924,20 +1924,36 @@ const DashboardView = ({ openModal }) => {
       .catch((e) => { console.error('[dashboard] facturación de hoy', e); setFactLoading(false); });
   }, []);
 
+  // El widget pinta diez filas con dos campos, y hasta hoy se los pedía a
+  // `get_product_sales_agg` —las 14 columnas de la pantalla de Ventas— con el
+  // recorte AFUERA, vía `.limit(10)` de PostgREST. O sea que Postgres armaba
+  // el mes entero de las 7 salas, con presentaciones, costos y última venta
+  // por sucursal, para tirar todo menos diez filas: 11.4 s de promedio, 74 s
+  // la peor, el 33% del tiempo total de la base. `get_top_productos_mes` hace
+  // la misma cuenta con el LIMIT adentro, en 55 ms.
+  //
+  // Y el pedido salía al montar SIN mirar si este cargo ve el widget, así que
+  // el que lo tenía apagado pagaba la consulta igual. Ahora cuelga de
+  // `showWidget`, que además depende de la pestaña activa: sale recién cuando
+  // el widget se va a pintar. El `ref` —y no `topProductos.length`— es lo que
+  // garantiza una sola vuelta: un mes sin ventas devuelve `[]`, y con la
+  // guarda por longitud volvería a pedirlo en cada cambio de pestaña.
+  const topProdPedido = useRef(false);
   useEffect(() => {
-    if (topProductos.length > 0) return;
+    if (topProdPedido.current) return;
+    if (!showWidget('top_productos', 'dash_top_productos')) return;
+    topProdPedido.current = true;
     const now  = new Date();
     const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const ffin = localDateStr();
     setTopProdLoading(true);
-    supabase.rpc('get_product_sales_agg', { p_fini: fini, p_ffin: ffin })
-      .limit(10)
+    supabase.rpc('get_top_productos_mes', { p_fini: fini, p_ffin: ffin, p_limite: 10 })
       .then(({ data, error }) => {
         if (error) console.error('[top_productos]', error);
         setTopProductos(data || []);
         setTopProdLoading(false);
       });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showWidget]);
 
   // Los helpers de visibilidad (`isWidgetOn`, `canSee`, `canManage`,
   // `showWidget`) viven arriba, junto al canon: `activeLayout` los necesita

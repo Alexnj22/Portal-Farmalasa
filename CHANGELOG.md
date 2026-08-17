@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.4 — El tablero pide sólo lo que pinta
+
+Reportado por el usuario: *«¿por qué está tan lento el portal?»*. No era la
+conexión ni el navegador. Medido sobre 25 horas de `pg_stat_statements`, el
+widget «Top productos» del tablero se llevaba el **33% del tiempo total de la
+base**: 389 llamadas a 11,386 ms de promedio, 74 s la peor.
+
+El widget pinta dos campos —nombre y monto— de diez productos, y se los pedía a
+`get_product_sales_agg`, que es la función de la pantalla de Ventas y arma
+catorce columnas: presentaciones, costo por presentación (un `LATERAL` con
+`LIKE` por fila contra `product_precios`), última venta por sucursal,
+laboratorio y quién ocultó el producto. Nada de eso llega a la pantalla.
+
+Y el recorte a diez filas pasaba **afuera** de la función, con el `.limit(10)`
+de PostgREST: Postgres calculaba el mes entero de las siete salas y después
+tiraba todo menos diez. Es el mismo mecanismo que `CLAUDE.md` ya tenía anotado
+para el Patrón B —el `limit` se aplica sobre el resultado de la función, no
+adentro— aplicado acá sin que nadie lo viera, porque el widget **funcionaba**:
+mostraba los diez productos correctos, sólo que tardando once segundos.
+
+`get_top_productos_mes` hace la misma cuenta con el `LIMIT` adentro, en **55 ms**
+— 205 veces más rápido. No es una aproximación del número viejo: con `p_fini`
+en el día 1 del mes en curso, que es lo único que manda el tablero, las dos
+ramas históricas de la función vieja quedan vacías por construcción y sólo
+corre su rama viva, que es exactamente el cuerpo nuevo. Verificado contra las
+diez filas reales del 2026-08-01 al 17: mismo orden, mismas descripciones,
+mismos montos al cuarto decimal.
+
+**El segundo hallazgo es el que más gente pagaba.** El pedido salía al montar el
+tablero *sin mirar si el cargo ve el widget*, así que quien lo tenía apagado se
+comía los once segundos igual. Ahora cuelga de `showWidget`, que además depende
+de la pestaña activa: la consulta sale recién cuando el widget se va a pintar.
+
+Por qué esto hacía lento **todo** el portal y no sólo el tablero: mientras una
+de esas consultas corre medio minuto ocupa una conexión de PostgREST, y lo
+demás hace cola. Se veía en cosas sin excusa para tardar — `erp_sucursal_map`,
+una tabla de siete filas, llegó a 7.7 s; `cortes_caja` a 18.7 s. De madrugada,
+sin nadie usando el portal, el p95 de toda la API es de 150–230 ms; a las 21:00
+UTC de hoy estaba en 4,154 ms.
+
+Queda medido y sin arreglar `get_faltantes_con_stock_en_otra_sala`, el segundo
+consumidor (10% de la base, 3.1 s de promedio, 40.7 s la peor). Ese no tiene el
+`limit` afuera —lo tiene adentro— así que es otro problema: toca 98,132 bloques
+para devolver 40 filas porque calcula el inventario disponible de las siete
+salas antes de filtrar a los productos candidatos. Va en su propio cambio.
+
 ## v2.657.3 — La tarjeta dice de qué sala sale el producto
 
 Preguntado por el usuario mirando la sala de respaldo de v2.657.0: *«¿tienen

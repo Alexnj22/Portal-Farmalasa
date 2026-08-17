@@ -14,6 +14,20 @@ Chunkear el *input*, no el output. Si cada chunk tiene ≤1000 IDs, la respuesta
 también será ≤1000 filas: partir `ids` en tandas de 1000 y `Promise.all` de un
 `.rpc()` por tanda, aplanando `r.data`.
 
+⚠️ **Ese "también será ≤1000 filas" SÓLO vale si la columna del `.in()` es
+única en la tabla destino.** Si se repite, cada id de entrada trae N filas y el
+techo desaparece — acotar la entrada no acota nada. Costó el filtro «Receta
+Médica» de Ventas, que vivió roto desde el día uno:
+`.in('erp_product_id', <79 ids>)` sobre `sales_invoice_items` devuelve **4,013
+filas**, se recibían 1000, y agosto/2026 mostraba **8 ventas de 93**. El
+`npm run gate:data` estaba en verde porque daba por acotada cualquier consulta
+con un `.in(`. Hoy lo vigila la categoría `in-columna-repetida`.
+
+Y traer la lista completa tampoco es la salida: esos ids vuelven dentro de la
+**URL** del `.in()` siguiente, y con un rango de un año son ~1,700. Cuando el
+conjunto no cabe ni en la respuesta ni en la URL, el filtro va a la base —
+`get_ventas_con_receta` es el modelo.
+
 **Patrón B — RPC/select que pagina el output (ej. `get_stock_analysis`):**
 Primero `get_X_count`, después `ceil(count / 1000)` llamadas en paralelo con
 `.range(i * 1000, (i + 1) * 1000 - 1)`. Es exactamente lo que hace
@@ -190,6 +204,31 @@ de tablas, funciones, policies e índices— y trae datos de muestra, cero PII.
 
 **Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
 final de este archivo): `npm run dev:staging`.
+
+**Una función con parámetros se mide SEIS veces, no una** (2026-08-17). Tres
+trampas de planificación, las tres descubiertas midiendo `get_ventas_receta_stats`
+y ninguna visible leyendo el SQL:
+
+1. **`plpgsql` cambia al plan GENÉRICO en la sexta ejecución.** Las cinco
+   primeras llamadas daban 24 ms y la sexta 1,089 ms, con los mismos argumentos.
+   Sin los valores, el planificador no sabe que el rango de fechas filtra, y
+   elige el plan al revés. Cuando el plan bueno depende de los ARGUMENTOS, no
+   hay genérico que sirva: `ALTER FUNCTION … SET plan_cache_mode =
+   'force_custom_plan'`. Cuesta ~3 ms de planificación. Una función que se
+   probó una vez y anda "bien" puede estar degradada en producción desde la
+   sexta llamada de cada conexión.
+2. **`LANGUAGE sql` se INLINEA en quien la llama y aplana sus CTE.** Mismo
+   cuerpo: 1,011 ms inlineado contra 34 ms con `PREPARE`. `plpgsql` no se
+   inlinea nunca — por eso `get_ventas_con_puntos` y las gemelas de receta lo
+   son. `EXECUTE` dinámico además replanifica siempre, así que tampoco sufre (1).
+3. **Un `EXISTS` correlacionado fija la dirección del join.** `EXISTS (… WHERE
+   ii.invoice_id = si.id …)` obliga a entrar por las 180,000 facturas del año;
+   el mismo predicado como `si.id IN (SELECT ii.invoice_id …)` deja al
+   planificador entrar por los 4,013 renglones. 8,471 ms → 31 ms.
+
+Y **medir con `EXPLAIN (ANALYZE, TIMING OFF)`**: con el timing encendido, la
+instrumentación de un nested loop de 3,655 vueltas inventó 1,146 ms sobre un
+trabajo de 31. El número que se reporta tiene que ser el que no miente.
 
 **Todo `apply_migration` necesita su archivo local en el mismo commit, nombrado
 con la versión de 14 dígitos que devolvió el servidor** — `apply_migration` NUNCA

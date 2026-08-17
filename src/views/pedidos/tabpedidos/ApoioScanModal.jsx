@@ -1,12 +1,19 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — carné scanner modal for
-// registering apoyo (support staff) on a pedido, keydown-based scan capture.
-import { useState, useEffect, useRef, useCallback } from 'react';
+// registering apoyo (support staff) on a pedido.
+//
+// La captura del escaneo y el panel que la dibuja salieron de acá el
+// 2026-08-17 (`hooks/useCapturaDeCarne` + `components/common/EsperaDeCarne`):
+// la entrega del efectivo pide lo mismo, y el usuario la pidió «así como
+// apoyo». Dos copias del detector se corrigen por separado — que es justo lo
+// que pasó con el PIN contra el código.
+import { useState, useEffect, useCallback } from 'react';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
+import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
 import LiquidAvatar from '../../../components/common/LiquidAvatar';
-import { SkeletonText } from '../../../components/common/StateViews';
-import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, Check } from 'lucide-react';
+import { Users, Loader2, AlertTriangle, UserCircle2, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
+import useCapturaDeCarne from '../../../hooks/useCapturaDeCarne';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';
@@ -15,45 +22,13 @@ import { mensajeAmigable } from '../../../utils/errorMessages';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
-    const [displayDots, setDisplayDots] = useState(0);
     const [employee,    setEmployee]    = useState(null);
     const [error,       setError]       = useState('');
     const [loading,     setLoading]     = useState(false);
-    const [manualWarn,  setManualWarn]  = useState(false);
     // Cuántos entraron en esta pasada. No es lo mismo que `existingApoyo`, que
     // trae también a los que ya estaban de antes: esto es lo que acaba de hacer
     // quien está parado frente a la pantalla.
     const [anotados,    setAnotados]    = useState([]);
-
-    const bufferRef   = useRef('');
-    const lastTimeRef = useRef(0);
-    const timerRef    = useRef(null);
-    const isManRef    = useRef(false);
-
-    useEffect(() => {
-        if (!open) {
-            bufferRef.current  = '';
-            lastTimeRef.current = 0;
-            isManRef.current   = false;
-            setDisplayDots(0);
-            setEmployee(null);
-            setError('');
-            setManualWarn(false);
-            setAnotados([]);
-        }
-    }, [open]);
-
-    // Queda listo para el carné siguiente, sin cerrar. En Bodega se anotan
-    // varios seguidos y hasta el 2026-08-17 cada uno costaba volver a abrir el
-    // modal desde la tarjeta.
-    const listoParaElSiguiente = useCallback(() => {
-        bufferRef.current = '';
-        isManRef.current  = false;
-        setEmployee(null);
-        setDisplayDots(0);
-        setManualWarn(false);
-        setError('');
-    }, []);
 
     const lookupPin = useCallback(async (code) => {
         setLoading(true);
@@ -66,54 +41,35 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
             // llega como error y decía «Error al buscar empleado», que no dice
             // qué hacer — y es justo la que aparece después de insistir.
             if (error) { setError(mensajeAmigable(error, 'No se pudo confirmar el carné.')); return; }
-            if (data) { await signPhotosDeep(data); setEmployee(data); setManualWarn(false); }
+            if (data) { await signPhotosDeep(data); setEmployee(data); }
             else       setError('Ese carné no es de nadie de esta sucursal.');
         } catch (err) { setError(mensajeAmigable(err, 'No se pudo confirmar el carné.')); }
         finally   { setLoading(false); }
     }, []);
 
+    const { teclas, manual, limpiar } = useCapturaDeCarne(open, lookupPin);
+
+    // Un tecleo a mano deja al que se acababa de reconocer fuera de la pantalla:
+    // lo que se confirma es lo que ENTRÓ por el lector, y nada más.
+    const reconocido = manual ? null : employee;
+
     useEffect(() => {
-        if (!open) return;
-        const handleKey = (e) => {
-            if (e.key === 'Escape') return;
-            const now = Date.now();
-            const gap = now - lastTimeRef.current;
-            lastTimeRef.current = now;
+        if (!open) {
+            setEmployee(null);
+            setError('');
+            setAnotados([]);
+            limpiar();
+        }
+    }, [open, limpiar]);
 
-            if (e.key === 'Enter') {
-                const buf = bufferRef.current;
-                bufferRef.current = '';
-                setDisplayDots(0);
-                clearTimeout(timerRef.current);
-                if (buf.length >= 3 && !isManRef.current) lookupPin(buf);
-                isManRef.current = false;
-                return;
-            }
-            if (e.key.length !== 1) return;
-
-            if (bufferRef.current.length > 0 && gap > 80) {
-                // Manual typing detected
-                isManRef.current = true;
-                setManualWarn(true);
-                setEmployee(null);
-                bufferRef.current = e.key;
-                setDisplayDots(1);
-            } else {
-                if (bufferRef.current.length === 0) isManRef.current = false;
-                bufferRef.current += e.key;
-                setDisplayDots(bufferRef.current.length);
-            }
-
-            clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => {
-                bufferRef.current = '';
-                isManRef.current  = false;
-                setDisplayDots(0);
-            }, 500);
-        };
-        document.addEventListener('keydown', handleKey, { capture: true });
-        return () => { document.removeEventListener('keydown', handleKey, { capture: true }); clearTimeout(timerRef.current); };
-    }, [open, lookupPin]);
+    // Queda listo para el carné siguiente, sin cerrar. En Bodega se anotan
+    // varios seguidos y hasta el 2026-08-17 cada uno costaba volver a abrir el
+    // modal desde la tarjeta.
+    const listoParaElSiguiente = useCallback(() => {
+        setEmployee(null);
+        setError('');
+        limpiar();
+    }, [limpiar]);
 
     const confirmApoyo = useCallback(async () => {
         if (!employee) return;
@@ -158,47 +114,19 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 </PedidoModal.Header>
 
                 <PedidoModal.Body className="space-y-4">
-                    {!employee && (
-                        <div className="flex flex-col items-center gap-3 py-3">
-                            <div className="relative w-16 h-16 rounded-2xl bg-chart-1/10 border-2 border-chart-1/30 flex items-center justify-center">
-                                {/* §11 — el latido del aro del escáner es
-                                    `animate-pulse` de Tailwind, que además se apaga
-                                    solo en Solid y con `prefers-reduced-motion`. Con
-                                    framer-motion latía en los cuatro temas. */}
-                                <div className="absolute inset-0 rounded-2xl border-2 border-chart-1 pointer-events-none animate-pulse" />
-                                <ScanLine size={28} className="text-chart-1-text" />
-                                {loading && (
-                                    <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center"><SkeletonText lines={4} className="w-full max-w-md" /></div>
-                                )}
-                            </div>
-
-                            {displayDots > 0 && (
-                                <div className="flex gap-1.5 h-3 items-center">
-                                    {Array.from({ length: Math.min(displayDots, 10) }).map((_, i) => (
-                                        <div key={i}
-                                            className="w-2 h-2 rounded-full bg-chart-1 animate-in zoom-in duration-[var(--dur-base)]"
-                                            style={{ animationDelay: `${i * 20}ms` }}
-                                        />
-                                    ))}
-                                    {displayDots > 10 && <span className="text-caption text-chart-1-text">+{displayDots - 10}</span>}
-                                </div>
-                            )}
-
-                            <p className="text-body-sm text-content-2 text-center">
-                                Apunta el escáner al código de barras<br />del carné del empleado
-                            </p>
-                        </div>
+                    {!reconocido && (
+                        <EsperaDeCarne teclas={teclas} manual={manual} ocupado={loading} />
                     )}
 
-                    {employee && (
+                    {reconocido && (
                         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                             animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
-                            {employee.photo_url
-                                ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
+                            {reconocido.photo_url
+                                ? <img src={reconocido.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
-                                <p className="font-bold text-success-text text-body-lg">{shortEmployeeName(employee)}</p>
+                                <p className="font-bold text-success-text text-body-lg">{shortEmployeeName(reconocido)}</p>
                                 <p className="text-label text-success-text mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </div>
@@ -227,12 +155,6 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         </div>
                     )}
 
-                    {manualWarn && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
-                            <ShieldAlert size={14} className="shrink-0 text-danger" />
-                            Solo se acepta escaneo. No se permite ingreso manual del teclado.
-                        </div>
-                    )}
                     {error && (
                         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
                             <AlertTriangle size={14} className="shrink-0 text-danger" />
@@ -249,7 +171,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 en cuanto hay alguien guardado, porque cerrar ya
                                 no deshace nada. */}
                             <Button variant="secondary" onClick={onClose}>{anotados.length > 0 ? 'Listo' : 'Cancelar'}</Button>
-                            {employee && (
+                            {reconocido && (
                                 <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                                     Confirmar</Button>
                             )}

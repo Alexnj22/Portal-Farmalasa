@@ -57,6 +57,23 @@ const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBols
  * Las tres primeras etapas ignoran el período de la vista a propósito: una bolsa
  * que lleva seis días esperando es justamente la que hay que ver, y el período
  * arranca en «Hoy». El período recorta sólo el historial de las contadas.
+ *
+ * ── Las dos acciones viven en la píldora ────────────────────────────────────
+ * «los botones de sacar dinero, entregar dinero, deben estar en el filterpill»
+ * (usuario, 2026-08-17). Es §17 al pie de la letra: `FilterBar` lleva los
+ * filtros de la vista **y sus acciones**. Estaban colgados de la etapa «En la
+ * sala», que además las escondía al hacer scroll.
+ *
+ * La píldora la dibuja `CortesView` —una por vista—, así que esta pestaña
+ * PUBLICA sus acciones por `onAcciones` y sigue siendo dueña de sus diálogos.
+ * Al revés (que el padre supiera cuántas bolsas hay en la sala para poder
+ * deshabilitarlas) habría que cargar las bolsas dos veces.
+ *
+ * ── Y los montos, detrás de `bolsas_ver_montos` ─────────────────────────────
+ * «los totales de dinero no los deben ver los dependientes, solo quien tenga
+ * permisos» (mismo día). Mismo canon que `facturacion_ver_montos`. Sin el
+ * permiso la pantalla dice cuántas bolsas, de qué día y con qué folio —todo lo
+ * que hace falta para moverlas— y ni una cifra.
  */
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
@@ -83,7 +100,7 @@ const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
 const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - saldoDe(b)) * 100) / 100);
 
 /** Una bolsa, con lo que hay que saber de ella en cualquier etapa. */
-function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma, onAbrir }) {
+function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma, onAbrir, verMontos }) {
     const dias = diasDesde(bolsa.fecha);
     const quien = personas.get(bolsa.contado_por || bolsa.recibida_por || bolsa.entregada_por || bolsa.cerrada_por);
     return (
@@ -116,15 +133,16 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                     </div>
                 </div>
                 {/* La cifra grande es lo que DEBE HABER en billetes. Cuando salió
-                    dinero, lo guardado va abajo y tachado: si sólo se mostrara el
-                    monto inicial, la pantalla estaría prometiendo plata que ya no
-                    está adentro. */}
+                    dinero, lo guardado va abajo: si sólo se mostrara el monto
+                    inicial, la pantalla estaría prometiendo plata que ya no está
+                    adentro. Sin `bolsas_ver_montos` no hay cifra — queda el ojo,
+                    que es lo que dice que la tarjeta se abre. */}
                 <div className="text-right shrink-0">
                     <div className="text-label font-bold tabular-nums text-content flex items-center gap-1.5 justify-end">
-                        {formatMoney(saldoDe(bolsa))}
+                        {verMontos && formatMoney(saldoDe(bolsa))}
                         {onAbrir && <OjoDeTarjeta size={13} />}
                     </div>
-                    {Number(bolsa.vales || 0) > 0 && (
+                    {verMontos && Number(bolsa.vales || 0) > 0 && (
                         <div className="text-caption text-content-3 tabular-nums">
                             de {formatMoney(bolsa.monto_inicial)}
                         </div>
@@ -135,7 +153,8 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
             <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
                 {Number(bolsa.vales || 0) > 0 && (
                     <Badge variant="info" size="sm">
-                        {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'} · {formatMoney(bolsa.vales)}
+                        {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'}
+                        {verMontos ? ` · ${formatMoney(bolsa.vales)}` : ''}
                     </Badge>
                 )}
                 {alarma && dias >= DIAS_DE_ALARMA && (
@@ -249,7 +268,7 @@ function Resolver({ bolsa, ocupado, onResolver }) {
 }
 
 /** Una etapa del circuito, con su total y su acción de conjunto. */
-function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio }) {
+function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio, verMontos }) {
     return (
         <section className="space-y-2">
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
@@ -259,7 +278,7 @@ function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio }) {
                 </h3>
                 <span className="text-caption text-content-3 tabular-nums">
                     {bolsas.length} {bolsas.length === 1 ? 'bolsa' : 'bolsas'}
-                    {bolsas.length > 0 && ` · ${formatMoney(suma(bolsas))}`}
+                    {verMontos && bolsas.length > 0 && ` · ${formatMoney(suma(bolsas))}`}
                 </span>
             </div>
             {ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
@@ -271,10 +290,11 @@ function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio }) {
     );
 }
 
-export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
+export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }) {
     const { hasPermission } = useAuth();
     const puedeEntregar = hasPermission('bolsas', 'can_edit');
     const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
+    const verMontos = hasPermission('bolsas_ver_montos');
     const showToast = useToastStore((s) => s.showToast);
     const empleados = useStaff((st) => st.employees);
 
@@ -458,11 +478,32 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 onSeleccionar={extra?.elegible ? alternar : null}
                 alarma={extra?.alarma}
                 onAbrir={setAbierta}
+                verMontos={verMontos}
             >
                 {extra?.pie?.(b)}
             </Bolsa>
         ),
-    })), [nombreSala, personas, elegidas, alternar, setAbierta]);
+    })), [nombreSala, personas, elegidas, alternar, setAbierta, verMontos]);
+
+    // ── Las dos acciones, publicadas a la píldora de la vista ───────────────
+    // Ninguna depende de haber marcado bolsas: quien va a pagar una remesa sabe
+    // el monto, no de qué bolsa sale —eso lo elige el portal—, y la entrega
+    // pregunta por DÍAS, que es como la sala piensa lo que se lleva.
+    const acciones = useMemo(() => (puedeEntregar ? [
+        {
+            key: 'sacar', icon: HandCoins, label: 'Sacar dinero', rotulo: 'Sacar',
+            disabled: !enSala.length, onClick: () => setSacando(true),
+        },
+        {
+            key: 'entregar', icon: Send, label: 'Entregar dinero', rotulo: 'Entregar',
+            variant: 'primary', disabled: !enSala.length, onClick: () => setEntregando(true),
+        },
+    ] : []), [puedeEntregar, enSala.length]);
+
+    useEffect(() => { onAcciones?.(acciones); }, [acciones, onAcciones]);
+    // Al salir de la pestaña la píldora tiene que quedar sin ellas: son acciones
+    // de Bolsas, no de la vista.
+    useEffect(() => () => onAcciones?.([]), [onAcciones]);
 
     if (cargando) return <LoadingState label="Buscando las bolsas" />;
 
@@ -508,25 +549,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                         </div>
                     ),
                 })}
-                accion={puedeEntregar && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {/* Sacar dinero está SIEMPRE, no detrás de elegir una
-                            bolsa: quien va a pagar una remesa sabe el monto, no
-                            de qué bolsa sale — eso lo elige el portal. */}
-                        <Button variant="secondary" size="sm" icon={HandCoins}
-                            disabled={!enSala.length} onClick={() => setSacando(true)}>
-                            Sacar dinero
-                        </Button>
-                        {/* Entregar tampoco depende de haber marcado bolsas: el
-                            diálogo pregunta por DÍAS, que es como la sala piensa
-                            lo que se lleva. Marcar de a una sigue existiendo
-                            para el caso raro, pero dejó de ser el camino. */}
-                        <Button variant="primary" size="sm" icon={Send}
-                            disabled={!enSala.length} onClick={() => setEntregando(true)}>
-                            Entregar dinero
-                        </Button>
-                    </div>
-                )}
+                verMontos={verMontos}
                 vacio="Sin efectivo esperando en las salas"
             />
 
@@ -544,8 +567,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                             : `${enCaminoViejas.length} bolsas llevan más de un día entregadas y sin recibir`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Suman {formatMoney(suma(enCaminoViejas))}. Mientras nadie confirme la
-                        recepción, ese dinero no está ni en la sala ni en administración.
+                        {verMontos && `Suman ${formatMoney(suma(enCaminoViejas))}. `}
+                        Mientras nadie confirme la recepción, ese dinero no está ni en la
+                        sala ni en administración.
                     </span>
                 </Notice>
             )}
@@ -558,9 +582,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 accion={puedeContar && elegidasEnCamino.length > 0 && (
                     <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
                         onClick={() => recibir(elegidasEnCamino)}>
-                        Confirmar recepción de {elegidasEnCamino.length} · {formatMoney(suma(elegidasEnCamino))}
+                        Confirmar recepción de {elegidasEnCamino.length}
+                        {verMontos ? ` · ${formatMoney(suma(elegidasEnCamino))}` : ''}
                     </Button>
                 )}
+                verMontos={verMontos}
                 vacio="Nada en camino"
             />
 
@@ -574,6 +600,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                         <Conteo bolsa={b} ocupado={ocupado === `contar-${b.id}`} onContar={contar} />
                     ) : null),
                 })}
+                verMontos={verMontos}
                 vacio="Nada pendiente de contar"
             />
 
@@ -592,7 +619,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                                     ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadró</Badge>
                                     : (
                                         <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
-                                            {dif < 0 ? 'Faltó ' : 'Sobró '}{formatMoney(Math.abs(dif))}
+                                            {dif < 0 ? 'Faltó' : 'Sobró'}
+                                            {verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}
                                         </Badge>
                                     )}
                                 {b.dif_at && (
@@ -612,6 +640,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                         );
                     },
                 })}
+                verMontos={verMontos}
                 vacio="Sin bolsas contadas en estas fechas"
             />
 
@@ -632,6 +661,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                         abierto={entregando}
                         bolsas={enSala}
                         saldoDe={saldoDe}
+                        verMontos={verMontos}
                         nombreSala={enSala.length ? nombreSala[enSala[0].branch_id] : ''}
                         onClose={() => setEntregando(false)}
                         onHecho={trasLaEntrega}

@@ -66,6 +66,11 @@ const rotularDia = (fecha) => {
 export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
     const puedeGuardar = hasPermission('bolsas', 'can_edit');
+    // «los totales de dinero no los deben ver los dependientes, solo quien
+    // tenga permisos» (usuario, 2026-08-17). Es la misma regla que en la
+    // pestaña de Bolsas: sin `bolsas_ver_montos` la baldosa dice cuántas bolsas
+    // hay y cuántos días llevan, que es lo que cambia lo que hay que HACER hoy.
+    const verMontos = hasPermission('bolsas_ver_montos');
     const miSala = user?.branchId ?? user?.branch_id ?? null;
 
     const branches = useStaff((st) => st.branches);
@@ -223,8 +228,13 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     </span>
                 </div>
                 <CarrilCards ariaLabel="Efectivo guardado en la sala">
+                    {/* Sin el permiso de montos la tarjeta cuenta BOLSAS: la
+                        baldosa existe para saber que hay efectivo esperando el
+                        retiro, y eso se sabe igual sin la cifra. */}
                     <StatCard densa icon={Banknote} iconBg="bg-success/10" iconCls="text-success-text"
-                        label="Efectivo guardado" value={formatMoney(total)} valueCls="text-success-text" />
+                        label={verMontos ? 'Efectivo guardado' : 'Bolsas guardadas'}
+                        value={verMontos ? formatMoney(total) : String(enSala.length)}
+                        valueCls="text-success-text" />
                 </CarrilCards>
 
                 {/* «Entrega de remesas», lo que pidió el usuario: cuando hay que
@@ -279,9 +289,11 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                     {c.caja || 'Sin nombre'}
                                 </div>
                             </div>
-                            <div className="text-label font-bold tabular-nums text-content text-right shrink-0">
-                                {formatMoney(c.sugerida)}
-                            </div>
+                            {verMontos && (
+                                <div className="text-label font-bold tabular-nums text-content text-right shrink-0">
+                                    {formatMoney(c.sugerida)}
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
                             {/* Desde que la bolsa nace sola al confirmar el
@@ -328,9 +340,11 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                         Corte del {rotularDia(b.fecha)} · {hhmm(b.hora)}
                                     </div>
                                 </div>
-                                <div className="text-label font-bold tabular-nums text-success-text text-right shrink-0">
-                                    {formatMoney(b.monto_inicial)}
-                                </div>
+                                {verMontos && (
+                                    <div className="text-label font-bold tabular-nums text-success-text text-right shrink-0">
+                                        {formatMoney(b.monto_inicial)}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
                                 {dias >= DIAS_DE_ALARMA

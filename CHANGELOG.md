@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.0 — Entregar efectivo: se escanea el carné y los montos van tras permiso
+
+Tres correcciones del usuario sobre la pantalla de bolsas, mirándola en vivo.
+
+**«Sacar dinero» y «Entregar dinero» se fueron a la píldora.** Estaban colgados
+de la etapa «En la sala», o sea que se iban con el scroll. Es §17 al pie de la
+letra: `FilterBar` lleva los filtros de la vista **y sus acciones**. La píldora
+es una sola por vista y la dibuja `CortesView`, así que `TabBolsas` las publica
+por `onAcciones` y sigue siendo dueña de sus diálogos — al revés, la vista padre
+tendría que cargar las bolsas por su cuenta sólo para saber si deshabilitarlas.
+
+**La entrega ya no pregunta quién se lleva el efectivo: lo dice el carné.**
+Elegir a la persona de una lista y DESPUÉS pedirle el carné eran dos formas de
+contestar la misma pregunta, y la lista obligaba a publicarle a la sala la
+nómina entera —quien recolecta suele ser de administración— para elegir a
+alguien que el escaneo iba a identificar igual. Ahora quedan el selector de días
+y la pantalla de espera del lector, **la misma que el apoyo de un pedido**: su
+detector salió a `hooks/useCapturaDeCarne` y su panel a
+`components/common/EsperaDeCarne`, y los dos los usan. Copiarlos habría dejado
+dos detectores que se corrigen por separado, que es exactamente lo que pasó con
+el PIN contra el código.
+
+Atrás va `probar_identidad_por_carne`, que resuelve a la persona —PIN primero,
+código después— y emite el vale de un solo uso en la misma llamada. **Sin filtro
+de sucursal a propósito**: `identificar_por_carne`, la del apoyo, exige que la
+persona trabaje en esa sala, y el recolector justamente no. Y devuelve
+`{ok:false, motivo}` en vez de lanzar, porque un `RAISE` aborta la transacción y
+se lleva el registro del intento fallido — medido: `intentos_identidad` tiene 17
+filas, las 17 de `CARNE_LOOKUP` (la función que no lanza) y cero de `RETIRO`, o
+sea que el freno de `probar_identidad` viene contando sobre una tabla que nunca
+crece. Verificado en el entorno de pruebas: el intento que no reconoce a nadie
+queda escrito.
+
+**Los montos, detrás de `bolsas_ver_montos`.** «Los totales de dinero no los
+deben ver los dependientes, solo quien tenga permisos». Mismo canon que
+`facturacion_ver_montos`, y sembrado al revés que las de agosto —que arrancaron
+encendidas para todo rol que ya veía el módulo padre—: sólo Gerente General,
+Administrador, Supervisor/a de Ventas y Jefe/a de Talento Humano. Sin el
+permiso, la pantalla dice cuántas bolsas hay, de qué día son y con qué folio
+—todo lo que hace falta para moverlas y cotejarlas contra lo físico— y ni una
+cifra: tarjetas de bolsa, totales de cada etapa, avisos, el diálogo de entrega y
+la baldosa del Inicio, que pasa a contar bolsas en vez de dinero.
+
+Queda fuera «Sacar dinero»: ahí el monto es el dato que se escribe y el aviso de
+«no alcanza» depende de él.
+
 ## v2.654.2 — El ticket de una bolsa de efectivo sale a la mitad de largo
 
 Los tres papeles de una bolsa —la etiqueta que se pega afuera, el vale que

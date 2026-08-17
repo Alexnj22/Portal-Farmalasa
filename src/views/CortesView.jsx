@@ -313,6 +313,15 @@ const CortesView = () => {
     const [tab, setTab] = useState('cortes');
     const enBolsas = tab === 'bolsas';
 
+    // ── Las acciones de Bolsas viven en la píldora (§17) ────────────────────
+    // «los botones de sacar dinero, entregar dinero, deben estar en el
+    // filterpill» (usuario, 2026-08-17). La píldora es UNA por vista y la
+    // dibuja este archivo, así que la pestaña las PUBLICA acá y sigue siendo
+    // dueña de sus diálogos. Al revés —que esta vista supiera cuántas bolsas
+    // hay en la sala para poder deshabilitarlas— habría que cargar las bolsas
+    // dos veces, una por pantalla.
+    const [accionesBolsas, setAccionesBolsas] = useState(VACIO);
+
     const filtersContent = (
         <ViewTabBar
             tabs={verBolsas
@@ -360,6 +369,7 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
+                            acciones={enBolsas ? accionesBolsas : VACIO}
                             activeCount={[sala, !esHoy,
                                 !enBolsas && estado !== 'TODOS',
                                 !enBolsas && diferencia !== 'TODAS'].filter(Boolean).length}>
@@ -425,7 +435,8 @@ const CortesView = () => {
                     corte: en la sala → entregada → recibida → contada. Comparte
                     con Cortes la sucursal y el período; el resto es suyo. */}
                 {enBolsas && (
-                    <TabBolsas desde={desde} hasta={hasta} sala={sala} nombreSala={nombreSala} />
+                    <TabBolsas desde={desde} hasta={hasta} sala={sala} nombreSala={nombreSala}
+                        onAcciones={setAccionesBolsas} />
                 )}
 
                 {!enBolsas && (<>

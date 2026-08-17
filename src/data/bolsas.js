@@ -305,6 +305,30 @@ export function probarIdentidad({ employeeId, metodo, secreto }) {
     });
 }
 
+/**
+ * El carné dice QUIÉN es, y de paso emite el vale — un solo paso.
+ *
+ * Es lo que reemplazó a «elegir a la persona de una lista y después pedirle el
+ * carné» en la entrega del efectivo (usuario, 2026-08-17). Elegir un nombre no
+ * aporta nada cuando el carné ya lo contesta, y la lista obligaba a publicarle
+ * a la sala la nómina entera.
+ *
+ * A diferencia de `probarIdentidad`, el «no lo reconocí» viene como resultado y
+ * no como error: el servidor necesita CONFIRMAR la transacción para que el
+ * intento fallido quede registrado y el freno tenga contra qué contar.
+ *
+ * Devuelve `{ vale, persona }` o `{ motivo }` / `{ error }`.
+ */
+export async function identificarPorCarne(secreto) {
+    const { data, error } = await supabase.rpc('probar_identidad_por_carne', { p_secreto: secreto });
+    if (error) return { error };
+    if (!data?.ok) return { motivo: data?.motivo || 'No se pudo confirmar el carne.' };
+    // La foto viene cruda (formato público, que es lo que guarda la base) y el
+    // bucket es privado: sin firmar no se ve.
+    await signPhotosDeep(data.employee);
+    return { vale: data.vale, persona: data.employee };
+}
+
 /** Se anula, nunca se borra: el vale ya salió impreso y está dentro de la bolsa. */
 export function anularSalida(operacionId, motivo) {
     return supabase.rpc('anular_salida_de_bolsa', {

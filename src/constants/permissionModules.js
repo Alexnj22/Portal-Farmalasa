@@ -158,6 +158,14 @@ const GRUPOS_CRUDOS = [
                 // un solo permiso, darle a la sala lo suyo le daría también el
                 // poder de dar por buena su propia bolsa.
                 { key: 'bolsas_conteo', label: 'Recibir y contar el dinero (administración)', tipo: 'cap' },
+                // Decisión del usuario (2026-08-17): «los totales de dinero no
+                // los deben ver los dependientes, solo quien tenga permisos».
+                // Sin esto, la sala mueve las bolsas viendo cuánto hay adentro
+                // de cada una — y para moverlas alcanza el folio y el día.
+                // Arranca ENCENDIDA sólo para quien recibe y cuenta el dinero,
+                // al revés que las otras `*_ver_montos`, que se sembraron para
+                // todo rol que ya veía el módulo padre.
+                { key: 'bolsas_ver_montos', label: 'Ver los montos', tipo: 'cap' },
             ]},
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.644.0 — Bitácoras SRS: el libro foliado de dispensación bajo receta
+
+**Módulo nuevo, primera entrega: la base.** Las bitácoras que la Superintendencia
+de Regulación Sanitaria exige en cada sala. La pantalla llega en la siguiente.
+
+**Las tres ambientales** —temperatura y humedad, limpieza y orden,
+refrigerador— con sus áreas configurables por sucursal: cuántas lecturas al día
+y en qué franjas, qué rango aplica, qué días se monitorea y hasta cuándo está
+calibrado el instrumento. Sembradas para las 6 salas (sala de ventas + bodega) y
+para Bodega (bodega + refrigerador, 2 a 8 °C).
+
+**El libro de dispensación bajo receta, foliado por sucursal y año.** Buscar un
+folio —`2026-00007`— devuelve todo de una: producto, cantidad, lote,
+vencimiento, la venta con su documento y su PDF, el cliente, quién vendió, el
+paciente, el médico con su número de junta, la receta con su foto, y lo que
+queda pendiente de entregar.
+
+**Agosto recreado**: 103 renglones en las 6 salas (98 vigentes, 5 anuladas),
+foliados en orden cronológico. Los 103 salieron de la venta con lote,
+vencimiento, cliente y vendedor ya puestos. Lo que queda pendiente es lo único
+que un sistema no puede saber: paciente, médico y la foto de la receta.
+
+**Lo que ordena todo el diseño es un ítem del reglamento**, el RTS 6.1.14: un
+registro digital debe ser «atribuible, legible, **contemporáneo**, original y
+preciso». De ahí salen tres cosas que sin ese ítem parecen de más: se guarda la
+hora **real** de captura además de la franja, una carga fuera de su ventana
+queda marcada como tarde, y nada se borra — corregir agrega una corrección con
+su motivo y su autor.
+
+**Un mes imperfecto se puede cerrar, y el cierre guarda cuán imperfecto era.**
+Exigir perfección para poder firmar enseña a inventar las lecturas que faltan.
+
+**Y el libro ya encontró algo**: folio 2026-00006 de Salud 1 — ROCEFORT 1 GR IV,
+lote vencido el 1-mar-2026, dispensado el 3-ago. 155 días vencido, y es un ítem
+CRÍTICO de la guía de inspección.
+
+Definición completa, con cada exigencia citada por número de ítem, en
+`docs/PLAN-BITACORAS-SRS-2026-08-16.md`. Los dos documentos de la norma quedaron
+en `docs/legal/`.
+
 ## v2.643.2 — Por confirmar: apartar es un clic, se pueden ver los apartados y deja de cargar lo que no se mira
 
 **Compras → Cargar compra → Por confirmar.**

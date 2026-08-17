@@ -23,11 +23,10 @@ export function fetchProductPreciosOptsForProducts(productIds) {
     );
 }
 
-export function fetchPedidoApoyoBasic(pedidoId, sucursalId) {
-    return supabase.from('pedido_apoyo')
-        .select('employee_id, employees(name, photo_url)')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucursalId);
-}
+// `fetchPedidoApoyoBasic` se retiró con la franja de «Responsables» del modal de
+// recepción (2026-08-17): era su único llamador, y el apoyo de recepción se
+// sigue viendo en la tarjeta del pedido, que lo trae por su cuenta
+// (`fetchApoyoForPedidos` → `apoyoMap` en `usePedidosData`, bucket `recepcion`).
 
 export function searchAvailableProducts(term, excludeIds) {
     let q = supabase.from('products').select('id, nombre')

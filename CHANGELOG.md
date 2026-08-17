@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.3 — Recepción: el nombre completo en las cajas especiales, el aviso de que el producto se recibe entero, y la hoja con más lista y menos encabezado
+
+Tres arreglos de pantalla en el modal de recepción, pedidos por el usuario.
+
+**El nombre de la caja especial se leía cortado.** La baldosa lo dibujaba dentro
+de `max-w-[90px] truncate`, así que las diez presentaciones de Electrolit decían
+todas «ELECTROLIT MANZ…» — el rótulo E1, E2… distinguía las baldosas entre sí,
+pero no decía qué caja hay que ir a buscar al estante, que es justo para lo que
+se mira. Ahora el nombre se escribe entero y baja de renglón si hace falta (las
+baldosas de una misma fila igualan alto solas), y la rejilla se queda en **dos
+columnas hasta seis baldosas** en vez de cuatro: en tres columnas el ancho no
+alcanza para leer un nombre largo aunque se lo deje envolver.
+
+**Recibir un producto suelto es parcial POR PRODUCTO, no por unidad.** El renglón
+se cierra con la cantidad que quede escrita y ya no se vuelve a contar, así que
+quien viene a buscar un producto para venderlo ahora puede llevarse las que
+necesita, dejar el resto «para después» y no enterarse de que ese después no
+existe: lo no contado queda como faltante. La tarjeta de búsqueda rápida lo dice
+ahora en el sitio donde se decide —**«Cuenta las 24 de una vez: el producto se
+recibe completo y después ya no se vuelve a contar»**— y sólo cuando el renglón
+trae más de uno, que es el único caso donde se puede equivocar. El botón verde
+de la tabla lleva el mismo aviso en su ayuda.
+
+**La hoja abierta es la lista de productos, no su encabezado.** Se retiró la
+franja de «Responsables» del pie —el apoyo de recepción se sigue viendo en la
+tarjeta del pedido, que lo trae por su cuenta— y el encabezado pasó a `py-2.5`
+con el título a 14px: entre las dos cosas se liberaron ~140px, que van a la
+lista (de `48vh` a `54dvh`). Con eso se fueron también su consulta a
+`pedido_apoyo` en cada apertura del modal y el `EmpChip` que vivía en el archivo,
+que no tenía ningún otro uso en el repo.
+
 ## v2.655.2 — La entrega acepta usuario y contraseña cuando el carné no lee
 
 La escotilla que faltaba, pedida por el usuario al ver la pantalla sólo-escaneo

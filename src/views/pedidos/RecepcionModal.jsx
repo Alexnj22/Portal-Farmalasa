@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
-import { signPhotosDeep } from '../../utils/storageFiles';
 import useCapaFlotante from '../../utils/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
@@ -15,12 +14,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import PedidoModal from './PedidoModal';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 import {
-    fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, fetchPedidoApoyoBasic,
+    fetchProductPreciosOpts, fetchProductPreciosOptsForProducts,
     searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
@@ -31,22 +29,10 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
 import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
-import { shortEmployeeName } from '../../utils/nameUtils';
 
-export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
-    if (!emp) return null;
-    const avatarCls = size === 'sm' ? 'w-6 h-6 rounded-full text-caption' : 'w-8 h-8 rounded-full text-body-sm';
-    return (
-        <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-surface-card border border-divider shadow-sm">
-            <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className={avatarCls} />
-            <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(emp)}</span>
-            {sub && <span className="text-micro text-content-3 whitespace-nowrap">{sub}</span>}
-            {onRemove && (
-                <Button variant="ghost" icon={X} iconOnly onClick={onRemove} />
-            )}
-        </span>
-    );
-}
+// `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
+// único uso en todo el repo (el chip de las tarjetas de pedido es
+// `tabpedidos/EmpChip.jsx`, otro archivo).
 
 function toDispatch(qty, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return qty;
@@ -179,14 +165,29 @@ function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
                 const panelOpen = tieneProblema[r.id] === true;
                 const hasProb   = !!tieneProblema[r.id];
                 const etiquetaEnviado = presOpts.find(o => o.factor === dispFactor)?.label ?? '';
+                const enviadoDisp = toDispatch(enviado, erpFactor, dispFactor);
 
                 return (
                     <div key={r.id} className={`mt-1.5 px-3 py-2.5 rounded-xl border ${delta !== 0 ? 'border-warning/40 bg-warning/10' : hasProb ? 'border-chart-4/40 bg-chart-4/10' : 'border-divider bg-surface-card'}`}>
                         <p className="text-body-sm font-semibold text-content-2 leading-tight">{r.products?.nombre}</p>
                         <p className="text-micro text-content-3 mt-0.5">
                             {hoja ? `Hoja ${hoja} · ` : ''}
-                            Enviado: {toDispatch(enviado, erpFactor, dispFactor)}{etiquetaEnviado ? ` × ${etiquetaEnviado}` : ''}
+                            Enviado: {enviadoDisp}{etiquetaEnviado ? ` × ${etiquetaEnviado}` : ''}
                         </p>
+
+                        {/* Recibir uno suelto es parcial POR PRODUCTO, no por unidad:
+                            el renglón se cierra con la cantidad que quede escrita acá
+                            y no se vuelve a contar. Quien viene a buscar un producto
+                            para venderlo ya, tiende a llevarse las que necesita y a
+                            dejar el resto «para después» — y ese después no existe.
+                            Se dice sólo cuando el renglón trae más de uno, que es el
+                            único caso donde se puede equivocar. */}
+                        {enviadoDisp > 1 && (
+                            <p className="text-micro font-medium text-warning-text mt-1 leading-tight">
+                                Cuenta las {enviadoDisp} de una vez: el producto se recibe
+                                completo y después ya no se vuelve a contar.
+                            </p>
+                        )}
 
                         <div className="flex items-center gap-1.5 mt-2">
                             <div className="w-36 shrink-0">
@@ -351,7 +352,6 @@ export default function RecepcionModal({
     const [saveError, setSaveError] = useState(null);
     const [prodSearch, setProdSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
-    const [apoyo,      setApoyo]      = useState([]);
 
     // ── Extras ─────────────────────────────────────────────────────────────────
     const [extras,       setExtras]       = useState([]);
@@ -574,12 +574,6 @@ export default function RecepcionModal({
         }
         setFQtyVals(fQ); setFPresVals(fP);
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
-
-        (async () => {
-            const { data, error } = await fetchPedidoApoyoBasic(pedido.id, sucursalId);
-            if (error) console.error('fetch pedido_apoyo failed:', error.message);
-            setApoyo(await signPhotosDeep((data || []).map(r => ({ id: r.employee_id, ...r.employees }))));
-        })();
 
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
@@ -1211,7 +1205,10 @@ export default function RecepcionModal({
                     {especialItems.length > 0 && (
                         <div className="mt-4">
                             <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
-                            <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                            {/* Dos columnas hasta seis baldosas: el nombre del producto es
+                                lo que se busca en el estante, y en tres columnas no le
+                                queda ancho para leerse entero. */}
+                            <div className={`grid gap-2 ${especialItems.length <= 6 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                                 {especialItems.map(({ label, labels, item }) => {
                                     // La baldosa cubre varias cajas: alcanza con que UNA venga
                                     // dañada para que haya que mirarla.
@@ -1240,11 +1237,17 @@ export default function RecepcionModal({
                                                  isDamaged   ? <AlertTriangle size={14} className="text-white" /> :
                                                                <Star size={14} className="text-white" />}
                                             </div>
-                                            <div>
+                                            <div className="w-full min-w-0">
                                                 <p className={`text-body-sm font-black leading-none ${
                                                     isConfirmed ? 'text-success-text' : isFaltante ? 'text-content-3' : 'text-content-2'
                                                 }`}>{label}</p>
-                                                <p className="text-micro text-content-3 mt-0.5 leading-tight max-w-[90px] truncate">
+                                                {/* El nombre ENTERO, aunque ocupe dos o tres
+                                                    renglones: cortado a 90px decía «ELECTROLIT
+                                                    MANZ…» en las diez baldosas, o sea que no
+                                                    distinguía la caja que hay que ir a buscar de
+                                                    la de al lado. Las baldosas de una misma fila
+                                                    igualan alto solas. */}
+                                                <p className="text-micro text-content-3 mt-0.5 leading-tight break-words">
                                                     {item.products?.nombre ?? ''}
                                                 </p>
                                                 <p className={`inline-flex items-center gap-0.5 text-micro font-medium mt-0.5 ${
@@ -1522,8 +1525,12 @@ export default function RecepcionModal({
     return (
         <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl">
 
-            {/* Header */}
-            <PedidoModal.Header className="px-5 py-4">
+            {/* Header — COMPACTO (2026-08-17)
+                Lo que se mira en esta pantalla es la lista de productos: el
+                encabezado sólo tiene que decir qué hoja está abierta y cuánto
+                queda. Con `py-4` y el título a 15px se comía casi 80px de alto
+                para tres datos que entran en dos renglones cortos. */}
+            <PedidoModal.Header className="px-4 py-2.5">
                 <div {...prodSearchContainerRef} className="flex items-center gap-2">
                     {hayHojas && (
                         <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBack} />
@@ -1535,21 +1542,21 @@ export default function RecepcionModal({
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
                                 {selectedEspecial !== null ? (
                                     <>
-                                        <h3 className="text-subtitle font-bold text-content leading-snug">
+                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">
                                             {selectedEspecial.label} — Caja especial
                                             {isDanadaEspecial && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Dañada</span>}
                                         </h3>
-                                        <p className="text-label text-content-3 mt-0.5">
+                                        <p className="text-micro text-content-3 leading-tight truncate">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : hayHojas ? (
                                     <>
-                                        <h3 className="text-subtitle font-bold text-content leading-snug">
+                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">
                                             Hoja {selectedHoja}{hojaLabel[selectedHoja] ? ` — ${hojaLabel[selectedHoja]}` : ''}
                                             {hojaEnAlerta && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Revisar</span>}
                                         </h3>
-                                        <p className="text-label text-content-3 mt-0.5">
+                                        <p className="text-micro text-content-3 leading-tight">
                                             {/* Cuántos quedan por contar, no cuántos trae la
                                                 hoja: los recibidos de a uno siguen en la
                                                 lista y decir «5 productos» sobre 3 por contar
@@ -1561,14 +1568,14 @@ export default function RecepcionModal({
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
-                                        <p className="text-label text-content-3 mt-0.5">
+                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">Confirmar recepción</h3>
+                                        <p className="text-micro text-content-3 leading-tight truncate">
                                             {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                         </p>
                                     </>
                                 )}
                                 {(hojaEnAlerta || isDanadaEspecial) && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
+                                    <div className="mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
                                             {isDanadaEspecial
@@ -1578,7 +1585,7 @@ export default function RecepcionModal({
                                     </div>
                                 )}
                                 {!hayHojas && cajaDanada.length > 0 && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
+                                    <div className="mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
                                             Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisa el estado físico
@@ -1611,7 +1618,12 @@ export default function RecepcionModal({
 
             {/* Item grid */}
             <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
-              <div className="max-h-[48vh] overflow-y-auto">
+              {/* 54dvh y no 48vh: el encabezado compacto y la franja de
+                  responsables que se fue dejaron ~140px libres, y van a la
+                  lista, que es lo que se lee. `dvh` porque en el teléfono
+                  descuenta el cromo del navegador — con el tope de 88dvh de la
+                  tarjeta, el pie con «Confirmar» sigue entrando. */}
+              <div className="max-h-[54dvh] overflow-y-auto">
                 {/* §15.1 · pegajoso = tiene que OCLUIR — ver el encabezado gemelo
                     de la pestaña de extras, unas líneas más arriba. */}
                 <div data-pegajoso className="sticky top-0 z-base border-b-2 border-divider shadow-sm">
@@ -1744,7 +1756,9 @@ export default function RecepcionModal({
                                                 soft
                                                 disabled={saving}
                                                 onClick={() => handleRecibirSolo(r)}
-                                                title="Recibir solo este producto e ingresarlo al inventario ahora"
+                                                title={defDispQty > 1
+                                                    ? `Recibir solo este producto e ingresarlo al inventario ahora — entra completo con la cantidad que esté escrita (${defDispQty} enviadas), y después no se vuelve a contar`
+                                                    : 'Recibir solo este producto e ingresarlo al inventario ahora'}
                                             />
                                         </>)}
                                     </div>
@@ -1770,15 +1784,10 @@ export default function RecepcionModal({
                     {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
             </div>
 
-            {/* Responsables */}
-            {apoyo.length > 0 && (
-                <div className="flex-none border-t border-divider px-5 py-3">
-                    <p className="text-caption font-semibold text-content-3 uppercase tracking-wide mb-2">Responsables</p>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}
-                    </div>
-                </div>
-            )}
+            {/* Sin franja de «Responsables» (2026-08-17). Quien cuenta ya sabe
+                quién está contando, y la tarjeta del pedido sigue mostrando el
+                apoyo de recepción: acá sólo comía dos renglones de alto en la
+                única pantalla donde el alto es la lista de productos. */}
 
             <PedidoModal.Footer className="space-y-2">
                 {saveError && (

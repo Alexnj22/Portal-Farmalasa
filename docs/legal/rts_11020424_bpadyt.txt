@@ -1,0 +1,1559 @@
+REGLAMENTO TÉCNICO                                                       RTS 11.02.04:24
+SALVADOREÑO
+
+
+
+
+                 PRODUCTOS FARMACÉUTICOS.
+              MEDICAMENTOS DE USO HUMANO.
+          BUENAS PRÁCTICAS DE ALMACENAMIENTO,
+         DISPENSACIÓN, DISTRIBUCIÓN Y TRANSPORTE
+
+
+Correspondencia: este Reglamento Técnico Salvadoreño no tiene correspondencia con normativa
+internacional.
+
+
+
+
+ICS: 11.120.99                                                               RTS 11.02.04:24
+
+
+
+
+Editado por el Organismo Salvadoreño de Reglamentación Técnica miembro del Consejo
+Nacional de Calidad, ubicado en Boulevard San Bartolo y Calle Lempa, costado Norte del INCAF,
+Edificio CNC, Ilopango, San Salvador, El Salvador. Teléfono (503) 2590-5335 y (503) 2590-
+5338. Sitio web: osartec.gob.sv
+REGLAMENTO TÉCNICO SALVADOREÑO                                                 RTS 11.02.04:24
+
+                                          INFORME
+
+Los Comités Nacionales de Reglamentación Técnica conformados en el Organismo Salvadoreño de
+Reglamentación Técnica, son las instancias encargadas de la elaboración de Reglamentos Técnicos
+Salvadoreños. Están integrados por representantes de la empresa privada, gobierno, Defensoría del
+Consumidor y sector académico universitario.
+
+Con el fin de garantizar un consenso nacional e internacional, los proyectos elaborados por los
+Comités Nacionales de Reglamentación Técnica se someten a un período de consulta pública nacional
+e internacional, durante el cual cualquier parte interesada puede formular observaciones.
+
+El Reglamento Técnico elaborado fue aprobado como RTS 11.02.04:24 PRODUCTOS
+FARMACÉUTICOS. MEDICAMENTOS DE USO HUMANO. BUENAS PRÁCTICAS DE
+ALMACENAMIENTO, DISPENSACIÓN, DISTRIBUCIÓN Y TRANSPORTE, por el Comité
+Nacional de Reglamentación Técnica. La oficialización del reglamento conlleva el Acuerdo de la
+entidad correspondiente de su vigilancia y aplicación.
+
+Este Reglamento Técnico Salvadoreño está sujeto a permanente revisión con el objeto que responda
+en todo momento a las necesidades y exigencias de la técnica moderna.
+REGLAMENTO TÉCNICO SALVADOREÑO                         RTS 11.02.04:24
+
+     CONTENIDO                                                    PÁG.
+
+
+1.   OBJETO                                                   1
+2.   ÁMBITO DE APLICACIÓN                                     1
+3.   ABREVIATURAS, SIGLAS Y SÍMBOLOS                          1
+4.   DEFINICIONES                                             1
+5.   BUENAS PRÁCTICAS DE ALMACENAMIENTO, DISTRIBUCIÓN y       5
+     TRANSPORTE PARA LABORATORIOS, DROGUERÍAS Y CENTROS DE
+     ALMACENAMIENTO
+6.   BUENAS PRÁCTICAS DE ALMACENAMIENTO Y DISPENSACIÓN EN     20
+     FARMACIAS, BOTIQUINES Y OTROS ESTABLECIMIENTOS QUE
+     DISPENSAN PRODUCTOS REGULADOS
+7.   PROCEDIMIENTOS DE EVALUACIÓN DE LA CONFORMIDAD           28
+8.   DOCUMENTOS A CONSULTAR                                   28
+9.   FUENTES BIBLIOGRÁFICAS                                   28
+10. VIGILANCIA Y VERIFICACIÓN                                 29
+11. VIGENCIA                                                  29
+REGLAMENTO TÉCNICO SALVADOREÑO                                                    RTS 11.02.04:24
+
+1. OBJETO
+Establecer los lineamientos de las Buenas Prácticas de Almacenamiento, Dispensación, Distribución
+y Transporte de medicamentos, de los establecimientos farmacéuticos.
+
+2. ÁMBITO DE APLICACIÓN
+Aplica a los establecimientos farmacéuticos sean estos públicos o privados que realicen actividades
+de almacenamiento, dispensación, distribución y transporte de productos farmacéuticos.
+
+ 3. ABREVIATURAS, SIGLAS Y SÍMBOLOS
+ Abreviaturas:
+ - RTS:       Reglamento Técnico Salvadoreño
+ - RTCA:      Reglamento Técnico Centroamericano
+ - BPM:        Buenas Prácticas de Manufactura
+ Siglas:
+- BPADyT: Buenas prácticas de almacenamiento, distribución y transporte
+- BPAyD: Buenas prácticas de almacenamiento y dispensación
+- HR:         Humedad Relativa
+- JVPQF:      Junta de Vigilancia de la Profesión Química Farmacéutica
+- SRS:        Superintendencia de Regulación Sanitaria
+Símbolos:
+- ºC:         Grado Celsius
+
+
+4. DEFINICIONES
+Para los efectos de este Reglamento se adoptan las siguientes definiciones:
+
+4.1. Acción correctiva: acción tomada para eliminar la causa de una no conformidad detectada u
+otra situación indeseable. Puede haber más de una causa para una no conformidad. La acción
+correctiva se toma para prevenir que algo vuelva a producirse.
+
+4.2. Acción preventiva: acción tomada para eliminar la causa de una no conformidad potencial
+u otra situación potencialmente indeseable. Puede haber más de una causa para una no conformidad
+potencial. La acción preventiva se toma para prevenir que algo suceda.
+
+4.3. Alta dirección: persona o grupo de personas que dirigen y controlan al más alto nivel el
+establecimiento farmacéutico.
+
+4.4. Auto inspección: inspección efectuada por personal técnico calificado propio del
+establecimiento, que evalúa periódicamente las BPADyT.
+
+4.5. Autoridad Reguladora: autoridad responsable de la regulación sanitaria en cada país o
+región. En El Salvador, para el ámbito de aplicación del presente Reglamento, esta función le
+corresponde a la SRS.
+
+4.6. Buenas Prácticas de Almacenamiento, Distribución y Transporte: Conjunto de normas,
+procedimientos o recomendaciones que deben seguirse para mantener la calidad de los productos
+
+                                                                                      Página 1 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                        RTS 11.02.04:24
+
+regulados durante su período de vida útil, mediante un control adecuado de las numerosas actividades
+que ocurren en diferentes entidades durante el proceso de almacenamiento y distribución; además de
+proporcionar una herramienta para proteger el sistema de distribución contra medicamentos
+falsificados, no aprobados, importados ilegalmente, robados, calidad inferior, adulterados o mal
+etiquetado.
+
+4.7. Calidad de producto: naturaleza esencial de un producto y la totalidad de sus atributos y
+propiedades, las cuales determinan su idoneidad para los propósitos a los cuales se destina.
+
+4.8. Condiciones de almacenamiento: son las condiciones definidas por el fabricante y
+declaradas en el etiquetado, basadas en estudios de estabilidad, que garantizan el mantenimiento de
+la calidad, la seguridad y eficacia, a través de toda la vida útil del producto, bajo las condiciones de
+estabilidad del Reglamento correspondiente.
+
+4.9. Contaminación: presencia de elementos físicos, químicos o biológicos que atentan contra la
+pureza, identidad, eficacia y seguridad de un producto.
+
+4.10. Contaminación cruzada: contaminación de un producto terminado con otro producto u otro
+material ajeno a este durante el almacenamiento o distribución.
+
+4.11. Contrato a terceros: instrumento público o privado en el que se acuerdan las condiciones
+para la realización de actividades relacionadas con la importación, exportación, almacenamiento,
+distribución, incluyendo el transporte de un medicamento.
+
+4.12. Cuarentena: retención temporal de los productos farmacéuticos aislados físicamente o por
+otros medios efectivos, hasta su verificación para su liberación o rechazo.
+
+4.13. Desaduanaje: proceso de liberación aduanal de los medicamentos para la nacionalización
+que solicita el regente farmacéutico ante la Autoridad Reguladora.
+
+4.14. Desviación: parámetro que se aparta del proceso o procedimiento establecido.
+
+4.15. Devolución: retorno de un medicamento que puede presentar o no un defecto de calidad a su
+fabricante o a un establecimiento farmacéutico.
+
+4.16. Distribuidora o Droguería: es todo establecimiento que opera la importación,
+almacenamiento, distribución y transporte de productos farmacéuticos para la venta al mayoreo.
+
+4.17. Envase primario o empaque primario: recipiente dentro del cual se coloca directamente el
+medicamento en la forma farmacéutica terminada.
+
+4.18. Envase secundario o empaque secundario: recipiente dentro del cual se coloca el envase
+primario que contiene al medicamento en su forma farmacéutica terminada para su distribución y
+comercialización.
+
+
+
+
+                                                                                          Página 2 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+4.19. Establecimientos farmacéuticos: Laboratorios Farmacéuticos, droguerías, farmacias, venta
+de medicamentos, detallistas y los centros de almacenamientos y distribución de productos
+farmacéuticos, Farmacias Hospitalarias y Botiquines, previa calificación de la autoridad competente.
+
+4.20. Estudios de mapeo de temperatura y humedad: proceso para determinar la distribución de
+la temperatura y humedad en un área de almacenamiento, el punto más frío y el más cálido dentro
+del área. Los resultados del estudio de mapeo ofrecen el sustento científico para la colocación de los
+sensores de temperatura y humedad destinados al posterior monitoreo continuo.
+
+4.21. Etiquetado: es toda inscripción o leyenda que identifica al producto, que se imprima, adhiera
+o grabe en el envase o empaque primario, o envase o empaque secundario.
+
+4.22. Fecha de expiración (caducidad o vencimiento): fecha colocada en el material de empaque
+primario y secundario de un producto por lote fabricado, para indicar el plazo para la cual se espera
+que el producto satisfaga las especificaciones de calidad.
+
+4.23. Información complementaria: es todo etiquetado, marcado o rotulación que posee una
+inscripción o leyenda de información adicional o secundaria adherida o impresa en su empaque
+primario o secundario, en un medicamento, que puede incluir instrucciones detalladas sobre el uso
+del medicamento, posibles efectos secundarios, interacciones, registro sanitario, leyendas especiales
+o cualquier otra información relevante para garantizar un uso seguro y eficaz del medicamento, lo
+anterior en concordancia a lo autorizado en el registro sanitario. Se excluyen las etiquetas o
+rotulación relacionadas con el precio, código de barra y otras similares.
+
+4.24. Medicamento adulterado: condición en la que el contenido o naturaleza de un
+medicamento, resulta de un proceso de manufactura que no se ajusta a las Buenas Prácticas de
+Manufactura. Esto incluye los que se hayan elaborado, manipulado o almacenado en
+establecimientos en condiciones no autorizadas o ilegales.
+
+4.25. Medicamento falsificado: producto manufacturado indebidamente de manera deliberada y
+fraudulenta en lo que respecta a su identidad u origen. Pueden incluir productos con los ingredientes
+correctos o con los ingredientes incorrectos, sin principios activos, con un principio activo
+insuficiente o cuyo empaque en su rotulación o la información que lo acompaña, contenga menciones
+falsas, ambiguas o engañosas respecto de su identidad, composición, cualidades, utilidad o seguridad.
+También pueden contener diferentes cantidades de impurezas peligrosas y tóxicas.
+
+4.26. Medicamento o producto farmacéutico: sustancia simple o compuesta, natural, sintética, o
+mezcla de ellas, con forma farmacéutica definida, empleada para diagnosticar, tratar, prevenir
+enfermedades o modificar una función fisiológica de los seres humanos.
+
+4.27. Informe o Certificado de análisis: documento que especifica el resultado de las pruebas, de
+una muestra representativa del material evaluado.
+
+4.28. Liberación: autorización documentada y extendida por el regente farmacéutico del
+establecimiento farmacéutico para que el medicamento sea comercializado.
+
+
+                                                                                        Página 3 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+4.29. Lote: cantidad definida del material de envasado o producto fabricado en un solo proceso o
+en una serie de procesos de tal manera que sea homogéneo.
+
+4.30. No Conformidad: incumplimiento de un requisito o condición.
+
+4.31. Número de lote: cualquier combinación distintiva de letras, números o símbolos que
+permiten trazar la historia completa de la producción y distribución de un determinado medicamento.
+
+4.32. Productos regulados: para efectos de este reglamento, constituye a los medicamentos y
+materias primas de uso farmacéutico.
+
+4.33. Procedimientos estándar de operación: documentos escritos que describen las
+instrucciones detalladas necesarias para realizar tareas relacionadas con el almacenamiento,
+distribución, transporte de los medicamentos y otras tareas/actividades relacionadas al manejo de
+medicamentos y funcionamiento del establecimiento farmacéutico.
+
+4.34. Producto subestándar: productos farmacéuticos de calidad subestándar denominados
+también productos «fuera de especificación», son productos farmacéuticos registrados que no
+cumplen, ya sea las normas de calidad o sus especificaciones, o ambas. Estos medicamentos pueden
+ser fabricados de manera deficiente, tener una formulación incorrecta o estar contaminados.
+
+4.35. Producto dañado:
+producto con defectos visuales fácilmente detectables o productos en anaquel que sufran cambios
+aparentes durante su almacenamiento.
+
+4.36. Reacondicionamiento: acondicionamiento de materias primas en envases de menor tamaño
+al original en el que se garantice la calidad de la misma.
+
+4.37. Rechazado: condición en que se encuentra un producto o material que no cumple con las
+especificaciones establecidas por el laboratorio fabricante o titular.
+
+4.38. Reclamo o queja: expresión de insatisfacción presentada por un cliente al establecimiento
+farmacéutico con respecto a sus productos o al servicio brindado; donde debe existir por parte del
+establecimiento farmacéutico una respuesta o resolución.
+
+4.39. Registro sanitario: autorización expedida por la Autoridad Reguladora para producir o
+vender un determinado producto. Esta autorización se expide una vez que la solicitud de registro del
+producto es evaluada por expertos y se encuentre satisfactoria, desde el punto de vista de la calidad
+farmacológica y farmacéutica del producto y en algunos países, de la necesidad que se tenga del
+mismo. Constituye un prerrequisito para introducir el producto en el mercado.
+
+4.40. Residuos de medicamentos: material sólido, semisólido, líquido o gaseoso proveniente de
+un medicamento, que esté almacenado o resguardado en un establecimiento farmacéutico, se
+incluyen en éste los empaques primarios y secundarios, que requiere ser descartado y que para ello
+debe ser manejado por sistemas de disposición final. No se encuentra en el cuerpo del documento.
+
+
+
+                                                                                       Página 4 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                         RTS 11.02.04:24
+
+4.41. Retiro: procedimiento voluntario o por exigencia de la autoridad reguladora mediante el cual
+un lote de fabricación o un producto se retira del mercado.
+
+4.42. Segregación: separación de dos o más grupos de medicamentos. Para efectos del presente
+reglamento la segregación física se refiere a que debe existir una barrera material que permita el
+acceso únicamente al personal autorizado.
+
+4.43. Sistema de gestión de la calidad de buenas prácticas: conjunto de elementos relacionados
+que abarcan la estructura organizativa, los procedimientos, procesos, recursos y las acciones
+sistemáticas, así como la política y objetivos de calidad, a fin de dirigir y controlar un establecimiento
+farmacéutico con respecto a la calidad.
+
+4.44. Titular del medicamento: persona natural o jurídica propietaria del producto farmacéutico.
+
+4.45. Transportista: persona natural o jurídica responsable de realizar el transporte de los
+medicamentos desde el establecimiento farmacéutico al destinatario, ésta puede formar parte del
+establecimiento farmacéutico o de un servicio de distribución subcontratado.
+
+4.46. Trazabilidad: capacidad de reconstruir la historia, localización de un elemento, un
+componente o de una actividad, utilizando los registros como evidencia.
+
+5. BUENAS PRÁCTICAS DE ALMACENAMIENTO, DISTRIBUCIÓN Y TRANSPORTE
+PARA LABORATORIOS, DROGUERÍAS Y CENTROS DE ALMACENAMIENTO
+
+5.1. PERSONAL
+
+5.1.1. Los establecimientos deben tener personal calificado y capacitado para el desempeño de sus
+funciones. Tales condiciones deben documentarse para demostrar que todas las partes involucradas
+son competentes para mantener la calidad y la seguridad de los productos durante el almacenamiento
+y distribución, y así garantizar su uso final previsto. La calificación debe documentarse conforme a
+las técnicas apropiadas.
+
+5.1.2. Todo el personal debe recibir capacitación inductiva y continua en BPADyT, seguridad
+ocupacional y capacitación específica de acuerdo a las funciones asignadas.
+
+5.1.3. Los establecimientos deben establecer y mantener procedimientos apropiados para asegurar
+que el personal que cambie de puesto de trabajo dentro de la empresa, reciba la capacitación necesaria
+antes de comenzar a desempeñar el nuevo cargo, quedando constancia escrita en el expediente de
+cada trabajador.
+
+5.1.4. La capacitación en BPADyT vigentes debe realizarse de acuerdo con una planificación
+establecida y aprobada por el regente del establecimiento y debe cubrir todos los aspectos
+relacionados con dichas prácticas.
+
+5.1.5. La organización evaluará el cumplimiento del programa de capacitación.
+
+
+                                                                                            Página 5 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+5.1.6. Toda capacitación que se imparta debe estar documentada y registrada, así como evidencia de
+evaluación para la verificación de la adquisición del conocimiento.
+
+5.1.7. El personal debe utilizar vestimenta e implementos de protección personal apropiados para
+las actividades que realiza, conforme al procedimiento establecido internamente.
+
+5.2. REGENCIA FARMACÉUTICA
+
+5.2.1. Los establecimientos deben tener un regente farmacéutico durante el horario de su
+funcionamiento conforme a lo autorizado, el cargo estará incluido dentro del organigrama general en
+una posición que tenga autoridad e independencia que le permitan cumplir con las responsabilidades
+descritas en el presente Reglamento.
+
+5.2.2. El regente es responsable de la Dirección Técnica del establecimiento. Es asimismo
+responsable del cumplimiento de las disposiciones legales y reglamentarias que demande la operación
+del establecimiento que regenta, siendo solidario en esta responsabilidad, el representante legal o
+propietario del establecimiento. El Regente debe cumplir en todo momento con los requisitos
+establecidos para la legalidad de su ejercicio profesional de acuerdo a la normativa vigente.
+
+5.2.3. El regente es responsable además de:
+a) Participar en la autorización según las disposiciones legales aplicables y conforme a la
+   organización del establecimiento, en el inicio del proceso de nacionalización y desaduanaje de los
+   productos regulados que importe el establecimiento, en coordinación con el profesional
+   responsable, cuando aplique;
+b) Autorizar la liberación documental para la distribución y comercialización de los productos
+   regulados;
+c) Implementar y mantener el sistema de gestión de calidad de buenas prácticas;
+d) Participar conforme a la organización del establecimiento, en las actividades de recepción,
+   registro e investigación de las causas, gestión de medidas correctivas y respuesta a los reclamos,
+   quejas relacionadas con el almacenamiento, distribución y la calidad de los productos;
+e) Notificar al laboratorio fabricante o su representante legal sobre el reclamo reportado y darle
+   seguimiento al mismo;
+f) Revisar regularmente los registros de reclamos o quejas, con el fin de buscar indicios de
+   problemas específicos o recurrentes relacionados con el almacenamiento o distribución que
+   requieran una atención especial;
+g) Coordinar y dar seguimiento del retiro de productos del mercado y notificar por escrito a la
+   Autoridad Reguladora, al inicio y al final del proceso;
+h) Autorizar, según criterios técnicos, la reincorporación al inventario (cuando aplique) de productos
+   devueltos, una vez que han salido del establecimiento, de acuerdo al procedimiento interno
+   establecido;
+i) Participar conforme a la organización del establecimiento en la coordinación y documentación de
+   las actividades de destrucción de producto regulado de acuerdo a la legislación nacional vigente;
+j) Coordinar y participar en la realización de auditorías o auto inspecciones por lo menos una vez al
+   año con el fin de verificar el cumplimiento de las BPADyT;
+k) Dar seguimiento al cumplimiento de las acciones correctivas o preventivas identificadas a raíz del
+   informe de auditoría;
+
+
+                                                                                        Página 6 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+l) Revisar y verificar que los requerimientos técnicos de los contratos establecidos con terceros
+   cumplan los requisitos de las BPADyT vigentes, dejando registro de dicha acción;
+m) Coordinar la realización y actualización de los estudios de mapeo o perfiles de temperatura y
+   humedad (según aplique) en las áreas de almacenamiento, dejando registro de dicha acción;
+n) Supervisar periódicamente la adición de información complementaria, a fin de evitar confusiones
+   y contaminaciones cruzadas, dejando registro de dicha acción.
+
+5.3. DOCUMENTACIÓN
+
+5.3.1. Se debe establecer y mantener un sistema de documentación que incluya los procedimientos
+estándar operativos, programas, que aseguren el cumplimiento de los procesos, registros y controles
+de manera consistente, con el fin de mantener la calidad de cada uno de los productos que son
+almacenados y distribuidos.
+
+5.3.2. Los procedimientos estándares de operación y documentos relacionados con el almacenamie
+nto, manejo y distribución deben ser revisados o autorizados por el regente farmacéutico conforme
+a lo establecido en el procedimiento de generación de documentación.
+
+5.3.3. Debe existir un manual de calidad de buenas prácticas que contenga como mínimo la siguiente
+información:
+a) Un organigrama detallado que contemple la estructura organizativa del establecimiento,
+   incluyéndose la estructura jerárquica general y la de los departamentos específicos. El
+   organigrama debe estar actualizado y vigente;
+b) Una descripción de las funciones y responsabilidades de cada puesto incluidos en el organigrama;
+c) Una declaración de la política y objetivos de calidad, que incluya entre otros aspectos, el propósito
+   del sistema de gestión de la calidad con enfoque a las buenas prácticas, el compromiso de la alta
+   dirección con el cumplimiento normativo; el requisito de que todo el personal del establecimiento
+   esté familiarizado con la documentación de calidad y la implementación de las políticas y
+   procedimientos en su trabajo;
+d) Los procedimientos estándares de operación establecidos para el sistema de gestión de la calidad
+   de buenas prácticas o referencia a los mismos;
+e) Asegurar la revisión periódica del sistema de buenas prácticas. Debe incluir una revisión de la
+   alta dirección, un proceso para revisar el sistema de gestión de calidad de forma periódica, el cual
+   debe quedar documentado y aplicar las acciones preventivas y correctivas que sean necesarias.
+
+5.3.4. Los documentos deben estar disponibles en todos los puntos de trabajo donde se utilicen.
+
+5.3.5. Todos los documentos obsoletos se deben archivar por el tiempo establecido en el
+procedimiento correspondiente. El original del documento obsoleto se debe mantener en un archivo
+histórico identificado.
+
+5.3.6. Los registros de las destrucciones, devoluciones, retiros y reclamos se deben conservar por un
+tiempo no menor de un año después del vencimiento del producto.
+
+5.3.7. Los establecimientos deben mantener disponible la información de los productos
+farmacéuticos la cual debe ser como mínimo la siguiente:
+a) Nombre del producto;
+                                                                                         Página 7 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+b) Concentración;
+c) Forma farmacéutica;
+d) Presentación;
+e) Número de lote;
+f) Fecha de vencimiento;
+g) Nombre del laboratorio fabricante;
+h) País de procedencia o país de fabricación;
+i) Número de registro sanitario;
+J) Condiciones de almacenamiento y transporte,
+k) Certificados de análisis de productos
+
+5.3.8. Los establecimientosdeben de mantener registros de las condiciones de recepción y despacho
+de los productos farmacéuticos, los cuales deben de incluir como mínimo la siguiente información:
+a) Fecha de recepción y/o despacho;
+b) Tipo de vehículo y número de placa;
+c) Nombre del conductor;
+d) Temperatura del contenedor del vehículo (previo a la recepción o posterior a la carga), cuando
+   aplique;
+e) Condiciones de limpieza del contenedor del vehículo;
+f) Verificación de los equipos auxiliares dentro del vehículo (extintor, kit contra derrames, entre
+   otros.);
+g) Verificación que los productos recibidos o despachados se encuentren en buen estado;
+h) Nombre, número de inscripción ante la autoridad responsable y dirección del destinatario,
+   cuando aplique;
+i) Numero de factura, crédito fiscal o identificación para la entrega del pedido.
+
+5.3.9. Los documentos y los datos pueden estar registrados en forma impresa, por medios
+electrónicos o por medio de otro sistema. En el caso de almacenar la información de forma electrónica
+deben crearse controles especiales que incluya los niveles de acceso, resguardo de datos, respaldo y
+evaluación periódica. Sólo las personas autorizadas deben ingresar o modificar los datos en el sistema
+informático y debe existir un registro de los cambios; el acceso debe estar restringido por contraseñas
+u otros medios.
+
+5.4. TRAZABILIDAD
+
+5.4.1. Deben existir procedimientos escritos para asegurar la trazabilidad de los productos desde el
+laboratorio fabricante, y los establecimientos pertinentes, durante el almacenamiento y distribución.
+
+5.4.2. Los establecimientos deben disponer de un sistema de control y facturación que permita la
+localización y trazabilidad de cada lote de producto en las áreas de almacenamiento y en el mercado
+hasta el cliente inmediato.
+
+5.4.3. Todos los documentos relacionados con la identificación y trazabilidad de los lotes de un
+producto, se deben guardar hasta un año después de la fecha de vencimiento del producto.
+
+
+
+
+                                                                                         Página 8 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+5.5. EDIFICIOS E INSTALACIONES
+
+5.5.1. Los establecimientos deben contar con los siguientes diagramas actualizados:
+a) Distribución de áreas;
+b) Flujo de personal;
+c) Flujo de materiales;
+d) Flujo de procesos;
+e) Sistemas de agua, drenajes, aguas servidas, aguas negras, acometida eléctrica, refrigeración, aire
+comprimido, aire acondicionado y cualquier otro según aplique por la naturaleza de los productos;
+f) Rutas de evacuación del personal en caso de emergencia y ubicación de los equipos de emergencia.
+
+5.5.2. Las instalaciones deben ubicarse, diseñarse, construirse, adaptarse y mantenerse de
+conveniencia con las operaciones propias del área de almacenamiento. La distribución y el diseño
+deben permitir una limpieza y mantenimiento efectivos y evitar cualquier condición adversa que
+pueda afectar la calidad de los productos regulados y la seguridad del personal.
+
+5.5.3. Deben disponer como mínimo con las áreas siguientes, las cuales deben estar debidamente
+identificadas:
+a) Recepción;
+b) Almacenamiento;
+c) Despacho;
+d) Administración;
+e) Cuarentena;
+f) Rechazados, dañados y vencidos;
+g) Limpieza, vestidores (cuando aplique), lavatorios y servicios sanitarios deben ser suficientes
+   según el número de usuarios, estas áreas deben estar sin comunicación directa con las áreas de
+   almacenamiento;
+h) Áreas auxiliares como: mantenimiento, descanso y alimentación, estas áreas deben estar
+   separadas físicamente con las áreas de almacenamiento;
+i) Devoluciones.
+
+5.5.4. Se debe tomar las precauciones necesarias para evitar cualquier tipo de contaminación
+proveniente del ambiente exterior, particularmente controlar la entrada de insectos u otros animales.
+
+5.5.5. Los locales deben ser sometidos regularmente a programas de mantenimiento preventivo,
+limpieza y control de plagas de acuerdo a procedimientos escritos con sus respectivos registros.
+
+5.5.6. Cuando el control de plagas requiera la aplicación de productos químicos, éste debe ser
+realizado por personal capacitado y de conformidad al protocolo respectivo, utilizando el equipo de
+protección personal necesario. Los productos químicos empleados deben estar autorizados por las
+autoridades competentes. En caso de utilizar productos clasificados como de uso profesional, se debe
+contratar los servicios de empresas autorizadas para tales efectos.
+
+5.5.7. Los sistemas de suministro eléctrico, iluminación, temperatura, humedad y ventilación deben
+ser acordes con las condiciones de almacenamiento requeridas para los productos regulados.
+
+
+
+                                                                                        Página 9 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+5.5.8. Se debe garantizar la seguridad de las instalaciones y áreas de almacenamiento a través del
+control del acceso restringido sólo al personal autorizado.
+
+5.5.9. Las áreas de recepción y despacho deben estar ubicadas en áreas protegidas de condiciones
+ambientales adversas y contar con una rampa para carga y descarga, si fuera necesario.
+En casos justificados, el establecimiento debe contar con un procedimiento operativo que indique q
+ue tipo de medidas se toman para la protección de los medicamentos en condiciones climáticas adv
+ersas y deben de existir registros de su ejecución.
+
+5.5.10. Debe prohibirse mantener alimentos, fumar, comer, beber y masticar en las áreas de
+almacenamiento. Estas prohibiciones deben indicarse por medio de rótulos visibles colocados a la
+entrada de las áreas de almacenamiento.
+
+5.6. ÁREAS DE ALMACENAMIENTO
+
+5.6.1. Las áreas de almacenamiento deben tener espacio suficiente para:
+a) Facilitar el manejo ordenado y segregado de los medicamentos;
+b) Facilitar el flujo del personal, material y productos;
+c) Facilitar la limpieza.
+
+5.6.2. Debe realizarse un estudio de mapeo de temperatura y humedad durante un periodo de 7 días
+y en las diferentes estaciones conforme a la bibliografía técnica apropiada, a fin de identificar los
+puntos críticos de fluctuación de temperatura y humedad relativa, la más alta y más baja, dentro del
+área de almacenamiento; para el caso de cuarto climatizado deben aplicarse las consideraciones
+pertinentes y contenidas en la bibliografía. Debe definirse justificadamente un tiempo de repetición
+del estudio o efectuarse nuevamente si se han realizado modificaciones en las áreas de
+almacenamiento.
+
+5.6.3. La temperatura y humedad relativa en puntos críticos debe ser monitoreada regularmente
+conforme a las conclusiones del estudio de las condiciones ambientales y considerando que sean no
+menos de dos veces al día. Deben existir registros de estas condiciones los cuales deben guardarse
+por un tiempo no menor de tres años.
+
+5.6.4. Las áreas de almacenamiento deben estar organizadas, limpias, delimitadas y dentro de los
+límites de temperatura para cumplir las condiciones establecidas en el etiquetado del producto.
+Cuando se requieran condiciones especiales de almacenamiento y estén declaradas en el etiquetado
+(temperatura y humedad relativa), éstas deben mantenerse, monitorearse y registrarse de manera
+continua.
+
+5.6.5. Se deben investigar las desviaciones de los parámetros ambientales establecidos y el impacto
+en la estabilidad de los medicamentos, tomando las medidas correctivas pertinentes.
+
+5.6.6. Las áreas de almacenamiento deben tener condiciones de iluminación, que no influyan
+negativamente, directa o indirectamente en los productos y que permita se realicen de manera segura
+todas las operaciones.
+
+
+
+                                                                                      Página 10 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+5.6.7. Para el almacenamiento de productos controlados, se debe tener un área segregada
+físicamente, la cual debe permanecer bajo llave o tener un sistema que permita el acceso sólo al
+responsable autorizado. Esta área debe estar bajo la responsabilidad y acceso del regente
+farmacéutico.
+
+5.6.8. En el caso de los productos regulados que presenten peligro de fuego o explosión, deben
+almacenarse en un área especial debidamente identificada y que cumpla con la normativa y medidas
+de seguridad vigentes.
+
+5.6.9. Todos los productos regulados se deben almacenar sobre tarimas o estantes que no
+comprometan su integridad física, separados de las paredes y del techo para permitir la limpieza e
+inspección, así como su fácil identificación. Todos los productos regulados que se estiben deben estar
+debidamente asegurados para evitar el riesgo de desprendimiento que pudiera ocasionar daños al
+personal o al producto.
+
+5.6.10. Los medicamentos deben almacenarse en áreas exclusivas y segregados físicamente de otros
+tipos de productos tales como suministros de limpieza y desinfección, productos químicos,
+cosméticos o cualquier otro que pueda provocar contaminación cruzada.
+
+5.6.11. Se debe asegurar que el producto regulado en cuarentena no pueda ser facturado hasta su
+liberación, independientemente si se cuenta con un área física de cuarentena o si la misma se lleva
+por medio de sistemas electrónicos. En caso de contar con sistemas electrónicos de control de
+inventarios o de distribución de productos, los mismos deben estar verificado por el establecimiento
+antes de ser puestos en funcionamiento, cuando aplique.
+
+5.6.12. Debe existir una segregación física para almacenar productos regulados rechazados, dañados,
+vencidos o devueltos. Además, debe existir un procedimiento escrito para el manejo de este tipo de
+productos e implementar un sistema de acceso restringido, debidamente señalizado, para evitar el uso
+de estos productos, hasta que se tome una decisión con respecto a su destino final.
+
+5.6.13. Los productos regulados que requieran condiciones especiales de temperatura y humedad
+deben ser almacenados utilizando equipos o áreas que permitan el mantenimiento y control de las
+condiciones especificadas en el etiquetado del producto.
+
+5.6.14. Los instrumentos de medición de temperatura y humedad que se utilicen en el
+almacenamiento o transporte de los productos regulados deben estar calibrados con su respectivo
+certificado de calibración vigente. La calibración debe estar claramente definido en el procedimiento
+respectivo.
+
+5.6.15. Las cámaras de refrigeración y congelación, deben estar conectadas a sistemas de alarma para
+detectar cuando se exceda los límites establecidos de temperatura, dejando registros de las acciones
+llevadas a cabo. Además, se debe controlar que las cámaras no produzcan condensación. Estos
+equipos junto con los registradores de temperatura y de alarma, deben estar conectados a un sistema
+alterno de energía en caso de una suspensión del servicio eléctrico, cuyo funcionamiento debe ser
+comprobado y registrado periódicamente.
+
+
+
+                                                                                       Página 11 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+5.6.16. Los medicamentos que deban ser almacenados bajo condiciones especiales de
+almacenamiento requieren instrucciones de almacenamiento apropiadas. A menos que se establezca
+específicamente algo distinto, se pueden permitir desviaciones sólo durante periodos cortos de
+tiempo, siempre que exista demostración documental de que no impacta en la calidad del producto.
+
+5.7. MANEJO Y DISPOSICIÓN DE RESIDUOS
+
+5.7.1. Se debe realizar el manejo adecuado de los residuos sólidos ordinarios que se generen de
+acuerdo a la legislación nacional vigente, evitando la acumulación en las áreas de almacenamiento y
+sus alrededores.
+
+5.7.2. En el caso de la disposición final de medicamentos y sus residuos, esta debe ser llevada a cabo
+conforme a la legislación nacional vigente.
+
+5.7.3. Debe existir un procedimiento escrito para el manejo de derrames de productos peligrosos que
+impliquen un riesgo para la salud, conforme a la legislación nacional vigente.
+
+5.8. RECEPCIÓN Y AUTORIZACIÓN
+
+5.8.1. Los establecimientos deben aplicar procedimientos de adquisición para asegurar que los
+productos regulados provienen de proveedores legalmente establecidos.
+
+5.8.2. Al ingreso de varios lotes, éstos se deben separar y mantener en cuarentena hasta su liberación.
+
+5.8.3. En el momento de la recepción se deben de revisar los aspectos detallados en el numeral 5.3.7.
+incluyéndose el certificado de análisis del lote del medicamento.
+
+5.8.4. El producto en cuarentena debe ser revisado física y documentalmente, bajo la
+responsabilidad del personal calificado y bajo supervisión periódica del regente farmacéutico. Una
+vez se ha determinado la conformidad en la revisión, el producto estará autorizado para su distribución
+y comercialización. Debe existir documentación que respalde esta actividad.
+
+5.8.5. En caso de existir un producto no conforme, éste debe estar documentado, así como las
+acciones tomadas
+
+5.9. DISTRIBUCIÓN Y TRANSPORTE
+
+5.9.1. Los establecimientos deben mantener registros de despacho que garanticen la trazabilidad de
+los productos enviados al destinatario, el registro debe contener como mínimo:
+a) Nombre del producto;
+b) Número de lote;
+c) Fecha de expiración del producto;
+d) Fecha del despacho y destino.
+
+5.9.2. Los destinatarios deben estar autorizados por la Autoridad Reguladora
+
+
+
+                                                                                       Página 12 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+5.9.3. Todo producto debe despacharse de acuerdo al sistema de primero en expirar primero en salir.
+En casos excepcionales se permite despachar primero productos con fechas de vencimiento más
+distantes a determinados destinatarios cuando esté justificado. El regente farmacéutico debe velar
+porque se cumpla la correcta rotación de fechas de vencimiento de los productos regulados bajo su
+custodia.
+
+5.9.4. Se debe demostrar que el personal de transporte está capacitado sobre las condiciones de
+manejo relacionadas a la seguridad y traslado de los productos regulados. Así mismo se debe asegurar
+el cumplimiento de las especificaciones requeridas para cada tipo de producto regulado durante el
+transporte o en cualquier estado intermedio, según sea comunicado por el establecimiento. Estas
+condiciones son aplicables independientemente si el servicio de transporte es subcontratado o es
+propio del establecimiento.
+
+5.9.5. Los vehículos empleados en el transporte deben ser cerrados, limpios y de un material que no
+afecte la integridad de los productos regulados. Así como, contar con los instrumentos de medición
+necesarios para el monitorea de condiciones requeridas para el transporte.
+
+5.9.6. Todo producto farmacéutico debe ser embalado y transportado de forma tal que:
+a) No se pierda la integridad e identidad del mismo;
+b) No contamine y no sea contaminado por otros;
+c) Se tomen las precauciones adecuadas para evitar derrames, roturas, alteración u otros; en caso de
+   pérdidas, hurto, robo o extravíos, debe ser notificado a la autoridad reguladora (según lo
+   establecido en las guías publicadas oficialmente) y demás autoridades competentes, según
+   aplique;
+d) Se mantengan dentro de las condiciones de almacenamiento establecidas en su etiquetado.
+
+5.9.7. En el caso de que ocurran incidentes durante el transporte como: excursiones de temperatura
+, daños en el producto regulado, daños mecánicos del vehículo; robo, hurto, extravío de la mercader
+ía, desastres naturales, entre otros       requeridos            para          el           producto
+regulado, estos deberán comunicarse al responsable del establecimiento, a fin de que se registre el i
+ncidente y se tomen las medidas pertinentes conforme el plan de contingencia establecido en el proc
+edimiento correspondiente.
+
+5.9.8. En caso de que el destinatario encuentre información sobre los incidentes relacionados al
+numeral 5.9.7., en caso que aplique, debe reportarla al establecimiento.
+
+5.9.9. El reporte de incidentes relacionados al numeral 5.9.7., en caso que aplique, debe ser
+investigado y documentado por el regente del establecimiento antes de que el producto pueda ser
+introducido en el inventario del destinatario. Cuando sea necesario (productos de cadena de frío), éste
+debe contactar al fabricante del producto farmacéutico a fin de obtener información relevante para
+determinar las acciones a seguir.
+
+5.9.10. La carga se debe colocar y mantener durante el transporte siguiendo las indicaciones de
+manipulación detalladas por el laboratorio fabricante, en la caja colectiva (estiba, flechas que indican
+el sentido en que debe colocarse la caja, frágil, protéjase de la lluvia, entre otros).
+
+
+
+                                                                                        Página 13 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+5.9.11. Los productos regulados que requieran refrigeración deben ser transportados considerando las
+medidas específicas para hacerlo, sin romper la cadena de frío. Además, se debe monitorear la
+temperatura durante el transporte y se debe conservar el registro. Los instrumentos utilizados para
+registrar las condiciones de temperatura en el interior de los vehículos y contenedores durante el
+transporte, serán verificados y calibrados a intervalos predeterminados.
+
+5.9.12. Queda prohibido el transporte de productos farmacéuticos en conjunto con sustancias
+peligrosas o cualquier otro material que pueda contaminar los productos.
+
+5.9.13. Se prohíbe el transporte de medicamentos en los sistemas de encomiendas de transporte
+público, a menos que el establecimiento demuestre documentalmente que el medio de transporte
+utilizado garantiza las condiciones de almacenamiento requeridas.
+
+5.10. RECLAMOS O QUEJAS
+
+5.10.1. Los establecimientos deben disponer de medios que permitan al cliente, comunicarse para
+presentar sus reclamos o dudas sobre los productos farmacéuticos.
+
+5.10.2. Los establecimientos deben contar con procedimientos escritos y registros para el manejo de
+los reclamos del mercado. Tales procedimientos deben distinguir entre reclamos relativos a la calidad
+del producto, distribución o a una sospecha de falsificación.
+
+5.10.3. En caso de reclamos por defectos de calidad o por sospecha de falsificación, los
+establecimientos deben informar de inmediato al fabricante o su representante legal en el país.
+
+5.10.4. Todas las quejas y otras informaciones relacionadas con productos potencialmente
+defectuosos serán registradas, revisadas e investigadas, en conformidad con los procedimientos
+establecidos y como resultado, se tomarán las acciones correctivas necesarias, incluyendo el posible
+retiro del producto. La información debe contener como mínimo lo siguiente:
+a) Nombre del producto;
+b) Forma y presentación farmacéutica;
+c) Número de lote del producto;
+d) Fecha de expiración;
+e) Nombre y datos generales de la persona o empresa que realizó el reclamo;
+f) Fecha del reclamo;
+g) Motivo de reclamo;
+h) Revisión de las condiciones del producto cuando se recibe;
+i) Investigación que se realiza;
+j) Determinación de las acciones correctivas y medidas adoptadas;
+k) Fecha de fabricación
+
+5.10.5. Si se detecta o se sospecha un defecto en la totalidad del lote o parte de este, se debe definir
+la extensión de la evaluación y el tiempo necesario para su realización. Además, se evaluará si se
+requiere extender la evaluación a otros lotes del mismo producto o si el defecto se extiende a otros
+productos regulados.
+
+
+
+                                                                                        Página 14 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+5.11. RETIROS
+
+5.11.1. Los establecimientos deben contar con procedimientos escritos y registros para la gestión de
+retiro del mercado los productos regulados por cualquier causa. Los procedimientos deben estar
+basados en las disposiciones pertinentes que la Autoridad Reguladora establezca en las guías que sean
+publicadas oficialmente.
+
+5.11.2. Todo retiro voluntario debe ser notificado a la Autoridad Reguladora. Cualquier retiro de
+productos regulados en el mercado debe ser ejecutado por los establecimientos, o el titular.
+
+5.11.3. En el caso que el retiro lo lleve a cabo el establecimiento, el regente farmacéutico es el
+responsable de la coordinación y seguimiento del mismo. Para tal efecto, debe contar con los registros
+de distribución y con el personal suficiente para iniciar las operaciones de retiro inmediato.
+
+5.11.4. El regente farmacéutico debe evaluar las razones del retiro y tomar las decisiones
+correspondientes, sin perjuicio de las disposiciones que dicte la Autoridad Reguladora al respecto.
+
+5.11.5. El producto regulado retirado debe mantener las condiciones de almacenamiento y transporte
+requeridas hasta que se tomen las medidas definitivas con respecto al mismo. Los productos retirados
+deben ser rotulados y almacenados de forma que se prevenga su comercialización no autorizada,
+ubicados en el área de cuarentena del almacén.
+
+5.11.6. El retiro del producto regulado se debe registrar y hacer un informe final, en el que se debe
+incluir un balance entre las cantidades distribuidas y las retiradas, así como la disposición final del
+producto regulado. Toda la documentación concerniente a un retiro se conservará como mínimo por
+un año después de la disposición final del producto regulado y podrá ser requerido por la Autoridad
+Reguladora en cualquier momento, de acuerdo a los lineamientos publicados oficialmente.
+
+5.12. DEVOLUCIONES
+
+5.12.1. Los establecimientos deben contar con procedimientos escritos para el manejo de los
+productos regulados devueltos del mercado.
+
+5.12.2. Todas las devoluciones deben ser colocadas en el área correspondiente, estar debidamente
+identificadas y registradas en el inventario como una devolución.
+
+5.12.3. Los productos regulados que los pacientes reintegran a la farmacia no deben registrarse
+nuevamente al inventario del establecimiento, sino que deben destruirse.
+
+5.12.4. Los productos regulados devueltos y que se consideren reintegrarse al inventario para una
+nueva distribución deben pasar previamente por una investigación que demuestre que el producto
+mantiene sus características de calidad. Dicha investigación debe incluir las siguientes
+consideraciones:
+a) La naturaleza del producto, las condiciones de almacenamiento requeridas, el tiempo
+   transcurrido desde la distribución, la forma y las condiciones del transporte durante la
+   devolución, cuando aplique;
+
+
+                                                                                       Página 15 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+b) Examen del producto devuelto para verificar buenas condiciones de integridad física y en caso
+   existan señales de adulteración
+c) El personal involucrado en esta actividad debe estar debidamente calificado y autorizado para
+   este fin.
+
+5.12.5. Cuando se origine cualquier duda con respecto a la calidad de un producto regulado
+reintegrado, no debe ingresar al inventario para su distribución hasta que se apruebe por el regente
+farmacéutico.
+
+5.13. DETECCIÓN DE MEDICAMENTOS ADULTERADOS O FALSIFICADOS
+
+5.13.1. En caso que sean identificados medicamentos adulterados, falsificados o con sospecha de
+falsificación o adulteración en las instalaciones del establecimiento, éstos deben ser inmediatamente
+separados de los demás productos para evitar confusiones hasta que se tome una decisión con respecto
+a su destino final, debiéndose identificar claramente que no se destinarán a la comercialización,
+siguiendo para ello el procedimiento establecido para tal efecto.
+
+5.13.2. De identificar la existencia en el establecimiento circulación en el mercado de medicamentos
+adulterados o falsificados, el regente farmacéutico debe notificar inmediatamente y por escrito a la
+Autoridad Reguladora, al titular del registro o su representante legal, así como a otras autoridades
+competentes y aportar los siguientes datos:
+a) Nombre del medicamento;
+b) Fabricante;
+c) Lote;
+d) Procedencia;
+e) Muestra del medicamento original y del adulterado o falsificado;
+f) Cantidad en existencia;
+g) Datos de interés obtenidos en la investigación inicial.
+
+5.14. CONTRATO A TERCEROS
+
+5.14.1 Cualquier actividad relacionada con el almacenamiento y distribución de los productos
+regulados que se delegue a otra persona o entidad deberá ser realizada por las partes debidamente
+autorizadas, de conformidad con los términos de un contrato escrito.
+
+5.14.2. El contrato debe definir las responsabilidades de cada entidad (contratante y aceptante del
+contrato) y cubrir al menos lo siguiente:
+
+a) Cumplimiento de este RTS;
+b) Las responsabilidades de todas las entidades en materia de medidas para evitar la entrada de
+productos falsificados y de mala calidad en la cadena de distribución;
+c) Capacitación del personal, cuando aplique;
+d) Condiciones de subcontratación sujetas a la aprobación por escrito del contratante;
+e) Auditorías periódicas para determinar que el producto cumpla con las condiciones de
+almacenamiento, transporte e integridad;
+
+
+
+                                                                                      Página 16 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                        RTS 11.02.04:24
+
+5.14.3 El contratante debe evaluar al contratado antes de firmar el contrato, con una auditoría in situ,
+evaluación de documentación y revisión del estado de la licencia de funcionamiento.
+
+5.14.4 El contratante deberá proporcionar, en caso desconocido por el contratado, toda la
+información de los productos regulados a almacenar, y sus condiciones de transporte necesarias,
+brindado el nivel de especificidad, si es requerida por algún producto.
+
+5.15. AUTOINSPECCIONES
+
+5.15.1. Los establecimientos deben contar con procedimientos escritos para llevar a cabo la auto
+inspección la cual debe contemplar la revisión de los requisitos técnicos y de gestión que garanticen
+el cumplimiento de las BPADyT vigentes establecidas en el presente Reglamento.
+
+5.15.2. Las autoinspecciones deben llevarse a cabo o ser coordinadas por el regente farmacéutico por
+lo menos una vez al año; conforme al tamaño de la organización se debe formar un equipo de
+autoinspección. Todo personal que participe debe contar capacitación para realizar dicha actividad y
+debe inspeccionar actividades independientes a las que realiza.
+
+5.15.3. Cada auto inspección debe generar un informe, el cual debe contener las no conformidades,
+observaciones y recomendaciones correspondientes a la actividad evaluada. El regente farmacéutico
+es responsable de garantizar el cumplimiento de las acciones correctivas y preventivas a implementar,
+identificadas a partir del informe de autoinspección.
+
+5.15.4. Los establecimientos deben contar con un registro de las acciones correctivas y preventivas
+generadas a partir de las no conformidades encontradas en las auto inspecciones. El regente
+farmacéutico es responsable de verificar la implementación y eficacia de las mismas a través de auto
+inspección de seguimiento.
+
+5.16. ÁREA DE ADICIÓN DE INFORMACIÓN COMPLEMENTARIA
+
+5.16.1. En caso que el establecimiento realiza las actividades de adición de información
+complementaria en el empaque primario o secundario de los medicamentos, esta información no debe
+de afectar visualmente la información aprobada por la Autoridad Reguladora contenida en el empaque
+de los productos.
+
+5.16.2. Debe existir un área definida para la actividad de adición de información complementaria y
+debe estar separada e identificada, de las diferentes áreas que conforman el establecimiento.
+
+5.16.3. El área debe tener un tamaño de acuerdo a su capacidad con el fin de evitar confusiones y
+debe encontrarse ordenada y limpia.
+
+5.16.4. Se debe contar con mobiliario de fácil limpieza (mesas, sillas, estantes) y los cuales no deben
+de poner en riesgo la calidad de los productos.
+
+5.16.5. El área debe de ser suficientemente ventilada e iluminada que asegure condiciones
+confortables al personal y no afecten negativamente la calidad de los productos.
+
+                                                                                         Página 17 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                        RTS 11.02.04:24
+
+
+
+5.16.6. Si las etiquetas contienen información autorizada en su registro sanitario aprobado, debe
+existir procedimientos escritos para las actividades de etiquetado y manejo de material con sus
+respectivos registros.
+
+5.16.7. Se debe contar con procedimientos escritos para el manejo de indumentaria e higiene del
+personal, previo a realizar la actividad de etiquetado o marcado.
+
+5.16.8. En relación a la información para la promoción de los productos farmacéuticos, deben de estar
+previamente autorizados por la Autoridad Reguladora, y dichas actividades deben de cumplir con lo
+declarado con los apartados 5.16.2 al 5.16.5 y 5.16.7.
+
+5.17. REEMPAQUETADO Y RE-ETIQUETADO DE MATERIAS PRIMAS DE USO
+FARMACÉUTICO
+Las operaciones de reacondicionado o el re-etiquetado, son procesos de fabricación y, por lo tanto,
+su desempeño debe seguir las BPM.
+
+5.17.1. Se debe prestar especial atención a lo siguiente:
+a) Prevención de la contaminación, la contaminación cruzada y las confusiones;
+b) Seguridad de las existencias de etiquetas, controles de despeje de líneas, inspecciones en línea,
+destrucción del exceso de etiquetas impresas por lotes;
+c) Buenas prácticas de saneamiento e higiene;
+d) Mantener la integridad del lote (normalmente no se debe mezclar lotes diferentes del mismo
+material sólido);
+e) Como parte de los registros de los lotes, debe conservar todas las etiquetas que se retiraron del
+recipiente original durante las operaciones y una muestra de la nueva etiqueta, por un periodo de 1
+año posterior a la fecha de vencimiento;
+f) Si se utiliza más de un lote de etiquetas en una operación, debe conservarse muestras de cada lote,
+por un periodo de 1 año posterior a la fecha de vencimiento;
+g) Mantener la identidad e integridad del producto.
+
+5.17.2. El material suministrado debe tener un certificado de conformidad con una especificación en
+la fecha de suministro. En todos los casos se debe proporcionar el certificado original del fabricante.
+Si se realiza un re-análisis, se deben proporcionar tanto el certificado original como el nuevo. El lote
+al que se hace referencia en el nuevo certificado debe ser rastreable hasta el certificado original.
+
+5.17.3. El reenvasado de materiales debe realizarse con materiales de embalaje primario para los que
+se haya establecido que la calidad e idoneidad son iguales o mejores que las del envase original. La
+aprobación del proveedor es necesaria para el material de embalaje utilizado para el reenvasado.
+
+5.17.4. No se debe reutilizar contenedores a menos que se hayan limpiado y desinfectado mediante
+un procedimiento documentado. No se debe utilizar envases reciclados a menos que exista evidencia
+de que la calidad del material embalado no se verá afectado negativamente.
+
+5.17.5. Debe existir un control ambiental eficaz para garantizar que no haya posibilidad de
+contaminación, contaminación cruzada, degradación, cambios fisicoquímicos o confusiones. La
+calidad del aire suministrado al área debe ser adecuada para las actividades realizadas, esto consiste
+                                                                                         Página 18 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                        RTS 11.02.04:24
+
+en la existencia de un sistema de aire farmacéutico y extracción de polvos, que cumpla con las
+condiciones de la reglamentación vigente de BPM en lo que respecta a su instalación, controles y
+calificación.
+
+5.17.6. El área de reacondicionamiento debe cumplir con las condiciones de infraestructura
+establecidas en la reglamentación vigente de BPM.
+
+5.17.7. Los recipientes de las materias primas al ingresar a esta área deben estar limpios, en su
+exterior antes de abrirse y cerrados perfectamente antes y después de dispensar la materia prima.
+
+5.17.8. Los utensilios utilizados en el área de reacondicionamiento/pesado deben mantenerse limpios
+y desinfectados, de acuerdo a un procedimiento establecido y además estar ubicados en un lugar
+específico para los mismos.
+5.17.9. Se debe garantizar la calidad del agua de lavado y último enjuague de los utensilios a utilizar.
+El agua para este proceso debe ser purificada mediante una técnica apropiada y la garantía de su
+calidad se debe demostrar mediante controles fisicoquímicos y microbiológicos periódicos.
+
+5.17.10. En el proceso de fraccionamiento/pesado se deben utilizar balanzas o básculas de acuerdo
+a su rango de sensibilidad y a la cantidad de peso a medir.
+
+5.17.11. Debe existir un programa escrito de mantenimiento y calibración de los equipos y mantener
+sus registros actualizados.
+
+5.17.12. Los utensilios para el manejo de las materias primas deben ser de acero inoxidable 316.
+
+5.17.13. Debe existir un área separada para el lavado de los utensilios que fueron utilizados durante
+el reacondicionamiento/pesado de materias primas, deben poseer condiciones de orden, limpieza,
+contar con curvas sanitarias y servicios para el trabajo que allí se ejecuta.
+
+5.17.14. El personal responsable de fraccionamiento/pesado debe usar ropa adecuada como uniforme
+completo incluyendo zapatos (cerrados, lisos y de fácil limpieza), gorro, mascarilla adecuada,
+guantes, u otro elemento de protección necesario.
+
+5.17.15. El personal responsable de manipulación de las materias primas debe tener capacitaciones
+en relación a su trabajo y estar documentada.
+
+5.17.16. Se debe seguir los procedimientos previamente establecidos para asegurar un control
+adecuado del etiquetado.
+
+5.17.17. Los contenedores de material reempacado y los contenedores reetiquetados deben llevar: el
+nombre del sitio de fabricación original y el nombre del distribuidor/reempacador.
+
+5.17.18. Debe existir procedimientos para asegurar el mantenimiento de la identidad y la calidad del
+material por los medios apropiados, tanto antes como después de las operaciones de
+reacondicionamiento.
+
+5.17.19. Deben existir procedimientos de liberación de lotes de producto reacondicionado.
+                                                                                         Página 19 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+
+
+5.17.20. Deben existir en el área de fraccionamiento/pesada y ser del conocimiento del personal los
+siguientes documentos:
+a) Procedimientos para medir pesos y volúmenes de las materias primas;
+b) Procedimientos para el manejo de materia prima;
+c) Procedimientos de limpieza y sanitización del equipo, utensilios auxiliares y área;
+d) Registro de la limpieza y sanitización del área, equipo y utensilios auxiliares.
+
+5.17.21. Se deben resguardar muestras de retención de principios activos y excipientes en cantidades
+adecuadas y deben conservarse durante al menos 1 año después de la fecha de vencimiento o
+reanálisis, o durante 1 año después de que se complete la distribución. Estas muestras deben
+almacenarse bajo condiciones controladas de temperatura y humedad acorde a lo requerido para cada
+material.
+
+5.17.22. El reenvasador y el reetiquetador debe asegurar de que la estabilidad del material no se vea
+afectada negativamente por el reenvasado o reetiquetado. Se debe realizar estudios de estabilidad
+para justificar las fechas de vencimiento o reevaluación asignadas si la materia prima farmacéutica
+se vuelve a envasar en un recipiente diferente al utilizado por el fabricante original. Se reconoce que
+algunos excipientes pueden no necesitar estudios de estabilidad adicionales.
+
+6. BUENAS PRÁCTICAS DE ALMACENAMIENTO Y DISPENSACIÓN EN
+FARMACIAS, BOTIQUINES Y OTROS ESTABLECIMIENTOS QUE DISPENSAN
+PRODUCTOS REGULADOS
+
+6.1. DOCUMENTACION LEGAL Y TÉCNICA
+
+6.1.1. El establecimiento que realiza actividades de dispensación debe estar autorizado por la
+Autoridad Reguladora y contar con la licencia de funcionamiento. Las actividades realizadas por el
+establecimiento deben de ser correspondientes a las descritas en la licencia de funcionamiento.
+
+6.1.2. El establecimiento debe contar con un regente profesional farmacéutico, según aplique, el cual
+debe velar por el cumplimiento de las Buenas Prácticas de Almacenamiento y Dispensación
+correspondiente al horario de visitas aprobado por la Autoridad Reguladora.
+
+6.1.3. El establecimiento debe mantener en un archivo todas las autoinspecciones e inspecciones
+realizadas por parte de la Autoridad Reguladora, por un período no menor a tres años. Este archivo
+debe estar disponible para su consulta por el personal autorizado y cuando sea requerido por la
+Autoridad Reguladora.
+
+6.1.4. El establecimiento debe contar con un procedimiento para la adquisición de los productos
+comercializados y tener evidencia de su adquisición, los proveedores de éstos deben estar autorizados
+por la Autoridad Reguladora. Esta documentación debe tener correspondencia con la cantidad, y datos
+variables (fecha de vencimiento y lote) de los productos.
+
+6.1.5. El establecimiento debe de disponer de documentos por escrito acerca de los descriptores de
+puesto de todas las personas involucradas en las actividades del establecimiento, que detalle las
+funciones principales realizadas.
+                                                                                        Página 20 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+
+
+6.1.6. El establecimiento debe de tener un procedimiento por escrito que detalle la inspección física
+de los productos ingresados, que garantice que los productos recibidos no estén averiados o tengan
+algún daño físico, así como que posean la información de datos variables mínima (fecha de
+vencimiento, lote y registro sanitario).
+
+6.1.7. Se debe establecer un mecanismo para la dispensación o despacho de productos regulados
+que permita una rotación eficaz, que impida el riesgo de acumulación de producto próximo a vencer.
+
+6.1.8. El establecimiento debe de tener un procedimiento por escrito que detalle la devolución de
+los productos en caso de que los mismos posean averías, estén dañados físicamente o por otras razones
+sanitarias.
+
+6.1.9. El establecimiento debe implementar un procedimiento para los casos de retiro de mercado
+de productos informados (por parte de los laboratorios fabricantes, droguerías o de la Autoridad
+Reguladora) que establezca la realización del detalle del producto en existencia (inventario) y
+segregación de los mismos.
+
+6.1.10. Deben de existir un procedimiento por escrito de las medidas de seguridad e higiene personal
+que debe cumplir el personal del establecimiento.
+
+6.1.11. Se debe de contar con un procedimiento por escrito de limpieza y mantenimiento aplicable
+a las áreas y mobiliario del establecimiento.
+
+6.1.12. Toda la documentación relacionada con los procedimientos e indicaciones dentro del
+establecimiento debe estar revisado o autorizado por el regente, con su firma y sello profesional.
+
+6.1.13. El establecimiento debe disponer del acceso al listado de antibióticos de acuerdo al
+reconocimiento de la clasificación de antibióticos por parte de la Autoridad Reguladora.
+
+6.1.14. Toda la documentación solicitada por este reglamento debe estar disponible dentro del
+establecimiento; preferiblemente debe estar de manera física. En caso de existir documentación
+digital esta debe manejarse conforme a un procedimiento/protocolo/guía, previamente autorizados
+por el Regente y debe garantizar que todos los documentos sean atribuibles, legibles,
+contemporáneos, originales y precisos.
+
+6.1.15. En el caso de documentación digital se debe disponer de un procedimiento para la
+supervisión del sistema electrónico, que incluya el nivel de acceso, resguardo de datos, forma de
+registro de datos (según aplique), respaldo y evaluación periódica.
+
+6.2.     INSTALACIONES Y ALMACENAMIENTO
+
+6.2.1. El establecimiento debe contar con permiso de funcionamiento vigente, ser independiente de
+cualquier otro giro comercial o casa habitacional; en caso de estar en el mismo predio o local, no debe
+de comunicar a través de ningún acceso como por ejemplo por puertas o pasillos.
+
+
+
+                                                                                       Página 21 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+6.2.2. Los establecimientos autorizados en autoservicios y tiendas departamentales, deben de estar
+separadas físicamente de las áreas de productos perecederos, bebidas alcohólicas y de toda sustancia
+que ponga en riesgo la seguridad, integridad y eficacia de los medicamentos.
+
+6.2.3. Se debe de disponer de manera visible al público, los datos del regente, que incluya su
+nombre, número de JVPQF y el horario de asistencia en el establecimiento correspondiente a la
+categoría del mismo.
+
+6.2.4. Las áreas y superficies deben de ser acordes con la capacidad y diversidad de los productos
+que manejan, a fin de evitar desorden y condiciones inadecuadas de limpieza.
+
+6.2.5. Todas las áreas deben de estar identificadas para el almacenamiento de los productos, y en los
+casos necesarios se debe de indicar las restricciones de acceso al personal ajeno, con el fin de
+resguardar la seguridad de los productos que se manejen.
+
+6.2.6. Se debe de contar con un espacio identificado de devoluciones de productos a proveedores,
+que garantice la no colocación en sala de ventas para su comercialización.
+
+6.2.7. El mobiliario y estantería debe de tener una separación mínima de 10 cm del piso, paredes y
+techo y deben de estar colocados de tal forma que mantengan la seguridad y adecuada conservación
+de los productos.
+
+6.2.8. Debe almacenarse por separado en un mobiliario correspondiente otros productos diferentes
+a los medicamentos.
+
+6.2.9. Las paredes, pisos y techos del establecimiento deben permitir el mantenimiento y limpieza.
+
+6.2.10. La instalación eléctrica del establecimiento debe de encontrarse protegida e identificada, se
+debe verificar que los toma corrientes, cableado y caja térmica se encuentren en buen estado y que no
+exista un riesgo inminente (visible por medio de inspección visual, ejemplo: cables sin protección,
+caja térmica dañada, toma corrientes fuera de su sitio) por descargas o mal funcionamiento del sistema
+eléctrico.
+
+6.2.11. Con el objetivo de monitorear la temperatura y la humedad relativa dentro del
+establecimiento, se debe contar con un instrumento o equipo independiente para área de bodega y
+sala de ventas, ubicada en un área representativa.
+
+6.2.12. La iluminación dentro del establecimiento, debe ser suficiente independientemente si es
+natural o artificial.
+
+6.2.13. Se debe tener acceso a servicios sanitarios y deben ser acordes al número de personas que
+laboran dentro del establecimiento (de conformidad a lo establecido en la normativa respectiva y a lo
+aprobado en su autorización de licenciamiento) y deben de contar con agua potable, lavabo, retrete,
+jabón, toallas o seca manos, contenedor para la basura con tapa, letrero alusivo que induzca al lavado
+de manos, sistema de extracción o ventilación natural adecuada.
+
+
+
+                                                                                       Página 22 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+6.2.14. El establecimiento debe presentar los permisos emitidos por las autoridades competentes en
+materia de prevención de riesgos en los lugares de trabajo, seguridad y salud ocupacional, así como
+del almacenamiento de sustancias químicas, según aplique.
+
+6.2.15. El establecimiento debe poseer ventilación efectiva para garantizar de que exista en sala de
+venta y bodega, una temperatura no mayor a treinta grados Celsius, u otra condición establecida en
+el empaque para su almacenamiento.
+6.2.16. Se deben tener registros de temperatura y humedad relativa (conservando por dos años los
+registros), realizado al menos dos veces al día, una a mediados de la mañana y otra a mediados de la
+tarde. El registro del parámetro de humedad relativa será informativo.
+
+6.2.17. Los productos no deben estar expuestos directamente a la luz del sol.
+
+6.2.18. Se debe contar con refrigerador de uso exclusivo para la conservación de los medicamentos
+que así lo requieran. Este debe mantenerse limpio y ordenado.
+
+6.2.19. El refrigerador debe contar con termómetro calibrado si se manejan productos que requieran
+condiciones especiales de cadena de frío.
+
+6.2.20. Debe existir registro de temperatura del interior del refrigerador, realizarlo dos veces al día,
+donde se conserven los medicamentos de 2 °C a 8 °C, o según se declare en el empaque.
+
+6.2.21. En los registros debe existir evidencia de la fecha, hora y persona que realiza la lectura de la
+temperatura y humedad relativa, según aplique.
+
+6.2.22. Debe existir un programa de control de plagas mediante contrato o constancia de servicio
+del proveedor, quien debe de estar autorizado por la autoridad competente. Si se realiza el control de
+plagas internamente, debe de cumplir con lo estipulado en el numeral 5.5.6. de este reglamento.
+
+6.3.   PERSONAL Y DISPENSACIÓN
+
+6.3.1. El personal que labora en el establecimiento debe contar con la acreditación vigente emitida
+por la autoridad reguladora.
+6.3.2. Cada establecimiento debe de contar con un programa de capacitaciones anuales que
+describan los temas abordados, entre los cuales se deben incluir: promoción de la importancia de la
+adherencia a los tratamientos de los pacientes, promoción del uso apropiado de antibióticos y el
+problema de las resistencias, el uso responsable de los medicamentos, farmacovigilancia (con énfasis
+al reporte de reacciones adversas), de este reglamento, entre otros temas de interés sanitario. La
+revisión o aprobación e implementación de este programa está bajo la responsabilidad del regente.
+
+6.3.3. Se debe demostrar la capacidad de la aplicación de los conocimientos adquiridos en las
+capacitaciones relacionadas en el numeral 6.3.2.
+
+6.3.4. Debe existir registro de capacitación para el personal, incluyendo el material impartido y la
+evaluación de los conocimientos adquiridos, según se establece en el programa de capacitación anual.
+
+
+
+                                                                                        Página 23 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                        RTS 11.02.04:24
+
+6.3.5. El personal que despacha o dispensa los productos debe utilizar gafete de identificación. De
+acuerdo a las actividades que realiza en el establecimiento, se podrá utilizar otro tipo de indumentaria
+correspondiente al grado de manipulación, según requiera el tipo de producto.
+
+6.3.6. Se debe reportar cualquier eventualidad o sospecha de reacciones adversas a la Autoridad
+Reguladora competente, relacionada con medicamentos u otros productos. El establecimiento debe
+contar con procedimientos y registros de notificación de quejas o reacciones adversas. En caso de que
+el establecimiento no haya recibido ningún reporte de este tipo, se deberá contar con el reporte
+correspondiente para estos casos según establezca la Autoridad Reguladora competente.
+
+6.3.7. La presencia del regente en el establecimiento debe ser verificable mediante registro conforme
+a su horario de asistencia, el registro debe contener como mínimo: fecha de visita, horario de
+permanencia, breve descripción de las actividades ejecutadas durante ese tiempo (por ejemplo,
+revisión de productos estupefacientes y psicotrópicos (según la facturación), revisión de recetas de
+antibióticos, verificación de elementos de este reglamento, capacitación, otras según el tipo de
+productos o actividad que se realiza en el establecimiento), firma y sello. Para el caso de las regencias
+a tiempo completo, se deberá contar con un registro periódico de actividades y verificaciones
+ejecutadas. Se debe conservar el registro por un periodo de al menos 1 año.
+
+6.3.8. Los productos regulados devueltos por pacientes deben ser evaluados de acuerdo con un
+procedimiento para determinar que mantiene su integridad, para aceptar una devolución y su reintegro
+al inventario; en caso de que el producto no cumpla, no será aceptada su devolución. Si el consumidor
+decide efectuar la devolución, este será puesto a disposición del distribuidor para su adecuada
+destrucción. Lo mismo aplica en caso de devoluciones parciales.
+
+6.4. DISPENSACIÓN DE ANTIBIÓTICOS
+
+6.4.1. Se debe contar con un procedimiento que especifique el proceso de adquisición, suministro,
+dispensación, devolución y disposición final de los medicamentos antibióticos.
+
+6.4.2. Se debe demostrar la existencia de un registro trazable (físico o digital) del movimiento de
+los medicamentos antibióticos que se manejan en el establecimiento. Debe existir concordancia con
+las existencias físicas de los productos que se encuentren en el establecimiento.
+
+6.4.3. La dispensación de antibióticos se debe realizar solamente si se presenta una receta médica,
+según el listado emitido oficialmente por SRS.
+
+6.4.4. Debe existir un mecanismo a fin de prevenir el uso indebido de la receta presentada en el
+establecimiento. Por ejemplo, cada vez que se dispensan antibióticos se debe sellar y firmar la receta
+médica con la leyenda de “Entregado” o similar incluyendo la fecha de dispensación, la cantidad
+dispensada y la cantidad pendiente de ser dispensada (si aplica). Deberá quedar una copia física o
+digital de la receta como registro en el establecimiento.
+
+6.4.5. Los registros referentes al manejo de antibióticos deben ser resguardados por el
+establecimiento ya sea en forma física o digital por un periodo de al menos 1 año.
+
+
+
+                                                                                         Página 24 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+6.5. DISPENSACIÓN    Y   ALMACENAMIENTO                               DE        MEDICAMENTOS
+ESTUPEFACIENTES Y PSICOTRÓPICOS
+
+6.5.1. La recepción, registro, almacenamiento, manejo y control de medicamentos estupefacientes o
+psicotrópicos debe ser verificado por el regente de acuerdo al procedimiento correspondiente con su
+debido registro.
+
+6.5.2. Debe implementarse el sistema de control para medicamentos estupefacientes o psicotrópicos
+facilitado por la Autoridad Reguladora. Se debe demostrar que su uso permite una adecuada
+trazabilidad de los productos.
+
+6.5.3. Debe existir un área restringida (bajo llave) para el almacenamiento de medicamentos
+psicotrópicos o estupefacientes.
+
+6.5.4. Los productos controlados deben contar con facturas o copias de las mismas para demostrar
+su adquisición y trazabilidad.
+
+6.6. PRODUCTOS FALSIFICADOS, SUB ESTANDAR Y SIN REGISTRO
+
+6.6.1. No se deben comercializar al público en general, medicamentos propiedad del Estado,
+muestras médicas o en original de obsequio para su distribución o venta, medicamentos fuera de su
+empaque primario, productos de importación no autorizados para su distribución en el país.
+
+6.6.2. En caso de que se comercialicen medicamentos fraccionados (por ejemplo, fracción de blíste
+r de tabletas,          capsulas          entre          otros), se deberá de realizar de tal forma que
+la fecha de vencimiento y lote queden en la fracción del establecimiento
+para permitir su verificación y consulta por parte del consumidor.
+
+6.6.3. Los medicamentos deben estar etiquetados en idioma español y contener su número de registro
+sanitario, en cumplimiento a lo establecido por la autoridad reguladora.
+
+6.6.4. No se deben despachar o dispensar productos con sospecha de falsificación, sub estándar o
+deteriorado (producto con defectos visuales fácilmente detectables o productos en anaquel que sufran
+cambios aparentes durante su almacenamiento), sin registro sanitario vigente o productos alertados a
+la población por parte de la Autoridad Competente.
+
+6.6.5. En la recepción del medicamento se debe verificar el número de lote y fecha de caducidad de
+estos productos conforme a un procedimiento de recepción de los medicamentos.
+
+6.6.6. Los medicamentos para dispensación deben poseer fecha de vida útil vigente.
+
+6.6.7. Los medicamentos vencidos deben colocarse en un área identificada y separada para este fin.
+
+6.6.8. Debe existir un procedimiento para el manejo de medicamentos vencidos en el que se declare
+y cumpla la política de gestión de productos con fecha próxima de vencimiento.
+
+
+
+                                                                                       Página 25 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                       RTS 11.02.04:24
+
+6.7. TRANSPORTE A DOMICILIO AL CONSUMIDOR FINAL.
+
+6.7.1. El vehículo utilizado para el transporte debe contener el producto adecuadamente preparado
+en embalajes que mantengan las condiciones de almacenamiento establecidas por el fabricante hasta
+que llegue al receptor. Los contenedores utilizados para el transporte de los productos deben estar en
+buen estado de mantenimiento y limpieza.
+
+6.7.2. El establecimiento debe proporcionar un embalaje y una identificación apropiada de manera
+que la persona que haga la entrega tenga conocimiento de precauciones particulares, cuando aplique,
+así como para el registro de otra información necesaria.
+
+6.7.3. En el caso de no estar disponible un receptor del paquete, la persona que efectúe la entrega
+debe retornar el paquete al establecimiento.
+
+6.7.4. Para el caso de productos sensibles a la temperatura, se debe hacer los arreglos adecuados para
+proteger el medicamento de la exposición a altas temperaturas o, en algunos casos, a condiciones de
+congelación. Tales arreglos pueden incluir los siguientes: aislar el embalaje o realizar un embalaje
+con un refrigerante incluido; realizar envíos a la brevedad acordando previamente la recepción.
+
+6.7.5. El transportista debe recibir capacitaciones o las instrucciones necesarias sobre el manejo de
+productos durante el envío para conservar las condiciones indicadas en la etiqueta del producto
+
+6.7.6. Debe existir un procedimiento que refiera las actividades pertinentes relacionadas al
+Transporte a domicilio al consumidor final.
+
+6.8. PRODUCTOS OFICINALES Y MAGISTRALES
+
+6.8.1. Los productos magistrales solamente deben ser elaborados, despachados o dispensados en
+farmacias autorizadas para ello. No se podrán comercializar este tipo de productos provenientes de
+un tercer establecimiento.
+
+6.8.2. Se debe cumplir con los requerimientos de infraestructura, equipamiento, documentación
+personal y controles establecidos en la reglamentación de buenas prácticas de elaboración para este
+tipo de productos.
+
+6.9. FARMACIAS QUE PREPARAN DOSIS Y TRATAMIENTOS INDIVIDUALIZADOS
+
+Esta sección se aplicará a los servicios de entrega de medicamentos existentes en clínicas, hospitales,
+instituciones de servicios de salud, clínicas de atención contra las adicciones y centros de
+rehabilitación.
+
+6.9.1. Debe existir registros de las preparaciones individualizadas por dosis unitarias y su
+distribución/ dispensación que contenga como mínimo la siguiente información:
+a) Tipo de mezcla;
+b) Datos del paciente;
+c) Componentes y dosis;
+d) Número de identificación;
+                                                                                        Página 26 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+e) Fecha de preparación;
+f) Tiempo de vida útil;
+g) Cantidad y fecha de dispensación/ distribución.
+
+6.9.2. Se debe disponer de una orden de preparación de la prescripción médica que contenga como
+mínimo:
+a) Nombre del químico farmacéutico que llevó a cabo la revisión de la prescripción médica;
+b) Cálculos y su aprobación correspondiente del profesional farmacéutico;
+c) Nombre del profesional farmacéutico que elaboró el producto según receta.
+
+6.9.3. La receta de prescripción debe contener como mínimo los siguientes datos:
+a) Datos de identificación del prescriptor y del paciente;
+b) El medicamento de elección del médico/ facultativo (no aplica para instituciones públicas de
+     salud);
+c) El nombre genérico del principio activo. En caso de medicamentos que contengan
+     estupefacientes o psicotrópicos debe indicar nombre comercial del producto;
+d) Presentación;
+e) Dosis con detalle de la concentración del medicamento;
+f) Vía de administración;
+g) Días de tratamiento y cantidad prescrita en números;
+h) Lugar, fecha, firma y sello del prescriptor.
+
+6.9.4. Los productos que se dispensan en dosis unitarias son debidamente acondicionados e
+identificados, conteniendo la siguiente información:
+a) Nombre y dirección del establecimiento (cuando aplique);
+b) Nombre del producto;
+c) Nombre y concentración del principio activo;
+d) Vía de administración;
+e) Fecha de vencimiento;
+f) Número de lote;
+g) Número de cama e identificación del paciente,
+h) Nombre, fecha y firma del profesional farmacéutico a cargo de la preparación.
+
+6.9.5. Se debe contar con un sistema que garantice la inequívoca dispensación del medicamento
+indicando la identificación del paciente y el número de cama.
+
+6.9.6. Las dosis unitarias deben ser preparadas por profesionales farmacéuticos competentes para la
+preparación de las mismas. El personal en áreas de preparación debe utilizar la indumentaria adecuada
+en buen estado y conforme a lo establecido en el procedimiento interno respectivo.
+
+6.9.7. Se debe cumplir con los requerimientos de infraestructura, equipamiento, personal,
+documentación y controles establecidos en la reglamentación de buenas prácticas de elaboración que
+se defina para este tipo de productos.
+
+6.9.8. Para los casos de productos estériles se debe brindar las condiciones y monitoreos establecidos
+en los libros oficiales u otras referencias internacionales en la materia.
+
+
+                                                                                       Página 27 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+7. PROCEDIMIENTOS DE EVALUACIÓN DE LA CONFORMIDAD
+
+7.1. La verificación del cumplimiento a las disposiciones técnicas de este RTS, se realizaran por
+medio de inspecciones y revisión documental por parte de la autoridad reguladora a los
+establecimientos farmacéuticos públicos o privados que participen en el almacenamiento,
+dispensación, distribución y transporte de productos regulados con el propósito de garantizar que la
+calidad y la integridad se mantengan a lo largo de la cadena de suministro, permitiendo identificar las
+buenas prácticas, no conformidades y oportunidades de mejora.
+
+7.2. La Superintendencia de Regulación Sanitaria publicará por medios oficiales las guías de
+evaluación a acorde al catálogo de categorías de establecimientos vigente, junto con la publicación
+del Diario Oficial de este RTS.
+
+8. DOCUMENTOS A CONSULTAR
+
+8.1. Ley de la Superintendencia de Regulación Sanitaria, Decreto No. 891, Diario Oficial No. 227,
+Tomo No. 441 del 4 de diciembre de 2023.
+8.2. Ley de Medicamentos. Dirección Nacional de Medicamentos. Decreto Legislativo No. 1008,
+Diario Oficial No. 43, Tomo No. 394 del 2 de marzo de 2012. El Salvador.
+8.3. Reglamento de Estupefacientes, Psicotrópicos, Precursores, Sustancias y Productos Químicos
+y Agregados. Dirección Nacional de Medicamentos. Decreto No. 20, Diario Oficial No. 398, Tomo
+No. 398 del 13 de febrero de 2013. El Salvador.
+8.4. Reglamento General de la Ley de Medicamentos. Dirección Nacional de Medicamentos.
+Decreto Legislativo No. 245, Diario Oficial No. 239, Tomo No. 397 del 20 de diciembre de 2012. El
+Salvador.
+8.5. RTCA PRODUCTOS FARMACÉUTICOS. ESTUDIOS DE ESTABILIDAD DE
+MEDICAMENTOS PARA USO HUMANO. en su versión vigente
+8.6. RTCA PRODUCTOS FARMACÉUTICOS. ETIQUETADO DE PRODUCTOS
+FARMACÉUTICOS PARA USO HUMANO en su versión vigente
+8.7. RTCA PRODUCTOS FARMACÉUTICOS. MEDICAMENTOS PARA USO HUMANO.
+BUENAS PRÁCTICAS DE MANUFACTURA PARA LA INDUSTRIA FARMACÉUTICA. en su
+versión vigente
+8.8. RTCA PRODUCTOS FARMACÉUTICOS. MEDICAMENTOS PARA USO HUMANO.
+REQUISITOS DE REGISTRO SANITARIO en su versión vigente.
+8.9. World Health Organization, Technical Report Series 1025. 2020. Annex 7 Good storage and
+distribution    practices   for     medical    products.   [en    línea].  Disponible    en:    <
+https://www.who.int/publications/i/item/978-92-4-000182-4>. pp. 157-188. Fecha de consulta: 21 de
+noviembre de 2023
+
+9. FUENTE BIBLIOGRÁFICA
+
+9.1. Consejo Nacional de Calidad. Organismo Salvadoreño de Reglamentación Técnica.
+REGLAMENTO PARA LA ELABORACIÓN DE REGLAMENTOS TÉCNICOS
+SALVADOREÑOS-RTS-. Diario Oficial No. 235. Tomo No. 437 del martes 13 de diciembre de
+2022.
+9.2. Cuba. Centro para el Control Estatal de la Calidad de los Medicamentos. Directrices sobre
+Buenas Prácticas de Distribución de productos farmacéuticos y materiales. Cuba, 2006.
+                                                                                       Página 28 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                      RTS 11.02.04:24
+
+9.3. World Health Organization, Technical Report Series 908. 2003. Annex 9: Guide to good storage
+practices        for        pharmaceuticals.       [en        línea].       Disponible         en:
+http://whqlibdoc.who.int/trs/WHO_TRS_908.pdf pp. 125-136. Fecha de consulta: 21 de noviembre
+2011.
+9.4. World Health Organization, Technical Report Series 953. 2009. Annex 2: Stability testing of
+active pharmaceutical ingredients and finished pharmaceutical products. [en línea]. Disponible en:
+<http://whqlibdoc.who.int/trs/WHO_TRS_953_eng.pdf>. pp. 87-130. Fecha de consulta: 21 de
+noviembre 2011.
+9.5. World Health Organization, Technical Report Series 957. 2010. Annex 5: WHO good
+distribution practices for pharmaceutical products. [en línea]. Disponible en:
+http://www.who.int/medicines/publications/TRS957_2010.pdf>. pp. 235-264. Fecha de consulta: 21
+de noviembre 2011.
+9.6. World Health Organization, Technical Report Series 961. 2011. Annex 9: Model guidance for
+the storage and transport of time- and temperature-sensitive pharmaceutical products. [en línea].
+Disponible en: <http://whqlibdoc.who.int/trs/WHO_TRS_961_eng.pdf>. pp. 324-372. Fecha de
+consulta: 21 de noviembre 2011.
+
+10. VIGILANCIA Y VERIFICACIÓN
+
+10.1. La vigilancia y verificación del cumplimiento de este RTS corresponde a la Superintendencia
+de Regulación Sanitaria, de conformidad con la legislación vigente.
+
+10.2. El incumplimiento a las disposiciones de este RTS estará sujeto a los procedimientos y
+sanciones que establece la legislación vigente.
+
+11. VIGENCIA
+
+11.1. El presente Reglamento Técnico Salvadoreño entrará en vigencia seis (6) meses después de su
+publicación en el Diario Oficial.
+
+11.2. Los sujetos obligados contarán con un plazo transitorio de hasta cuatro (4) años posteriores a la
+entrada en vigencia de este RTS para realizar las adecuaciones a la implementación, teniendo en
+cuenta las siguientes consideraciones:
+a) A partir de la entrada en vigencia y durante el primer año de vigencia, se debe cumplir con un
+mínimo del 70 % de los requerimientos inspeccionados mediante la guía de verificación de cada
+establecimiento. Para los requerimientos referidos a las condiciones especiales para productos que
+requieren cadena de frío, se debe cumplir con un mínimo del 85 %;
+b) Durante el segundo año de vigencia, cada establecimiento debe cumplir con un mínimo del 80 %
+de los requerimientos inspeccionados mediante la guía de verificación; para los requerimientos
+referidos a las condiciones especiales para productos que requieren cadena de frío, se debe cumplir
+con un mínimo del 95 %;
+c) Durante el tercer año de vigencia, cada establecimiento debe cumplir con un mínimo del 90 %
+de los requerimientos inspeccionados mediante la guía de verificación; para los requerimientos
+referidos en los numerales 5.17, 6.8. y 6.9. se debe cumplir con un mínimo del 85 % de los
+requerimientos establecidos.
+
+
+                                                                                       Página 29 de 30
+REGLAMENTO TÉCNICO SALVADOREÑO                                                     RTS 11.02.04:24
+
+11.3. Concluido el periodo transitorio, a partir del cuarto año de vigencia del RTS, el cumplimiento
+de las Buenas Prácticas se dictaminará a partir del cumplimiento del 95 % al 100 % de la totalidad de
+los requerimientos inspeccionados mediante la guía de verificación aplicable a cada establecimiento.
+
+11.4. La criticidad de las no conformidades encontradas durante las inspecciones realizadas durante
+el período transitorio estará sujeta al análisis de riesgo en las que se verifiquen circunstancias que
+afecten en forma grave e inadmisible la calidad o seguridad de los productos regulados,
+particularmente para los puntos referidos a las condiciones especiales para productos que requieren
+cadena de frío y a los puntos referidos en los numerales 5.17, 6.8. y 6.9.
+
+
+                  -FIN DEL REGLAMENTO TÉCNICO SALVADOREÑO-
+
+
+
+
+                                                                                       Página 30 de 30
+

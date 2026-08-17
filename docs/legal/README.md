@@ -1,12 +1,19 @@
-# Referencia legal y técnica — Impuestos y Facturación Electrónica (El Salvador)
+# Referencia legal y técnica (El Salvador)
 
-Documentos descargados el **2026-07-18** para usar como referencia al trabajar
-los módulos de **facturación, proveedores, ventas** y cualquier otro tema
-fiscal/tributario del portal. Complementa (no reemplaza) las referencias
-puntuales ya usadas en el código — ver `docs/resumen-dte-el-salvador.md` para
-el resumen de negocio del DTE aplicado a esta farmacia.
+Textos oficiales guardados en el repo para consultarlos al trabajar los módulos
+que dependen de ellos. Son **dos materias distintas** y conviene no mezclarlas:
 
-## Documentos
+- **§1 Fiscal y tributario** — facturación, proveedores, ventas, contabilidad.
+  Descargados el 2026-07-18 (el Código de Comercio el 2026-08-01).
+- **§2 Regulación sanitaria** — bitácoras, dispensación bajo receta,
+  almacenamiento. Descargados el **2026-08-16**.
+
+Complementa (no reemplaza) las referencias puntuales ya usadas en el código —
+ver `docs/resumen-dte-el-salvador.md` para el resumen de negocio del DTE
+aplicado a esta farmacia, y `docs/PLAN-BITACORAS-SRS-2026-08-16.md` para el de
+las bitácoras.
+
+## 1 · Fiscal y tributario
 
 | Archivo | Contenido | Fuente | Vigencia conocida |
 |---|---|---|---|
@@ -28,6 +35,37 @@ a ello». Sin este PDF, la cadena de la obligación quedaba cortada.
 Ver `docs/CONTABILIDAD-ALCANCE-2026-08-01.md` para qué cubre el portal hoy y qué
 no, con los artículos citados.
 
+## 2 · Regulación sanitaria — SRS / DNM
+
+Agregados el **2026-08-16** al definir el módulo de bitácoras. Son los dos
+documentos que mandan sobre una farmacia que dispensa: **la guía dice qué se
+revisa y con qué gravedad, el reglamento dice los números.**
+
+| Archivo | Contenido | Fuente | Vigencia conocida |
+|---|---|---|---|
+| `srs_guia_verificacion_bpad.pdf` | «Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos que Dispensan Medicamentos». **Es literalmente la lista con la que el inspector camina la sala**: 8 secciones, cada ítem numerado y clasificado CRÍTICO / MAYOR / MENOR. La sección 2 es almacenamiento y dispensación (temperatura, refrigerador, limpieza); la **sección 3 es antibióticos** (3.1 a 3.22) | Superintendencia de Regulación Sanitaria (srs.gob.sv), carpeta `2025/10` | Publicada octubre 2025 |
+| `rts_11020424_bpadyt.pdf` | Reglamento Técnico Salvadoreño **RTS 11.02.04:24** — Productos Farmacéuticos, Buenas Prácticas de Almacenamiento, Distribución y Transporte. 30 páginas. Es donde están **las frecuencias, los rangos y los años de resguardo**: §5.5-5.6 almacenamiento, §6.2 establecimiento (temperatura, humedad, refrigerador), §6.3 personal y regente, **§6.4 dispensación de antibióticos** | OSARTEC (osartec.gob.sv) | Versión del 18/dic/2024 |
+
+**Los `.txt` están al lado a propósito.** Los dos PDFs traen el texto comprimido
+y un `WebFetch` sobre ellos devuelve basura binaria — hay que pasarlos por
+`pdftotext -layout`. Como al implementar hay que citar números de ítem todo el
+tiempo, el `.txt` ya generado evita repetir la conversión y evita la tentación
+de citar de memoria.
+
+Los cuatro ítems que más se consultan, para no tener que buscarlos:
+
+| tema | guía | RTS |
+|---|---|---|
+| temperatura y humedad: 2×/día, ≤30 °C, fecha+hora+persona, 2 años | 2.26, 2.27, 2.34 | 6.2.11, 6.2.15, 6.2.16, 6.2.21 |
+| refrigerador: 2×/día, 2-8 °C, termómetro calibrado, uso exclusivo | 2.29 a 2.33 | 6.2.18 a 6.2.20 |
+| antibióticos: registro trazable, campos exigidos, parcial/total, copia de receta | 3.3, 3.5, 3.16 a 3.21 | 6.4.1 a 6.4.5 |
+| bitácora de visitas del regente | 2.23 | 6.3.7 |
+
+**Ojo con quién regula.** Los textos y la propia guía nombran indistintamente a
+la **DNM** (Dirección Nacional de Medicamentos) y a la **SRS**
+(Superintendencia de Regulación Sanitaria), que la absorbió. Es el mismo
+regulador; al buscar en internet aparecen bajo los dos nombres.
+
 ## ⚠️ Limitación importante
 
 **Ninguno de estos documentos es garantizadamente la versión 100% vigente hoy.**
@@ -47,14 +85,22 @@ más reciente o un asesor legal/contable — no asumir que estos PDFs son la
 
 ## Cómo usarlos
 
-Los PDFs no están indexados como texto plano en el repo (a diferencia del
-Código de Trabajo, que vive en la memoria de Claude como `.txt` — ver
+**Los dos de §2 ya tienen su `.txt` al lado** — se grepean directo:
+
+```bash
+grep -n "antibiótic" docs/legal/rts_11020424_bpadyt.txt
+grep -n -A3 "^3\.17" docs/legal/srs_guia_verificacion_bpad.txt
+```
+
+Los de §1 no están indexados como texto plano (a diferencia del Código de
+Trabajo, que vive en la memoria de Claude como `.txt` — ver
 `reference_el_salvador_codigo_trabajo` en las memorias del proyecto). Para
 buscar un artículo específico:
 
 ```bash
-pdftotext docs/legal/codigo_tributario.pdf - | grep -n "Art. 114"
+pdftotext -layout docs/legal/codigo_tributario.pdf - | grep -n "Art. 114"
 ```
 
-o abrir el PDF directamente. Si en el futuro se necesita grep frecuente sobre
-estos textos, conviene generar los `.txt` una vez y guardarlos junto al PDF.
+o abrir el PDF directamente. El `-layout` importa: sin él, las tablas de la
+guía de la SRS pierden la columna de gravedad y un ítem CRÍTICO se lee igual
+que uno MENOR.

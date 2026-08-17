@@ -1,0 +1,618 @@
+                                             Guía para la Evaluación de Buenas Prácticas de Almacenamiento y
+                                             Transporte Aplicadas a Droguerías y Centros de Almacenamiento
+                                             Macroproceso Inspección, Vigilancia y Control Sanitario
+                                             Proceso          Inspección
+                                             Subproceso       Gestión de Buenas Prácticas
+
+
+
+
+      GUÍA DE VERIFICACIÓN DE BUENAS PRÁCTICAS DE
+ ALMACENAMIENTO Y DISPENSACIÓN DE ESTABLECIMIENTOS QUE
+                DISPENSAN MEDICAMENTOS
+
+1. OBJETIVO
+     Facilitar al regulado las directrices que debe cumplir en la verificación de buenas prácticas de almacenamiento y
+     dispensación de establecimientos que dispensan medicamentos.
+
+
+
+2. REFERENCIA NORMATIVA
+ •   Reglamento de Organización y Funcionamiento de la Dirección Nacional de Medicamentos, Art. 4 literal j).
+ •   Ley de Medicamentos, Art. 2, 6, 5, 24, 43.
+ •   Reglamento General de la Ley de Medicamentos, Art. 40.
+ •   DIRECTRICES CONJUNTAS FIP/OMS SOBRE BUENAS PRÁCTICAS EN FARMACIA: ESTÁNDARES PARA LA CALIDAD DE
+     LOS SERVICIOS FARMACÉUTICOS disponible en: https://www.paho.org/hq/dmdocuments/2013/GPP-guidelines-FIP-
+     publication-ES-2011.pdf
+
+
+
+3. INFORMACIÓN GENERAL
+ •   La Dirección Nacional de Medicamentos (DNM) a través de la Unidad de Inspección, Fiscalización y Buenas Prácticas,
+     verifica el cumplimiento, en los establecimientos públicos y privados que dispensen medicamentos al público, es decir,
+     las Farmacias y Botiquines; públicos y privados, legalmente inscritos en la DNM.
+
+ •   Los establecimientos pueden solicitar las inspecciones previo al pago del arancel correspondiente, conforme a la guía de
+     solicitud de buenas prácticas, código C03-IV-02-UIF.GUI.03, sin embargo, como parte de la vigilancia, se realizaran
+     inspecciones de rutina de manera periódica, con el fin de comprobar que se cumplan con estos requerimientos.
+
+ •   Los trámites de la DNM serán observados una única vez de conformidad a lo establecido en el artículo 72 de la Ley de
+     Procedimientos Administrativos, en caso que no se subsane en tiempo y/o en forma, el administrado deberá iniciar
+     nuevamente el trámite
+
+
+
+
+                                                                                                             Página 1 de 13
+                                               Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                               que Dispensan Medicamentos
+                                               Macroproceso Inspección, Vigilancia y Control Sanitario
+                                               Proceso        Inspección
+                                               Subproceso     Gestión de Buenas Prácticas
+
+
+
+
+        4. REQUISITOS QUE DEBE CUMPLIR
+        Con el objetivo de facilitar la tramitación de las solicitudes referentes a la verificación de buenas prácticas de almacenamiento y
+        dispensación de establecimientos que dispensan medicamentos se establecen los siguientes requisitos:
+
+
+                                                                                                                    NO
+Capitulo                              TITULO                                       CRITERIO              CUMPLE            N/A       COMENTRIO
+                                                                                                                  CUMPLE
+   1       DOCUMENTACIÓN LEGAL Y TÉCNICA
+           ¿Cuenta con licencia sanitaria? ¿se encuentra en lugar visible al
+  1.1                                                                               CRITICO
+           público? ¿Se realizan solamente las actividades autorizadas?
+           ¿Cuenta con regente          farmacéutico     responsable       del
+  1.2                                                                               CRITICO
+           establecimiento?
+           ¿Cuenta con archivo de las últimas inspecciones internas y
+  1.3                                                                                MAYOR
+           externas realizadas?
+           ¿Cuentan con facturas o documentos que amparen la
+  1.4      posesión legal de los medicamentos e insumos médicos e                    MAYOR
+           incluyen cantidad, presentación y número de lote?
+           ¿Se cuenta con descripción de funciones y responsabilidades,
+  1.5                                                                                MAYOR
+           del personal autorizado?
+           ¿Cuentan con procedimiento de recepción e inspección física
+  1.6                                                                                MAYOR
+           de los productos?
+           ¿Se cuenta con sistema de primeras entradas, primeras salidas;
+  1.7                                                                                MAYOR
+           primeras caducidades, ¿primeras salidas?
+  1.8      ¿Se cuenta con procedimiento de adquisición de productos?                 MAYOR
+           ¿Se cuenta con procedimiento de devolución de los
+  1.9                                                                                MAYOR
+           productos?
+           ¿Se cuenta con instrucciones de medidas de seguridad e
+  1.1                                                                                MAYOR
+           higiene que debe guardar el personal?
+
+
+
+                                                                                                                                   Página 2 de 13
+                                          Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                          que Dispensan Medicamentos
+                                          Macroproceso Inspección, Vigilancia y Control Sanitario
+                                          Proceso        Inspección
+                                          Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Se cuenta con procedimiento de limpieza y mantenimiento
+1.11                                                                            MAYOR
+       aplicable a las áreas y mobiliario del establecimiento?
+       ¿Los procedimientos se encuentran autorizados por el
+1.12                                                                            MAYOR
+       regente?
+       ¿Se dispone del listado de antibióticos que maneja el servicio
+1.13   farmacéutico e incluye la clasificación AWaRe recomendada                MAYOR
+       por OMS (Reserva, Vigilancia y Acceso) para cada antibiótico?
+ 2                 ALMACENAMIENTO Y DISPENSACION
+       ¿El establecimiento es independiente de cualquier otro giro
+2.1    comercial o casa habitacional; en caso de estar en el mismo              MAYOR
+       predio o local, y no está comunicado por puertas o pasillos?
+       Los establecimientos autorizados en autoservicios y tiendas
+       departamentales, ¿están separadas físicamente de las áreas de
+2.2                                                                             MAYOR
+       perecederos, bebidas alcohólicas y de toda sustancia que
+       ponga en riesgo la seguridad, eficacia de los medicamentos?
+       En la entrada del establecimiento, ¿cuenta con rótulo que
+2.3    indica el nombre del regente, número de JVPQF y el horario               MENOR
+       de asistencia?
+       ¿Las áreas y superficies están acordes con la capacidad y
+2.4                                                                             MAYOR
+       diversidad de los productos que manejan?
+       ¿Cuentan con área identificada de almacenamiento de los
+2.5    productos, e indica la restricción de acceso a personal ajeno,           MAYOR
+       para la seguridad de los productos que se manejen?
+       ¿Cuentan con espacio identificado de devoluciones a
+2.6                                                                             MAYOR
+       proveedores (productos de devolución, deteriorados, etc.)?
+       ¿El mobiliario y estantería tiene una separación mínima de 10
+2.7                                                                             MENOR
+       cm del piso, paredes y techo?
+       ¿Están colocados de tal forma que mantengan la seguridad y
+2.8                                                                             MAYOR
+       adecuada conservación de los productos?
+
+
+
+
+                                                                                                                              Página 3 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Están separados en anaqueles y vitrinas los productos de
+2.9    perfumería, belleza, aseo y otros productos de los                        MAYOR
+       medicamentos en el establecimiento?
+2.10   Las paredes, pisos y techos, ¿son de fácil limpieza?                     CRITICO
+       ¿El establecimiento se observa limpio y en condiciones
+2.11                                                                            CRITICO
+       adecuadas de mantenimiento?
+2.12   La instalación eléctrica, ¿está protegida?                                MAYOR
+2.13   ¿Cuentan con termómetro para monitorear la temperatura?                  CRITICO
+       ¿Cuenta con iluminación y ventilación natural o artificial
+2.14                                                                             MAYOR
+       suficiente y adecuada?
+       ¿Cuentan con servicio sanitario acorde al número de
+2.15                                                                             MAYOR
+       personas?
+       ¿El servicio sanitario cuenta con agua potable, lavabo, retrete,
+       jabón, toallas o seca manos, bote de basura con tapa, letrero
+2.16                                                                             MAYOR
+       alusivo que induzca al lavado de manos, sistema de extracción
+       o ventilación natural adecuada?
+2.17   ¿Se cuentan con extintores debidamente cargados?                          MAYOR
+       ¿El personal ha recibido la capacitación para dependientes de
+2.18                                                                             MAYOR
+       farmacias?
+       ¿Cuenta con programa de capacitación para el personal que
+2.19                                                                             MAYOR
+       labora en el establecimiento?
+       ¿Cuenta con registro de capacitación para el personal que se
+2.20                                                                             MAYOR
+       capacitó, incluyendo el examen realizado por el facilitador?
+       ¿Las capacitaciones incluyen temas de manejo de antibióticos
+2.21                                                                             MAYOR
+       y de los aspectos contemplados en esta normativa?
+       ¿El personal cuenta con indumentaria y gafete de acuerdo a las
+2.22                                                                             MENOR
+       actividades que realiza en el establecimiento?
+
+
+
+
+                                                                                                                               Página 4 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿El regente se encuentra presente durante la visita? (No aplica
+2.23   si no está dentro del horario de permanencia, verificar bitácora          MAYOR
+       de visitas.)
+2.24   ¿Los productos se ubican en los anaqueles?                                MAYOR
+       ¿El personal conoce el método de colocación de los
+2.25                                                                             MENOR
+       medicamentos?
+       ¿El establecimiento se encuentra ventilado a una temperatura
+2.26                                                                            CRITICO
+       no mayor a 30 grados Celsius?
+       ¿Se cuenta con registros de temperatura, realizado al menos
+2.27                                                                            CRITICO
+       dos veces al día?
+2.28   ¿Los productos no están expuestos al sol?                                CRITICO
+       ¿Cuentan con refrigerador para la conservación de los
+2.29                                                                            CRITICO
+       medicamentos que así lo requieran?
+2.3    ¿El refrigerador se mantiene limpio y ordenado?                           MAYOR
+       ¿El refrigerador es de uso exclusivo solamente para conservar
+2.31                                                                             MAYOR
+       los medicamentos?
+2.32   ¿El refrigerador cuenta con termómetro calibrado?                        CRITICO
+       ¿Cuenta con registro de temperatura al interior del
+2.33   refrigerador, dos veces al día, donde se conserven los                   CRITICO
+       medicamentos de 2 a 8 grados Celsius?
+       ¿Se anota la fecha y persona que realiza la lectura de la
+2.34                                                                             MAYOR
+       temperatura?
+       ¿Cuenta con un programa de control de plagas mediante
+2.35                                                                             MAYOR
+       contrato o constancia de servicio del proveedor?
+ 3                             ANTIBIOTICOS
+       ¿Se dispone y cumple un procedimiento/protocolo/guía para
+3.1    la recepción, almacenamiento, dispensación y disposición final            MAYOR
+       de antibióticos?
+
+
+
+
+                                                                                                                               Página 5 de 13
+                                          Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                          que Dispensan Medicamentos
+                                          Macroproceso Inspección, Vigilancia y Control Sanitario
+                                          Proceso        Inspección
+                                          Subproceso     Gestión de Buenas Prácticas
+
+
+
+      ¿Se dispone y cumple un procedimiento/protocolo/guía para
+3.2   la devolución de antibióticos (si aplica) y son registradas las           MAYOR
+      devoluciones realizadas por antibiótico?
+      ¿Se lleva un registro trazable de los antibióticos que se manejan
+3.3                                                                            CRITICO
+      y dispensan en el establecimiento?
+      ¿Las existencias físicas de antibióticos (número de viales,
+3.4   tabletas, capsulas, etc.) concuerdan con las detalladas en el            CRITICO
+      registro electrónico o físico?
+      ¿El registro físico o electrónico incluye información
+      relacionada con la fecha de entrada/adquisición, cantidad
+      adquirida, denominación genérica, presentación, forma
+3.5   farmacéutica, laboratorio farmacéutico, número de lote, fecha             MAYOR
+      de expiración, fecha de salida/dispensación, cantidad
+      dispensada, devuelta y destruida del antibiótico, así como,
+      nombre, firma y sello de quien realizó tales actividades?
+      En el caso que los registros sean electrónicos, ¿se dispone de
+      un protocolo para la supervisión del sistema electrónico que
+3.6                                                                             MAYOR
+      incluye el nivel de acceso, resguardo de datos, forma de
+      registro de datos y evaluación periódica del sistema?
+      En el caso que los registros sean físicos ¿se dispone con
+      libros/formatos autorizados y controlados debidamente, que
+3.7                                                                             MAYOR
+      incluye numeración de hoja, responsables de registro,
+      responsables de autorización, control de correcciones?
+      ¿Se dispone de un registro que dé cuenta de la disposición final
+      de los antibióticos que caducaron o fueron identificados como
+      producto no conforme, falsificados, adulterados u otras
+3.8   características relacionadas que no permitieron su                        MAYOR
+      dispensación? Incluye fecha, cantidad e información técnica
+      (¿nombre genérico, nombre comercial, forma farmacéutica,
+      lote, fecha de vencimiento?) del antibiótico.
+      ¿Las recetas, ordenes o prescripciones médicas que llegan a la
+3.9                                                                             MENOR
+      farmacia usualmente contienen datos completos? Nombre del
+
+
+                                                                                                                              Página 6 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       paciente, edad o fecha de nacimiento,               número       de
+       identificación, fecha de prescripción.
+       ¿Las recetas, ordenes o prescripciones medica que llegan a su
+       farmacia contienen información completa del medicamento?
+3.10   (denominación genérica del antibiótico, forma farmacéutica,              CRITICO
+       vía de administración, cantidad del medicamento y tiene letra
+       legible)
+       ¿En el establecimiento solo se recibe las recetas, ordenes o
+3.11   prescripciones médicas con datos del paciente, medicamento                MAYOR
+       y prescriptor completas?
+       ¿Los registros de la dispensación de antibióticos como la copia
+       de receta médica y registro físicos o electrónicos de control
+3.12                                                                             MAYOR
+       son resguardados por el establecimiento ya sea en forma física
+       o digital y son almacenados por un periodo de al menos 1 año?
+       ¿Las recetas, ordenes o prescripciones médicas que se reciben
+       en el establecimiento, contiene datos completos del
+3.13   prescriptor? (nombre completo, cedula, firma y sello                      MENOR
+       autorizado por la Junta de Vigilancia de la Profesión Médica del
+       Consejo Superior de Salud Pública).
+       ¿La dispensación de antibióticos se realiza solamente si se
+3.14                                                                            CRITICO
+       presenta una receta, orden o prescripción médica?
+       ¿La cantidad prescrita concuerda con el tiempo de duración
+3.15                                                                            CRITICO
+       del tratamiento indicado por prescriptor acreditado?
+       ¿Cada vez que se dispensa antibióticos se sellan o firma la
+3.16   receta médica con "Entregado" o similar incluyendo la fecha de            MAYOR
+       dispensación (original y copia)?
+       ¿Cada vez que se dispensa antibióticos, se registra en la receta,
+3.17   orden o prescripción médica la cantidad dispensada y la                   MAYOR
+       cantidad pendiente de ser dispensada (si aplica)?
+       ¿La misma información del punto anterior está contenida en
+3.18   original y copia, quedando una copia como registro en el                  MAYOR
+       establecimiento farmacéutico?
+
+
+                                                                                                                               Página 7 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Se dispone de una guía/protocolo para el registro y gestión de
+3.19   antibióticos que quedan pendientes de dispensación por                    MAYOR
+       agotamiento de inventario?
+       ¿Al momento de finalizar la entrega total con la cantidad de
+3.20   antibiótico prescrito, se retiene una copia de la receta, orden o         MAYOR
+       prescripción médica por el establecimiento?
+       ¿En caso de haber retenido la copia de la receta médica por
+3.21   agotamiento de inventario, esta cuenta con un número                      MENOR
+       consecutivo asignado y está registrado para su gestión?
+       ¿Se reporta cualquier eventualidad a la DNM/Centro Nacional
+       de Farmacovigilancia, relacionada con antibióticos y otros
+3.22   medicamentos? (El establecimiento deberá contar con                       MAYOR
+       procedimientos y registros de notificación de quejas o
+       reacciones adversas a la DNM)
+         MEDICAMENTOS CONTROLADOS: ESTUPEFACIENTES Y
+ 4
+                       PSICOTRÓPICOS
+       ¿La recepción, registro, almacenamiento, manejo y control de
+       medicamentos estupefacientes o psicotrópicos son
+4.1                                                                             CRITICO
+       verificados por el regente de acuerdo a procedimiento
+       correspondiente?
+       ¿Cuenta con un sistema de control para medicamentos
+4.2    estupefacientes y/o psicotrópicos trazable y confiable y es              CRITICO
+       aprobado por la Dirección Nacional de Medicamentos?
+       ¿Cuentan con un área para el almacenamiento de
+4.3    medicamentos psicotrópicos y/o estupefacientes, y esta se                CRITICO
+       encuentra restringida?
+       ¿Los productos controlados cuentan con facturas o copias de
+4.4                                                                              MAYOR
+       las mismas para demostrar su adquisición y trazabilidad?
+ 5            PRODUCTOS FALSIFICADOS Y SUB ESTÁNDAR
+       ¿No comercializan al público en general, medicamentos
+5.1                                                                             CRITICO
+       propiedad del Estado?
+
+
+                                                                                                                               Página 8 de 13
+                                         Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                         que Dispensan Medicamentos
+                                         Macroproceso Inspección, Vigilancia y Control Sanitario
+                                         Proceso        Inspección
+                                         Subproceso     Gestión de Buenas Prácticas
+
+
+
+      ¿No se comercializan medicamentos en presentación muestra
+5.2                                                                           CRITICO
+      médica o en original de obsequio para su distribución o venta?
+      ¿No comercializan medicamentos fraccionados o fuera de su
+5.3                                                                           CRITICO
+      empaque primario?
+      ¿No comercializan productos de importación, no autorizados
+5.4                                                                           CRITICO
+      para su venta en el país?
+5.5   ¿Los medicamentos cuentan con etiquetas en español?                      MAYOR
+      ¿No se comercializan medicamentos con sospecha de
+5.6   falsificación o productos alertados a la población por parte de         CRITICO
+      la Dirección?
+      ¿Los medicamentos para dispensación cuentan con registro
+5.7                                                                           CRITICO
+      sanitario impreso en caja y etiqueta?
+      ¿Se verifica en los registros de entradas el número de lote y
+5.8                                                                            MAYOR
+      fecha de caducidad de los productos?
+6                       PRODUCTOS VENCIDOS
+      ¿Los medicamentos para dispensación cuentan con fecha de
+6.1                                                                           CRITICO
+      caducidad vigente?
+      ¿Los medicamentos vencidos se encuentran en un área
+6.2                                                                            MAYOR
+      identificada y separada para este fin?
+      ¿Cuentan con un procedimiento           para el     manejo      de
+6.3                                                                            MAYOR
+      medicamentos vencidos?
+7            MEDICAMENTOS MAGISTRALES Y OFICINALES
+      ¿Está el personal libre de enfermedades infectocontagiosas y
+7.1   lesiones abiertas, tienen su control médico por lo menos una            CRITICO
+      vez al año y dos veces al año?
+      ¿La preparación de medicamentos magistrales y oficinales está
+7.2                                                                           CRITICO
+      a cargo y/o supervisado por profesionales farmacéuticos?
+
+
+
+
+                                                                                                                             Página 9 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Cuentan con áreas separadas e identificadas según
+7.3    corresponda? ¿Se tienen bajo acceso restringido y protegidas             CRITICO
+       contra insectos y otros animales?
+       ¿Se cuenta con el material básico para la preparación de
+7.4                                                                             CRITICO
+       medicamentos magistrales y oficinales?
+       ¿Las áreas de preparación de los medicamentos magistrales y
+       oficinales cuentan con las condiciones adecuadas para evitar
+7.5    la contaminación de las preparaciones? ¿Cuenta con mueble                CRITICO
+       de fácil limpieza, resistente a los sanitizantes y exclusivo para
+       la elaboración de las preparaciones?
+7.6    ¿Cuentan con procedimiento de limpieza de área y equipo?                  MAYOR
+       ¿Se verifica que los medicamentos cuenten con fecha de
+7.7                                                                              MAYOR
+       caducidad? ¿Existen registro?
+       ¿Se cuentan con cristalería o utensilios adecuados (Material y
+7.8    utensilios de acero inoxidable)? ¿Y un área específica para su           CRITICO
+       almacenamiento?
+       ¿Se vigila que el equipo esté calibrado y el material limpio
+7.9                                                                             CRITICO
+       protegido?
+       ¿Hay una persona responsable que verifica que las fórmulas
+7.10   magistrales que se preparen sean registradas en libro o sistema           MAYOR
+       electrónico?
+       ¿Cuentan con los registros ordenados y actualizados de
+7.11                                                                             MAYOR
+       materias primas?
+       Los contenedores de materias primas están identificados
+       correctamente con la siguiente información: nombre
+7.12   completo, concentración, condiciones de almacenamiento,                   MAYOR
+       fecha de vencimiento, número de lote, fabricante, proveedor y
+       especificaciones de manejo y riesgo cuando aplique.
+       El proceso de pesado se realiza de manera que se garantice
+7.13                                                                            CRITICO
+       que no se produce contaminación cruzada.
+
+
+
+
+                                                                                                                              Página 10 de 13
+                                           Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                           que Dispensan Medicamentos
+                                           Macroproceso Inspección, Vigilancia y Control Sanitario
+                                           Proceso        Inspección
+                                           Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Se realiza un reanálisis completo de la materia prima cuando
+7.14                                                                            CRITICO
+       el envase ya tiene un año de abierto?
+       ¿Cuentan con la bibliografía necesaria para la preparación de
+7.15                                                                            CRITICO
+       magistrales?
+       ¿Cuentan con las fichas técnicas y certificados de calidad de
+7.16                                                                             MAYOR
+       las materias primas que se manejan?
+       Cuentan con procedimientos para la preparación general de
+7.17                                                                            CRITICO
+       los productos y el fraccionamiento.
+       ¿Las etiquetas para una sustancia a dispensar por
+       fraccionamiento contienen la siguiente información:
+7.18                                                                            CRITICO
+       Denominación de la Sustancia; Nombre y dirección de la
+       farmacia, vía de administración?
+       ¿Cuenta el personal con equipo de protección como gabacha,
+7.19   guantes, gorro y mascarilla adecuados para la manipulación de            CRITICO
+       las sustancias?
+       ¿Los medicamentos preparados cuentan con etiqueta en
+7.20                                                                             MAYOR
+       idioma español?
+       ¿Todas las preparaciones magistrales se realizan mediante una
+7.21   receta debidamente extendida por un médico? ¿Existen                     CRITICO
+       registro?
+           FARMACIAS QUE PREPARAN DOSIS Y TRATAMIENTOS
+                             INDIVIDUALIZADO
+ 8           (esta sección se aplicará para clínicas , hospitales,
+          instituciones de servicios de salud , clínicas de atención
+              contra las adicciones y centros de rehabilitación)
+       ¿Se cuenta con Área específica para la preparación de dosis y
+8.1                                                                             CRITICO
+       tratamientos individualizados?
+       ¿Se cuenta con aire limpio, campanas de flujo, presión
+8.2                                                                             CRITICO
+       diferencial para los casos de productos estériles?
+       ¿Se cuenta con profesionales preparados para la preparación
+8.3                                                                             CRITICO
+       de estas dosis?
+
+
+                                                                                                                              Página 11 de 13
+                                            Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                            que Dispensan Medicamentos
+                                            Macroproceso Inspección, Vigilancia y Control Sanitario
+                                            Proceso        Inspección
+                                            Subproceso     Gestión de Buenas Prácticas
+
+
+
+       ¿Cuentan con Procedimiento escrito de limpieza de área y
+8.4                                                                              CRITICO
+       equipo?
+       ¿Cuenta con mesa de preparación resistente a los agentes
+8.5                                                                              CRITICO
+       desinfectantes?
+       ¿Cuentan con registros de las preparaciones individualizadas
+       por Dosis Unitarias y su distribución/ dispensación que
+       contenga como mínimo la siguiente información?
+       Tipo                       de                           mezcla
+       Datos                     del                        paciente.
+8.6                                                                               MAYOR
+       Componentes                      y                       dosis.
+       Número                   de                     identificación.
+       Fecha                    de                       preparación.
+       Tiempo                de               vida                 útil
+       Cantidad y fecha de dispensación/ distribución.
+       ¿Se cuenta con registros de calibración de equipo que lo
+8.7                                                                              CRITICO
+       requieran utilizados en estas áreas?
+       ¿Se realizan monitoreos microbiológicos periódicos en áreas y
+       superficies para asegurar que se mantienen dentro de los
+8.8                                                                              CRITICO
+       límites preestablecidos     y presentan evidencia         del
+       cumplimiento?
+       Se dispone de una orden de preparación de la prescripción
+       médica       que      contenga         como        mínimo:
+       Nombre del químico farmacéutico que llevo a cabo la revisión
+8.9                                                                               MAYOR
+       de            la           prescripción             médica.
+       Cálculos    y     su      aprobación      correspondientes
+       Nombre del personal que preparó.
+       La receta de prescripción contiene como mínimo los
+       siguientes datos:a) Datos de identificación del proscriptor y del
+       paciente. b) El medicamento de elección del médico/
+8.10                                                                              MAYOR
+       facultativo (no aplica para instituciones públicas de salud) c) El
+       nombre genérico del principio activo. En caso de
+       medicamentos        que     contengan      estupefacientes      o
+
+
+
+                                                                                                                               Página 12 de 13
+                                          Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos
+                                          que Dispensan Medicamentos
+                                          Macroproceso Inspección, Vigilancia y Control Sanitario
+                                          Proceso        Inspección
+                                          Subproceso     Gestión de Buenas Prácticas
+
+
+
+       psicotrópicos deberán indicar nombre comercial del
+       producto.d) Presentación.e) Dosis con detalle de la
+       concentración del medicamento.f) Vía de administración.g)
+       Días de tratamientos y cantidad prescrita en números.h) Lugar,
+       fecha, firma y sello del prescriptor.
+       Los productos que se dispensan en Dosis Unitarias son
+       debidamente acondicionados e identificados contiendo la
+       siguiente                                         información:
+       a) Nombre y dirección del establecimiento (Cuando aplique).
+       b)            Nombre                del              producto.
+       c)       Concentración       del        principio       activo.
+8.11                                                                            MAYOR
+       d)            Vía             de               administración.
+       e)            Fecha              de               vencimiento.
+       f)              Número                  de                lote.
+       g) Numero de cama e identificación del paciente.
+       h) Nombre fecha y firma del profesional a cargo de la
+       preparación.
+       ¿Se cuenta con un sistema que garantice la inequívoca
+8.12   dispensación del medicamento indicando la identificación del             MAYOR
+       paciente y el número de cama?
+       ¿El personal en áreas de preparación utiliza la indumentaria
+8.13   adecuada en buen estado según lo establece el procedimiento              MAYOR
+       respectivo?
+
+
+
+
+                                                                                                                             Página 13 de 13
+

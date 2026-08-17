@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.2 — El instalador de la caja ya no confunde una llave rechazada con falta de internet
+
+`instalar.sh` moría en el primer paso diciendo **«esta computadora no llega al
+portal»** en *cualquier* computadora, incluida una con internet perfecto.
+
+Comprobaba la conexión pidiendo `GET /rest/v1/` —el índice de la API— y ese
+extremo hoy sólo lo abre una llave **secreta**: con la `publishable` que lleva
+el instalador contesta `401 Secret API key required`. O sea que el chequeo
+estaba condenado a fallar y su mensaje mandaba a revisar el cable de red por un
+problema que no era de la red. Nada más estaba roto: el canje del código y las
+dos funciones del agente sí aceptan esa llave.
+
+Ahora son **dos preguntas separadas**, que es lo que faltaba:
+
+- **¿llegó la red?** — sólo si `curl` falla en el *transporte* (DNS, conexión,
+  timeout) y no hay ningún código HTTP. Eso, y sólo eso, es «sin internet».
+- **¿la aceptaron?** — hubo respuesta, así que el código HTTP decide, y el
+  mensaje lo dice: «hay internet y el portal contestó, pero rechazó a esta
+  computadora (código 401)».
+
+Probados los tres caminos contra producción: normal → `200`, host que no
+resuelve → `curl 6`, llave inventada → `401`.
+
 ## v2.653.1 — Bitácoras: la foto de la receta se revisa antes de guardarla
 
 Al preparar la foto, el editor mide el recorte y avisa **antes** de guardar:

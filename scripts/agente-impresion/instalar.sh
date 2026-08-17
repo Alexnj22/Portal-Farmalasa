@@ -41,9 +41,23 @@ verde "  ✓ Python 3"
 command -v lp >/dev/null || morir "Falta el sistema de impresión. Instalalo con: sudo apt install cups-client"
 verde "  ✓ Sistema de impresión"
 
-if ! curl -fsS --max-time 10 "$URL/rest/v1/" -H "apikey: $ANON" >/dev/null 2>&1; then
-    morir "Esta computadora no llega al portal. Revisá la conexión a internet."
-fi
+# Son DOS preguntas distintas y hay que contestarlas por separado, porque
+# confundirlas manda a revisar el lugar equivocado:
+#
+#   ¿llegó la red?      → curl falla en el TRANSPORTE (DNS, conexión, timeout) y
+#                         no hay código HTTP. Eso, y sólo eso, es "sin internet".
+#   ¿la aceptaron?      → hubo respuesta; el código dice si el portal la tomó.
+#
+# La primera versión probaba `GET /rest/v1/` —el índice de la API— con la llave
+# publishable. Ese extremo hoy sólo lo abre una llave SECRETA, así que contestaba
+# 401 en TODA computadora y el instalador lo anunciaba como falta de internet.
+# `/auth/v1/health` tampoco sirve de prueba de red: también exige la llave.
+HTTP="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+    "$URL/rest/v1/branches?select=id&limit=1" \
+    -H "apikey: $ANON" -H "Authorization: Bearer $ANON" 2>/dev/null)"
+FALLA_RED=$?
+[ "$FALLA_RED" -eq 0 ] || morir "Esta computadora no llega al portal. Revisá la conexión a internet. (curl $FALLA_RED)"
+[ "$HTTP" = "200" ] || morir "Hay internet y el portal contestó, pero rechazó a esta computadora (código $HTTP). Pedí una copia nueva de esta carpeta."
 verde "  ✓ Llega al portal"
 
 # ── 2. ¿Cuál es la ticketera? ────────────────────────────────────────────────

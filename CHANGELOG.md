@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.5 — El freno de intentos de identidad vuelve a contar
+
+`probar_identidad` —la que comprueba a quién se le entrega el efectivo en «Sacar
+dinero»— corta a los 5 fallos en 15 minutos contra una persona, y para contarlos
+guarda cada intento en `intentos_identidad`. El orden de esas dos cosas lo
+anulaba:
+
+```sql
+INSERT INTO intentos_identidad (..., exito) VALUES (..., false);   -- anota el fallo
+IF NOT v_ok THEN
+    RAISE EXCEPTION 'No se pudo comprobar la identidad...';         -- y revierte el INSERT
+END IF;
+```
+
+Una excepción que sale de una función de Postgres aborta la transacción entera,
+**incluido lo que esa misma función acababa de escribir**. Anotaba el fallo y
+acto seguido lo borraba sola, sin que nada fallara a la vista: la tabla contra la
+que cuenta el freno no crecía nunca, el contador daba siempre cero y el corte de
+los 5 no llegaba jamás. Se podían probar contraseñas sin límite y sin dejar
+rastro — exactamente lo que ese código creía impedir.
+
+**Cómo se vio.** `intentos_identidad` tenía 17 filas y las 17 eran de
+`CARNE_LOOKUP` —`identificar_por_carne` no lanza en esa rama, y por eso sí
+registra—, **cero** de `RETIRO`. Ese cero se lee como «nadie intentó retirar
+efectivo» y significaba «esto no se puede registrar».
+
+El arreglo es el que ya usaban `kiosco_identificar` y las dos funciones de la
+entrega: **el fracaso es un resultado, no una excepción**. Devuelve
+`{ok:false, motivo}` y la transacción confirma, así que el intento queda escrito.
+Los únicos `RAISE` que quedan son el de permisos y el del método inválido, y los
+dos corren antes del primer `INSERT`. Cambia el tipo de retorno, así que se
+adapta su único llamador —«Sacar dinero»—, donde «no coincide» pasa a mostrarse
+como lo que es y no como un error de conexión.
+
+Barridas las cinco funciones que escriben en esa bitácora: ésta era la única con
+el defecto. Verificado sobre el catálogo de producción — en las tres
+`probar_identidad*` ya no aparece ningún `RAISE` después del registro del
+intento.
+
 ## v2.655.4 — Un espacio antes del pie, y los dos papeles de una salida en un solo lugar
 
 **Un renglón en blanco entre el total y el pie.** Pedido del usuario mirando el

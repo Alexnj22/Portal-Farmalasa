@@ -292,17 +292,28 @@ export function registrarSalida({
  * falle. Corta a los 5 fallos en 15 minutos **contra esa persona** — lo que hay
  * que encarecer es adivinarle el carné a alguien en concreto.
  *
+ * ── Y por eso el «no coincide» viene como RESULTADO, no como error ─────────
+ * El razonamiento de arriba se le escapaba a la propia función: registraba el
+ * intento fallido y después lanzaba, y el `RAISE` revertía ese mismo INSERT. La
+ * tabla contra la que cuenta el freno no crecía nunca (medido: 17 filas, las 17
+ * de otro propósito, cero de `RETIRO`), así que el corte de los 5 no llegaba
+ * jamás. Corregido en `20260817173157`: devuelve `{ vale }` o `{ motivo }` — un
+ * `error` de verdad es sólo el de red o el de permisos.
+ *
  * La comprobación es del servidor y no del navegador por dos motivos: el
  * navegador diciendo «ya verifiqué» no es una verificación, y
  * `signInWithPassword` en el cliente de siempre reemplazaría la sesión abierta
  * —la sala quedaría logueada como quien vino a retirar el dinero—.
  */
-export function probarIdentidad({ employeeId, metodo, secreto }) {
-    return supabase.rpc('probar_identidad', {
+export async function probarIdentidad({ employeeId, metodo, secreto }) {
+    const { data, error } = await supabase.rpc('probar_identidad', {
         p_employee_id: employeeId,
         p_metodo: metodo,
         p_secreto: secreto,
     });
+    if (error) return { error };
+    if (!data?.ok) return { motivo: data?.motivo || 'No se pudo comprobar la identidad.' };
+    return { vale: data.vale };
 }
 
 /**

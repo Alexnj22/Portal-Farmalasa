@@ -116,14 +116,18 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             // dinero. Son dos llamadas a propósito: la del secreto confirma
             // sola, así que un intento fallido queda registrado aunque lo que
             // sigue se aborte. Ver `probarIdentidad` en `data/bolsas.js`.
+            //
+            // «No coincide» llega como `motivo` y no como `error`: es un
+            // RESULTADO de la comprobación, y tiene que serlo para que el
+            // servidor pueda confirmar la transacción y dejar registrado el
+            // intento. Un `error` acá es de red o de permisos.
             let vale = null;
             if (t.pide_receptor) {
-                const { data: token, error: idErr } = await probarIdentidad({
-                    employeeId: quien, metodo, secreto,
-                });
+                const r = await probarIdentidad({ employeeId: quien, metodo, secreto });
                 setSecreto('');   // se olvida apenas se manda, salga bien o mal
-                if (idErr) { setError(mensajeAmigable(idErr, 'Vuelve a intentar.')); return; }
-                vale = token;
+                if (r.error) { setError(mensajeAmigable(r.error, 'Vuelve a intentar.')); return; }
+                if (r.motivo) { setError(r.motivo); return; }
+                vale = r.vale;
             }
 
             const { data, error: err } = await registrarSalida({

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Ban, Image, ScrollText } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Ban, Image, Printer, ScrollText } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -12,6 +12,7 @@ import {
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { openStoredFile } from '../../utils/storageFiles';
+import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 
@@ -81,6 +82,39 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
     }, [bolsa]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al abrir
+
+    // El hook quiere el mapa sucursal→nombre y acá se conoce una sola: la de
+    // esta bolsa. Se arma con ella en vez de pedir el mapa entero.
+    const nombreSala = useMemo(
+        () => (bolsa ? { [bolsa.branch_id]: sala || '' } : {}),
+        [bolsa, sala],
+    );
+    const { imprimirVale } = useCerrarBolsa({ nombreSala, origen: 'detalle' });
+
+    /**
+     * El vale que quedó (o tenía que quedar) dentro de la bolsa.
+     *
+     * Existe porque el papel se imprime desde el navegador después de escribir
+     * la salida, y ahí hay mil formas de que no salga: la computadora sin
+     * ticketera, la caja apagada, la pestaña que se recarga en el medio —el
+     * 17-ago-2026 la bolsa S5-1003 se quedó sin su vale por esto último—. Sin
+     * un botón, un papel perdido no se recupera: la bolsa viaja con dinero de
+     * menos y nada adentro que lo explique.
+     *
+     * El saldo que sale impreso es el de DESPUÉS de ese vale, no el de hoy: es
+     * lo que decía el papel original y lo que hace que dos vales de la misma
+     * bolsa se puedan leer en orden.
+     */
+    const reimprimirVale = useCallback(async (mov) => {
+        setOcupado(`vale-${mov.movimiento_id}`);
+        const hasta = salidas.filter((s) => !s.anulado_at
+            && String(s.registrado_at) <= String(mov.registrado_at));
+        const saldo = Number(bolsa.monto_inicial || 0)
+            + hasta.reduce((a, s) => a + Number(s.monto || 0), 0);
+        await imprimirVale(mov, bolsa, saldo);
+        setOcupado(null);
+        cargar();
+    }, [salidas, bolsa, imprimirVale, cargar]);
 
     const confirmarAnulacion = useCallback(async (motivo) => {
         if (!anulando || !motivo?.trim()) return;
@@ -175,6 +209,13 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
 
                                     <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
                                         {s.anulado_at && <Badge variant="neutral" size="sm" icon={Ban}>Anulada</Badge>}
+                                        {/* El vale es el papel que respalda el faltante DENTRO de
+                                            la bolsa. Que no haya salido no se veía en ninguna
+                                            pantalla: la bolsa viajaba con dinero de menos y nada
+                                            adentro que lo explicara. */}
+                                        {!s.anulado_at && !s.impreso_at && (
+                                            <Badge variant="warning" size="sm" icon={Printer}>Vale sin imprimir</Badge>
+                                        )}
                                         {s.entidad && <Badge variant="neutral" size="sm">{s.entidad}</Badge>}
                                         {s.numero_boleta && (
                                             <Badge variant="neutral" size="sm">Boleta {s.numero_boleta}</Badge>
@@ -199,6 +240,16 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
                                             <Button variant="secondary" size="sm" icon={Image}
                                                 onClick={() => openStoredFile(s.foto_url)}>
                                                 Ver el comprobante
+                                            </Button>
+                                        )}
+                                        {/* Se puede volver a sacar aunque la bolsa ya no esté en
+                                            la sala: el papel que falta se le entrega a quien la
+                                            tenga. Anular, en cambio, sí exige que esté acá. */}
+                                        {!s.anulado_at && (
+                                            <Button variant="secondary" size="sm" icon={Printer}
+                                                loading={ocupado === `vale-${s.movimiento_id}`}
+                                                onClick={() => reimprimirVale(s)}>
+                                                {s.impreso_at ? 'Reimprimir el vale' : 'Imprimir el vale'}
                                             </Button>
                                         )}
                                         {puedeEditar && enLaSala && !s.anulado_at && (

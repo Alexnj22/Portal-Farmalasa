@@ -34,6 +34,15 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     const showToast = useToastStore((s) => s.showToast);
     const [ocupadoId, setOcupadoId] = useState(null);
 
+    /** Lo que salió de la bolsa, en la forma que la etiqueta necesita. */
+    const salidasDeLaEtiqueta = useCallback(async (bolsaId) => {
+        const [filas, { salidasParaEtiqueta }] = await Promise.all([
+            fetchSalidasDeBolsa(bolsaId),
+            import('../utils/bolsaComprobante'),
+        ]);
+        return salidasParaEtiqueta(filas);
+    }, []);
+
     /**
      * Imprime la etiqueta de una bolsa que ya existe.
      *
@@ -43,9 +52,31 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
      *
      * El motor de impresión se baja al apretar el botón (`await import`): son
      * ~13 kB que nadie tiene que descargar para entrar al Inicio.
+     *
+     * ── Las salidas las trae ESTA función, no cada botón ────────────────────
+     * `construirEtiquetaDeBolsa` calcula el efectivo como `monto_inicial menos
+     * lo que salió`: sin la lista, imprime el monto guardado sobre una bolsa
+     * que ya no lo tiene. Era opcional y de los dos botones de reimprimir uno
+     * la pasaba y el otro no, así que la pestaña de Cortes sacó el 17-ago una
+     * etiqueta que decía $488.12 sobre una bolsa con $188.12 adentro — el
+     * número que administración compara al contar. Un dato que la etiqueta
+     * NECESITA no puede depender de que el llamador se acuerde: se pasa `[]`
+     * explícito para decir «ya sé que no hay», y no pasar nada significa
+     * «averigualo».
      */
-    const imprimir = useCallback(async (bolsa, { salidas = [], cerradaPor = null } = {}) => {
+    const imprimir = useCallback(async (bolsa, { salidas = null, cerradaPor = null } = {}) => {
         if (!bolsa) return false;
+
+        // `bolsa.salidas` viene de `get_bolsas_saldos` y es cuántas tiene. Si
+        // dice 0 no hay nada que traer; si no viene, se pregunta — la falla
+        // segura es el viaje de más, nunca la etiqueta que miente.
+        let lista = salidas;
+        if (lista == null) {
+            lista = Number(bolsa.salidas) === 0 && bolsa.salidas != null
+                ? []
+                : await salidasDeLaEtiqueta(bolsa.id);
+        }
+
         const { data: version, error } = await marcarEtiquetaImpresa(bolsa.id);
         if (error) {
             showToast?.('No se pudo imprimir', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
@@ -60,7 +91,7 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         const r = await imprimirDocumento(construirEtiquetaDeBolsa({
             bolsa,
             sala: nombreSala[bolsa.branch_id] || '',
-            salidas,
+            salidas: lista,
             cerradaPor: cerradaPor || user?.name || user?.nombre || '',
             version: version ?? (bolsa.etiqueta_version || 0) + 1,
             impresaAt: new Date().toISOString(),
@@ -75,7 +106,7 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             r.ok ? 'success' : 'error',
         );
         return r.ok;
-    }, [showToast, nombreSala, user]);
+    }, [showToast, nombreSala, user, salidasDeLaEtiqueta]);
 
     /**
      * El vale que queda DENTRO de la bolsa cuando sale dinero.
@@ -149,7 +180,14 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     const imprimirTrasLaSalida = useCallback(async (repartos, bolsas = [], nombrePersona) => {
         for (const r of repartos || []) {
             const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
-            if (!bolsa) continue;
+            // Sin la fila no hay con qué armar los papeles. Se AVISA en vez de
+            // seguir de largo: callado, la salida queda escrita, no sale nada y
+            // nadie se entera hasta que administración cuenta la bolsa.
+            if (!bolsa) {
+                showToast?.('Faltan los papeles',
+                    'El vale y la etiqueta se imprimen desde el detalle de la bolsa.', 'error');
+                continue;
+            }
 
             // El saldo lo dice el SERVIDOR (`bolsa_saldo`), no una suma hecha
             // acá: sumar `monto_inicial + Σ salidas` en el navegador era una

@@ -64,6 +64,19 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     useEffect(() => {
         if (!abierto) return;
         fetchTiposDeSalida().then((t) => { setTipos(t); setTipo((v) => v || t[0]?.codigo || ''); });
+
+        // ── El motor de impresión se baja ANTES de escribir ─────────────────
+        // Los dos papeles se arman con `import()` y eso los deja atados a un
+        // chunk del servidor. Tras un despliegue, el chunk con el hash viejo ya
+        // no existe: el `import()` falla, `main.jsx` recarga la página para
+        // tomar el bundle nuevo, y la recarga pasa JUSTO DESPUÉS de registrar la
+        // salida — el dinero queda escrito y ni el vale ni la etiqueta salen.
+        // Pasó el 17-ago-2026 con la remesa REM-1000: el portal se recargó un
+        // segundo después de escribir y la bolsa se quedó sin su vale adentro.
+        // Bajarlo al ABRIR el diálogo no evita el chunk muerto —eso no se puede
+        // desde acá—, lo adelanta a un momento en que recargar no cuesta nada.
+        import('../../utils/ticketPrint').catch(() => {});
+        import('../../utils/bolsaComprobante').catch(() => {});
     }, [abierto]);
 
     // Al cerrar se olvida TODO, y la clave la primera. Un secreto que sobrevive

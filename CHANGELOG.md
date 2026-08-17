@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.13 — fix(bolsas): el vale se puede imprimir de nuevo, y la etiqueta deja de decir un monto que ya no es
+
+Reportado desde la sala: *«realicé un vale por remesa, pero al confirmar no me
+imprimió ni el vale ni el ticket de la bolsa»*. La salida se registró bien
+(REM-1000, $300, bolsa S5-1003); lo que no salió fue ninguno de los dos papeles.
+Reconstruido con los registros del servidor, minuto a minuto:
+
+1. `17:55:22` se escribe la salida, y el circuito de impresión ARRANCA: quedan
+   las dos lecturas que necesita (`get_salidas_de_bolsa`, `get_bolsas_saldos`).
+2. `17:55:23` **el portal se recarga entero** — arranque completo, sesión nueva,
+   todo. Entre las dos cosas hay un `import()`: los dos papeles se arman con un
+   módulo que se baja al momento de imprimir. A las `11:52` (tres minutos antes)
+   se había desplegado v2.655.7, así que el archivo con el nombre viejo ya no
+   existía en el servidor; el `import()` falla y `main.jsx` recarga para tomar la
+   versión nueva. La recarga cayó **justo después de escribir el dinero**.
+3. `17:55:45` alguien aprieta «Reimprimir» a mano. Esa sí sale… **diciendo
+   $488.12 sobre una bolsa que tiene $188.12 adentro.**
+
+O sea, dos fallas encadenadas, y las dos arregladas acá:
+
+**El vale ya se puede volver a imprimir.** No había forma: el papel se imprimía
+una vez y si no salía, no salía nunca — la bolsa viajaba con dinero de menos y
+nada adentro que lo explicara. En el detalle de la bolsa cada salida tiene ahora
+su botón, y las que nunca se imprimieron lo dicen con una etiqueta **«Vale sin
+imprimir»**. El monto que sale en el papel es el saldo de después de ESE vale, no
+el de hoy: es lo que decía el original y lo que deja leer dos vales en orden.
+
+**La etiqueta ya no puede mentir el monto.** `construirEtiquetaDeBolsa` calcula
+el efectivo como *lo guardado menos lo que salió*, y la lista de salidas era un
+parámetro opcional: el botón del Inicio la pasaba y el de la pestaña de Cortes
+no. Por eso la reimpresión de las `11:55` salió con los $300 todavía adentro —el
+número que administración compara al contar. Ahora la trae `imprimir`, así que
+ninguna pantalla puede olvidarla; pasar `[]` sigue significando «ya sé que no
+hay».
+
+**Y el motor de impresión se baja ANTES de escribir.** Al abrir «Sacar dinero de
+una bolsa» y «Entregar», no después de confirmar. No evita el archivo viejo —eso
+no se puede desde el navegador—, pero adelanta la recarga a un momento en que no
+cuesta nada: antes, esa misma recarga dejaba el dinero escrito y sin papeles.
+
+También: cuando la bolsa de un reparto no está en la lista de la pantalla, el
+circuito **avisa** en vez de seguir de largo en silencio.
+
 ## v2.656.12 — Traslados: caras, alturas parejas y el detalle en un modal
 
 Reportado con captura: *«las cards deben medir lo mismo de alto»*, *«no hay foto

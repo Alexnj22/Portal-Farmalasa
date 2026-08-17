@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos, fetchSalidasDeBolsa } from '../../data/bolsas';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
@@ -163,21 +163,16 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
         if (await cerrar(corte)) cargar();
     }, [cerrar, cargar]);
 
-    const salidasParaLaEtiqueta = useCallback(async (bolsaId) => {
-        const filas = await fetchSalidasDeBolsa(bolsaId);
-        const { salidasParaEtiqueta } = await import('../../utils/bolsaComprobante');
-        return salidasParaEtiqueta(filas);
-    }, []);
-
+    // La etiqueta tiene que listar lo que salió —sin eso diría el monto guardado
+    // sobre una bolsa que ya no lo tiene— y de traerlo se encarga `imprimir`:
+    // acá estaba resuelto y en la pestaña de Cortes no, que es cómo salió una
+    // etiqueta con $300 de más. Ver el comentario de `useCerrarBolsa`.
     const reimprimir = useCallback(async (bolsa) => {
         setImprimiendo(bolsa.id);
-        // La etiqueta tiene que listar lo que salió: sin eso diría el monto
-        // guardado sobre una bolsa que ya no lo tiene.
-        const salidas = Number(bolsa.salidas || 0) > 0 ? await salidasParaLaEtiqueta(bolsa.id) : [];
-        await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por), salidas });
+        await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por) });
         setImprimiendo(null);
         cargar();
-    }, [imprimir, nombrePersona, cargar, salidasParaLaEtiqueta]);
+    }, [imprimir, nombrePersona, cargar]);
 
     /**
      * Después de una remesa salen dos papeles por bolsa: el vale de adentro y la

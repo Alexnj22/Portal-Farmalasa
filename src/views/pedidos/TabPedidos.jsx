@@ -34,7 +34,7 @@ import SucPill from './tabpedidos/SucPill';
 import PauseModal from './tabpedidos/PauseModal';
 import AnularModal from './tabpedidos/AnularModal';
 import ApoioScanModal from './tabpedidos/ApoioScanModal';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -631,7 +631,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Recepción — enviado, o parcial con reenvío aún en camino */}
+                                    {/* Recepción — mientras a ESTA sala le quede algo por contar */}
                                     {/* La sucursal sobre la que se recibe es la de ESTA tarjeta, no la
                                         de quien mira. Para quien tiene alcance «su sucursal» son la
                                         misma —su listado no trae otras—, pero el bloque además estaba
@@ -639,8 +639,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         recibir por nadie: los botones no existían para él. Se abre a
                                         `isSU`, que es la misma noción que reconoce la base
                                         (`auth_is_su`), y no a cualquiera con «Gestionar»: eso le daría
-                                        a bodega un poder que nadie pidió. */}
-                                    {(isBranch || isSU) && (row.erp_sucursal_id ?? erpSucursalId) && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
+                                        a bodega un poder que nadie pidió.
+
+                                        Cuándo hay algo que contar lo decide `hayRecepcionPendiente`,
+                                        que está probada: escrito acá como `pedido_status === 'enviado'`
+                                        el bloque desaparecía a mitad de la recepción. */}
+                                    {(isBranch || isSU) && (row.erp_sucursal_id ?? erpSucursalId) && hayRecepcionPendiente({
+                                        pedidoStatus: row.pedido_status,
+                                        pendientes: cardStats[cardKey]?.pendientes ?? 0,
+                                        reenviosHistorial: row.reenvios_historial ?? [],
+                                    }) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 canEdit={canEdit}

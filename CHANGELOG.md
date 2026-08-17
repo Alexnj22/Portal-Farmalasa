@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.14 — La sala sigue contando aunque un renglón salga con diferencia
+
+Reportado desde La Popular: *«no confirmaron todo y no permite hacerlo»*.
+
+El pedido 116 del 17-ago (código `09-170826-3-PO`) trajo 174 renglones
+despachados: 169 repartidos en 5 hojas y 5 en cajas especiales. A las 20:26 la
+sala cerró la **hoja 1** y en uno de sus renglones anotó *«viene 1 más en
+físico»*. Ese solo renglón bastó para que el pedido pasara a **«Con
+diferencias»** —lo hace `receive_pedido_sucursal` en cuanto aparece la primera,
+aunque queden hojas sin contar— y el bloque de Recepción de la tarjeta pedía que
+el pedido estuviera *en ruta* para pintarse. Desapareció con **139 renglones
+pendientes**: las hojas 2, 3, 4 y 5 más las 8 cajas especiales, sin ningún botón
+para contarlas.
+
+Ahora el bloque se muestra mientras a **esa sala** le quede algo pendiente, que
+es el mismo número que la propia tarjeta ya mostraba en «Paso 2 (N)». El estado
+del pedido es de todo el pedido y no de una sala: en uno de varias sucursales,
+la diferencia que reportaba una les quitaba el botón a todas.
+
+La regla vive en `hayRecepcionPendiente` y quedó anclada en
+`tests/unit/recepcionPendiente.test.js`, con el caso de La Popular adentro.
+
 ## v2.656.13 — fix(bolsas): el vale se puede imprimir de nuevo, y la etiqueta deja de decir un monto que ya no es
 
 Reportado desde la sala: *«realicé un vale por remesa, pero al confirmar no me

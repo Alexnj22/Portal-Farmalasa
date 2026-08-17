@@ -51,6 +51,27 @@ export function getBranchStage(row, pedidoStatus) {
     return 'sin_iniciar';
 }
 
+// ¿Le queda algo por contar a ESTA sala? Es lo que decide si la tarjeta pinta
+// el bloque de Recepción, y por eso no puede colgar sólo de que el pedido esté
+// «enviado»: ese estado se cae solo a mitad de la recepción.
+// `receive_pedido_sucursal` pasa el pedido a «parcial» apenas UN renglón se
+// confirma con diferencia, aunque queden hojas sin contar — y con la condición
+// vieja el bloque entero desaparecía. Es lo que pasó el 2026-08-17 en La
+// Popular (pedido 116): reportaron «viene 1 más en físico» al cerrar la hoja 1
+// y quedaron 139 renglones —4 hojas y 8 cajas especiales— sin forma de
+// contarlos.
+//
+// Y `pedidos.status` es del PEDIDO, no de la sala: en uno de varias sucursales,
+// la diferencia que reporta una les quitaba el botón a TODAS. Por eso lo que
+// manda es `pendientes`, que viene por (pedido, sucursal) de
+// `get_pedido_item_stats` — el mismo número que la tarjeta ya muestra en
+// «Paso 2 (N)».
+export function hayRecepcionPendiente({ pedidoStatus, pendientes = 0, reenviosHistorial = [] }) {
+    if (pedidoStatus === 'enviado') return true;
+    if (pedidoStatus === 'parcial' && pendientes > 0) return true;
+    return (reenviosHistorial ?? []).some(c => c.sent_at && !c.arrived_at);
+}
+
 // solicitado = need in presentation units before dispatch rounding
 export function calcSolicitado(row) {
     if (row.max_qty_snapshot == null || row.stock_packs_snapshot == null) return null;

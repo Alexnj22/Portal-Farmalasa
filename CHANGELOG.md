@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.7 — El aviso de una solicitud personal ya lleva a su pantalla
+
+La otra mitad del arreglo de v2.655.6, esta vez en la base. En
+`notificar_solicitud_creada`, la pantalla del enlace arrancaba fija en
+`/requests` —el centro de la SALA— y sólo el cambio de turno de nivel 1 la
+corregía. O sea que vacaciones, permiso, incapacidad, anticipo, constancia,
+horas extra, excepción de turno y cambio de vacaciones mandaban a una pantalla
+donde **esos tipos ni se listan**: la vista filtra por ámbito, así que el enlace
+`?solicitud=` no encontraba nada, no abría nada y no dejaba error. El aviso
+llegaba y moría ahí.
+
+Le pega justo a Talento Humano, que es quien decide todo lo personal. No se
+había ejercido todavía porque hoy no hay ni una solicitud personal en la tabla
+— la primera que entrara se llevaba el enlace muerto. Hoy la pantalla sale de
+`es_solicitud_operativa(type)`, para todos los tipos y de una sola vez, en vez
+de por una rama que se acuerde de corregirla.
+
+El resto del cuerpo del trigger quedó **idéntico byte a byte**: se verificó por
+md5 contra producción antes de aplicar (`fbd031d1f19c122f454939d942c7b0ef`
+revirtiendo los tres cambios), que es lo que hace que un `CREATE OR REPLACE`
+transcrito a mano sobre 8 kB de función no sea una apuesta.
+
 ## v2.655.6 — Solicitudes: la bandeja de quien aprueba deja de estar vacia
 
 Talento Humano recibía el aviso de cada solicitud y llegaba a una pantalla sin

@@ -7,6 +7,7 @@ import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHe
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../utils/pushEquipo";
+import AvisoDeInactividad from "../components/common/AvisoDeInactividad";
 
 const AuthContext = createContext(null);
 
@@ -88,6 +89,11 @@ const IDLE_EMP_MS   = 5 * 60 * 1000;
 const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000;
 const IDLE_APP_MS   = 30 * 24 * 60 * 60 * 1000; // 30 días — PWA instalada o build nativo
 const CHECK_EVERY_MS        = 30 * 1000;
+// Cuánto antes del cierre se pregunta «¿sigues ahí?». Un minuto contra un
+// chequeo cada 30 s significa que el aviso sale con 30-60 s de margen: alcanza
+// para reaccionar y no tanto como para volverse un cartel que se ignora. La
+// cuenta regresiva que se ve es la real, calculada del vencimiento.
+const AVISO_INACTIVIDAD_MS  = 60 * 1000;
 const ACTIVITY_THROTTLE_MS  = 2000;
 // Cada cuánto, como mucho, se le avisa al servidor que la sesión sigue viva.
 const HEARTBEAT_MS          = 60 * 1000;
@@ -472,9 +478,25 @@ export const AuthProvider = ({ children }) => {
     supabase.rpc('touch_session', { p_device_class: clase }).then(() => {}, () => {});
   }, []);
 
+  // El aviso previo al cierre por inactividad. `avisoHastaRef` existe porque
+  // `onActivity` corre en CADA mousemove: sin él habría que meter el estado en
+  // sus dependencias y reenganchar los cinco listeners a cada rato.
+  const [avisoHasta, setAvisoHasta] = useState(null);
+  const avisoHastaRef = useRef(null);
+  const ponerAviso = useCallback((valor) => {
+    if (avisoHastaRef.current === valor) return;   // sin esto, un setState por tick
+    avisoHastaRef.current = valor;
+    setAvisoHasta(valor);
+  }, []);
+
   const onActivity = useCallback(() => {
-    if (userRef.current) { writeLastActivity(false); latirSesion(); }
-  }, [latirSesion]);
+    if (!userRef.current) return;
+    // Mover el mouse YA es la respuesta a «¿sigues ahí?». Esperar al próximo tic
+    // dejaría el cartel puesto hasta 30 s después de que la persona volvió.
+    if (avisoHastaRef.current) ponerAviso(null);
+    writeLastActivity(false);
+    latirSesion();
+  }, [latirSesion, ponerAviso]);
 
   // `doLogout` se define más abajo; se referencia por ref para no atarlo a las
   // dependencias del callback (mismo patrón que `refreshPermissionsRef`).
@@ -506,6 +528,7 @@ export const AuthProvider = ({ children }) => {
   }, [latirSesion]);
 
   const stopIdleWatcher = () => {
+    ponerAviso(null);   // que no quede el cartel colgado sobre la pantalla de entrada
     if (idleIntervalRef.current) { clearInterval(idleIntervalRef.current); idleIntervalRef.current = null; }
     window.removeEventListener('mousemove',   onActivity, true);
     window.removeEventListener('keydown',     onActivity, true);
@@ -638,7 +661,12 @@ export const AuthProvider = ({ children }) => {
       const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
       if (!last) return;
       // Re-read limit each tick so it reflects permissions loaded after login.
-      if (Date.now() - last >= getIdleLimitMs(userRef.current)) doLogout();
+      const vence = last + getIdleLimitMs(userRef.current);
+      if (Date.now() >= vence) { doLogout(); return; }
+      // Preguntar antes de cerrar. Se guarda el INSTANTE del vencimiento y no
+      // los segundos que faltan: el diálogo hace su propia cuenta contra ese
+      // instante, así que no se desfasa si un tic llega tarde.
+      ponerAviso(vence - Date.now() <= AVISO_INACTIVIDAD_MS ? vence : null);
     }, CHECK_EVERY_MS);
   };
 
@@ -1082,7 +1110,21 @@ export const AuthProvider = ({ children }) => {
   // que la lectura falló y se queda en el splash para siempre.
   }, [user, loading, isSU, rolePerms, permsLoading, permsError, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Se monta acá y no en el layout a propósito: colgado del provider aparece en
+  // CUALQUIER pantalla donde haya sesión —incluida una que se abra fuera del
+  // layout—, y `{children}` conserva su referencia, así que este estado no
+  // vuelve a renderizar el árbol de abajo.
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {!!user && (
+        <AvisoDeInactividad
+          hasta={avisoHasta}
+          onSeguir={() => { ponerAviso(null); writeLastActivity(true); latirSesion(); }}
+        />
+      )}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext;

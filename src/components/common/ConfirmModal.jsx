@@ -29,6 +29,11 @@ const ConfirmModal = ({
     cancelText = "Cancelar",
     isDestructive = true,
     isProcessing = false,
+    // Un diálogo de UNA sola salida. No es un capricho de estilo: cuando las dos
+    // opciones no son simétricas —«sigo aquí» contra «cerrame la sesión»— dejar
+    // la segunda colgada de `onClose` significa que Escape y el clic afuera
+    // ejecutan la peligrosa. Con esto, `onClose` vuelve a ser «no hacer nada».
+    hideCancel = false,
 }) => {
     // En táctil el cuerpo es el canónico de hoja: título a la izquierda, ícono
     // en línea y botones apilados de ancho completo. El de abajo es el cuerpo de
@@ -64,7 +69,7 @@ const ConfirmModal = ({
                                 ? (isDestructive ? 'Eliminando…' : 'Confirmando…')
                                 : confirmText}
                         </Button>
-                        {!isProcessing && (
+                        {!isProcessing && !hideCancel && (
                             <Button variant="secondary" onClick={onClose}>{cancelText}</Button>
                         )}
                     </>}
@@ -117,7 +122,7 @@ const ConfirmModal = ({
             </div>
 
             <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-base bg-surface-card-hover">
-                {!isProcessing && (
+                {!isProcessing && !hideCancel && (
                     <Button variant="secondary" className="flex-1" onClick={onClose}>{cancelText}</Button>
                 )}
                 <Button

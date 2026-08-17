@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.646.0 — Aviso «¿Sigues ahí?» antes de cerrar por inactividad
+
+**La sesión se cerraba sin avisar.** El caso que lo motivó: alguien llenando una
+bitácora se va a sacar copia, vuelve y encuentra la pantalla de entrada con todo
+lo escrito perdido — el formulario vive en memoria, no en disco.
+
+Ahora, **un minuto antes del cierre** aparece un diálogo con la cuenta regresiva
+real. Cualquier señal de que hay alguien lo descarta: el botón, Escape, el clic
+afuera o **mover el mouse**, que se atiende en el acto y no en el próximo tic
+(esperar 30 segundos con el cartel puesto después de que la persona volvió sería
+peor que no avisar).
+
+Se guarda el **instante** del vencimiento y no los segundos que faltan, así la
+cuenta no se desfasa si un tic llega tarde. Y el aviso se monta colgado del
+provider, no del layout: aparece en cualquier pantalla donde haya sesión, y como
+`{children}` conserva su referencia, este estado no vuelve a renderizar el árbol.
+
+**Un solo botón, a propósito.** «Cerrar sesión» aquí no es simétrico a «sigo
+aquí»: colgado de `onClose`, Escape y el clic afuera ejecutarían la peligrosa.
+`ConfirmModal` acepta `hideCancel` para eso — con él, descartar el diálogo
+significa siempre lo mismo, que es justo lo que se está preguntando.
+
 ## v2.645.2 — Bitácoras: correcciones vistas en pantalla
 
 **Cinco defectos que ningún gate podía encontrar**, y salieron de abrir la vista

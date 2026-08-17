@@ -264,10 +264,27 @@ export function rotularRango(area) {
 }
 
 export const TIPO_AREA = {
-    sala_ventas:  'Sala de ventas',
-    bodega:       'Bodega',
-    refrigerador: 'Refrigerador',
+    sala_ventas:        'Sala de ventas',
+    bodega:             'Bodega',
+    refrigerador:       'Refrigerador',
+    vitrinas:           'Vitrinas',
+    servicio_sanitario: 'Servicio sanitario',
 };
+
+/**
+ * Un área que sólo se limpia: no tiene franjas de temperatura.
+ *
+ * Vitrinas y servicio sanitario son ÁREAS y no turnos de la sala porque el eje
+ * lo pone el RTS 6.1.11 —limpieza «aplicable a las áreas y mobiliario»—: son
+ * cosas que se limpian, no momentos del día. Metidas como turnos, el mes
+ * impreso saldría con las columnas Apertura | Cierre | Vitrinas | Baño, que un
+ * inspector lee como cuatro turnos, y las cuatro compartirían un solo
+ * porcentaje de cumplimiento.
+ *
+ * Se pregunta por las franjas y NO por el tipo: el día que se agregue otra área
+ * de sólo limpieza, una lista de tipos habría que acordarse de tocarla.
+ */
+export const soloLimpieza = (area) => !(area?.franjas || []).length;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro de dispensación bajo receta

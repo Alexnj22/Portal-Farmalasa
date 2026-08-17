@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, Droplets, Pencil, Snowflake, Sparkles, Store, Thermometer, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, Clock, Droplets, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
-import { TIPO_AREA, rotularRango } from '../../data/bitacoras';
+import { TIPO_AREA, rotularRango, soloLimpieza } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.
@@ -28,9 +28,11 @@ import { TIPO_AREA, rotularRango } from '../../data/bitacoras';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const ICONO_AREA = {
-    sala_ventas:  Store,
-    bodega:       Warehouse,
-    refrigerador: Snowflake,
+    sala_ventas:        Store,
+    bodega:             Warehouse,
+    refrigerador:       Snowflake,
+    vitrinas:           LayoutPanelTop,
+    servicio_sanitario: Toilet,
 };
 
 // El aspecto de cada estado. Vive acá y no repartido por el JSX porque son
@@ -189,9 +191,16 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
     // Las áreas que hoy no aplican se muestran aparte, pero se muestran: que no
     // aparecieran sería esconder una parte de la sala, y el día que alguien
     // configure mal los días de la semana nadie lo notaría.
-    const { activas, enPausa } = useMemo(() => ({
-        activas: areas.filter(a => a.aplica_hoy !== false),
-        enPausa: areas.filter(a => a.aplica_hoy === false),
+    //
+    // Y las que SÓLO se limpian —vitrinas, servicio sanitario— van a un bloque
+    // compacto al final. Cada una es un área de verdad, con su cumplimiento
+    // propio y su tabla en el mes impreso, pero darle a cada una un encabezado
+    // grande y una fila entera para una casilla desplaza hacia abajo justo lo
+    // que se abre esta pantalla a hacer: las lecturas de temperatura.
+    const { conLecturas, deLimpieza, enPausa } = useMemo(() => ({
+        conLecturas: areas.filter(a => a.aplica_hoy !== false && !soloLimpieza(a)),
+        deLimpieza:  areas.filter(a => a.aplica_hoy !== false && soloLimpieza(a)),
+        enPausa:     areas.filter(a => a.aplica_hoy === false),
     }), [areas]);
 
     if (cargando) return <LoadingState label="Cargando la bitácora del día…" />;
@@ -227,7 +236,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                 </Notice>
             )}
 
-            {activas.map((area) => {
+            {conLecturas.map((area) => {
                 const Icono = ICONO_AREA[area.tipo] || Thermometer;
                 return (
                     <section key={area.id} className="space-y-3">
@@ -274,6 +283,34 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                     </section>
                 );
             })}
+
+            {deLimpieza.length > 0 && (
+                <section className="space-y-3">
+                    <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+                        <Sparkles size={13} /> Sólo limpieza
+                    </p>
+                    {deLimpieza.map((area) => {
+                        const Icono = ICONO_AREA[area.tipo] || Sparkles;
+                        return (
+                            <div key={area.id} className="space-y-2">
+                                <header className="flex flex-wrap items-center gap-2">
+                                    <span className="grid place-items-center size-7 rounded-btn bg-brand/10 text-brand-text shrink-0">
+                                        <Icono size={14} />
+                                    </span>
+                                    <h3 className="text-body font-black text-content">{area.nombre}</h3>
+                                </header>
+                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    {(area.limpiezas || []).map((t) => (
+                                        <CasillaLimpieza key={t.clave} turno={t} area={area}
+                                            puedeAnotar={puedeAnotar} cerrado={cerrado}
+                                            onAnotar={abrirLimpieza} />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </section>
+            )}
 
             {enPausa.length > 0 && (
                 <Notice variant="info" compact>

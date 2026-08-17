@@ -244,12 +244,17 @@ export function imprimirMesDeBitacoras(mes) {
     if (!mes) return;
 
     const areas = mes.areas || [];
-    const secciones = [
-        `<section class="pb">${portada(mes)}</section>`,
-        `<section class="pb">${cabecera(mes, 'Temperatura y humedad')}${
-            areas.map(a => tablaArea(mes, a)).join('')
-        }</section>`,
-    ];
+    // Un área de sólo limpieza —vitrinas, servicio sanitario— no tiene franjas,
+    // y su tabla de temperatura saldría con la columna «Día» sola.
+    const conLecturas = areas.filter(a => (a.franjas || []).length);
+
+    const secciones = [`<section class="pb">${portada(mes)}</section>`];
+
+    if (conLecturas.length) {
+        secciones.push(`<section class="pb">${cabecera(mes, 'Temperatura y humedad')}${
+            conLecturas.map(a => tablaArea(mes, a)).join('')
+        }</section>`);
+    }
 
     const conLimpieza = areas.filter(a => (a.limpiezas || []).length);
     if (conLimpieza.length) {

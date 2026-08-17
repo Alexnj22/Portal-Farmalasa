@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.654.0 — Bitácoras: vitrinas y servicio sanitario
+
+Las **vitrinas** y el **servicio sanitario** entran a la bitácora de limpieza,
+como **áreas propias** y no como turnos de la sala.
+
+**Por qué áreas.** La lista de limpieza de un área guarda TURNOS —«Apertura»,
+«Cierre»—, o sea momentos del día. Vitrinas y baño no son momentos: son cosas
+que se limpian. Metidas ahí, el mes impreso saldría con las columnas
+`Apertura | Cierre | Vitrinas | Baño`, que un inspector lee como cuatro turnos, y
+las cuatro compartirían un solo porcentaje de cumplimiento. El eje lo pone la
+propia norma: el RTS 6.1.11 (ítem 1.11 de la guía, MAYOR) pide procedimiento de
+limpieza «aplicable a las **áreas y mobiliario** del establecimiento» — las
+vitrinas son mobiliario y el baño es un área. Y el servicio sanitario tiene
+además ítems propios en la guía (2.15 y 2.16, los dos MAYOR), así que su
+cumplimiento se mide aparte o no se mide.
+
+**Frecuencia:** vitrinas 1 vez al día, en la apertura; servicio sanitario 2,
+apertura y cierre. Es lo que se sostiene en una sala abierta doce horas sin
+volverse un trámite que nadie llena — y una casilla que nadie llena es peor que
+no tenerla, porque convierte el faltante en ruido de fondo. Se apagan por
+sucursal desde Configuración, igual que las demás.
+
+**Un área puede pedir sólo limpieza.** La tabla obligaba a que toda área activa
+tuviera al menos una franja de temperatura; tomarle la temperatura al baño no
+significa nada. Ahora la regla es «al menos una franja **o** al menos un turno de
+limpieza»: lo que un área no puede es no pedir nada.
+
+En consecuencia:
+
+- **Registro diario** las agrupa en un bloque compacto **«Sólo limpieza»** al
+  final. Cada una es un área de verdad, pero darle a cada una un encabezado
+  grande y una fila entera para una casilla empujaría hacia abajo lo que se abre
+  esta pantalla a hacer.
+- **Configuración** no les ofrece instrumento ni «calibrado hasta»: un
+  certificado inventado en el baño ensuciaría el aviso de calibración vencida,
+  que es un ítem CRÍTICO. Llevan un distintivo «sólo limpieza».
+- **Cierre de mes** abre la limpieza **por área** — un solo porcentaje para «la
+  sala, las vitrinas y el baño» no contesta cuál de los tres se está dejando, que
+  es lo que hay que saber antes de firmar.
+- **El mes impreso** les da su propia tabla de limpieza y ninguna de
+  temperatura.
+
+Migraciones `20260817160526` y `20260817160559`.
+
 ## v2.653.5 — El apoyo de un pedido acepta a varios, uno tras otro
 
 **El botón «Apoyo» desaparecía en cuanto vos quedabas anotado.** Probado en

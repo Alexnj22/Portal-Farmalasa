@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Check, Droplets, Snowflake, Store, Thermometer, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, Droplets, LayoutPanelTop, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -7,7 +7,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import { LoadingState } from '../../components/common/StateViews';
-import { TIPO_AREA, fetchAreas, guardarArea, rotularRango } from '../../data/bitacoras';
+import { TIPO_AREA, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.
@@ -23,12 +23,20 @@ import { TIPO_AREA, fetchAreas, guardarArea, rotularRango } from '../../data/bit
 // se cambian con `vigente_desde`, que es la respuesta honesta a esa pregunta.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const ICONO = { sala_ventas: Store, bodega: Warehouse, refrigerador: Snowflake };
+const ICONO = {
+    sala_ventas: Store, bodega: Warehouse, refrigerador: Snowflake,
+    vitrinas: LayoutPanelTop, servicio_sanitario: Toilet,
+};
 
 const hhmm = (t) => String(t || '').slice(0, 5);
 
 function Area({ area, puedeEditar, onGuardado }) {
     const Icono = ICONO[area.tipo] || Thermometer;
+    // Un área que sólo se limpia no tiene termómetro que identificar ni
+    // certificado que vencer. Ofrecerle esos dos campos invita a llenarlos con
+    // cualquier cosa, y un «calibrado hasta» inventado en el baño ensucia el
+    // aviso de calibración vencida, que es un ítem CRÍTICO.
+    const sinTemperatura = soloLimpieza(area);
     const [activa, setActiva] = useState(area.activa);
     const [instrumento, setInstrumento] = useState(area.instrumento || '');
     const [calibrado, setCalibrado] = useState(area.calibrado_hasta || '');
@@ -63,11 +71,17 @@ function Area({ area, puedeEditar, onGuardado }) {
                 </span>
                 <h4 className="text-body font-black text-content">{area.nombre}</h4>
                 <Badge variant="neutral" size="sm" uppercase={false}>{TIPO_AREA[area.tipo] || area.tipo}</Badge>
-                <Badge variant="chart-1" size="sm" uppercase={false}>{rotularRango(area)}</Badge>
-                {area.mide_humedad && (
-                    <Badge variant="neutral" size="sm" uppercase={false} icon={Droplets}>humedad</Badge>
+                {sinTemperatura ? (
+                    <Badge variant="chart-3" size="sm" uppercase={false} icon={Sparkles}>sólo limpieza</Badge>
+                ) : (
+                    <>
+                        <Badge variant="chart-1" size="sm" uppercase={false}>{rotularRango(area)}</Badge>
+                        {area.mide_humedad && (
+                            <Badge variant="neutral" size="sm" uppercase={false} icon={Droplets}>humedad</Badge>
+                        )}
+                        {vencida && <Badge variant="danger" size="sm" uppercase={false}>Calibración vencida</Badge>}
+                    </>
                 )}
-                {vencida && <Badge variant="danger" size="sm" uppercase={false}>Calibración vencida</Badge>}
             </header>
 
             <div className="flex flex-wrap gap-2">
@@ -89,23 +103,25 @@ function Area({ area, puedeEditar, onGuardado }) {
 
             {puedeEditar ? (
                 <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <PortalInput
-                            label="Instrumento" name={`inst-${area.id}`} icon={Thermometer}
-                            value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
-                            placeholder="Termohigrómetro TH-01"
-                            helperText="Cómo se identifica el aparato de esta área"
-                        />
-                        <div>
-                            <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
-                                Calibrado hasta
-                            </p>
-                            <LiquidDatePicker value={calibrado} onChange={(v) => setCalibrado(v || '')} />
-                            <p className="text-label text-content-3 mt-1">
-                                Un certificado vencido invalida las lecturas
-                            </p>
+                    {!sinTemperatura && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <PortalInput
+                                label="Instrumento" name={`inst-${area.id}`} icon={Thermometer}
+                                value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
+                                placeholder="Termohigrómetro TH-01"
+                                helperText="Cómo se identifica el aparato de esta área"
+                            />
+                            <div>
+                                <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                                    Calibrado hasta
+                                </p>
+                                <LiquidDatePicker value={calibrado} onChange={(v) => setCalibrado(v || '')} />
+                                <p className="text-label text-content-3 mt-1">
+                                    Un certificado vencido invalida las lecturas
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <Switch
@@ -122,13 +138,14 @@ function Area({ area, puedeEditar, onGuardado }) {
 
                     {!activa && area.activa && (
                         <Notice variant="warning" compact>
-                            Al apagarla deja de pedir lecturas desde hoy. Lo ya anotado no se toca.
+                            Al apagarla deja de pedir {sinTemperatura ? 'registros' : 'lecturas'} desde
+                            hoy. Lo ya anotado no se toca.
                         </Notice>
                     )}
                     {ok && !sucio && <Notice variant="success" compact>Guardado.</Notice>}
                     {error && <Notice variant="danger" compact icon={AlertTriangle}>{error}</Notice>}
                 </>
-            ) : (
+            ) : !sinTemperatura && (
                 <p className="text-label text-content-3">
                     {area.instrumento || 'Sin instrumento identificado'}
                     {area.calibrado_hasta ? ` · calibrado hasta ${area.calibrado_hasta}` : ' · sin fecha de calibración'}
@@ -168,6 +185,11 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
                     Uno para la sala de ventas y otro para la bodega, cada uno con certificado de
                     calibración vigente. Si una sala es un solo ambiente, apaga el área que no existe:
                     así deja de contar como faltante al cerrar el mes.
+                </span>
+                <span className="block mt-1.5 font-normal text-content-2">
+                    Las vitrinas y el servicio sanitario son áreas de <strong>sólo limpieza</strong>: no
+                    llevan temperatura ni instrumento, pero sí su propio registro y su propio
+                    cumplimiento. Si esta sucursal no tiene alguna, apágala igual que las demás.
                 </span>
             </Notice>
 

@@ -213,6 +213,29 @@ export default function TabCierre({ branchId, fechaVista }) {
                             <Cifra valor={`${Li.hechas}/${Li.esperadas}`} label="Registradas" />
                             <Cifra valor={Li.faltantes} label="Faltantes" tono={Li.faltantes > 0 ? 'danger' : 'success'} />
                         </div>
+
+                        {/* Abierto por área: un solo porcentaje para «la sala, las
+                            vitrinas y el baño» no contesta CUÁL de los tres se
+                            está dejando, que es lo que hay que saber antes de
+                            firmar. El servicio sanitario además tiene ítems
+                            propios en la guía (2.15 y 2.16). */}
+                        {(resumen.limpieza_por_area || []).length > 1 && (
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {resumen.limpieza_por_area.map(a => (
+                                    <div key={a.area_id} data-surface="card" className="p-3 flex items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-body-sm font-bold text-content truncate">{a.nombre}</p>
+                                            <p className="text-label text-content-3 tabular-nums">
+                                                {a.hechas} de {a.esperadas} · {a.tarde} fuera de hora
+                                            </p>
+                                        </div>
+                                        <Badge variant={a.faltantes > 0 ? 'warning' : 'success'} size="sm" uppercase={false}>
+                                            {a.faltantes > 0 ? `${a.faltantes} sin registrar` : 'Completa'}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </section>
 
                     {(resumen.calibracion_vencida || []).length > 0 && (

@@ -81,6 +81,8 @@ export default function BitacorasView() {
     const [tab, setTab] = useState('hoy');
     const [busqueda, setBusqueda] = useState('');
 
+    const enLibro = tab === 'libro';
+
     const [dia, setDia] = useState(null);
     const [cargandoDia, setCargandoDia] = useState(true);
     const [errorDia, setErrorDia] = useState(null);
@@ -89,14 +91,36 @@ export default function BitacorasView() {
     const [cargandoLibro, setCargandoLibro] = useState(false);
     const [errorLibro, setErrorLibro] = useState(null);
 
-    const salaOptions = useMemo(
-        () => branches.map(b => ({ value: String(b.id), label: b.name })),
-        [branches],
-    );
+    // ── Qué sucursales ofrece cada sección ─────────────────────────────────
+    //
+    // Sale de `branches.type`, no de una lista de nombres a mano: el día que
+    // abra una sala nueva entra sola, y el día que se renombre una no se rompe
+    // nada. Es la regla del proyecto —una lista que existe como tabla no se
+    // escribe a mano— aplicada a un filtro.
+    //
+    //   · Las bitácoras de AMBIENTE son de donde se GUARDA medicamento: las
+    //     farmacias y la bodega. Administración no almacena nada, así que
+    //     ofrecerla prometía una bitácora que no existe.
+    //   · El libro BAJO RECETA es de donde se DISPENSA: sólo las farmacias.
+    //     Bodega no vende, y su libro siempre estaría vacío — un vacío que se
+    //     lee como «no hubo ventas bajo receta» en vez de «acá no se vende».
+    const salaOptions = useMemo(() => {
+        const tipos = enLibro ? ['FARMACIA'] : ['FARMACIA', 'BODEGA'];
+        return branches
+            .filter(b => tipos.includes(b.type || 'FARMACIA'))
+            .map(b => ({ value: String(b.id), label: b.name }));
+    }, [branches, enLibro]);
     const nombreSala = useMemo(
+        () => salaOptions.find(o => o.value === String(sala))?.label || '',
+        [salaOptions, sala],
+    );
+    // El nombre aunque la sala NO aplique a esta sección: hace falta para poder
+    // decir «Bodega no dispensa» en vez de un vacío mudo.
+    const nombreSalaCruda = useMemo(
         () => branches.find(b => String(b.id) === String(sala))?.name || '',
         [branches, sala],
     );
+    const salaValida = Boolean(sala) && salaOptions.some(o => o.value === String(sala));
 
     // ── El día ──────────────────────────────────────────────────────────────
     const cargarDia = useCallback(async () => {
@@ -145,8 +169,6 @@ export default function BitacorasView() {
             r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc,
         ].some(v => String(v ?? '').toLowerCase().includes(q)));
     }, [libro, busqueda]);
-
-    const enLibro = tab === 'libro';
 
     const tabs = useMemo(() => ([
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },
@@ -228,9 +250,13 @@ export default function BitacorasView() {
                     </div>
                 </div>
 
-                {!sala ? (
+                {!salaValida ? (
                     <Notice variant="info" icon={Search}>
-                        Elige una sucursal para ver su bitácora.
+                        {!sala
+                            ? 'Elige una sucursal para ver su bitácora.'
+                            : enLibro
+                                ? `${nombreSalaCruda || 'Esa sucursal'} no dispensa: el libro bajo receta es de las salas de venta.`
+                                : `${nombreSalaCruda || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`}
                     </Notice>
                 ) : tab === 'hoy' ? (
                     <TabHoy dia={dia} cargando={cargandoDia} error={errorDia}

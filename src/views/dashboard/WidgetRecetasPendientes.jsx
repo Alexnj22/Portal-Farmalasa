@@ -7,6 +7,7 @@ import ListRow from '../../components/common/ListRow';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 import { correrDia, faltantesDelRenglon, fetchLibro, hoySV } from '../../data/bitacoras';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
@@ -53,13 +54,19 @@ export default function WidgetRecetasPendientes() {
     const navigate = useNavigate();
     const puedeCompletar = hasPermission('bitacoras', 'can_edit');
     const miSala = user?.branchId ?? user?.branch_id ?? null;
+    const branches = useStaff((st) => st.branches);
+    // Sólo las salas de venta dispensan. En Bodega o Administración un «sin
+    // pendientes» se leería como «todo al día», cuando en realidad ahí no se
+    // vende — y ese matiz importa cuando el widget existe para no olvidarse.
+    const dispensa = (branches || []).some(
+        b => String(b.id) === String(miSala) && (b.type || 'FARMACIA') === 'FARMACIA');
 
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [completando, setCompletando] = useState(null);
 
     const cargar = useCallback(async () => {
-        if (!miSala) { setCargando(false); return; }
+        if (!miSala || !dispensa) { setCargando(false); return; }
         const hoy = hoySV();
         const { renglones } = await fetchLibro(miSala, {
             desde: correrDia(hoy, -DIAS_ATRAS), hasta: hoy, estado: 'pendiente',
@@ -67,7 +74,7 @@ export default function WidgetRecetasPendientes() {
         // Los más viejos primero: son los que se están por olvidar.
         setFilas([...renglones].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))));
         setCargando(false);
-    }, [miSala]);
+    }, [miSala, dispensa]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial y refresco cada 5 min
@@ -81,7 +88,13 @@ export default function WidgetRecetasPendientes() {
     if (!miSala) {
         return <EmptyState icon={Pill} compact
             title="Sin sala asignada"
-            subtitle="El libro bajo receta es de una sala." />;
+            subtitle="El libro bajo receta es de una sala de venta." />;
+    }
+
+    if (!dispensa) {
+        return <EmptyState icon={Pill} compact
+            title="Acá no se dispensa"
+            subtitle="El libro bajo receta es de las salas de venta." />;
     }
 
     if (!filas.length) {

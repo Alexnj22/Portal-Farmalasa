@@ -3280,7 +3280,11 @@ const DashboardView = ({ openModal }) => {
     // el renglón es quien atendió la venta y se acuerda del paciente.
     if (wid === 'recetas_pend') {
       if (!showWidget('recetas_pend', 'dash_recetas_pendientes')) return null;
-      return wrapWidget('recetas_pend', <WidgetRecetasPendientes />, staggerIdx);
+      return wrapWidget('recetas_pend',
+        <WidgetCard title="Recetas pendientes" icon={Pill} category="productos">
+          <WidgetRecetasPendientes />
+        </WidgetCard>
+      , staggerIdx);
     }
 
     /* ── BITÁCORAS DE MI SALA ── */
@@ -3291,7 +3295,11 @@ const DashboardView = ({ openModal }) => {
     // Para revisar las demás está el módulo, que sí tiene la ranura.
     if (wid === 'bitacoras') {
       if (!showWidget('bitacoras', 'dash_bitacoras')) return null;
-      return wrapWidget('bitacoras', <WidgetBitacoras />, staggerIdx);
+      return wrapWidget('bitacoras',
+        <WidgetCard title="Bitácoras" icon={Thermometer} category="productos">
+          <WidgetBitacoras />
+        </WidgetCard>
+      , staggerIdx);
     }
 
     /* ── FACTURAS DE MI SALA ── */

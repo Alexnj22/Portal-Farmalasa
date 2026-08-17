@@ -53,6 +53,52 @@ export async function confirmarProducto(emisorNit, codigoProveedor, productId) {
     return { error: error?.message ?? null };
 }
 
+/**
+ * La lista completa de preguntas distintas, ordenada por cuánto destraba cada
+ * una.
+ *
+ * Es lo que evita abrir factura por factura: la pregunta es
+ * `(proveedor, su código)`, no `renglón`, y está medido que el 87% de los
+ * renglones usan un código que se repite. Responder la primera de la lista
+ * resuelve más renglones que responder cualquier otra.
+ */
+export async function fetchProductosPorConfirmar(soloPendientes = true, limite = 500) {
+    const { data, error } = await supabase.rpc('get_productos_por_confirmar', {
+        p_solo_pendientes: soloPendientes, p_limite: limite,
+    });
+    if (error) return { filas: [], error };
+    return { filas: data ?? [], error: null };
+}
+
+/**
+ * Leer una tanda de documentos para armar esa lista.
+ *
+ * Corre por tandas y devuelve cuánto queda porque son 615 documentos y una
+ * Edge Function vive 150 segundos. **Un documento leído no se vuelve a leer**
+ * —la cuenta de renglones se acumula, y leerlo dos veces la inflaría—, así que
+ * llamar de más no rompe nada: simplemente no hace nada.
+ */
+export async function barrerDocumentos({ dias = 90, tanda = 40 } = {}) {
+    const { data, error } = await supabase.functions.invoke('leer-dte-json', {
+        body: { modo: 'barrido', dias, tanda },
+    });
+    if (error) return { resultado: null, error: error.message ?? 'No se pudo leer los documentos.' };
+    return { resultado: data, error: null };
+}
+
+/**
+ * Apartar un renglón que no es un producto nuestro (un flete, un servicio).
+ *
+ * Sin esto la lista no se termina nunca: siempre quedarían abajo las mismas
+ * diez líneas que nadie va a emparejar con nada.
+ */
+export async function apartarRenglon(id, motivo, deshacer = false) {
+    const { error } = await supabase.rpc('ignorar_renglon_pendiente', {
+        p_id: id, p_motivo: motivo || null, p_deshacer: deshacer,
+    });
+    return { error: error?.message ?? null };
+}
+
 /** Buscar un producto para corregir a mano lo que el matcher no acertó. */
 export async function buscarProductos(texto, limite = 12) {
     const q = String(texto ?? '').trim();

@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.643.0 — Por confirmar: la lista completa de productos, en una sola pantalla
+
+**Compras → Cargar compra → Por confirmar.** Sembrar el diccionario abriendo las
+615 facturas que esperan carga era trabajo que nadie iba a hacer, y además
+repetía la misma pregunta en cada factura. Ahora la pregunta se hace **una vez
+por `(proveedor, su código)`**, todas juntas, ordenadas por cuánto destraba cada
+una: la primera de la lista resuelve más renglones que cualquier otra. Está
+medido que el 86.9% de los renglones usan un código que se repite, así que la
+lista de preguntas distintas es varias veces más corta que la de renglones —y
+cada respuesta vale para siempre, para ese proveedor y para todas sus facturas.
+
+Cada línea trae el proveedor, su código, la descripción tal como viene en el
+documento, en cuántas facturas aparece y qué producto propone el portal con su
+origen. Tres acciones: **Es correcto**, **Es otro** (busca a mano) y **No es un
+producto**, que aparta un flete o un servicio con su motivo para que la lista se
+pueda terminar. Lo apartado y lo confirmado se ven eligiendo **Todos**, y una
+confirmación equivocada se corrige desde la misma línea.
+
+**Un renglón sin código también se aprende.** El 4% de los renglones no traen
+código del proveedor y hasta hoy se habrían preguntado para siempre. Ahora esos
+usan una llave derivada del nombre, y el emparejador la busca igual que a la
+real.
+
+**«Actualizar lista»** lee los documentos que todavía no se leyeron, de a tandas
+—son 615 y una función vive 150 segundos—. Un documento leído no se vuelve a
+leer: los conteos se acumulan y leerlo dos veces inflaría el peso de sus
+renglones.
+
+**Y el aviso de una factura dejó de contradecirse.** Decía «6 a confirmar» con
+los 6 productos marcados «Ya confirmado»: contaba como pendiente todo renglón al
+que le faltara **algo**, incluido el lote, que ya se informa aparte. Ahora «por
+confirmar» cuenta sólo el producto que es una adivinanza, y el aviso nombra
+únicamente lo que de verdad falta.
+
+Además, la pantalla dice lo que quedó decidido: **toda compra entra a Bodega**, y
+desde ahí el producto se mueve a las salas.
+
 ## v2.642.2 — El carné vuelve a abrir sesión en cualquier computadora
 
 Reportado por el usuario: «quitaste el escaneo de carné en la computadora». Era

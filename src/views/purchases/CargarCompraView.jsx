@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
-    Search, HelpCircle, CalendarRange,
+    Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -18,6 +18,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon,
 } from '../../data/cargarCompra';
 import { formatMoney } from '../../utils/formatNumber';
 import { normalizeText } from '../../utils/helpers';
@@ -54,6 +55,11 @@ const ORIGEN = {
     parecido:      { label: 'Por parecido',     icon: Search,      variant: 'warning' },
 };
 
+const TABS = [
+    { key: 'facturas',  label: 'Facturas'      },
+    { key: 'confirmar', label: 'Por confirmar' },
+];
+
 const COLS = [
     { key: 'fecha',      label: 'Fecha',      align: 'left'   },
     { key: 'proveedor',  label: 'Proveedor',  align: 'left'   },
@@ -68,6 +74,9 @@ const PERIODOS = [
     { value: '60',  label: 'Últimos 60 días' },
     { value: '180', label: 'Últimos 6 meses' },
 ];
+
+/** «1 renglón» / «3 renglones» — el «(es)» de las plantillas se lee a máquina. */
+const plural = (n, uno, muchos) => `${n} ${Number(n) === 1 ? uno : muchos}`;
 
 const fmtFecha = (iso) => {
     if (!iso) return '—';
@@ -184,11 +193,20 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                     {/* Lo que hay que mirar antes de nada. */}
                     {faltan > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <b>{faltan}</b> de {resumen.renglones} renglones necesitan un ojo:
-                            {resumen.sin_producto > 0 && <> <b>{resumen.sin_producto}</b> sin producto,</>}
-                            {' '}<b>{resumen.a_confirmar}</b> a confirmar,
-                            {' '}<b>{resumen.sin_lote}</b> sin lote,
-                            {' '}<b>{resumen.sin_vencimiento}</b> sin vencimiento.
+                            <b>{faltan}</b> de {resumen.renglones} renglones necesitan un ojo:{' '}
+                            {/* Sólo lo que de verdad falta. Enumerar las cuatro
+                                categorías siempre —incluso en cero— hacía leer
+                                «0 sin producto» como si fuera un hallazgo. */}
+                            {[
+                                [resumen.sin_producto,    'sin producto'],
+                                [resumen.a_confirmar,     'con el producto por confirmar'],
+                                [resumen.sin_lote,        'sin lote'],
+                                [resumen.sin_vencimiento, 'sin vencimiento'],
+                            ].filter(([n]) => n > 0).map(([n, texto], i, arr) => (
+                                <span key={texto}>
+                                    <b>{n}</b> {texto}{i < arr.length - 1 ? ' · ' : '.'}
+                                </span>
+                            ))}
                         </Notice>
                     )}
                     {faltan === 0 && (
@@ -282,12 +300,279 @@ function Dato({ titulo, valor, nota, mono }) {
     );
 }
 
+/* ─── Todo lo que hay por confirmar, en una sola lista ─────────────────────── */
+//
+// La otra pestaña se recorre documento por documento, que es lo correcto para
+// cargar una factura pero pésimo para sembrar el diccionario: la misma pregunta
+// —«¿qué producto es el código 21AG de GAMMA?»— vuelve a aparecer en cada
+// factura de ese proveedor. Acá la pregunta aparece **una vez**, con cuánto
+// destraba, y la respuesta vale para todas.
+//
+// Por eso la lista se ordena por peso y no por fecha: responder las primeras
+// diez resuelve muchísimos más renglones que responder diez cualesquiera.
+
+// El filtro NO se llama «Por confirmar»: así se llama la pestaña, y dos
+// controles con el mismo rótulo en la misma pantalla se leen como uno solo.
+const ESTADOS = [
+    { value: 'pendientes', label: 'Sin resolver' },
+    { value: 'todos',      label: 'Todos'        },
+];
+
+function TabPorConfirmar({ puedeEditar }) {
+    const [filas, setFilas]   = useState(null);
+    const [error, setError]   = useState('');
+    const [busca, setBusca]   = useState('');
+    const [estado, setEstado] = useState('pendientes');
+    const [barriendo, setBarr] = useState(null);   // texto de progreso
+    const [buscando, setBusc] = useState(null);    // id del renglón abierto
+    const [apartando, setAp]  = useState(null);    // id del renglón que pide motivo
+    const [motivo, setMotivo] = useState('');
+    const [guardando, setG]   = useState(null);
+    const [pagina, setPagina] = useState(1);
+    const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
+
+    const cargar = useCallback(async () => {
+        const { filas: f, error: e } = await fetchProductosPorConfirmar(estado === 'pendientes');
+        setError(e?.message ?? '');
+        setFilas(f);
+    }, [estado]);
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { cargar(); }, [cargar]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- el filtro cambió, la página vieja ya no existe
+    useEffect(() => { setPagina(1); }, [busca, estado]);
+
+    // Leer los documentos de a tandas hasta que no quede ninguno **o hasta que
+    // una tanda no avance**: un archivo ilegible no se marca leído, así que
+    // sin ese segundo freno el bucle no terminaría nunca.
+    const barrer = async () => {
+        setError(''); setBarr('Leyendo los documentos…');
+        for (let vuelta = 0; vuelta < 30; vuelta++) {
+            const { resultado, error: e } = await barrerDocumentos({ dias: 90, tanda: 40 });
+            if (e) { setError(e); break; }
+            setBarr(`Leídos ${resultado.leidos} · quedan ${resultado.restantes}`);
+            if (resultado.leidos === 0 || resultado.restantes === 0) break;
+        }
+        setBarr(null);
+        await cargar();
+    };
+
+    const confirmar = async (fila, producto) => {
+        setG(fila.id);
+        const { error: e } = await confirmarProducto(fila.emisor_nit, fila.llave, producto.id);
+        setG(null);
+        if (e) { setError(e); return; }
+        setBusc(null);
+        useStaffStore.getState().appendAuditLog('COMPRA_ALIAS_CONFIRMADO', String(producto.id), {
+            proveedor: fila.proveedor, codigo: fila.llave, producto: producto.nombre,
+            renglones: fila.renglones,
+        });
+        await cargar();
+    };
+
+    const apartar = async (fila) => {
+        setG(fila.id);
+        const { error: e } = await apartarRenglon(fila.id, motivo, false);
+        setG(null);
+        if (e) { setError(e); return; }
+        setAp(null); setMotivo('');
+        await cargar();
+    };
+
+    const visibles = useMemo(() => {
+        const q = normalizeText(busca.trim());
+        if (!q) return filas ?? [];
+        return (filas ?? []).filter(f =>
+            normalizeText(f.proveedor || '').includes(q)
+            || normalizeText(f.descripcion || '').includes(q)
+            || normalizeText(f.codigo_proveedor || '').includes(q)
+            || normalizeText(f.sugerido_nombre || '').includes(q));
+    }, [filas, busca]);
+
+    const totales = useMemo(() => {
+        const t = { preguntas: 0, renglones: 0, sinCandidato: 0 };
+        for (const f of filas ?? []) {
+            if (f.resuelto || f.ignorado) continue;
+            t.preguntas++;
+            t.renglones += Number(f.renglones || 0);
+            if (!f.sugerido_product_id) t.sinCandidato++;
+        }
+        return t;
+    }, [filas]);
+
+    const totalPaginas = Math.ceil(visibles.length / porPagina);
+    const enPantalla = useMemo(
+        () => visibles.slice((pagina - 1) * porPagina, pagina * porPagina),
+        [visibles, pagina, porPagina]);
+
+    return (<>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta confirmar">
+                <StatCard icon={ListChecks} label="Preguntas" value={totales.preguntas}
+                    sub="productos distintos" loading={filas === null} tono="brand" />
+                <StatCard icon={Layers} label="Renglones" value={totales.renglones}
+                    sub="que se destraban" loading={filas === null} tono="brand" />
+                <StatCard icon={HelpCircle} label="Sin candidato" value={totales.sinCandidato}
+                    sub="hay que buscarlos a mano" loading={filas === null} tono="warning"
+                    valueCls={totales.sinCandidato ? 'text-warning-text' : 'text-content'} />
+            </CarrilCards>
+
+            <div className="flex justify-end min-w-0 gap-2 items-center">
+                <Button size="sm" variant="ghost" icon={RefreshCw} loading={!!barriendo} onClick={barrer}>
+                    {barriendo ?? 'Actualizar lista'}
+                </Button>
+                <FilterBar onClear={() => setEstado('pendientes')} activeCount={estado !== 'pendientes' ? 1 : 0}>
+                    <FilterBar.Section active={estado !== 'pendientes'}
+                        onClear={() => setEstado('pendientes')} label="estado">
+                        <div style={{ width: '160px' }}>
+                            <LiquidSelect value={estado} onChange={v => setEstado(v || 'pendientes')}
+                                options={ESTADOS} icon={ListChecks} compact bare clearable={false} />
+                        </div>
+                    </FilterBar.Section>
+                </FilterBar>
+            </div>
+        </div>
+
+        {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+
+        <Notice variant="info" icon={ListChecks} compact>
+            Cada línea es <b>un producto de un proveedor</b>, no un renglón: confirmarla resuelve
+            todas las facturas donde aparece, las de hoy y las que vengan. Está ordenada por
+            cuánto destraba cada una. Si la lista se ve corta o vieja, <b>Actualizar lista</b> lee
+            los documentos nuevos.
+        </Notice>
+
+        <PortalInput value={busca} onChange={e => setBusca(e.target.value)} tono="brand"
+            placeholder="Buscar proveedor, producto o código…" aria-label="Buscar" />
+
+        <div className="flex flex-col gap-2">
+            {filas === null && <p className="text-label text-content-3">Cargando…</p>}
+            {filas !== null && visibles.length === 0 && (
+                <Notice variant="success" icon={CheckCircle2}>
+                    Sin productos por confirmar. Si acaban de llegar facturas nuevas,
+                    tocá <b>Actualizar lista</b>.
+                </Notice>
+            )}
+            {enPantalla.map((f) => {
+                const o = ORIGEN[f.sugerido_origen] ?? null;
+                const Icono = o?.icon ?? HelpCircle;
+                return (
+                    <div key={f.id} data-surface="card"
+                        className={`px-3 py-2.5 ${f.ignorado ? 'opacity-60' : ''}`}>
+                        <div className="flex items-start gap-3 flex-wrap">
+                            <div className="flex-1 min-w-[16rem]">
+                                <p className="text-label font-black text-content">
+                                    {f.sugerido_nombre ?? '— sin candidato —'}
+                                </p>
+                                <p className="text-micro text-content-3">
+                                    {f.descripcion}
+                                </p>
+                                <p className="text-micro text-content-3">
+                                    {f.proveedor}
+                                    {f.codigo_proveedor && <> · código <span className="font-mono">{f.codigo_proveedor}</span></>}
+                                </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="text-label font-black text-content tabular-nums">
+                                    {plural(f.renglones, 'renglón', 'renglones')}
+                                </p>
+                                <p className="text-micro text-content-3">
+                                    en {plural(f.documentos, 'factura', 'facturas')}
+                                    {' · '}{Number(f.unidades ?? 0)} unidades
+                                </p>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-2 flex-wrap">
+                                {f.ignorado && <Badge variant="neutral" size="sm">Apartado</Badge>}
+                                {f.resuelto && <Badge variant="success" size="sm">Confirmado</Badge>}
+                                {!f.resuelto && !f.ignorado && o && (
+                                    <Badge variant={o.variant} size="sm">
+                                        <Icono size={11} className="mr-1 inline" />
+                                        {o.label}
+                                        {f.sugerido_origen === 'parecido' && f.sugerido_similitud != null
+                                            && ` · ${Math.round(f.sugerido_similitud * 100)}%`}
+                                    </Badge>
+                                )}
+                                {puedeEditar && !f.resuelto && !f.ignorado && (<>
+                                    {f.sugerido_product_id && (
+                                        <Button size="xs" loading={guardando === f.id}
+                                            onClick={() => confirmar(f, { id: f.sugerido_product_id, nombre: f.sugerido_nombre })}>
+                                            Es correcto
+                                        </Button>
+                                    )}
+                                    <Button size="xs" variant="ghost"
+                                        onClick={() => { setBusc(buscando === f.id ? null : f.id); setAp(null); }}>
+                                        {f.sugerido_product_id ? 'Es otro' : 'Elegir'}
+                                    </Button>
+                                    <Button size="xs" variant="ghost" icon={EyeOff}
+                                        onClick={() => { setAp(apartando === f.id ? null : f.id); setBusc(null); setMotivo(''); }}>
+                                        No es un producto
+                                    </Button>
+                                </>)}
+                                {/* Una confirmación equivocada tiene que poder
+                                    corregirse desde donde se hizo: el
+                                    diccionario se sobrescribe, pero si la
+                                    pantalla esconde el botón, el único camino
+                                    es la base de datos. */}
+                                {puedeEditar && f.resuelto && (
+                                    <Button size="xs" variant="ghost"
+                                        onClick={() => setBusc(buscando === f.id ? null : f.id)}>
+                                        Es otro
+                                    </Button>
+                                )}
+                                {puedeEditar && f.ignorado && (
+                                    <Button size="xs" variant="ghost" loading={guardando === f.id}
+                                        onClick={async () => {
+                                            setG(f.id);
+                                            const { error: e } = await apartarRenglon(f.id, null, true);
+                                            setG(null);
+                                            if (e) setError(e); else await cargar();
+                                        }}>
+                                        Devolver a la lista
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {buscando === f.id && (
+                            <BuscadorProducto
+                                onElegir={(prod) => confirmar(f, prod)}
+                                onCancelar={() => setBusc(null)} />
+                        )}
+
+                        {apartando === f.id && (
+                            <div className="mt-2 flex items-end gap-2 flex-wrap">
+                                <div className="flex-1 min-w-[14rem]">
+                                    <PortalInput value={motivo} onChange={e => setMotivo(e.target.value)}
+                                        tono="brand" placeholder="¿Por qué no es un producto? (flete, servicio…)"
+                                        aria-label="Motivo" />
+                                </div>
+                                <Button size="xs" loading={guardando === f.id}
+                                    disabled={!motivo.trim()} onClick={() => apartar(f)}>
+                                    Apartar
+                                </Button>
+                                <Button size="xs" variant="ghost" onClick={() => setAp(null)}>Cancelar</Button>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+
+        <TablePagination
+            page={pagina} totalPages={totalPaginas} onPageChange={setPagina}
+            pageSize={porPagina} onPageSizeChange={setPorPagina}
+            total={filas?.length ?? 0} filteredTotal={visibles.length}
+            unit="productos" />
+    </>);
+}
+
 /* ─── La vista ────────────────────────────────────────────────────────────── */
 export default function CargarCompraView() {
     const { hasPermission } = useAuth();
     const puedeEditar = hasPermission('compras', 'can_edit')
         || hasPermission('facturas_compra', 'can_edit');
 
+    const [tab, setTab]     = useState('facturas');
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState('');
     const [busca, setBusca] = useState('');
@@ -332,14 +617,16 @@ export default function CargarCompraView() {
         [visibles, pagina, porPagina]);
 
     const filtersContent = (
-        <ViewTabBar tabs={[]} activeTab="" onTabChange={() => {}}
-            searchValue={busca} onSearchChange={setBusca} showSearch
+        <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
+            searchValue={busca} onSearchChange={setBusca} showSearch={tab === 'facturas'}
             placeholder="Buscar proveedor o número de documento…" />
     );
 
     return (
         <GlassViewLayout icon={PackagePlus} title="Cargar compra" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
+
+            {tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} /> : (<>
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta cargar">
@@ -371,6 +658,7 @@ export default function CargarCompraView() {
                     vencimiento— y cada renglón dice de dónde salió su dato. <b>Todavía no registra
                     nada en el sistema</b>: es para revisarla. Lo que sí queda guardado es cada
                     producto que confirmes, y de ahí en adelante ese proveedor no vuelve a preguntar.
+                    Toda compra entra a <b>Bodega</b>, y desde ahí el producto se mueve a las salas.
                 </Notice>
 
                 <DataTable columns={COLS} dense loading={filas === null}
@@ -410,6 +698,7 @@ export default function CargarCompraView() {
                     pageSize={porPagina} onPageSizeChange={setPorPagina}
                     total={filas?.length ?? 0} filteredTotal={visibles.length}
                     unit="documentos" />
+            </>)}
             </div>
 
             {sel && <Propuesta doc={sel} puedeEditar={puedeEditar} onCerrar={() => setSel(null)} />}

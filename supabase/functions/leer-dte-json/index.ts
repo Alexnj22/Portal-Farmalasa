@@ -111,6 +111,70 @@ Deno.serve(async (req: Request) => {
       desde = null,
     } = body ?? {};
 
+    // ── `barrido`: armar la lista de preguntas distintas ────────────────────
+    //
+    // Lee los documentos que todavía no se leyeron y acumula sus renglones en
+    // `compra_renglon_pendiente`, agrupados por `(proveedor, código)`. Es lo
+    // que hace que la pantalla «Por confirmar» abra al instante: el parecido
+    // de nombre se calcula UNA vez por llave, acá, y no en cada carga.
+    //
+    // Va de a tandas y devuelve cuánto queda, para que la pantalla vuelva a
+    // llamar. Trocearlo no es prolijidad: son 615 documentos y una Edge
+    // Function vive 150 segundos.
+    if (modo === "barrido") {
+      const dias  = Math.min(Math.max(Number(body?.dias)  || 90, 1), 400);
+      const tanda = Math.min(Math.max(Number(body?.tanda) || 40, 1), 120);
+
+      const { data: pend, error: errP } = await admin.rpc("get_documentos_por_barrer", {
+        p_dias: dias, p_limite: tanda,
+      });
+      if (errP) throw new Error(`get_documentos_por_barrer: ${errP.message}`);
+
+      const lista = pend ?? [];
+      const quedaba = Number(lista[0]?.restantes ?? 0);
+      let leidos = 0, nuevas = 0, fallados = 0;
+
+      // De a 8 en paralelo. Las 40 descargas de golpe saturan el runtime y no
+      // van más rápido: el cuello es Storage, no el CPU.
+      const CONC = 8;
+      for (let i = 0; i < lista.length; i += CONC) {
+        const res = await Promise.all(lista.slice(i, i + CONC).map(async (d: any) => {
+          try {
+            const path = pathDeStorage(d.json_path);
+            if (!path) return { ok: false };
+            const { data: blob } = await admin.storage.from("purchase-dte").download(path);
+            if (!blob) return { ok: false };
+            const dte = desenvolver(JSON.parse(await blob.text()));
+            const items: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
+            const filas = items.map((it) => ({
+              codigo: it?.codigo ?? null,
+              descripcion: String(it?.descripcion ?? ""),
+              // El mismo nombre limpio que usa la propuesta. Tiene que ser el
+              // mismo: es lo que arma la llave sintética de los renglones sin
+              // código, y dos limpiezas distintas darían dos llaves distintas
+              // para el mismo producto.
+              limpio: nombreLimpio(String(it?.descripcion ?? "")),
+              cantidad: Number(it?.cantidad ?? 0) || 0,
+            }));
+            const { data: n, error } = await admin.rpc("registrar_renglones_pendientes", {
+              p_document_id: d.document_id, p_emisor_nit: d.emisor_nit,
+              p_fecha: d.fecha_emision, p_filas: filas,
+            });
+            if (error) return { ok: false };
+            return { ok: true, nuevas: Number(n ?? 0) };
+          } catch { return { ok: false }; }
+        }));
+        for (const r of res) { if (r.ok) { leidos++; nuevas += r.nuevas ?? 0; } else fallados++; }
+      }
+
+      // `restantes` es lo que queda DESPUÉS de esta tanda. Un documento que
+      // falló no se marca leído, así que sigue contando: la pantalla corta
+      // cuando una tanda no avanza (`leidos === 0`), no cuando llega a cero.
+      return new Response(JSON.stringify({
+        leidos, nuevas, fallados, quedaba, restantes: Math.max(0, quedaba - leidos),
+      }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
+
     let q = admin
       .from("purchase_dte_documents")
       .select("id, emisor_nombre, emisor_nit, codigo_generacion, fecha_emision, json_path, pdf_path, sello_recibido")
@@ -307,6 +371,11 @@ Deno.serve(async (req: Request) => {
             match_origen: match?.origen ?? "sin candidato",
             match_similitud: match?.similitud ?? null,
             lote: lv.lote, vence: lv.vence, lote_origen: lv.de,
+            // `seguro` es sobre el PRODUCTO y nada más. Va aparte de `listo`
+            // porque son dos preguntas distintas y confundirlas hacía que el
+            // aviso dijera «a confirmar» de un renglón cuyo producto estaba
+            // resuelto y lo único que faltaba era el lote.
+            seguro,
             listo: !!(seguro && lv.vence && lv.lote),
             falta: [
               !match?.product_id ? "producto" : (!seguro ? "confirmar producto" : null),
@@ -340,7 +409,11 @@ Deno.serve(async (req: Request) => {
             renglones: renglones.length,
             listos: renglones.filter((r) => r.listo).length,
             sin_producto: renglones.filter((r) => !r.producto_id).length,
-            a_confirmar: renglones.filter((r) => r.producto_id && !r.listo).length,
+            // Cuenta el producto que es una ADIVINANZA, no el renglón al que
+            // le falta algo: el lote y el vencimiento ya se informan aparte, y
+            // contarlos acá hacía que una factura sin lote —SUIZOS no lo
+            // manda— dijera «6 a confirmar» con los 6 productos resueltos.
+            a_confirmar: renglones.filter((r) => r.producto_id && !r.seguro).length,
             sin_lote: renglones.filter((r) => !r.lote).length,
             sin_vencimiento: renglones.filter((r) => !r.vence).length,
           },

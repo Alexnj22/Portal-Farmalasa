@@ -94,17 +94,21 @@ export default function AnotarLectura({ area, franja, lectura, fecha, onCerrar }
                     {/* `alto` es la variante para llenar DE PIE con una mano —
                         que es exactamente esto: se lee el termohigrómetro
                         mirando el aparato, no la pantalla. */}
+                    {/* `type="text"` con la máscara DECIMAL, NO `type="number"`:
+                        el campo numérico del navegador se traga la coma sin
+                        avisar y «24,9» entraba como 249 °C. Ver el comentario
+                        de `applyInputMask` — está medido. */}
                     <PortalInput
-                        label="Temperatura (°C)" name="temperatura" type="number" inputMode="decimal"
-                        step="0.1" icon={Thermometer} alto required
+                        label="Temperatura (°C)" name="temperatura" type="text" inputMode="decimal"
+                        maskType="DECIMAL" icon={Thermometer} alto required
                         value={temp} onChange={(e) => setTemp(e.target.value)}
                         placeholder="0.0" inputClassName="tabular-nums"
                         hasError={fueraDeRango}
                     />
                     {area.mide_humedad && (
                         <PortalInput
-                            label="Humedad (% HR)" name="humedad" type="number" inputMode="decimal"
-                            step="1" min="0" max="100" icon={Droplets} alto
+                            label="Humedad (% HR)" name="humedad" type="text" inputMode="decimal"
+                            maskType="DECIMAL" icon={Droplets} alto
                             value={hum} onChange={(e) => setHum(e.target.value)}
                             placeholder="—" inputClassName="tabular-nums"
                             helperText="Informativa"

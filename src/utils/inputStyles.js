@@ -25,6 +25,28 @@ export const applyInputMask = (value, type) => {
     if (!value) return '';
     if (type === 'ACCOUNT') return value.replace(/[^0-9-]/g, '').substring(0, 25);
     if (type === 'DUI') return maskDui(value);
+    // DECIMAL acepta punto Y coma, y por eso el campo va como `type="text"`.
+    //
+    // Medido el 2026-08-17 sobre el campo de temperatura de las bitácoras, que
+    // era `type="number"`: tecleando «24.9» funciona, pero tecleando «24,9» el
+    // navegador **tira la coma sin avisar** y queda «249». No es que no deje
+    // escribir el decimal — es que se lo come, y 249 °C entra como una lectura
+    // válida. Un teclado en español (y el teclado decimal de un teléfono en
+    // es-419) ofrece la coma, así que la trampa es la ruta normal, no la rara.
+    //
+    // De paso arregla lo que el usuario ve: con `type="number"` el punto recién
+    // aparece cuando se escribe el dígito siguiente, así que la pantalla parece
+    // estar ignorando la tecla.
+    if (type === 'DECIMAL') {
+        const negativo = /^\s*-/.test(value) ? '-' : '';
+        const limpio = value.replace(/[^0-9.,]/g, '').replace(/,/g, '.');
+        const [entero, ...decimales] = limpio.split('.');
+        // Sólo el PRIMER grupo decimal: «24.9.5» es un error de tipeo, y pegar
+        // los grupos daría 24.95 — otro número, no el que se quiso escribir.
+        return limpio.includes('.')
+            ? `${negativo}${entero}.${(decimales[0] || '').substring(0, 2)}`
+            : `${negativo}${entero}`;
+    }
     let v = value.replace(/\D/g, '');
     if (type === 'PHONE') {
         if (v.length > 4) return `${v.substring(0, 4)}-${v.substring(4, 8)}`;

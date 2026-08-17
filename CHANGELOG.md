@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.3 — Bitácoras: la temperatura acepta decimales y las franjas caben en el horario
+
+**La temperatura no rechazaba el decimal: se comía la coma.** Medido en el
+navegador tecla por tecla sobre el campo real: con `type="number"`, teclear
+«24.9» funciona, pero teclear **«24,9» deja 249** — el navegador descarta la
+coma sin avisar, y 249 °C entra como una lectura válida y fuera de rango. En un
+teclado en español (y en el teclado decimal de un teléfono en es-419) la coma
+es el separador normal, así que la trampa estaba en el camino de todos los días.
+De paso, `type="number"` tampoco mostraba el punto hasta que se escribía el
+dígito siguiente, y la pantalla parecía estar ignorando la tecla.
+
+Ahora el campo es de texto con una máscara **DECIMAL** nueva en el canónico
+(`applyInputMask`): acepta punto **y** coma, deja ver el separador mientras se
+teclea, corta en dos decimales —lo que guarda la columna—, descarta letras y
+conserva el signo negativo por si algún día hay un congelador. Diez pruebas lo
+anclan, incluida la que verifica que «24,9» nunca vuelva a ser 249.
+
+**Las franjas de lectura pasan a ser de dos horas**, como se pidió: mañana
+**07:00–09:00**, mediodía **12:00–14:00** y tarde **17:00–19:00**. Las seis
+farmacias abren a las 07:00 y cierran entre las 19:00 y las 22:00, así que las
+tres ventanas caen enteras dentro de su horario.
+
+**La bodega central lleva las suyas, y no es un capricho.** Abre a las 08:00 y
+cierra a las 17:00: con la ventana de la tarde en 17:00–19:00, su lectura
+vespertina caería siempre fuera del horario, nadie podría anotarla nunca, y el
+cierre del mes informaría un faltante diario que no es un incumplimiento sino un
+error de configuración. Un hueco que se genera solo enseña a ignorar los huecos,
+que es lo contrario de para qué existe la bitácora. Así que la bodega lleva
+**08–10 / 12–14 / 15–17** —la misma idea dentro de su día—, su limpieza pasa a
+08:00–10:00 y 15:00–17:00 (antes empezaba una hora antes de abrir y terminaba
+tres después de cerrar), y **deja de esperar registros el domingo**, que es el
+día en que está cerrada. El refrigerador, que lleva dos lecturas y vive en la
+bodega, queda en 08–10 y 15–17.
+
+Es configuración, no datos: hay 0 lecturas y 0 limpiezas registradas, así que no
+reescribe ningún mes ya contado. Migración `20260817155040`.
+
 ## v2.653.2 — El instalador de la caja ya no confunde una llave rechazada con falta de internet
 
 `instalar.sh` moría en el primer paso diciendo **«esta computadora no llega al

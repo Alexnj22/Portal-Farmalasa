@@ -385,13 +385,29 @@ export async function despacharTrasladoPedido(pedidoId, sucId) {
  * viaja en su propio traslado, cualquiera de las dos formas recibe traslados
  * COMPLETOS: no depende de que el sistema soporte recepción parcial, que no la
  * soporta.
+ *
+ * `enSegundoPlano` decide QUIÉN espera, y la respuesta cambia con él:
+ *
+ *   · sin él (por omisión) se espera el resultado completo — `recibidas`,
+ *     `pedidas`, `completo` y los fallos. Es lo que necesita quien recibe UN
+ *     producto para venderlo ya: sin saber si entró, no puede facturarlo.
+ *   · con él vuelve un `{ ok: true, en_segundo_plano: true, pedidas }` en cuanto
+ *     el encargo queda tomado, y el trabajo sigue del lado del servidor. Es para
+ *     confirmar una hoja o el pedido entero: 35 productos son 18-45 s medidos, y
+ *     la sala no tiene por qué mirar la pantalla mientras tanto. El resultado se
+ *     lee después en la tarjeta del pedido («en el inventario» / «sin ingresar»).
+ *
+ * Que el trabajo siga aunque la sala pierda el internet no es un accidente: la
+ * función corre en el servidor, no en el navegador. Lo único que se pierde es la
+ * respuesta.
  */
-export async function recibirTrasladoPedido(pedidoId, sucId, { hoja = null, itemIds = [] } = {}) {
+export async function recibirTrasladoPedido(pedidoId, sucId, { hoja = null, itemIds = [], enSegundoPlano = false } = {}) {
     const { data, error } = await supabase.functions.invoke('trasladar-pedido-erp', {
         body: {
             pedido_id: pedidoId, erp_sucursal_id: sucId, accion: 'recibir',
             ...(hoja != null ? { hoja } : {}),
             ...(itemIds.length ? { pedido_item_ids: itemIds } : {}),
+            ...(enSegundoPlano ? { background: true } : {}),
         },
     });
     if (error) {

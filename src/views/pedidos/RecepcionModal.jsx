@@ -548,6 +548,17 @@ export default function RecepcionModal({
         () => filasAbiertas.filter(r => !yaRecibido(r)),
         [filasAbiertas, yaRecibido]);
 
+    // ── Mientras guarda, cerrar la pestaña se pregunta ──────────────────────────
+    // Tocar afuera, Escape y el arrastre ya están bloqueados mientras `saving`
+    // (el modal se pasa `onClose={undefined}`), pero cerrar la pestaña o recargar
+    // no lo frenaba nada — y ahí sí se corta lo que esté a mitad de camino.
+    useEffect(() => {
+        if (!saving) return undefined;
+        const avisar = (e) => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', avisar);
+        return () => window.removeEventListener('beforeunload', avisar);
+    }, [saving]);
+
     // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
@@ -710,16 +721,30 @@ export default function RecepcionModal({
     // El aviso va por toast y no en la franja del pie: los tres caminos pueden
     // terminar cerrando el modal, y ahí la franja se va con él sin que nadie la
     // lea.
-    const ingresarAlInventario = useCallback(async (itemIds) => {
+    // `enSegundoPlano`: la sala NO espera al sistema (2026-08-17, pedido por el
+    // usuario — «se tarda bastante»). Medido: 0.49-1.20 s por producto, o sea
+    // 18-45 s una hoja de 35 y varios minutos un pedido entero, todo con la
+    // pantalla trabada. Lo que la sala está haciendo —contar— ya quedó guardado
+    // antes de esta llamada; el ingreso es la otra mitad y tiene su propia red:
+    // la tarjeta del pedido dice «en el inventario» o «sin ingresar» con su
+    // reintento. Sólo espera quien recibe UN producto para venderlo ahora.
+    const ingresarAlInventario = useCallback(async (itemIds, { enSegundoPlano = false } = {}) => {
         // SIN ids no se llama. La función sin `pedido_item_ids` ni `hoja` recibe
         // TODO lo pendiente de la sucursal: una hoja cuyos renglones ya se
         // recibieron de a uno deja la lista vacía, y esa llamada ingresaría el
         // pedido completo sin que nadie lo pidiera.
         if (!itemIds.length) return { ok: true };
         try {
-            const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds });
+            const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds, enSegundoPlano });
             if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') return { ok: false, error: erp.error ?? 'sin detalle' };
-            return { ok: true };
+            // Con la respuesta directa, «entraron 20 de 37» no es un fallo pero
+            // tampoco es haber terminado — y antes se leía como éxito porque
+            // sólo se miraba `ok`. Lo que falta queda 'enviada' y lo levanta el
+            // reintento de la tarjeta.
+            if (erp.completo === false && !erp.en_segundo_plano) {
+                return { ok: false, error: `entraron ${erp.recibidas ?? 0} de ${erp.pedidas ?? itemIds.length}` };
+            }
+            return { ok: true, enCurso: erp.en_segundo_plano === true };
         } catch (e) {
             console.error('ingreso al inventario:', e);
             return { ok: false, error: mensajeAmigable(e) };
@@ -731,6 +756,17 @@ export default function RecepcionModal({
             'Recepción guardada, inventario pendiente',
             `El conteo quedó guardado, pero los productos no entraron al inventario: ${detalle}. Se puede reintentar.`,
             'error', 8000,
+        );
+    }, []);
+
+    // El conteo ya está guardado y la sala se puede ir; los productos siguen
+    // entrando. Decirlo es la mitad del trato: sin este aviso, cerrar la pantalla
+    // enseguida se lee como que algo quedó a medias.
+    const avisarIngresoEnCurso = useCallback((n) => {
+        useToastStore.getState().showToast(
+            'Contado',
+            `${n} producto${n !== 1 ? 's' : ''} entrando al inventario. Puedes seguir trabajando — la tarjeta del pedido avisa cuando terminen.`,
+            'success', 6000,
         );
     }, []);
 
@@ -852,9 +888,10 @@ export default function RecepcionModal({
             });
             if (error) throw error;
 
-            // ── Y lo mismo en el inventario ─────────────────────────────────
-            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
+            // ── Y lo mismo en el inventario, sin hacer esperar a la sala ────
+            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id), { enSegundoPlano: true });
             if (!ing.ok) avisarIngresoFallido(ing.error);
+            else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
 
             const boxHasDiff = p_items.some(it => it.error_tipo !== null);
             const newAnyDiff = anyHasDiff || boxHasDiff;
@@ -881,7 +918,7 @@ export default function RecepcionModal({
     }, [
         alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja,
         pedido, sucursalId, user, anyHasDiff, saveExtras, onConfirmed, onClose,
-        ingresarAlInventario, avisarIngresoFallido,
+        ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso,
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
@@ -914,8 +951,9 @@ export default function RecepcionModal({
             // Dar por bueno también ingresa: «Todo OK» y «Confirmar» dejan el
             // mismo renglón recibido, y sólo uno de los dos metía el producto al
             // inventario. Quien lo apretaba se quedaba sin existencias.
-            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
+            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id), { enSegundoPlano: true });
             if (!ing.ok) avisarIngresoFallido(ing.error);
+            else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
 
             if (alcance === 'especial') {
                 await cerrarEspecial({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
@@ -934,19 +972,22 @@ export default function RecepcionModal({
         }
     }, [alcance, filasPorContar, pedido, sucursalId, user, anyHasDiff,
         cerrarEspecial, cerrarHoja, saveExtras, onConfirmed, onClose,
-        ingresarAlInventario, avisarIngresoFallido]);
+        ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso]);
 
     // ── Confirmar de una vez todo lo que se puede (Todo OK) ────────────────────
+    //
+    // Era un viaje POR HOJA —un RPC y una llamada al sistema cada una, en fila— y
+    // otro par por cada caja especial. Un pedido de 4 hojas y 3 especiales pagaba
+    // siete arranques y siete sesiones del sistema para el mismo trabajo, con la
+    // sala mirando la pantalla. Ahora: UN conteo con todo adentro (es una sola
+    // transacción: o queda todo contado o no queda nada), UNA marca de hojas y
+    // UN encargo de ingreso que sigue en segundo plano.
     const handleConfirmarTodo = useCallback(async () => {
         setSaving(true); setSaveError(null);
-        // El ingreso al inventario va POR HOJA y no en una sola llamada al
-        // final: un pedido grande pasa de las 500 líneas que la recepción trae
-        // por vuelta, y ahí el resto se quedaría afuera en silencio. Los fallos
-        // se juntan y se avisan una vez —dentro del bucle, cada aviso pisaría al
-        // anterior—.
-        const fallosIngreso = [];
         try {
             let newRec = [...allRecibidas];
+            const p_items = [];
+            const hojasConfirmadas = [];
             for (const hojaNum of accessibleHojaNums) {
                 if (newRec.includes(hojaNum)) continue;
                 // Regla del usuario: una hoja que venía en una caja dañada o que
@@ -957,65 +998,70 @@ export default function RecepcionModal({
                 const ids = itemIdsByHoja[String(hojaNum)];
                 if (!ids) continue;
                 const hojaRows = sortedRows.filter(r => ids.has(r.id) && !yaRecibido(r));
-                if (!hojaRows.length) {
-                    // Sin renglones por contar la hoja igual queda contada: sus
-                    // productos se recibieron de a uno y ya están adentro.
-                    newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
-                    continue;
-                }
-                const p_items = hojaRows.map(r => {
+                // Sin renglones por contar la hoja igual queda contada: sus
+                // productos se recibieron de a uno y ya están adentro.
+                newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
+                if (!hojaRows.length) continue;
+                hojasConfirmadas.push({ hoja: hojaNum, items: hojaRows.length });
+                for (const r of hojaRows) {
                     const erpFactor  = Number(r.factor) || 1;
                     const dispFactor = Number(r.dispatch_factor) || erpFactor;
                     const rawQty     = Math.round(toDispatch(enviadoDe(r), erpFactor, dispFactor) * dispFactor / erpFactor);
-                    return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
-                });
-                const { error } = await supabase.rpc('receive_pedido_sucursal', {
-                    p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
-                    p_items, p_received_by: user?.id ?? null,
-                });
-                if (error) throw error;
-                const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
-                if (!ing.ok) fallosIngreso.push(`H${hojaNum}: ${ing.error}`);
-                newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
-                    sucursal_id: sucursalId, hoja: hojaNum, items_count: p_items.length, todo_ok: true,
-                    entro_al_inventario: ing.ok,
-                });
+                    p_items.push({ pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null });
+                }
             }
-            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
-            if (recErr) throw recErr;
-            setLocalRec(newRec.filter(n => !initHojasRecibidas.includes(n)));
 
-            // También confirmar cajas especiales accesibles (no faltantes)
+            // También las cajas especiales accesibles (no faltantes)
             const newConfirmedEspIds = new Set([...confirmedEspecialIds]);
+            const especialesConfirmadas = [];
             for (const { label, item } of especialItems) {
                 if (item.falta_caja) continue; // en reenvío, no tocar
                 if (confirmedEspecialIds.has(item.id) || item.status === 'recibido') continue;
                 const erpF  = Number(item.factor) || 1;
                 const dispF = Number(item.dispatch_factor) || erpF;
                 const rawQty = Math.round(toDispatch(enviadoDe(item), erpF, dispF) * dispF / erpF);
+                p_items.push({ pedido_item_id: item.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null });
+                newConfirmedEspIds.add(item.id);
+                especialesConfirmadas.push(label);
+            }
+
+            if (p_items.length) {
                 const { error } = await supabase.rpc('receive_pedido_sucursal', {
                     p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
-                    p_items: [{ pedido_item_id: item.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null }],
-                    p_received_by: user?.id ?? null,
+                    p_items, p_received_by: user?.id ?? null,
                 });
                 if (error) throw error;
-                const ingEsp = await ingresarAlInventario([item.id]);
-                if (!ingEsp.ok) fallosIngreso.push(`${label}: ${ingEsp.error}`);
-                newConfirmedEspIds.add(item.id);
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
-                    sucursal_id: sucursalId, especial: label, todo_ok: true,
-                    entro_al_inventario: ingEsp.ok,
-                });
             }
+
+            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
+            if (recErr) throw recErr;
+            setLocalRec(newRec.filter(n => !initHojasRecibidas.includes(n)));
             setConfirmedEspecialIds(newConfirmedEspIds);
 
+            // El ingreso al sistema, de una sola vez y sin esperarlo. Si falla el
+            // encargo mismo se avisa acá; lo que falle adentro queda escrito en la
+            // tabla y sale en la tarjeta como «sin ingresar», con su reintento.
+            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id), { enSegundoPlano: true });
+            if (!ing.ok) avisarIngresoFallido(ing.error);
+            else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
+
             await saveExtras();
+            for (const { hoja: h, items } of hojasConfirmadas) {
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
+                    sucursal_id: sucursalId, hoja: h, items_count: items, todo_ok: true,
+                    ingreso_en_segundo_plano: ing.ok && ing.enCurso,
+                });
+            }
+            for (const label of especialesConfirmadas) {
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
+                    sucursal_id: sucursalId, especial: label, todo_ok: true,
+                    ingreso_en_segundo_plano: ing.ok && ing.enCurso,
+                });
+            }
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
-                ingresos_fallidos: fallosIngreso.length || undefined,
+                items_count: p_items.length,
             });
-            if (fallosIngreso.length) avisarIngresoFallido(fallosIngreso.join(' · '));
             // Sólo se da por terminado si no quedó nada por revisar ni en reenvío
             const quedaPorRevisar = accessibleHojaNums.some(n => hojasAlertadas.has(n) && !newRec.includes(n));
             onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems && !quedaPorRevisar });
@@ -1028,7 +1074,7 @@ export default function RecepcionModal({
     }, [accessibleHojaNums, allRecibidas, itemIdsByHoja, sortedRows, pedido, sucursalId, user,
         anyHasDiff, initHojasRecibidas, saveExtras, extras, onConfirmed, onClose, hojasAlertadas,
         especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems,
-        yaRecibido, ingresarAlInventario, avisarIngresoFallido]);
+        yaRecibido, ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso]);
 
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {
@@ -1315,7 +1361,9 @@ export default function RecepcionModal({
                 <ConfirmModal
                     isOpen={confirmarTodoOpen}
                     onClose={() => setConfirmarTodoOpen(false)}
-                    onConfirm={() => { setConfirmarTodoOpen(false); handleConfirmarTodo(); }}
+                    /* Puesto mientras guarda — ver el gemelo de la pantalla de
+                       items: es la única señal grande de que está trabajando. */
+                    onConfirm={async () => { await handleConfirmarTodo(); setConfirmarTodoOpen(false); }}
                     title="¿Dar por bueno todo el pedido?"
                     message={
                         'Se van a confirmar todas las hojas y cajas especiales tal como se enviaron, sin contarlas, '
@@ -1814,10 +1862,16 @@ export default function RecepcionModal({
             <ConfirmModal
                 isOpen={confirmarHoja !== null}
                 onClose={() => setConfirmarHoja(null)}
-                onConfirm={() => {
+                /* El diálogo se queda puesto MIENTRAS guarda, no se cierra un
+                   instante antes: `ConfirmModal` ya sabe pintar «Procesando… No
+                   cierres esta ventana» con el fondo y Escape bloqueados
+                   (`isProcessing`), y cerrándolo primero esa pantalla no se veía
+                   nunca — quedaba sólo un spinner de 14px adentro del botón, que
+                   es justo por qué alguien toca afuera a ver si pasa algo. */
+                onConfirm={async () => {
                     const modo = confirmarHoja;
+                    if (modo === 'todook') await handleTodoOk(); else await handleConfirmarCaja();
                     setConfirmarHoja(null);
-                    if (modo === 'todook') handleTodoOk(); else handleConfirmarCaja();
                 }}
                 title={confirmarHoja === 'todook'
                     ? `¿Dar por bueno todo lo de ${rotuloAbierto}?`

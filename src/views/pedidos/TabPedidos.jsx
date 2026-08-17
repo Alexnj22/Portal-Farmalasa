@@ -132,6 +132,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         cardStats,
         trasladoStats,
         ingresoStats,
+        ingresoEnCurso,
+        vigilarIngreso,
         handleReintentarIngreso,
         entregaMap,
         anularModal, setAnularModal,
@@ -415,6 +417,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 // a la sala sin poder facturar.
                                                 const ing = ingresoStats?.[cardKey];
                                                 if (!ing || !ing.lineas) return null;
+                                                // Está entrando AHORA: la sala confirmó y se fue, y
+                                                // el ingreso sigue solo. Mientras dure, el rojo de
+                                                // «sin ingresar» sería un susto y su reintento una
+                                                // carrera contra algo que ya está en marcha.
+                                                if (ingresoEnCurso?.[cardKey] && ing.sin_ingresar > 0) return (
+                                                    <Badge variant="chart-3" uppercase={false}>entrando al inventario…</Badge>
+                                                );
                                                 if (ing.sin_ingresar > 0) return (
                                                     <>
                                                         <Badge variant="danger" icon={AlertTriangle} uppercase={false}>
@@ -921,6 +930,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                     onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);
+                        // El ingreso al inventario quedó corriendo solo: se le
+                        // pregunta cada tanto hasta que termine, para que la
+                        // tarjeta pase a «en el inventario» sin recargar nada.
+                        vigilarIngreso(pedido.id, sucId);
                         if (allDone) {
                             await handleMarkErp(pedido.id, sucId, key);
                             // Re-fetch items to get accurate con_diferencia count

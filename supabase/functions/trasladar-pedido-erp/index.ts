@@ -61,6 +61,13 @@ import {
 const PRESUPUESTO_FG_MS = 110_000; // respuesta directa: hay que alcanzar a contestar
 const PRESUPUESTO_BG_MS = 240_000; // background: corto y se retoma, nunca una corrida larga
 
+// Cuánto tiene que llevar tomada una línea de recepción para darla por huérfana.
+// Una viva tarda como mucho ~90 s (dos pedidos al sistema, 45 s de espera cada
+// uno), y el reloj de pared del worker corta a los 400 s: 15 minutos no puede
+// pisar una corrida en curso, y es corto comparado con dejarla trabada para
+// siempre.
+const RESCATE_TOMADA_MS = 15 * 60_000;
+
 interface ItemPedido {
   id: number;
   erp_product_id: number;
@@ -326,19 +333,51 @@ Deno.serve(async (req) => {
           }, 403);
       }
 
-      let q = admin.from("pedido_traslado_linea")
-        .select("id, pedido_item_id, erp_product_id, id_traslado, clave, hoja, cantidad")
+      // ── Rescate de las líneas que quedaron tomadas ────────────────────────
+      // `recibiendo` es el candado: se toma la línea ANTES de tocar el sistema.
+      // Si la corrida muere entre las dos cosas —al worker lo matan por reloj
+      // de pared, o el sistema se cuelga— la línea queda tomada para siempre:
+      // el reintento sólo levanta las `enviada`, así que la tarjeta se quedaba
+      // en «sin ingresar» sin ninguna forma de arreglarlo desde el portal.
+      //
+      // Se devuelve a la cola, y NO es un reintento a ciegas: el bucle de abajo
+      // abre primero la pantalla del traslado, y un traslado ya recibido no
+      // muestra líneas — ese caso ya está contemplado y lo anota como recibido
+      // sin volver a moverlo. O sea que la verificación contra el sistema es
+      // parte del camino normal, y por eso acá alcanza con re-encolar.
+      //
+      // El corte es holgado a propósito: una línea viva puede tardar hasta ~90 s
+      // (dos pedidos con 45 s de espera cada uno), así que 15 minutos no puede
+      // pisar una corrida en curso.
+      const corteTomada = new Date(Date.now() - RESCATE_TOMADA_MS).toISOString();
+      await admin.from("pedido_traslado_linea")
+        .update({
+          estado: "enviada",
+          aviso: "Una corrida anterior se cortó con esta línea tomada. Se vuelve a la cola: "
+            + "antes de recibirla se comprueba en el sistema si ya había entrado.",
+          updated_at: new Date().toISOString(),
+        })
         .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
-        .eq("estado", "enviada")
-        .not("id_traslado", "is", null)
-        .order("hoja", { ascending: true })
-        .limit(500);
-      if (hoja != null)     q = q.eq("hoja", hoja);
-      if (itemIds.length)   q = q.in("pedido_item_id", itemIds);
+        .eq("estado", "recibiendo")
+        .lt("updated_at", corteTomada);
 
-      const { data: lineas, error: lineasErr } = await q;
-      if (lineasErr) throw lineasErr;
-      if (!lineas?.length)
+      const traerLineas = async () => {
+        let q = admin.from("pedido_traslado_linea")
+          .select("id, pedido_item_id, erp_product_id, id_traslado, clave, hoja, cantidad")
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+          .eq("estado", "enviada")
+          .not("id_traslado", "is", null)
+          .order("hoja", { ascending: true })
+          .limit(500);
+        if (hoja != null)     q = q.eq("hoja", hoja);
+        if (itemIds.length)   q = q.in("pedido_item_id", itemIds);
+        const { data, error } = await q;
+        if (error) throw error;
+        return data ?? [];
+      };
+
+      const lineas = await traerLineas();
+      if (!lineas.length)
         return json({
           ok: false, codigo: "NADA_QUE_RECIBIR",
           error: hoja != null
@@ -346,103 +385,152 @@ Deno.serve(async (req) => {
             : "No hay traslados pendientes de recibir para eso.",
         }, 409);
 
-      // Sesión en el DESTINO: la sucursal es estado global de la sesión del
-      // sistema, y recibir escribe en la sala que recibe.
-      const cookie = await sesionEn(sucId, login);
+      // ── Quién espera el resultado ─────────────────────────────────────────
+      // Recibir un producto suelto es rápido y quien lo aprieta necesita saber
+      // si ya lo puede facturar: ése espera. Confirmar una hoja entera son 35
+      // productos × dos viajes al sistema, medido en 18-45 s, y la sala no tiene
+      // por qué quedarse mirando la pantalla: ésa lo pide en segundo plano.
+      //
+      // Explícito y no `!== false` como en el despacho: el valor por omisión
+      // acá es ESPERAR. Un llamador viejo que no sabe de esto sigue recibiendo
+      // la respuesta completa que espera.
+      const enSegundoPlano = cuerpo.background === true;
+      const presupuesto = enSegundoPlano ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS;
+
       let recibidas = 0;
       const fallos: { clave: string; error: string }[] = [];
 
-      for (const ln of lineas) {
-        if (Date.now() - arranque > PRESUPUESTO_FG_MS) break;
+      const correr = async (lote: typeof lineas) => {
+        // Sesión en el DESTINO: la sucursal es estado global de la sesión del
+        // sistema, y recibir escribe en la sala que recibe.
+        const cookie = await sesionEn(sucId, login);
 
-        // Se toma la línea ANTES de tocar el sistema. Dos personas de la sala
-        // confirmando la misma hoja a la vez pasarían las dos la lectura de
-        // arriba; acá la segunda no entra. Recibir dos veces duplicaría la
-        // existencia, y eso no se deshace solo.
-        const { data: tomadaRec } = await admin.from("pedido_traslado_linea")
-          .update({ estado: "recibiendo", updated_at: new Date().toISOString() })
-          .eq("id", ln.id).eq("estado", "enviada")
-          .select("id").maybeSingle();
-        if (!tomadaRec) continue;
+        for (const ln of lote) {
+          if (Date.now() - arranque > presupuesto) break;
 
-        const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
-          undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+          // Se toma la línea ANTES de tocar el sistema. Dos personas de la sala
+          // confirmando la misma hoja a la vez pasarían las dos la lectura de
+          // arriba; acá la segunda no entra. Recibir dos veces duplicaría la
+          // existencia, y eso no se deshace solo.
+          const { data: tomadaRec } = await admin.from("pedido_traslado_linea")
+            .update({ estado: "recibiendo", updated_at: new Date().toISOString() })
+            .eq("id", ln.id).eq("estado", "enviada")
+            .select("id").maybeSingle();
+          if (!tomadaRec) continue;
 
-        const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
-          .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+          const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
+            undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
 
-        if (filas.length === 0) {
-          // Un traslado ya recibido deja de mostrar líneas. No es un error del
-          // portal: es que alguien lo recibió por el sistema. Se anota como
-          // recibido para que el pedido no quede colgado esperándolo.
+          const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
+            .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+
+          if (filas.length === 0) {
+            // Un traslado ya recibido deja de mostrar líneas. No es un error del
+            // portal: es que alguien lo recibió por el sistema. Se anota como
+            // recibido para que el pedido no quede colgado esperándolo.
+            await admin.from("pedido_traslado_linea").update({
+              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+              aviso: "Ya no mostraba líneas: se había recibido o anulado desde el sistema.",
+              updated_at: new Date().toISOString(),
+            }).eq("id", ln.id);
+            recibidas++;
+            continue;
+          }
+
+          // Se recibe COMPLETO lo que se despachó. Recibir de menos es declarar un
+          // faltante, y eso necesita a alguien mirando la caja, no una función:
+          // esa diferencia se cuenta en el portal, en la pantalla de recepción.
+          const partes: string[] = [];
+          let total = 0;
+          for (const tr of filas) {
+            const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
+            const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+            const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+            const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+            const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+            const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+            const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+            if (!idProd || !idPres) continue;
+            // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
+            // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
+            // RECIBIDO. Mismo lugar del string que en el envío, otro significado.
+            partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+            total += Number(compra) * Number(esp);
+          }
+
+          if (partes.length === 0) {
+            await admin.from("pedido_traslado_linea")
+              .update({ estado: "enviada", updated_at: new Date().toISOString() })
+              .eq("id", ln.id);
+            fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
+            continue;
+          }
+
+          const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
+          const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+            process: "insert",
+            datos: partes.join("#") + "#",
+            cuantos: String(partes.length),
+            total: total.toFixed(4),
+            fecha: hoySV(),
+            concepto,
+            destino: String(ubicDestino),
+            id_traslado: String(ln.id_traslado),
+          }), { extra: { Referer: RECIBIR } }));
+
+          if (!resp.ok) {
+            // Vuelve a 'enviada': el traslado sigue vivo y se puede reintentar.
+            await admin.from("pedido_traslado_linea")
+              .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
+                        updated_at: new Date().toISOString() })
+              .eq("id", ln.id);
+            fallos.push({ clave: String(ln.clave), error: resp.msg || "sin detalle" });
+            continue;
+          }
+
+          recibidas++;
           await admin.from("pedido_traslado_linea").update({
-            estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-            aviso: "Ya no mostraba líneas: se había recibido o anulado desde el sistema.",
+            estado: "recibida",
+            recibido_at: new Date().toISOString(),
+            recibido_por: quien.id,
             updated_at: new Date().toISOString(),
           }).eq("id", ln.id);
-          recibidas++;
-          continue;
         }
+      };
 
-        // Se recibe COMPLETO lo que se despachó. Recibir de menos es declarar un
-        // faltante, y eso necesita a alguien mirando la caja, no una función:
-        // esa diferencia se cuenta en el portal, en la pantalla de recepción.
-        const partes: string[] = [];
-        let total = 0;
-        for (const tr of filas) {
-          const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
-          const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-          const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-          const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-          if (!idProd || !idPres) continue;
-          // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
-          // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
-          // RECIBIDO. Mismo lugar del string que en el envío, otro significado.
-          partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-          total += Number(compra) * Number(esp);
+      // En segundo plano se sigue hasta vaciar la cola: el lote es de 500 y un
+      // pedido grande los pasa. Con la respuesta ya entregada no hay a quién
+      // avisarle del corte, así que lo que queda tiene que quedar en la tabla —
+      // y queda: las líneas siguen 'enviada' y la tarjeta las cuenta como «sin
+      // ingresar», con su reintento.
+      const correrTodo = async () => {
+        let lote = lineas;
+        while (lote.length && Date.now() - arranque < presupuesto) {
+          await correr(lote);
+          if (!enSegundoPlano || lote.length < 500) break;
+          lote = await traerLineas();
         }
+      };
 
-        if (partes.length === 0) {
-          await admin.from("pedido_traslado_linea")
-            .update({ estado: "enviada", updated_at: new Date().toISOString() })
-            .eq("id", ln.id);
-          fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
-          continue;
-        }
-
-        const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
-        const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
-          process: "insert",
-          datos: partes.join("#") + "#",
-          cuantos: String(partes.length),
-          total: total.toFixed(4),
-          fecha: hoySV(),
-          concepto,
-          destino: String(ubicDestino),
-          id_traslado: String(ln.id_traslado),
-        }), { extra: { Referer: RECIBIR } }));
-
-        if (!resp.ok) {
-          // Vuelve a 'enviada': el traslado sigue vivo y se puede reintentar.
-          await admin.from("pedido_traslado_linea")
-            .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
-                      updated_at: new Date().toISOString() })
-            .eq("id", ln.id);
-          fallos.push({ clave: String(ln.clave), error: resp.msg || "sin detalle" });
-          continue;
-        }
-
-        recibidas++;
-        await admin.from("pedido_traslado_linea").update({
-          estado: "recibida",
-          recibido_at: new Date().toISOString(),
-          recibido_por: quien.id,
-          updated_at: new Date().toISOString(),
-        }).eq("id", ln.id);
+      if (enSegundoPlano) {
+        // 202: recibido el encargo, todavía no terminado. La sala no espera —lo
+        // que le importa, el conteo, ya está guardado— y el resultado se lee en
+        // la tarjeta del pedido, que sabe decir «en el inventario» o «sin
+        // ingresar» con su reintento.
+        // @ts-ignore — EdgeRuntime es global del runtime de Supabase
+        EdgeRuntime.waitUntil(
+          correrTodo().catch((e: unknown) => {
+            console.error("recibir en segundo plano:", e instanceof Error ? e.message : String(e));
+          }),
+        );
+        return json({
+          ok: true,
+          en_segundo_plano: true,
+          pedidas: lineas.length,
+        }, 202);
       }
+
+      await correrTodo();
 
       const { data: resumen } = await admin.rpc("resumen_traslado_pedido", {
         p_pedido_id: pedidoId, p_sucursal_id: sucId,
@@ -450,6 +538,11 @@ Deno.serve(async (req) => {
 
       return json({
         ok: fallos.length === 0,
+        // Cortar por presupuesto NO es un fallo, pero tampoco es haber
+        // terminado: sin esto la respuesta decía `ok: true` con la mitad de las
+        // líneas adentro, y quien la lee sólo miraba `ok`. Lo que falta se
+        // reintenta desde la tarjeta.
+        completo: recibidas === lineas.length && fallos.length === 0,
         recibidas,
         pedidas: lineas.length,
         fallos,

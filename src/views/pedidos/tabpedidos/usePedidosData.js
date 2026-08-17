@@ -133,6 +133,13 @@ export function usePedidosData({ searchTerm = '' }) {
     // del circuito que deja a la sala sin poder facturar y no se veía en
     // ninguna pantalla: el aviso era un toast que se va solo.
     const [ingresoStats, setIngresoStats] = useState({});
+    // Las tarjetas cuyo ingreso al inventario está corriendo AHORA, en segundo
+    // plano (2026-08-17). Sin esto, confirmar y cerrar la pantalla dejaba la
+    // tarjeta en rojo —«N sin ingresar»— durante el minuto que tarda el sistema,
+    // invitando a apretar «Reintentar» sobre algo que ya está en marcha.
+    const [ingresoEnCurso, setIngresoEnCurso] = useState({});
+    // Los relojes de esa vigilancia, para poder apagarlos al desmontar.
+    const vigilanciaRef = useRef({});
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
     const [entregaMap, setEntregaMap] = useState({}); // cardKey → { entregado_at, entregado_por, ruta }
 
@@ -1218,15 +1225,69 @@ export function usePedidosData({ searchTerm = '' }) {
             if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(erp.error ?? 'No se pudo ingresar.');
             useStaff.getState().appendAuditLog('REINTENTAR_INGRESO_INVENTARIO', pedidoId, {
                 sucursal_id: sucId, items_count: itemIds.length,
+                entraron: erp.recibidas ?? null, completo: erp.completo ?? null,
             });
-            useToastStore.getState().showToast('Ingresado',
-                `${itemIds.length} producto${itemIds.length !== 1 ? 's' : ''} entr${itemIds.length !== 1 ? 'aron' : 'ó'} al inventario.`, 'success');
+            // Lo que ENTRÓ, no lo que se pidió. Decía «N entraron» sobre el
+            // tamaño de la lista aunque no hubiera entrado ninguno: con
+            // `NADA_QUE_RECIBIR` —que se acepta como éxito— la cuenta era cero y
+            // el aviso igual felicitaba.
+            const entraron = erp.recibidas ?? 0;
+            if (entraron === 0) {
+                useToastStore.getState().showToast('Nada entró al inventario',
+                    'Los productos siguen pendientes. Si se repite, hay que revisarlos en el sistema.', 'error', 8000);
+            } else {
+                useToastStore.getState().showToast('Ingresado',
+                    `${entraron} producto${entraron !== 1 ? 's' : ''} entr${entraron !== 1 ? 'aron' : 'ó'} al inventario.`
+                    + (erp.completo === false ? ` Quedan ${itemIds.length - entraron} por reintentar.` : ''),
+                    erp.completo === false ? 'info' : 'success');
+            }
             await loadActive();
         } catch (e) {
             console.error(e);
             useToastStore.getState().showToast('No se pudo ingresar', mensajeAmigable(e), 'error');
         } finally { setBusyAction(null); }
     }, [busyAction, loadActive]);
+
+    // ── Vigilar un ingreso que quedó corriendo en segundo plano ─────────────────
+    //
+    // Desde v2.656.0 confirmar una hoja NO espera al sistema: la sala se va y el
+    // ingreso sigue del lado del servidor (18-45 s una hoja de 35 productos,
+    // medido). Eso deja un hueco: la tarjeta muestra el resultado y nadie se lo
+    // vuelve a preguntar, así que hasta la próxima recarga se quedaba con la foto
+    // de antes —en rojo, invitando a un reintento innecesario—.
+    //
+    // Se pregunta sólo por ESTE pedido y sólo por el resumen: una fila, no la
+    // vista entera. Y para de preguntar en cuanto no queda nada pendiente o a los
+    // 4 minutos, que es más de lo que tarda el pedido más grande medido.
+    const vigilarIngreso = useCallback((pedidoId, sucId) => {
+        const cardKey = `act_${pedidoId}_${sucId}`;
+        if (vigilanciaRef.current[cardKey]) clearInterval(vigilanciaRef.current[cardKey].timer);
+        setIngresoEnCurso(p => ({ ...p, [cardKey]: true }));
+
+        const fin = () => {
+            const v = vigilanciaRef.current[cardKey];
+            if (v) { clearInterval(v.timer); delete vigilanciaRef.current[cardKey]; }
+            setIngresoEnCurso(p => { const n = { ...p }; delete n[cardKey]; return n; });
+        };
+
+        let vueltas = 0;
+        const timer = setInterval(async () => {
+            vueltas += 1;
+            const { data, error } = await fetchResumenIngresoPedidos([pedidoId]);
+            if (error) { console.error('vigilarIngreso:', error.message); fin(); return; }
+            const fila = (data ?? []).find(r => r.erp_sucursal_id === sucId);
+            if (fila) setIngresoStats(p => ({ ...p, [cardKey]: fila }));
+            // Terminó cuando no queda nada por ingresar. Si el sistema dejó algo
+            // afuera, el tope corta y la tarjeta lo dice con su reintento.
+            if (!fila || fila.sin_ingresar === 0 || vueltas >= 20) fin();
+        }, 12_000);
+        vigilanciaRef.current[cardKey] = { timer };
+    }, []);
+
+    useEffect(() => () => {
+        Object.values(vigilanciaRef.current).forEach(v => clearInterval(v.timer));
+        vigilanciaRef.current = {};
+    }, []);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = await fetchItems(key, pedidoId, sucId);
@@ -1625,6 +1686,8 @@ export function usePedidosData({ searchTerm = '' }) {
         cardStats,
         trasladoStats,
         ingresoStats,
+        ingresoEnCurso,
+        vigilarIngreso,
         handleReintentarIngreso,
         entregaMap,
         anularModal, setAnularModal,

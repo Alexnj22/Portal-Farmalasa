@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarCheck, CheckCircle2, Clock, LockOpen, Thermometer } from 'lucide-react';
+import { AlertTriangle, CalendarCheck, CheckCircle2, Clock, LockOpen, Printer, Thermometer } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -8,8 +8,9 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import {
-    cerrarMes, correrPeriodo, fetchCierres, fetchResumenMes, hoySV, periodoDe, reabrirMes,
+    cerrarMes, correrPeriodo, fetchCierres, fetchMesImpreso, fetchResumenMes, hoySV, periodoDe, reabrirMes,
 } from '../../data/bitacoras';
+import { imprimirMesDeBitacoras } from '../../utils/bitacoraPrint';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El cierre de mes del regente.
@@ -58,6 +59,7 @@ function Cifra({ valor, label, tono }) {
 export default function TabCierre({ branchId, fechaVista }) {
     const { hasPermission } = useAuth();
     const puedeFirmar = hasPermission('bitacoras_cerrar_mes', 'can_edit');
+    const puedeImprimir = hasPermission('bitacoras_descargar', 'can_view');
 
     // Arranca en el mes ANTERIOR al de la fecha que se está mirando: el mes en
     // curso no se puede cerrar todavía, así que abrir ahí mostraría siempre un
@@ -70,6 +72,7 @@ export default function TabCierre({ branchId, fechaVista }) {
     const [motivo, setMotivo] = useState('');
     const [reabriendo, setReabriendo] = useState(false);
     const [guardando, setGuardando] = useState(false);
+    const [imprimiendo, setImprimiendo] = useState(false);
     const [error, setError] = useState(null);
 
     const cargar = useCallback(async () => {
@@ -106,6 +109,18 @@ export default function TabCierre({ branchId, fechaVista }) {
         cargar();
     }, [branchId, periodo, obs, cargar]);
 
+    // El papel se arma con SU PROPIA consulta, no con el resumen que ya está en
+    // pantalla: lo impreso tiene que ser una foto coherente del mes entero
+    // —grilla, limpieza y libro— tomada en un solo momento.
+    const imprimir = useCallback(async () => {
+        setImprimiendo(true);
+        setError(null);
+        const { mes, error: err } = await fetchMesImpreso(branchId, periodo);
+        setImprimiendo(false);
+        if (err) { setError(err.message ?? 'No se pudo armar el mes para imprimir.'); return; }
+        imprimirMesDeBitacoras(mes);
+    }, [branchId, periodo]);
+
     const reabrir = useCallback(async () => {
         setGuardando(true);
         setError(null);
@@ -132,11 +147,20 @@ export default function TabCierre({ branchId, fechaVista }) {
                     <span className="text-body-sm font-bold text-content-2">{nombreMes(periodo)}</span>
                 </PeriodStepper>
 
-                {cerrado
-                    ? <Badge variant="success" size="md" uppercase={false} icon={CheckCircle2}>Mes cerrado y firmado</Badge>
-                    : enCurso
-                        ? <Badge variant="neutral" size="md" uppercase={false} icon={Clock}>Todavía en curso</Badge>
-                        : <Badge variant="warning" size="md" uppercase={false}>Sin cerrar</Badge>}
+                <div className="flex items-center gap-2">
+                    {cerrado
+                        ? <Badge variant="success" size="md" uppercase={false} icon={CheckCircle2}>Mes cerrado y firmado</Badge>
+                        : enCurso
+                            ? <Badge variant="neutral" size="md" uppercase={false} icon={Clock}>Todavía en curso</Badge>
+                            : <Badge variant="warning" size="md" uppercase={false}>Sin cerrar</Badge>}
+
+                    {puedeImprimir && !cargando && resumen && !resumen.sin_dias && (
+                        <Button variant="secondary" size="sm" icon={Printer}
+                            onClick={imprimir} loading={imprimiendo}>
+                            Imprimir el mes
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {cargando ? <LoadingState label="Calculando el mes…" /> : !resumen ? (

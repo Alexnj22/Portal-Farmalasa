@@ -82,6 +82,27 @@ export async function fetchResumenMes(branchId, periodo) {
     return { resumen: data ?? null, error: null };
 }
 
+/**
+ * Todo el mes de una sala, en UN objeto, para imprimirlo.
+ *
+ * El RTS 6.1.14 prefiere el papel («preferiblemente debe estar de manera
+ * física»), así que el mes tiene que poder salir con la forma que un inspector
+ * reconoce: la grilla día a día con sus huecos, no una lista de lo anotado.
+ *
+ * Es una sola llamada a propósito. Cuatro consultas separadas pueden caer a
+ * cada lado de una anotación que entra en el medio, y el papel se contradiría
+ * consigo mismo — que es justo lo que un registro no puede hacer.
+ */
+export async function fetchMesImpreso(branchId, periodo) {
+    if (!branchId) return { mes: null, error: null };
+    const { data, error } = await supabase.rpc('get_bitacora_mes_impreso', {
+        p_branch_id: Number(branchId),
+        p_periodo: periodo,
+    });
+    if (error) return { mes: null, error };
+    return { mes: data ?? null, error: null };
+}
+
 /** Las áreas configuradas de una sala (o de todas, con alcance ALL). */
 export async function fetchAreas(branchId = null) {
     let qb = supabase.from('bitacora_areas')

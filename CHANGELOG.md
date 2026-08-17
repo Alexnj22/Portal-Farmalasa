@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.653.0 — Bitácoras: el mes sale impreso
+
+**El mes completo se imprime desde el cierre.** Botón «Imprimir el mes» en la
+pestaña Cierre de mes: sale una hoja carta con el resumen y la firma del
+regente, la grilla día a día de temperatura y humedad, la de limpieza y orden, y
+el libro foliado de dispensación bajo receta.
+
+**Por qué existe.** El RTS 11.02.04:24 §6.1.14 dice que la documentación
+«preferiblemente debe estar de manera física». La norma PREFIERE el papel — lo
+digital está permitido, pero con la carga extra de un procedimiento autorizado
+por el regente. Que la respuesta a «muéstreme la bitácora» sea «déjeme prender
+la computadora» es exactamente lo que esta hoja evita.
+
+**El hueco se imprime.** Cada día que tocaba sale con su casilla, y la que nadie
+llenó sale vacía y marcada con «—». Un papel que sólo lista lo anotado no se
+puede auditar: no distingue «no había que leer» de «nadie leyó», y esa
+distinción es toda la bitácora. Lo mismo con las desviaciones: cada lectura
+fuera de rango va subrayada en su celda y repetida al pie con la acción
+correctiva completa, que es lo que pide el ítem 5.6.5 y en la celda no cabe.
+
+**Cuatro cosas que en pantalla no se notan y en papel importan:**
+
+- **La dirección del establecimiento** en cada encabezado. La bitácora es del
+  local, no de la empresa: lo primero que hace un inspector es comprobar que la
+  hoja que tiene en la mano es de la sala en la que está parado.
+- **«BORRADOR»** en un recuadro cuando el regente todavía no firmó el mes. Sin
+  eso, un mes a medio llenar sale con la misma cara que el mes cerrado, y en
+  papel esa diferencia ya no se puede recuperar.
+- **El nombre completo de quien anotó**, no el de pila. ALCOA pide que el
+  registro sea «atribuible», y en una sala con dos Merlyn el nombre de pila no
+  atribuye a nadie.
+- **Una marca `(c)`** en el valor que se corrigió. El ítem 3.7 pide control de
+  correcciones y ALCOA pide que el dato sea «original»: un valor corregido
+  impreso igual que uno de primera mano borra justo lo que ese control existe
+  para mostrar.
+
+**Es una sola consulta, no cuatro.** Cuatro pueden caer a cada lado de una
+anotación que entra en el medio, y el papel se contradiría consigo mismo — que
+es justo lo que un registro no puede hacer.
+
+**Permiso propio: «Imprimir el mes completo»** (`bitacoras_descargar`). La hoja
+lleva el libro entero —paciente, medicamento y prescriptor de cada renglón—, o
+sea información de salud de personas con nombre, y en papel sale del portal para
+siempre. Por eso no viene con «ver».
+
+Migraciones `20260817060518` y `20260817061556`.
+
 ## v2.652.0 — Bitácoras: cada minuto, médico sólo del registro, y la tabla del libro más limpia
 
 **El libro se actualiza cada minuto**, no cada cinco. La venta llega al portal en

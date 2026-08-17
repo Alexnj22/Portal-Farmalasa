@@ -294,6 +294,11 @@ const GRUPOS_CRUDOS = [
                 // va a exigir a la sala TODOS los días, y de rebote cambia el
                 // número que el regente firma al cerrar.
                 { key: 'bitacoras_configurar',    label: 'Configurar áreas, franjas y rangos',  tipo: 'cap' },
+                // El mes impreso lleva el libro completo: paciente, medicamento
+                // y prescriptor de cada renglón. Eso es información de salud de
+                // personas con nombre, y en papel sale del portal para siempre.
+                // Por eso es su propia capacidad y no viene con «ver».
+                { key: 'bitacoras_descargar',     label: 'Imprimir el mes completo',            tipo: 'cap' },
             ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [

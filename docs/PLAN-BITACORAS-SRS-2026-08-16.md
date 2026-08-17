@@ -111,7 +111,7 @@ Tres cosas más que la norma pide y conviene tener anotadas desde ahora:
   6.4.5). Un año es el piso legal; no hay razón para borrar nunca.
 - **Listado de antibióticos con clasificación AWaRe de la OMS** —Acceso,
   Vigilancia, Reserva— para cada antibiótico (guía 1.13, MAYOR). Esto es un
-  requisito de catálogo, no de bitácora, y hoy no existe. Ver §7.
+  requisito de catálogo, no de bitácora, y hoy no existe. Ver §8.
 
 ### 1.5 · La quinta bitácora, que no estaba en la lista
 
@@ -132,7 +132,44 @@ O sea que el inspector la va a pedir sí o sí, y si el regente no estaba ese d�
 esa bitácora es la única defensa.
 
 Va en el módulo. Es la más barata de las cinco y es la que se le pide al
-inspector primero.
+inspector primero. El detalle de qué es y cómo se llena, en §3.4.
+
+### 1.6 · La condición que vale para las cinco, y que casi se me pasa
+
+RTS **6.1.14** — es el ítem que decide si un registro digital sirve o no sirve:
+
+> «Toda la documentación solicitada por este reglamento debe estar disponible
+> dentro del establecimiento; **preferiblemente debe estar de manera física**.
+> En caso de existir documentación digital esta debe manejarse conforme a un
+> procedimiento/protocolo/guía, previamente autorizados por el Regente y debe
+> garantizar que todos los documentos sean **atribuibles, legibles,
+> contemporáneos, originales y precisos**.»
+
+Esos cinco adjetivos no son adorno: son **ALCOA**, el principio de integridad de
+datos que se usa en toda la industria farmacéutica. Traducido a decisiones de
+este módulo:
+
+| adjetivo | qué obliga | cómo se cumple acá |
+|---|---|---|
+| **atribuible** | se sabe quién escribió cada cosa | `registrado_por` en toda fila, nunca opcional |
+| **legible** | se puede leer y entender | exportables y **papel** — ver abajo |
+| **contemporáneo** | **se escribió en el momento**, no después | se guarda la hora REAL de captura además de la franja, y una carga tardía se ve tardía |
+| **original** | es el registro primario, no una transcripción | la lectura se anota en el portal, no se copia de un papel |
+| **preciso** | exacto, y las correcciones se ven | nada se borra: corregir agrega una corrección con motivo y autor |
+
+**«Contemporáneo» es exactamente lo que vos dijiste** —«estos registros se hacen
+en el momento»— y es la razón técnica de que el módulo tenga que llegarle a la
+persona en su teléfono, ahí donde está el termómetro y ahí donde acaba de
+vender. Un sistema que sólo se puede llenar sentado en la computadora de la
+oficina produce registros no contemporáneos por construcción.
+
+**Y ojo con «preferiblemente debe estar de manera física».** La norma **prefiere
+el papel**. Lo digital está permitido, pero con la carga extra de tener un
+procedimiento autorizado por el regente. Consecuencia concreta: **las cinco
+bitácoras tienen que poder imprimirse**, y el mes cerrado tiene que salir en
+papel con una forma que un inspector reconozca. No es un extra: es lo que hace
+que la respuesta a «muéstreme la bitácora» no sea «déjeme prender la
+computadora».
 
 ---
 
@@ -270,6 +307,59 @@ Misma forma, menos columnas: `area_id, fecha, turno, realizada_por,
 observaciones, foto_url?`. La foto es opcional y no la pide la norma; sirve
 cuando el regente supervisa a distancia.
 
+### 3.4 · La bitácora del regente — qué es y cómo se llena
+
+**Qué es un regente.** Toda farmacia tiene que tener un **regente
+farmacéutico** —un químico farmacéutico inscrito en la JVPQF— durante todo su
+horario de funcionamiento (RTS 5.2.1). No es un cargo administrativo: es el
+**responsable de la Dirección Técnica**, y la norma dice que responde
+«solidariamente» con el propietario por el cumplimiento legal del
+establecimiento (5.2.2). Su nombre, su número de JVPQF y su horario tienen que
+estar **a la vista del público en la entrada** (RTS 6.2.3, guía 2.3).
+
+En la práctica un mismo regente cubre varias salas y va rotando. De ahí sale el
+problema que la bitácora resuelve.
+
+**Qué problema resuelve.** El inspector llega sin avisar. Si el regente no está
+en ese momento, el ítem 2.23 de la guía dice textualmente qué hace el inspector:
+
+> «¿El regente se encuentra presente durante la visita? (No aplica si no está
+> dentro del horario de permanencia, **verificar bitácora de visitas**.)»
+
+O sea: **la bitácora es la única prueba de que el regente sí estuvo.** Sin ella,
+la ausencia del día de la inspección se lee como ausencia a secas.
+
+**Qué lleva cada visita** (RTS 6.3.7, textual): fecha de visita, horario de
+permanencia, **breve descripción de las actividades ejecutadas**, firma y sello.
+La norma da ejemplos de actividades y uno de ellos es justamente **«revisión de
+recetas de antibióticos»**. Se conserva al menos 1 año.
+
+```
+regente_visitas
+  branch_id, regente_id
+  fecha, hora_entrada, hora_salida
+  actividades       text[]   -- de una lista, no escritas a mano cada vez
+  observaciones     text
+  firmado_at                 -- el regente la firma, nadie por él
+```
+
+Dos decisiones:
+
+- **Las actividades salen de una lista, no de un campo libre.** La norma da los
+  ejemplos; la lista los recoge («revisión de recetas de antibióticos»,
+  «verificación de controlados según facturación», «capacitación», «revisión de
+  bitácoras del mes», «autoinspección») y deja un campo libre para lo demás. Un
+  campo libre solo produce «visita de rutina» ciento veinte veces, que no prueba
+  nada. Es la regla del proyecto: una lista que existe como catálogo no se
+  escribe a mano.
+- **La firma la pone el regente con su propia sesión.** Nadie registra la visita
+  de otro. Eso es «atribuible» del §1.6, y es lo que hace que el registro valga
+  como el equivalente digital de su firma y sello.
+
+**El horario de permanencia es el dato contra el que se compara.** Cargándolo
+por sala, el portal puede mostrar la cobertura del mes —qué días le tocaba y
+cuáles registró— que es exactamente lo que el inspector reconstruye a mano.
+
 ---
 
 ## 4 · La bitácora de dispensación
@@ -354,6 +444,74 @@ partir de ahí la sala lo ve en rojo, el regente lo ve en su tablero y queda en
 el resumen del mes. No se bloquea nada —bloquear una venta que ya ocurrió no
 tiene sentido— pero deja de ser invisible.
 
+**La venta llega en menos de un minuto.** Medido el 2026-08-16 sobre las seis
+salas: entre la hora de la venta y la hora en que la fila entra al portal pasan
+**entre 6 y 36 segundos** (el trabajo corre cada minuto, de 6 de la mañana a
+medianoche). O sea que «en el momento» es real: quien vendió termina, abre el
+portal y el pendiente ya está ahí. Eso es lo que hace que el registro sea
+*contemporáneo* en el sentido del §1.6 y no una transcripción del día siguiente.
+
+### 4.4 · La foto de la receta: qué se puede verificar y qué no
+
+Preguntaste si algo puede mejorar la foto y detectar que esté todo bien —que
+traiga sello—. Hay tres respuestas distintas y conviene no mezclarlas, porque
+una es sólida, otra es una trampa y la tercera es una decisión tuya.
+
+**Lo que se puede medir sin adivinar** (en el teléfono, sin mandar nada a
+ningún lado, y es lo que resuelve el 90% de las fotos malas):
+
+- **Borrosa** — varianza del Laplaciano sobre el canvas. Es el detector clásico
+  de foto movida y es confiable: una receta borrosa da un número chico y no hay
+  ambigüedad.
+- **Oscura o quemada** — histograma. Trivial y sin falsos positivos.
+- **Muy chica** — resolución mínima del lado largo. Una receta por debajo de
+  ~1500 px no se lee después, y «después» puede ser un inspector dentro de un
+  año.
+- **Torcida o con media mesa adentro** — recorte y enderezado. **Esto ya existe
+  en el repo**: `PhotoEditorModal` recorta y rota. No hay que escribirlo.
+- **Contraste tipo escáner** — un filtro de canvas que sube el contraste deja el
+  texto negro sobre blanco, se lee mejor y pesa menos.
+
+Esos cinco **avisan, no bloquean**: «esta foto salió borrosa, ¿la repetís?» con
+un botón para repetir y otro para usarla igual.
+
+**La trampa: detectar el sello por su forma o su color.** Se puede intentar
+—buscar tinta azul o violeta agrupada en forma de cuño— y va a fallar en las dos
+direcciones: un sello con poca tinta no se detecta, una receta impresa a color o
+una foto con dominante azulada lo detecta donde no hay. **El costo del falso
+negativo es el que mata la idea**: si el sistema dice «no veo sello» en una
+receta que sí lo tiene, la sala aprende en tres días a apretar «continuar» sin
+mirar, y el aviso deja de significar algo — incluso el día que tenga razón. Un
+detector en el que no se puede confiar es peor que ninguno. **No lo
+recomiendo.**
+
+**Lo que sí funciona: un modelo de visión leyendo la receta.** Es la respuesta
+buena a lo que pediste, y hace más de lo que pediste: además de decir si ve
+sello y firma, **lee** el número de junta, el nombre del médico, el paciente y
+los medicamentos con sus cantidades. O sea que es la misma pieza que resuelve tu
+«que se rellene». El volumen lo hace barato: ~1.5 recetas por sala por día son
+unas **270 al mes** entre las seis.
+
+Tres reglas si se hace, y las tres son de la misma familia:
+
+1. **Nunca bloquea.** La venta ya ocurrió; un modelo que no ve el sello no puede
+   impedir registrarla. Propone, no decide.
+2. **Lo que se guarda es lo que la persona confirmó**, no lo que el modelo dijo.
+   El modelo llena los campos y la persona los corrige; el registro es de ella y
+   por eso sigue siendo atribuible.
+3. **Se guarda también lo que dijo el modelo**, al lado de lo confirmado. Es la
+   única forma de contestar dentro de tres meses «¿esto realmente acierta?» con
+   un número en vez de una impresión.
+
+**La decisión que no es técnica y no es mía**: mandar la foto de una receta a un
+servicio externo es mandar el nombre de un paciente y su tratamiento, o sea dato
+de salud de una persona identificable. Se puede mitigar (tapar el nombre del
+paciente antes de enviar y leer sólo el bloque del médico y los medicamentos),
+pero la decisión de si eso sale del portal es tuya. **Si la respuesta es que no
+sale, el módulo funciona igual**: la persona escribe el número de junta, el
+nombre se rellena desde nuestra tabla de médicos (§5) y las verificaciones de
+calidad de foto son las cinco de arriba, que no mandan nada a ningún lado.
+
 ---
 
 ## 5 · El médico: catálogo propio, el CSSP como ayuda
@@ -409,7 +567,67 @@ más, y eso lo decide la base con RLS, no la vista.
 
 ---
 
-## 7 · Lo que falta en el catálogo (y no es bitácora)
+## 7 · El cierre de mes del regente
+
+El regente revisa las bitácoras y **da por finalizado el mes**. Es lo que
+convierte cinco tablas en un expediente: un mes cerrado es lo que se le pone
+adelante al inspector.
+
+```
+bitacora_cierres
+  branch_id, periodo        -- '2026-08', único por sucursal
+  estado                    'abierto' | 'cerrado'
+  cerrado_por, cerrado_at   -- el regente, con su sesión
+  resumen jsonb             -- la foto del cumplimiento AL CERRAR
+  observaciones text
+  reaperturas jsonb[]       -- quién reabrió, cuándo y por qué
+```
+
+### 7.1 · Qué ve el regente antes de firmar
+
+No una lista de filas: **un resumen de conformidad**, que es la pregunta que él
+tiene que contestar. Por sucursal y por mes:
+
+- de las lecturas que tocaban, cuántas se hicieron — y **cuáles faltan**;
+- cuántas cayeron fuera de rango y **si todas tienen su acción correctiva**;
+- cuántas se cargaron tarde (fuera de su franja) — el «contemporáneo» del §1.6;
+- cuántas ventas bajo receta quedaron **sin bitácora**;
+- cuántas recetas siguen **abiertas** (parciales sin cerrar) y desde cuándo;
+- limpiezas registradas contra las que el procedimiento manda;
+- **certificados de calibración por vencer** — que es un ítem CRÍTICO que hoy no
+  vigila nadie.
+
+### 7.2 · El cierre no puede mentir
+
+Ésta es la decisión de fondo de esta sección: **se puede cerrar un mes
+imperfecto, y el cierre guarda cuán imperfecto era.**
+
+La tentación es la contraria —no dejar cerrar hasta que esté todo completo— y es
+un error que se paga caro. Un cierre que exige perfección le enseña a la gente a
+**inventar las lecturas que faltan** para poder cerrar, y ahí el registro deja
+de valer para siempre: ya no se sabe cuál es real. Un cierre que registra el
+estado verdadero —«se cerró agosto con 4 lecturas faltantes de 186 y 2 ventas
+sin bitácora»— es defendible ante un inspector, porque muestra un sistema que
+sabe lo que le falta. Lo que se esconde es lo que hunde una inspección; lo que
+está medido y anotado es un hallazgo menor con plan de acción.
+
+Por eso el `resumen` se congela **en el momento del cierre** y no se recalcula
+después. Es la foto de lo que el regente vio cuando firmó.
+
+### 7.3 · Qué se congela y cómo se reabre
+
+Con el mes cerrado, **nadie agrega ni corrige nada de ese período**. Si aparece
+algo que hay que arreglar, el regente **reabre**, y la reapertura queda con
+quién, cuándo y por qué — y el cierre siguiente lo muestra. Un mes que se
+reabrió tres veces cuenta una historia, y esa historia también es información.
+
+Lo que el cierre produce, y es la mitad del punto (§1.6, «preferiblemente de
+manera física»): **el mes impreso**. Las cinco bitácoras del período en un
+documento con el resumen adelante, para tenerlo en la carpeta de la sala.
+
+---
+
+## 8 · Lo que falta en el catálogo (y no es bitácora)
 
 El ítem 1.13 de la guía pide el **listado de antibióticos con su clasificación
 AWaRe de la OMS** — Acceso, Vigilancia, Reserva. Hoy eso no se puede producir,
@@ -434,7 +652,7 @@ Quién la llena: el regente, sobre 79 productos, una vez. No es un proyecto.
 
 ---
 
-## 8 · Permisos, RLS y auditoría
+## 9 · Permisos, RLS y auditoría
 
 Claves de módulo siguiendo la convención del proyecto:
 
@@ -467,7 +685,7 @@ por escrito:
 
 ---
 
-## 9 · Por dónde empezar
+## 10 · Por dónde empezar
 
 **Fase 1 — las tres ambientales.** Configuración de áreas, la grilla con sus
 huecos, la acción correctiva obligatoria, y el aviso al teléfono cuando una
@@ -480,13 +698,16 @@ pide el inspector cuando el regente no está.
 **Fase 3 — dispensación.** Recetas, médicos, la cola de pendientes, la foto. Es
 la fase grande.
 
-**Fase 4 — los automatismos y el papel.** Programar el comprobante, la consulta
-al CSSP, la clasificación AWaRe y los exportables con los que se atiende una
-inspección.
+**Fase 4 — el cierre de mes.** El resumen de conformidad, la firma del regente,
+el congelado del período y **el mes impreso**. Va después de las tres anteriores
+porque no puede resumir lo que todavía no se registra.
+
+**Fase 5 — los automatismos.** Programar el comprobante, la consulta al CSSP, la
+clasificación AWaRe y —si se decide que sí— la lectura de la receta.
 
 ---
 
-## 10 · Lo que este módulo NO resuelve
+## 11 · Lo que este módulo NO resuelve
 
 Digo esto ahora para que no se descubra frente a un inspector:
 
@@ -509,7 +730,7 @@ Digo esto ahora para que no se descubra frente a un inspector:
 
 ---
 
-## 11 · Lo que hace falta decidir
+## 12 · Lo que hace falta decidir
 
 1. **Las franjas horarias exactas** de las tres lecturas y de las dos limpiezas,
    por área. Necesito los horarios reales de sala para que el aviso caiga cuando
@@ -520,3 +741,18 @@ Digo esto ahora para que no se descubra frente a un inspector:
    siguiente. Es una decisión de operación, no técnica.
 4. **Los rangos del ambiente.** La norma dice «no mayor a 30 °C» y no pone piso.
    ¿Se deja sólo el techo, o se define también un mínimo?
+5. **Las áreas reales de cada sala.** El RTS 6.2.11 pide instrumento
+   independiente para **bodega y sala de ventas**. ¿Cada sala tiene las dos
+   áreas, o hay alguna que sea un solo ambiente? Y cuántos termohigrómetros hay
+   hoy por sala — porque si hay uno solo, el ítem no se cumple por más bitácora
+   que se lleve.
+6. **Los instrumentos y su calibración.** RTS 5.6.14 exige certificado de
+   calibración **vigente** para cada termómetro/termohigrómetro. Necesito su
+   identificación y hasta cuándo está calibrado, o saber que todavía no lo
+   están. El portal puede avisar que vence; no puede calibrar.
+7. **Si la foto de la receta sale del portal** hacia un servicio de lectura
+   (§4.4). Es una decisión sobre dato de salud de un paciente, no una decisión
+   técnica. El módulo funciona igual con cualquiera de las dos respuestas.
+8. **Una receta real de ejemplo** —con el nombre del paciente tapado si querés—
+   para calibrar los umbrales de foto borrosa/oscura contra papel de verdad y no
+   contra un número inventado.

@@ -127,6 +127,67 @@ test.describe('Login · el carné tecleado a mano no abre la sesión', () => {
     });
 });
 
+// El lazo cerrado que dejó el carné sin poder abrir sesión en NINGUNA
+// computadora que no fuera un kiosco vinculado: sin marca de lector el foco
+// arranca en «usuario» y el detector está apagado, así que el carné se escribía
+// adentro del campo y su Enter mandaba el formulario como usuario/contraseña —
+// y como la marca sólo la escribe un carné que abre sesión, el equipo no podía
+// salir nunca de ahí. La salida no intercepta teclas (eso rompía el gestor de
+// contraseñas): anota la velocidad y decide al enviar.
+test.describe('Login · el primer carné de un equipo sin marca', () => {
+    const sinMarca = async (page) => {
+        await page.goto('/login');
+        await expect(page.locator('#username')).toBeVisible();
+        await focoAsentado(page);
+    };
+
+    test('una ráfaga en «usuario» se valida como carné y no queda a la vista', async ({ page }) => {
+        const intentos = [];
+        page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
+
+        await sinMarca(page);
+        // Sin marca no se intercepta nada: el código SÍ se pinta mientras entra.
+        await page.keyboard.type('447', { delay: RAFAGA });
+        await expect(page.locator('#username')).toHaveValue('447');
+        await page.keyboard.press('Enter');
+
+        // Se fue por el camino del carné, no por el de usuario/contraseña.
+        await expect.poll(() => intentos.length).toBeGreaterThan(0);
+        // Y el código no se queda en pantalla ni cuando el carné es rechazado.
+        await expect(page.locator('#username')).toHaveValue('');
+        await expect(page.getByText(/Carné no reconocido|conexión/i).first()).toBeVisible({ timeout: 5000 });
+    });
+
+    test('un tecleo humano con la contraseña vacía sigue siendo un login normal', async ({ page }) => {
+        const intentos = [];
+        page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
+
+        await sinMarca(page);
+        await page.keyboard.type('447', { delay: HUMANO });
+        await page.keyboard.press('Enter');
+
+        await expect(page.getByText(/Ingresa usuario y contraseña/i)).toBeVisible();
+        expect(intentos).toHaveLength(0);
+        await expect(page.locator('#username')).toHaveValue('447');
+    });
+
+    test('un usuario del portal escrito a toda velocidad no se toma por carné', async ({ page }) => {
+        // El caso del gestor de contraseñas: rellena tan rápido como un lector.
+        // Lo que lo separa es la FORMA — un usuario es `nombre.apellido`, un
+        // código de carné no lleva punto y mide 3 a 5 caracteres.
+        const intentos = [];
+        page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
+
+        await sinMarca(page);
+        await page.keyboard.type('maria.hernandez', { delay: RAFAGA });
+        await page.keyboard.press('Enter');
+
+        await expect(page.getByText(/Ingresa usuario y contraseña/i)).toBeVisible();
+        expect(intentos).toHaveLength(0);
+        await expect(page.locator('#username')).toHaveValue('maria.hernandez');
+    });
+});
+
 test.describe('Login · pegar', () => {
     // La regla no es «nunca se pega»: es «no se pega a mano». Un gestor de
     // contraseñas rellena con eventos sintéticos, y bloquearlos dejaba al

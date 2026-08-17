@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.642.2 — El carné vuelve a abrir sesión en cualquier computadora
+
+Reportado por el usuario: «quitaste el escaneo de carné en la computadora». Era
+cierto, y era peor que en una: desde v2.640.0 el carné no abría sesión en
+**ninguna** computadora que no fuera una terminal de kiosco vinculada.
+
+**El lazo cerrado.** El login sólo enciende el detector de ráfagas donde
+_consta_ que hay lector, y esa constancia la escribe únicamente un carné que
+abre sesión. Pero sin la constancia el foco arranca dentro del campo de usuario
+y el detector está apagado, así que el carné se escribía adentro del campo y su
+Enter mandaba el formulario como usuario/contraseña — o sea que no abría sesión,
+o sea que la constancia no se escribía nunca. Encima esa marca cambió de nombre
+en v2.640.0 (`lector_carne_visto` → `lector_carne_ok`), así que las computadoras
+que ya escaneaban quedaron del lado equivocado de un día para el otro.
+
+**Cómo se sale sin romper lo que arreglaron las tres versiones anteriores.** No
+se puede volver a interceptar teclas: eso es lo que se comía el relleno del
+gestor de contraseñas y dejó a la gente sin poder entrar tres veces el mismo
+día. Así que ahora el campo de usuario lleva un **observador puro** —sin
+`preventDefault`, sin tocar el valor del campo, incapaz de romper un login— que
+sólo anota a qué velocidad llegó cada tecla. La decisión se toma recién al
+enviar el formulario, que es donde ya se sabe si la contraseña quedó vacía.
+
+Se prueba como carné si se dan las seis: el equipo no tiene marca de lector, la
+contraseña está vacía, la ráfaga escribió el campo entero, mide entre 3 y 12
+caracteres, no lleva punto ni espacios, y llegó a velocidad de lector. Un
+`nombre.apellido` rellenado por un gestor falla tres de esas. Si el carné abre
+sesión, la marca se escribe y desde la próxima vez el detector saca el código
+del campo antes de que llegue a verse; si no, el código se borra igual —sigue
+siendo una credencial— y el aviso sale en el formulario.
+
+**Dos arreglos que salieron al tirar del hilo:**
+
+- `hayLector()` preguntaba «¿es un teléfono?» **antes** de mirar si el equipo
+  está vinculado como kiosco. Una terminal de sala se anuncia como móvil y tiene
+  lector igual: quedaba clasificada como equipo sin lector. Las dos condiciones
+  son evidencia positiva y ahora van primero.
+- Con esa terminal, el bloque del lector seguía oculto por la regla del teléfono
+  mientras la espera de 30s le sacaba el foco a los campos: medio minuto sin un
+  solo cartel que dijera por qué. Tener lector ahora manda sobre la regla del
+  teléfono — y un teléfono común no cumple ninguna de las dos condiciones, así
+  que ahí no cambia nada.
+
+Tres casos nuevos en `tests/e2e/login-lector.spec.js` (15 en total, todos en
+verde): la ráfaga en «usuario» se valida como carné y no queda a la vista, el
+tecleo humano con la contraseña vacía sigue siendo un login normal, y un usuario
+del portal escrito a toda velocidad no se toma por carné.
+
 ## v2.642.1 — La auditoría de compras: un pago no repite factura y el carril aplana el fragmento
 
 Dos cosas que salieron de auditar todo lo construido para Compras. El resto de

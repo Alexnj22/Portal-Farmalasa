@@ -15,6 +15,11 @@ import { esAtajoDePegar, esPegadoDeUnaPersona } from '../utils/pegadoManual';
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
+// Los códigos reales miden 3, 4 o 5 caracteres (medido sobre `employees`, que
+// además los obliga a ser numéricos). El tope es holgado a propósito: sirve
+// para descartar un usuario del portal escrito a toda velocidad, no para
+// validar el código — de eso se encarga la base.
+const CARNE_MAX_LENGTH = 12;
 // Ventana inicial con prioridad del lector: si nadie escanea, el foco pasa a
 // usuario. Eran 10s y no alcanzaban para sacar el carné y acercarlo al lector
 // (2026-08-16, a pedido del usuario): el foco saltaba al campo de usuario en
@@ -66,7 +71,12 @@ const RAFAGA_ESPERA_ENTER_MS = 400;
 const LECTOR_VISTO = 'lector_carne_ok';
 
 const hayLector = () => {
-    if (isMobileOrApp()) return false;          // un teléfono no lleva lector
+    // Las dos condiciones de abajo son EVIDENCIA POSITIVA de que este equipo
+    // tiene lector, así que van primero. Preguntar antes «¿es un teléfono?»
+    // dejaba a una terminal de sala vinculada —que por definición tiene
+    // lector— del lado de los equipos sin lector, sólo porque su navegador se
+    // anuncia como móvil. Un teléfono común no tiene ninguna de las dos y sigue
+    // dando `false`, que era lo que esa línea quería lograr.
     try {
         if (localStorage.getItem('kiosk_config')) return true;   // terminal de sala
         return localStorage.getItem(LECTOR_VISTO) === '1';
@@ -416,10 +426,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     /* ── Scan login (lector físico o cámara) ─────────────────────────────── */
 
+    // Devuelve `{ ok, mensaje }` y no un booleano: quien lo llama desde el
+    // formulario necesita PODER DECIR qué pasó. El aviso del bloque del lector
+    // sólo se ve si ese bloque está en pantalla, y en un equipo que todavía no
+    // sabe que tiene lector no lo está — sin el mensaje, un carné rechazado no
+    // producía ni una palabra.
     const handleScanLogin = async (rawCode) => {
-        if (busyRef.current || mustChangePwd) return false;
+        if (busyRef.current || mustChangePwd) return { ok: false };
         const code = String(rawCode ?? '').trim().toUpperCase();
-        if (!code) return false;
+        if (!code) return { ok: false };
         busyRef.current = true;
         endScanHold();
         setError('');
@@ -430,20 +445,21 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         try {
             const result = await login(code);
             if (!result.ok) {
-                setScanFeedback({ status: 'error', message: result.error || 'Carné no reconocido.' });
+                const mensaje = result.error || 'Carné no reconocido.';
+                setScanFeedback({ status: 'error', message: mensaje });
                 setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
-                return false;
+                return { ok: false, mensaje };
             }
             // Un carné que ABRE la sesión es la única prueba de que este
             // equipo tiene lector.
             recordarLector();
             setConLector(true);
             setScanFeedback({ status: 'success', message: '¡Acceso concedido!' });
-            return true;
+            return { ok: true };
         } catch {
             setScanFeedback({ status: 'error', message: 'Error de conexión' });
             setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
-            return false;
+            return { ok: false, mensaje: 'Error de conexión' };
         } finally {
             setIsLoading(false);
             busyRef.current = false;
@@ -639,6 +655,66 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     useEffect(() => () => clearTimeout(rafagaRef.current.timer), []);
 
+    /* ── Cómo aprende un equipo que tiene lector (2026-08-16) ────────────────
+       La marca de arriba nació con un lazo cerrado, y el lazo dejó el login por
+       carné MUERTO en toda computadora que no fuera un kiosco vinculado:
+
+         · sin marca, el detector de ráfagas está apagado y el foco arranca en
+           «usuario», así que el carné se escribe adentro del campo y su Enter
+           manda el formulario como usuario/contraseña → no abre sesión;
+         · y como la marca sólo la escribe un carné que ABRE sesión, el equipo
+           no puede salir nunca de ahí.
+
+       Encima, la marca cambió de nombre en v2.640.0, así que las computadoras
+       que ya escaneaban quedaron del lado equivocado de un día para el otro —
+       que es exactamente como lo vio el usuario: «quitaste el escaneo de carné
+       en la computadora».
+
+       La salida NO puede ser volver a interceptar teclas: eso es lo que se
+       comía el relleno del gestor de contraseñas y dejaba a la gente sin poder
+       entrar (tres veces el 2026-08-16). Así que acá no se intercepta nada. Se
+       ANOTA a qué velocidad llegó cada tecla —un observador puro, sin
+       `preventDefault` y sin tocar el valor del campo, incapaz de romper un
+       login— y la decisión se toma recién al enviar el formulario, donde ya se
+       sabe si la contraseña quedó vacía. */
+    const rafagaPasivaRef = useRef({ tiempos: [], previo: '' });
+
+    const anotarVelocidad = (e) => {
+        if (!e.isTrusted) return;                         // ver la nota de `vigilarRafaga`
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length !== 1) return;                   // Shift, Tab, flechas, Backspace…
+        const r = rafagaPasivaRef.current;
+        const ahora = Date.now();
+        const ultima = r.tiempos[r.tiempos.length - 1] ?? 0;
+        if (ahora - ultima > RAFAGA_GAP_MS) {
+            // Un hueco humano corta la ráfaga: lo que venga después es otra
+            // cosa. `previo` es el valor del campo ANTES de esta tecla (en
+            // `keydown` el carácter todavía no se insertó), o sea lo que había
+            // escrito antes de que empezara la ráfaga.
+            r.tiempos = [];
+            r.previo = e.currentTarget.value;
+        }
+        r.tiempos.push(ahora);
+    };
+
+    // ¿Esto lo escribió un lector? Cinco condiciones, y las cinco tienen que
+    // darse. El largo y la forma importan porque son lo que separa un código de
+    // carné de un usuario del portal: los códigos miden 3 a 5 caracteres y no
+    // llevan punto, y los usuarios son `nombre.apellido`. Sin eso, un gestor
+    // que rellena «pruebas» a toda velocidad podría terminar validado como
+    // carné.
+    const loEscribioUnLector = (valor) => {
+        const r = rafagaPasivaRef.current;
+        return r.previo === ''                       // la ráfaga escribió el campo entero
+            && r.tiempos.length === valor.length     // y nadie tecleó nada más
+            && valor.length >= SCAN_MIN_LENGTH
+            && valor.length <= CARNE_MAX_LENGTH
+            && /^[A-Za-z0-9]+$/.test(valor)
+            && esVelocidadDeLector(r.tiempos);
+    };
+
+    const olvidarRafagaPasiva = () => { rafagaPasivaRef.current = { tiempos: [], previo: '' }; };
+
     // Pegar en usuario o contraseña queda prohibido (a pedido del usuario,
     // 2026-08-16): una credencial que viaja por el portapapeles queda ahí,
     // legible para cualquier otra app y para el siguiente que se siente.
@@ -679,6 +755,31 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         e.preventDefault(); setError('');
         const username = usernameRef.current?.value?.trim() || '';
         const password = userPasswordRef.current?.value || '';
+
+        // El carné que entró por el campo de usuario, en un equipo que todavía
+        // no sabe que tiene lector. Se prueba ANTES de validar usuario y
+        // contraseña porque en ese equipo es el único camino que le queda al
+        // carné — y es el que vuelve a encender todo lo demás: si abre sesión,
+        // `handleScanLogin` escribe la marca y la próxima vez el detector saca
+        // el código del campo antes de que llegue a verse.
+        //
+        // Dos frenos, y los dos hacen falta:
+        //   · `!conLector` — donde consta que hay lector, esto ya lo resolvió
+        //     el detector y no debe correr una segunda vez;
+        //   · `!password` — un gestor de contraseñas rellena los DOS campos y
+        //     una persona escribe los dos. Con la contraseña puesta, esto es un
+        //     login normal aunque el usuario haya llegado rapidísimo.
+        if (!conLector && !password && loEscribioUnLector(username)) {
+            olvidarRafagaPasiva();
+            // El código NO se queda a la vista, ni siquiera si el carné falla:
+            // sigue siendo una credencial y la pantalla de login es pública.
+            if (usernameRef.current) usernameRef.current.value = '';
+            syncFormEngaged();
+            const r = await handleScanLogin(username);
+            if (!r.ok) { setError(r.mensaje || 'Carné no reconocido.'); usernameRef.current?.focus(); }
+            return;
+        }
+
         if (!username || !password) { setError('Ingresa usuario y contraseña.'); return; }
         setIsLoading(true);
         try {
@@ -818,11 +919,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     //     teléfono del portal y el kiosco ya está oculto ahí — la pantalla
     //     queda con los dos campos y nada más (2026-08-16, a pedido del
     //     usuario).
-    //   · En un equipo con lector: el bloque completo.
+    //   · En un equipo con lector: el bloque completo. Y esto manda sobre la
+    //     regla del teléfono: una terminal de sala vinculada se anuncia como
+    //     móvil y tiene lector igual. Sin esta prioridad, esa terminal se
+    //     quedaba los 30s con el foco fuera de los campos y sin un solo cartel
+    //     que dijera por qué.
     //   · En un equipo sin lector pero con cámara: sólo el botón de cámara,
     //     sin cartel de «lector activo» ni cuenta regresiva. Pedir un escaneo
     //     que nadie puede hacer no es una opción, es un estorbo.
-    const mostrarEscaneo = !enMovil && (conLector || hasCamera);
+    const mostrarEscaneo = conLector || (!enMovil && hasCamera);
 
     const renderLoginForm = (compact) => (
         <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-4'}`}>
@@ -856,7 +961,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             // pueda entrar — pasó tres veces el 2026-08-16.
                             // Donde SÍ hay lector, que es donde el carné se
                             // escanea de verdad, la protección sigue entera.
-                            onKeyDown={conLector ? vigilarRafaga : undefined}
+                            //
+                            // Y donde todavía NO consta, «usuario» lleva el
+                            // observador: no intercepta, sólo anota la
+                            // velocidad para que el primer carné pueda abrir
+                            // sesión y encender la marca. Sin él, el equipo no
+                            // podía salir nunca de «sin lector».
+                            onKeyDown={
+                                conLector          ? vigilarRafaga
+                                : id === 'username' ? anotarVelocidad
+                                                    : undefined
+                            }
                             onPaste={bloquearPegado} onDrop={bloquearPegado} onDragOver={e => e.preventDefault()}
                             // Copiar y cortar sólo se bloquean en la contraseña:
                             // el usuario es un dato público (sale en la lista de

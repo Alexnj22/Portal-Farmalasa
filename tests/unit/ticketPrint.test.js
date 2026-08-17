@@ -76,8 +76,12 @@ describe('el ticket que se manda al programa de impresión', () => {
         const s = seccionesParaElPrograma(ticket());
         expect(s.encabezado.startsWith('\x1bR\f\x1ba\x01\x1b!\x10')).toBe(true);
         expect(s.encabezado).toContain('FARMACIA LA SALUD 1');
-        // Los saltos del final son lo que salva la última línea de la cuchilla.
-        expect(s.pie.endsWith('\n\n\n\n\n')).toBe(true);
+        // Los saltos del final son lo que salva la última línea de la cuchilla,
+        // que queda CENTÍMETROS arriba del punto donde deja de salir papel. Se
+        // cuentan, no se buscan con `endsWith`: con cinco —lo que había hasta el
+        // 2026-08-17— el corte se llevaba el final del ticket en la sala, y un
+        // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con doce.
+        expect(s.pie.match(/\n+$/)[0].length).toBe(12);
     });
 
     // Los dos que siguen salieron del PRIMER ticket impreso desde el portal

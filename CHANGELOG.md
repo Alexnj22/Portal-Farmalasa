@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.1 — Margen de corte: la cuchilla ya no se lleva la última línea
+
+Reportado por el usuario con el papel en la mano, sobre los tickets acortados
+en v2.654.2: **al cortar, el corte se comía el final del ticket.**
+
+La cuchilla no está a la altura del cabezal — queda unos centímetros más
+arriba —, así que lo último que se imprimió todavía está adentro de la
+impresora cuando uno corta. El margen que había era de cinco saltos de línea
+(~15 mm) en el envío directo y una banda de 12 mm en el camino del navegador, y
+ninguno de los dos alcanzaba. Ahora son **35 mm en los dos caminos**
+(`SALTOS_DE_CORTE` = 12 saltos, y `.corte` = 35 mm).
+
+Es el único papel en blanco que un ticket necesita, y es justo lo que se pagó
+sacando los renglones vacíos de adentro: la etiqueta de una bolsa sigue midiendo
+la mitad que antes de v2.654.2 aunque ahora salga con margen.
+
+La prueba que lo vigila **cuenta** los saltos en vez de buscarlos con
+`endsWith`: con `endsWith('\n\n\n\n\n')` daba verde igual con cinco que con
+doce, o sea que no podía detectar el defecto que acaba de aparecer en la sala.
+
 ## v2.655.0 — Entregar efectivo: se escanea el carné y los montos van tras permiso
 
 Tres correcciones del usuario sobre la pantalla de bolsas, mirándola en vivo.

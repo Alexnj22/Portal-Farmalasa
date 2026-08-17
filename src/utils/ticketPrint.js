@@ -75,9 +75,11 @@
 //    de **216 × 279 mm (carta)** con esa regla puesta. Por eso el alto se mide
 //    sobre el documento ya pintado y se inyecta —`ajustarAltoDePagina`—, y el
 //    valor escrito a mano queda sólo como respaldo por si el JS no corre.
-// 4. **Margen de corte al final.** La cuchilla queda unos milímetros arriba
+// 4. **Margen de corte al final.** La cuchilla queda unos centímetros arriba
 //    del punto donde deja de salir papel; sin ese margen se lleva la última
-//    línea.
+//    línea. Y no son «unos milímetros»: con 12 mm el corte seguía comiéndose
+//    el final, medido en la sala el 2026-08-17. Hoy son 35 mm en los dos
+//    caminos — la banda `.corte` acá y `SALTOS_DE_CORTE` en el envío directo.
 
 // Anchos de rollo que existen en el mercado. El `margen` es cuánto se deja a
 // cada lado: el área imprimible de un rollo es menor que el papel, y además el
@@ -276,8 +278,11 @@ export function construirTicketHtml(ticket) {
   .pie { margin-top: 2.5mm; padding-top: 1mm; border-top: 1px solid #000;
          text-align: center; font-size: 8pt; }
   .pie p { overflow-wrap: anywhere; }
-  /* Margen de corte: la cuchilla queda arriba del final del papel. */
-  .corte { height: 12mm; }
+  /* Margen de corte: la cuchilla queda arriba del final del papel, así que sin
+     esta banda en blanco el corte se lleva la última línea. 12 mm no
+     alcanzaban —medido con papel en la mano el 2026-08-17—; 35 mm es lo mismo
+     que manda el camino sin diálogo (SALTOS_DE_CORTE). */
+  .corte { height: 35mm; }
 </style>
 </head>
 <body>
@@ -445,6 +450,22 @@ export function imprimirTicket(ticket) {
 //    romperse cuando llegan vacías. Es lo único de este contrato que no salió de
 //    leer su código.
 const RUTA_PROGRAMA = 'http://localhost/impresion_dte/';
+
+/**
+ * El margen de corte: cuánto papel se hace salir DESPUÉS de la última línea.
+ *
+ * La cuchilla no está a la altura del cabezal — queda unos centímetros más
+ * arriba —, así que lo último que se imprimió todavía está adentro de la
+ * impresora cuando uno corta. Sin margen, el corte se lleva el final del
+ * ticket.
+ *
+ * **Cinco saltos no alcanzaban**: con ~15 mm el corte seguía comiéndose la
+ * última línea, medido con papel en la mano el 2026-08-17. Doce son ~35 mm y
+ * dejan el texto entero afuera de la cuchilla. Es el único papel en blanco que
+ * este ticket necesita, y es justo lo que se pagó sacando los renglones vacíos
+ * de adentro (v2.654.2).
+ */
+const SALTOS_DE_CORTE = 12;
 
 // Códigos de la impresora, tal como aparecen en el ticket del origen.
 const ESC = '\x1b';
@@ -644,9 +665,9 @@ export function seccionesParaElPrograma(ticket) {
         // El origen manda acá sólo los códigos y pone las cifras en el cuerpo.
         totales: DOBLE_ALTO + LETRA_NORMAL,
         total_letras: CENTRO,
-        // Los saltos del final son el margen de corte: la cuchilla queda arriba
-        // del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + pie.join('\n')) + '\n\n\n\n\n',
+        // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
+        // cuchilla queda arriba del punto donde deja de salir papel.
+        pie: soloASCII(LETRA_CHICA + CENTRO + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
         img: '', qr: '', qr_farmalasa: '',
     };
 }

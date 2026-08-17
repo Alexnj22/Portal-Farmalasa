@@ -74,7 +74,11 @@ export async function fetchTrasladosPorConfirmar() {
 export async function fetchTrasladosPorRecibir() {
     const { data, error } = await supabase
         .from('approval_requests')
-        .select('id, employee_id, note, metadata, updated_at')
+        // `approver_id` y `created_at` para poder decir el circuito entero:
+        // quién lo pidió y cuándo, y quién lo despachó. Sin ellos la tarjeta
+        // mostraba una caja en camino sin nadie a los dos lados — reportado:
+        // «no sale quién solicitó, quién lo aprobó».
+        .select('id, employee_id, approver_id, note, metadata, created_at, updated_at')
         .eq('type', 'INVENTORY_TRANSFER_REQUEST')
         .eq('status', 'APPROVED')
         .order('updated_at', { ascending: true })
@@ -158,7 +162,11 @@ export async function fetchDisponibilidadTraslado(requestId) {
 export async function fetchTrasladosHistorial({ branchId = null, limite = 200 } = {}) {
     let q = supabase
         .from('approval_requests')
-        .select('id, employee_id, note, approver_note, status, metadata, created_at, updated_at')
+        // `approver_id`: quién lo despachó o quién lo rechazó. El historial
+        // guardaba el motivo pero no de quién era la firma, así que el registro
+        // no decía quién decidió — reportado: «no sale el proceso de
+        // aprobaciones».
+        .select('id, employee_id, approver_id, note, approver_note, status, metadata, created_at, updated_at')
         .eq('type', 'INVENTORY_TRANSFER_REQUEST')
         .in('status', ['APPROVED', 'REJECTED'])
         .order('updated_at', { ascending: false })

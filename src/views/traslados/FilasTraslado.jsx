@@ -252,11 +252,13 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
  * es quien tiene la caja en la mano: es el único que puede comprobar que el lote
  * que llegó es el que se pidió.
  *
- * @param ahora  El reloj de `useNowTick`, para «hace 20 min». Opcional: sin él
- *               la tarjeta muestra la hora de salida y nada más, en vez de un
- *               número congelado en el último render.
+ * @param ahora      El reloj de `useNowTick`, para «hace 20 min». Opcional: sin
+ *                   él la tarjeta muestra la hora de salida y nada más, en vez
+ *                   de un número congelado en el último render.
+ * @param nombrePor  Resuelve un id de empleado a su nombre. Opcional: sin él la
+ *                   tarjeta no inventa el circuito, simplemente no lo dibuja.
  */
-export function FilaPorRecibir({ fila, onHecho, ahora = null }) {
+export function FilaPorRecibir({ fila, onHecho, ahora = null, nombrePor = null }) {
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
     const meta   = fila.metadata ?? {};
@@ -270,6 +272,13 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null }) {
     // tiñe solo para que la cola se lea sin contar horas — mismo recurso que la
     // espera larga de `RequestCard`.
     const trabado = Boolean(ahora) && (ahora - new Date(salio).getTime()) > 86400000;
+
+    /* El id se comprueba ACÁ y no dentro de `nombrePor`: los dos llamadores
+     * traen el suyo y el del tablero contesta «Alguien» a cualquier cosa, así
+     * que sin esta guarda una fila vieja sin despachante diría «Envió Alguien»
+     * — un nombre inventado donde no hay registro. */
+    const quienPidio = nombrePor && fila.employee_id ? nombrePor(fila.employee_id) : null;
+    const quienEnvio = nombrePor && fila.approver_id ? nombrePor(fila.approver_id) : null;
 
     const recibir = async () => {
         setError(''); setOcupado(true);
@@ -333,15 +342,40 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null }) {
                 cuánto lleva, a la derecha qué se hace con eso. El botón sólo se
                 estira en el teléfono. */}
             <div className="flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-divider">
-                <span className="flex items-center gap-1 min-w-0 text-micro text-content-3">
-                    <Clock size={11} strokeWidth={2.5} className="shrink-0" />
-                    <span className="truncate">Salió {fmtCuando(salio)}</span>
-                    {espera && (
-                        <span className={`shrink-0 font-bold ${trabado ? 'text-danger-text' : 'text-content-3'}`}>
-                            · {espera}
+                <div className="flex flex-col gap-0.5 min-w-0">
+                    {/* El circuito: quién lo pidió y quién lo despachó. Faltaba
+                        entero —«no sale quién solicitó, quién lo aprobó»— y es
+                        lo que convierte una caja anónima en el pedido de
+                        alguien a alguien. Los dos nombres llegan por
+                        `nombrePor`, que cae al mapa de personas escondidas: el
+                        que despacha suele tener un cargo que el maestro de
+                        personal no muestra. */}
+                    {(quienPidio || quienEnvio) && (
+                        <span className="flex items-center gap-1.5 min-w-0 text-micro text-content-2 flex-wrap">
+                            {quienPidio && (
+                                <span className="truncate">
+                                    <span className="font-black uppercase tracking-widest text-content-3">Pidió </span>
+                                    <span className="font-semibold">{quienPidio}</span>
+                                </span>
+                            )}
+                            {quienEnvio && (
+                                <span className="truncate">
+                                    <span className="font-black uppercase tracking-widest text-content-3">Envió </span>
+                                    <span className="font-semibold">{quienEnvio}</span>
+                                </span>
+                            )}
                         </span>
                     )}
-                </span>
+                    <span className="flex items-center gap-1 min-w-0 text-micro text-content-3">
+                        <Clock size={11} strokeWidth={2.5} className="shrink-0" />
+                        <span className="truncate">Salió {fmtCuando(salio)}</span>
+                        {espera && (
+                            <span className={`shrink-0 font-bold ${trabado ? 'text-danger-text' : 'text-content-3'}`}>
+                                · {espera}
+                            </span>
+                        )}
+                    </span>
+                </div>
 
                 <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
                     onClick={recibir} className="w-full sm:w-auto">

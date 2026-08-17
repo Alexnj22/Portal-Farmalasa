@@ -88,10 +88,18 @@ const TABS = [
 // ESTADO y FECHA fuera de la vista en dos intentos seguidos—. `line-clamp` deja
 // que el texto AJUSTE dentro del ancho que la tabla reparte y corta por altura,
 // que es lo único que se puede acotar sin pelearse con el algoritmo.
+// `resolvio` se agregó el 2026-08-17. El historial guardaba el motivo del
+// rechazo pero no de quién era la firma: se podía leer que un traslado se
+// rechazó y por qué, y no quién lo decidió — o sea que el registro no servía
+// para lo único que un historial tiene que contestar cuando alguien pregunta.
+// Reportado así: «no sale tampoco el proceso de aprobaciones». Va pegado a
+// «Pidió» porque son las dos mitades del mismo circuito, y en el teléfono cae
+// a la hoja de detalle de `DataTable` en vez de desaparecer.
 const COLS_HISTORIAL = [
     { key: 'producto',  label: 'Producto' },
     { key: 'recorrido', label: 'Recorrido',  hideBelow: 'md' },
     { key: 'pidio',     label: 'Pidió',      hideBelow: 'lg' },
+    { key: 'resolvio',  label: 'Resolvió',   hideBelow: 'xl' },
     { key: 'motivo',    label: 'Motivo',     hideBelow: 'lg' },
     { key: 'estado',    label: 'Estado',     align: 'center' },
     { key: 'fecha',     label: 'Fecha',      align: 'right' },
@@ -110,6 +118,8 @@ export default function TrasladosView() {
     const { user, getScope } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const branches  = useStaffStore(s => s.branches);
+    const personasDeSolicitudes = useStaffStore(s => s.personasDeSolicitudes);
+    const resolverPersonas      = useStaffStore(s => s.resolverPersonasDeSolicitudes);
 
     const alcanceTodas = getScope('traslados') === 'ALL';
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
@@ -131,10 +141,19 @@ export default function TrasladosView() {
      * pintando el mismo minuto. Mismo recurso que la bandeja de Solicitudes. */
     const ahora = useNowTick(60_000);
 
+    /* El maestro de personal, MÁS los que ese maestro esconde.
+     *
+     * `employees_select` no deja ver a quien tenga un cargo `is_su`, y quien
+     * despacha un traslado a veces es justamente uno de ésos: con el maestro a
+     * secas la columna «Resolvió» habría quedado en «Alguien» sin explicar por
+     * qué. La RPC devuelve sólo a los que participan de alguna solicitud y sólo
+     * lo que se pinta. Es el mismo hueco que ya tapó la bandeja de Solicitudes.
+     */
     const nombrePor = useCallback((id) => {
+        if (!id) return null;
         const e = (employees ?? []).find(x => x.id === id);
-        return e?.name ?? 'Alguien';
-    }, [employees]);
+        return e?.name ?? personasDeSolicitudes?.[String(id)]?.name ?? 'Alguien';
+    }, [employees, personasDeSolicitudes]);
 
     // Nada de `setError('')` antes del primer `await`: sería un setState
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
@@ -151,6 +170,17 @@ export default function TrasladosView() {
     }, [alcanceTodas, sala, miBranch]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+
+    /* Los que el maestro de personal esconde. Se piden UNA vez por carga y sólo
+     * los que faltan: `employees` ya trae a casi todos, y `resolverPersonas`
+     * mezcla sobre lo que haya. El mapa NO va en las dependencias a propósito —
+     * lo que el efecto escribe volvería a dispararlo. */
+    useEffect(() => {
+        const faltan = [...new Set([...(porRecibir ?? []), ...(historial ?? [])]
+            .flatMap(f => [f.employee_id, f.approver_id])
+            .filter(id => id && !(employees ?? []).some(e => e.id === id)))];
+        if (faltan.length > 0) resolverPersonas(faltan);
+    }, [porRecibir, historial, employees, resolverPersonas]);
 
     // Las dos listas en vuelo salen sin filtro de sala —el RLS ya decide qué se
     // ve— así que el recorte por sucursal se aplica acá, contra los dos
@@ -216,7 +246,14 @@ export default function TrasladosView() {
                 tipo sólo se ofrece en Historial —en las otras dos pestañas no
                 hay dos desenlaces que separar— y ofrecerlo igual sería un
                 control que no recorta nada. */}
+            {/* La píldora va en una fila propia y alineada a la derecha, que es
+                como la montan las otras 34 vistas (`<div className="flex
+                justify-end">`). Sin ese envoltorio `FilterBar` se estira al
+                ancho del cuerpo y deja de leerse como píldora: se ve como una
+                barra vacía con un desplegable en la esquina, que fue lo
+                reportado — «el filter pill no es canónico». */}
             {(alcanceTodas || enHistorial) && (
+              <div className="flex justify-end px-4 md:px-5 pt-4">
                 <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}>
                     {alcanceTodas && (
                         <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
@@ -225,13 +262,20 @@ export default function TrasladosView() {
                     )}
                     {enHistorial && (
                         <FilterBar.Section active={!!tipo} onClear={() => setTipo('')} label="tipo">
+                            {/* `umbral={2}` lo pliega a select. Con el umbral
+                                por defecto, tres opciones rinden un riel — y un
+                                riel de tres con `uppercase tracking-widest` mide
+                                ~710px contra ~235 del select (§17, medido el
+                                2026-08-17). Al lado de «Sucursales» eso es la
+                                fila entera para dos filtros. */}
                             <FilterBar.Opciones
-                                label="Tipo" icon={History}
+                                label="Tipo" icon={History} umbral={2}
                                 value={tipo} onChange={setTipo} options={TIPOS}
                             />
                         </FilterBar.Section>
                     )}
                 </FilterBar>
+              </div>
             )}
 
             {/* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */}
@@ -240,7 +284,7 @@ export default function TrasladosView() {
                     <DataTable
                         columns={COLS_HISTORIAL}
                         loading={cargando}
-                        minWidth="820px"
+                        minWidth="960px"
                         empty={{
                             icon: History,
                             message: busqueda.trim() || tipo
@@ -285,10 +329,30 @@ export default function TrasladosView() {
                                         fila al cuádruple de alto y descolocaba
                                         toda la tabla. Se corta; el nombre entero
                                         queda en el `title`. */}
+                                    {/* Quién pidió y CUÁNDO. La fecha de la
+                                        derecha es la del cierre, así que sin
+                                        ésta no había forma de saber cuánto
+                                        tardó — que es la mitad de lo que un
+                                        historial contesta. */}
                                     <DataCell hideBelow="lg">
                                         <span className="block line-clamp-1 text-label text-content-3"
                                             title={nombrePor(f.employee_id)}>
                                             {nombrePor(f.employee_id)}
+                                        </span>
+                                        <span className="block text-micro text-content-3 tabular-nums whitespace-nowrap">
+                                            {fmtFechaLarga(f.created_at)}
+                                        </span>
+                                    </DataCell>
+                                    {/* Quién puso la firma. Un traslado sin
+                                        `approver_id` no debería existir —lo
+                                        escribe la misma función que lo despacha
+                                        o lo rechaza— pero si aparece uno viejo,
+                                        se dice «Sin registro» y no un nombre
+                                        inventado. */}
+                                    <DataCell hideBelow="xl">
+                                        <span className="block line-clamp-1 text-label text-content-3"
+                                            title={nombrePor(f.approver_id) ?? 'Sin registro'}>
+                                            {nombrePor(f.approver_id) ?? 'Sin registro'}
                                         </span>
                                     </DataCell>
                                     <DataCell hideBelow="lg">
@@ -341,7 +405,7 @@ export default function TrasladosView() {
                     {!cargando && lista.length > 0 && (
                         <div className="grid gap-3 xl:grid-cols-2 items-start">
                             {lista.map(f => (
-                                <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} />
+                                <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} nombrePor={nombrePor} />
                             ))}
                         </div>
                     )}

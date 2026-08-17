@@ -114,7 +114,7 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                             : 'En camino'}
                     </p>
                     {porRecibir.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} />
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} nombrePor={nombrePor} />
                     ))}
                 </div>
             )}

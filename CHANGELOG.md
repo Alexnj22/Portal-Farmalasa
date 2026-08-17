@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.9 — Traslados: la píldora en su sitio y el circuito de aprobación visible
+
+Reportado con dos capturas: *«el filter pill no es canónico»*, *«no sale quién
+solicitó, quién lo aprobó»*, *«no sale tampoco el proceso de aprobaciones»*.
+
+**La píldora se estiraba a lo ancho del cuerpo.** `FilterBar` iba suelto como
+hijo de la vista, sin el `<div className="flex justify-end">` con que la montan
+las otras 34: estirada deja de leerse como píldora y se ve como una barra vacía
+con un desplegable en la esquina. Es lo mismo que el canon lleva escrito desde
+§17 y lo que no estaba era el envoltorio, no el componente.
+
+**Y el filtro de tipo iba como riel de tres.** «Todos / Recibidos / Rechazados»
+en `SegmentedControl` mide ~710px contra ~235 del select, porque el riel pinta
+`uppercase tracking-widest whitespace-nowrap` (medido el mismo día en §17 al
+arreglar Solicitudes). Con `umbral={2}` baja a select y la píldora vuelve a
+caber.
+
+**El circuito no se veía por ninguna parte, y era un agujero de datos, no de
+pintura**: ni `fetchTrasladosPorRecibir` ni `fetchTrasladosHistorial` traían
+`approver_id`. Se podía leer que un traslado se rechazó y por qué, pero no de
+quién era la firma — o sea que el historial no contestaba lo único que un
+historial tiene que contestar cuando alguien pregunta.
+
+Ahora, en las dos pestañas:
+
+| dónde | qué se agregó |
+|---|---|
+| tarjeta de «En camino» | **Pidió X · Envió Y**, sobre la hora de salida |
+| historial | columna **Resolvió**, pegada a «Pidió» |
+| historial | la **fecha del pedido** bajo quien lo pidió — la de la derecha es la del cierre, así que sin ésta no había cómo saber cuánto tardó |
+
+Los nombres pasan por el maestro de personal **y por el mapa de personas
+escondidas**: `employees_select` no deja ver a quien tenga un cargo `is_su`, y
+quien despacha un traslado a veces es justamente uno de ésos. Sin ese respaldo
+la columna nueva habría dicho «Alguien» sin explicar por qué — el mismo hueco
+que ya había tapado la bandeja de Solicitudes.
+
+Y no se inventa: sin `approver_id` la celda dice **«Sin registro»**, y la
+tarjeta simplemente no dibuja la línea en vez de poner un nombre de relleno.
+
+**No verificado en pantalla:** la extensión del navegador sigue sin conectar. El
+ancho del riel sale de la medición de §17 hecha ese mismo día, no de esta vista.
+
 ## v2.656.8 — Solicitudes: la barra de filtros deja de ocupar la fila entera
 
 Reportado con una captura: **demasiadas opciones a la vista**. La barra tenía

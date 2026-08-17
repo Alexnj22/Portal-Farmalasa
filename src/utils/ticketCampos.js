@@ -53,3 +53,38 @@ export const selloDeTiempo = (iso) => (iso
         timeZone: 'America/El_Salvador',
     }))
     : '');
+
+/**
+ * El mismo sello, en el ancho de media columna: `14/08/26 07:12 pm`.
+ *
+ * `selloDeTiempo` mide 23 caracteres —`14/08/2026, 07:12 p. m.`— y media columna
+ * del rollo son 27: con el rótulo delante no entra ni uno, así que un ticket
+ * lleno de sellos largos no puede armar dos columnas y sale al doble de largo.
+ * Lo que se suelta son dos dígitos del año, la coma y dos puntos de `p. m.`:
+ * nada que alguien lea distinto sobre el mostrador.
+ */
+export const selloCorto = (iso) => (iso
+    ? soloAscii(new Date(iso).toLocaleString('es-SV', {
+        day: '2-digit', month: '2-digit', year: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: 'America/El_Salvador',
+    }))
+        .replace(',', '')
+        .replace(/([ap])\.\s*m\.?/i, '$1m')
+    : '');
+
+/**
+ * Dos textos en un renglón si entran, y en dos si no.
+ *
+ * Existe para juntar lo que se leía en dos renglones sin motivo —«Registro:
+ * Ana Pena» y su sello de tiempo— sin apostar a que siempre quepan: un nombre
+ * de 40 caracteres desborda las 54 columnas y la impresora lo parte donde se le
+ * acaba el papel, a mitad de palabra. Devuelve un arreglo para poder esparcirlo
+ * dentro del pie sin un `if` en cada uso.
+ */
+export const juntarSiEntra = (a, b, { ancho = COLUMNAS, union = ' - ' } = {}) => {
+    if (!a) return b ? [b] : [];
+    if (!b) return [a];
+    const junto = `${a}${union}${b}`;
+    return junto.length <= ancho ? [junto] : [a, b];
+};

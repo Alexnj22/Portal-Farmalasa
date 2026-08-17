@@ -104,6 +104,49 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
 const MONO = "'DejaVu Sans Mono','Menlo','Consolas','Courier New',monospace";
 
 /**
+ * Cuántos caracteres entran de verdad en un renglón de la VISTA PREVIA.
+ *
+ * No son las 54 del rollo: el papel imprime en su letra chica y la vista dibuja
+ * 8.5pt, que en una monoespaciada avanza 0.6 del tamaño — 1.81 mm por carácter,
+ * medido en Chrome sobre la misma pila de fuentes. En el rollo de 80 mm son 40
+ * columnas contra 54. La diferencia sólo importa para decidir qué se empareja:
+ * el texto es el mismo y ninguno de los dos recorta nada.
+ */
+const columnasDeLaVista = (cfg) => Math.floor((cfg.mm - 2 * cfg.margen) / 1.81);
+
+/**
+ * Los pares de datos, agrupados de a dos por renglón **donde quepan**.
+ *
+ * El rollo mide 54 columnas y un dato rara vez pasa de 25 (`Sala: Salud 3`):
+ * imprimir uno por renglón gasta media hoja en blanco y alarga el papel al
+ * doble. Pero un dato largo —`Motivo: Remesa entregada a un cliente`— no puede
+ * compartir renglón sin partirse en dos, y un dato partido se lee peor que uno
+ * solo. Por eso la regla es «de a dos donde quepan», no «de a dos siempre».
+ *
+ * La segunda columna arranca **siempre en la mitad del rollo**, no pegada al
+ * dato de la izquierda: así los renglones se leen como una tabla en vez de como
+ * texto corrido. Ese es el motivo de que el de la izquierda tenga que dejar dos
+ * espacios libres — sin ellos las dos columnas se tocan.
+ *
+ * @returns {Array<Array<[string,string]>>} renglones, de uno o dos pares
+ */
+export function emparejarDatos(datos = [], ancho = COLUMNAS_TICKET.chica) {
+    const mitad = Math.floor(ancho / 2);
+    const largo = ([rot, val]) => `${rot}: ${val}`.length;
+    const filas = [];
+    for (let i = 0; i < datos.length; i++) {
+        const izq = datos[i], der = datos[i + 1];
+        if (der && largo(izq) <= mitad - 2 && largo(der) <= ancho - mitad) {
+            filas.push([izq, der]);
+            i++;
+        } else {
+            filas.push([izq]);
+        }
+    }
+    return filas;
+}
+
+/**
  * El documento imprimible de un ticket.
  *
  * `ticket` es la forma que declaran los documentos del portal:
@@ -123,6 +166,16 @@ export function construirTicketHtml(ticket) {
 
     const filaPar = ([rot, val]) => `
       <div class="par"><span class="rot">${esc(rot)}</span><span class="val">${esc(val)}</span></div>`;
+
+    // Los datos van de a dos por renglón, igual que en el rollo. Pero se
+    // emparejan con las columnas de LA VISTA, no con las 54 del papel: la vista
+    // dibuja la letra más grande —8.5pt sobre 74 mm de cuerpo son 40 columnas,
+    // medido en Chrome— así que un par que entra en el rollo puede no entrar
+    // acá, y el valor se parte en dos renglones. Emparejar con el ancho de cada
+    // medio es lo que hace que ninguno de los dos parta nada.
+    const filasDeDatos = emparejarDatos(datos, columnasDeLaVista(cfg));
+    const filaDeDatos = (fila) => `
+      <div class="datos">${fila.map(filaPar).join('')}</div>`;
 
     const filaTotal = ([rot, val, destacado]) => `
       <div class="par ${destacado ? 'grande' : ''}"><span class="rot">${esc(rot)}</span><span class="val">${esc(val)}</span></div>`;
@@ -192,6 +245,12 @@ export function construirTicketHtml(ticket) {
      vez de partirse — es la misma trampa de flex de siempre. */
   .par .val { flex: 1 1 auto; min-width: 0; text-align: right; font-weight: 700;
               overflow-wrap: anywhere; }
+  /* Las dos columnas de datos. El flex 1 1 0 las parte por la mitad exacta
+     —que es donde arranca la segunda columna en el rollo— y min-width:0 deja
+     que un valor largo se parta adentro de su mitad en vez de ensancharla.
+     (Ojo con los acentos invertidos acá adentro: cortan el literal.) */
+  .datos { display: flex; gap: 3mm; }
+  .datos > .par { flex: 1 1 0; min-width: 0; }
   .bloque { margin-top: 2mm; }
   .btit { font-weight: 700; text-transform: uppercase; font-size: 8pt;
           letter-spacing: .5px; border-bottom: 1px dotted #000; margin-bottom: .8mm; }
@@ -227,7 +286,7 @@ export function construirTicketHtml(ticket) {
     ${(encabezado.lineas ?? []).map(l => `<div class="sub">${esc(l)}</div>`).join('')}
   </div>
   ${ticket.titulo ? `<div class="titulo">${esc(ticket.titulo)}</div>` : ''}
-  ${datos.map(filaPar).join('')}
+  ${filasDeDatos.map(filaDeDatos).join('')}
   ${bloques.map(bloqueHtml).join('')}
   ${itemsHtml}
   ${totales.length ? `<div class="totales">${totales.map(filaTotal).join('')}</div>` : ''}
@@ -486,6 +545,27 @@ function filaDeItem(celdas) {
     return [linea, ...resto];
 }
 
+/**
+ * Los datos de arriba, de a dos por renglón donde quepan (ver `emparejarDatos`).
+ *
+ * Cada renglón sale **rellenado hasta las 54 columnas**, y no es cosmético: el
+ * ticket se imprime con el centrado puesto desde el encabezado, y un renglón de
+ * 40 caracteres centrado arranca siete columnas más adentro que uno de 54. Con
+ * el relleno, centrar deja de mover nada y las dos columnas quedan a plomo.
+ * Es lo mismo que hacen los totales, por lo mismo.
+ */
+function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.chica) {
+    const mitad = Math.floor(ancho / 2);
+    const texto = ([rot, val]) => `${rot}: ${val}`;
+    return emparejarDatos(datos, ancho).flatMap((fila) => (
+        fila.length === 2
+            ? [(texto(fila[0]).padEnd(mitad) + texto(fila[1])).padEnd(ancho)]
+            // Uno solo y no entra: se parte por palabras, nunca se recorta —
+            // el que se recorta en silencio es un dato perdido.
+            : enRenglones(texto(fila[0]), ancho).map(l => l.padEnd(ancho))
+    ));
+}
+
 /** El encabezado de la tabla, en las mismas posiciones que sus datos. */
 function encabezadoDeItems(columnas) {
     if (columnas.length !== 4) return dosColumnas(columnas[0]?.label, columnas[columnas.length - 1]?.label);
@@ -499,20 +579,32 @@ function encabezadoDeItems(columnas) {
 /**
  * El ticket en las secciones que espera el programa de impresión, con sus
  * códigos. Devuelve exactamente las claves que manda el origen.
+ *
+ * ── Un código de impresora NO va en su propio renglón ────────────────────────
+ * `\x1b a \x01` no imprime nada, pero el `\n` que lo sigue sí: **sale un
+ * renglón en blanco**. Había cuatro —antes de los datos, antes de la tabla,
+ * antes de los totales y después— y en un papel de veinte renglones eso es una
+ * quinta parte del rollo gastada en nada. Cada código viaja pegado al renglón
+ * que le toca mandar.
  */
 export function seccionesParaElPrograma(ticket) {
     const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [] } = ticket;
 
+    // El nombre de la farmacia sale en letra grande; de la regla para abajo,
+    // todo en chica. Cuando no hay líneas de encabezado —la etiqueta de una
+    // bolsa no lleva ninguna— el cambio de letra viaja con la regla: en su
+    // propio renglón sería un renglón vacío.
+    const lineasDeEncabezado = (encabezado.lineas ?? []).filter(Boolean);
     const cabeza = [
         JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
-        LETRA_CHICA + (encabezado.lineas ?? []).join('\n'),
-        regla(),
+        ...(lineasDeEncabezado.length ? [LETRA_CHICA + lineasDeEncabezado.join('\n')] : []),
+        LETRA_CHICA + regla(),
         (ticket.titulo ?? '').toUpperCase(),
     ].filter(Boolean).join('\n') + '\n';
 
     const medio = [
-        CENTRO + LETRA_CHICA,
-        ...datos.map(([r, v]) => `${r}: ${v}`),
+        // El centrado y la letra chica ya vienen puestos del encabezado.
+        ...renglonesDeDatos(datos),
         regla(),
         ...bloques.flatMap(b => [
             b.titulo ?? '',
@@ -525,14 +617,12 @@ export function seccionesParaElPrograma(ticket) {
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
         ].filter(Boolean)),
         ...(items ? [
-            IZQUIERDA,
-            encabezadoDeItems(items.columnas),
+            IZQUIERDA + encabezadoDeItems(items.columnas),
             regla(),
             ...items.filas.flatMap(filaDeItem),
             regla(),
         ] : []),
         ...(totales.length ? [
-            DERECHA + LETRA_NORMAL,
             // Rellenados por nosotros, no alineados por el aparato. En el ticket
             // del 14-08 los totales salieron centrados pese al `ESC a 2`, y el
             // renglón sobrante de un nombre largo salió indentado pese al
@@ -540,8 +630,11 @@ export function seccionesParaElPrograma(ticket) {
             // es justo la que se rellena con espacios acá. Un `dosColumnas` sin
             // espacios al final se ve igual esté centrado o alineado a la
             // derecha, así que deja de depender de quién decida la alineación.
-            ...totales.map(([r, v]) => dosColumnas(r, v, COLUMNAS_TICKET.normal)),
-            LETRA_CHICA + CENTRO,
+            // El cambio a letra normal viaja con el primer total: en su propio
+            // renglón imprimía uno vacío. Y no hace falta volver a letra chica
+            // al final — la sección del pie la vuelve a pedir ella misma.
+            ...totales.map(([r, v], i) => (i === 0 ? DERECHA + LETRA_NORMAL : '')
+                + dosColumnas(r, v, COLUMNAS_TICKET.normal)),
         ] : []),
     ].join('\n') + '\n';
 

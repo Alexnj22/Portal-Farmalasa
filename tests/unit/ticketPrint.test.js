@@ -33,7 +33,13 @@ const ticket = () => ({
 });
 
 const renglones = (t) => seccionesParaElPrograma(t).cuerpo.split('\n');
-const sinCodigos = (s) => s.replace(/\x1b./g, '').replace(/\x1b!./g, '');
+// Los códigos ocupan CERO columnas de papel: hay que sacarlos ENTEROS antes de
+// contar. `ESC a n` mide tres bytes, y un `\x1b.` dejaba el tercero adentro —una
+// columna que no existe—. Desde que cada código viaja pegado al renglón que
+// manda (para no gastar un renglón en blanco por cada uno), ese byte de más era
+// la diferencia entre 54 y «55, no cabe».
+// eslint-disable-next-line no-control-regex
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
 
 describe('el ticket que se manda al programa de impresión', () => {
     it('pone cantidad, precio e importe en las columnas del ticket real', () => {

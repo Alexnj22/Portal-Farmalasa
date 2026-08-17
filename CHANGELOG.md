@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.654.2 — El ticket de una bolsa de efectivo sale a la mitad de largo
+
+Los tres papeles de una bolsa —la etiqueta que se pega afuera, el vale que
+queda adentro y el comprobante que se firma— salían al doble de largo del que
+necesitan. Medido sobre el mismo caso de siempre (Salud 3, corte de las 19:01
+del 14-ago, $716.92), en renglones impresos:
+
+| papel | antes | ahora |
+|---|---|---|
+| etiqueta sin salidas | 20 | 10 |
+| etiqueta con dos vales | 27 | 17 |
+| vale de salida | 25 | 14 |
+| comprobante de entrega | 28 | 20 |
+
+Tres motivos, y ninguno era el contenido:
+
+**El NIT no iba a ninguna parte.** Estos tres papeles no salen de la farmacia:
+uno se pega a una bolsa, otro queda adentro y el tercero lo firman dos
+empleados. El dato que identifica al contribuyente no cumplía ninguna función y
+gastaba un renglón en cada impresión. Los documentos que sí se presentan —el
+Corte Z, los comprobantes de caja— lo siguen llevando.
+
+**Un código de impresora ocupa cero columnas, pero el salto de línea que lo
+seguía imprimía un renglón vacío.** Había cuatro: antes de los datos, antes de
+la tabla, antes de los totales y después. En un papel de veinte renglones eso
+es una quinta parte del rollo gastada en nada, y no se veía en la pantalla
+porque la vista previa no dibuja los códigos. Ahora cada código viaja pegado al
+renglón que le toca mandar.
+
+**Un dato por renglón desperdicia media hoja.** El rollo mide 54 columnas y
+`Sala: Salud 3` mide 13. Ahora van de a dos por renglón **donde quepan**, con
+la segunda columna siempre en la mitad del papel para que se lean como una
+tabla; el que no entra —`Motivo: Remesa entregada a un cliente`— se queda solo
+en su renglón en vez de partirse en dos. Los rótulos se acortaron lo justo para
+que entren (`Corte del` → `Corte`), y el sello de tiempo de los datos suelta
+dos dígitos del año y los puntos de `p. m.`: `14/08/26 07:12 pm`.
+
+Además, lo que se leía en dos renglones sin motivo ahora va en uno —el número
+de etiqueta con la hora en que se imprimió, quién registró el vale con su
+sello— y siempre que quepa: un nombre de 40 caracteres vuelve a dos renglones
+en vez de desbordar el rollo. Y la etiqueta de una bolsa sin salidas dejó de
+imprimir `Guardado al cerrar`, que era el mismo número que el total de abajo.
+
+**La vista previa empareja con SU ancho, no con el del papel.** Dibuja 8.5pt
+sobre 74 mm de cuerpo, o sea 40 columnas contra las 54 del rollo (medido en
+Chrome). Emparejando con 54, los valores se partían en dos renglones en
+pantalla aunque en el papel entraran holgados.
+
 ## v2.654.1 — La cola de la sala lleva bytes: el ticket llega a la caja
 
 Al apretar «Reimprimir» desde una computadora que no es la caja, salía el

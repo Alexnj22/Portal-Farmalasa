@@ -29,7 +29,7 @@
 
 import { EMPRESA } from '../constants/empresa';
 import { formatMoney } from './formatNumber';
-import { soloAscii, recortar, fechaCorta, hhmm, selloDeTiempo } from './ticketCampos';
+import { soloAscii, recortar, fechaCorta, hhmm, selloCorto, juntarSiEntra } from './ticketCampos';
 
 /** El ancho del primer campo de la tabla de cuatro columnas del rollo. */
 const ANCHO_MOTIVO = 28;
@@ -96,10 +96,14 @@ export function salidasParaEtiqueta(filas = []) {
         }));
 }
 
-const encabezadoDeLaEmpresa = () => ({
-    titulo: soloAscii(EMPRESA.razonSocial),
-    lineas: [`NIT ${EMPRESA.nit}`],
-});
+/**
+ * Sólo el nombre. **El NIT no va**: estos tres papeles no salen de la farmacia
+ * —se pegan a una bolsa, quedan adentro o los firman dos empleados—, así que el
+ * dato que identifica al contribuyente no cumple ninguna función acá y gasta un
+ * renglón en cada impresión. Los documentos que SÍ se presentan (el Corte Z, los
+ * comprobantes de caja) lo siguen llevando.
+ */
+const encabezadoDeLaEmpresa = () => ({ titulo: soloAscii(EMPRESA.razonSocial) });
 
 const sumar = (filas, campo = 'monto') => filas
     .reduce((a, f) => a + Math.abs(Number(f?.[campo] ?? 0)), 0);
@@ -139,14 +143,19 @@ export function construirEtiquetaDeBolsa({
     return {
         titulo: 'BOLSA DE EFECTIVO',
         encabezado: encabezadoDeLaEmpresa(),
+        // Los rótulos son cortos porque el ancho manda: en dos columnas, media
+        // línea son 27 caracteres y `Corte del: 14/08/2026  19:01` (28) obliga a
+        // gastar un renglón entero. Lo que se recorta es el rótulo, nunca el
+        // dato. `Guardado al cerrar` sólo aparece cuando hubo salidas: sin
+        // ellas es el MISMO número que el total de abajo, dicho dos veces.
         datos: [
             ['Bolsa', recortar(bolsa?.folio || '', 24)],
             ['Sala', recortar(sala || '', 34)],
-            ['Corte del', `${fechaCorta(bolsa?.fecha)}  ${hhmm(bolsa?.hora)}`],
+            ['Corte', `${fechaCorta(bolsa?.fecha)} ${hhmm(bolsa?.hora)}`],
             ['Caja', recortar(bolsa?.caja || '', 34)],
             ['Guardo', recortar(cerradaPor || 'Sin registrar', 34)],
-            ['Cerrada', selloDeTiempo(bolsa?.cerrada_at)],
-            ['Guardado al cerrar', formatMoney(inicial)],
+            ['Cerrada', selloCorto(bolsa?.cerrada_at)],
+            ...(hubo ? [['Guardado al cerrar', formatMoney(inicial)]] : []),
         ],
         // Las CUATRO columnas son la geometría medida contra un ticket real del
         // sistema de facturación. La de dos colapsa a «primero … ultimo» y acá
@@ -174,14 +183,18 @@ export function construirEtiquetaDeBolsa({
                 [`VALES ADENTRO (${salidas.length})`, formatMoney(sacado)],
             ]
             : [['EFECTIVO ADENTRO', formatMoney(inicial), true]],
+        // El número de etiqueta y la hora en que se imprimió son UN dato —cuál
+        // es la buena— así que van en un renglón, no en dos con un blanco en el
+        // medio.
         pie: [
-            version > 1 ? `ETIQUETA #${version} - ANULA LA ANTERIOR` : 'ETIQUETA #1',
-            selloDeTiempo(impresaAt),
-            '',
+            ...juntarSiEntra(
+                version > 1 ? `ETIQUETA #${version} - ANULA LA ANTERIOR` : 'ETIQUETA #1',
+                selloCorto(impresaAt),
+            ),
             hubo
                 ? 'Si sale mas dinero, imprimir otra etiqueta.'
                 : 'Si sale dinero de esta bolsa, imprimir otra etiqueta.',
-        ].filter((l) => l !== null),
+        ],
     };
 }
 
@@ -222,7 +235,7 @@ export function construirValeDeSalida({
         ['Vale', recortar(vale?.folio || '', 24)],
         ['Bolsa', recortar(bolsa?.folio || '', 24)],
         ['Sala', recortar(sala || '', 34)],
-        ['Corte del', `${fechaCorta(bolsa?.fecha)}  ${hhmm(bolsa?.hora)}`],
+        ['Corte', `${fechaCorta(bolsa?.fecha)} ${hhmm(bolsa?.hora)}`],
         ['Motivo', recortar(operacion?.motivo || 'Sin motivo', 30)],
     ];
     if (operacion?.banco) datos.push(['Banco', recortar(operacion.banco, 30)]);
@@ -243,16 +256,20 @@ export function construirValeDeSalida({
             ['SALE DE LA BOLSA', formatMoney(monto), true],
             ['QUEDA EN LA BOLSA', formatMoney(Number(vale?.saldo_despues ?? 0))],
         ],
+        // Quién y cuándo son un solo hecho, y quién retira y cómo se comprobó
+        // también: cada par entra en un renglón mientras los nombres quepan, y
+        // `juntarSiEntra` los separa cuando no —un nombre de 40 caracteres
+        // desborda el rollo y la impresora lo parte a mitad de palabra—.
         pie: [
-            `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
-            selloDeTiempo(registradoAt),
+            ...juntarSiEntra(
+                `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
+                selloCorto(registradoAt),
+            ),
             ...(recibidoPor?.nombre
-                ? [`Recibe: ${recortar(recibidoPor.nombre, 40)}`,
-                   `(${identificacion})`,
-                   '',
+                ? [...juntarSiEntra(`Recibe: ${recortar(recibidoPor.nombre, 40)}`,
+                                    `(${identificacion})`, { union: ' ' }),
                    'Firma ______________________']
                 : []),
-            '',
             `Este vale queda dentro de la bolsa ${recortar(bolsa?.folio || '', 24)}.`,
             ...(parcial
                 ? [`Parte de ${recortar(operacion?.folio || '', 24)} por ${formatMoney(total)}.`]
@@ -285,9 +302,9 @@ export function construirComprobanteDeEntrega({
         titulo: 'ENTREGA DE BOLSAS',
         encabezado: encabezadoDeLaEmpresa(),
         datos: [
-            ['Comprobante', recortar(entrega?.folio || '', 24)],
+            ['Entrega', recortar(entrega?.folio || '', 24)],
             ['Sala', recortar(sala || '', 34)],
-            ['Fecha', selloDeTiempo(entrega?.entregado_at)],
+            ['Fecha', selloCorto(entrega?.entregado_at)],
         ],
         items: {
             columnas: [
@@ -313,13 +330,14 @@ export function construirComprobanteDeEntrega({
                 : []),
             ['TOTAL SEGUN LOS CORTES', formatMoney(efectivo + vales)],
         ],
+        // Los dos bloques de firma quedan pegados: lo que los separa es el
+        // rótulo, no un renglón en blanco. La línea de puntos ya es el espacio
+        // para firmar.
         pie: [
             `Entrega: ${recortar(entregadoPor || 'Sin registrar', 40)}`,
             'Firma ______________________',
-            '',
             `Recibe: ${recortar(recibidoPor || 'Sin registrar', 40)}`,
             'Firma ______________________',
-            '',
             'Dos copias: una para la sala, una para quien retira.',
         ],
     };

@@ -37,6 +37,13 @@ const armar = (extra = {}) => construirComprobante({
 
 const cuerpo = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).cuerpo;
 const todoElTexto = (t) => JSON.stringify(seccionesParaElPrograma({ ancho: 80, ...t }));
+// Los códigos de la impresora ocupan CERO columnas de papel, así que hay que
+// sacarlos enteros antes de contar. `ESC a n` mide tres bytes: un `\x1b.` deja
+// el tercero adentro y suma una columna que no existe — y desde que los códigos
+// viajan pegados al renglón que mandan (para no gastar uno en blanco cada vez),
+// ese byte de más era la diferencia entre 54 y «55, no cabe».
+// eslint-disable-next-line no-control-regex
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
 
 describe('el comprobante de una diferencia de caja', () => {
     it('no manda un solo caracter que el rollo no sepa imprimir', () => {
@@ -56,7 +63,7 @@ describe('el comprobante de una diferencia de caja', () => {
 
     it('no pasa de 54 columnas en ningun renglon', () => {
         for (const linea of cuerpo(armar()).split('\n')) {
-            expect(linea.replace(/\x1b./g, '').length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+            expect(sinCodigos(linea).length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
         }
     });
 
@@ -133,7 +140,7 @@ describe('el comprobante del ingreso o vale acumulado', () => {
 
     it('no pasa de 54 columnas en ningun renglon', () => {
         for (const linea of cuerpo(asiento()).split('\n')) {
-            expect(linea.replace(/\x1b./g, '').length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+            expect(sinCodigos(linea).length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
         }
     });
 

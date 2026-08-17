@@ -55,9 +55,11 @@ const todoElTexto = (t) => JSON.stringify(seccionesParaElPrograma({ ancho: 80, .
 // `cuerpo` no la encuentra nunca, y el test pasaria en verde al reves.
 const pie = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).pie;
 // El `\x1b` es un caracter de control a propósito: son los códigos de la
-// impresora, y quitarlos es justamente lo que hay que hacer para contar columnas.
+// impresora, y quitarlos es justamente lo que hay que hacer para contar
+// columnas. Van ENTEROS: `ESC a n` mide tres bytes y sacarle dos deja el tercero
+// contando como una columna que en el papel no existe.
 // eslint-disable-next-line no-control-regex
-const renglones = (t) => cuerpo(t).split('\n').map((l) => l.replace(/\x1b./g, ''));
+const renglones = (t) => cuerpo(t).split('\n').map((l) => l.replace(/\x1b(?:[!aRt].|@)/g, ''));
 
 describe.each([
     ['la etiqueta de la bolsa', etiqueta],
@@ -75,6 +77,42 @@ describe.each([
     it('no pasa de 54 columnas en ningun renglon', () => {
         for (const linea of renglones(armar())) {
             expect(linea.length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+        }
+    });
+
+    // ── El papel se paga por centimetro ─────────────────────────────────────
+    // Las tres de abajo son lo que pidio el usuario el 2026-08-17 mirando un
+    // ticket real: «quita el nit, quita los espacios en blanco, y haz dos
+    // columnas donde quepan». Cada una vuelve sola si nadie la vigila: un
+    // codigo de impresora en su propio renglon imprime un renglon vacio, y un
+    // dato por renglon es lo que sale de escribir la lista sin pensar en el
+    // ancho.
+
+    it('no lleva el NIT: estos papeles no salen de la farmacia', () => {
+        expect(todoElTexto(armar())).not.toContain('0401-210685-101-0');
+        expect(todoElTexto(armar())).not.toContain('NIT');
+    });
+
+    it('no gasta un renglon en blanco en ningun lado', () => {
+        // El salto del final de cada seccion no es un renglon: cierra el
+        // ultimo. Por eso se recorta antes de contar, en las dos. Y el pie
+        // termina ademas con el margen de corte —cinco saltos— que SI tiene que
+        // estar: es lo que salva la ultima linea de la cuchilla.
+        const sinCierre = (texto) => texto.replace(/\n+$/, '').split('\n');
+
+        expect(sinCierre(cuerpo(armar())).filter((l) => l.trim() === '')).toEqual([]);
+        expect(sinCierre(pie(armar())).filter((l) => l.trim() === '')).toEqual([]);
+    });
+
+    it('pone dos datos por renglon donde entran', () => {
+        // Un renglon con dos rotulos es la prueba de que se armaron las dos
+        // columnas; y la segunda arranca siempre en la mitad del rollo, para
+        // que se lean como tabla y no como texto corrido.
+        const conDos = renglones(armar()).filter((l) => (l.match(/: /g) ?? []).length === 2);
+        expect(conDos.length).toBeGreaterThan(0);
+        for (const l of conDos) {
+            expect(l.slice(0, 27)).toMatch(/ {2}$/);          // dos espacios libres
+            expect(l[27]).not.toBe(' ');                      // y ahi arranca la segunda
         }
     });
 });
@@ -109,8 +147,19 @@ describe('la etiqueta de una bolsa', () => {
     });
 
     it('avisa que anula a la anterior solo cuando no es la primera', () => {
-        expect(etiqueta({ version: 1 }).pie).toContain('ETIQUETA #1');
-        expect(etiqueta({ version: 3 }).pie).toContain('ETIQUETA #3 - ANULA LA ANTERIOR');
+        // El numero de etiqueta y la hora en que se imprimio van en el MISMO
+        // renglon: son un solo dato —cual de las dos manda— y en dos gastaban
+        // papel.
+        expect(pie(etiqueta({ version: 1 }))).toContain('ETIQUETA #1 - 14/08/26 07:12 pm');
+        expect(pie(etiqueta({ version: 3 })))
+            .toContain('ETIQUETA #3 - ANULA LA ANTERIOR - 14/08/26 07:12 pm');
+    });
+
+    it('sin salidas no repite el monto: el total de abajo dice lo mismo', () => {
+        // `Guardado al cerrar` y `EFECTIVO ADENTRO` son el mismo numero cuando
+        // no salio nada de la bolsa.
+        expect(cuerpo(etiqueta())).not.toContain('Guardado al cerrar');
+        expect(cuerpo(etiqueta({ salidas }))).toContain('Guardado al cerrar: $716.92');
     });
 
     it('no pierde un digito de un monto de cuatro cifras', () => {

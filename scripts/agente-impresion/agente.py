@@ -30,6 +30,7 @@ diferencia sólo se vería en el papel.
 Ver README.md en esta misma carpeta.
 """
 
+import base64
 import json
 import os
 import subprocess
@@ -88,18 +89,38 @@ def rpc(cfg, nombre, cuerpo):
     return json.loads(cuerpo_resp)
 
 
-def imprimir(contenido, impresora, cortar):
-    """Manda el texto a la ticketera y devuelve (ok, detalle).
+def bytes_del_ticket(job):
+    """Los bytes que van a la ticketera.
+
+    Viajan en base64 porque **un ticket es un flujo de bytes, no un texto**: la
+    letra normal se pide con `ESC ! \\x00` y ese NUL no cabe en una columna
+    `text` de Postgres. Hasta el 17-ago-2026 la cola guardaba texto, asi que
+    PostgREST rechazaba TODO documento con 400 («unsupported Unicode escape
+    sequence») y la cola nunca llego a tener una sola fila — el portal caia al
+    dialogo del navegador y el papel salia en la computadora equivocada.
+
+    `contenido` en texto plano es el formato viejo y se sigue aceptando a
+    proposito: asi este agente funciona tambien contra una base todavia sin
+    migrar, y la caja se puede actualizar ANTES de tocar el portal sin que
+    quede ni un minuto tirando papel en blanco. Se puede borrar cuando todas
+    las cajas esten al dia.
+    """
+    b64 = job.get("contenido_b64")
+    if b64:
+        return base64.b64decode(b64)
+    # latin-1: el rollo interpreta un codepage de un byte y el portal ya
+    # transcribio todo a ASCII antes de encolarlo. `errors="replace"` es la red
+    # por si algo se escapo — un signo de pregunta se ve, una excepcion dejaria
+    # el ticket sin salir.
+    return (job.get("contenido") or "").encode("latin-1", errors="replace")
+
+
+def imprimir(datos, impresora, cortar):
+    """Manda los bytes a la ticketera y devuelve (ok, detalle).
 
     `-o raw` es el único modo probado en esa impresora: el controlador de CUPS
     para POS nunca se verificó acá, y el modo crudo ya sacó papel legible.
-
-    El texto va en latin-1: el rollo interpreta un codepage de un byte y el
-    portal ya transcribió todo a ASCII antes de encolarlo. `errors="replace"`
-    es la red por si algo se escapó — un signo de pregunta se ve, una excepción
-    dejaría el ticket sin salir.
     """
-    datos = contenido.encode("latin-1", errors="replace")
     if cortar:
         datos += b"\x1dV\x00"       # GS V 0 — corte total
     try:
@@ -138,11 +159,17 @@ def main():
                 continue
 
             for job in filas:
-                ok, detalle = imprimir(
-                    job.get("contenido") or "",
-                    job.get("impresora") or "pos-80",
-                    cfg["CORTAR"],
-                )
+                try:
+                    datos = bytes_del_ticket(job)
+                except Exception as e:                        # noqa: BLE001
+                    # Un documento ilegible no se imprime en blanco ni se
+                    # reintenta tres veces: se confiesa, y queda a la vista en
+                    # el portal con su motivo.
+                    ok, detalle = False, "Documento ilegible: {}".format(e)[:400]
+                else:
+                    ok, detalle = imprimir(
+                        datos, job.get("impresora") or "pos-80", cfg["CORTAR"],
+                    )
                 print("[{}] {} — {}".format(
                     job.get("id"), job.get("titulo"),
                     "impreso" if ok else "FALLO: " + detalle), flush=True)

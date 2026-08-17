@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.654.1 — La cola de la sala lleva bytes: el ticket llega a la caja
+
+Al apretar «Reimprimir» desde una computadora que no es la caja, salía el
+diálogo de impresión del navegador — o sea, el papel iba a salir en esa
+computadora — en vez de irse a la caja de la sala.
+
+**La cola rechazaba TODOS los documentos, y desde el primer día.** Un ticket es
+un flujo de bytes: la letra normal se pide con `ESC ! \x00` y la alineación a
+la izquierda con `ESC a \x00`, así que todo ticket lleva un NUL adentro. La
+columna era `text`, y un NUL no cabe en `text`: Postgres cortaba con
+`unsupported Unicode escape sequence` y PostgREST devolvía 400. El portal lo
+leía como «esta sala no tiene caja registrada» —que es un rechazo legítimo y
+esperado— y seguía al respaldo de siempre, el diálogo del navegador.
+
+Por eso no se notaba: el aviso decía la verdad sobre lo que hizo, y el camino
+de respaldo funcionaba. Lo que delató el caso fue que `cola_impresion` no tenía
+ni una fila, con la caja de Salud 5 vinculada y latiendo cada segundo. El error
+exacto salió de los registros de Postgres, en los dos instantes de las
+reimpresiones (15:55:26 y 15:55:34 UTC).
+
+**El arreglo es el tipo de la columna, no un `replace` en el camino.**
+`cola_impresion.contenido` pasa a `bytea`; el documento entra en base64 —un
+JSON tampoco transporta un NUL— y `reclamar_impresion` lo devuelve en
+`contenido_b64`. Mientras la columna dijera `text`, cualquier llamador nuevo
+volvía a estrellarse igual.
+
+Se llama `contenido_b64` y no `contenido` a propósito: un agente viejo pide
+`contenido`, no lo encuentra y falla **a la vista** en vez de tirar una hoja en
+blanco creyendo que imprimió. Y el agente nuevo acepta las dos formas, así que
+la caja se puede actualizar antes que la base sin un minuto de papel en blanco.
+
+Verificado ida y vuelta sobre la columna real: 29 bytes, NUL en la posición 5,
+base64 idéntico al de salida. Dos pruebas nuevas lo anclan — que todo ticket
+lleva un NUL, y que el viaje devuelve exactamente los mismos bytes.
+
 ## v2.654.0 — Bitácoras: vitrinas y servicio sanitario
 
 Las **vitrinas** y el **servicio sanitario** entran a la bitácora de limpieza,

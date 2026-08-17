@@ -122,6 +122,17 @@ facturación. La maquetación vive en `src/utils/ticketPrint.js` y tiene que
 seguir viviendo ahí: dos maquetadores se desincronizan y la diferencia sólo se
 ve en el papel.
 
+**Un ticket son BYTES, y por eso viaja en base64.** La letra normal se pide con
+`ESC ! \x00`, así que todo ticket lleva un NUL — y un NUL no cabe ni en un JSON
+ni en una columna `text` de Postgres. Hasta el 17-ago-2026 la cola guardaba
+texto y rechazaba **todos** los documentos con 400 «unsupported Unicode escape
+sequence»; el portal lo leía como «esta sala no tiene caja» y caía al diálogo
+del navegador, así que el papel salía en la computadora de quien apretaba el
+botón. Hoy la columna es `bytea` y `reclamar_impresion` devuelve
+`contenido_b64`. El agente todavía acepta el `contenido` viejo en texto plano:
+eso es lo que permite actualizar una caja **antes** de tocar la base sin que
+quede tirando papel en blanco, y se puede borrar cuando todas estén al día.
+
 **Un trabajo que queda a medias vuelve solo.** Si el agente se muere con el
 papel en la mano, a los dos minutos ese trabajo vuelve a la cola. A los 3
 intentos pasa a `ERROR` y deja de reintentarse: un ticket que no sale nunca

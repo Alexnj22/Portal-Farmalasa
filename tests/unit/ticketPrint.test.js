@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
+import { seccionesParaElPrograma, COLUMNAS_TICKET, textoParaElRollo, ticketEnBase64 }
+    from '../../src/utils/ticketPrint';
 
 // El ancla de estos tests es un ticket REAL del sistema de facturación —factura
 // 351275, capturada el 2026-08-13— del que se contaron las columnas:
@@ -109,5 +110,29 @@ describe('el ticket que se manda al programa de impresión', () => {
         const linea = renglones(t).find(l => l.includes('Efectivo'));
         expect(sinCodigos(linea).length).toBe(COLUMNAS_TICKET.chica);
         expect(linea.endsWith('$ 20.00')).toBe(true);
+    });
+    // ── La cola de la sala lleva BYTES ──────────────────────────────────────
+    //
+    // Estas dos pruebas existen por un bug que no se veía en pantalla ni en el
+    // papel: la cola guardaba el ticket como `text`, y como TODO ticket lleva
+    // un NUL (`ESC ! \x00` es la letra normal), Postgres rechazaba cada
+    // documento con 400. El portal caía al diálogo del navegador, así que el
+    // papel salía en la computadora de quien apretaba el botón en vez de en la
+    // caja de la sala. La primera prueba fija el hecho que lo causa; la
+    // segunda, que el viaje no lo pierda.
+
+    it('todo ticket lleva un NUL adentro: por eso no puede viajar como texto', () => {
+        expect(textoParaElRollo(ticket())).toContain('\x00');
+    });
+
+    it('el base64 devuelve los MISMOS bytes, NUL incluido', () => {
+        const texto = textoParaElRollo(ticket());
+        const vuelta = atob(ticketEnBase64(texto));
+
+        expect(vuelta.length).toBe(texto.length);
+        expect(vuelta).toBe(texto);
+        // Y ni un byte por encima de 255: el rollo lee uno por carácter, así
+        // que un UTF-8 de dos bytes volvería a imprimir letras ajenas.
+        expect([...vuelta].every(c => c.charCodeAt(0) <= 0xFF)).toBe(true);
     });
 });

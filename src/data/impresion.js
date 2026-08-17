@@ -15,15 +15,24 @@ import { supabase } from '../supabaseClient';
 /**
  * Deja un documento esperando en la caja de una sala.
  *
+ * `contenido` llega **en base64** y no es una precaución: un ticket es un flujo
+ * de bytes —la letra normal se pide con `ESC ! \x00`— y un NUL no cabe en una
+ * columna `text` de Postgres. El 17-ago-2026 esta llamada devolvía 400
+ * «unsupported Unicode escape sequence» en cada intento, el portal lo leía como
+ * «este camino no está» y caía al diálogo del navegador: el papel salía en la
+ * computadora de quien apretaba el botón en vez de en la caja de la sala, que
+ * es justo lo que la cola existe para evitar. Lo codifica
+ * `ticketEnBase64` en `ticketPrint.js`, junto a los bytes que describe.
+ *
  * Rechaza si esa sala no tiene una caja registrada, y eso es deliberado: una
  * cola que nadie lee es papel que nunca sale y nadie se entera. Quien llama
  * trata el rechazo como «este camino no está» y cae al siguiente.
  */
-export function encolarImpresion({ branchId, titulo, contenido }) {
+export function encolarImpresion({ branchId, titulo, contenidoB64 }) {
     return supabase.rpc('encolar_impresion', {
         p_branch_id: branchId,
         p_titulo: titulo,
-        p_contenido: contenido,
+        p_contenido: contenidoB64,
     });
 }
 

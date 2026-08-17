@@ -581,6 +581,31 @@ export function textoParaElRollo(ticket) {
 }
 
 /**
+ * Los mismos bytes, en base64, para que puedan viajar dentro de un JSON.
+ *
+ * **Un ticket no es un texto: es un flujo de bytes.** `LETRA_NORMAL` es
+ * `ESC ! \x00` e `IZQUIERDA` es `ESC a \x00`, así que todo ticket lleva al
+ * menos un NUL — y un NUL no cabe ni en un JSON ni en una columna `text` de
+ * Postgres. La cola de las salas guardaba texto y por eso rechazaba **todos**
+ * los documentos con 400 «unsupported Unicode escape sequence»: no fallaba uno,
+ * fallaban todos, y el portal lo leía como «esta sala no tiene caja» y caía al
+ * diálogo del navegador. O sea que el papel salía en la computadora de quien
+ * apretaba el botón, que es exactamente lo que la cola existe para evitar.
+ *
+ * `charCodeAt & 0xFF` y no `TextEncoder`: el rollo lee UN byte por carácter y
+ * el ticket ya viene transcrito a ASCII por `soloASCII`. Con UTF-8, cada
+ * acentuada saldría como dos bytes y el papel volvería a mostrar letras ajenas
+ * —que es el bug que `soloASCII` arregló midiendo papel en Salud 3—.
+ */
+export function ticketEnBase64(texto) {
+    let bytes = '';
+    for (let i = 0; i < texto.length; i++) {
+        bytes += String.fromCharCode(texto.charCodeAt(i) & 0xFF);
+    }
+    return btoa(bytes);
+}
+
+/**
  * ¿El navegador tiene prohibido alcanzar la red local de esta computadora?
  *
  * Existe porque sin esto **«no hay programa» y «el navegador me bloqueó» se ven
@@ -790,7 +815,7 @@ export async function imprimirDocumento(
             const { error } = await encolarImpresion({
                 branchId: sala,
                 titulo: ticket?.titulo || 'Documento',
-                contenido: textoParaElRollo(doc),
+                contenidoB64: ticketEnBase64(textoParaElRollo(doc)),
             });
             if (!error) {
                 return {

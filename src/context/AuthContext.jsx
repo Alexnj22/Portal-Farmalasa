@@ -417,11 +417,45 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   // ⏱️ Inactividad
   // -------------------------
+  // ── El límite lo dice el TOKEN, que lo pone el servidor ──────────────────
+  //
+  // `custom_access_token_hook` mete `idle_limit_min` en los claims con el mismo
+  // `session_idle_limit_minutes` que después usa para negar la renovación. Leerlo
+  // de ahí es lo que garantiza que el navegador y el servidor no puedan discrepar.
+  //
+  // Antes el cliente lo DEDUCÍA por su cuenta —caché de permisos, módulos de
+  // gestión, `isSU`— y era una segunda copia de una regla que ya vivía en la
+  // base. Dos copias de un criterio se desincronizan: la del servidor cambió el
+  // 2026-08-17 al pasar a ser configurable por cargo, y ésta no se habría
+  // enterado.
+  const leerLimiteDelToken = () => {
+    try {
+      const guardada = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      const token = guardada?.access_token;
+      if (!token) return null;
+      const cuerpo = token.split('.')[1];
+      if (!cuerpo) return null;
+      const claims = JSON.parse(atob(cuerpo.replace(/-/g, '+').replace(/_/g, '/')));
+      const min = Number(claims?.idle_limit_min);
+      return Number.isFinite(min) && min > 0 ? min * 60 * 1000 : null;
+    } catch { return null; }   // token ilegible: manda el camino de abajo
+  };
+
   const getIdleLimitMs = (u) => {
     // La clase la fijó la ventana desde la que se inició sesión y vale para
     // todas las de esta sesión. Sin clase —sesión anterior a este cambio— manda
     // el camino estricto, que es el que no regala tiempo.
     if (localStorage.getItem(LS_DEVICE) === 'app') return IDLE_APP_MS;
+
+    // Lo que dijo el servidor, si lo dijo.
+    const delToken = leerLimiteDelToken();
+    if (delToken) return delToken;
+
+    // ── De acá para abajo es el respaldo, y sólo corre si el token no trae el
+    // dato: sesión anterior a este cambio, o el hook que falló y devolvió el
+    // evento sin el claim (falla abierta, a propósito). Se conserva el criterio
+    // viejo porque en ese caso es lo único que hay.
+    //
     // El caché primero: `u.isSU` lo pierde cualquier refresco que rearme el
     // usuario, y sin esto un superadministrador terminaba con el tiempo de
     // inactividad corto sin que nadie lo hubiera decidido.
@@ -525,7 +559,11 @@ export const AuthProvider = ({ children }) => {
     }
     writeLastActivity(true);
     latirSesion();
-  }, [latirSesion]);
+  // `getIdleLimitMs` se redefine en cada render y sólo lee localStorage + el
+  // usuario que ya llega por ref. Meterlo en la lista rompería la identidad
+  // estable de este callback, que es lo único que permite quitarlo con
+  // `removeEventListener`.
+  }, [latirSesion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopIdleWatcher = () => {
     ponerAviso(null);   // que no quede el cartel colgado sobre la pantalla de entrada

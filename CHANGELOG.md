@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.647.0 — El tiempo de inactividad se configura por cargo en Permisos
+
+**El límite de inactividad se deducía de los permisos, y deducía mal.** Se daban
+12 horas al cargo que tuviera `can_view` sobre alguno de siete módulos de
+gestión. La intención era «si es jefe, dale más tiempo», pero dos de esa lista no
+distinguen a un jefe: **`requests` es donde uno PIDE vacaciones** y
+`announcements` donde uno LEE los avisos — los tiene todo el mundo.
+
+Medido el 2026-08-17: los **21 Dependientes de Farmacia, 7 Regentes de
+Enfermería, 6 Jefes de Sala y 5 Auxiliares de Bodega tenían 12 horas**, los
+cuatro por `requests`. O sea que la computadora compartida del mostrador quedaba
+abierta toda la jornada — exactamente lo que el límite corto venía a evitar.
+Sólo 3 personas en toda la empresa tenían los 5 minutos, y ninguna trabaja en una
+sala. Es [[feedback_un_rotulo_no_es_una_clave]] aplicado a permisos: la lista se
+leyó como si dijera «es jefe» y en realidad dice «tiene esta pantalla».
+
+**Ahora es un dato del cargo, no un efecto secundario.** Columna
+`roles.idle_limit_min`, editable en Permisos junto a Super Usuario y al nivel de
+precio, con la escala 5 min · 15 · 30 · 1 h · 4 h · 12 h. La base lo acota entre
+5 y 1440: por debajo de 5, quien lo configure se deja afuera a sí mismo.
+
+**Todos quedaron en 5 minutos salvo Gerencia, Supervisión, Talento Humano,
+Administración y el Superusuario**, que siguen en 12 horas (decisión del
+usuario). El superadministrador además tiene piso propio en la función: no puede
+depender de que alguien le configure el cargo, porque se dejaría afuera de la
+pantalla donde eso se arregla.
+
+**El navegador dejó de tener su propia opinión.** `getIdleLimitMs` deducía el
+límite por su cuenta —caché de permisos, módulos, `isSU`—: una segunda copia de
+una regla que ya vivía en la base, y las dos copias se desincronizan (ésta no se
+habría enterado de este cambio). Ahora lee el claim `idle_limit_min` que el
+propio hook mete en el token con la misma función que después usa para negar la
+renovación. La deducción vieja queda sólo como respaldo para una sesión anterior
+a este cambio o para un token sin el claim.
+
 ## v2.646.0 — Aviso «¿Sigues ahí?» antes de cerrar por inactividad
 
 **La sesión se cerraba sin avisar.** El caso que lo motivó: alguien llenando una

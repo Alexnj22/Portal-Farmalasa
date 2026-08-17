@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchRolesForPermissions() {
-    return supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su').order('id');
+    return supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su, idle_limit_min').order('id');
 }
 
 // TODAS las filas de TODOS los cargos: es la que alimenta la pantalla de
@@ -43,6 +43,13 @@ export function updateRoleMaxPriceLevel(roleId, level) {
 
 export function updateRoleIsSU(roleId, value) {
     return supabase.from('roles').update({ is_su: value }).eq('id', roleId);
+}
+
+// Minutos sin usar el portal antes de cerrar la sesión. La base lo acota entre
+// 5 y 1440: por debajo de 5 el portal se vuelve inusable y quien lo configure se
+// deja afuera a sí mismo.
+export function updateRoleIdleLimit(roleId, minutos) {
+    return supabase.from('roles').update({ idle_limit_min: minutos }).eq('id', roleId);
 }
 
 // ── AuthContext.jsx (2 de sus 3 sitios — refreshPermissions) ────────────────

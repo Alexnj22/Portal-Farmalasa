@@ -25,8 +25,9 @@ import Switch from '../components/common/Switch';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
     fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
-    updateRoleMaxPriceLevel, updateRoleIsSU,
+    updateRoleMaxPriceLevel, updateRoleIsSU, updateRoleIdleLimit,
 } from '../data/permissions';
+import { useToastStore } from '../store/toastStore';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
@@ -504,6 +505,8 @@ const PermissionsView = () => {
     const [orgRoles, setOrgRoles] = useState([]);               // [{ id, name, parent_role_id }] sorted hierarchically
     const [permissions, setPermissions] = useState({});         // { 'role_id:module_key': { can_view, can_edit, can_approve } }
     const [rolePriceLevels, setRolePriceLevels] = useState({}); // { [roleId]: string | null }
+    const [roleIdleLimits, setRoleIdleLimits] = useState({});   // { [roleId]: minutos }
+    const showToast = useToastStore(s => s.showToast);
     const [roleIsSU, setRoleIsSU] = useState({});               // { [roleId]: boolean }
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState({});
@@ -548,15 +551,18 @@ const PermissionsView = () => {
             const loadedRoles = sorted;
             setOrgRoles(loadedRoles);
 
-            // Niveles de precio y flag is_su por cargo
+            // Niveles de precio, flag is_su y tiempo de inactividad por cargo
             const levels = {};
             const suFlags = {};
+            const idles = {};
             rawRoles.forEach(r => {
                 levels[r.id]  = r.max_price_level ?? null;
                 suFlags[r.id] = r.is_su ?? false;
+                idles[r.id]   = r.idle_limit_min ?? 5;
             });
             setRolePriceLevels(levels);
             setRoleIsSU(suFlags);
+            setRoleIdleLimits(idles);
 
             const map = {};
             (permsData || []).forEach(p => {
@@ -758,6 +764,25 @@ const PermissionsView = () => {
             cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, nivel: level || 'sin límite',
         });
     }, [selectedRoleId, orgRoles]);
+
+    // ── Tiempo de inactividad por cargo ──────────────────────────────────────
+    // A diferencia del nivel de precio, esto NO es optimista sin red de
+    // seguridad: la base acota el valor (5 a 1440) y si rechaza hay que volver
+    // atrás, o la pantalla mostraría un tiempo que nadie guardó.
+    const handleIdleLimitChange = useCallback(async (minutos) => {
+        if (!selectedRoleId) return;
+        const anterior = roleIdleLimits[selectedRoleId] ?? 5;
+        setRoleIdleLimits(prev => ({ ...prev, [selectedRoleId]: minutos }));
+        const { error } = await updateRoleIdleLimit(selectedRoleId, minutos);
+        if (error) {
+            setRoleIdleLimits(prev => ({ ...prev, [selectedRoleId]: anterior }));
+            showToast?.('No se pudo cambiar el tiempo', 'Vuelve a intentarlo.', 'error');
+            return;
+        }
+        useStaff.getState().appendAuditLog('PERMISOS_TIEMPO_INACTIVIDAD', String(selectedRoleId), {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, minutos,
+        });
+    }, [selectedRoleId, orgRoles, roleIdleLimits, showToast]);
 
     // ── Toggle Super Usuario por cargo ───────────────────────────────────────
     const handleSuToggle = useCallback(async (value) => {
@@ -1319,6 +1344,62 @@ const PermissionsView = () => {
                                             onChange={v => canEdit && handlePriceLevelChange(v === '_null' ? null : v)}
                                             label="Nivel de precio" />
                                     </div>
+                                </div>
+                                );
+                            })()}
+
+                            {/* ── Tiempo de inactividad ────────────────────────────
+                                Va acá, junto a Super Usuario y al nivel de precio,
+                                porque contesta una pregunta del CARGO.
+
+                                Antes esto se DEDUCÍA de los permisos: 12 horas si el
+                                cargo veía algún módulo de gestión. Y dos de esa lista
+                                —pedir vacaciones y leer avisos— los tiene todo el
+                                mundo, así que los 39 de sala y bodega tenían la
+                                computadora del mostrador abierta 12 horas. Ahora es un
+                                dato que se elige, no un efecto secundario. */}
+                            {(() => {
+                                const actual = roleIdleLimits[selectedRoleId] ?? 5;
+                                const OPTS = [
+                                    { value: 5,   label: '5 min'  },
+                                    { value: 15,  label: '15 min' },
+                                    { value: 30,  label: '30 min' },
+                                    { value: 60,  label: '1 hora' },
+                                    { value: 240, label: '4 horas' },
+                                    { value: 720, label: '12 horas' },
+                                ];
+                                // Un valor puesto a mano en la base que no cae en la
+                                // escala no se puede esconder: se nombra, y así quien
+                                // mira entiende por qué no hay ninguna opción marcada.
+                                const enLaEscala = OPTS.some(o => o.value === actual);
+                                return (
+                                <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
+                                            <Clock size={18} className="text-white" strokeWidth={2} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-body font-black text-content leading-tight">Cerrar sesión sin uso</p>
+                                            <p className="text-caption text-content-3 font-medium mt-0.5">
+                                                Actual: <span className="font-black text-content-2">
+                                                    {enLaEscala ? OPTS.find(o => o.value === actual).label : `${actual} min`}
+                                                </span> sin tocar el portal
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                                        <SegmentedControl
+                                            size="sm" disabled={!canEdit}
+                                            options={OPTS}
+                                            value={enLaEscala ? actual : null}
+                                            onChange={v => canEdit && handleIdleLimitChange(Number(v))}
+                                            label="Cerrar sesión sin uso" />
+                                    </div>
+                                    <p className="text-caption text-content-3 font-medium mt-3 leading-relaxed">
+                                        Un minuto antes se le pregunta si sigue ahí. En el teléfono con
+                                        la aplicación instalada no aplica: ahí la sesión dura semanas
+                                        para que le lleguen los avisos.
+                                    </p>
                                 </div>
                                 );
                             })()}

@@ -21,7 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.650.2 — Bitácoras: el libro se llena solo y los widgets van en su tarjeta
+## v2.650.2 — Cerrar el cargo desde la barra de acciones
+
+**La × de la tarjeta no se encuentra** (reportado por el usuario): vive en la
+columna izquierda y, con 25 cargos, esa tarjeta puede estar fuera de la vista
+justo cuando se quiere soltar. Ahora «Cerrar» está también en la barra de
+acciones del cargo, o sea donde se está trabajando. Van las dos: la de la
+tarjeta es la que se descubre estando ahí, ésta la que se busca.
+
+De paso, esa barra colgaba de `puedeEditarCargo` —cargo elegido **y** permiso de
+escritura—, así que quien sólo puede mirar se quedaba sin ninguna salida. Ahora
+aparece con un cargo elegido, y las acciones de escritura siguen atadas a
+`canEdit`.
+
+Nota de implementación: le puse `tone: 'neutral'` al botón y **ese tono no
+existe** en `TONO_POR_ICONO`; habría caído a `brand` por accidente en vez de por
+decisión. Va sin `tone`, que es como `TabBarAction` está diseñado: lo decide el
+ícono.
+
+## v2.650.1 — Bitácoras: el libro se llena solo y los widgets van en su tarjeta
 
 **Una venta bajo receta ya entra sola al libro.** Hasta ahora no: el barrido
 existía y **nadie lo llamaba** — agosto entró porque se corrió a mano, y una
@@ -48,24 +66,6 @@ el libro bajo receta sólo salen las salas de venta — Bodega no dispensa, y su
 libro siempre vacío se leería como «no hubo ventas» en vez de «acá no se vende».
 El filtro sale de `branches.type`, no de una lista de nombres: el día que abra
 una sala nueva entra sola.
-
-## v2.650.1 — Cerrar el cargo desde la barra de acciones
-
-**La × de la tarjeta no se encuentra** (reportado por el usuario): vive en la
-columna izquierda y, con 25 cargos, esa tarjeta puede estar fuera de la vista
-justo cuando se quiere soltar. Ahora «Cerrar» está también en la barra de
-acciones del cargo, o sea donde se está trabajando. Van las dos: la de la
-tarjeta es la que se descubre estando ahí, ésta la que se busca.
-
-De paso, esa barra colgaba de `puedeEditarCargo` —cargo elegido **y** permiso de
-escritura—, así que quien sólo puede mirar se quedaba sin ninguna salida. Ahora
-aparece con un cargo elegido, y las acciones de escritura siguen atadas a
-`canEdit`.
-
-Nota de implementación: le puse `tone: 'neutral'` al botón y **ese tono no
-existe** en `TONO_POR_ICONO`; habría caído a `brand` por accidente en vez de por
-decisión. Va sin `tone`, que es como `TabBarAction` está diseñado: lo decide el
-ícono.
 
 ## v2.650.0 — Bitácoras: buscar al médico por nombre y sólo las tres juntas que prescriben
 

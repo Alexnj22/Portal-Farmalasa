@@ -1174,10 +1174,28 @@ const PermissionsView = () => {
     // §17: las dos acciones sobre el cargo elegido bajan a la píldora del cuerpo.
     // "Copiar desde…" es un `LiquidSelect` y no cabe en un descriptor de botón,
     // así que va por `accionesExtra` — que existe exactamente para esto.
-    const puedeEditarCargo = selectedRoleId && canEdit;
-    const filtrosCuerpo = puedeEditarCargo ? (
+    // La barra aparece con un cargo elegido, no con permiso de editar: «Cerrar
+    // cargo» también le sirve a quien sólo mira. Antes colgaba de
+    // `puedeEditarCargo` y entonces la única salida —la × de la tarjeta— quedaba
+    // fuera de alcance para quien no puede escribir.
+    const filtrosCuerpo = selectedRoleId ? (
         <FilterBar
             acciones={[{
+                // La × de la tarjeta no se encuentra: está en la columna
+                // izquierda, que en una lista de 25 cargos puede estar fuera de
+                // la vista. Acá está donde se está trabajando (reportado por el
+                // usuario, 2026-08-17). Van las dos, no una: la de la tarjeta es
+                // la que se descubre estando ahí, ésta la que se busca.
+                key: 'cerrar',
+                icon: X,
+                label: 'Cerrar cargo',
+                rotulo: 'Cerrar',
+                // Sin `tone`: lo decide el ícono (`TONO_POR_ICONO`), que es el
+                // diseño de `TabBarAction`. Puse `neutral` primero y no existe en
+                // el mapa —habría caído a `brand` por accidente, no por decisión.
+                onClick: () => setSelectedRoleId(null),
+            },
+            ...(canEdit ? [{
                 key: 'activar',
                 icon: activatingAll ? Loader2 : Zap,
                 label: 'Activar todo',
@@ -1187,15 +1205,15 @@ const PermissionsView = () => {
                 tone: 'warning',
                 disabled: activatingAll || !!copyingFrom,
                 onClick: () => setConfirmActivate(true),
-            }]}
-            accionesExtra={(
+            }] : [])]}
+            accionesExtra={canEdit ? (
                 <div className="w-44 shrink-0">
                     <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }}
                         options={copyOptions}
                         placeholder={copyingFrom ? 'Copiando…' : 'Copiar desde…'}
                         compact bare clearable={false} disabled={!!copyingFrom} />
                 </div>
-            )}
+            ) : undefined}
         />
     ) : null;
 

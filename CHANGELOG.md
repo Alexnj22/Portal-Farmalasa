@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.4 — Solicitudes: los traslados dejan de llenar la bandeja de la sala
+
+Pedido: *«que por defecto no salgan las solicitudes entre salas, solo podamos
+ver las que son para uno mismo, y al activar el filtro se puedan ver todas, o
+solo las entre sucursales»*.
+
+El traslado es la única familia donde el asunto es de OTRA sala: se lo pide una
+a otra. Mezclado con lo propio —descartes, cargas, cambios a facturación— la
+bandeja de cada sala venía llena de trabajo ajeno.
+
+Se agrega el corte **mostrar**, con tres estados y no con un interruptor:
+
+| | qué queda |
+|---|---|
+| **Sin traslados** (de arranque) | todo menos los traslados |
+| **Todo** | sin corte |
+| **Sólo traslados · N** | nada más los traslados |
+
+Tres y no dos porque **esconder algo sin dejar cómo verlo es esconderlo de
+verdad**. Por eso «Sólo traslados» lleva el conteo **aun estando apagado** —el
+de la pestaña que se está mirando, no un total que prometa de más—, así que se
+ve que hay trabajo esperando en vez de tener que sospecharlo.
+
+**Bodega arranca en «Todo», y es la única excepción.** Para las demás salas un
+traslado es trabajo ajeno; para la que surte es EL trabajo: hoy tiene 4
+pendientes y ninguna otra solicitud, o sea que el corte parejo la habría dejado
+entrando a una bandeja vacía. Se eligió «Todo» y no «Sólo traslados» para no
+esconderle sus propias cargas y descartes — se esconde de menos, no de más. Y no
+sale de los permisos a propósito: `traslados.can_approve` lo tienen 12 cargos,
+incluidos los 21 dependientes de farmacia, así que usarlo como señal le
+devolvería los traslados a todo el mundo y anularía el corte (medido contra
+producción).
+
+Y el enlace de la notificación de un traslado enciende el corte al abrirla. Sin
+eso, tocar el aviso abría la ventana y dejaba detrás una bandeja donde esa
+solicitud no figura: se cierra y no está. Es el mismo agujero que ya tenía el
+filtro de estado, un tipo más abajo.
+
+La lógica del corte vive en `corteTraslados.js` con su prueba, y no dentro de la
+vista, porque es de la clase que se invierte sola y en silencio: cruzados «sin»
+y «sólo», las dos pantallas siguen mostrando solicitudes —las de al lado— y no
+hay ningún error que mirar. La prueba fija además la propiedad que de verdad
+importa: entre los dos modos está todo y nada dos veces.
+
 ## v2.656.3 — MIN y MAX se van de la pantalla de quien no los ajusta
 
 Reportado: *«en los pedidos, los vendedores pueden ver y modificar min y max con

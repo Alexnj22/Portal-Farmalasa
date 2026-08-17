@@ -8,7 +8,7 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Inbox, ChevronDown, ClipboardList, Palmtree, FileText,
-    CheckCircle2, Search, Plus, Users, User,
+    CheckCircle2, Search, Plus, Users, User, ArrowLeftRight,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -36,6 +36,7 @@ const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa
 const PedirTrasladoModal  = lazy(() => import('./dashboard/PedirTrasladoModal'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
+import { pasaCorteDeTraslados, modoInicialDeTraslados, TIPO_TRASLADO } from './solicitudes/corteTraslados';
 
 // El mapa vivía acá y se mudó a `constants/tipoIconos` (2026-08-01): la campana
 // de notificaciones necesita los mismos íconos para los mismos tipos, y tener
@@ -277,6 +278,19 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const [quien, setQuien] = useState('TODAS');
     const filtrandoMias = !soloMio && quien === 'MIAS';
 
+    /* ── El corte de traslados ────────────────────────────────────────────
+     * `SIN` de arranque: lo que una sala le pide a otra no es asunto de esta
+     * bandeja hasta que alguien lo busque. `TODAS` y `SOLO` son las dos formas
+     * de volver. Sólo aplica en el ámbito de sucursal — un traslado no es una
+     * solicitud personal de nadie, así que allá el corte no existe.
+     *
+     * La excepción es la sala que surte, que arranca viéndolos: para ella un
+     * traslado no es trabajo ajeno sino EL trabajo, y el corte parejo le dejaba
+     * la bandeja vacía. El porqué —y por qué no sale de los permisos— está en
+     * `modoInicialDeTraslados`. */
+    const modoInicialTraslados = modoInicialDeTraslados(user?.branchId);
+    const [traslados, setTraslados] = useState(modoInicialTraslados);
+
     /* ── El filtro de sala ────────────────────────────────────────────────
      * Con alcance sobre todas, la bandeja mezcla las siete: la tarjeta dice de
      * cuál viene cada una, pero no había forma de quedarse con una sola. Guarda
@@ -344,6 +358,11 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         });
         // Sin esto la solicitud podría quedar escondida tras el filtro activo.
         if (req.status !== statusFilter) setStatusFilter(req.status);
+        /* Y lo mismo con el corte de traslados, que arranca escondiéndolos: sin
+         * esto, tocar el aviso de un traslado abría la ventana y dejaba detrás
+         * una bandeja donde esa solicitud no figura — se cierra y no está. Es
+         * el mismo agujero que el del estado, un tipo más abajo. */
+        if (req.type === TIPO_TRASLADO) setTraslados('TODAS');
 
         const limpio = new URLSearchParams(searchParams);
         limpio.delete('solicitud');
@@ -481,9 +500,21 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         return paraQuien(r) === miId;
     };
 
-    const enFiltro = (r) => visible(r)
+    /* Todo menos el corte de traslados. Se separa porque hay que poder contar
+     * los traslados que el corte esconde: un filtro encendido por defecto que
+     * no dice cuánto tapa es indistinguible de una bandeja sin nada. */
+    const enFiltroBase = (r) => visible(r)
         && (!filtrandoMias || deQuienEs(r) === miId)
         && (!sala || salaDe(r) === sala);
+
+    /* El corte por familia vive en `corteTraslados.js` —con su porqué y su
+     * prueba— porque es lógica que se invierte sola y en silencio: cruzados
+     * `SIN` y `SOLO`, las dos pantallas siguen mostrando solicitudes y nadie ve
+     * un error, sólo las de al lado. Acá queda el conteo, que es lo que esta
+     * pantalla sabe: su opción lo lleva aun estando apagada, para que se vea
+     * que hay trabajo esperando en vez de tener que adivinarlo. */
+    const esTraslado = (r) => r.type === TIPO_TRASLADO;
+    const enFiltro = (r) => enFiltroBase(r) && pasaCorteDeTraslados(r.type, traslados, esSucursal);
 
     /* Las salas que OFRECE el selector son las que de verdad tienen algo, y se
      * miden sobre todo lo que la persona puede ver —sin el filtro de sala ni el
@@ -505,6 +536,13 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         .sort((a, b) => a.orden - b.orden);
 
     const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && enFiltro(r)).length;
+
+    /* Cuántos traslados hay del otro lado del corte, medidos EN LA PESTAÑA que
+     * se está mirando: es el número que va a aparecer al tocar «Sólo
+     * traslados», no un total que prometa más de lo que hay. */
+    const cuantosTraslados = !esSucursal ? 0 : delAmbito.filter(r =>
+        esTraslado(r) && enFiltroBase(r)
+        && (statusFilter === 'ALL' || r.status === statusFilter)).length;
 
     const statusFiltered = delAmbito.filter(r => {
         if (!enFiltro(r)) return false;
@@ -615,13 +653,18 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const puedeCrear = canCreate && (!esSucursal || familiasDisponibles(hasPermission).length > 0);
 
     const hayFiltroDeSala = salaOptions.length > 1;
-    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0);
-    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); };
+    /* El arranque no cuenta como filtro puesto y limpiar vuelve a él: es el
+     * estado normal de la pantalla, no algo que alguien encendió. Lo que se
+     * señala es haberse salido de ahí — y para la sala que surte ese estado
+     * normal es «Todo», no «Sin traslados». */
+    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0)
+                          + (traslados !== modoInicialTraslados ? 1 : 0);
+    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); setTraslados(modoInicialTraslados); };
 
     // §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
     // fusión la barra lleva además el filtro de a quién pertenece lo que se
     // está mirando, que es el control que convierte la bandeja en «lo mío».
-    const filtrosCuerpo = (puedeCrear || !soloMio || hayFiltroDeSala) ? (
+    const filtrosCuerpo = (puedeCrear || !soloMio || hayFiltroDeSala || esSucursal) ? (
         <FilterBar
             activeCount={filtrosPuestos}
             onClear={filtrosPuestos > 0 ? limpiarTodo : undefined}
@@ -652,6 +695,31 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                         options={[
                             { value: 'TODAS', label: 'Todos',    icon: Users },
                             { value: 'MIAS',  label: 'Sólo yo',  icon: User  },
+                        ]}
+                    />
+                </FilterBar.Section>
+            )}
+
+            {/* Va ÚLTIMO porque es el que corta por tipo, y los dos de arriba
+                cortan por ámbito: primero de qué sala y de quién, después qué
+                clase de asunto. El conteo viaja en «Sólo traslados» y no en la
+                sección, para que se lea dónde está lo que no se está viendo. */}
+            {esSucursal && (
+                <FilterBar.Section label="mostrar" active={traslados !== modoInicialTraslados}
+                    onClear={() => setTraslados(modoInicialTraslados)}>
+                    <SegmentedControl
+                        size="sm" tone="neutro"
+                        label="Qué solicitudes se muestran"
+                        value={traslados}
+                        onChange={setTraslados}
+                        options={[
+                            { value: 'SIN',   label: 'Sin traslados', icon: Inbox },
+                            { value: 'TODAS', label: 'Todo',          icon: Users },
+                            { value: 'SOLO',
+                              label: cuantosTraslados > 0
+                                  ? `Sólo traslados · ${cuantosTraslados}`
+                                  : 'Sólo traslados',
+                              icon: ArrowLeftRight },
                         ]}
                     />
                 </FilterBar.Section>

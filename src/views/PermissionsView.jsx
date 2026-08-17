@@ -1255,6 +1255,29 @@ const PermissionsView = () => {
 
                     {/* ── Columna izquierda: selector de cargos ── */}
                     <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
+                        {/* ── En teléfono, un desplegable ────────────────────
+                            La columna de cargos es `w-full` abajo de `lg`, así
+                            que en un teléfono eran 25 tarjetas apiladas ANTES de
+                            llegar al primer módulo: había que barrer la pantalla
+                            entera para empezar a trabajar. Con el desplegable,
+                            elegir el cargo cuesta un toque y los módulos quedan
+                            arriba de todo.
+
+                            Y su × es además la forma de SOLTAR el cargo, que en
+                            esta pantalla no existía: una vez elegido uno no había
+                            manera de volver a la lista completa. */}
+                        <div className="lg:hidden mb-4">
+                            <LiquidSelect
+                                value={selectedRoleId ?? null}
+                                onChange={(v) => setSelectedRoleId(v == null || v === '' ? null : Number(v))}
+                                options={filteredRoles.map(r => ({ value: r.id, label: r.name }))}
+                                placeholder="Elegir un cargo…"
+                                icon={ShieldCheck}
+                                clearLabel="Ningún cargo"
+                            />
+                        </div>
+
+                        <div className="hidden lg:block">
                         <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
@@ -1287,7 +1310,13 @@ const PermissionsView = () => {
                                 <button
                                     key={r.id}
                                     aria-pressed={isActive}
-                                    onClick={() => setSelectedRoleId(r.id)}
+                                    // Vuelve a apretarlo y lo suelta. Antes, una vez
+                                    // elegido un cargo no había forma de volver a la
+                                    // lista sin cargo: `selectedRoleId` sólo se podía
+                                    // cambiar por otro, nunca vaciar. La × del ícono
+                                    // lo anuncia — sin ella, el toggle existe y nadie
+                                    // lo descubre.
+                                    onClick={() => setSelectedRoleId(isActive ? null : r.id)}
                                     className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? `${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
@@ -1319,7 +1348,7 @@ const PermissionsView = () => {
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
-                                        {isActive && <ChevronRight size={14} className={cs.texto} strokeWidth={2.5} />}
+                                        {isActive && <X size={14} className={cs.texto} strokeWidth={2.5} aria-hidden="true" />}
                                     </div>
                                 </button>
                             );
@@ -1335,6 +1364,7 @@ const PermissionsView = () => {
                                 </p>
                             </div>
                         </div>
+                        </div>{/* fin de la columna de tarjetas, sólo escritorio */}
                     </div>
 
                     {/* ── Panel derecho: permisos del cargo ── */}

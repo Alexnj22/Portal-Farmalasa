@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.649.4 — Cerrar el cargo y elegirlo desde un desplegable en el teléfono
+
+**No había forma de soltar un cargo.** `selectedRoleId` sólo se podía cambiar por
+otro, nunca vaciar: una vez elegido uno, la pantalla se quedaba ahí. Ahora
+volver a apretar la tarjeta lo suelta, y el ícono de la derecha pasa de `›` a
+**×** cuando está elegida — sin eso el comportamiento existe y nadie lo
+descubre.
+
+**En el teléfono, los cargos son un desplegable.** La columna es `w-full` abajo
+de `lg`, así que en un teléfono eran **25 tarjetas apiladas antes del primer
+módulo**: había que barrer la pantalla entera para empezar a trabajar. Con el
+desplegable, elegir el cargo cuesta un toque y los módulos quedan arriba de
+todo; su × es la otra forma de soltarlo. La lista de tarjetas y su aviso al pie
+quedan sólo para escritorio, donde el ancho de la columna sí los justifica.
+
 ## v2.649.3 — Naranja limpio, tiempo en horas y minutos, solicitudes compacto
 
 **El naranja se enturbiaba porque el color reemplazaba al vidrio.** La tarjeta de

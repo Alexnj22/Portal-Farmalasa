@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.8 — Solicitudes: la barra de filtros deja de ocupar la fila entera
+
+Reportado con una captura: **demasiadas opciones a la vista**. La barra tenía
+cinco botones encendidos al mismo tiempo —«Todos / Sólo yo» y «Sin traslados /
+Todo / Sólo traslados · 5»— más el selector de sucursal y el botón de crear, y
+entre todos llenaban la fila completa.
+
+Peor que el ancho era la confusión: los dos grupos se ven iguales, están pegados
+y **los dos empiezan con una opción que dice “todo”**. Nada indica que uno
+recorta por persona y el otro por tipo de asunto.
+
+Ahora el corte de traslados es un desplegable. Ocupa un tercio de lo que ocupaba
+y se distingue del control de al lado por su ícono y por mostrar sólo la opción
+puesta.
+
+**El número no se perdió al plegarlo**, que era el riesgo real. Ese `· 5` existe
+para que no haya que adivinar cuánto esconde el corte, y un desplegable sólo
+muestra la opción activa; si se quedaba donde estaba, desaparecía justo cuando
+hace falta. Ahora lo lleva la opción puesta y se lee **«Sin traslados · 5
+ocultos»** sin abrir nada. La palabra «ocultos» tampoco sobra: sin ella el mismo
+`· 5` querría decir «vas a ver 5» en una opción y «no vas a ver 5» en la otra.
+
+**Por qué había pasado.** La vista elegía a mano el tipo de control en vez de
+dejar que lo decidiera el componente común, que justamente sirve para eso —
+pasadas tres opciones, las convierte en desplegable. Y lo hacía por algo tonto:
+necesitaba un color de control que ese componente no aceptaba. Una propiedad de
+menos y la vista se saltó el componente entero, con el límite adentro. Ya la
+acepta, así que la próxima vista no tiene motivo para repetirlo.
+
+⚠️ El ancho de antes está medido sobre la captura; el de después está estimado a
+partir del código y **no se verificó en pantalla**. Falta mirarlo a 1280 y a
+1600, que es lo que exige la regla de esta barra.
+
 ## v2.656.7 — Un traslado lo confirma la sala, no una persona
 
 Reportado: *«los traslados entre sala deben poder los vendedores de la sucursal

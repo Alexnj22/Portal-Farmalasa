@@ -3493,6 +3493,34 @@ listas dinámicas —los subfiltros de "Mis Avisos" van de 2 a 6— el control s
 adapta solo. `umbral` baja a 2 si las etiquetas son larguísimas; subirlo, casi
 nunca.
 
+**`tone` se reenvía al segmentado (2026-08-17), y esa prop faltante costaba el
+canónico entero.** Solicitudes tenía DOS `SegmentedControl` escritos a mano
+—«Todos/Sólo yo» y «Sin traslados/Todo/Sólo traslados·N»— porque necesitaba
+`tone="neutro"` y `FilterBar.Opciones` no lo aceptaba. O sea que una prop de
+menos empujó a la vista a saltarse el componente **y con él el umbral**, que es
+justo lo que el umbral existe para impedir. Al portar los dos, el segundo bajó a
+select.
+
+⚠️ Las medidas del ANTES (~1770px de píldora, ~710 el riel) salen de una captura
+del 2026-08-17; las del DESPUÉS son estimadas del código y **están sin verificar
+en pantalla**. Quien retome esto: los dos anchos de §17.0 (1280 y 1600) antes de
+darlo por cerrado.
+
+**Por qué un riel de 3 mide 710px y el mismo texto en select mide 235.** No es
+el texto: `SegmentedControl` pinta `font-black uppercase tracking-widest
+whitespace-nowrap` —tres decisiones que multiplican el ancho y ninguna cede— y
+`LiquidSelect` compacto pinta `text-body-sm` normal con `truncate`. Al estimar
+si un riel entra, contar MAYÚSCULAS con tracking, no caracteres.
+
+**Un conteo que vive en una opción apagada obliga a mirar dónde queda al
+plegar.** El riel de Solicitudes llevaba el número en «Sólo traslados · 5»
+estando esa opción apagada, para que se viera cuánto tapaba el corte. Un select
+sólo muestra la opción ACTIVA, así que plegarlo tal cual habría borrado el único
+motivo por el que ese número existía. Se movió a la etiqueta de la opción que
+está puesta: con el corte activo se lee «Sin traslados · 5 ocultos». Y la
+palabra sobra sólo en apariencia — sin ella, el mismo `· 5` significa «vas a
+ver 5» en una opción y «no vas a ver 5» en la otra.
+
 #### Muchos chips en una ranura: casi siempre son UN select
 
 Cuando una ranura junta media docena de chips, la pregunta previa es si son de

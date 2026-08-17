@@ -3,7 +3,6 @@ import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import FilterBar from '../components/common/FilterBar';
-import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -684,11 +683,15 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                 </FilterBar.Section>
             )}
 
+            {/* Dos opciones cortas: el canónico lo resuelve como segmentado, que
+                para un binario es lo más rápido de leer. Va por `FilterBar.Opciones`
+                y no por `SegmentedControl` a mano para que esa decisión la siga
+                tomando él y no esta vista. */}
             {!soloMio && (
                 <FilterBar.Section label="de quién" active={filtrandoMias}
                     onClear={() => setQuien('TODAS')}>
-                    <SegmentedControl
-                        size="sm" tone="neutro"
+                    <FilterBar.Opciones
+                        tone="neutro"
                         label="De quién son las solicitudes"
                         value={quien}
                         onChange={setQuien}
@@ -702,19 +705,46 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
             {/* Va ÚLTIMO porque es el que corta por tipo, y los dos de arriba
                 cortan por ámbito: primero de qué sala y de quién, después qué
-                clase de asunto. El conteo viaja en «Sólo traslados» y no en la
-                sección, para que se lea dónde está lo que no se está viendo. */}
+                clase de asunto.
+
+                `umbral={2}` lo baja a select, que es para lo que existe esa prop
+                —«etiquetas larguísimas donde ya con 3 no entra»—. Medido sobre una
+                captura del 2026-08-17: dibujado como riel, este control solo
+                ocupaba ~710px de una píldora de ~1770, o sea la falla que §17
+                documenta («ocho chips son UNA sola de ~700px»). El ancho de
+                DESPUÉS está estimado del código, no verificado en pantalla.
+
+                Lo que lo infla no es el texto sino la FORMA del riel:
+                `SegmentedControl` pinta `uppercase tracking-widest whitespace-nowrap`
+                y `LiquidSelect` pinta `text-body-sm` normal con `truncate`. Las
+                mismas palabras miden un tercio.
+
+                El conteo NO se pierde al plegarse, que era el riesgo: la etiqueta
+                que lo lleva es la de la opción ACTIVA, así que con el corte puesto
+                se lee «Sin traslados · 5 ocultos» sin abrir nada. La palabra
+                «ocultos» no es adorno — sin ella el mismo `· 5` significaría lo
+                contrario en «Sin traslados» que en «Sólo traslados».
+
+                235 y no los 170 de por defecto: esa etiqueta con el conteo es la
+                más larga del portal en una ranura. Es una excepción deliberada al
+                nominal de §17.0 y se paga sola —sigue siendo un tercio del riel—;
+                si aun así no entra, `LiquidSelect` la corta con `title`, que
+                degrada sin romper la fila. */}
             {esSucursal && (
                 <FilterBar.Section label="mostrar" active={traslados !== modoInicialTraslados}
                     onClear={() => setTraslados(modoInicialTraslados)}>
-                    <SegmentedControl
-                        size="sm" tone="neutro"
+                    <FilterBar.Opciones
+                        umbral={2} ancho="235px" icon={ArrowLeftRight}
                         label="Qué solicitudes se muestran"
                         value={traslados}
                         onChange={setTraslados}
                         options={[
-                            { value: 'SIN',   label: 'Sin traslados', icon: Inbox },
-                            { value: 'TODAS', label: 'Todo',          icon: Users },
+                            { value: 'SIN',
+                              label: cuantosTraslados > 0
+                                  ? `Sin traslados · ${cuantosTraslados} ocultos`
+                                  : 'Sin traslados',
+                              icon: Inbox },
+                            { value: 'TODAS', label: 'Todo', icon: Users },
                             { value: 'SOLO',
                               label: cuantosTraslados > 0
                                   ? `Sólo traslados · ${cuantosTraslados}`

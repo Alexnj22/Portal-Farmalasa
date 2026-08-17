@@ -208,6 +208,12 @@ Chip.displayName = 'FilterBar.Chip';
  *
  * `umbral` existe para el caso raro de etiquetas larguísimas donde ya con 3 no
  * entra — bajarlo a 2 es legítimo; subirlo, casi nunca.
+ *
+ * `tone` se reenvía al segmentado (2026-08-17). No estaba, y esa falta empujaba
+ * a la vista de vuelta al control crudo: Solicitudes tenía DOS `SegmentedControl`
+ * escritos a mano —uno de ellos de 710px— porque necesitaba `tone="neutro"` y
+ * por acá no había forma de pedirlo. O sea que el canónico se saltaba entero por
+ * una prop faltante, y con él el umbral que existe para que eso no pase.
  */
 const Opciones = memo(({
     options = [],
@@ -218,9 +224,10 @@ const Opciones = memo(({
     placeholder = 'Todos',
     umbral = 3,
     ancho = '170px',
+    tone,
 }) => {
     if (options.length <= umbral) {
-        return <SegmentedControl size="sm" options={options} value={value} onChange={onChange} label={label} />;
+        return <SegmentedControl size="sm" options={options} value={value} onChange={onChange} label={label} {...(tone ? { tone } : {})} />;
     }
     return (
         <div style={{ width: ancho }}>

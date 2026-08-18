@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.4 — La ticketera se llama lp0 siempre, no por sorteo
+
+Cerrada la falla de Salud 4 que llevaba el dia entero: la ticketera dejaba de
+imprimir —y con ella los tickets del sistema de facturacion— y se curaba
+apagandola y prendiendola, hasta que volvia a fallar.
+
+**La causa es una carrera.** El programa de facturacion escribe a
+`/dev/usb/lp0` con ese nombre fijo, y ese nombre no esta garantizado: los `lp*`
+comparten el numero mayor 180 y sus menores con `hiddev*` (receptores
+inalambricos, teclados USB). El que se enumera primero se lleva el 0. En esa
+caja lo gano el receptor Logitech, la ticketera cayo en `lp1`, y el programa
+quedo escribiendo a un archivo inexistente **sin error, sin log y sin nada en
+pantalla**. Apagar la impresora volvia a tirar los dados: dos veces salio bien y
+la tercera no.
+
+Arreglado con una regla de udev que le fija el nombre gane quien gane
+(`99-ticketera.rules`, con el `SYMLINK+="usb/lp0"`). Va en toda caja donde el
+programa escriba al nodo directo — no es un parche de una sala.
+
+`scripts/diagnostico-caja.sh` aprende a detectarlo solo: su seccion 8 ahora
+lista `/dev/usb/` entero, avisa si falta la regla, y explica las **dos firmas
+opuestas con el mismo sintoma** que solo `dmesg` distingue — `USB disconnect`
+antes de `usblp: removed` es fisico (cable, puerto, corriente); `usblp: removed`
+sin disconnect y re-enganche con el mismo numero de dispositivo es software
+(CUPS tomando el aparato).
+
+Queda abierto y anotado: en esa maquina el USB se cae solo —del dispositivo 6 al
+8 en segundo y medio— y la red se cae cada 30 segundos. La regla vuelve
+inofensivo el baile de nombres, pero mientras el cable este caido no imprime
+nada. Dos cosas distintas fallando juntas en la misma maquina apuntan a
+alimentacion o regleta.
+
+Y un detalle de metodo que costo caro: **`lsusb` miente sobre esta ticketera.**
+La muestra como `Prolific PL2305 Parallel Port` porque traduce el codigo de
+fabricante con su lista, y se lee como un adaptador USB→paralelo que no existe.
+`dmesg` trae los nombres que declara el aparato: `Product: Printer-80`. Para
+identificar un dispositivo, `dmesg`, no `lsusb`.
+
 ## v2.661.3 — Diagnostico de ticketera trabada en la caja
 
 La ticketera de Salud 4 dejo de imprimir dos veces, y con ella los tickets del

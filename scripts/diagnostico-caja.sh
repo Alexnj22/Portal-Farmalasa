@@ -107,16 +107,34 @@ titulo "8. ¿POR QUÉ SE TRABA? — falla intermitente que se cura apagando la i
 echo "IMPORTANTE: esta sección sólo sirve si se corre MIENTRAS está fallando,"
 echo "ANTES de apagar y prender la ticketera. El reinicio borra la evidencia."
 echo
-echo "--- QUIÉN TIENE TOMADO EL DISPOSITIVO (la pregunta decisiva) ---"
-echo "El programa de facturación escribe DIRECTO a /dev/usb/lp0, sin pasar por CUPS."
-echo "Si cupsd u otro proceso lo tiene abierto, esa escritura falla en silencio."
+echo "--- ¿LA TICKETERA SE LLAMA lp0? (la causa de Salud 4, 2026-08-18) ---"
+echo "El programa de facturación escribe a /dev/usb/lp0 con ese nombre FIJO, y ese"
+echo "nombre NO está garantizado: los lp* comparten el mayor 180 y sus menores con"
+echo "hiddev* (receptores inalámbricos, teclados USB). El que se enumera primero se"
+echo "lleva el 0; si lo gana un HID, la ticketera cae en lp1 y el programa escribe a"
+echo "un archivo que no existe — sin error, sin log. Los dos sistemas mudos a la vez."
+ls -l /dev/usb/ 2>&1
+echo
+if [ -e /etc/udev/rules.d/99-ticketera.rules ]; then
+    echo "[OK] La regla de udev que fija el nombre está instalada:"
+    cat /etc/udev/rules.d/99-ticketera.rules
+else
+    echo "[FALTA] No está /etc/udev/rules.d/99-ticketera.rules — si el listado de"
+    echo "        arriba NO muestra 'lp0 -> lp1', instalarla (ver la memoria de"
+    echo "        impresión en ticketera). Sin ella el nombre es una lotería."
+fi
+echo
+echo "--- QUIÉN TIENE TOMADO EL DISPOSITIVO ---"
+echo "Si cupsd u otro proceso lo tiene abierto, la escritura falla en silencio."
 if [ -e /dev/usb/lp0 ]; then
     if hay fuser; then sudo -n fuser -v /dev/usb/lp0 2>&1 || fuser -v /dev/usb/lp0 2>&1; fi
     if hay lsof;  then sudo -n lsof /dev/usb/lp0 2>&1  || lsof /dev/usb/lp0 2>&1;  fi
     hay fuser || hay lsof || echo "(sin fuser ni lsof instalados)"
 else
-    echo "/dev/usb/lp0 NO EXISTE en este momento — ESE es el hallazgo:"
-    echo "el sistema perdió la ticketera (cable, corriente o el módulo usblp)."
+    echo "/dev/usb/lp0 NO EXISTE en este momento — ESE es el hallazgo."
+    echo "Si el listado de arriba muestra un lp1 (u otro número), la ticketera ESTÁ"
+    echo "conectada y lo que falta es la regla de udev. Si no muestra ningún lp*,"
+    echo "el sistema perdió la impresora: cable, corriente o el módulo usblp."
 fi
 echo
 echo "--- ¿hay una cola de CUPS apuntando a la MISMA ticketera? ---"
@@ -127,6 +145,10 @@ if hay lpstat; then
 fi
 echo
 echo "--- el USB, ¿se cae y vuelve sola? ---"
+echo "Dos firmas OPUESTAS con el mismo síntoma, y sólo dmesg las separa:"
+echo "  · 'USB disconnect' ANTES de 'usblp: removed'  → físico: cable/puerto/corriente"
+echo "  · 'usblp: removed' SIN disconnect, y re-engancha con el MISMO número de"
+echo "    dispositivo                                  → software: CUPS tomando el aparato"
 { sudo -n dmesg 2>/dev/null || dmesg 2>/dev/null; } \
     | grep -iE 'usblp|usb .*(disconnect|new full|new high|reset)|lp[0-9]' | tail -30 \
     || echo "(dmesg necesita permisos de administrador — correr el script con sudo)"

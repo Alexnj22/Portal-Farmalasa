@@ -10,26 +10,31 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
+import { fetchInventoryByProductIds } from '../../data/inventory';
 import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
 
 // Pedirle un producto a otra sala.
 //
-// **Se abre desde la consulta de inventario, y `producto` viene puesto.** La
-// lista ya sabe qué producto, qué salas lo tienen, cuántas unidades y con qué
-// lotes; quedan tres decisiones: a cuál pedirle, cuánto, y para qué.
+// Se abre desde la consulta de inventario, y lo normal es que `producto` venga
+// puesto: la lista ya sabe qué producto, qué salas lo tienen, cuántas unidades
+// y con qué lotes. Quedan tres decisiones: a cuál pedirle, cuánto, y para qué.
 //
-// ── La puerta sin producto se cerró (2026-08-18) ───────────────────────────
-// Entre el 2026-08-15 y hoy este modal también se abría desde «Nueva solicitud»
-// con `producto` en nulo, y empezaba por `BuscadorDeProducto`. Se quitó a
-// pedido del usuario, y el motivo es lo que hay que saber antes de reabrirla:
-// por ese camino NO hay lotes —`fetchDondeHay` trae las salas y las unidades,
-// no el reparto—, así que la solicitud salía sin decir de qué lote tenía que
-// salir el producto y quien despacha lo elegía por su cuenta. La elección de
-// lote es del que pide («los lotes MANDAN», 2026-08-07).
+// ── SIEMPRE sale con lotes, venga como venga (2026-08-18) ─────────────────
+// Lo que falte se pregunta acá: las salas con `fetchDondeHay` y los lotes con
+// `fetchInventoryByProductIds`. Las dos consultas corren SÓLO cuando el dato no
+// vino, nunca encima del que vino — si la pantalla mostró una lista, se elige
+// sobre ESA y no sobre otra que podría no coincidir con lo que la persona miró.
 //
-// La rama de `BuscadorDeProducto` sigue escrita y hoy no la alcanza nadie: si
-// alguna vez se vuelve a montar este modal sin producto, hay que resolver
-// primero de dónde salen los lotes, no sólo de dónde sale el producto.
+// Antes los lotes no se preguntaban, y por eso había puertas que producían
+// solicitudes a medias: la que vivió en «Nueva solicitud» entre el 15 y el 18
+// de agosto (arrancaba en un buscador de catálogo) y la lista de faltantes
+// —«Sin existencia, puedes solicitar en estas sucursales»—, que abre con la
+// fila del RPC y ésa no trae lotes. Por ahí la solicitud salía sin decir de qué
+// lote tenía que salir el producto y quien despacha lo elegía por su cuenta,
+// cuando esa elección es de quien pide («los lotes MANDAN», 2026-08-07).
+//
+// O sea que el modal ya no depende de con cuánto lo abrieron. Es la condición
+// para que las dos puertas produzcan la misma solicitud.
 //
 // El «para qué» es obligatorio en los dos casos: es lo único que queda escrito
 // en el movimiento de las dos salas.
@@ -94,6 +99,36 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         });
         return () => { cancelado = true; };
     }, [producto?.erp_product_id, producto?.donde, miErp]);
+
+    /* Los lotes, cuando la pantalla que abrió el modal no los traía.
+     *
+     * Misma forma que las salas de arriba, y por el mismo motivo: que el modal
+     * sea UNO y no dos que se parecen. La lista de faltantes —«Sin existencia,
+     * puedes solicitar en estas sucursales»— abre con la fila del RPC, que trae
+     * las salas y las unidades pero NO los lotes, así que por ahí la solicitud
+     * salía sin decir de qué lote tenía que salir el producto y quien despacha
+     * lo elegía por su cuenta.
+     *
+     * ⚠️ Sólo se pregunta cuando NO vinieron. Ese matiz es toda la regla: si la
+     * pantalla mostró una lista de lotes, se usa ESA —volver a pedirlos podría
+     * traer otra y se estaría eligiendo sobre algo distinto de lo que la
+     * persona miró—. Sin lista a la vista no hay nada que contradecir, y
+     * preguntar es estrictamente mejor que no ofrecer la elección. */
+    const [lotesTraidos, setLotesTraidos] = useState(null);
+    useEffect(() => {
+        if (producto?.lotesPorSala || !producto?.erp_product_id) return;
+        let cancelado = false;
+        fetchInventoryByProductIds([producto.erp_product_id]).then(filas => {
+            if (cancelado) return;
+            const porSala = {};
+            for (const l of filas ?? []) {
+                if (l.erp_product_id !== producto.erp_product_id) continue;
+                (porSala[l.erp_sucursal_id] ||= []).push(l);
+            }
+            setLotesTraidos(porSala);
+        }).catch(() => {});
+        return () => { cancelado = true; };
+    }, [producto?.erp_product_id, producto?.lotesPorSala]);
 
     // Queda elegida la sala desde la que se apretó «Solicitar» —la fila ya estaba
     // bajo su encabezado— y, si no viene ninguna, la de más existencia, que es
@@ -203,8 +238,11 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     useEffect(() => { setDescartados(new Set()); }, [salaId]);
 
     const lotesDeSala = useMemo(
-        () => lotesEnUnidades(producto?.lotesPorSala?.[String(salaId)] ?? producto?.lotesPorSala?.[salaId] ?? []),
-        [producto?.lotesPorSala, salaId],
+        () => {
+            const mapa = producto?.lotesPorSala ?? lotesTraidos;
+            return lotesEnUnidades(mapa?.[String(salaId)] ?? mapa?.[salaId] ?? []);
+        },
+        [producto?.lotesPorSala, lotesTraidos, salaId],
     );
     const lotesVivos = useMemo(
         () => lotesDeSala.filter(l => !descartados.has(l.clave)),

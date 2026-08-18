@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.1 — El pedido lleva sus lotes venga de la lista que venga
+
+Último hueco de la serie de hoy. En Consulta de inventario hay dos formas de
+pedir un producto, y sólo una llevaba los lotes.
+
+Si buscás el producto, la pantalla te muestra sus lotes y podés descartar el que
+está por vencer — eso viaja con la solicitud y se respeta al despachar. Pero si
+lo pedís desde la lista **«Sin existencia, puedes solicitar en estas
+sucursales»**, esa lista no trae lotes: no aparecía la sección «SALDRÍA DE» y el
+pedido salía sin decir de qué lote tenía que salir el producto, así que lo
+elegía quien despacha. La elección del lote es de quien pide.
+
+Ahora, cuando la pantalla que abre el pedido no trae los lotes, el formulario
+los busca solo. Es la misma solución que ya usaba para las salas cuando venían
+faltando.
+
+Con una condición que importa: **sólo pregunta cuando el dato no vino**, nunca
+encima del que vino. Si la pantalla te mostró una lista de lotes, elegís sobre
+ésa — volver a pedirlos podría traer otra y estarías eligiendo sobre algo
+distinto de lo que miraste.
+
+Con esto las dos formas de pedir producen la misma solicitud, completa.
+
 ## v2.661.0 — Arriba lo que te toca, abajo lo que esperas
 
 Las diferencias de un pedido se parten en tres, y el corte **no es el estado**:

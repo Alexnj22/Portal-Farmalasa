@@ -10,6 +10,8 @@ import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 import DevolucionBloque from './DevolucionBloque';
+import DecisionDiferencia from './DecisionDiferencia';
+import { fetchOpcionesDiferencia } from '../../../data/diferencias';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },
@@ -21,15 +23,14 @@ const ERROR_TIPO_LABEL = {
     diferencia:   { label: 'Diferencia',      variante: 'warning'      },
 };
 
-const RESOLUCION_OPTS = {
-    faltante:     [['envio_fisico','Enviar producto'],['ajuste_sistema','Ajuste en sistema']],
-    sobrante:     [['aceptar_sobrante','Sucursal queda con sobrante'],['devolver_bodega','Devolver a bodega']],
-    danado:       [['devolucion_aceptada','Aceptar devolución'],['devolucion_negada','Negar devolución']],
-    vencido:      [['devolucion_aceptada','Aceptar devolución'],['devolucion_negada','Negar devolución']],
-    presentacion: [['ajuste_sistema','Ajuste en sistema'],['aceptar_dif_pres','Aceptar dif. presentación']],
-    otro:         [['resuelto','Resuelto'],['no_aplica','Sin solución']],
-};
+// La lista de salidas ya NO se escribe acá. Vive en `diferencia_opcion` y la
+// pantalla la lee: es la misma que la base usa para validar, así que el valor
+// que se elige coincide con el que se acepta por construcción. Antes eran dos
+// copias —una acá y otra en la cabeza de quien escribió la RPC— y encima las
+// elegía BODEGA, cuando quien ve la diferencia es la sala.
 
+// Los rótulos de las resoluciones VIEJAS. Se quedan para poder leer lo que ya
+// está guardado; las nuevas traen su rótulo desde la tabla.
 const RESOLUCION_LABEL = {
     envio_fisico:        'Enviar producto',
     ajuste_sistema:      'Ajuste en sistema',
@@ -43,20 +44,37 @@ const RESOLUCION_LABEL = {
 };
 
 const EVENTO_LABEL = {
-    resolucion_propuesta:  'propuso resolución',
-    resolucion_confirmada: 'confirmó resolución',
-    resolucion_rechazada:  'rechazó resolución',
+    resolucion_propuesta:    'propuso resolución',
+    resolucion_confirmada:   'confirmó resolución',
+    resolucion_rechazada:    'rechazó resolución',
+    diferencia_proponer:     'propuso cómo se arregla',
+    diferencia_contraproponer:'propuso la otra salida',
+    diferencia_aceptar:      'estuvo de acuerdo',
+    diferencia_escalada:     'no estuvo de acuerdo — pasó a supervisión',
+    diferencia_supervisar:   'lo decidió supervisión',
+    diferencia_llegada:      'confirmó que lo tiene',
+    devolucion_solicitada:   'pidió la devolución',
+    devolucion_aceptada:     'aceptó la devolución',
+    devolucion_rechazada:    'no aceptó la devolución',
+    devolucion_recibida:     'recibió la devolución en bodega',
+    correccion_conteo:       'corrigió lo contado',
 };
 
 const DIF_MAX = 3;
 
-export default function DifSection({ row, difItems = [], eventos = [], devoluciones = [], isBranch, busyAction, empMap = new Map(), onResolver, onCorregirBodega, onConfirmarCorreccion, onSolicitarDevolucion, onDecidirDevolucion, onMoverDevolucion, onRecibirDevolucion, readOnly = false, onNeedItems, itemsLoaded = true }) {
-    const [tipoSel,    setTipoSel]    = useState({});
-    const [notaSel,    setNotaSel]    = useState({});
-    const [rejectOpen, setRejectOpen] = useState({});
-    const [notaRec,    setNotaRec]    = useState({});
-    const [showAll,    setShowAll]    = useState(false);
-    const [corrNota,   setCorrNota]   = useState('');
+export default function DifSection({ row, difItems = [], eventos = [], devoluciones = [], isBranch, esSupervision = false, busyAction, empMap = new Map(), onCorregirBodega, onConfirmarCorreccion, onDecidirDiferencia, onConfirmarLlegada, onPedirFoto, onMoverDevolucion, onRecibirDevolucion, readOnly = false, onNeedItems, itemsLoaded = true }) {
+    const [showAll,  setShowAll]  = useState(false);
+    const [corrNota, setCorrNota] = useState('');
+    const [catalogo, setCatalogo] = useState({});
+
+    // El catálogo de salidas. Se pide una vez por sesión —son doce filas que no
+    // cambian mientras el portal está abierto— y sin él no se ofrece ninguna
+    // opción: es preferible a inventarlas.
+    useEffect(() => {
+        let vivo = true;
+        fetchOpcionesDiferencia().then(c => { if (vivo) setCatalogo(c); });
+        return () => { vivo = false; };
+    }, []);
 
     useEffect(() => {
         if (!itemsLoaded && onNeedItems) onNeedItems();
@@ -101,23 +119,21 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
             </div>
 
             {visibleItems.map(item => {
-                const opts    = RESOLUCION_OPTS[item.error_tipo] ?? [['resuelto','Resuelto'],['no_aplica','Sin solución']];
-                const selTipo = tipoSel[item.id] ?? opts[0]?.[0] ?? '';
-                const isBusy  = busyAction === `res_${item.id}`;
                 const et      = ERROR_TIPO_LABEL[item.error_tipo];
                 const res     = item.resolucion_status;
                 const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
                 const dev     = devPorItem.get(item.id) ?? null;
-                const devViva = !!dev && dev.estado !== 'rechazada';
+                const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null;
 
-                const resueltoEmp   = item.resuelto_por       ? empMap.get(item.resuelto_por)       : null;
-                const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por)  : null;
-                const rechazadoEmp  = item.rechazado_por      ? empMap.get(item.rechazado_por)       : null;
-
-                const borderCls = res === 'confirmada' ? 'border-success/30 bg-success/10'
-                                : res === 'rechazada'  ? 'border-danger/30 bg-danger/10'
-                                : res === 'propuesta'  ? 'border-chart-3/30 bg-chart-3/10'
-                                :                        'border-warning/30 bg-surface-card';
+                // El marco dice de un vistazo en qué está el renglón. `escalada`
+                // se pinta en rojo porque es lo único que no avanza solo: alguien
+                // tiene que ir a mirarlo.
+                const borderCls = res === 'confirmada'      ? 'border-success/30 bg-success/10'
+                                : res === 'escalada'        ? 'border-danger/40 bg-danger/10'
+                                : res === 'acordada'        ? 'border-warning/40 bg-warning/10'
+                                : res === 'contrapropuesta' ? 'border-chart-4/30 bg-chart-4/10'
+                                : res === 'propuesta'       ? 'border-chart-3/30 bg-chart-3/10'
+                                :                             'border-warning/30 bg-surface-card';
 
                 return (
                     <div key={item.id} className={`rounded-xl border overflow-hidden ${borderCls}`}>
@@ -143,129 +159,38 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 
                         <div className="px-3 pb-3 space-y-2">
 
-                            {/* ── La devolución a bodega ──
-                                Mientras hay una viva, las opciones de resolución
-                                de abajo se esconden: son dos conversaciones sobre
-                                el mismo renglón, y tenerlas a la vez es la forma
-                                de que una diga que sí y la otra que no. */}
+                            {/* ── Cómo se arregla ──
+                                UNA conversación por renglón. Antes eran dos —la
+                                lista de resolución y el botón «Devolver a
+                                bodega»— sobre el mismo renglón, y tenerlas a la
+                                vez es la forma de que una diga que sí y la otra
+                                que no. */}
+                            <DecisionDiferencia
+                                item={item} catalogo={catalogo}
+                                esSala={isBranch} esSupervision={esSupervision}
+                                empMap={empMap} busyAction={busyAction} readOnly={readOnly}
+                                onDecidir={onDecidirDiferencia}
+                                onConfirmarLlegada={onConfirmarLlegada}
+                                onPedirFoto={onPedirFoto}
+                            />
+
+                            {/* ── El movimiento, cuando la salida acordada lo
+                                tiene. Ya no ofrece pedirlo: el acuerdo se dio
+                                arriba y la devolución nace aceptada. */}
                             <DevolucionBloque
                                 dev={dev} item={item} isBranch={isBranch} busyAction={busyAction}
                                 empMap={empMap} readOnly={readOnly}
-                                onSolicitar={onSolicitarDevolucion}
-                                onDecidir={onDecidirDevolucion}
                                 onMover={onMoverDevolucion}
                                 onRecibir={onRecibirDevolucion}
                             />
 
-                            {/* ── Estado: null o rechazada — BODEGA propone ── */}
-                            {!devViva && (!res || res === 'rechazada') && !isBranch && !readOnly && (
-                                <>
-                                    {res === 'rechazada' && (
-                                        <div className="flex items-start gap-1.5 text-caption bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30">
-                                            <X size={10} className="text-danger mt-0.5 shrink-0" />
-                                            <div>
-                                                <span className="font-semibold text-danger-text">Rechazado</span>
-                                                {rechazadoEmp && <span className="text-danger"> por {shortEmployeeName(rechazadoEmp)}</span>}
-                                                {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <LiquidSelect
-                                        value={selTipo}
-                                        onChange={v => setTipoSel(p => ({ ...p, [item.id]: v }))}
-                                        options={opts.map(([v, l]) => ({ value: v, label: l }))}
-                                        compact
-                                        clearable={false}
-                                    />
-                                    <div className="flex gap-2">
-                                        <PortalInput
-                                            aria-label="Nota de lo seleccionado" className="flex-1" tono="chart-3" compact
-                                            value={notaSel[item.id] ?? ''} onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            placeholder="Nota (opcional)…"
-                                        />
-                                        <Button tone="chart-3" disabled={isBusy || !selTipo} onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}</Button>
-                                    </div>
-                                </>
-                            )}
-
-                            {/* ── Estado: null — SUCURSAL espera ── */}
-                            {!devViva && !res && isBranch && !readOnly && (
-                                <p className="text-caption text-content-3 italic">Esperando resolución de bodega…</p>
-                            )}
-
-                            {/* ── Estado: propuesta — mostrar propuesta ── */}
-                            {res === 'propuesta' && !readOnly && (
-                                <>
-                                    <div className="flex items-start gap-1.5 text-caption bg-chart-3/10 rounded-lg px-2.5 py-1.5 border border-chart-3/20">
-                                        {/* `photo || photo_url` y `LiquidAvatar`: `resueltoEmp`
-                                            sale de `empMap`, donde la firmada vive en `photo` y
-                                            `photo_url` es la cruda de un bucket privado. Con la
-                                            cruda el `<img>` da 403 — y como `photo_url` existe,
-                                            el ternario tampoco caía en el ícono: quedaba un
-                                            círculo vacío. Mismo caso que el resumen de
-                                            recepción, corregido el 2026-08-15. */}
-                                        {resueltoEmp && (
-                                            <LiquidAvatar
-                                                src={resueltoEmp.photo || resueltoEmp.photo_url}
-                                                alt=""
-                                                fallbackText={shortEmployeeName(resueltoEmp)}
-                                                className="w-5 h-5 rounded-full border border-border-card shadow-sm shrink-0 mt-0.5 text-micro"
-                                            />
-                                        )}
-                                        <div className="flex-1">
-                                            <span className="font-semibold text-chart-3-text">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
-                                            {resueltoEmp && <span className="text-chart-3-text"> — {shortEmployeeName(resueltoEmp)}</span>}
-                                            {item.resolucion_nota && <p className="text-chart-3-text italic">{item.resolucion_nota}</p>}
-                                        </div>
-                                    </div>
-                                    {isBranch && (
-                                        rejectOpen[item.id] ? (
-                                            <div className="flex gap-2">
-                                                <PortalInput
-                                            aria-label="Razón del rechazo" className="flex-1" tono="danger" compact
-                                            value={notaRec[item.id] ?? ''} onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
-                                                                           autoFocus
-                                                                           onKeyDown={e => {
-                                                                               if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
-                                                                               if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
-                                                                           }}
-                                            placeholder="Razón del rechazo…"
-                                        />
-                                                <Button variant="destructive" disabled={isBusy} onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}</Button>
-                                                <Button variant="ghost" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))}>✕</Button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex gap-2">
-                                                <Button tone="success" icon={Check} loading={isBusy} onClick={() => onResolver(item.id, 'confirmar', null, null)}>Confirmar</Button>
-                                                <Button variant="destructive" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}>Rechazar</Button>
-                                            </div>
-                                        )
-                                    )}
-                                    {!isBranch && (
-                                        <p className="text-caption text-content-3 italic">Esperando confirmación de sucursal…</p>
-                                    )}
-                                </>
-                            )}
-
-                            {/* ── Estado: rechazada — SUCURSAL espera ── */}
-                            {res === 'rechazada' && isBranch && (
-                                <div className="text-caption bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30 space-y-0.5">
-                                    <div>
-                                        <span className="font-semibold text-danger-text">Rechazada</span>
-                                        {rechazadoEmp && <span className="text-danger"> por {shortEmployeeName(rechazadoEmp)}</span>}
-                                    </div>
-                                    {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
-                                    <p className="text-content-3">Esperando nueva propuesta de bodega…</p>
-                                </div>
-                            )}
-
-                            {/* ── Estado: confirmada ── */}
-                            {res === 'confirmada' && (
+                            {/* Lo resuelto por el circuito VIEJO se sigue
+                                leyendo: hay renglones cerrados así. */}
+                            {res === 'confirmada' && !item.resolucion_vence_at && RESOLUCION_LABEL[item.resolucion_tipo] && (
                                 <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
                                     <CheckCircle2 size={11} className="text-success shrink-0" />
-                                    <strong>{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</strong>
+                                    <strong>{RESOLUCION_LABEL[item.resolucion_tipo]}</strong>
                                     {confirmadoEmp && <span className="text-success">— {shortEmployeeName(confirmadoEmp)}</span>}
-                                    {item.resolucion_nota && <span className="text-success italic">· {item.resolucion_nota}</span>}
                                 </div>
                             )}
                         </div>

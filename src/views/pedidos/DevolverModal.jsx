@@ -33,7 +33,12 @@ const motivoSugerido = (item) =>
 // estado inicial se calcula al montar y no hay efecto que lo sincronice: un
 // `setState` dentro de un efecto para copiar props es justo lo que el lint del
 // repo prohíbe, y con razón — encadena renders para nada.
-export default function DevolverModal({ open, onClose, item, onConfirm, saving }) {
+// `soloEvidencia`: la decisión de la diferencia ya resolvió QUÉ se hace y por
+// CUÁNTO —lo dice la salida acordada y lo calcula la base—, así que preguntarlo
+// otra vez sería pedir dos veces el mismo dato, y peor: ofrecer una cantidad que
+// después se ignora. En ese modo el modal sirve para lo único que falta y que
+// nadie más puede aportar: la foto del daño.
+export default function DevolverModal({ open, onClose, item, onConfirm, saving, soloEvidencia = false }) {
     const [motivo,   setMotivo]   = useState(() => motivoSugerido(item));
     const [cantidad, setCantidad] = useState(
         () => String(item?.cantidad_problema ?? tope(item, motivoSugerido(item)) ?? ''));
@@ -46,7 +51,8 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
     const pideFoto = motivo === 'danado';
     const cant = Number(cantidad);
 
-    const puede = cant > 0 && cant <= max && (!pideFoto || fotos.length > 0) && !saving;
+    const puede = (soloEvidencia || (cant > 0 && cant <= max))
+        && (!pideFoto || fotos.length > 0) && !saving;
 
     const cambiarMotivo = (m) => {
         setMotivo(m);
@@ -74,6 +80,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 {/* ── Motivo ── */}
+                {!soloEvidencia && (
                 <div className="space-y-1.5">
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest px-1">Qué pasó</p>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -93,8 +100,10 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
                         {MOTIVOS.find(m => m.value === motivo)?.ayuda}
                     </p>
                 </div>
+                )}
 
                 {/* ── Lo que va a pasar. Es el dato que usa bodega. ── */}
+                {!soloEvidencia && (
                 <div className={`rounded-xl border px-3 py-2.5 ${
                     viaja ? 'border-warning/30 bg-warning/[0.07]' : 'border-success/30 bg-success/[0.07]'
                 }`}>
@@ -107,8 +116,10 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
                             : 'Quedó en bodega desde el principio: se corrige y bodega lo confirma en el momento.'}
                     </p>
                 </div>
+                )}
 
                 {/* ── Cantidad ── */}
+                {!soloEvidencia && (
                 <div className="space-y-1">
                     <PortalInput
                         label="Cuántas" type="number" alto tono="chart-4"
@@ -123,9 +134,10 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
                             : `Llegaron ${max}; se puede devolver hasta esa cantidad.`}
                     </p>
                 </div>
+                )}
 
                 {/* ── Foto ── */}
-                {viaja && (
+                {(viaja || soloEvidencia) && (
                     <div className="flex flex-col gap-2">
                         <div className="flex items-baseline gap-2 px-1">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest">

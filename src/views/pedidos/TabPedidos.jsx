@@ -45,6 +45,7 @@ import { fetchBodegaBranchId, updateRutaStatus } from '../../data/pedidos';
 import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
 import { usePedidosData } from './tabpedidos/usePedidosData';
 import { clickable } from '../../utils/clickable';
+import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
     // hecho y sin hoja. El permiso se llama "Reimprimir el pedido" por eso.
     const canDownload = hasPermission('pedidos_descargar');
-    // { pedidoId, sucId, item } — el renglón que la sala quiere devolver.
+    // { pedidoId, sucId, item, opcion, nota } — el renglón cuya foto falta.
     const [devolverModal, setDevolverModal] = React.useState(null);
     const {
         user, isBranch, canEdit, canEditMinMax,
@@ -167,11 +168,11 @@ export default function TabPedidos({ searchTerm = '' }) {
         handleReportarDiferencias,
         handleCorregirBodega,
         handleConfirmarCorreccion,
-        handleSolicitarDevolucion,
-        handleDecidirDevolucion,
+        handleProponerConFoto,
         handleMoverDevolucion,
         handleRecibirDevolucion,
-        handleResolverItem,
+        handleDecidirDiferencia,
+        handleConfirmarLlegadaDiferencia,
         filterOptions,
         hasObservacion,
         pedidoStageMap,
@@ -179,6 +180,12 @@ export default function TabPedidos({ searchTerm = '' }) {
         sucursalCounts,
         renderGroups,
     } = usePedidosData({ searchTerm });
+
+    // Supervisión es el CARGO, no el alcance. Bodega tiene alcance «todas las
+    // salas» sobre Pedidos y NO es supervisión: confundirlos le daba el turno de
+    // la sala (medido el 2026-08-17). La base decide igual con
+    // `auth_es_supervision()`; acá sólo se elige qué botón se pinta.
+    const esSupervision = esCargoDeSupervision(user?.systemRole);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -688,24 +695,25 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 readOnly={row.pedido_status === 'completado'}
                                                 onNeedItems={() => fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
                                                 itemsLoaded={!!items[cardKey]}
-                                                onResolver={(itemId, action, tipo, nota) =>
-                                                    handleResolverItem(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, action, tipo, nota)
+                                                esSupervision={esSupervision}
+                                                onDecidirDiferencia={(itemId, accion, tipo, nota) =>
+                                                    handleDecidirDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, accion, tipo, nota)
+                                                }
+                                                onConfirmarLlegada={(itemId) =>
+                                                    handleConfirmarLlegadaDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId)
+                                                }
+                                                onPedirFoto={(item, opcion, nota) =>
+                                                    setDevolverModal({
+                                                        pedidoId: row.pedido_id,
+                                                        sucId: erpSucursalId ?? row.erp_sucursal_id,
+                                                        item, opcion, nota,
+                                                    })
                                                 }
                                                 onCorregirBodega={(nota) =>
                                                     handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)
                                                 }
                                                 onConfirmarCorreccion={() =>
                                                     handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
-                                                }
-                                                onSolicitarDevolucion={(item) =>
-                                                    setDevolverModal({
-                                                        pedidoId: row.pedido_id,
-                                                        sucId: erpSucursalId ?? row.erp_sucursal_id,
-                                                        item,
-                                                    })
-                                                }
-                                                onDecidirDevolucion={(id, accion, nota) =>
-                                                    handleDecidirDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id, accion, nota)
                                                 }
                                                 onMoverDevolucion={(id) =>
                                                     handleMoverDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
@@ -989,15 +997,21 @@ export default function TabPedidos({ searchTerm = '' }) {
                 El estado vive acá y no en el hook porque es puro formulario: se
                 abre desde la fila de una diferencia y muere al enviarlo. */}
             {devolverModal && (
+                /* El daño es lo único que no se puede proponer en la tarjeta:
+                   necesita la foto, y la foto necesita un lugar donde elegirla.
+                   El modal ya no pregunta motivo ni cantidad —eso lo resolvió la
+                   decisión, y volver a preguntarlo sería ofrecer un número que
+                   después se ignora—: pide la foto y la nota, y con eso propone. */
                 <DevolverModal
                     open
+                    soloEvidencia
                     onClose={() => setDevolverModal(null)}
                     item={devolverModal.item}
-                    saving={busyAction === `dev_${devolverModal.item?.id}`}
-                    onConfirm={async (datos) => {
+                    saving={busyAction === `dif_${devolverModal.item?.id}`}
+                    onConfirm={async ({ nota, fotos = [] }) => {
                         const m = devolverModal;
                         setDevolverModal(null);
-                        await handleSolicitarDevolucion(m.pedidoId, m.sucId, { itemId: m.item.id, ...datos });
+                        await handleProponerConFoto(m, { nota, fotos });
                     }}
                 />
             )}

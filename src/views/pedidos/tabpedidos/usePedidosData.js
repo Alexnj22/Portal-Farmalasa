@@ -28,9 +28,10 @@ import {
     fetchEntregasDePedidos,
 } from '../../../data/pedidos';
 import {
-    fetchDevolucionesDePedido, solicitarDevolucion, decidirDevolucion,
+    fetchDevolucionesDePedido, decidirDevolucion,
     subirEvidencia, moverDevoluciones, recibirDevoluciones,
 } from '../../../data/devoluciones';
+import { decidirDiferencia, confirmarLlegadaDiferencia } from '../../../data/diferencias';
 import { registerPlugin } from '@capacitor/core';
 
 import { mensajeAmigable } from '../../../utils/errorMessages';
@@ -1413,33 +1414,94 @@ export function usePedidosData({ searchTerm = '' }) {
         await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
     }, [loadActive, fetchItems]);
 
-    const handleSolicitarDevolucion = useCallback(async (pedidoId, sucId, datos) => {
-        const { itemId, motivo, cantidad, nota, fotos = [] } = datos;
-        setBusyAction(`dev_${itemId}`);
+    // ── La decisión de la diferencia ──────────────────────────────────────────
+    //
+    // Un turno de la conversación. De quién es el turno y qué opciones valen lo
+    // decide la BASE — acá se manda lo que la pantalla ofreció, y si no
+    // correspondía rebota con su motivo. Escribir esa regla también acá sería
+    // tenerla dos veces, y dos copias se separan.
+    //
+    // Cuando el acuerdo cae en una salida que se arregla EN EL SISTEMA, la RPC
+    // deja la devolución creada y ya aceptada; lo único que falta es sacarla de
+    // la sala, y eso habla con el sistema y puede fallar. Por eso va aparte: el
+    // fallo del movimiento no borra el acuerdo.
+    const handleDecidirDiferencia = useCallback(async (pedidoId, sucId, itemId, accion, tipo, nota, evidencia = []) => {
+        setBusyAction(`dif_${itemId}`);
         try {
-            // La evidencia va PRIMERO: si la foto no sube, la devolución no se
-            // crea. Una por daño sin foto es justo la que bodega no puede
-            // decidir, y dejarla entrar la vuelve una fila que hay que rechazar.
-            const evidencia = fotos.length
-                ? await subirEvidencia(fotos, { salaId: sucId, userId: user?.id })
-                : [];
-            const { error } = await solicitarDevolucion({ itemId, motivo, cantidad, nota, evidencia });
+            const { data, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia });
             if (error) throw error;
-            useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_SOLICITADA', pedidoId, {
-                sucursal_id: sucId, item_id: itemId, motivo, cantidad, fotos: evidencia.length,
+
+            useStaff.getState().appendAuditLog(`PEDIDO_DIFERENCIA_${String(accion).toUpperCase()}`, pedidoId, {
+                sucursal_id: sucId, item_id: itemId, opcion: data?.opcion ?? tipo, estado: data?.estado,
             });
-            useToastStore.getState().showToast(
-                'Devolución pedida',
-                motivo === 'faltante'
-                    ? 'Bodega la confirma y se corrige en el momento — no viaja nada.'
-                    : 'Bodega la revisa y te contesta.',
-                'success',
-            );
+
+            if (data?.devolucion_id) {
+                const r = await moverDevoluciones([data.devolucion_id], { simulacro: false });
+                useToastStore.getState().showToast(
+                    r.ok ? 'Salió de la sala' : 'Quedaron de acuerdo, pero no salió',
+                    r.ok ? 'Falta que bodega confirme la entrada.'
+                         : (r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.'),
+                    r.ok ? 'success' : 'warning',
+                );
+            } else if (data?.estado === 'acordada' && data?.mueve === 'traslado_a_sala') {
+                useToastStore.getState().showToast(
+                    'Quedaron de acuerdo',
+                    'Falta que salga el traslado de bodega a la sala.',
+                    'warning',
+                );
+            } else if (data?.estado === 'escalada') {
+                useToastStore.getState().showToast(
+                    'Pasó a supervisión',
+                    'No hubo acuerdo. Supervisión decide con qué salida se queda.',
+                    'info',
+                );
+            }
             await recargarTarjeta(pedidoId, sucId);
         } catch (e) {
-            useToastStore.getState().showToast('Devolución', mensajeAmigable(e), 'error');
+            useToastStore.getState().showToast('Diferencia', mensajeAmigable(e), 'error');
         } finally { setBusyAction(null); }
-    }, [user, recargarTarjeta]);
+    }, [recargarTarjeta]);
+
+    // «Ya lo tengo en la mano.» Cierra las salidas que se arreglan en FÍSICO: no
+    // mueven nada en el sistema, pero igual las firma quien recibe el producto.
+    const handleConfirmarLlegadaDiferencia = useCallback(async (pedidoId, sucId, itemId) => {
+        setBusyAction(`dif_${itemId}`);
+        try {
+            const { error } = await confirmarLlegadaDiferencia(itemId);
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIA_LLEGADA', pedidoId, {
+                sucursal_id: sucId, item_id: itemId,
+            });
+            useToastStore.getState().showToast('Diferencia cerrada', 'Queda la constancia de que llegó.', 'success');
+            await recargarTarjeta(pedidoId, sucId);
+        } catch (e) {
+            useToastStore.getState().showToast('Diferencia', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [recargarTarjeta]);
+
+    // Proponer una salida que necesita FOTO — hoy sólo el daño.
+    //
+    // La evidencia va PRIMERO: si la foto no sube, la propuesta no se hace. Una
+    // devolución por daño sin foto es exactamente la que bodega no puede
+    // decidir, y dejarla entrar «para no perder lo escrito» la convierte en una
+    // fila que alguien va a tener que rechazar a mano. La base además la
+    // rechaza, así que subir después sería confiar en que el segundo paso ocurra.
+    const handleProponerConFoto = useCallback(async ({ pedidoId, sucId, item, opcion, nota }, { nota: notaModal, fotos = [] }) => {
+        setBusyAction(`dif_${item.id}`);
+        let evidencia = [];
+        try {
+            evidencia = fotos.length
+                ? await subirEvidencia(fotos, { salaId: sucId, userId: user?.id })
+                : [];
+        } catch (e) {
+            useToastStore.getState().showToast('Diferencia', mensajeAmigable(e), 'error');
+            setBusyAction(null);
+            return;
+        }
+        setBusyAction(null);
+        await handleDecidirDiferencia(pedidoId, sucId, item.id, 'proponer', opcion,
+            notaModal || nota || null, evidencia);
+    }, [user, handleDecidirDiferencia]);
 
     // Aceptar y mover son UN gesto para quien aprieta, pero dos escrituras
     // distintas: la decisión es del portal y siempre entra; el movimiento habla
@@ -1722,7 +1784,9 @@ export function usePedidosData({ searchTerm = '' }) {
         handleCorregirBodega,
         handleConfirmarCorreccion,
         handleResolverItem,
-        handleSolicitarDevolucion,
+        handleDecidirDiferencia,
+        handleConfirmarLlegadaDiferencia,
+        handleProponerConFoto,
         handleDecidirDevolucion,
         handleMoverDevolucion,
         handleRecibirDevolucion,

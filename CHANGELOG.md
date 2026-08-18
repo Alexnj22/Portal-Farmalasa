@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.658.0 — La diferencia se decide entre las dos partes
+
+Sale de mirar el pedido 116 de La Popular. Hasta hoy, cuando un renglón no
+cuadraba, **bodega** elegía de una lista qué se hacía y la sala confirmaba — y
+al lado convivía un botón «Devolver a bodega» que era otra conversación sobre el
+mismo renglón. Dos caminos para lo mismo es la forma de que uno diga que sí y el
+otro que no.
+
+Ahora es **una sola conversación, y la abre quien ve el problema**:
+
+> La **sala** propone cómo se arregla · **Bodega** acepta o propone la otra
+> salida · si no coinciden, decide **supervisión**. El movimiento sale cuando
+> los dos estuvieron de acuerdo, y el renglón cierra cuando el movimiento
+> terminó — o cuando el producto llegó.
+
+**Cada diferencia tiene exactamente dos salidas, y lo que las separa es en qué
+plano se arregla.** En el sistema sale un traslado; en físico no hay asiento,
+sólo la decisión y la firma de quien recibe el producto:
+
+| | Se arregla en el sistema | Se arregla en físico |
+|---|---|---|
+| **Faltante** | la sala regresa la unidad | bodega manda el producto |
+| **Sobrante** | bodega manda la unidad | la sala devuelve la unidad |
+| **Dañado o vencido** | la sala lo devuelve (con foto) | se queda en la sala |
+
+Lo que cambia en la pantalla es el mismo bloque de Diferencias de siempre,
+adentro de la tarjeta del pedido: no hay que ir a otro lado. Cada renglón dice
+de quién es el turno, y el que no está de acuerdo tiene que escribir por qué —
+lo lee supervisión.
+
+Tres cosas que se sostienen solas y no dependen de que nadie se acuerde:
+
+- **La lista de salidas vive en la base**, no escrita en la pantalla. Es la
+  misma que valida al guardar, así que lo que se elige coincide con lo que se
+  acepta por construcción.
+- **Nadie firma un acuerdo solo.** Quien propone no puede aceptarse, tenga el
+  alcance que tenga.
+- **«Que bodega mande el producto» vive 3 días.** Después se vuelve a decidir.
+
+Y se cerró un hueco que sólo apareció probándolo con las cuentas reales:
+**«alcance todas las salas» no es supervisión** — sobre Pedidos lo tiene Bodega,
+porque necesita ver los pedidos de las siete salas. Tomarlo por supervisión le
+daba a Bodega el turno de la sala. Ahora supervisión es el cargo, y nada más.
+
+Migraciones `20260817213712`, `20260817213842`, `20260817213946`, `20260817214322`,
+`20260817221845` y `20260818…los_rotulos_dicen_quien_y_en_que_plano`.
+
 ## v2.657.8 — El traslado recibido sale de la lista aunque el sistema conteste mal
 
 Reportado por el usuario: *«al confirmar uno como llegado se carga, pero no se

@@ -20,12 +20,10 @@ import { getSignedFileUrl, openStoredFile } from '../../../utils/storageFiles';
 const MOTIVO_LABEL = { faltante: 'No llegó', danado: 'Dañado', vencido: 'Vencido' };
 
 export default function DevolucionBloque({
-    dev, item, isBranch, busyAction, empMap = new Map(), readOnly = false,
-    onSolicitar, onDecidir, onMover, onRecibir,
+    dev, isBranch, busyAction, empMap = new Map(), readOnly = false,
+    onMover, onRecibir,
 }) {
-    const [rechazando, setRechazando] = useState(false);
-    const [motivoRech, setMotivoRech] = useState('');
-    const [firmadas,   setFirmadas]   = useState([]);
+    const [firmadas, setFirmadas] = useState([]);
 
     // El bucket es privado: la URL guardada es la de formato público —que no
     // sirve para mirar— y hay que firmarla. Se firma al pintar el bloque y no al
@@ -39,22 +37,17 @@ export default function DevolucionBloque({
         return () => { vivo = false; };
     }, [dev?.id, dev?.evidencia_urls]);
 
-    // ── Todavía no hay devolución: la sala la puede pedir ────────────────────
-    if (!dev) {
-        if (readOnly || !isBranch) return null;
-        // Sólo tiene sentido devolver lo que no cuadró por cantidad o por estado
-        // del producto. Una diferencia de presentación no se arregla sacando
-        // mercadería de la sala.
-        if (!['faltante', 'danado', 'vencido'].includes(item?.error_tipo)) return null;
-        return (
-            <Button tone="chart-4" icon={Undo2} disabled={busyAction === `dev_${item.id}`}
-                onClick={() => onSolicitar?.(item)}>
-                {busyAction === `dev_${item.id}` ? <Loader2 size={10} className="animate-spin" /> : 'Devolver a bodega'}
-            </Button>
-        );
-    }
+    // ── Todavía no hay devolución ────────────────────────────────────────────
+    // Acá vivía el botón «Devolver a bodega», que era la puerta de entrada. Ya
+    // no: devolver es UNA de las dos salidas de la decisión (2026-08-18), y la
+    // decisión es la única puerta. Tener las dos abiertas era tener dos
+    // conversaciones sobre el mismo renglón — la forma de que una diga que sí y
+    // la otra que no.
+    //
+    // Este bloque queda con lo que nadie más hace: mover el producto y firmar
+    // que entró.
+    if (!dev) return null;
 
-    const decidiendo = busyAction === `devdec_${dev.id}`;
     const moviendo   = busyAction === `devmov_${dev.id}`;
     const recibiendo = busyAction === `devrec_${dev.id}`;
     const quienPidio = dev.solicitada_por ? empMap.get(dev.solicitada_por) : null;
@@ -135,37 +128,15 @@ export default function DevolucionBloque({
             )}
 
             {readOnly ? null : (<>
-                {/* ── Bodega decide ── */}
-                {dev.estado === 'solicitada' && !isBranch && (
-                    rechazando ? (
-                        <div className="flex gap-2">
-                            <PortalInput
-                                aria-label="Por qué no se devuelve" className="flex-1" tono="danger" compact autoFocus
-                                value={motivoRech} onChange={e => setMotivoRech(e.target.value)}
-                                placeholder="Por qué no…"
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && motivoRech.trim()) onDecidir?.(dev.id, 'rechazar', motivoRech);
-                                    if (e.key === 'Escape') setRechazando(false);
-                                }}
-                            />
-                            <Button variant="destructive" disabled={decidiendo || !motivoRech.trim()}
-                                onClick={() => onDecidir?.(dev.id, 'rechazar', motivoRech)}>
-                                {decidiendo ? <Loader2 size={10} className="animate-spin" /> : 'No devolver'}
-                            </Button>
-                            <Button variant="ghost" onClick={() => setRechazando(false)}>✕</Button>
-                        </div>
-                    ) : (
-                        <div className="flex gap-2">
-                            <Button tone="success" icon={Check} disabled={decidiendo}
-                                onClick={() => onDecidir?.(dev.id, 'aceptar', '')}>
-                                {decidiendo ? <Loader2 size={10} className="animate-spin" /> : 'Aceptar y sacarlo de la sala'}
-                            </Button>
-                            <Button variant="destructive" icon={X} onClick={() => setRechazando(true)}>No devolver</Button>
-                        </div>
-                    )
-                )}
-                {dev.estado === 'solicitada' && isBranch && (
-                    <p className="text-caption text-content-3 italic">Esperando que bodega la revise…</p>
+                {/* Acá estaba «Aceptar / No devolver». El acuerdo ahora se
+                    da arriba, en la decisión, y la devolución nace ACEPTADA:
+                    volver a preguntarlo sería la misma conversación dos veces.
+                    Una fila vieja en «solicitada» sigue pudiendo cerrarse desde
+                    la bitácora, pero ya no nacen así. */}
+                {dev.estado === 'solicitada' && (
+                    <p className="text-caption text-content-3 italic">
+                        Pedida con el circuito anterior — resolvela desde la decisión de arriba.
+                    </p>
                 )}
 
                 {/* ── Salió: falta que entre ── */}
@@ -210,13 +181,6 @@ export default function DevolucionBloque({
                     </p>
                 )}
 
-                {/* ── Rechazada: la sala puede volver a pedirla ── */}
-                {dev.estado === 'rechazada' && isBranch && (
-                    <Button tone="chart-4" icon={Undo2} disabled={busyAction === `dev_${item.id}`}
-                        onClick={() => onSolicitar?.(item)}>
-                        {busyAction === `dev_${item.id}` ? <Loader2 size={10} className="animate-spin" /> : 'Volver a pedirla'}
-                    </Button>
-                )}
             </>)}
         </div>
     );

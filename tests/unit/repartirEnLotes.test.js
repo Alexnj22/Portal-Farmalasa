@@ -138,7 +138,7 @@ describe('repartirEnLotes — los lotes que la solicitud reservó MANDAN', () =>
         expect(r.avisos.join(' ')).toMatch(/no es el que la solicitud había reservado/);
     });
 
-    it('el mismo número con otro vencimiento es OTRO lote', () => {
+    it('el mismo número con otro vencimiento es OTRO lote: la fecha desempata', () => {
         // Hay productos con dos lotes de igual número y fechas distintas: son
         // existencias separadas.
         const lotes = [
@@ -147,6 +147,33 @@ describe('repartirEnLotes — los lotes que la solicitud reservó MANDAN', () =>
         ];
         const r = repartirEnLotes(lotes, 1, 10, [{ numero: 'X1', vence: '2028-01-01', paquetes: 1 }]);
         expect(r.renglones).toEqual([{ cantidad: 1, idLote: '2', lote: 'X1' }]);
+        expect(r.avisos).toEqual([]);
+    });
+
+    // ── El número manda; la fecha sólo desempata ─────────────────────────────
+    // Quien pide ve la fecha del inventario del portal y quien despacha la del
+    // <select> de traslados: son dos pantallas distintas del sistema. Si la
+    // coincidencia exacta de fecha fuera obligatoria, un día distinto tiraría
+    // abajo una reserva correcta y el lote elegido se perdería en silencio.
+    it('un número único se respeta aunque la fecha no coincida', () => {
+        const r = repartirEnLotes(ALOPURINOL, 1, 10, [{ numero: '6F125', vence: '2030-06-30', paquetes: 1 }]);
+        expect(r.renglones).toEqual([{ cantidad: 1, idLote: '102', lote: '6F125' }]);
+        expect(r.avisos).toEqual([]);
+    });
+
+    it('un número único se respeta aunque la solicitud no traiga fecha', () => {
+        const r = repartirEnLotes(ALOPURINOL, 1, 10, [{ numero: '6F125', paquetes: 1 }]);
+        expect(r.renglones).toEqual([{ cantidad: 1, idLote: '102', lote: '6F125' }]);
+    });
+
+    it('número repetido y ninguna fecha que coincida: sale el que vence primero y se avisa', () => {
+        const lotes = [
+            { id: '1', numero: 'X1', vence: '2027-01-01', stock: 10 },
+            { id: '2', numero: 'X1', vence: '2028-01-01', stock: 10 },
+        ];
+        const r = repartirEnLotes(lotes, 1, 10, [{ numero: 'X1', vence: '2029-12-31', paquetes: 1 }]);
+        expect(r.renglones).toEqual([{ cantidad: 1, idLote: '1', lote: 'X1' }]);
+        expect(r.avisos.join(' ')).toMatch(/hay dos lotes X1/);
     });
 
     it('la reserva no alcanza a completar lo pedido: se avisa y se completa', () => {

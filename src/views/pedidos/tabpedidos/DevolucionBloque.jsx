@@ -3,7 +3,7 @@ import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle, Image as 
 import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import Badge from '../../../components/common/Badge';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import EmpChip from './EmpChip';
 import { getSignedFileUrl, openStoredFile } from '../../../utils/storageFiles';
 
 // La devolución de un renglón, pegada a su diferencia.
@@ -85,12 +85,12 @@ export default function DevolucionBloque({
                 {dev.estado === 'recibida' && <PackageCheck size={12} className="text-success shrink-0" />}
             </div>
 
-            <p className="text-caption text-content-3">
-                {dev.viaja
+            <div className="flex items-center gap-2 flex-wrap text-caption text-content-3">
+                <span>{dev.viaja
                     ? 'El producto viaja de vuelta a bodega.'
-                    : 'No viaja nada: quedó en bodega desde el principio.'}
-                {quienPidio && <> · Pedida por {shortEmployeeName(quienPidio)}</>}
-            </p>
+                    : 'No viaja nada: quedó en bodega desde el principio.'}</span>
+                <EmpChip emp={quienPidio} prefijo="Pedida por" size="xs" />
+            </div>
 
             {dev.nota && <p className="text-caption text-content-2 italic">«{dev.nota}»</p>}
 
@@ -121,10 +121,10 @@ export default function DevolucionBloque({
                 </p>
             )}
             {dev.motivo_rechazo && (
-                <p className="text-caption text-danger">
-                    <strong>Bodega dijo que no:</strong> {dev.motivo_rechazo}
-                    {quienDecidio && <span className="text-content-3"> — {shortEmployeeName(quienDecidio)}</span>}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap text-caption text-danger">
+                    <span><strong>Bodega dijo que no:</strong> {dev.motivo_rechazo}</span>
+                    <EmpChip emp={quienDecidio} size="xs" tono="danger-text" />
+                </div>
             )}
 
             {readOnly ? null : (<>

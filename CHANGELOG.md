@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.658.3 — Las caras vuelven, y los renglones del circuito viejo se reabren
+
+Dos cosas que sólo se vieron abriendo la pantalla.
+
+**Siempre que se nombra a una persona, sale su foto.** En el bloque de
+diferencias los nombres salían pelados — quien propuso, quien pidió la
+devolución, quien la cerró, y toda la bitácora de actividad. Un nombre suelto
+obliga a saberse quién es cada quien; la cara se reconoce de un vistazo. Ahora
+todos pasan por un mismo componente, que además resuelve la foto por la URL
+**firmada**:
+el bucket es privado y con la cruda el navegador devuelve 403 y deja el círculo
+vacío. Es el mismo error que ya se había corregido dos veces en esta misma
+vista, así que esta vez quedó en un solo componente.
+
+**Y tres renglones decían «La sala propone» sobre algo que propuso Bodega.** Eran
+del circuito anterior —donde bodega elegía y la sala confirmaba— y su decisión
+ya no existe en la lista de hoy, así que la pantalla no podía saber de quién era
+el turno. Peor: ofrecía «De acuerdo» sobre una salida que la base iba a
+rechazar. Los tres se reabrieron para decidirse con las dos salidas, y lo que
+bodega había escrito quedó en la bitácora del renglón. Un renglón viejo que
+aparezca de aquí en adelante lo dice en vez de disfrazarse.
+
+## v2.658.2 — El lote reservado se cruza por número, no por fecha
+
+Sale de una pregunta del usuario sobre la pantalla de solicitar: «al momento de
+solicitar, ¿no va el lote y vence? ¿envía en el traslado el que pedí?». Sí va —y
+desde v2.658.1 se respeta—, pero al revisarlo apareció que el cruce era más
+frágil de lo necesario.
+
+Quien pide ve la fecha de vencimiento que guardó el inventario del portal; quien
+despacha ve la que trae la pantalla de traslados del sistema. Son dos orígenes
+distintos, y el cruce exigía que el número **y** la fecha coincidieran exacto.
+Un día distinto —y las fechas reales no son todas día 1: hay 243 filas con día
+31, 15 con día 30, 6 con día 28— habría tirado abajo una reserva correcta, y el
+lote elegido se habría perdido sin que nadie lo notara.
+
+Ahora **el número identifica el lote y la fecha sólo desempata**, que es cuando
+de verdad hace falta: el caso real de dos lotes con el mismo número y
+vencimientos distintos, que son existencias separadas. Si el número está
+repetido y ninguna fecha coincide, sale el que vence primero y queda avisado en
+el detalle de la solicitud.
+
+
 ## v2.658.1 — El traslado sale de varios lotes cuando uno solo no alcanza
 
 Reportado el 18-ago: una solicitud de producto hecha desde Consulta de

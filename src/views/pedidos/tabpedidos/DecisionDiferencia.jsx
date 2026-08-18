@@ -5,7 +5,7 @@ import Badge from '../../../components/common/Badge';
 import Notice from '../../../components/common/Notice';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import PortalInput from '../../../components/common/PortalInput';
-import { shortEmployeeName } from '../../../utils/nameUtils';
+import EmpChip from './EmpChip';
 import { opcionesDe, opcionElegida } from '../../../data/diferencias';
 import { turnoDe } from '../../../utils/decisionDiferencia';
 
@@ -25,6 +25,20 @@ const ESPERA = {
     sala:        'Esperando que la sala decida…',
     bodega:      'Esperando la respuesta de bodega…',
     supervision: 'Sin acuerdo — lo está viendo supervisión…',
+};
+
+// Los rótulos del circuito ANTERIOR. Sirven para poder LEER lo que ya quedó
+// cerrado así — no para elegirlos: las salidas de hoy vienen de la tabla.
+const ROTULO_VIEJO = {
+    envio_fisico:        'Enviar producto',
+    ajuste_sistema:      'Ajuste en sistema',
+    aceptar_sobrante:    'La sala se quedó con el sobrante',
+    devolver_bodega:     'Devolver a bodega',
+    devolucion_aceptada: 'Devolución aceptada',
+    devolucion_negada:   'Devolución negada',
+    aceptar_dif_pres:    'Diferencia de presentación aceptada',
+    resuelto:            'Resuelto',
+    no_aplica:           'Sin solución',
 };
 
 const MARCO = {
@@ -74,6 +88,22 @@ export default function DecisionDiferencia({
     // Sin catálogo no se ofrece nada. Es preferible a pintar una lista vacía que
     // parece un error de la persona.
     if (!opciones.length) return null;
+
+    // Un renglón resuelto con el circuito ANTERIOR: bodega elegía de otra lista
+    // y la sala confirmaba. Su `resolucion_tipo` no existe en el catálogo de
+    // hoy, así que no se puede decir de quién es el turno ni ofrecer «De
+    // acuerdo» — la base lo rechazaría con OPCION_INVALIDA y quien apretara
+    // vería un error que no explica nada. Se muestra lo que quedó anotado y
+    // nada más; los que quedaron a medias se reabrieron el 2026-08-18.
+    const esDelCircuitoViejo = !!item.resolucion_tipo && !op;
+    if (esDelCircuitoViejo && estado !== 'confirmada') {
+        return (
+            <Notice variant="neutral" icon={Scale} compact>
+                Esta diferencia se propuso con el circuito anterior. Hay que volver a
+                decidirla con las dos salidas.
+            </Notice>
+        );
+    }
 
     const decidir = (accion, tipo = null, txt = null) =>
         onDecidir?.(item.id, accion, tipo, txt);
@@ -133,10 +163,10 @@ export default function DecisionDiferencia({
                     ? <ShieldQuestion size={12} className="text-danger shrink-0" />
                     : <Scale size={12} className="text-content-2 shrink-0" />}
                 <span className="text-label font-bold text-content-2">{ROTULO_ESTADO[estado] ?? estado}</span>
-                {op && (
+                {(op || ROTULO_VIEJO[item.resolucion_tipo]) && (
                     <Badge variant="neutral" size="sm" uppercase={false}
-                        icon={op.mueve === 'ninguno' ? Hand : ArrowLeftRight}>
-                        {op.rotulo}
+                        icon={!op || op.mueve === 'ninguno' ? Hand : ArrowLeftRight}>
+                        {op?.rotulo ?? ROTULO_VIEJO[item.resolucion_tipo]}
                     </Badge>
                 )}
             </div>
@@ -144,18 +174,19 @@ export default function DecisionDiferencia({
             {op?.ayuda && <p className="text-caption text-content-3">{op.ayuda}</p>}
 
             {(quienPropuso || item.resolucion_nota) && (
-                <p className="text-caption text-content-2">
-                    {item.resolucion_nota && <span className="italic">«{item.resolucion_nota}» </span>}
-                    {quienPropuso && <span className="text-content-3">— {shortEmployeeName(quienPropuso)}</span>}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap text-caption text-content-2">
+                    {item.resolucion_nota && <span className="italic">«{item.resolucion_nota}»</span>}
+                    <EmpChip emp={quienPropuso} size="xs" />
+                </div>
             )}
 
             {/* Lo que dijo quien no estuvo de acuerdo. Es lo que supervisión
                 necesita leer para decidir, así que se muestra siempre, no sólo
                 del lado de quien rechazó. */}
             {estado === 'escalada' && item.nota_rechazo && (
-                <Notice variant="danger" icon={X} compact>
-                    «{item.nota_rechazo}»{quienRechazo ? ` — ${shortEmployeeName(quienRechazo)}` : ''}
+                <Notice variant="danger" icon={X} compact
+                    action={<EmpChip emp={quienRechazo} size="xs" tono="danger-text" />}>
+                    «{item.nota_rechazo}»
                 </Notice>
             )}
 
@@ -262,9 +293,7 @@ export default function DecisionDiferencia({
             </>)}
 
             {estado === 'confirmada' && quienAcepto && (
-                <p className="text-caption text-success-text">
-                    Cerrado por {shortEmployeeName(quienAcepto)}
-                </p>
+                <EmpChip emp={quienAcepto} prefijo="Cerrado por" size="xs" tono="success-text" />
             )}
         </div>
     );

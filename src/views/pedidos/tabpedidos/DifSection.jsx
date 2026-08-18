@@ -8,8 +8,8 @@ import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
-import { shortEmployeeName } from '../../../utils/nameUtils';
 import DevolucionBloque from './DevolucionBloque';
+import EmpChip from './EmpChip';
 import DecisionDiferencia from './DecisionDiferencia';
 import { fetchOpcionesDiferencia } from '../../../data/diferencias';
 
@@ -123,7 +123,6 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 const res     = item.resolucion_status;
                 const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
                 const dev     = devPorItem.get(item.id) ?? null;
-                const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null;
 
                 // El marco dice de un vistazo en qué está el renglón. `escalada`
                 // se pinta en rojo porque es lo único que no avanza solo: alguien
@@ -184,15 +183,6 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                 onRecibir={onRecibirDevolucion}
                             />
 
-                            {/* Lo resuelto por el circuito VIEJO se sigue
-                                leyendo: hay renglones cerrados así. */}
-                            {res === 'confirmada' && !item.resolucion_vence_at && RESOLUCION_LABEL[item.resolucion_tipo] && (
-                                <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
-                                    <CheckCircle2 size={11} className="text-success shrink-0" />
-                                    <strong>{RESOLUCION_LABEL[item.resolucion_tipo]}</strong>
-                                    {confirmadoEmp && <span className="text-success">— {shortEmployeeName(confirmadoEmp)}</span>}
-                                </div>
-                            )}
                         </div>
                     </div>
                 );
@@ -224,7 +214,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                     <CheckCircle2 size={10} className="text-success mt-0.5 shrink-0" />
                                     <div>
                                         <span className="font-semibold text-success-text">Bodega marcó la corrección</span>
-                                        {corrBodegaEmp && <span className="text-success"> — {shortEmployeeName(corrBodegaEmp)}</span>}
+                                        <EmpChip emp={corrBodegaEmp} size="xs" tono="success-text" />
                                         {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
                                     </div>
                                 </div>
@@ -237,7 +227,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                         <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
                             <CheckCircle2 size={11} className="text-success shrink-0" />
                             <strong>Corrección confirmada</strong>
-                            {corrConfEmp && <span className="text-success">— {shortEmployeeName(corrConfEmp)}</span>}
+                            <EmpChip emp={corrConfEmp} size="xs" tono="success-text" />
                         </div>
                     )}
                 </div>
@@ -251,10 +241,10 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                         const emp       = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
                         const itemName  = difItems.find(d => d.id === ev.pedido_item_id)?.products?.nombre;
                         return (
-                            <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2">
+                            <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2 flex-wrap">
                                 <span className="text-content-3 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
+                                {emp ? <EmpChip emp={emp} size="xs" /> : <strong className="text-content-2">—</strong>}
                                 <span>
-                                    <strong className="text-content-2">{emp ? shortEmployeeName(emp) : '—'}</strong>{' '}
                                     {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
                                     {ev.resolucion_tipo && <em className="text-content-3"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
                                     {itemName && <span className="text-content-3"> · {itemName}</span>}

@@ -338,10 +338,30 @@ export function repartirEnLotes(
 
   for (const r of pedidos) {
     if (resto <= 0) break;
+    // ── El NÚMERO identifica el lote; la fecha sólo DESEMPATA ──────────────
+    // Las dos puntas no leen la misma pantalla: quien pide ve la fecha que
+    // guardó el inventario del portal y quien despacha la que trae el <select>
+    // de traslados. Exigir que las dos coincidan hace que un formato distinto
+    // —o un día 31 contra un día 1— tire abajo una reserva que estaba bien, y
+    // el lote elegido se pierde sin que nadie lo note.
+    //
+    // Sólo hay que desempatar cuando el mismo número aparece dos veces, que es
+    // el caso real que documenta `lotesEnUnidades`: dos lotes de igual número y
+    // vencimientos distintos son existencias separadas.
     const buscadoVen = String(r.vence ?? "").slice(0, 10);
-    const lote = lotes.find((x) => !usados.has(x.id)
-      && norm(x.numero) === norm(r.numero)
-      && (!buscadoVen || x.vence.slice(0, 10) === buscadoVen));
+    const mismos = lotes.filter((x) => !usados.has(x.id) && norm(x.numero) === norm(r.numero));
+    const lote = mismos.length <= 1
+      ? mismos[0]
+      : (mismos.find((x) => buscadoVen && x.vence.slice(0, 10) === buscadoVen)
+        // Mismo número dos veces y ninguna fecha que coincida: se toma el que
+        // vence primero, que es el que corresponde sacar, y se avisa.
+        ?? [...mismos].sort((a, b) =>
+             (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"))[0]);
+    if (lote && mismos.length > 1 && buscadoVen && lote.vence.slice(0, 10) !== buscadoVen)
+      avisos.push(
+        `hay dos lotes ${lote.numero} y ninguno vence el ${buscadoVen}: `
+        + `salió el que vence ${lote.vence || "sin fecha"}`,
+      );
     if (!lote) {
       avisos.push(`el lote ${r.numero} que reservó la solicitud ya no está`);
       continue;

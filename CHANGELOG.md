@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.3 — Cada lado lee lo que le toca hacer
+
+Cada salida ahora dice qué significa **para quien la está mirando**. No es la
+misma frase con otras palabras: en cada una hay uno que manda y otro que recibe.
+
+> **En el sistema** · La sala regresa la unidad
+> — mirándolo la sala: *«Le regresas esa cantidad a bodega en el sistema. No
+> mandas nada: el producto nunca salió de allá.»*
+> — mirándolo bodega: *«La sala te regresa esa cantidad en el sistema. El
+> producto ya está aquí; sólo confirmas la entrada.»*
+
+Una sola frase neutra obliga a cada quien a traducirla a su lado, que es el
+trabajo que la pantalla existe para ahorrar. Supervisión, que no es ninguna de
+las dos partes, sigue leyendo la descripción neutra.
+
+**Y con eso salió un error que la captura dejó ver:** ninguna de las dos
+opciones venía marcada, así que no se mostraba ninguna explicación y «Proponer»
+estaba apagado sin decir por qué. La lista de salidas llega de la base **después**
+del primer dibujo, y la preselección se calculaba una sola vez — o sea, siempre
+sobre una lista vacía.
+
 ## v2.659.2 — Pedir a otra sala abre la consulta de inventario
 
 «Pedir a otra sala» vuelve a **Nueva solicitud**, pero ahora abre la pantalla de

@@ -7,7 +7,7 @@ import Notice from '../../../components/common/Notice';
 import SegmentedControl from '../../../components/common/SegmentedControl';
 import PortalInput from '../../../components/common/PortalInput';
 import EmpChip from './EmpChip';
-import { opcionesDe, opcionElegida } from '../../../data/diferencias';
+import { opcionesDe, opcionElegida, ayudaPara } from '../../../data/diferencias';
 import { turnoDe } from '../../../utils/decisionDiferencia';
 
 // La decisión de una diferencia, dentro de la tarjeta de su renglón.
@@ -75,7 +75,15 @@ export default function DecisionDiferencia({
     busyAction, readOnly = false, onDecidir, onConfirmarLlegada, onPedirFoto,
 }) {
     const opciones = opcionesDe(catalogo, item.error_tipo);
-    const [elegida, setElegida] = useState(() => opciones[0]?.valor ?? '');
+    // El catálogo llega DESPUÉS del primer dibujo, así que un `useState` con
+    // valor inicial se queda vacío para siempre: ninguna opción marcada, ninguna
+    // explicación, y «Proponer» apagado sin decir por qué. Se ve en la captura
+    // del 2026-08-18. La elección es la del usuario **si eligió**; si no, la
+    // primera de la lista — que ya no depende de cuándo llegó.
+    const [tocada, setTocada] = useState(null);
+    const elegida = (tocada && opciones.some(o => o.valor === tocada))
+        ? tocada
+        : (opciones[0]?.valor ?? '');
     const [nota, setNota] = useState('');
     const [rechazando, setRechazando] = useState(false);
     const [motivoRech, setMotivoRech] = useState('');
@@ -125,7 +133,7 @@ export default function DecisionDiferencia({
                     Cómo se arregla
                 </p>
                 <SegmentedControl
-                    value={elegida} onChange={setElegida} label="Cómo se arregla"
+                    value={elegida} onChange={setTocada} label="Cómo se arregla"
                     layout="block" columns={2} tone="chart-3"
                     options={opciones.map(o => ({
                         value: o.valor, label: o.rotulo_corto ?? o.rotulo, icon: iconoDe(o),
@@ -134,7 +142,7 @@ export default function DecisionDiferencia({
                 {sel && (
                     <p className="text-caption text-content-2 leading-snug">
                         <strong className="font-semibold">{sel.rotulo}.</strong>{' '}
-                        <span className="text-content-3">{sel.ayuda}</span>
+                        <span className="text-content-3">{ayudaPara(sel, { esSala, esSupervision })}</span>
                     </p>
                 )}
                 <div className="flex gap-2">
@@ -175,8 +183,10 @@ export default function DecisionDiferencia({
                 </div>
             </div>
 
-            {op?.ayuda && estado !== 'confirmada' && (
-                <p className="text-caption text-content-3 leading-snug">{op.ayuda}</p>
+            {estado !== 'confirmada' && ayudaPara(op, { esSala, esSupervision }) && (
+                <p className="text-caption text-content-3 leading-snug">
+                    {ayudaPara(op, { esSala, esSupervision })}
+                </p>
             )}
             {item.resolucion_nota && (
                 <p className="text-caption text-content-2 italic">«{item.resolucion_nota}»</p>

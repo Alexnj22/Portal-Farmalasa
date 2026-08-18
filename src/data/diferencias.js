@@ -33,7 +33,7 @@ export async function fetchOpcionesDiferencia() {
     if (cache) return cache;
     const { data, error } = await supabase
         .from('diferencia_opcion')
-        .select('error_tipo, valor, rotulo, rotulo_corto, ayuda, orden, mueve, cierra_con')
+        .select('error_tipo, valor, rotulo, rotulo_corto, ayuda, ayuda_sala, ayuda_bodega, orden, mueve, cierra_con')
         .order('error_tipo').order('orden');
     if (error) {
         console.error('opciones de diferencia:', error.message);
@@ -47,6 +47,21 @@ export async function fetchOpcionesDiferencia() {
 
 /** Las salidas de un tipo de diferencia, ya cargado el catálogo. */
 export const opcionesDe = (catalogo, errorTipo) => catalogo?.[errorTipo] ?? [];
+
+/**
+ * Qué significa una salida para QUIEN la está mirando.
+ *
+ * No es la misma frase con otras palabras: en cada salida hay uno que manda y
+ * otro que recibe. «La sala regresa la unidad» le dice a la sala lo que tiene
+ * que hacer y a bodega lo que le va a llegar — y una sola frase neutra obliga a
+ * cada quien a traducirla a su lado, que es el trabajo que la pantalla existe
+ * para ahorrar. Supervisión, que no es ninguna de las dos, lee la neutra.
+ */
+export const ayudaPara = (op, { esSala, esSupervision } = {}) => {
+    if (!op) return null;
+    if (esSupervision) return op.ayuda ?? null;
+    return (esSala ? op.ayuda_sala : op.ayuda_bodega) ?? op.ayuda ?? null;
+};
 
 /** La salida elegida, para saber qué mueve y quién la cierra. */
 export const opcionElegida = (catalogo, errorTipo, valor) =>

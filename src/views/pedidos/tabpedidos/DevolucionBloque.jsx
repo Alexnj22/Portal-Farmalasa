@@ -145,7 +145,7 @@ export default function DevolucionBloque({
                     <div className="space-y-1.5">
                         <Button tone="warning" icon={PackageCheck} disabled={recibiendo}
                             onClick={() => onRecibir?.(dev.id)}>
-                            {recibiendo ? <Loader2 size={10} className="animate-spin" /> : 'Ya está en bodega'}
+                            {recibiendo ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar entrada'}
                         </Button>
                         <p className="text-micro text-content-3 leading-snug">
                             {dev.viaja

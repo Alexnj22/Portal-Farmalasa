@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.4 — Los textos hablan como el portal
+
+Los textos del bloque de diferencias se escribieron sin leer **§26 de DESIGN.md
+— «Voz: cómo escribe el portal»**, y salieron tres cosas fuera de regla. Los
+gates habían pasado en verde, pero no prueban nada acá: las categorías de
+redacción miran **sólo** los slots de `EmptyState` y `message:`, así que un
+texto guardado en la base o puesto en un botón pasa diga lo que diga. Lo
+advierte el propio doc: si el texto es correcto lo agarra una persona leyendo,
+no un regex.
+
+- **Los botones vuelven a ser verbos.** «De acuerdo» → **Aceptar**. «No estoy de
+  acuerdo» → **Rechazar**. «Ya lo tengo» → **Confirmar llegada**. «Ya está en
+  bodega» → **Confirmar entrada**. Un botón dice qué va a pasar al apretarlo, no
+  describe un estado.
+- **«En el sistema» no separaba nada**, porque el portal también es un sistema.
+  Se dice lo concreto que ocurre: **con un traslado**, que además es la palabra
+  que este módulo ya usa en toda la pantalla. Y el rótulo dejó de repetir el
+  plano: ahora dice quién hace qué («Bodega le pasa la cantidad a la sala») y la
+  etiqueta corta dice cómo.
+- **Sin punto en las etiquetas**, con punto en la prosa.
+
 ## v2.659.3 — Cada lado lee lo que le toca hacer
 
 Cada salida ahora dice qué significa **para quien la está mirando**. No es la

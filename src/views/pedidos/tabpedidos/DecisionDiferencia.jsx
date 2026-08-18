@@ -40,7 +40,7 @@ const TITULO = {
     propuesta:       'La sala propone',
     contrapropuesta: 'Bodega propone la otra',
     escalada:        'Sin acuerdo',
-    acordada:        'De acuerdo',
+    acordada:        'Acordado',
     confirmada:      'Resuelto',
 };
 
@@ -107,7 +107,7 @@ export default function DecisionDiferencia({
         return (
             <Marco>
                 <Notice variant="neutral" icon={Scale} compact>
-                    Se propuso con el circuito anterior. Hay que volver a decidirla.
+                    Se propuso con la pantalla anterior. Hay que decidirla de nuevo.
                 </Notice>
             </Marco>
         );
@@ -141,7 +141,7 @@ export default function DecisionDiferencia({
                 />
                 {sel && (
                     <p className="text-caption text-content-2 leading-snug">
-                        <strong className="font-semibold">{sel.rotulo}.</strong>{' '}
+                        <strong className="font-semibold">{sel.rotulo}</strong>{' — '}
                         <span className="text-content-3">{ayudaPara(sel, { esSala, esSupervision })}</span>
                     </p>
                 )}
@@ -203,7 +203,7 @@ export default function DecisionDiferencia({
                 <Notice variant={dias <= 0 ? 'warning' : 'neutral'} icon={Clock} compact>
                     {dias > 0
                         ? `Quedan ${dias} día${dias === 1 ? '' : 's'} para que llegue`
-                        : 'Se venció el plazo — hay que decidir de nuevo'}
+                        : 'Se venció el plazo. Hay que decidirla de nuevo.'}
                 </Notice>
             )}
 
@@ -221,24 +221,24 @@ export default function DecisionDiferencia({
                                 }}
                             />
                             <Button variant="destructive" loading={ocupado} disabled={!motivoRech.trim()}
-                                onClick={() => decidir('rechazar', null, motivoRech)}>Enviar</Button>
+                                onClick={() => decidir('rechazar', null, motivoRech)}>Rechazar</Button>
                             <Button variant="ghost" onClick={() => setRechazando(false)}>✕</Button>
                         </div>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
                             <Button tone="success" icon={Check} loading={ocupado}
-                                onClick={() => decidir('aceptar')}>De acuerdo</Button>
+                                onClick={() => decidir('aceptar')}>Aceptar</Button>
                             {/* Contraproponer sólo en la primera vuelta: a la
                                 segunda, quien no está de acuerdo escala. */}
                             {estado === 'propuesta' && laOtra && (
                                 <Button variant="secondary" icon={ArrowLeftRight} disabled={ocupado}
                                     onClick={() => decidir('contraproponer', laOtra.valor, null)}>
-                                    Mejor {(laOtra.rotulo_corto ?? laOtra.rotulo).toLowerCase()}
+                                    Proponer {(laOtra.rotulo_corto ?? laOtra.rotulo).toLowerCase()}
                                 </Button>
                             )}
                             {estado === 'contrapropuesta' && (
                                 <Button variant="destructive" icon={X}
-                                    onClick={() => setRechazando(true)}>No estoy de acuerdo</Button>
+                                    onClick={() => setRechazando(true)}>Rechazar</Button>
                             )}
                         </div>
                     )
@@ -265,9 +265,9 @@ export default function DecisionDiferencia({
                     return (
                         <div className="flex items-center gap-2 flex-wrap">
                             <Button tone="success" icon={Check} loading={ocupado}
-                                onClick={() => onConfirmarLlegada?.(item.id)}>Ya lo tengo</Button>
+                                onClick={() => onConfirmarLlegada?.(item.id)}>Confirmar llegada</Button>
                             <span className="text-micro text-content-3">
-                                Con el producto en la mano. No mueve nada en el sistema.
+                                Con el producto en la mano. No sale ningún traslado.
                             </span>
                         </div>
                     );

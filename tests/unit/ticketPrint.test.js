@@ -80,7 +80,10 @@ describe('el ticket que se manda al programa de impresión', () => {
         // que queda CENTÍMETROS arriba del punto donde deja de salir papel. Se
         // cuentan, no se buscan con `endsWith`: con cinco —lo que había hasta el
         // 2026-08-17— el corte se llevaba el final del ticket en la sala, y un
-        // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con doce.
+        // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con seis.
+        // Son SEIS y no doce desde el 2026-08-18: con el corte viajando en el
+        // ticket, el margen dejó de ser colchón y es el blanco que se ve abajo
+        // — el usuario lo midió con el rollo en la mano y sobraba la mitad.
         // El pie NO lleva orden de cortar, y es a propósito: **estas secciones
         // son las del camino directo**, y ahí el programa de la caja ya manda
         // `GS V '1'` por su cuenta despues del pie (leído en
@@ -90,7 +93,33 @@ describe('el ticket que se manda al programa de impresión', () => {
         // sobre `textoParaElRollo`: son dos caminos distintos y por eso son dos
         // pruebas distintas.
         expect(s.pie).not.toContain('\x1d\x56');
-        expect(s.pie.match(/\n+$/)[0].length).toBe(12);
+        expect(s.pie.match(/\n+$/)[0].length).toBe(6);
+    });
+
+    it('el total destacado sale en negrita y doble alto, y vuelve a letra normal', () => {
+        // El HTML lo pinta desde el primer dia (clase `grande`) y el rollo lo
+        // ignoraba: los totales salian los tres iguales, asi que la cifra que
+        // alguien cuenta con las manos no se distinguia de las que la explican
+        // (reporte del usuario, 2026-08-18, con el papel en la mano).
+        const t = ticket();
+        t.totales = [['VALES (2)', '-$350.50'], ['EFECTIVO', '$1,328.85', true]];
+        const s = seccionesParaElPrograma(t);
+
+        // `ESC ! 0x18` = negrita (0x08) + doble alto (0x10) en UN codigo, el
+        // mismo comando con el que este ticket ya cambia de letra. Doble ANCHO
+        // no: partiria el renglon, que se rellena contando 40 columnas.
+        expect(s.cuerpo).toContain('\x1b!\x18EFECTIVO');
+        expect(s.cuerpo).not.toContain('\x1b!\x18VALES');
+        expect(s.cuerpo).not.toContain('\x1b!\x20');
+
+        // Y se apaga en el MISMO renglon: un codigo suelto se lleva un renglon
+        // entero de rollo, y lo que sigue no tiene por que salir agrandado.
+        const linea = s.cuerpo.split('\n').find((l) => l.includes('EFECTIVO'));
+        expect(linea.endsWith('\x1b!\x00')).toBe(true);
+        // El renglon destacado sigue midiendo 40 columnas: el doble alto no
+        // cambia el ancho, y por eso el relleno de `dosColumnas` sigue valiendo.
+        // eslint-disable-next-line no-control-regex
+        expect(linea.replace(/\x1b(?:[!aRt].|@)/g, '')).toHaveLength(40);
     });
 
     // Los dos que siguen salieron del PRIMER ticket impreso desde el portal
@@ -148,7 +177,7 @@ describe('el ticket que se manda al programa de impresión', () => {
         // computadora.
         const bytes = textoParaElRollo(ticket());
 
-        expect(bytes.endsWith('\n'.repeat(12) + '\x1dV1')).toBe(true);
+        expect(bytes.endsWith('\n'.repeat(6) + '\x1dV1')).toBe(true);
         // Tres bytes y ninguno en cero. `GS V 66 n` colgó la ticketera de una
         // sala (v2.661.5) y en el papel se veria igual de bien, asi que no
         // alcanza con comprobar que haya *alguna* orden de cortar.

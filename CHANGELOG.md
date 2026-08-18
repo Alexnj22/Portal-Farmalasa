@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.664.1 — El ticket gasta la mitad de papel al final, y el total resalta
+
+Dos reportes del usuario con el rollo en la mano.
+
+**El papel en blanco del final baja a la mitad**, de ~35 mm a ~17 mm (12 saltos
+→ 6, y la banda del camino con diálogo con él). Esos 12 se eligieron el 17-ago,
+cuando el ticket **todavía no mandaba su propia orden de cortar** y el margen
+tenía que alcanzar para que el corte a mano cayera lejos del texto. Desde
+v2.661.7 el papel se corta solo, en el punto que decide el ticket, así que el
+margen dejó de ser un colchón y pasó a ser exactamente el blanco que se ve
+abajo. Sigue siendo lo único que separa la última línea de la cuchilla: si el
+corte vuelve a comerse el final, este número sube.
+
+**El total destacado ahora se imprime destacado.** La vista del navegador lo
+pintaba desde el primer día —más grande y en negrita— y el rollo se lo comía:
+los tres totales salían iguales, así que en el papel de la sala la cifra que
+alguien cuenta con las manos no se distinguía de las dos que la explican. Va en
+negrita y doble alto, en un solo código (`ESC ! 0x18`), que es el mismo comando
+con el que este ticket ya cambia de letra — el único medido en esa impresora.
+Doble **ancho** no: partiría el renglón, que se rellena contando 40 columnas.
+
+Las dos cosas valen para todos los papeles del portal: la etiqueta y el vale de
+una bolsa, el comprobante de un corte y el de entrega.
+
 ## v2.664.0 — La etiqueta de la bolsa dice de cuánto se partió
 
 Reporte del usuario: al reimprimir la etiqueta después de agregar un vale, el

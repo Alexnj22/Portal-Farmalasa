@@ -78,7 +78,7 @@
 // 4. **Margen de corte al final.** La cuchilla queda unos centímetros arriba
 //    del punto donde deja de salir papel; sin ese margen se lleva la última
 //    línea. Y no son «unos milímetros»: con 12 mm el corte seguía comiéndose
-//    el final, medido en la sala el 2026-08-17. Hoy son 35 mm en los dos
+//    el final, medido en la sala el 2026-08-17. Hoy son ~17 mm en los dos
 //    caminos — la banda `.corte` acá y `SALTOS_DE_CORTE` en el envío directo.
 
 // Anchos de rollo que existen en el mercado. El `margen` es cuánto se deja a
@@ -280,9 +280,10 @@ export function construirTicketHtml(ticket) {
   .pie p { overflow-wrap: anywhere; }
   /* Margen de corte: la cuchilla queda arriba del final del papel, así que sin
      esta banda en blanco el corte se lleva la última línea. 12 mm no
-     alcanzaban —medido con papel en la mano el 2026-08-17—; 35 mm es lo mismo
-     que manda el camino sin diálogo (SALTOS_DE_CORTE). */
-  .corte { height: 35mm; }
+     alcanzaban —medido con papel en la mano el 2026-08-17—, y 35 mm resultaron
+     de más una vez que el ticket manda su propio corte: 17 mm es lo mismo que
+     manda el camino sin diálogo (SALTOS_DE_CORTE, 2026-08-18). */
+  .corte { height: 17mm; }
 </style>
 </head>
 <body>
@@ -460,17 +461,40 @@ const RUTA_PROGRAMA = 'http://localhost/impresion_dte/';
  * ticket.
  *
  * **Cinco saltos no alcanzaban**: con ~15 mm el corte seguía comiéndose la
- * última línea, medido con papel en la mano el 2026-08-17. Doce son ~35 mm y
- * dejan el texto entero afuera de la cuchilla. Es el único papel en blanco que
- * este ticket necesita, y es justo lo que se pagó sacando los renglones vacíos
- * de adentro (v2.654.2).
+ * última línea, medido con papel en la mano el 2026-08-17. Es el único papel en
+ * blanco que este ticket necesita, y es justo lo que se pagó sacando los
+ * renglones vacíos de adentro (v2.654.2).
+ *
+ * **Doce eran de más.** Se eligieron el 17-08 —cuando el ticket todavía NO
+ * mandaba su propia orden de cortar— para que el corte a mano cayera lejos del
+ * texto. Desde v2.661.7 el papel se corta solo en el punto que decide el
+ * ticket, así que el margen dejó de ser un colchón y pasó a ser exactamente el
+ * blanco que se ve abajo. El usuario lo midió con el rollo en la mano el
+ * 2026-08-18: sobra la mitad. Seis son ~17 mm, y siguen dejando la última línea
+ * afuera de la cuchilla.
+ *
+ * **Si el corte vuelve a comerse el final, este número SUBE** — es el único que
+ * lo separa del filo, y nada más en el archivo lo compensa.
  */
-const SALTOS_DE_CORTE = 12;
+const SALTOS_DE_CORTE = 6;
 
 // Códigos de la impresora, tal como aparecen en el ticket del origen.
 const ESC = '\x1b', GS = '\x1d';
 const CENTRO = `${ESC}a\x01`, IZQUIERDA = `${ESC}a\x00`, DERECHA = `${ESC}a\x02`;
 const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `${ESC}!\x10`;
+/**
+ * El renglón que alguien va a leer parado frente a la mesa: negrita Y doble
+ * alto. `ESC ! n` es un mapa de bits —`0x08` negrita, `0x10` doble alto— así
+ * que los dos viajan en un solo código, y es el MISMO comando con el que este
+ * ticket ya cambia de letra, o sea el único que está medido en esta impresora.
+ * (`ESC E` haría la negrita sola, pero es otro comando y acá hay antecedentes
+ * de códigos que el aparato ignora sin avisar — ver `ESC a`.)
+ *
+ * **Doble alto y no doble ancho**: el ancho lo cambiaría a la mitad de las
+ * columnas y `dosColumnas` rellena contando 40. Un total destacado saldría
+ * partido, que es peor que un total que no resalta.
+ */
+const DESTACADO = `${ESC}!\x18`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
@@ -694,8 +718,20 @@ export function seccionesParaElPrograma(ticket) {
             // El cambio a letra normal viaja con el primer total: en su propio
             // renglón imprimía uno vacío. Y no hace falta volver a letra chica
             // al final — la sección del pie la vuelve a pedir ella misma.
-            ...totales.map(([r, v], i) => (i === 0 ? DERECHA + LETRA_NORMAL : '')
-                + dosColumnas(r, v, COLUMNAS_TICKET.normal)),
+            //
+            // El destacado se IMPRIME (pedido del usuario, 2026-08-18: «que se
+            // vea un poco más»). El HTML lo pintaba desde el primer día —clase
+            // `grande`— y el rollo se lo comía: los tres totales salían iguales,
+            // así que en el papel de la sala la cifra que alguien cuenta con las
+            // manos no se distinguía de las dos que la explican. Es el mismo
+            // dato con dos salidas, y una lo decía y la otra no.
+            //
+            // El reset va al final del MISMO renglón, no en el siguiente: un
+            // código solo se lleva un renglón de rollo.
+            ...totales.map(([r, v, destacado], i) => (i === 0 ? DERECHA + LETRA_NORMAL : '')
+                + (destacado ? DESTACADO : '')
+                + dosColumnas(r, v, COLUMNAS_TICKET.normal)
+                + (destacado ? LETRA_NORMAL : '')),
         ] : []),
     ].join('\n') + '\n';
 

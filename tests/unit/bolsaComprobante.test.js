@@ -141,7 +141,8 @@ describe('la etiqueta de una bolsa', () => {
         // una resta, y el numero que cierra la cuenta es el que se busca
         // (pedido del usuario, 2026-08-17).
         expect(etiqueta({ salidas }).totales).toEqual([
-            ['VALES (2)', '$350.00'],
+            ['EFECTIVO INICIAL', '$716.92'],
+            ['VALES (2)', '-$350.00'],
             ['EFECTIVO', '$366.92', true],
         ]);
     });
@@ -153,7 +154,8 @@ describe('la etiqueta de una bolsa', () => {
             salidas: [{ fecha: '2026-08-15', hora: '11:02', motivo: 'Remesa', monto: -716.92 }],
         });
         expect(vacia.totales).toEqual([
-            ['VALES (1)', '$716.92'],
+            ['EFECTIVO INICIAL', '$716.92'],
+            ['VALES (1)', '-$716.92'],
             ['EFECTIVO', '$0.00', true],
         ]);
     });
@@ -167,11 +169,17 @@ describe('la etiqueta de una bolsa', () => {
             .toContain('ETIQUETA #3 - ANULA LA ANTERIOR - 14/08/26 07:12 pm');
     });
 
-    it('sin salidas no repite el monto: el total de abajo dice lo mismo', () => {
-        // `Guardado al cerrar` y `EFECTIVO` son el mismo numero cuando no salio
-        // nada de la bolsa.
+    it('el monto de partida sale en la resta, no entre los datos de arriba', () => {
+        // Vivia arriba como `Guardado al cerrar`, en letra chica entre las
+        // fichas: al reimprimir una etiqueta despues de agregar un vale, el
+        // papel decia lo que se resto y lo que queda, pero de cuanto se partio
+        // no se leia (pedido del usuario, 2026-08-18).
+        const conVales = cuerpo(etiqueta({ salidas }));
+        expect(conVales).not.toContain('Guardado al cerrar');
+        expect(conVales).toContain('EFECTIVO INICIAL');
+        // Sin salidas no hay resta que mostrar: un solo total, sin repetirlo.
+        expect(cuerpo(etiqueta())).not.toContain('EFECTIVO INICIAL');
         expect(cuerpo(etiqueta())).not.toContain('Guardado al cerrar');
-        expect(cuerpo(etiqueta({ salidas }))).toContain('Guardado al cerrar: $716.92');
     });
 
     it('no pierde un digito de un monto de cuatro cifras', () => {

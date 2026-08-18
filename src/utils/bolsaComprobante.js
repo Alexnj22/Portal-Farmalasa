@@ -146,8 +146,9 @@ export function construirEtiquetaDeBolsa({
         // Los rótulos son cortos porque el ancho manda: en dos columnas, media
         // línea son 27 caracteres y `Corte del: 14/08/2026  19:01` (28) obliga a
         // gastar un renglón entero. Lo que se recorta es el rótulo, nunca el
-        // dato. `Guardado al cerrar` sólo aparece cuando hubo salidas: sin
-        // ellas es el MISMO número que el total de abajo, dicho dos veces.
+        // dato. Lo que se guardó al cerrar NO va acá: es el primer término de la
+        // resta de abajo, y en letra chica entre los datos se lee como una ficha
+        // más y no como el número del que se parte.
         datos: [
             ['Bolsa', recortar(bolsa?.folio || '', 24)],
             ['Sala', recortar(sala || '', 34)],
@@ -155,7 +156,6 @@ export function construirEtiquetaDeBolsa({
             ['Caja', recortar(bolsa?.caja || '', 34)],
             ['Guardo', recortar(cerradaPor || 'Sin registrar', 34)],
             ['Cerrada', selloCorto(bolsa?.cerrada_at)],
-            ...(hubo ? [['Guardado al cerrar', formatMoney(inicial)]] : []),
         ],
         // Las CUATRO columnas son la geometría medida contra un ticket real del
         // sistema de facturación. La de dos colapsa a «primero … ultimo» y acá
@@ -180,9 +180,18 @@ export function construirEtiquetaDeBolsa({
         // (pedido del usuario, 2026-08-17): la etiqueta se lee de arriba abajo
         // como una resta —se guardo tanto, salio tanto en vales, queda esto— y
         // el numero que cierra la cuenta es el que administracion busca.
+        //
+        // La resta se imprime ENTERA, con su primer termino (pedido del usuario,
+        // 2026-08-18, al reimprimir una etiqueta despues de agregar un vale):
+        // sin `EFECTIVO INICIAL` el papel muestra el resultado y lo que se
+        // resto, pero no de cuanto se partio, asi que la cuenta no se puede
+        // rehacer mirandolo. Los vales van CON el signo menos por lo mismo: en
+        // esta columna hay lugar de sobra —son 40 caracteres, no las 8 de la
+        // tabla de arriba— y el signo dice para que lado va el numero.
         totales: hubo
             ? [
-                [`VALES (${salidas.length})`, formatMoney(sacado)],
+                ['EFECTIVO INICIAL', formatMoney(inicial)],
+                [`VALES (${salidas.length})`, formatMoney(-sacado)],
                 ['EFECTIVO', formatMoney(efectivo), true],
             ]
             : [['EFECTIVO', formatMoney(inicial), true]],

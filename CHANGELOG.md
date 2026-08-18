@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.664.0 — La etiqueta de la bolsa dice de cuánto se partió
+
+Reporte del usuario: al reimprimir la etiqueta después de agregar un vale, el
+papel lista los vales y debajo el efectivo que queda, **pero no dice cuánto
+había antes**. O sea que la resta está impresa sin su primer término y no se
+puede rehacer mirando el papel.
+
+El monto de partida sí estaba, pero arriba, como `Guardado al cerrar`: entre
+las fichas de la bolsa, en letra chica y a media línea, donde se lee como un
+dato más de la cabecera y no como el número del que arranca la cuenta.
+
+Ahora el bloque de totales es la resta completa, en el mismo orden en que se
+lee:
+
+```
+EFECTIVO INICIAL    $1,679.35
+VALES (2)            -$350.50
+EFECTIVO            $1,328.85
+```
+
+Dos detalles: el monto de partida sale **una sola vez** —se quitó de la
+cabecera, porque el mismo número dicho dos veces en el mismo papel obliga a
+compararlos— y los vales van **con el signo menos**, que acá entra sin riesgo:
+esa columna mide 40 caracteres, no las 8 de la tabla de arriba, donde un signo
+delante es justo el carácter que el relleno del rollo se lleva.
+
+Sin salidas la etiqueta no cambia: no hay resta que mostrar, y sigue cerrando
+con un solo `EFECTIVO`.
+
+## v2.663.1 — El inventario cuenta las unidades una sola vez
+
+Reporte del usuario: la Consulta de Inventario decía **«Bodega · 3 uds»** de
+CLOPRIM X 3 AMPOLLAS y el formulario de pedirlo, abierto desde esa misma fila,
+decía **«Bodega — 1 unidad»**. Bodega tenía 1 caja de 3 ampollas.
+
+No era un número feo: la guarda del formulario y el trigger de la base comparan
+contra ese 1, así que **la caja de Bodega no se podía pedir** — pedir 1 caja son
+3 unidades y el portal creía que había 1.
+
+**La causa.** El mismo número se calculaba de dos maneras. La lista lo sacaba
+del `detalle` de la fila (`1X3` → 3), en el navegador. La base lo sacaba del
+catálogo, cruzando la etiqueta de la presentación. Y ese cruce falla cuando la
+etiqueta trae un espacio al final: el sistema de origen manda `'CAJA '` y el
+catálogo dice `'CAJA'`. Sin coincidencia caía al factor 1 — sin error, sin log,
+con un número más chico.
+
+**El alcance, medido.** 436 filas con existencia traen ese espacio (`CAJA `,
+`BOTE `, `SOBRE X 2 `, `CAJA X 10 SOBRES `, `FRASCO X 20 ML `, `CAJA X 25 `,
+`PAQUETE `). Eran **78 pares producto·sala mal contados sobre 23 productos y
+4,988 unidades invisibles**: NEUROBION X 120 pasó de 365 a 1,436, METRONIDAZOL
+500 de 134 a 797, FLORENTEROL X 25 SOBRES de 90 a 594. Y tres productos —las
+recargas de saldo— figuraban en **cero** sobre 453, 134 y 114, porque tienen
+factor 0 en el catálogo y la consulta vieja se quedaba con el factor más chico.
+Ninguna corrección baja una existencia; todas destapan la que ya estaba.
+
+**El arreglo.** El factor de una fila de inventario ahora se resuelve en **un
+solo lugar** (`factor_de_inventario`) y viaja con la fila: el catálogo dice qué
+factores son posibles para esa etiqueta y el `detalle` elige entre ellos.
+Ninguna de las dos fuentes alcanzaba sola, y las dos excepciones están medidas —
+CETRADOL X 10 tiene dos «CAJA» en el catálogo, de 1 y de 10, y sólo el `detalle`
+las distingue; ELEQUINE 750 X 20 llega con `detalle = '1'` dentro de una caja de
+20, y ahí sólo el catálogo sabe.
+
+El navegador dejó de deducirlo: lo recibe ya resuelto en la búsqueda y en los
+lotes. Que dos fuentes coincidan es cuestión de suerte; que haya una sola, no.
+
 ## v2.663.0 — Al confirmar el pedido se ven los lotes que vienen
 
 Pregunta del usuario: *«en el pedido al aceptarlo, ¿cómo veo los lotes de los

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.660.1 — El aviso «¿Sigues ahí?» ya no aparece apenas se entra en el teléfono
+
+**Lo que pasaba.** En el teléfono, con el portal instalado como app, el cartel
+«¿Sigues ahí?» salía a los pocos segundos de entrar y avisaba que la sesión se
+cerraba en **2,591,998 segundos** — o sea, en 30 días. Le pasó a dos personas.
+
+**Por qué.** Al instalarse como app la sesión dura 30 días sin usarse, y el
+temporizador que arma el aviso guarda su plazo en un número de 32 bits. Treinta
+días no le entran: el número desborda y el navegador, en vez de esperar, lo
+dispara **al instante**. Los dos relojes de la sesión —el del aviso y el del
+cierre— salían corriendo apenas se entraba. El del cierre además se rearmaba
+solo al comprobar que todavía no vencía, así que quedaba dando vueltas sin
+freno: el número absurdo en pantalla venía acompañado de un teléfono gastando
+batería de más.
+
+No afectaba a la computadora: ahí los plazos son de 5 minutos y de 12 horas, y
+esos sí entran.
+
+**Cómo quedó.** Un plazo largo se arma por tramos —se duerme hasta donde el
+navegador sabe contar y vuelve a preguntar—, y cada tramo se recalcula contra el
+reloj de ese momento, así que un teléfono que estuvo suspendido no arrastra el
+desfase. El aviso vuelve a salir donde siempre debió: un minuto antes del
+cierre. La regla queda anclada en `tests/unit/temporizadorLargo.test.js`, que
+falla con el código viejo.
+
 ## v2.660.0 — Las diferencias en dos columnas, con las cifras al frente
 
 **Dos columnas desde 1280 px.** Con tres diferencias abiertas la lista medía más

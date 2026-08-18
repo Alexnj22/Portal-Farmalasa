@@ -8,6 +8,7 @@ import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../utils/pushEquipo";
 import AvisoDeInactividad from "../components/common/AvisoDeInactividad";
+import { programarEn } from "../utils/temporizadorLargo";
 
 const AuthContext = createContext(null);
 
@@ -700,6 +701,8 @@ export const AuthProvider = ({ children }) => {
     if (cierreTimeoutRef.current) { clearTimeout(cierreTimeoutRef.current); cierreTimeoutRef.current = null; }
   };
 
+  // El plazo puede ser de 30 días (app instalada) y `setTimeout` no llega tan
+  // lejos sin desbordar. Por qué, y qué se veía cuando pasaba: `temporizadorLargo.js`.
   const programarVencimiento = () => {
     limpiarTemporizadores();
     if (!idleIntervalRef.current) return;   // sin vigilante no hay nada que programar
@@ -707,14 +710,12 @@ export const AuthProvider = ({ children }) => {
     if (!last) return;
     const vence = last + getIdleLimitMs(userRef.current);
 
-    avisoTimeoutRef.current = setTimeout(() => {
-      avisoTimeoutRef.current = null;
+    programarEn(avisoTimeoutRef, vence - AVISO_INACTIVIDAD_MS, () => {
       if (document.visibilityState === 'hidden') return;
       ponerAviso(vence);
-    }, Math.max(0, vence - AVISO_INACTIVIDAD_MS - Date.now()));
+    });
 
-    cierreTimeoutRef.current = setTimeout(() => {
-      cierreTimeoutRef.current = null;
+    programarEn(cierreTimeoutRef, vence, () => {
       if (document.visibilityState === 'hidden') return;
       // El sello pudo moverse entre que se armó esto y que llegó —la escritura
       // tiene 2 s de throttle, y otra pestaña escribe sin avisar—, así que se
@@ -722,7 +723,7 @@ export const AuthProvider = ({ children }) => {
       const sello = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
       if (sello && Date.now() < sello + getIdleLimitMs(userRef.current)) { programarVencimiento(); return; }
       doLogoutRef.current?.();
-    }, Math.max(0, vence - Date.now()));
+    });
   };
 
   // Recibe el usuario que los cuatro caminos de login ya le venían pasando —

@@ -65,6 +65,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     const [corrNota, setCorrNota] = useState('');
     const [catalogo, setCatalogo] = useState({});
     const [verResuelta, setVerResuelta] = useState(null);
+    const [verActividad, setVerActividad] = useState(false);
 
     // El catálogo de salidas. Se pide una vez por sesión —son doce filas que no
     // cambian mientras el portal está abierto— y sin él no se ofrece ninguna
@@ -110,7 +111,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     const corrConfEmp   = row?.confirmado_correccion_por ? empMap.get(row.confirmado_correccion_por) : null;
 
     return (
-        <div className="border-t border-warning/30 bg-gradient-to-b from-warning/10 to-surface-card px-4 py-3 space-y-3">
+        <div className="border-t border-warning/30 px-4 py-3 space-y-3">
             {/* El ícono ya dice el estado: llevaba además un ✓ de texto pegado
                 al final del rótulo, que en versalitas queda a otra altura. */}
             <div className="flex items-center gap-1.5">
@@ -244,29 +245,6 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 </div>
             )}
 
-            {/* ── Actividad ── */}
-            {eventos.length > 0 && (
-                <div className="border-t border-warning/30 pt-2 space-y-1.5">
-                    <p className="text-micro text-content-2 uppercase tracking-widest font-bold">Actividad</p>
-                    {eventos.map(ev => {
-                        const emp       = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
-                        const itemName  = difItems.find(d => d.id === ev.pedido_item_id)?.products?.nombre;
-                        return (
-                            <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2 flex-wrap">
-                                <span className="text-content-3 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
-                                {emp ? <EmpChip emp={emp} size="xs" /> : <strong className="text-content-2">—</strong>}
-                                <span>
-                                    {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
-                                    {ev.resolucion_tipo && <em className="text-content-3"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
-                                    {itemName && <span className="text-content-3"> · {itemName}</span>}
-                                    {ev.nota && <span className="text-content-3 italic"> — {ev.nota}</span>}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
             {hiddenCount > 0 && (
                 <Button tone="warning" onClick={() => setShowAll(s => !s)}>
                     {showAll ? 'Ver menos ↑' : `Ver las ${abiertas.length} por resolver ↓`}
@@ -292,6 +270,43 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                     ))}
                 </div>
             )}
+
+            {/* ── El historial, plegado ──
+                Once renglones de bitácora en medio de lo que hay que decidir.
+                Se consulta cuando algo no cuadra, no cada vez que se abre el
+                pedido: va al final y cerrado, con el chevron que dice que
+                pliega (§5.3). */}
+            {eventos.length > 0 && (
+                <div className="pt-1">
+                    <button type="button" onClick={() => setVerActividad(v => !v)}
+                        aria-expanded={verActividad}
+                        className="flex items-center gap-1.5 text-micro font-black text-content-3 uppercase tracking-widest hover:text-content-2 transition-colors">
+                        {verActividad ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        Actividad ({eventos.length})
+                    </button>
+                    {verActividad && (
+                        <div className="space-y-1.5 pt-2">
+                            {eventos.map(ev => {
+                        const emp       = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
+                        const itemName  = difItems.find(d => d.id === ev.pedido_item_id)?.products?.nombre;
+                        return (
+                            <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2 flex-wrap">
+                                <span className="text-content-3 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
+                                {emp ? <EmpChip emp={emp} size="xs" /> : <strong className="text-content-2">—</strong>}
+                                <span>
+                                    {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
+                                    {ev.resolucion_tipo && <em className="text-content-3"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
+                                    {itemName && <span className="text-content-3"> · {itemName}</span>}
+                                    {ev.nota && <span className="text-content-3 italic"> — {ev.nota}</span>}
+                                </span>
+                            </div>
+                        );
+                    })}
+                        </div>
+                    )}
+                </div>
+            )}
+
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    Check, X, Loader2, ArrowLeftRight, Hand, Clock, ShieldQuestion, Scale,
+    Check, X, Loader2, ArrowLeftRight, Hand, Clock, ShieldQuestion, Scale, MessageSquarePlus,
 } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import Notice from '../../../components/common/Notice';
@@ -85,6 +85,7 @@ export default function DecisionDiferencia({
         ? tocada
         : (opciones[0]?.valor ?? '');
     const [nota, setNota] = useState('');
+    const [conNota, setConNota] = useState(false);
     const [rechazando, setRechazando] = useState(false);
     const [motivoRech, setMotivoRech] = useState('');
 
@@ -140,23 +141,37 @@ export default function DecisionDiferencia({
                     }))}
                 />
                 {sel && (
-                    <p className="text-caption text-content-2 leading-snug">
-                        <strong className="font-semibold">{sel.rotulo}</strong>{' — '}
-                        <span className="text-content-3">{ayudaPara(sel, { esSala, esSupervision })}</span>
+                    <p className="text-caption leading-snug text-content-2">
+                        <strong className="font-semibold text-content">{sel.rotulo}</strong>
+                        {' — '}{ayudaPara(sel, { esSala, esSupervision })}
                     </p>
                 )}
-                <div className="flex gap-2">
+                {/* La nota se pide sólo si alguien la quiere. Estaba siempre a la
+                    vista y casi nunca se usa: un renglón por diferencia, y con
+                    tres abiertas son tres campos vacíos compitiendo con lo único
+                    que hay que apretar. */}
+                {conNota && (
                     <PortalInput
-                        aria-label="Nota de la decisión" className="flex-1" tono="chart-3" compact
+                        aria-label="Nota de la decisión" tono="chart-3" compact autoFocus
                         value={nota} onChange={e => setNota(e.target.value)}
-                        placeholder="Nota (opcional)…"
+                        placeholder="Nota…"
                     />
-                    <Button tone="chart-3" loading={ocupado} disabled={!elegida}
+                )}
+                <div className="flex items-center gap-2">
+                    {/* `md` y no el chico: es la acción del bloque y estaba más
+                        baja que las dos opciones de arriba, así que se leía como
+                        un accesorio del campo de nota en vez de como el paso
+                        siguiente. */}
+                    <Button tone="chart-3" size="md" className="flex-1" loading={ocupado} disabled={!elegida}
                         onClick={() => (necesitaFoto(elegida)
                             ? onPedirFoto?.(item, elegida, nota || null)
                             : decidir('proponer', elegida, nota || null))}>
                         Proponer
                     </Button>
+                    {!conNota && (
+                        <Button variant="ghost" size="sm" icon={MessageSquarePlus}
+                            onClick={() => setConNota(true)}>Agregar nota</Button>
+                    )}
                 </div>
             </Marco>
         );
@@ -184,7 +199,7 @@ export default function DecisionDiferencia({
             </div>
 
             {estado !== 'confirmada' && ayudaPara(op, { esSala, esSupervision }) && (
-                <p className="text-caption text-content-3 leading-snug">
+                <p className="text-caption text-content-2 leading-snug">
                     {ayudaPara(op, { esSala, esSupervision })}
                 </p>
             )}

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.6 — Menos ruido en las diferencias, y el texto se lee
+
+Tres cosas reportadas mirando la pantalla con tres diferencias abiertas.
+
+**El texto que hay que leer para decidir estaba en el tono más tenue.** La
+explicación de cada salida usaba el terciario, que sobre la tarjeta da **4.15:1**
+cuando la norma pide 4.5 — está medido y anotado como pendiente abierto en
+DESIGN.md §5.bis.1. Ese tono es para un dato de apoyo, no para la frase de la
+que depende la decisión. Pasa al secundario (5.07:1) y el nombre de la salida al
+primario (9.78:1).
+
+**Y las tarjetas estaban sobre una banda teñida**, así que el píxel real era otro
+todavía: los números de contraste del documento están medidos sobre la tarjeta
+limpia. Se quitó el degradado; el borde de arriba ya separa la sección.
+
+**El historial se pliega y baja al final.** Once renglones de bitácora en medio
+de lo que hay que decidir. Se consulta cuando algo no cuadra, no cada vez que se
+abre el pedido.
+
+**Y «Proponer» era más bajo que las dos opciones de arriba**, así que se leía
+como un accesorio del campo de nota y no como el paso siguiente. Ahora ocupa el
+ancho y la misma altura. La nota, que casi nunca se usa, se pide sólo si alguien
+la quiere: con tres diferencias abiertas eran tres campos vacíos compitiendo con
+lo único que hay que apretar.
+
 ## v2.659.5 — Un rechazo se explica, y el motivo se ve en la tarjeta
 
 Pedido del usuario: rechazar una solicitud tiene que exigir motivo, y ese motivo

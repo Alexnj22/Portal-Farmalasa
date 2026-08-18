@@ -2,9 +2,7 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, Check } from 'lucide-react';
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
-import LiquidSelect from '../../../components/common/LiquidSelect';
+import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
@@ -66,6 +64,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     const [showAll,  setShowAll]  = useState(false);
     const [corrNota, setCorrNota] = useState('');
     const [catalogo, setCatalogo] = useState({});
+    const [verResuelta, setVerResuelta] = useState(null);
 
     // El catálogo de salidas. Se pide una vez por sesión —son doce filas que no
     // cambian mientras el portal está abierto— y sin él no se ofrece ninguna
@@ -94,9 +93,14 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
         return m;
     }, [devoluciones]);
 
-    const allConfirmed  = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
-    const visibleItems  = showAll ? difItems : difItems.slice(0, DIF_MAX);
-    const hiddenCount   = difItems.length - DIF_MAX;
+    // Una diferencia resuelta ya no pide nada: mostrarla con el mismo peso que
+    // una abierta hace que la lista mienta sobre cuánto trabajo queda. Van
+    // aparte, colapsadas a un renglón, y se abren si alguien quiere el detalle.
+    const abiertas  = difItems.filter(r => r.resolucion_status !== 'confirmada');
+    const resueltas = difItems.filter(r => r.resolucion_status === 'confirmada');
+    const allConfirmed = difItems.length > 0 && abiertas.length === 0;
+    const visibleItems = showAll ? abiertas : abiertas.slice(0, DIF_MAX);
+    const hiddenCount  = abiertas.length - DIF_MAX;
 
     // Cierre a nivel sucursal (7A.1): backend listo desde 2026-06-21
     // (pedido_sucursal_status.corregido_bodega_*/confirmado_correccion_*),
@@ -113,9 +117,18 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 {allConfirmed
                     ? <CheckCircle2 size={12} className="text-success shrink-0" />
                     : <AlertCircle size={12} className="text-warning shrink-0" />}
+                {/* El número cuenta lo que FALTA. Decía «pendiente resolución
+                    (4)» con una ya resuelta adentro: un contador que incluye lo
+                    hecho no sirve para saber cuánto queda, que es para lo único
+                    que se mira. */}
                 <span className={`text-caption font-semibold uppercase tracking-wide ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
-                    {allConfirmed ? 'Diferencias resueltas' : `Diferencias — pendiente resolución${difItems.length > 1 ? ` (${difItems.length})` : ''}`}
+                    {allConfirmed
+                        ? `Diferencias resueltas${resueltas.length > 1 ? ` (${resueltas.length})` : ''}`
+                        : `Diferencias — por resolver (${abiertas.length})`}
                 </span>
+                {!allConfirmed && resueltas.length > 0 && (
+                    <span className="text-caption text-content-3">· {resueltas.length} resuelta{resueltas.length > 1 ? 's' : ''}</span>
+                )}
             </div>
 
             {visibleItems.map(item => {
@@ -124,29 +137,27 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
                 const dev     = devPorItem.get(item.id) ?? null;
 
-                // El marco dice de un vistazo en qué está el renglón. `escalada`
-                // se pinta en rojo porque es lo único que no avanza solo: alguien
-                // tiene que ir a mirarlo.
-                const borderCls = res === 'confirmada'      ? 'border-success/30 bg-success/10'
-                                : res === 'escalada'        ? 'border-danger/40 bg-danger/10'
-                                : res === 'acordada'        ? 'border-warning/40 bg-warning/10'
-                                : res === 'contrapropuesta' ? 'border-chart-4/30 bg-chart-4/10'
-                                : res === 'propuesta'       ? 'border-chart-3/30 bg-chart-3/10'
-                                :                             'border-warning/30 bg-surface-card';
+                // El estado lo lleva la TARJETA, con `data-tono` (§5.1). Antes
+                // era un par borde+relleno a mano, y adentro cada estado ponía
+                // OTRA caja de color: dos anillos concéntricos, que es
+                // exactamente lo que ese canónico existe para evitar.
+                const tono = res === 'escalada'        ? 'danger'
+                           : res === 'acordada'        ? 'warning'
+                           : res === 'contrapropuesta' ? 'chart-3'
+                           : undefined;
 
                 return (
-                    <div key={item.id} className={`rounded-xl border overflow-hidden ${borderCls}`}>
-                        {/* Item header */}
-                        <div className="flex items-center gap-2 px-3 py-2">
-                            <span className="flex-1 text-label font-semibold text-content-2 truncate">{item.products?.nombre}</span>
+                    <div key={item.id} data-surface="card" data-tono={tono}
+                        className="rounded-card overflow-hidden px-3 py-2.5 space-y-1.5">
+                        {/* Encabezado */}
+                        <div className="flex items-center gap-2">
+                            <span className="flex-1 text-label font-bold text-content truncate">{item.products?.nombre}</span>
                             {et && <Badge variant={et.variante} size="sm" className="shrink-0" uppercase={false}>{et.label}</Badge>}
-                            {res === 'confirmada' && <CheckCircle2 size={13} className="text-success shrink-0" />}
-                            {res === 'rechazada'  && <X size={13} className="text-danger shrink-0" />}
                         </div>
 
                         {/* Qty diff */}
                         {(qtyDiff || item.cantidad_asignada != null) && (
-                            <div className="flex items-center gap-2 px-3 pb-1.5 text-caption text-content-3 flex-wrap">
+                            <div className="flex items-center gap-2 text-caption text-content-3 flex-wrap">
                                 {(() => { const sol = calcSolicitado(item); return sol != null ? <span>Solicitado: <strong className="text-content-2">{sol}</strong></span> : null; })()}
                                 <span>Enviado: <strong className="text-content-2">{item.cantidad_asignada}</strong></span>
                                 {item.cantidad_recibida != null && <>
@@ -156,7 +167,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             </div>
                         )}
 
-                        <div className="px-3 pb-3 space-y-2">
+                        <div className="space-y-2">
 
                             {/* ── Cómo se arregla ──
                                 UNA conversación por renglón. Antes eran dos —la
@@ -257,7 +268,67 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
             )}
 
             {hiddenCount > 0 && (
-                <Button tone="warning" onClick={() => setShowAll(s => !s)}>{showAll ? 'Ver menos ↑' : `Ver todas las diferencias (${difItems.length}) ↓`}</Button>
+                <Button tone="warning" onClick={() => setShowAll(s => !s)}>
+                    {showAll ? 'Ver menos ↑' : `Ver las ${abiertas.length} por resolver ↓`}
+                </Button>
+            )}
+
+            {/* ── Las resueltas, plegadas ──
+                Ocupaban lo mismo que una abierta y con una caja de color adentro
+                de otra. Una diferencia cerrada no pide nada: se dice en un
+                renglón —qué se hizo y quién lo cerró— y el detalle se abre si
+                alguien lo busca. El chevron es la afordancia de plegar (§5.3);
+                el ojo prometería «hay más para ver», que no es lo que hace. */}
+            {!allConfirmed && resueltas.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                        Ya resueltas ({resueltas.length})
+                    </p>
+                    {resueltas.map(item => (
+                        <FilaResuelta key={item.id} item={item} abierta={verResuelta === item.id}
+                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            isBranch={isBranch} esSupervision={esSupervision} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+// Una diferencia ya cerrada, en un renglón. Lo que hay que poder leer sin abrir
+// es qué se decidió y quién lo cerró — el resto es historia y vive adentro.
+function FilaResuelta({ item, abierta, onToggle, catalogo, empMap, dev, isBranch, esSupervision }) {
+    const et  = ERROR_TIPO_LABEL[item.error_tipo];
+    const emp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null;
+    return (
+        <div data-surface="card" data-tono="success" className="rounded-card overflow-hidden">
+            <button type="button" onClick={onToggle} aria-expanded={abierta}
+                className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-success/5 transition-colors">
+                <CheckCircle2 size={13} className="text-success shrink-0" />
+                <span className="flex-1 text-label font-semibold text-content-2 truncate">
+                    {item.products?.nombre}
+                </span>
+                {et && <Badge variant={et.variante} size="sm" className="shrink-0 hidden sm:inline-flex" uppercase={false}>{et.label}</Badge>}
+                <EmpChip emp={emp} size="xs" tono="success-text" />
+                {abierta
+                    ? <ChevronUp   size={14} className="text-content-3 shrink-0" />
+                    : <ChevronDown size={14} className="text-content-3 shrink-0" />}
+            </button>
+            {abierta && (
+                <div className="px-3 pb-2.5 space-y-2">
+                    <div className="flex items-center gap-2 text-caption text-content-3 flex-wrap">
+                        <span>Enviado: <strong className="text-content-2">{item.cantidad_asignada}</strong></span>
+                        {item.cantidad_recibida != null && <>
+                            <span>→</span>
+                            <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-danger' : 'text-success'}>{item.cantidad_recibida}</strong></span>
+                        </>}
+                    </div>
+                    <DecisionDiferencia item={item} catalogo={catalogo} esSala={isBranch}
+                        esSupervision={esSupervision} empMap={empMap} readOnly />
+                    <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly />
+                </div>
             )}
         </div>
     );

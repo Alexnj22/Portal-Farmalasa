@@ -33,7 +33,7 @@ export async function fetchOpcionesDiferencia() {
     if (cache) return cache;
     const { data, error } = await supabase
         .from('diferencia_opcion')
-        .select('error_tipo, valor, rotulo, ayuda, orden, mueve, cierra_con')
+        .select('error_tipo, valor, rotulo, rotulo_corto, ayuda, orden, mueve, cierra_con')
         .order('error_tipo').order('orden');
     if (error) {
         console.error('opciones de diferencia:', error.message);

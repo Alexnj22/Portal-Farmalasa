@@ -53,16 +53,17 @@ export default function DevolucionBloque({
     const quienPidio = dev.solicitada_por ? empMap.get(dev.solicitada_por) : null;
     const quienDecidio = dev.decidida_por ? empMap.get(dev.decidida_por) : null;
 
-    const marco = {
-        solicitada: 'border-chart-4/30 bg-chart-4/10',
-        aceptada:   'border-chart-3/30 bg-chart-3/10',
-        enviando:   'border-chart-3/30 bg-chart-3/10',
-        enviada:    'border-warning/40 bg-warning/10',
-        recibiendo: 'border-warning/40 bg-warning/10',
-        recibida:   'border-success/30 bg-success/10',
-        rechazada:  'border-danger/30 bg-danger/10',
-        error:      'border-danger/40 bg-danger/10',
-    }[dev.estado] ?? 'border-divider bg-surface-card';
+    // El movimiento NO es otra tarjeta adentro de la del renglón: son dos
+    // anillos concéntricos y §5.1 de DESIGN.md lo prohíbe. Es una franja
+    // separada por una línea, igual que la decisión de arriba — y el estado lo
+    // dice el ícono y el rótulo, no un rectángulo de color más.
+    const acento = {
+        enviada:    'text-warning-text',
+        recibiendo: 'text-warning-text',
+        recibida:   'text-success-text',
+        rechazada:  'text-danger-text',
+        error:      'text-danger-text',
+    }[dev.estado] ?? 'text-content-2';
 
     const rotulo = {
         solicitada: 'Devolución pedida',
@@ -76,10 +77,10 @@ export default function DevolucionBloque({
     }[dev.estado] ?? dev.estado;
 
     return (
-        <div className={`rounded-xl border px-3 py-2.5 space-y-2 ${marco}`}>
+        <div className="border-t border-divider pt-2.5 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-                <Undo2 size={12} className="text-content-2 shrink-0" />
-                <span className="text-label font-bold text-content-2">{rotulo}</span>
+                <Undo2 size={12} className={`shrink-0 ${acento}`} />
+                <span className={`text-label font-bold ${acento}`}>{rotulo}</span>
                 <Badge variant="neutral" size="sm" uppercase={false}>{MOTIVO_LABEL[dev.motivo] ?? dev.motivo}</Badge>
                 <span className="text-caption text-content-3">{dev.cantidad}</span>
                 {dev.estado === 'recibida' && <PackageCheck size={12} className="text-success shrink-0" />}

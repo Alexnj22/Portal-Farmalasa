@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.0 — El bloque de diferencias se lee de un vistazo
+
+Rediseño del bloque, mirando la pantalla real con cuatro diferencias abiertas.
+
+**Elegir entre dos salidas era un desplegable del ancho de la tarjeta**, con
+lupa incluida, que escondía las dos opciones detrás de un clic y prometía un
+buscador que no existe. Ahora son dos botones lado a lado que dicen **en qué
+plano se arregla** — «En el sistema» o «En físico» — y debajo, la frase entera
+de la que quedó elegida: quién hace qué. Es el control canónico para elegir de
+uno a tres (DESIGN.md §15.3), y sirve justo para lo que hay que hacer acá:
+comparar las dos de un vistazo.
+
+**Se fueron las tarjetas dentro de tarjetas.** Cada estado pintaba su propia
+caja de color adentro de la caja del renglón: dos anillos concéntricos. Ahora el
+estado lo lleva la tarjeta del renglón y el contenido va suelto, separado por
+una línea. Lo mismo con el bloque del movimiento. Son unos 90 px menos por
+renglón, que con cuatro diferencias es media pantalla.
+
+**Una diferencia resuelta deja de ocupar lo mismo que una abierta.** Baja a un
+renglón —el producto, qué se decidió y quién lo cerró— bajo el título «Ya
+resueltas», y se abre si alguien quiere el detalle. Y el contador del encabezado
+cuenta **lo que falta**: decía «pendiente resolución (4)» con una ya resuelta
+adentro, y un número que incluye lo hecho no sirve para lo único que se mira.
+
 ## v2.658.4 — Pedir a otra sala se hace desde Consulta de inventario
 
 «Pedir a otra sala» era una de las cuatro opciones de **Nueva solicitud** en

@@ -1,34 +1,51 @@
 import { useState } from 'react';
-import { Scale, Check, X, Loader2, ArrowLeftRight, Hand, Clock, ShieldQuestion } from 'lucide-react';
+import {
+    Check, X, Loader2, ArrowLeftRight, Hand, Clock, ShieldQuestion, Scale,
+} from 'lucide-react';
 import Button from '../../../components/common/Button';
-import Badge from '../../../components/common/Badge';
 import Notice from '../../../components/common/Notice';
-import LiquidSelect from '../../../components/common/LiquidSelect';
+import SegmentedControl from '../../../components/common/SegmentedControl';
 import PortalInput from '../../../components/common/PortalInput';
 import EmpChip from './EmpChip';
 import { opcionesDe, opcionElegida } from '../../../data/diferencias';
 import { turnoDe } from '../../../utils/decisionDiferencia';
 
-// La decisión de una diferencia, pegada a su renglón.
+// La decisión de una diferencia, dentro de la tarjeta de su renglón.
 //
 // Regla del usuario (2026-08-17/18): toda diferencia tiene DOS salidas, y lo que
 // las separa es **en qué plano se arregla**. La propone la SALA —que es la que
 // está revisando—, bodega acepta o contrapropone la otra, y sin acuerdo decide
-// SUPERVISIÓN. Nada se mueve hasta que coinciden dos personas distintas.
+// SUPERVISIÓN.
 //
-// Por qué esto reemplaza a la lista de resolución vieja: aquélla la elegía
-// BODEGA y la sala sólo confirmaba, y encima convivía con el botón «Devolver a
-// bodega» — dos conversaciones sobre el mismo renglón, que es la forma de que
-// una diga que sí y la otra que no. Acá hay una sola.
+// ── Por qué esto NO va en una tarjeta propia (2026-08-18) ──────────────────
+// La primera versión metía cada estado en su propia caja de color adentro de la
+// tarjeta del renglón: dos anillos concéntricos, que es justo lo que §5.1 de
+// DESIGN.md prohíbe. El estado lo lleva la tarjeta con `data-tono` y esto vive
+// suelto adentro, separado por una línea. Se ganaron ~90px por renglón, que con
+// cuatro diferencias abiertas es media pantalla.
+//
+// ── Y por qué segmentado y no desplegable ─────────────────────────────────
+// Son DOS opciones. Un `LiquidSelect` las esconde detrás de un clic, ocupa el
+// ancho entero y trae una lupa que promete un buscador que no existe. §15.3: de
+// una a tres opciones, segmentado — que además las deja comparar de un vistazo,
+// que es exactamente lo que hay que hacer para elegir.
 
 const ESPERA = {
-    sala:        'Esperando que la sala decida…',
-    bodega:      'Esperando la respuesta de bodega…',
-    supervision: 'Sin acuerdo — lo está viendo supervisión…',
+    sala:        'Esperando que la sala decida',
+    bodega:      'Esperando la respuesta de bodega',
+    supervision: 'Lo está viendo supervisión',
 };
 
-// Los rótulos del circuito ANTERIOR. Sirven para poder LEER lo que ya quedó
-// cerrado así — no para elegirlos: las salidas de hoy vienen de la tabla.
+const TITULO = {
+    propuesta:       'La sala propone',
+    contrapropuesta: 'Bodega propone la otra',
+    escalada:        'Sin acuerdo',
+    acordada:        'De acuerdo',
+    confirmada:      'Resuelto',
+};
+
+// Los rótulos del circuito ANTERIOR. Sirven para LEER lo que ya quedó cerrado
+// así — no para elegirlos: las salidas de hoy vienen de la tabla.
 const ROTULO_VIEJO = {
     envio_fisico:        'Enviar producto',
     ajuste_sistema:      'Ajuste en sistema',
@@ -41,29 +58,16 @@ const ROTULO_VIEJO = {
     no_aplica:           'Sin solución',
 };
 
-const MARCO = {
-    propuesta:       'border-chart-3/30 bg-chart-3/10',
-    contrapropuesta: 'border-chart-4/30 bg-chart-4/10',
-    escalada:        'border-danger/40 bg-danger/10',
-    acordada:        'border-warning/40 bg-warning/10',
-    confirmada:      'border-success/30 bg-success/10',
-};
+// El ícono dice el plano sin gastar una palabra: dos flechas = se mueve en el
+// sistema, una mano = se resuelve con el producto.
+const iconoDe = (op) => (op?.mueve === 'ninguno' ? Hand : ArrowLeftRight);
 
-const ROTULO_ESTADO = {
-    propuesta:       'La sala propone',
-    contrapropuesta: 'Bodega propone otra salida',
-    escalada:        'Sin acuerdo — decide supervisión',
-    acordada:        'De acuerdo — falta cerrarlo',
-    confirmada:      'Resuelto',
-};
-
-// Cuántos días faltan para que el plazo del «te lo mando» se venza. En días y no
-// en horas porque el plazo son 3 días corridos: decir «en 71 horas» sugiere una
+// Cuántos días faltan para que el plazo del «que lo manden» se venza. En días y
+// no en horas: el plazo son 3 días corridos, y «en 71 horas» sugiere una
 // precisión que la decisión no tiene.
 function diasPara(iso) {
     if (!iso) return null;
-    const ms = new Date(iso).getTime() - Date.now();
-    return Math.ceil(ms / 86_400_000);
+    return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 }
 
 export default function DecisionDiferencia({
@@ -71,8 +75,8 @@ export default function DecisionDiferencia({
     busyAction, readOnly = false, onDecidir, onConfirmarLlegada, onPedirFoto,
 }) {
     const opciones = opcionesDe(catalogo, item.error_tipo);
-    const [elegida,  setElegida]  = useState(() => opciones[0]?.valor ?? '');
-    const [nota,     setNota]     = useState('');
+    const [elegida, setElegida] = useState(() => opciones[0]?.valor ?? '');
+    const [nota, setNota] = useState('');
     const [rechazando, setRechazando] = useState(false);
     const [motivoRech, setMotivoRech] = useState('');
 
@@ -85,104 +89,99 @@ export default function DecisionDiferencia({
     const quienAcepto  = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null;
     const quienRechazo = item.rechazado_por      ? empMap.get(item.rechazado_por)      : null;
 
-    // Sin catálogo no se ofrece nada. Es preferible a pintar una lista vacía que
-    // parece un error de la persona.
     if (!opciones.length) return null;
 
-    // Un renglón resuelto con el circuito ANTERIOR: bodega elegía de otra lista
-    // y la sala confirmaba. Su `resolucion_tipo` no existe en el catálogo de
-    // hoy, así que no se puede decir de quién es el turno ni ofrecer «De
-    // acuerdo» — la base lo rechazaría con OPCION_INVALIDA y quien apretara
-    // vería un error que no explica nada. Se muestra lo que quedó anotado y
-    // nada más; los que quedaron a medias se reabrieron el 2026-08-18.
-    const esDelCircuitoViejo = !!item.resolucion_tipo && !op;
-    if (esDelCircuitoViejo && estado !== 'confirmada') {
+    // Un renglón resuelto con el circuito ANTERIOR: su `resolucion_tipo` no
+    // existe en el catálogo de hoy, así que no se puede decir de quién es el
+    // turno ni ofrecer «De acuerdo» — la base lo rechazaría y quien apretara
+    // vería un error que no explica nada.
+    if (item.resolucion_tipo && !op && estado !== 'confirmada') {
         return (
-            <Notice variant="neutral" icon={Scale} compact>
-                Esta diferencia se propuso con el circuito anterior. Hay que volver a
-                decidirla con las dos salidas.
-            </Notice>
+            <Marco>
+                <Notice variant="neutral" icon={Scale} compact>
+                    Se propuso con el circuito anterior. Hay que volver a decidirla.
+                </Notice>
+            </Marco>
         );
     }
 
-    const decidir = (accion, tipo = null, txt = null) =>
-        onDecidir?.(item.id, accion, tipo, txt);
+    const decidir = (accion, tipo = null, txt = null) => onDecidir?.(item.id, accion, tipo, txt);
 
     // Proponer devolver un producto DAÑADO exige la foto: es lo único que bodega
-    // puede mirar para decidir si amerita la devolución o si todavía se vende, y
-    // la base lo rechaza sin ella. Se pide en el modal, que es donde se puede
-    // adjuntar; las demás salidas se proponen acá mismo.
+    // puede mirar para decidir si amerita la devolución, y la base la rechaza
+    // sin ella. Se pide en el modal, que es donde se puede adjuntar.
     const necesitaFoto = (valor) => item.error_tipo === 'danado'
         && opcionElegida(catalogo, item.error_tipo, valor)?.mueve === 'devolucion';
 
-    // ── Todavía nadie propuso ─────────────────────────────────────────────────
+    // ── Nadie propuso todavía ─────────────────────────────────────────────────
     if (estado === null) {
         if (readOnly) return null;
-        if (turno !== 'yo') {
-            return <p className="text-caption text-content-3 italic">{ESPERA.sala}</p>;
-        }
-        const ayuda = opciones.find(o => o.valor === elegida)?.ayuda;
+        if (turno !== 'yo') return <Marco><Espera texto={ESPERA.sala} /></Marco>;
+
+        const sel = opciones.find(o => o.valor === elegida);
         return (
-            <div data-surface="card" className="rounded-xl border px-3 py-2.5 space-y-2">
-                <div className="flex items-center gap-1.5">
-                    <Scale size={12} className="text-content-2 shrink-0" />
-                    <span className="text-label font-bold text-content-2">¿Cómo se arregla?</span>
-                </div>
-                <LiquidSelect
-                    value={elegida}
-                    onChange={v => setElegida(v)}
-                    options={opciones.map(o => ({ value: o.valor, label: o.rotulo }))}
-                    compact
-                    clearable={false}
+            <Marco>
+                <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                    Cómo se arregla
+                </p>
+                <SegmentedControl
+                    value={elegida} onChange={setElegida} label="Cómo se arregla"
+                    layout="block" columns={2} tone="chart-3"
+                    options={opciones.map(o => ({
+                        value: o.valor, label: o.rotulo_corto ?? o.rotulo, icon: iconoDe(o),
+                    }))}
                 />
-                {ayuda && <p className="text-caption text-content-3">{ayuda}</p>}
+                {sel && (
+                    <p className="text-caption text-content-2 leading-snug">
+                        <strong className="font-semibold">{sel.rotulo}.</strong>{' '}
+                        <span className="text-content-3">{sel.ayuda}</span>
+                    </p>
+                )}
                 <div className="flex gap-2">
                     <PortalInput
                         aria-label="Nota de la decisión" className="flex-1" tono="chart-3" compact
                         value={nota} onChange={e => setNota(e.target.value)}
                         placeholder="Nota (opcional)…"
                     />
-                    <Button tone="chart-3" disabled={ocupado || !elegida}
+                    <Button tone="chart-3" loading={ocupado} disabled={!elegida}
                         onClick={() => (necesitaFoto(elegida)
                             ? onPedirFoto?.(item, elegida, nota || null)
                             : decidir('proponer', elegida, nota || null))}>
-                        {ocupado ? <Loader2 size={10} className="animate-spin" /> : 'Proponer'}
+                        Proponer
                     </Button>
                 </div>
-            </div>
+            </Marco>
         );
     }
 
     const laOtra = opciones.find(o => o.valor !== item.resolucion_tipo);
     const dias   = diasPara(item.resolucion_vence_at);
+    const Icono  = estado === 'escalada' ? ShieldQuestion : iconoDe(op);
+    const rotulo = op?.rotulo ?? ROTULO_VIEJO[item.resolucion_tipo];
 
     return (
-        <div data-surface="card" className={`rounded-xl border px-3 py-2.5 space-y-2 ${MARCO[estado] ?? ''}`}>
-            <div className="flex items-center gap-2 flex-wrap">
-                {estado === 'escalada'
-                    ? <ShieldQuestion size={12} className="text-danger shrink-0" />
-                    : <Scale size={12} className="text-content-2 shrink-0" />}
-                <span className="text-label font-bold text-content-2">{ROTULO_ESTADO[estado] ?? estado}</span>
-                {(op || ROTULO_VIEJO[item.resolucion_tipo]) && (
-                    <Badge variant="neutral" size="sm" uppercase={false}
-                        icon={!op || op.mueve === 'ninguno' ? Hand : ArrowLeftRight}>
-                        {op?.rotulo ?? ROTULO_VIEJO[item.resolucion_tipo]}
-                    </Badge>
-                )}
+        <Marco>
+            {/* La salida acordada es el dato, así que va primero y en grande —
+                no como una etiqueta al lado de un título de estado. El estado lo
+                dice el color de la tarjeta y el renglón de abajo. */}
+            <div className="flex items-start gap-2">
+                <Icono size={14} className="text-content-2 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                    <p className="text-label font-bold text-content leading-snug">{rotulo ?? '—'}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-caption text-content-3">{TITULO[estado] ?? estado}</span>
+                        <EmpChip emp={quienPropuso} size="xs" tono="content-3" />
+                    </div>
+                </div>
             </div>
 
-            {op?.ayuda && <p className="text-caption text-content-3">{op.ayuda}</p>}
-
-            {(quienPropuso || item.resolucion_nota) && (
-                <div className="flex items-center gap-2 flex-wrap text-caption text-content-2">
-                    {item.resolucion_nota && <span className="italic">«{item.resolucion_nota}»</span>}
-                    <EmpChip emp={quienPropuso} size="xs" />
-                </div>
+            {op?.ayuda && estado !== 'confirmada' && (
+                <p className="text-caption text-content-3 leading-snug">{op.ayuda}</p>
+            )}
+            {item.resolucion_nota && (
+                <p className="text-caption text-content-2 italic">«{item.resolucion_nota}»</p>
             )}
 
-            {/* Lo que dijo quien no estuvo de acuerdo. Es lo que supervisión
-                necesita leer para decidir, así que se muestra siempre, no sólo
-                del lado de quien rechazó. */}
             {estado === 'escalada' && item.nota_rechazo && (
                 <Notice variant="danger" icon={X} compact
                     action={<EmpChip emp={quienRechazo} size="xs" tono="danger-text" />}>
@@ -190,9 +189,6 @@ export default function DecisionDiferencia({
                 </Notice>
             )}
 
-            {/* El plazo del «que bodega mande el producto». Se dice en la
-                tarjeta y no sólo en el aviso: quien la abre tiene que ver que
-                hay un reloj corriendo. */}
             {estado === 'acordada' && dias !== null && (
                 <Notice variant={dias <= 0 ? 'warning' : 'neutral'} icon={Clock} compact>
                     {dias > 0
@@ -202,7 +198,6 @@ export default function DecisionDiferencia({
             )}
 
             {readOnly ? null : (<>
-                {/* ── Me toca contestar ────────────────────────────────────── */}
                 {turno === 'yo' && (estado === 'propuesta' || estado === 'contrapropuesta') && (
                     rechazando ? (
                         <div className="flex gap-2">
@@ -215,22 +210,20 @@ export default function DecisionDiferencia({
                                     if (e.key === 'Escape') setRechazando(false);
                                 }}
                             />
-                            <Button variant="destructive" disabled={ocupado || !motivoRech.trim()}
-                                onClick={() => decidir('rechazar', null, motivoRech)}>
-                                {ocupado ? <Loader2 size={10} className="animate-spin" /> : 'No estoy de acuerdo'}
-                            </Button>
+                            <Button variant="destructive" loading={ocupado} disabled={!motivoRech.trim()}
+                                onClick={() => decidir('rechazar', null, motivoRech)}>Enviar</Button>
                             <Button variant="ghost" onClick={() => setRechazando(false)}>✕</Button>
                         </div>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
                             <Button tone="success" icon={Check} loading={ocupado}
                                 onClick={() => decidir('aceptar')}>De acuerdo</Button>
-                            {/* Contraproponer sólo existe en la primera vuelta:
-                                a la segunda, quien no está de acuerdo escala. */}
+                            {/* Contraproponer sólo en la primera vuelta: a la
+                                segunda, quien no está de acuerdo escala. */}
                             {estado === 'propuesta' && laOtra && (
                                 <Button variant="secondary" icon={ArrowLeftRight} disabled={ocupado}
                                     onClick={() => decidir('contraproponer', laOtra.valor, null)}>
-                                    Mejor: {laOtra.rotulo}
+                                    Mejor {(laOtra.rotulo_corto ?? laOtra.rotulo).toLowerCase()}
                                 </Button>
                             )}
                             {estado === 'contrapropuesta' && (
@@ -241,60 +234,63 @@ export default function DecisionDiferencia({
                     )
                 )}
 
-                {/* ── Supervisión desempata ────────────────────────────────── */}
                 {estado === 'escalada' && turno === 'yo' && (
-                    <div className="flex gap-2 flex-wrap">
-                        {opciones.map(o => (
-                            <Button key={o.valor} variant="secondary" disabled={ocupado}
-                                onClick={() => decidir('supervisar', o.valor, null)}>
-                                {o.rotulo}
-                            </Button>
-                        ))}
-                    </div>
+                    <SegmentedControl
+                        value={item.resolucion_tipo} label="Con cuál se queda" layout="block" columns={2}
+                        tone="danger" disabled={ocupado}
+                        onChange={v => decidir('supervisar', v, null)}
+                        options={opciones.map(o => ({
+                            value: o.valor, label: o.rotulo_corto ?? o.rotulo, icon: iconoDe(o),
+                        }))}
+                    />
                 )}
 
-                {/* ── Acordado y se arregla en FÍSICO: falta que llegue ────── */}
                 {estado === 'acordada' && op?.mueve === 'ninguno' && (() => {
-                    const meTocaFirmar = op.cierra_con === 'llegada_sala' ? esSala : !esSala;
-                    if (!meTocaFirmar && !esSupervision) {
-                        return (
-                            <p className="text-caption text-content-3 italic">
-                                {op.cierra_con === 'llegada_sala'
-                                    ? 'Falta que la sala confirme que llegó.'
-                                    : 'Falta que bodega confirme que lo tiene.'}
-                            </p>
-                        );
+                    const meToca = op.cierra_con === 'llegada_sala' ? esSala : !esSala;
+                    if (!meToca && !esSupervision) {
+                        return <Espera texto={op.cierra_con === 'llegada_sala'
+                            ? 'Falta que la sala confirme que llegó'
+                            : 'Falta que bodega confirme que lo tiene'} />;
                     }
                     return (
-                        <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <Button tone="success" icon={Check} loading={ocupado}
-                                onClick={() => onConfirmarLlegada?.(item.id)}>
-                                Ya lo tengo
-                            </Button>
-                            <p className="text-micro text-content-3 leading-snug">
-                                Confírmalo con el producto en la mano, no antes. No mueve nada en
-                                el sistema — es la constancia de que llegó.
-                            </p>
+                                onClick={() => onConfirmarLlegada?.(item.id)}>Ya lo tengo</Button>
+                            <span className="text-micro text-content-3">
+                                Con el producto en la mano. No mueve nada en el sistema.
+                            </span>
                         </div>
                     );
                 })()}
 
-                {/* ── Acordado y se arregla en el SISTEMA ──────────────────── */}
                 {estado === 'acordada' && op?.mueve === 'traslado_a_sala' && (
                     <Notice variant="warning" icon={ArrowLeftRight} compact>
                         Falta que salga el traslado de bodega a la sala.
                     </Notice>
                 )}
 
-                {/* Turnos ajenos: se dice de quién se espera, no se calla. */}
                 {turno !== 'yo' && ESPERA[turno] && estado !== 'acordada' && (
-                    <p className="text-caption text-content-3 italic">{ESPERA[turno]}</p>
+                    <Espera texto={ESPERA[turno]} />
                 )}
             </>)}
 
             {estado === 'confirmada' && quienAcepto && (
                 <EmpChip emp={quienAcepto} prefijo="Cerrado por" size="xs" tono="success-text" />
             )}
-        </div>
+        </Marco>
+    );
+}
+
+// El bloque no es una tarjeta: es parte de la del renglón, separada por una
+// línea. Ver la nota de arriba y §5.1 de DESIGN.md.
+function Marco({ children }) {
+    return <div className="border-t border-divider pt-2.5 space-y-2">{children}</div>;
+}
+
+function Espera({ texto }) {
+    return (
+        <p className="text-caption text-content-3 italic flex items-center gap-1.5">
+            <Clock size={11} className="shrink-0" />{texto}
+        </p>
     );
 }

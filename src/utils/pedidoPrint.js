@@ -105,9 +105,17 @@ export function fefoProject(lotes, qty) {
     return result;
 }
 
-function fmtVence(iso) {
+// `fecha_vencimiento` es una fecha SIN hora ('2027-11-01'). `new Date()` la lee
+// como UTC y `toLocaleDateString` la pinta en hora local: en El Salvador (UTC−6)
+// toda fecha del día 1 retrocedía un mes, o sea que un lote que vence en
+// noviembre se imprimía «oct 27». Y no era un borde raro — medido el 2026-08-18,
+// 9,774 de las 9,959 existencias con vencimiento son día 01: el desfase era la
+// regla. Armando la fecha en hora LOCAL no hay huso que la mueva.
+export function fmtVence(iso) {
     if (!iso) return null;
-    return new Date(iso).toLocaleDateString('es-SV', { month: 'short', year: '2-digit' });
+    const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
+    if (!y || !m) return null;
+    return new Date(y, m - 1, 1).toLocaleDateString('es-SV', { month: 'short', year: '2-digit' });
 }
 function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });

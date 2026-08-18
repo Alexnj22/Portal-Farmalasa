@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDispatch, lotesToDispatch, lotesAsignadosToDispatch } from '../../src/utils/pedidoPrint';
+import { toDispatch, lotesToDispatch, lotesAsignadosToDispatch, fmtVence } from '../../src/utils/pedidoPrint';
 
 // Regresión: conversión de unidades ERP → unidades de despacho (dispatch_factor)
 // para impresión/snapshot de pedidos. Ver memoria del proyecto
@@ -58,5 +58,33 @@ describe('lotesAsignadosToDispatch', () => {
         const lotes = [{ take: 0 }, { take: 5 }];
         const result = lotesAsignadosToDispatch(lotes, 12, 6);
         expect(result).toEqual([{ take: 10 }]);
+    });
+});
+
+// El vencimiento del lote llega como fecha SIN hora ('2027-11-01'). `new Date()`
+// la lee como UTC y `toLocaleDateString` la pinta en hora local: en El Salvador
+// (UTC−6) toda fecha del día 1 retrocedía un mes. Como 9,774 de las 9,959
+// existencias con vencimiento son día 01 (medido en producción el 2026-08-18),
+// el desfase no era un borde: era lo que se imprimía casi siempre.
+//
+// Estas fechas son las que traía el pedido 121 de Salud 3 ese día, no ejemplos
+// redactados. Se prueba con `TZ=America/El_Salvador`, que es donde corre.
+describe('fmtVence — el huso no puede correr el mes', () => {
+    it('el día 01 se queda en SU mes', () => {
+        expect(fmtVence('2027-11-01')).toMatch(/nov/i);
+        expect(fmtVence('2028-03-01')).toMatch(/mar/i);
+        expect(fmtVence('2029-06-01')).toMatch(/jun/i);
+        expect(fmtVence('2030-09-01')).toMatch(/sept?/i);
+    });
+
+    it('conserva el año de la fecha, no el del corrimiento', () => {
+        expect(fmtVence('2028-01-01')).toMatch(/28/);
+        expect(fmtVence('2030-01-01')).toMatch(/30/);
+    });
+
+    it('sin fecha no inventa una', () => {
+        expect(fmtVence(null)).toBeNull();
+        expect(fmtVence('')).toBeNull();
+        expect(fmtVence('nada')).toBeNull();
     });
 });

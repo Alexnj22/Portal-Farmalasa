@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.663.0 — Al confirmar el pedido se ven los lotes que vienen
+
+Pregunta del usuario: *«en el pedido al aceptarlo, ¿cómo veo los lotes de los
+productos que me vienen? […] en los productos bajo receta (los de la bitácora)
+esos sí deben de venir según lo solicitado, por legalidad»* — y después:
+*«pero debería de mostrarlo en la confirmación de pedido»*.
+
+**El dato ya viajaba; lo que faltaba era la pantalla.** Bodega guarda los lotes
+de cada renglón en `lotes_asignados` al generar el pedido, y salen impresos en
+la hoja, columna «Lote». Medido el 2026-08-18: los pedidos de ese día traen
+lote en 381 de 381 renglones (Salud 2) y 335 de 335 (Salud 3). Pero la pantalla
+donde la sala cuenta y confirma sólo mostraba Producto / Enviado / Pres. /
+Cant., así que quien recibía tenía que ir al papel para saber qué lote le llegó.
+Y el renglón bajo receta ni siquiera se distinguía: el badge **Bajo Receta**
+estaba en la hoja impresa y en la vista de bodega, pero no en recepción.
+
+Ahora la fila lo dice, debajo del nombre del producto: **«Debe venir del lote»**
+(o «de N lotes») y una línea por lote con su número, su vencimiento y cuántos.
+Va también en la búsqueda rápida de producto suelto, que es justo el camino de
+quien NO tiene la hoja delante. El dato ya llegaba al navegador —`ITEMS_SELECT`
+lo trae desde siempre—, así que no hay una consulta nueva.
+
+Las cantidades pasan por `lotesAsignadosToDispatch`, la misma función que usa el
+PDF, a propósito: si el papel dice «7» y la pantalla dice «2», quien cuenta no
+sabe a cuál creerle.
+
+**El rótulo dice «Debe venir», no «Vino», y la diferencia es el punto.**
+`lotes_asignados` es una proyección por vencimiento hecha el día que se generó
+el pedido —qué lotes *deberían* salir según lo que había en bodega—, no un
+registro de cuáles salieron. Nadie lo confirma al despachar ni al recibir.
+Prometer en pantalla más certeza de la que hay sería peor que no mostrarlo.
+
+### El vencimiento impreso estaba corrido un mes — desde siempre
+
+Encontrado al mirar el dato para esta pantalla, no reportado. `fmtVence` de
+`pedidoPrint.js` hacía `new Date('2027-11-01').toLocaleDateString('es-SV', …)`:
+`new Date` lee la fecha sin hora como **UTC** y `toLocaleDateString` la pinta en
+hora **local**, así que en El Salvador (UTC−6) toda fecha del día 1 retrocedía
+un mes. La hoja imprimía «oct 27» de un lote que vence en noviembre.
+
+No era un borde raro: **9,774 de las 9,959 existencias con vencimiento son día
+01**, o sea que el desfase era lo que se imprimía casi siempre. `fmtFechaLarga`
+de `trasladoTexto.js` tenía el mismo defecto sobre el mismo dato —sus tres usos
+son vencimientos de lote—, y decía «31 oct 27» de un lote del 1 de noviembre.
+Las dos arman ahora la fecha en hora local, donde ningún huso la mueve.
+
+Anclado en `tests/unit/pedidoPrint.test.js` y en el nuevo
+`tests/unit/trasladoVencimiento.test.js`, con las fechas del pedido 121 de
+Salud 3 —no ejemplos redactados—. Verificado que las pruebas fallan contra la
+implementación vieja.
+
+### Lo que queda abierto
+
+Para lo que el usuario busca —que el bajo receta venga **según lo solicitado**,
+por legalidad— esto muestra la expectativa, no la prueba. Falta que alguien
+**confirme el lote que realmente llegó**. Hoy nadie lo hace: bodega no lo marca
+al despachar, la sala no lo marca al recibir.
+
+Dos cosas medidas que conviene tener a mano cuando se retome:
+
+- **Para bajo receta el dato de origen es bueno.** De 74 renglones de productos
+  bajo receta con existencia en bodega, 72 tienen lote real (2 quedaron en
+  `GENERICO`). En los últimos 10 días viajaron 59 renglones bajo receta, 5
+  partidos en varios lotes, y **ninguno** con lote genérico.
+- **La bitácora ya se llena con lote real**, y no del pedido sino de la factura
+  de venta (`sales_invoice_items.lote`): 316 de 316 dispensaciones con lote,
+  ninguna vacía. Ese eslabón está sano; el que falta es bodega→sala.
+
+También queda medido, sin tocar: por el redondeo a unidades de despacho, 46 de
+14,730 renglones de 30 días pierden un lote de la vista (el que redondea a
+cero). En bajo receta: **0 de 133**. Está igual en el papel, así que cambiarlo
+en un solo lado los pondría a decir cosas distintas.
+
 ## v2.662.0 — Quitar una caja de impresion que ya no existe
 
 Pregunta del usuario: *«¿como puedo eliminar cajas de las salas? por las que

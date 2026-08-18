@@ -29,6 +29,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
 import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { lotesAsignadosToDispatch } from '../../utils/pedidoPrint';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
@@ -44,6 +45,62 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
     const LABELS = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
     const label = LABELS[dispatch_tipo] ?? dispatch_tipo ?? 'Unidad';
     return f > 1 ? `${label} ×${f}` : label;
+}
+
+/**
+ * Los lotes del renglón, para quien tiene la caja en la mano.
+ *
+ * El dato ya viajaba: bodega lo guarda en `lotes_asignados` al generar y sale
+ * impreso en la hoja, columna «Lote». Lo que faltaba era acá —la pantalla donde
+ * se cuenta y se confirma—, así que quien recibía tenía que ir al papel para
+ * saber qué lote le llegó. En un producto BAJO RECETA eso no es comodidad: es
+ * el dato que la bitácora tiene que poder sostener.
+ *
+ * Las cantidades pasan por `lotesAsignadosToDispatch`, la MISMA función que usa
+ * el PDF. Es a propósito: si el papel dice «7» y la pantalla dice «2», quien
+ * cuenta no sabe a cuál creerle. Los dos tienen que decir lo mismo.
+ *
+ * Ojo con lo que este dato ES: una proyección por vencimiento hecha el día que
+ * se generó el pedido —qué lotes DEBERÍAN salir según lo que había en bodega—,
+ * no un registro de cuáles salieron. Nadie lo confirma al despachar. Por eso el
+ * rótulo dice «Debe venir» y no «Vino».
+ */
+
+// Fecha sin hora: se arma en LOCAL para que el huso no la corra un mes.
+// Mismo motivo y misma forma que `fmtVence` de `pedidoPrint.js`.
+function fmtVence(iso) {
+    if (!iso) return null;
+    const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
+    if (!y || !m) return null;
+    return new Date(y, m - 1, 1).toLocaleDateString('es-SV', { month: 'short', year: '2-digit' });
+}
+
+function LotesDelRenglon({ row }) {
+    const crudos = Array.isArray(row.lotes_asignados) ? row.lotes_asignados : [];
+    if (!crudos.length) return null;
+    const erpFactor  = Number(row.factor) || 1;
+    const dispFactor = Number(row.dispatch_factor) || erpFactor;
+    const lotes = lotesAsignadosToDispatch(crudos, erpFactor, dispFactor);
+    if (!lotes.length) return null;
+
+    return (
+        <span className="flex flex-col gap-0.5 mt-1 font-normal">
+            <span className="text-micro text-content-3 uppercase tracking-wide">
+                {lotes.length === 1 ? 'Debe venir del lote' : `Debe venir de ${lotes.length} lotes`}
+            </span>
+            {lotes.map((l, i) => {
+                const vence = fmtVence(l.fecha_vencimiento);
+                const cant  = l.take ?? l.cantidad ?? l.packs;
+                return (
+                    <span key={i} className="text-micro text-content-3 leading-tight">
+                        <span className="font-mono text-content-2">{l.lote || 'sin lote'}</span>
+                        {vence != null && <> · vence {vence}</>}
+                        {cant != null && <> · {cant}</>}
+                    </span>
+                );
+            })}
+        </span>
+    );
 }
 
 /**
@@ -169,11 +226,20 @@ function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
 
                 return (
                     <div key={r.id} className={`mt-1.5 px-3 py-2.5 rounded-xl border ${delta !== 0 ? 'border-warning/40 bg-warning/10' : hasProb ? 'border-chart-4/40 bg-chart-4/10' : 'border-divider bg-surface-card'}`}>
-                        <p className="text-body-sm font-semibold text-content-2 leading-tight">{r.products?.nombre}</p>
+                        <p className="text-body-sm font-semibold text-content-2 leading-tight">
+                            {r.products?.nombre}
+                            {r.products?.es_antibiotico && (
+                                <Badge variant="danger" size="sm" uppercase={false} className="ml-1 align-middle">Bajo Receta</Badge>
+                            )}
+                        </p>
                         <p className="text-micro text-content-3 mt-0.5">
                             {hoja ? `Hoja ${hoja} · ` : ''}
                             Enviado: {enviadoDisp}{etiquetaEnviado ? ` × ${etiquetaEnviado}` : ''}
                         </p>
+                        {/* Quien viene por un producto suelto es justo el que no
+                            tiene la hoja delante: si el lote sólo estuviera en la
+                            tabla de la hoja, este camino quedaría sin él. */}
+                        <LotesDelRenglon row={r} />
 
                         {/* Recibir uno suelto es parcial POR PRODUCTO, no por unidad:
                             el renglón se cierra con la cantidad que quede escrita acá
@@ -1729,6 +1795,12 @@ export default function RecepcionModal({
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                                     <span className={`text-body-sm font-semibold leading-snug ${recibidoSolo ? 'text-content-3' : 'text-content-2'}`}>
                                         {r.products?.nombre}
+                                        {/* La hoja impresa lo trae y la pantalla no lo traía. Es el
+                                            renglón que tiene que cuadrar con lo solicitado, así que
+                                            quien cuenta necesita distinguirlo de un vistazo. */}
+                                        {r.products?.es_antibiotico && (
+                                            <Badge variant="danger" size="sm" uppercase={false} className="ml-1 align-middle">Bajo Receta</Badge>
+                                        )}
                                         {!hayHojas && r.caja_especial && (
                                             <Badge variant="chart-3" size="sm" icon={Star} uppercase={false}>Especial</Badge>
                                         )}
@@ -1740,6 +1812,7 @@ export default function RecepcionModal({
                                         {recibidoSolo && (
                                             <Badge variant="success" size="sm" icon={Check} uppercase={false}>Recibido</Badge>
                                         )}
+                                        <LotesDelRenglon row={r} />
                                     </span>
                                     <span className="text-body-sm font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
 

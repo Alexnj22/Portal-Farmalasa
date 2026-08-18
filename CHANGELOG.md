@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.7 — El cambio de vacaciones guarda quién lo decidió
+
+Cola del cambio anterior. Al decidir un cambio de fechas de vacaciones —lo
+apruebe o lo rechace— la solicitud no guardaba **quién** lo hizo, así que la
+tarjeta habría dicho «Rechazó · Sin registro».
+
+No era una decisión: la función nació el 21 de mayo escribiendo solamente el
+estado, y su firma nunca recibió a la persona, así que no había qué guardar. La
+auditoría de tiempos, escrita después, sí lo hace. Eran dos implementaciones del
+mismo paso que no coincidían.
+
+Se corrige antes de que importe: ese camino **no tiene ni una sola solicitud** en
+producción, así que no hay nada viejo que quedara sin firma.
+
 ## v2.659.6 — Menos ruido en las diferencias, y el texto se lee
 
 Tres cosas reportadas mirando la pantalla con tres diferencias abiertas.

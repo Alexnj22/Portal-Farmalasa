@@ -97,7 +97,7 @@ export const createVacationPlanSlice = (set, get) => ({
         return enriched;
     },
 
-    processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd, approverNote = '') => {
+    processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd, approverNote = '', approverId = null) => {
         // action: 'APPROVED' | 'REJECTED'
 
         /* La solicitud se decide ANTES de tocar el plan, y no al revés.
@@ -116,6 +116,18 @@ export const createVacationPlanSlice = (set, get) => ({
             // base. La pantalla lo exige desde el 2026-08-18.
             ...(String(approverNote ?? '').trim()
                 ? { approver_note: String(approverNote).trim() } : {}),
+            /* Y QUIÉN decidió. Tampoco se escribía: la función nació el
+             * 2026-05-21 haciendo un `update({ status, updated_at })` —el
+             * comentario decía «Update approval_request status» y era
+             * literal—, y su firma nunca recibió al aprobador, así que no
+             * había qué guardar. La auditoría de tiempos, escrita después,
+             * sí lo hace: era inconsistencia entre dos implementaciones, no
+             * una decisión. Nadie lo notó porque este camino no tiene ni una
+             * fila en producción.
+             *
+             * Va en los DOS desenlaces: la tarjeta dice «Aprobó» o «Rechazó»
+             * seguido de la persona, y sin esto muestra «Sin registro». */
+            ...(approverId ? { approver_id: approverId } : {}),
             updated_at: new Date().toISOString(),
         });
         if (reqErr) { console.error('processChangeRequest request:', reqErr); return false; }

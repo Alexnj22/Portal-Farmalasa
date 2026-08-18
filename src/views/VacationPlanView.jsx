@@ -641,6 +641,7 @@ const VacationPlanView = () => {
             action === 'APPROVED' ? meta.requested_start : null,
             action === 'APPROVED' ? meta.requested_end : null,
             motivo,
+            user?.id ?? null,
         );
         setProcessingRequestId(null);
         setRechazandoCambio(null);

@@ -104,7 +104,9 @@ export function nombreCorto(
   return soloAscii(`${partes[0]} ${partes[2]}`);
 }
 
-export const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
+// El cuerpo ya contempla el nulo (`s ?? ""`); la firma decía otra cosa.
+export const norm = (s: string | null | undefined) =>
+  String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
 
 /**
  * El concepto, en ASCII puro.
@@ -272,6 +274,113 @@ export function hayEnTexto(
 ): string {
   return `en ${lugar} hay ${hay.unidades} ${hay.unidades === 1 ? "unidad" : "unidades"}`
     + (hay.lotes > 1 ? ` repartidas en ${hay.lotes} lotes` : "");
+}
+
+/** Un lote tal como lo ofrece el <select> del sistema. */
+export type LoteErp = { id: string; numero: string; vence: string; stock: number };
+
+/**
+ * De qué lotes sale lo que se despacha, y en qué cantidad cada uno.
+ *
+ * **La otra mitad de `disponibleEnBodega`.** Ese cuenta lote por lote —suma
+ * `floor(stock/unidad)` de cada uno— y por eso dice que alcanza cuando la
+ * cantidad está repartida. Si el reparto después exige que UN lote cubra todo,
+ * el tope promete lo que el reparto no entrega, y la mercadería se queda en el
+ * estante con el portal diciendo que no hay.
+ *
+ * Costó un traslado real: el 2026-08-18 Bodega no pudo mandar 6 cajas de
+ * ALOPURINOL 300 que tenía en dos lotes —6A096 con 1 caja y 6F125 con 5—, y la
+ * pantalla contestó «ningún lote tiene las 60 unidades juntas» sobre existencia
+ * suficiente. Quien despachaba terminó rechazando la solicitud a mano.
+ *
+ * El sistema acepta varios renglones del mismo producto: `datos` es una lista y
+ * nada obliga a que el producto no se repita. Es lo que `trasladar-pedido-erp`
+ * manda para los pedidos desde el 2026-08-11 — esa función conserva su propia
+ * copia de esta regla porque además arrastra la reserva del pedido y su tabla
+ * de estados; si se toca el criterio, se tocan las dos.
+ *
+ * ── Las dos escalas ────────────────────────────────────────────────────────
+ * `pedido` y lo que se devuelve van en PAQUETES de la presentación; `stock` y
+ * `reservados[].unidades` en unidades BASE. `unidad` es el factor que las une, y
+ * confundirlas mueve `factor` veces lo que se pedía.
+ *
+ * ── El orden ───────────────────────────────────────────────────────────────
+ * 1. Lo que la solicitud RESERVÓ, si reservó. La pantalla que pide reparte por
+ *    lote y quien despacha ve ese reparto: «los lotes MANDAN» (decisión del
+ *    usuario, 2026-08-07).
+ * 2. Lo que quede, del que VENCE PRIMERO. Es lo que corresponde despachar, y es
+ *    el único criterio cuando no hubo reserva —el caso normal, porque la
+ *    pantalla manda `lotes: null` cuando no conoce los lotes de esa sala—.
+ *
+ * Un lote reservado que ya no está NO corta el reparto: se anota en `avisos` y
+ * lo cubre el paso 2. Frenar ahí sería frenar mercadería que sigue en el
+ * estante (mismo criterio que el pedido, decisión del usuario 2026-08-11).
+ *
+ * `faltan > 0` es lo único que sí corta, y lo decide quien llama.
+ */
+export function repartirEnLotes(
+  lotes: LoteErp[],
+  pedido: number,
+  unidad: number,
+  reservados: { numero: string; vence?: string; paquetes: number }[] = [],
+): {
+  renglones: { cantidad: number; idLote: string; lote: string }[];
+  faltan: number;
+  avisos: string[];
+} {
+  const u = Number(unidad) || 1;
+  const renglones: { cantidad: number; idLote: string; lote: string }[] = [];
+  const avisos: string[] = [];
+  const usados = new Set<string>();
+  let resto = Math.max(0, Number(pedido) || 0);
+
+  const pedidos = reservados.filter((r) => norm(r.numero) && Number(r.paquetes) > 0);
+
+  for (const r of pedidos) {
+    if (resto <= 0) break;
+    const buscadoVen = String(r.vence ?? "").slice(0, 10);
+    const lote = lotes.find((x) => !usados.has(x.id)
+      && norm(x.numero) === norm(r.numero)
+      && (!buscadoVen || x.vence.slice(0, 10) === buscadoVen));
+    if (!lote) {
+      avisos.push(`el lote ${r.numero} que reservó la solicitud ya no está`);
+      continue;
+    }
+    const quiere = Math.min(Number(r.paquetes), resto);
+    const toma = Math.min(quiere, Math.floor(lote.stock / u));
+    if (toma <= 0) {
+      avisos.push(`el lote ${lote.numero} quedó sin existencia suficiente`);
+      continue;
+    }
+    if (toma < quiere) avisos.push(`del lote ${lote.numero} solo alcanzaban ${toma}`);
+    renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+    usados.add(lote.id);
+    resto -= toma;
+  }
+
+  if (resto > 0) {
+    // Sin fecha va al final y no al principio: un lote sin vencimiento no es el
+    // más urgente, es el que no se sabe.
+    const disponibles = [...lotes]
+      .filter((x) => !usados.has(x.id) && x.stock > 0)
+      .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
+    for (const lote of disponibles) {
+      if (resto <= 0) break;
+      const cabe = Math.floor(lote.stock / u);
+      if (cabe <= 0) continue;
+      const toma = Math.min(cabe, resto);
+      if (pedidos.length > 0)
+        avisos.push(
+          `se despacharon ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
+          + `que no es el que la solicitud había reservado`,
+        );
+      renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+      usados.add(lote.id);
+      resto -= toma;
+    }
+  }
+
+  return { renglones, faltan: resto, avisos };
 }
 
 /**

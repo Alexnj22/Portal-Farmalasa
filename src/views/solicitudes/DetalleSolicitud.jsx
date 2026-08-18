@@ -363,6 +363,15 @@ const BloqueAplicado = ({ req, aplicado }) => {
             {aplicado.concepto_recortado && (
                 <p className="text-micro text-content-3">El detalle se guardó abreviado.</p>
             )}
+            {/* Lo que se apartó de lo pedido sin llegar a frenarlo — casi
+                siempre, que el lote que salió no es el que se había apartado.
+                No frena nada, y por eso mismo hay que poder leerlo: si no se
+                muestra acá, no se muestra en ninguna parte. */}
+            {Array.isArray(aplicado.avisos) && aplicado.avisos.length > 0 && (
+                <ul className="text-micro text-warning-text font-medium leading-snug space-y-0.5">
+                    {aplicado.avisos.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+            )}
         </Caja>
     );
 };

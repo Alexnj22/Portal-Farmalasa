@@ -65,6 +65,7 @@ import {
   norm,
   pendientesDeOrigen,
   RECIBIR,
+  repartirEnLotes,
   sesionEn as abrirSesionEn,
   TRASLADO,
   leerFila,
@@ -87,6 +88,53 @@ const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
  * pudo despacharse (medido: 0 filas APPROVED en la tabla). Vive acá, junto al
  * `arranque` que mide contra ella. */
 const PRESUPUESTO_MS = 110_000;
+
+/* Un producto de la solicitud, tal como lo guarda `PedirTrasladoModal` en
+ * `metadata.items`. El tipo faltaba —se escribía `Linea[]` contra un nombre que
+ * no existía— y como Deno no chequea tipos al desplegar, nada avisó de que
+ * `lotes` no se leía en ninguna parte: el reparto por lote que la pantalla hace
+ * al pedir viajaba y se tiraba.
+ *
+ * `cantidad` va en PAQUETES de `presentacion_tipo`; `lotes[].unidades`, en
+ * unidades base. Son escalas distintas y `factor` es lo que las une. */
+interface Linea {
+  erp_product_id: number;
+  descripcion?: string;
+  presentacion_tipo?: string;
+  factor?: number;
+  cantidad: number;
+  /** El reparto por lote que hizo quien pidió. `null` cuando no los conocía. */
+  lotes?: { lote?: string; vence?: string; unidades?: number }[] | null;
+  /** Un solo lote, para quien llame a mano. La pantalla no lo escribe. */
+  numero_lote?: string;
+  vence?: string;
+}
+
+/**
+ * Los lotes que la SOLICITUD reservó, en paquetes de la presentación.
+ *
+ * La pantalla que pide el traslado ya reparte por lote y guarda ese reparto en
+ * `items[].lotes` —«los lotes MANDAN», decisión del usuario 2026-08-07—, en
+ * unidades BASE. Hasta el 2026-08-18 esta función ni lo miraba: buscaba un
+ * `numero_lote` que esa pantalla nunca escribe, así que el reparto viajaba en la
+ * solicitud y se tiraba.
+ *
+ * `numero_lote` se sigue aceptando como el caso de un solo lote, para quien
+ * llame por fuera de la pantalla.
+ */
+function reservadosDe(l: Linea, unidad: number): { numero: string; vence?: string; paquetes: number }[] {
+  if (Array.isArray(l.lotes) && l.lotes.length)
+    return l.lotes.map((r) => ({
+      numero: String(r?.lote ?? ""),
+      vence: String(r?.vence ?? "").slice(0, 10),
+      // Un lote que no llega a completar UN paquete no se puede despachar en
+      // esta presentación; lo que sobre lo cubre el que vence primero.
+      paquetes: Math.floor(Number(r?.unidades ?? 0) / (Number(unidad) || 1)),
+    })).filter((r) => r.paquetes > 0);
+  return l.numero_lote
+    ? [{ numero: String(l.numero_lote), vence: String(l.vence ?? "").slice(0, 10), paquetes: Number(l.cantidad) }]
+    : [];
+}
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
@@ -488,6 +536,9 @@ Deno.serve(async (req) => {
     // ── Cada línea se confirma contra el sistema antes de armar el envío ──
     const partes: string[] = [];
     const detalle: Record<string, unknown>[] = [];
+    // Lo que no frena el envío pero hay que poder leer después: un lote que la
+    // solicitud reservó y ya no está, o uno que se despachó en su lugar.
+    const avisosTraslado: string[] = [];
     let total = 0;
     let unidades = 0;
     let cortadoEn = -1;
@@ -553,11 +604,7 @@ Deno.serve(async (req) => {
       // unidades base y la cantidad viene en la presentación elegida.
       //
       // Y la cifra sale de los LOTES, no de la casilla de existencia — que trae
-      // la del primer lote y no la del producto (ver `disponibleEnBodega`). Acá
-      // el traslado va con UN lote, así que el filtro de abajo sigue exigiendo
-      // que uno solo cubra todo; lo que cambia es que dejó de frenarse un pedido
-      // que un lote posterior sí podía cubrir.
-      const pedidoEnUnidades = Number(l.cantidad) * Number(unidad);
+      // la del primer lote y no la del producto (ver `disponibleEnBodega`).
       const hay = disponibleEnBodega(f, Number(unidad));
       if (Number(l.cantidad) > hay.paquetes)
         return json({
@@ -566,56 +613,67 @@ Deno.serve(async (req) => {
                + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
-      // ── El lote ──────────────────────────────────────────────────────────
+      // ── Los lotes ────────────────────────────────────────────────────────
       // Solo los regulados llevan control de lote; para el resto el selector
       // viene vacío y deshabilitado y va 0. La identidad de un lote es número +
       // fecha: hay productos con dos lotes de igual número y vencimientos
       // distintos, que son existencias separadas.
-      let idLote = "0";
-      if (f.regulado) {
-        const buscadoNum = norm(l.numero_lote ?? "");
-        const buscadoVen = String(l.vence ?? "").slice(0, 10);
-        // Sin lote pedido se toma el que vence primero: es lo que corresponde
-        // despachar, y la solicitud nace de una lista de faltantes donde nadie
-        // eligió lote.
-        const lote = buscadoNum
-          ? f.lotes.find((x) => norm(x.numero) === buscadoNum
-              && (!buscadoVen || x.vence.slice(0, 10) === buscadoVen))
-          : [...f.lotes].filter((x) => x.stock >= pedidoEnUnidades)
-              .sort((a, b) => a.vence.localeCompare(b.vence))[0];
-        if (!lote)
-          return json({
-            ok: false, codigo: "LOTE_NO_EXISTE",
-            error: buscadoNum
-              ? `El lote ${l.numero_lote} de ${nombre} ya no existe en la sala de origen. `
-                + `Quedan: ${f.lotes.map((x) => `${x.numero} ${x.vence}`).join(", ") || "ninguno"}.`
-              : `Ningún lote de ${nombre} tiene las ${pedidoEnUnidades} unidades juntas. `
-                + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
-          }, 409);
-        if (pedidoEnUnidades > lote.stock)
-          return json({
-            ok: false, codigo: "SIN_EXISTENCIA_EN_LOTE",
-            error: `El lote ${lote.numero} de ${nombre} tiene ${lote.stock} unidades, `
-                 + `y se pidieron ${pedidoEnUnidades}.`,
-          }, 409);
-        idLote = lote.id;
+      //
+      // ⚠️ Una línea puede salir de VARIOS lotes, y hasta el 2026-08-18 acá se
+      // exigía que UNO solo cubriera todo. Eso frenaba mercadería que sí
+      // estaba: Bodega no pudo mandar 6 cajas de ALOPURINOL 300 que tenía en
+      // dos lotes (1 caja + 5 cajas), con el tope diciendo que alcanzaba
+      // —`disponibleEnBodega` cuenta lote por lote a propósito— y el reparto
+      // diciendo que ningún lote tenía «las 60 unidades juntas». El tope y el
+      // reparto tienen que decir lo mismo o el tope frena lo que el reparto sí
+      // sabía armar.
+      //
+      // El sistema lo acepta sin cambios: `datos` es una lista de renglones y
+      // nada obliga a que el producto no se repita — es exactamente lo que
+      // `trasladar-pedido-erp` manda para los pedidos desde el 2026-08-11.
+      //
+      // `repartirEnLotes` decide de qué lotes sale y en qué cantidad cada uno:
+      // primero lo que la solicitud reservó, después lo que vence primero. Es
+      // pura y vive en `_shared` porque lo que produce entra al inventario de
+      // una sala — está anclada en `tests/unit/repartirEnLotes.test.js`.
+      const noRegulado = [{ cantidad: Number(l.cantidad), idLote: "0", lote: null as string | null }];
+      const reparto = f.regulado
+        ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(unidad), reservadosDe(l, Number(unidad)))
+        : { renglones: noRegulado, faltan: 0, avisos: [] as string[] };
+
+      // Acá sí se corta: no hay de dónde sacar el resto. Se dice cuánto falta y
+      // qué hay, para que quien despacha decida sin volver a mirar.
+      if (reparto.faltan > 0)
+        return json({
+          ok: false, codigo: "SIN_EXISTENCIA_EN_LOTE",
+          error: `De ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo} para `
+               + `completar ${l.cantidad}: los lotes de la sala de origen no alcanzan. `
+               + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
+        }, 409);
+
+      // El aviso nombra el producto: en un traslado de varias líneas, «el lote
+      // X ya no está» sin decir de qué no se puede leer.
+      if (reparto.avisos.length)
+        avisosTraslado.push(...reparto.avisos.map((a) => `${nombre}: ${a}`));
+
+      for (const r of reparto.renglones) {
+        partes.push([
+          l.erp_product_id, costo, precio, r.cantidad, unidad, f.vence || "", elegida, r.idLote,
+        ].join("|"));
+
+        total    += Number(costo || 0) * r.cantidad;
+        unidades += r.cantidad;
+        detalle.push({
+          erp_product_id: l.erp_product_id, descripcion: l.descripcion,
+          presentacion: `${l.presentacion_tipo} (${l.factor})`,
+          id_presentacion_erp: elegida,
+          cantidad: r.cantidad, unidad, costo, precio,
+          existencia_previa: f.existencia,
+          regulado: f.regulado,
+          id_lote_erp: r.idLote !== "0" ? r.idLote : null,
+          numero_lote: r.lote,
+        });
       }
-
-      partes.push([
-        l.erp_product_id, costo, precio, l.cantidad, unidad, f.vence || "", elegida, idLote,
-      ].join("|"));
-
-      total    += Number(costo || 0) * Number(l.cantidad);
-      unidades += Number(l.cantidad);
-      detalle.push({
-        erp_product_id: l.erp_product_id, descripcion: l.descripcion,
-        presentacion: `${l.presentacion_tipo} (${l.factor})`,
-        id_presentacion_erp: elegida,
-        cantidad: l.cantidad, unidad, costo, precio,
-        existencia_previa: f.existencia,
-        regulado: f.regulado,
-        id_lote_erp: idLote !== "0" ? idLote : null,
-      });
     }
 
     // Un tope que no se anuncia es un truncamiento silencioso: si el presupuesto
@@ -746,7 +804,13 @@ Deno.serve(async (req) => {
       concepto,
       concepto_recortado: conceptoRecortado,
       concepto_completo: conceptoRecortado ? conceptoCompleto : undefined,
-      lineas: partes.length,
+      // PRODUCTOS, no renglones: el detalle lo lee como «N productos» y desde
+      // que una línea puede salir de varios lotes `partes.length` cuenta lotes.
+      // Acá ya se verificaron todos —el bucle sale por `return` o completo—.
+      lineas: lineas.length,
+      renglones: partes.length !== lineas.length ? partes.length : undefined,
+      // Qué se apartó de lo pedido sin llegar a frenarlo.
+      avisos: avisosTraslado.length ? avisosTraslado : undefined,
       unidades,
       total: Number(total.toFixed(4)),
       msg: resp.msg,

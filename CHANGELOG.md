@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.658.1 — El traslado sale de varios lotes cuando uno solo no alcanza
+
+Reportado el 18-ago: una solicitud de producto hecha desde Consulta de
+inventario daba error al confirmarla. Era Bodega mandando 6 cajas de ALOPURINOL
+300 a Salud 1, y Bodega las tenía: 1 caja en el lote 6A096 y 5 en el 6F125. El
+portal las contaba —la pantalla decía «si lo envías, tu sala queda en 0»— y al
+apretar «Confirmar y enviar» contestaba que ningún lote tenía «las 60 unidades
+juntas». Se intentó dos veces y terminó rechazada a mano.
+
+El despacho armaba el traslado con **un solo lote** y exigía que ése cubriera
+todo el pedido, mientras que el conteo de existencia suma lote por lote. O sea
+que el tope decía que alcanzaba y el reparto decía que no: con la cantidad
+repartida en dos lotes, no había número que se pudiera enviar. Y como no depende
+de nada raro —basta con que lo pedido no entre en un solo lote— venía fallando
+desde siempre en ese caso.
+
+Ahora el traslado sale de **tantos lotes como haga falta**, empezando por el que
+vence primero. Es lo que ya hacía el despacho de pedidos desde el 11-ago, con la
+misma regla y sobre la misma pantalla.
+
+Además, quien pide un traslado desde Consulta de inventario ya elegía de qué
+lotes quería el producto, y esa elección **se estaba tirando**: el despacho
+buscaba el dato en otro lado y nunca lo encontraba. Ahora se respeta, y si uno
+de esos lotes ya no está cuando llega el momento de enviar, el traslado no se
+frena: sale del que vence primero y lo avisa en el detalle de la solicitud.
+
+Lo único que corta ahora es que de verdad no alcance, y el aviso dice cuánto
+falta y qué lotes hay.
+
 ## v2.658.0 — La diferencia se decide entre las dos partes
 
 Sale de mirar el pedido 116 de La Popular. Hasta hoy, cuando un renglón no

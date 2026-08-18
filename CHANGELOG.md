@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.2 — El traslado vuelve al lote reservado por lo que le sobra
+
+Dos traslados de DOLO APRANAX X 100 TAB pararon esta mañana con el mismo aviso
+—«faltan 1 de BLISTER X 10 para completar 4»— sobre salas que sí tenían la
+mercadería. Salud 5 → Salud 2 listaba GENERICO (5), LI2408201 (20) y LH2504902
+(20): 45 unidades para 40 pedidas. Salud 2 → Salud 3 listaba D2505802 (1) y
+J2502102 (40).
+
+El reparto trataba la reserva como un TOPE y no como un ORDEN. Cuando la sala
+pide, la pantalla reparte por lote y guarda ese reparto en unidades; el despacho
+lo pasa a paquetes lote por lote, y ahí se pierde lo que no completa uno —39
+unidades en blísteres de 10 son 3 y sobran 9—. Después de sacarle esos 3, el
+lote quedaba marcado como usado y el cuarto blíster, que estaba en ese mismo
+lote, era inalcanzable. El tope de existencia miraba el stock del sistema (40, o
+sea 4) y decía que alcanzaba: **una mitad prometía cuatro y la otra entregaba
+tres.**
+
+Es el mismo desacuerdo entre el tope y el reparto de v2.658.1 —el ALOPURINOL que
+Bodega no pudo mandar— entrando por la otra puerta, y por eso ahora la prueba no
+compara contra un número escrito a mano sino contra `disponibleEnBodega`: lo que
+el tope promete, el reparto lo entrega.
+
+- El reparto vuelve sobre todos los lotes, incluidos los que ya dieron algo, y
+  toma lo que les sobra. Un lote sigue siendo un solo renglón: si se vuelve a
+  él, se le suma.
+- El aviso distingue los dos casos. Salir por otro lote sigue diciendo «no es el
+  que la solicitud había reservado»; volver al reservado dice «salieron N más de
+  lo que la solicitud había reservado», que es lo que de verdad pasó.
+- **Los pedidos usaban su propia copia de esta regla, en dos lugares** —el
+  despacho real y el simulacro que le avisa a Bodega qué va a pasar—, y las dos
+  arrastraban el mismo error; el simulacro además pone en cero los productos con
+  problema en la pantalla de confirmar, así que frenaba mercadería que el
+  despacho sí sabía armar. Las dos pasan a llamar a la función compartida, con
+  lo que además recuperan el cruce de lote por número de v2.658.2.
+- La devolución tenía una tercera copia. No sufría este bug, pero podía tomar
+  dos veces del mismo lote cuando el traslado de ida lo nombraba en dos
+  renglones: cuadraba en total y le asignaba a ese lote más unidades de las que
+  tiene. Ahora descuenta lo ya tomado.
+- Siete pruebas nuevas en `tests/unit/repartirEnLotes.test.js`, con los dos
+  traslados de hoy tal como estaban.
+
 ## v2.661.1 — El pedido lleva sus lotes venga de la lista que venga
 
 Último hueco de la serie de hoy. En Consulta de inventario hay dos formas de

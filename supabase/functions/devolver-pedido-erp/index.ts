@@ -509,6 +509,21 @@ Deno.serve(async (req) => {
         } else {
           let resto = Number(d.cantidad);
           const usados = new Set<string>();
+          // Cuánto se le sacó ya a cada lote. El traslado de ida puede nombrar
+          // el MISMO lote en dos renglones —así se despachaba hasta el
+          // 2026-08-18—, y sin descontar lo tomado la segunda vuelta le pide
+          // otra vez su capacidad entera: la devolución cuadra en total y le
+          // asigna a ese lote más unidades de las que tiene.
+          const tomado = new Map<string, number>();
+          const anotar = (lote: { id: string; numero: string }, n: number) => {
+            const ya = renglones.find((x) => x.idLote === lote.id);
+            if (ya) ya.cantidad += n;
+            else renglones.push({ cantidad: n, idLote: lote.id, lote: lote.numero });
+            tomado.set(lote.id, (tomado.get(lote.id) ?? 0) + n);
+            resto -= n;
+          };
+          const cabeEn = (l: { id: string; stock: number }) =>
+            Math.floor(l.stock / Number(pres.unidad)) - (tomado.get(l.id) ?? 0);
 
           for (const r of (lotesDeIda.get(d.pedido_item_id) ?? [])) {
             if (resto <= 0) break;
@@ -519,12 +534,10 @@ Deno.serve(async (req) => {
               avisos.push(`el lote ${numero} con el que llegó ya no está en la sala`);
               continue;
             }
-            const cabe = Math.floor(lote.stock / Number(pres.unidad));
-            const toma = Math.min(resto, cabe);
+            const toma = Math.min(resto, cabeEn(lote));
             if (toma <= 0) { avisos.push(`el lote ${lote.numero} quedó sin existencia suficiente`); continue; }
-            renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+            anotar(lote, toma);
             usados.add(lote.id);
-            resto -= toma;
           }
 
           // Lo que no se pudo cubrir con los lotes de ida sale del que vence
@@ -537,14 +550,12 @@ Deno.serve(async (req) => {
               .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
             for (const lote of disponibles) {
               if (resto <= 0) break;
-              const cabe = Math.floor(lote.stock / Number(pres.unidad));
-              if (cabe <= 0) continue;
-              const toma = Math.min(cabe, resto);
-              renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+              const toma = Math.min(cabeEn(lote), resto);
+              if (toma <= 0) continue;
+              anotar(lote, toma);
               usados.add(lote.id);
               avisos.push(`se devolvieron ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
                 + `que no es con el que llegó`);
-              resto -= toma;
             }
           }
 

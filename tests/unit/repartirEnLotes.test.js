@@ -203,3 +203,88 @@ describe('repartirEnLotes — los lotes que la solicitud reservó MANDAN', () =>
         expect(r.renglones).toEqual([{ cantidad: 1, idLote: '102', lote: '6F125' }]);
     });
 });
+
+// ── La reserva ORDENA, no LIMITA ────────────────────────────────────────────
+// El mismo desacuerdo entre el tope y el reparto que motivó este archivo,
+// entrando por la otra puerta: acá los lotes SÍ alcanzaban y el reparto los
+// cerraba después de sacarles menos de lo que tenían.
+//
+// Los dos casos son reales y están medidos — DOLO APRANAX X 100 TAB (id 1271),
+// presentación BLÍSTER X 10, el 2026-08-18. Los dos pedían 4 blísteres y los dos
+// contestaron «faltan 1» sobre existencia suficiente.
+describe('repartirEnLotes — la reserva ordena, no limita', () => {
+    /** Salud 5 → Salud 2. El portal reservó 15 unidades de LH2504902; el sistema tiene 20. */
+    const APRANAX_S5 = [
+        { id: '1', numero: 'GENERICO', vence: '2025-12-31', stock: 5 },
+        { id: '2', numero: 'LI2408201', vence: '2027-08-01', stock: 20 },
+        { id: '3', numero: 'LH2504902', vence: '2028-07-01', stock: 20 },
+    ];
+
+    /** Salud 2 → Salud 3. El portal reservó 39 unidades de J2502102; el sistema tiene 40. */
+    const APRANAX_S2 = [
+        { id: '4', numero: 'D2505802', vence: '2028-03-01', stock: 1 },
+        { id: '5', numero: 'J2502102', vence: '2028-09-01', stock: 40 },
+    ];
+
+    it('vuelve al lote reservado por lo que le sobra (Salud 5 → Salud 2)', () => {
+        // La reserva llega en unidades y se redondea lote por lote: 5→0, 20→2,
+        // 15→1 = 3 blísteres, y hacen falta 4. El cuarto está en LH2504902, que
+        // tiene 20 y sólo dio 10.
+        const r = repartirEnLotes(APRANAX_S5, 4, 10, [
+            { numero: 'GENERICO', vence: '2025-12-31', paquetes: 0 },
+            { numero: 'LI2408201', vence: '2027-08-01', paquetes: 2 },
+            { numero: 'LH2504902', vence: '2028-07-01', paquetes: 1 },
+        ]);
+        expect(r.faltan).toBe(0);
+        expect(r.renglones.map(x => [x.lote, x.cantidad])).toEqual([['LI2408201', 2], ['LH2504902', 2]]);
+        expect(r.avisos.join(' ')).toMatch(/LH2504902 salieron 1 más de lo que la solicitud había reservado/);
+    });
+
+    it('un lote = un renglón, aunque se vuelva a él (Salud 2 → Salud 3)', () => {
+        // Dos renglones del mismo lote son la misma existencia contada dos veces.
+        const r = repartirEnLotes(APRANAX_S2, 4, 10, [
+            { numero: 'D2505802', vence: '2028-03-01', paquetes: 0 },
+            { numero: 'J2502102', vence: '2028-09-01', paquetes: 3 },
+        ]);
+        expect(r.faltan).toBe(0);
+        expect(r.renglones).toEqual([{ cantidad: 4, idLote: '5', lote: 'J2502102' }]);
+    });
+
+    it('lo que el tope promete, el reparto lo entrega — con reserva y sin ella', () => {
+        // El invariante, no un número escrito a mano: es lo único que impide que
+        // las dos mitades vuelvan a discrepar por una tercera puerta.
+        for (const lotes of [APRANAX_S5, APRANAX_S2, ALOPURINOL]) {
+            const hay = disponibleEnBodega(
+                { regulado: true, lotes, existencia: 0, presentaciones: [], vence: '', encontrado: true },
+                10,
+            );
+            // La reserva más adversa: un paquete de cada lote, que es la que
+            // toca todos y no completa ninguno.
+            const reserva = lotes.map(l => ({ numero: l.numero, vence: l.vence, paquetes: 1 }));
+            expect(repartirEnLotes(lotes, hay.paquetes, 10, reserva).faltan).toBe(0);
+            expect(repartirEnLotes(lotes, hay.paquetes, 10).faltan).toBe(0);
+        }
+    });
+
+    it('sigue sin despachar más de lo pedido al volver sobre un lote', () => {
+        const r = repartirEnLotes(APRANAX_S2, 2, 10, [{ numero: 'J2502102', paquetes: 1 }]);
+        expect(r.renglones.reduce((s, x) => s + x.cantidad, 0)).toBe(2);
+        expect(r.faltan).toBe(0);
+    });
+
+    it('el aviso distingue volver al lote reservado de salir por otro', () => {
+        const otro = repartirEnLotes(ALOPURINOL, 2, 10, [{ numero: '6A096', paquetes: 1 }]);
+        expect(otro.avisos.join(' ')).toMatch(/no es el que la solicitud había reservado/);
+        // 3 cajas con la reserva pidiendo 1 de 6F125: sale esa, después la
+        // única de 6A096 —que vence primero— y la tercera vuelve a 6F125.
+        const mismo = repartirEnLotes(ALOPURINOL, 3, 10, [{ numero: '6F125', paquetes: 1 }]);
+        expect(mismo.renglones.map(x => [x.lote, x.cantidad])).toEqual([['6F125', 2], ['6A096', 1]]);
+        expect(mismo.avisos.join(' ')).toMatch(/6F125 salieron 1 más de lo que la solicitud había reservado/);
+    });
+
+    it('el sujeto del aviso lo pone quien llama', () => {
+        const r = repartirEnLotes(ALOPURINOL, 2, 10, [{ numero: 'FANTASMA', paquetes: 2 }], 'el pedido');
+        expect(r.avisos.join(' ')).toMatch(/que reservó el pedido ya no está/);
+        expect(r.avisos.join(' ')).toMatch(/no es el que el pedido había reservado/);
+    });
+});

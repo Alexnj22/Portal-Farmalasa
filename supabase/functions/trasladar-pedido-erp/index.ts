@@ -7,8 +7,8 @@ import {
   hayEnTexto,
   hoySV,
   nombreCorto,
-  norm,
   pendientesDeOrigen,
+  repartirEnLotes,
   resolverPresentacion,
   sesionEn,
   traerFila,
@@ -80,6 +80,27 @@ interface ItemPedido {
   lotes_asignados: { lote?: string; fecha_vencimiento?: string; take?: number; packs?: number }[] | null;
   presentacion_tipo: string;
   nombre: string;
+}
+
+/**
+ * Los lotes que el PEDIDO reservó, en paquetes de la presentación.
+ *
+ * `take`/`packs` ya vienen en PAQUETES —a diferencia de la solicitud de
+ * traslado, que los guarda en unidades base—, así que acá no se divide por el
+ * factor. Es la única diferencia entre las dos puntas y por eso la conversión
+ * vive en cada llamador y no dentro de `repartirEnLotes`.
+ *
+ * El `unidad` se recibe igual para que la firma no mienta el día que este lado
+ * también empiece a guardar unidades.
+ */
+function reservadosDe(it: ItemPedido, _unidad: number): { numero: string; vence?: string; paquetes: number }[] {
+  return (it.lotes_asignados ?? [])
+    .map((l) => ({
+      numero: String(l.lote ?? ""),
+      vence: String(l.fecha_vencimiento ?? "").slice(0, 10),
+      paquetes: Number(l.take ?? l.packs ?? 0),
+    }))
+    .filter((l) => l.paquetes > 0);
 }
 
 interface Hallazgo {
@@ -751,69 +772,20 @@ Deno.serve(async (req) => {
           if (!f.regulado) {
             renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
           } else {
-            const asignados = (it.lotes_asignados ?? [])
-              .map((l) => ({
-                numero: String(l.lote ?? ""),
-                vence: String(l.fecha_vencimiento ?? "").slice(0, 10),
-                cantidad: Number(l.take ?? l.packs ?? 0),
-              }))
-              .filter((l) => l.cantidad > 0);
+            // El reparto es `repartirEnLotes` de `_shared` y no una copia: hasta
+            // el 2026-08-18 esta función tenía la suya, y las dos se movieron por
+            // separado. La copia se quedó sin el cruce por número (v2.658.2) y
+            // sin el retorno al lote reservado por lo que le sobra — que es lo
+            // que hace que el tope y el reparto digan lo mismo.
+            const reparto = repartirEnLotes(
+              f.lotes, Number(ln.cantidad), Number(pres.unidad), reservadosDe(it, Number(pres.unidad)), "el pedido",
+            );
+            renglones.push(...reparto.renglones);
+            avisos.push(...reparto.avisos);
 
-            let resto = Number(ln.cantidad);
-            const usados = new Set<string>();
-
-            // 1. Lo que el pedido reservó y todavía está. Un lote que ya no
-            //    está NO corta: se anota y se cubre más abajo.
-            for (const a of asignados) {
-              if (resto <= 0) break;
-              const lote = f.lotes.find((x) =>
-                norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
-              );
-              if (!lote) {
-                avisos.push(`el lote ${a.numero || "(sin número)"} que reservó el pedido ya no está en bodega`);
-                continue;
-              }
-              const cabe = Math.floor(lote.stock / Number(pres.unidad));
-              const toma = Math.min(a.cantidad, resto, cabe);
-              if (toma <= 0) {
-                avisos.push(`el lote ${lote.numero} quedó sin existencia suficiente`);
-                continue;
-              }
-              if (toma < Math.min(a.cantidad, resto)) {
-                avisos.push(`del lote ${lote.numero} solo alcanzaban ${toma}`);
-              }
-              renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
-              usados.add(lote.id);
-              resto -= toma;
-            }
-
-            // 2. Lo que quedó sin cubrir sale del lote que VENCE PRIMERO entre
-            //    los que hay. Es lo que quien levanta hizo físicamente: tomó lo
-            //    del estante, no consultó la reserva del portal. Frenar acá
-            //    sería frenar mercadería que sí va en la caja.
-            //    Decisión del usuario (2026-08-11): despachar y avisar.
-            if (resto > 0) {
-              const disponibles = [...f.lotes]
-                .filter((x) => !usados.has(x.id) && x.stock > 0)
-                .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
-              for (const lote of disponibles) {
-                if (resto <= 0) break;
-                const cabe = Math.floor(lote.stock / Number(pres.unidad));
-                if (cabe <= 0) continue;
-                const toma = Math.min(cabe, resto);
-                renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
-                usados.add(lote.id);
-                avisos.push(
-                  `se despacharon ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
-                  + `que no es el que el pedido había reservado`,
-                );
-                resto -= toma;
-              }
-            }
-
-            if (resto > 0) {
+            if (reparto.faltan > 0) {
               await fallar(
-                `Ningún lote en bodega alcanza para las ${ln.cantidad} confirmadas: faltan ${resto}. `
+                `Ningún lote en bodega alcanza para las ${ln.cantidad} confirmadas: faltan ${reparto.faltan}. `
                 + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
               );
               continue;
@@ -1014,14 +986,6 @@ Deno.serve(async (req) => {
         if (!f.regulado) {
           lineasItem.push({ cantidad: it.cantidad, idLote: "0", lote: null });
         } else {
-          const asignados = (it.lotes_asignados ?? [])
-            .map((l) => ({
-              numero: String(l.lote ?? ""),
-              vence: String(l.fecha_vencimiento ?? "").slice(0, 10),
-              cantidad: Number(l.take ?? l.packs ?? 0),
-            }))
-            .filter((l) => l.cantidad > 0);
-
           // Que el pedido no haya guardado lote no corta: se cubre igual con lo
           // que hay, empezando por el que vence primero. El despacho real hace
           // exactamente eso, y las dos tienen que coincidir.
@@ -1031,46 +995,22 @@ Deno.serve(async (req) => {
           // pasar, y su salida pone en cero los productos con problema en la
           // pantalla de confirmar: si acá se marcara como problema un lote que
           // el despacho resuelve solo, Bodega dejaría de enviar mercadería que
-          // sí está en la caja. Si se toca una, se toca la otra.
+          // sí está en la caja. Por eso hoy las dos llaman a la MISMA función:
+          // eran dos copias del mismo criterio y «si se toca una, se toca la
+          // otra» no alcanzó — el 2026-08-18 las dos arrastraban el mismo error
+          // de cerrar un lote del que había salido menos de lo que tenía.
           //
           // Que el lote reservado ya no esté NO es un problema: se cubre con el
           // que vence primero, que es lo que quien levanta hizo físicamente.
-          let resto = it.cantidad;
-          const usados = new Set<string>();
+          const reparto = repartirEnLotes(
+            f.lotes, it.cantidad, Number(pres.unidad), reservadosDe(it, Number(pres.unidad)), "el pedido",
+          );
+          lineasItem.push(...reparto.renglones);
 
-          for (const a of asignados) {
-            if (resto <= 0) break;
-            const lote = f.lotes.find((x) =>
-              norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
-            );
-            if (!lote) continue;
-            const cabe = Math.floor(lote.stock / Number(pres.unidad));
-            const toma = Math.min(a.cantidad, resto, cabe);
-            if (toma <= 0) continue;
-            lineasItem.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
-            usados.add(lote.id);
-            resto -= toma;
-          }
-
-          if (resto > 0) {
-            const disponibles = [...f.lotes]
-              .filter((x) => !usados.has(x.id) && x.stock > 0)
-              .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
-            for (const lote of disponibles) {
-              if (resto <= 0) break;
-              const cabe = Math.floor(lote.stock / Number(pres.unidad));
-              if (cabe <= 0) continue;
-              const toma = Math.min(cabe, resto);
-              lineasItem.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
-              usados.add(lote.id);
-              resto -= toma;
-            }
-          }
-
-          if (resto > 0) {
+          if (reparto.faltan > 0) {
             hallazgos.push({
               erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_LOTE_SUFICIENTE",
-              detalle: `Ningún lote en bodega alcanza para las ${it.cantidad} unidades: faltan ${resto}. `
+              detalle: `Ningún lote en bodega alcanza para las ${it.cantidad} unidades: faltan ${reparto.faltan}. `
                 + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
             });
             continue;

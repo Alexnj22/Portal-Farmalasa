@@ -632,6 +632,14 @@ Deno.serve(async (req) => {
       // nada obliga a que el producto no se repita — es exactamente lo que
       // `trasladar-pedido-erp` manda para los pedidos desde el 2026-08-11.
       //
+      // Y la reserva ORDENA, no limita (2026-08-18, la misma tarde): llega en
+      // unidades y se redondea lote por lote —15 unidades en BLÍSTER X 10 son 1
+      // blíster y sobran 5—, mientras el tope de arriba cuenta sobre el stock
+      // del sistema, que decía 20. Un lote que dio menos de lo que tiene sigue
+      // teniendo lo que le sobra, así que el reparto vuelve sobre él. Costó dos
+      // traslados de DOLO APRANAX ese día, los dos con «faltan 1» sobre
+      // existencia suficiente.
+      //
       // `repartirEnLotes` decide de qué lotes sale y en qué cantidad cada uno:
       // primero lo que la solicitud reservó, después lo que vence primero. Es
       // pura y vive en `_shared` porque lo que produce entra al inventario de

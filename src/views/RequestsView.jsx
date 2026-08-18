@@ -839,6 +839,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     hasPermission={hasPermission}
                     branchIdUsuario={user?.branchId ?? user?.branch_id}
                     alcanceTodas={alcance === 'ALL'}
+                    onEnviado={recargarSolicitudes}
                 />
             ) : (
                 <ModalNuevaPersonal

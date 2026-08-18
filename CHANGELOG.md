@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.2 — Pedir a otra sala abre la consulta de inventario
+
+«Pedir a otra sala» vuelve a **Nueva solicitud**, pero ahora abre la pantalla de
+**Consulta de inventario** — la misma que ya se usaba desde el tablero, no una
+propia.
+
+Esa era la diferencia que importaba. La versión anterior arrancaba por un
+buscador del catálogo y detrás no tenía lotes, así que la solicitud viajaba sin
+decir de qué lote tenía que salir el producto y quien despacha lo elegía por su
+cuenta. Ahora se busca el producto, se ve qué salas lo tienen y con qué lotes, y
+se pide desde ahí: la elección del lote es de quien pide, y viaja con la
+solicitud.
+
+Es la misma pantalla en los dos sitios, no una copia: el cuerpo de la consulta
+de inventario se extrajo para que las dos puertas monten exactamente lo mismo.
+Una sola pantalla no puede desincronizarse de sí misma, que es justo lo que
+produjo el problema.
+
+Y al enviar desde acá, la lista de Solicitudes que quedó atrás se refresca:
+`approval_requests` no viaja en vivo, así que sin ese aviso la solicitud recién
+enviada no aparecía y se leía como que no se había enviado.
+
+**Los Auxiliares de Bodega vuelven a tener el botón** «Nueva solicitud»: tienen
+justamente ese permiso, y era la única opción que les correspondía.
+
 ## v2.659.1 — El cierre por inactividad ocurre cuando el contador llega a cero
 
 El cartel «¿Sigues ahí?» descuenta cada segundo contra el instante real del

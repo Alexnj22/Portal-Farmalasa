@@ -27,12 +27,17 @@ import {
  * Solicitudes, que es lo que hace todo el mundo, para un botón que aprieta
  * poca gente. Con `lazy` el peso lo paga quien lo abre.
  *
- * ── «Pedir a otra sala» se fue de acá (2026-08-18) ────────────────────────
- * Fue la cuarta familia entre el 2026-08-15 y hoy, y esta ventana la delegaba
- * hacia arriba. Se quitó porque por este camino la solicitud salía sin decir de
- * qué lote tenía que salir el producto: detrás de este menú no hay ninguna
- * pantalla de lotes. Hoy eso se pide desde Consulta de inventario, que es donde
- * quien pide los está mirando. El motivo completo, en `familiasOperativas.js`.
+ * ── El traslado también entra, y por la MISMA puerta (2026-08-18) ─────────
+ * «Pedir a otra sala» abre `FormularioPedirASala`, o sea el cuerpo de la
+ * consulta de inventario. Entre el 15 y el 18 de agosto abría en cambio un
+ * formulario propio, y esa versión producía solicitudes sin lote: detrás de
+ * este menú no hay ninguna pantalla de lotes, así que el producto viajaba sin
+ * decir de dónde sacarlo. Es exactamente la copia que este archivo existe para
+ * no hacer — y acá se pagó en datos, no en líneas.
+ *
+ * Su `PedirTrasladoModal` se abre ENCIMA de esta ventana, igual que encima de
+ * la baldosa del tablero: es la misma pantalla en los dos sitios, con la misma
+ * profundidad de diálogos.
  */
 
 const FormularioAjuste = lazy(() =>
@@ -41,6 +46,8 @@ const FormularioFacturacion = lazy(() =>
     import('../dashboard/WidgetAnnulmentRequest').then(m => ({ default: m.FormularioFacturacion })));
 const FormularioMinMax = lazy(() =>
     import('../dashboard/WidgetMinMaxRequest').then(m => ({ default: m.FormularioMinMax })));
+const FormularioPedirASala = lazy(() =>
+    import('../dashboard/WidgetInventorySearch').then(m => ({ default: m.FormularioPedirASala })));
 
 const Cargando = () => (
     <div className="flex-1 min-h-[220px] grid place-items-center">
@@ -48,7 +55,7 @@ const Cargando = () => (
     </div>
 );
 
-export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUsuario, alcanceTodas }) {
+export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUsuario, alcanceTodas, onEnviado }) {
     const disponibles = useMemo(() => familiasDisponibles(hasPermission), [hasPermission]);
 
     // Con una sola familia disponible no hay nada que elegir: se entra directo
@@ -58,6 +65,12 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
     const erpPropio = BRANCH_A_ERP[branchIdUsuario] ?? null;
     const [erp, setErp] = useState(() => String(erpPropio ?? 5));
     const [branchFactura, setBranchFactura] = useState(() => String(branchIdUsuario ?? ''));
+
+    /* Lo escrito en el buscador de «Pedir a otra sala». Vive acá y no adentro
+       de `FormularioPedirASala` porque la baldosa del tablero lo guarda AFUERA
+       de su modal —así sobrevive a cerrarlo y volver a abrirlo— y el componente
+       no puede imponerle a una de las dos el comportamiento de la otra. */
+    const [q, setQ] = useState('');
 
     const elegida = FAMILIAS.find(f => f.key === familia) ?? null;
 
@@ -94,6 +107,11 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
             icon={elegida?.icon ?? PackageMinus}
             label={elegida?.label ?? 'Nueva solicitud'}
             descripcion={elegida?.desc ?? 'Qué se va a pedir'}
+            /* La consulta de inventario pide más ancho que un formulario: sus
+               filas llevan producto, salas, unidades y lotes. Es el MISMO
+               `max-w-3xl` de su baldosa en el tablero — la pantalla es una sola,
+               así que su ancho también. */
+            maxWidth={familia === 'traslado' ? 'max-w-3xl' : 'max-w-2xl'}
             onClose={onClose}
         >
             {(cerrar) => {
@@ -116,11 +134,6 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
                         </div>
                     );
                 }
-
-                // El traslado se abre por fuera; mientras el aviso viaja hacia
-                // arriba, esta ventana muestra el mismo giro que las otras en
-                // vez de un hueco.
-                if (familia === 'traslado') return <Cargando />;
 
                 return (
                     <Suspense fallback={<Cargando />}>
@@ -145,6 +158,16 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
                                 {selectorErp}
                                 <FormularioMinMax selectedErp={erpNum} />
                             </div>
+                        )}
+                        {/* Sin selector de sucursal: acá la sala que RECIBE es
+                            siempre la de quien pide —un traslado necesita un
+                            destino y ese destino es su sala—, y la que entrega
+                            se elige adentro, entre las que de verdad tienen el
+                            producto. Ofrecer el selector de arriba dejaría
+                            pedirle a nombre de otra sala, que es lo que la base
+                            rechaza. */}
+                        {familia === 'traslado' && (
+                            <FormularioPedirASala query={q} onQueryChange={setQ} onSolicitado={onEnviado} />
                         )}
                     </Suspense>
                 );

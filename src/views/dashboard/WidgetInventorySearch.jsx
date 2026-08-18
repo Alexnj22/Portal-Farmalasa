@@ -578,7 +578,7 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
 }
 
 /* ─── Main component ────────────────────────────────────────────────────────── */
-function PanelInventario({ query = '', onQueryChange }) {
+function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
   const { user }       = useAuth();
   const [results,      setResults]      = useState(null);
   const [loading,      setLoading]      = useState(false);
@@ -911,7 +911,12 @@ function PanelInventario({ query = '', onQueryChange }) {
             <PedirTrasladoModal
               producto={pedido}
               onClose={() => setPedido(null)}
-              onListo={cargarFaltantes}
+              // Recarga los faltantes Y avisa hacia arriba: cuando esto vive
+              // dentro de «Nueva solicitud», la lista de Solicitudes que quedó
+              // atrás tiene que enterarse — `approval_requests` no viaja por
+              // realtime, así que sin este aviso la solicitud recién enviada no
+              // aparece y se lee como que no se envió.
+              onListo={() => { cargarFaltantes(); onSolicitado?.(); }}
             />
           </Suspense>
         )}
@@ -1168,7 +1173,7 @@ function PanelInventario({ query = '', onQueryChange }) {
           <PedirTrasladoModal
             producto={pedido}
             onClose={() => setPedido(null)}
-            onListo={cargarFaltantes}
+            onListo={() => { cargarFaltantes(); onSolicitado?.(); }}
           />
         </Suspense>
       )}
@@ -1271,39 +1276,64 @@ export default function WidgetInventorySearch() {
       maxWidth="max-w-3xl"
       descripcion="En qué sala hay un producto, y cómo solicitarlo"
     >
-      {() => (
-        <>
-          {/* El buscador va en el encabezado del modal —la ranura canónica—
-              junto al título. El encabezado a mano que estaba acá lo pone ahora
-              `LanzadorSolicitud`, con su botón de cerrar. */}
-          <HerramientasModal>
-            {/* `autoFocus` explícito aunque `ModalShell` ya enfoque el primer
-                campo: acá el buscador vive en una RANURA por portal, así que
-                monta un tick después que el panel y la regla general —que mide
-                a los 60ms— podría no verlo todavía. Pedido así: «que el focus
-                lo tenga el input para escribir de un solo». */}
-            <SearchInput
-              autoFocus
-              accentColor="var(--warning)"
-              value={q}
-              onChange={setQ}
-              placeholder="Buscar por nombre o principio activo..."
-            />
-          </HerramientasModal>
-
-          {/* `min-h-0` y NO `overflow-hidden`.
-              Medido el 2026-08-06: con `overflow-hidden` esta caja quedaba en
-              708px con 1134 de contenido —lo recortaba y no dejaba scrollear— y
-              el scroller propio del panel nunca se activaba, porque su `h-full`
-              no resuelve contra un padre de alto automático y crecía hasta el
-              contenido entero. Es la trampa de siempre: un hijo flex no baja de
-              su contenido sin `min-h-0`, así que el scroll se va hacia arriba en
-              la cadena y no lo agarra nadie. */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <PanelInventario query={q} onQueryChange={setQ} />
-          </div>
-        </>
-      )}
+      {() => <FormularioPedirASala query={q} onQueryChange={setQ} />}
     </LanzadorSolicitud>
+  );
+}
+
+/**
+ * Buscar un producto y pedírselo a la sala que lo tiene — el cuerpo del modal,
+ * sin la baldosa.
+ *
+ * Se extrajo el 2026-08-18 para que «Nueva solicitud» de Solicitudes de
+ * Sucursal abra ESTO y no una versión propia. Es la misma razón por la que el
+ * ajuste de inventario, la facturación y el Min/Max exportan su formulario:
+ * escribir una segunda pantalla de pedido fue justamente lo que produjo
+ * solicitudes incompletas —la de allá no tenía de dónde sacar los lotes, así
+ * que el producto viajaba sin decir de qué lote sacarlo—. Una sola pantalla, un
+ * solo dato.
+ *
+ * El buscador va en la ranura del ENCABEZADO, que existe tanto en la baldosa
+ * (`LanzadorSolicitud`) como en el modal suelto (`ModalConRanuras`), así que
+ * sirve igual en los dos sitios.
+ *
+ * La consulta la posee QUIEN LLAMA: la baldosa la guarda afuera del modal —así
+ * lo escrito sobrevive a cerrarlo y volver a abrirlo— y en «Nueva solicitud»
+ * cada apertura empieza limpia. Un estado propio acá le impondría una de las
+ * dos a la otra.
+ */
+export function FormularioPedirASala({ query, onQueryChange, onSolicitado }) {
+  return (
+    <>
+      {/* El buscador va en el encabezado del modal —la ranura canónica— junto
+          al título. El encabezado a mano que estaba acá lo pone ahora la puerta,
+          con su botón de cerrar. */}
+      <HerramientasModal>
+        {/* `autoFocus` explícito aunque `ModalShell` ya enfoque el primer
+            campo: acá el buscador vive en una RANURA por portal, así que monta
+            un tick después que el panel y la regla general —que mide a los
+            60ms— podría no verlo todavía. Pedido así: «que el focus lo tenga el
+            input para escribir de un solo». */}
+        <SearchInput
+          autoFocus
+          accentColor="var(--warning)"
+          value={query}
+          onChange={onQueryChange}
+          placeholder="Buscar por nombre o principio activo..."
+        />
+      </HerramientasModal>
+
+      {/* `min-h-0` y NO `overflow-hidden`.
+          Medido el 2026-08-06: con `overflow-hidden` esta caja quedaba en 708px
+          con 1134 de contenido —lo recortaba y no dejaba scrollear— y el
+          scroller propio del panel nunca se activaba, porque su `h-full` no
+          resuelve contra un padre de alto automático y crecía hasta el
+          contenido entero. Es la trampa de siempre: un hijo flex no baja de su
+          contenido sin `min-h-0`, así que el scroll se va hacia arriba en la
+          cadena y no lo agarra nadie. */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <PanelInventario query={query} onQueryChange={onQueryChange} onSolicitado={onSolicitado} />
+      </div>
+    </>
   );
 }

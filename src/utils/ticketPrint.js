@@ -474,25 +474,32 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
- * Cortar el papel — APAGADO hasta medir cuál entiende la ticketera.
+ * Cortar el papel. `GS V 1`: corte parcial, TRES bytes y ninguno en cero.
  *
- * v2.661.5 mandó `GS V 66 0` (avanzar 0 y corte parcial) y en Salud 4 salió
- * PEOR que no mandar nada: no cortó **y ademas dejó de imprimir el sistema de
- * facturación**. Los dos síntomas son el mismo hecho — un comando que la
- * impresora no reconoce la deja esperando los bytes que le faltan, así que no
- * ejecuta el corte y se traga el trabajo siguiente. Por eso apagarla la revive.
+ * Medido en la ticketera de Salud 4 el 2026-08-18, escribiendo directo al
+ * dispositivo. Corta, y el sistema de facturación sigue imprimiendo después —
+ * las dos mitades de la prueba, porque una sola no alcanza (ver abajo).
  *
- * **La lección: un comando de impresora no se elige leyendo la especificación,
- * se elige con papel en la mano.** `GS V 66 n` son cuatro bytes y no todas las
- * placas lo implementan; los que casi siempre andan son los de tres
- * (`GS V 0` total, `GS V 1` parcial) y el dialecto viejo `ESC i` / `ESC m`.
+ * **Por qué NO `GS V 66 0`, que fue el primer intento (v2.661.5) y colgó la
+ * sala.** Son cuatro bytes y el último es un CERO. El ticket no va directo al
+ * papel: viaja por HTTP hasta el programa de la caja y pasa por PHP, y un byte
+ * cero al final de un texto es justo lo que ese recorrido recorta. A la
+ * impresora le llegó `GS V 66` sin el parámetro que ese comando exige, se quedó
+ * esperándolo, y **se comió el ticket siguiente del sistema de facturación**
+ * creyendo que era el número que le faltaba. Un solo síntoma con dos caras: no
+ * cortaba y además rompía al otro sistema.
  *
- * Para reactivarlo: probar los candidatos escribiendo directo al dispositivo
- * —§5 del doc de impresión— y comprobar DOS cosas, no una: que corte, y que el
- * sistema de facturación siga imprimiendo después. Recién ahí poner el valor
- * acá y volver a colgarlo del `pie`, con su test.
+ * De ahí la regla: **el comando de corte no lleva parámetros ni bytes en cero.**
+ * `GS V 0` (corte total) está descartado por lo mismo: termina en `\x00`.
+ *
+ * Corte PARCIAL y no total: deja una pestaña sin cortar, así el ticket queda
+ * colgando en vez de caerse al piso mientras el cajero cobra.
+ *
+ * Va DESPUÉS del margen en blanco y no en su lugar: la cuchilla está unos
+ * centímetros arriba del cabezal, así que sin esos 12 saltos el corte caería
+ * sobre texto todavía adentro de la impresora.
  */
-const CORTAR_PAPEL = '';   // eslint-disable-line no-unused-vars
+const CORTAR_PAPEL = '\x1d\x56\x01';
 
 /**
  * Columnas del ticket del origen, contadas sobre un ticket real.
@@ -695,7 +702,7 @@ export function seccionesParaElPrograma(ticket) {
         //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
+        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE) + CORTAR_PAPEL,
         img: '', qr: '', qr_farmalasa: '',
     };
 }

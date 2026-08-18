@@ -81,11 +81,21 @@ describe('el ticket que se manda al programa de impresión', () => {
         // cuentan, no se buscan con `endsWith`: con cinco —lo que había hasta el
         // 2026-08-17— el corte se llevaba el final del ticket en la sala, y un
         // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con doce.
-        // El pie NO lleva orden de cortar: `GS V 66 0` colgó la ticketera de
-        // Salud 4 —no cortaba y ademas se tragaba el trabajo siguiente del
-        // sistema de facturación—. Hasta medir cuál entiende esa placa, el
-        // ticket cierra en papel en blanco y se arranca a mano.
-        expect(s.pie.match(/\n+$/)[0].length).toBe(12);
+        // El pie cierra con `GS V 1` —corte parcial, medido en Salud 4 el
+        // 2026-08-18— y los 12 saltos van ANTES: la cuchilla está arriba del
+        // cabezal, así que cortar sin ese margen cae sobre texto todavía
+        // adentro de la máquina. Se afirman por separado.
+        //
+        // Los TRES bytes y el `\x01` final son el hallazgo, no un detalle: el
+        // primer intento fue `GS V 66 0`, que termina en CERO, y ese byte se
+        // pierde en el viaje por HTTP y PHP hasta el programa de la caja. La
+        // impresora recibía el comando incompleto, se quedaba esperando el
+        // parámetro y se comía el ticket siguiente del sistema de facturación.
+        // Por eso el test mira los bytes exactos: un corte con parámetros o con
+        // ceros vuelve a romper una sala, y en el papel se ve igual de bien.
+        expect(s.pie.endsWith('\x1d\x56\x01')).toBe(true);
+        expect(s.pie).not.toContain('\x1d\x56\x42');
+        expect(s.pie.slice(0, -3).match(/\n+$/)[0].length).toBe(12);
     });
 
     // Los dos que siguen salieron del PRIMER ticket impreso desde el portal

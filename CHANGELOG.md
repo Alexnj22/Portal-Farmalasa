@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.7 — El ticket del portal corta, con el comando medido
+
+El pie del ticket cierra con `GS V 1` — corte parcial, tres bytes y ninguno en
+cero. **Probado en la ticketera de Salud 4 escribiendo directo al dispositivo**,
+antes de desplegar: corta, y el sistema de facturacion sigue imprimiendo
+despues. Las dos mitades, porque una sola no alcanza.
+
+**Por que no `GS V 66 0`**, que fue el intento de v2.661.5 y colgo la sala: son
+cuatro bytes y el ultimo es un CERO. El ticket no va directo al papel — viaja
+por HTTP hasta el programa de la caja y pasa por PHP, y un byte cero al final de
+un texto es justo lo que ese recorrido recorta. A la impresora le llegaba
+`GS V 66` sin el parametro que exige, se quedaba esperandolo, y **se comia el
+ticket siguiente del sistema de facturacion** creyendolo el numero que le
+faltaba. De ahi la regla que queda escrita en el archivo: **el comando de corte
+no lleva parametros ni bytes en cero** — lo que tambien descarta `GS V 0`, que
+termina en `\x00`.
+
+Corte parcial y no total: deja una pestania, asi el ticket queda colgando en vez
+de caerse mientras el cajero cobra. Va DESPUES de los 12 saltos del margen, no
+en su lugar: la cuchilla esta arriba del cabezal.
+
+El test ancla los bytes exactos y ademas afirma que `GS V 66` NO aparece. Un
+corte con parametros vuelve a romper una sala y en el papel se ve igual de bien,
+asi que no alcanza con comprobar que haya *alguna* orden de cortar.
+
 ## v2.661.6 — Sacar el corte que colgaba la ticketera
 
 Revierte el `GS V 66 0` de v2.661.5. En Salud 4 salio **peor que no mandar

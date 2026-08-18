@@ -81,12 +81,14 @@ describe('el ticket que se manda al programa de impresión', () => {
         // cuentan, no se buscan con `endsWith`: con cinco —lo que había hasta el
         // 2026-08-17— el corte se llevaba el final del ticket en la sala, y un
         // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con doce.
-        // El pie NO lleva orden de cortar, y es a propósito: el programa de la
-        // caja ya manda `GS V '1'` por su cuenta despues del pie (leído en
+        // El pie NO lleva orden de cortar, y es a propósito: **estas secciones
+        // son las del camino directo**, y ahí el programa de la caja ya manda
+        // `GS V '1'` por su cuenta despues del pie (leído en
         // `printik_pista.php`). Los bytes del portal se SUMAN a los suyos, así
-        // que agregar un corte acá corta dos veces — y el intento de v2.661.5
-        // ademas colgaba la impresora. Se afirma la ausencia, no sólo el margen:
-        // sin esto, el proximo reporte de «no corta» vuelve a agregar uno.
+        // que un corte acá corta dos veces — y el intento de v2.661.5 ademas
+        // colgaba la impresora. El corte del camino de la cola se afirma abajo,
+        // sobre `textoParaElRollo`: son dos caminos distintos y por eso son dos
+        // pruebas distintas.
         expect(s.pie).not.toContain('\x1d\x56');
         expect(s.pie.match(/\n+$/)[0].length).toBe(12);
     });
@@ -137,6 +139,22 @@ describe('el ticket que se manda al programa de impresión', () => {
     // papel salía en la computadora de quien apretaba el botón en vez de en la
     // caja de la sala. La primera prueba fija el hecho que lo causa; la
     // segunda, que el viaje no lo pierda.
+
+    it('el ticket de la cola cierra con el corte, y despues del margen', () => {
+        // Por acá NADIE mas manda el corte: el agente entrega los bytes con
+        // `lp -o raw`, sin driver que agregue nada, y su `CORTAR` viene
+        // apagado. Sin esto el papel sale entero y hay que arrancarlo a mano —
+        // que es lo que el usuario reportó el 2026-08-18 imprimiendo desde otra
+        // computadora.
+        const bytes = textoParaElRollo(ticket());
+
+        expect(bytes.endsWith('\n'.repeat(12) + '\x1dV1')).toBe(true);
+        // Tres bytes y ninguno en cero. `GS V 66 n` colgó la ticketera de una
+        // sala (v2.661.5) y en el papel se veria igual de bien, asi que no
+        // alcanza con comprobar que haya *alguna* orden de cortar.
+        expect(bytes).not.toContain('\x1dV\x42');
+        expect(bytes).not.toContain('\x1dV\x00');
+    });
 
     it('todo ticket lleva un NUL adentro: por eso no puede viajar como texto', () => {
         expect(textoParaElRollo(ticket())).toContain('\x00');

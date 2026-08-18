@@ -430,6 +430,38 @@ papel; no prometas en pantalla lo que no podés saber.
    iframe con `imprimirMarco()`. No escribas un segundo maquetador — es la regla
    que ya está en `CLAUDE.md`.
 
+### El corte del papel: quién lo manda depende del camino (2026-08-18)
+
+Costó cuatro versiones en un día (v2.661.5 a v2.661.9) porque los dos caminos se
+trataron como uno solo. **No lo son:**
+
+| Camino | Quién manda el corte | Qué agrega el portal |
+|---|---|---|
+| Directo (`printik_pista.php`, la caja) | **El programa ajeno**: `chr(29).chr(86)."1"` después del pie, junto con el pulso del cajón — leído en su código | **Nada.** Un corte acá se SUMA al suyo |
+| Cola de la sala (el agente) | **Nadie.** `lp -o raw` entrega los bytes tal cual, sin driver que agregue nada | `GS V '1'` al final de `textoParaElRollo()` |
+| Diálogo del navegador | El controlador de la impresora que elija quien imprime | No aplica: ahí no hay ESC/POS |
+
+Por eso el reporte de «no corta» se leyó mal dos veces: la primera era que **no
+llegaba nada al papel** (permiso de escritura sobre `/dev/usb/lp0`, ver §5 bis),
+y la segunda era el camino de la cola —el que usa quien imprime desde el teléfono
+o desde otra computadora—, que efectivamente no tenía corte y salía entero.
+
+Tres cosas que hay que saber antes de tocar esos bytes:
+
+1. **El comando no lleva parámetros ni bytes en cero.** `GS V 66 0` son cuatro
+   bytes terminados en NUL; el viaje HTTP + PHP se lo come, la impresora espera
+   el parámetro que falta y **se traga el trabajo siguiente** — colgó la
+   ticketera de Salud 4 y con ella los tickets del otro sistema. `GS V '1'` son
+   tres bytes, está medido en esa misma ticketera, y es el que ya usan los
+   tickets de facturación en esas salas.
+2. **Corte parcial, no total.** Deja una pestaña: el ticket queda colgando en vez
+   de caerse al piso, que importa justo cuando nadie está parado ahí esperándolo.
+3. **Va después de los 12 saltos del margen**, nunca en su lugar: la cuchilla
+   está arriba del cabezal (§4 quater).
+
+Y el `CORTAR=1` del agente queda apagado: era de cuando el ticket no traía el
+suyo, y encenderlo hoy corta dos veces.
+
 ### Las piezas, si hace falta bajar un nivel
 
 | Función | Para qué |

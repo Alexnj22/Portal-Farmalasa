@@ -468,33 +468,50 @@ const RUTA_PROGRAMA = 'http://localhost/impresion_dte/';
 const SALTOS_DE_CORTE = 12;
 
 // Códigos de la impresora, tal como aparecen en el ticket del origen.
-const ESC = '\x1b';
+const ESC = '\x1b', GS = '\x1d';
 const CENTRO = `${ESC}a\x01`, IZQUIERDA = `${ESC}a\x00`, DERECHA = `${ESC}a\x02`;
 const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `${ESC}!\x10`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
- * NO se manda orden de cortar: **el programa de la caja ya la manda solo.**
+ * La orden de cortar el papel: `GS V '1'`, corte parcial.
  *
- * Leído en `printik_pista.php` de Salud 4 el 2026-08-18, que es el archivo al
- * que el portal le POSTea:
+ * **Sólo la lleva el ticket que viaja a la cola de la sala**, y ésa es toda la
+ * regla. Los dos caminos no son iguales:
  *
- *     $string .= chr(29).chr(86)."1";   // CORTAR PAPEL AUTOMATICO
+ *   · **Camino directo** (`printik_pista.php`, la computadora de la caja): ese
+ *     programa **ya manda el corte por su cuenta** —`chr(29).chr(86)."1"`
+ *     después del pie, junto con el pulso del cajón, leído en su código el
+ *     2026-08-18—. Un corte del portal acá se SUMA al suyo, no lo reemplaza.
+ *   · **Camino de la cola** (el agente de la caja): `lp -o raw` entrega los
+ *     bytes tal cual, sin driver que agregue nada. Ahí **nadie manda el corte**,
+ *     así que el papel salía entero y había que arrancarlo a mano. Es el camino
+ *     por el que imprime hoy quien manda desde el teléfono o desde otra
+ *     computadora — o sea, el que el usuario reportó sin cortar el 2026-08-18.
  *
- * Eso es `GS V '1'` —corte parcial—, y viaja DESPUÉS del pie junto con el pulso
- * del cajón. O sea que el ticket del portal siempre tuvo su corte.
+ * **Corte parcial y no total**: deja una pestaña, así el ticket queda colgando
+ * en vez de caerse al piso mientras nadie lo está esperando. Es el mismo que
+ * usan los tickets del sistema de facturación en esas salas.
  *
- * **Por qué esto costó dos versiones.** Un reporte de «no corta» se leyó como
- * «falta el comando», y se agregó uno (v2.661.5, `GS V 66 0`) que colgó la sala:
- * termina en un byte CERO, el viaje por HTTP+PHP lo recorta, y la impresora se
- * quedaba esperando el parámetro comiéndose el trabajo siguiente. La segunda
- * versión (v2.661.7) usó el comando correcto pero seguía sobrando. **No cortaba
- * porque no llegaba NADA al papel** —era permiso de escritura sobre el
- * dispositivo, ver §5 del doc—, no porque faltara la orden.
+ * **Va DESPUÉS de los `SALTOS_DE_CORTE`, no en su lugar.** La cuchilla está
+ * unos centímetros arriba del cabezal: cortar sin esos saltos parte texto que
+ * todavía está adentro de la máquina.
  *
- * La lección: antes de agregar un comando a este camino, leer qué manda ya el
- * programa de la caja. Los bytes que agrega el portal se SUMAN a los suyos.
+ * **Tres bytes y ninguno en cero, y eso no es estética.** `GS V 66 0` (el
+ * intento de v2.661.5) son cuatro y el último es un NUL: por el camino de HTTP
+ * + PHP ese cero se pierde, la impresora se queda esperando el parámetro que
+ * falta y **se come el trabajo siguiente** — colgó la ticketera de Salud 4 y
+ * con ella los tickets de facturación. `GS V 1` está medido en esa misma
+ * ticketera escribiendo directo al dispositivo (v2.661.7): corta, y el otro
+ * sistema sigue imprimiendo después. Por eso también queda descartado
+ * `GS V 0` —corte total, pero termina en `\x00`—, aunque por la cola los bytes
+ * viajen en base64 y un NUL sí sobreviva: un solo comando de corte para los dos
+ * caminos es una cosa menos que se puede desincronizar.
+ *
+ * **Y por eso el agente sigue con `CORTAR=0`.** Su corte opcional (`GS V 0`) es
+ * de cuando el ticket no traía el suyo; encenderlo ahora corta dos veces.
  */
+const CORTAR_PAPEL = `${GS}V1`;
 
 /**
  * Columnas del ticket del origen, contadas sobre un ticket real.
@@ -718,10 +735,14 @@ export function seccionesParaElPrograma(ticket) {
  * `totales` y `total_letras` de `seccionesParaElPrograma` NO se concatenan: son
  * sólo códigos de tamaño que el origen aplica antes de imprimir cifras que su
  * programa arma aparte. Acá las cifras ya vienen dentro de `cuerpo`.
+ *
+ * Y cierra con `CORTAR_PAPEL`, que es lo único que este camino tiene de más
+ * que las secciones del camino directo: por acá no hay programa ajeno que lo
+ * agregue después (ver la constante).
  */
 export function textoParaElRollo(ticket) {
     const s = seccionesParaElPrograma(ticket);
-    return `${ESC}@` + s.encabezado + s.cuerpo + s.pie;
+    return `${ESC}@` + s.encabezado + s.cuerpo + s.pie + CORTAR_PAPEL;
 }
 
 /**

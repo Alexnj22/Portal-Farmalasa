@@ -68,11 +68,12 @@ sudo journalctl -u farmalasa-impresion -f
 ```
 
 **El papel sale pero no se corta.**
-Editá `/opt/farmalasa/agente-impresion/agente.conf`, quitale el `#` a la línea
-`CORTAR=1` y reiniciá con
-`sudo systemctl restart farmalasa-impresion`. Viene apagado porque la ticketera
-de las salas corta sola, y prender un comando de corte que no hace falta puede
-hacer que salga basura.
+Desde v2.661.9 **el ticket trae su propio corte** y esto no debería pasar: si
+pasa, la caja está recibiendo tickets viejos o la ticketera ignora el comando.
+El último recurso es editar `/opt/farmalasa/agente-impresion/agente.conf`,
+quitarle el `#` a la línea `CORTAR=1` y reiniciar con
+`sudo systemctl restart farmalasa-impresion` — pero ojo: eso agrega un SEGUNDO
+corte, y total en vez de parcial, así que se prueba con papel en la mano.
 
 **¿Se puede instalar en más de una computadora de la misma sala?**
 No hace falta y no conviene: el papel sale igual en la caja aunque el documento

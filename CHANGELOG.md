@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.9 — El ticket que va a la cola de la sala corta el papel
+
+El usuario lo levanto otra vez: *«ya me funciona, pero haz que corte
+automaticamente»*. **Habia dos caminos y se venian tratando como uno solo.**
+
+| Camino | Quien manda el corte |
+|---|---|
+| Directo, en la computadora de la caja | El programa de la caja: `chr(29).chr(86)."1"` despues del pie |
+| **La cola de la sala** (el agente) | **Nadie.** `lp -o raw` entrega los bytes tal cual |
+
+Las cuatro versiones anteriores discutieron el primero, que ya cortaba. El que
+no cortaba es el segundo — y es justamente el que usa quien manda desde el
+telefono, desde la oficina o desde otra computadora, que hoy son las cinco cajas
+instaladas (La Popular, Salud 3, 4 y 5). Por ahi el papel salia entero y habia
+que arrancarlo a mano.
+
+Ahora `textoParaElRollo()` —los bytes que viajan a la cola, y solo esos— cierra
+con `GS V '1'`, corte parcial, despues de los 12 saltos del margen. Las nueve
+secciones del camino directo **no cambian**: sumarle un corte al que el programa
+de la caja ya manda es cortar dos veces.
+
+**Por que `GS V '1'` y no otro.** Tres bytes y ninguno en cero, medido en la
+ticketera de Salud 4 (v2.661.7). `GS V 66 0` son cuatro y terminan en NUL: el
+viaje por HTTP+PHP se lo come, la impresora espera el parametro que falta y se
+traga el trabajo siguiente — colgo una sala entera. Parcial y no total para que
+el ticket quede colgando en vez de caerse al piso, que importa justo cuando
+nadie esta parado ahi esperandolo.
+
+Y el `CORTAR=1` del agente sigue apagado, ahora con el motivo escrito en su
+propio archivo: era de cuando el ticket no traia el suyo, y encenderlo hoy corta
+dos veces —ademas con corte total—.
+
+La prueba nueva afirma el corte **sobre los bytes de la cola**, no sobre el pie,
+y la vieja sigue exigiendo que el pie NO lo lleve. Dos caminos, dos pruebas: es
+lo que faltaba para que el proximo reporte de «no corta» no vuelva a mover la
+pieza equivocada.
+
 ## v2.661.8 — El corte ya lo manda el programa de la caja
 
 Saca el `GS V 1` que v2.661.7 habia agregado al pie. **Sobraba**: leyendo

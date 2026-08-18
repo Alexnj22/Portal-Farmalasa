@@ -68,9 +68,12 @@ def config():
     if faltan:
         sys.exit("Falta configurar: " + ", ".join(faltan) + "\nVer README.md")
 
-    # El corte del final es opcional y viene apagado: la ticketera de las salas
-    # ya corta sola al terminar el trabajo (medido con `lp -o raw`). Se enciende
-    # sólo si el papel sale sin cortarse.
+    # El corte del final es opcional y viene apagado **porque el ticket ya trae
+    # el suyo**: desde v2.661.9 el portal cierra los bytes de la cola con
+    # `GS V '1'` (corte parcial), que es el mismo que usan los tickets del otro
+    # sistema en esas cajas. Encender esto agrega un SEGUNDO corte, y ademas
+    # total (`GS V 0`). Queda solo por si alguna caja recibe tickets de una
+    # version vieja del portal, que no lo traian.
     cfg["CORTAR"] = str(cfg.get("CORTAR", "0")).lower() in ("1", "true", "si", "sí")
     return cfg
 

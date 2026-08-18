@@ -129,7 +129,7 @@ SUPABASE_URL=$URL
 SUPABASE_ANON_KEY=$ANON
 DEVICE_ID=$DEV_ID
 DEVICE_TOKEN=$DEV_TOK
-# CORTAR=1   # sólo si el papel sale sin cortarse
+# CORTAR=1   # el ticket ya trae su corte; esto agrega un segundo, y total
 EOF
 $SUDO chmod 600 "$DESTINO/agente.conf"
 verde "  ✓ Configuración escrita"

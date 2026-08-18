@@ -474,22 +474,25 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
- * Cortar el papel. `GS V 66 0`: avanzar 0 y corte parcial.
+ * Cortar el papel — APAGADO hasta medir cuál entiende la ticketera.
  *
- * **Faltaba, y por eso el ticket del portal salía sin cortar** (visto en Salud 4
- * el 2026-08-18). El motor mandaba el margen en blanco de `SALTOS_DE_CORTE` —
- * pensado para que quien arranca el papel a mano no se lleve la última línea—
- * pero nunca la orden de usar la cuchilla, que esa ticketera sí tiene
- * (`Cutter : Yes` en su autoprueba).
+ * v2.661.5 mandó `GS V 66 0` (avanzar 0 y corte parcial) y en Salud 4 salió
+ * PEOR que no mandar nada: no cortó **y ademas dejó de imprimir el sistema de
+ * facturación**. Los dos síntomas son el mismo hecho — un comando que la
+ * impresora no reconoce la deja esperando los bytes que le faltan, así que no
+ * ejecuta el corte y se traga el trabajo siguiente. Por eso apagarla la revive.
  *
- * Corte PARCIAL y no total a propósito: deja una pestaña sin cortar, así el
- * ticket queda colgando en vez de caerse al piso mientras el cajero cobra.
+ * **La lección: un comando de impresora no se elige leyendo la especificación,
+ * se elige con papel en la mano.** `GS V 66 n` son cuatro bytes y no todas las
+ * placas lo implementan; los que casi siempre andan son los de tres
+ * (`GS V 0` total, `GS V 1` parcial) y el dialecto viejo `ESC i` / `ESC m`.
  *
- * Va DESPUÉS del margen en blanco, no en su lugar: la cuchilla está unos
- * centímetros más arriba que el cabezal, así que sin esos 12 saltos el corte
- * caería sobre texto todavía adentro de la impresora.
+ * Para reactivarlo: probar los candidatos escribiendo directo al dispositivo
+ * —§5 del doc de impresión— y comprobar DOS cosas, no una: que corte, y que el
+ * sistema de facturación siga imprimiendo después. Recién ahí poner el valor
+ * acá y volver a colgarlo del `pie`, con su test.
  */
-const CORTAR_PAPEL = '\x1dV\x42\x00';
+const CORTAR_PAPEL = '';   // eslint-disable-line no-unused-vars
 
 /**
  * Columnas del ticket del origen, contadas sobre un ticket real.
@@ -692,7 +695,7 @@ export function seccionesParaElPrograma(ticket) {
         //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE) + CORTAR_PAPEL,
+        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
         img: '', qr: '', qr_farmalasa: '',
     };
 }

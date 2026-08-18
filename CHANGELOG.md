@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.6 — Sacar el corte que colgaba la ticketera
+
+Revierte el `GS V 66 0` de v2.661.5. En Salud 4 salio **peor que no mandar
+nada**: no cortaba, y ademas **el sistema de facturacion dejaba de imprimir**
+despues de cada ticket del portal.
+
+Los dos sintomas son el mismo hecho. Un comando que la impresora no reconoce la
+deja esperando los bytes que le faltan: no ejecuta el corte, y se traga el
+trabajo siguiente como si fueran los parametros que espera. Por eso apagarla y
+prenderla la revivia — es la misma firma que veniamos viendo desde la manana,
+sin saber que la causabamos nosotros.
+
+`GS V 66 n` son cuatro bytes y no todas las placas lo implementan. Los que casi
+siempre andan son los de tres —`GS V 0` total, `GS V 1` parcial— y el dialecto
+viejo `ESC i` / `ESC m`. Cual de esos entiende esta ticketera **se averigua con
+papel en la mano**, escribiendo directo al dispositivo, no leyendo la
+especificacion. El constante queda en el archivo con esa receta escrita y en
+vacio.
+
+**La leccion de metodo, que es lo que vale del episodio:** el test que escribi
+para el corte afirmaba que los bytes estaban en el pie, y estaban — paso en
+verde mientras rompia una sala. Un test de bytes no puede verificar un comando
+de impresora; **eso solo lo verifica el papel, y hay que comprobar DOS cosas:
+que corte, y que el sistema de facturacion siga imprimiendo despues.**
+
 ## v2.661.5 — El ticket del portal corta el papel
 
 Lo levanto el usuario en Salud 4: *«desde el portal la ticketera no corta

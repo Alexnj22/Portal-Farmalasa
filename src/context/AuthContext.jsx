@@ -477,6 +477,10 @@ export const AuthProvider = ({ children }) => {
     if (!force && now - lastWriteRef.current < ACTIVITY_THROTTLE_MS) return;
     lastWriteRef.current = now;
     localStorage.setItem(LS_LAST, String(now));
+    // El sello se movió: los dos instantes que dependen de él se recalculan.
+    // Va acá y no en `onActivity` a propósito — así se re-arma cuando de verdad
+    // se escribió, no en cada mousemove que el throttle descarta.
+    programarVencimiento();
   };
 
   // El latido que le cuenta al SERVIDOR que esta sesión sigue viva.
@@ -567,6 +571,7 @@ export const AuthProvider = ({ children }) => {
 
   const stopIdleWatcher = () => {
     ponerAviso(null);   // que no quede el cartel colgado sobre la pantalla de entrada
+    limpiarTemporizadores();
     if (idleIntervalRef.current) { clearInterval(idleIntervalRef.current); idleIntervalRef.current = null; }
     window.removeEventListener('mousemove',   onActivity, true);
     window.removeEventListener('keydown',     onActivity, true);
@@ -673,6 +678,53 @@ export const AuthProvider = ({ children }) => {
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
+  // ── Los dos instantes que la persona VE ──────────────────────────────────
+  //
+  // El barrido de abajo mira cada 30 s, y con eso solo el cierre caía en
+  // cualquier punto de esos 30 s. Medido el 2026-08-18 contra el entorno de
+  // pruebas: el cartel se quedó diciendo «0 segundos» **21 s** después de haber
+  // llegado a cero —la sesión seguía abierta— y el aviso, que promete 60 s,
+  // salió con 9. Los dos números están en pantalla, así que los dos tienen que
+  // ser ciertos: cada uno se programa para su instante exacto.
+  //
+  // El intervalo NO se va: sigue siendo la red para lo que un temporizador no
+  // puede ver —el sello que mueve otra pestaña, el límite que cambia al
+  // renovarse el token, el reloj que salta— y para la pestaña oculta, donde
+  // estos dos se abstienen por la misma razón que el tic (que iOS no dispare al
+  // reanudar). Al volver decide `onVisibilityChange`, que ya cierra si venció.
+  const avisoTimeoutRef  = useRef(null);
+  const cierreTimeoutRef = useRef(null);
+
+  const limpiarTemporizadores = () => {
+    if (avisoTimeoutRef.current)  { clearTimeout(avisoTimeoutRef.current);  avisoTimeoutRef.current  = null; }
+    if (cierreTimeoutRef.current) { clearTimeout(cierreTimeoutRef.current); cierreTimeoutRef.current = null; }
+  };
+
+  const programarVencimiento = () => {
+    limpiarTemporizadores();
+    if (!idleIntervalRef.current) return;   // sin vigilante no hay nada que programar
+    const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+    if (!last) return;
+    const vence = last + getIdleLimitMs(userRef.current);
+
+    avisoTimeoutRef.current = setTimeout(() => {
+      avisoTimeoutRef.current = null;
+      if (document.visibilityState === 'hidden') return;
+      ponerAviso(vence);
+    }, Math.max(0, vence - AVISO_INACTIVIDAD_MS - Date.now()));
+
+    cierreTimeoutRef.current = setTimeout(() => {
+      cierreTimeoutRef.current = null;
+      if (document.visibilityState === 'hidden') return;
+      // El sello pudo moverse entre que se armó esto y que llegó —la escritura
+      // tiene 2 s de throttle, y otra pestaña escribe sin avisar—, así que se
+      // decide con el valor de AHORA y no con el que se calculó al armar.
+      const sello = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+      if (sello && Date.now() < sello + getIdleLimitMs(userRef.current)) { programarVencimiento(); return; }
+      doLogoutRef.current?.();
+    }, Math.max(0, vence - Date.now()));
+  };
+
   // Recibe el usuario que los cuatro caminos de login ya le venían pasando —
   // hasta ahora lo ignoraba. Hace falta: en ese momento `userRef` todavía no
   // está puesto (ver la nota de `latirSesion`).
@@ -705,7 +757,13 @@ export const AuthProvider = ({ children }) => {
       // los segundos que faltan: el diálogo hace su propia cuenta contra ese
       // instante, así que no se desfasa si un tic llega tarde.
       ponerAviso(vence - Date.now() <= AVISO_INACTIVIDAD_MS ? vence : null);
+      // Y se reprograman los dos instantes con los números de este tic: si el
+      // límite cambió —el token se renovó con otro `idle_limit_min`— el
+      // temporizador armado quedó apuntando a la hora vieja.
+      programarVencimiento();
     }, CHECK_EVERY_MS);
+    // Sin esto, el primer aviso/cierre esperaría al primer tic.
+    programarVencimiento();
   };
 
   // -------------------------

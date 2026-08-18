@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.1 — El cierre por inactividad ocurre cuando el contador llega a cero
+
+El cartel «¿Sigues ahí?» descuenta cada segundo contra el instante real del
+vencimiento, pero **quien cierra la sesión miraba el reloj cada 30 segundos**.
+O sea que el contador llegaba a cero y la sesión seguía abierta hasta que
+cayera el próximo barrido: en cualquier punto de esos 30 s.
+
+Medido contra el entorno de pruebas, dejando correr el reloj sin tocar nada:
+
+| vencimiento a los | aviso sale con | contador en 0 | sesión cerrada | tarde |
+|---|---|---|---|---|
+| 50 s | 24 s en pantalla | 51 s | 57 s | **6 s** |
+| 35 s | 9 s en pantalla | 36 s | 57 s | **21 s** |
+
+Dos números en pantalla y los dos falsos: el cartel se quedó 21 segundos
+diciendo «0 segundos», y el aviso —que promete un minuto— salió con nueve.
+
+Ahora cada instante que la persona VE tiene su propio temporizador: uno para el
+aviso, exactamente 60 s antes, y otro para el cierre, exactamente al vencer.
+Vuelto a medir con el límite de sala (5 min): el aviso sale con **60 s** justos
+y la sesión se cierra a los **0,2 s** de marcar cero —el intervalo con que mide
+la prueba—, contra los 21 s de antes.
+
+El barrido de 30 s **se queda**, ahora como red: es lo único que ve el sello
+que mueve otra pestaña, el límite que cambia al renovarse el token o el reloj
+que salta. Y los dos temporizadores se abstienen con la pestaña oculta, por la
+misma razón que el barrido —que iOS no dispare al reanudar—; al volver decide
+el mismo camino de siempre, que ya cierra si venció.
+
+Lo que no se rompió, y también está medido: con el cartel puesto, **un
+movimiento de mouse salva la sesión**. Cruza el vencimiento viejo con 30 s de
+sobra, sigue adentro y el cartel se va.
+
+`tests/e2e/inactividad.spec.js` fija las dos propiedades. Es lenta a propósito:
+es una propiedad de reloj y sólo se ve dejando correr el reloj.
+
 ## v2.659.0 — El bloque de diferencias se lee de un vistazo
 
 Rediseño del bloque, mirando la pantalla real con cuatro diferencias abiertas.

@@ -474,32 +474,27 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
- * Cortar el papel. `GS V 1`: corte parcial, TRES bytes y ninguno en cero.
+ * NO se manda orden de cortar: **el programa de la caja ya la manda solo.**
  *
- * Medido en la ticketera de Salud 4 el 2026-08-18, escribiendo directo al
- * dispositivo. Corta, y el sistema de facturación sigue imprimiendo después —
- * las dos mitades de la prueba, porque una sola no alcanza (ver abajo).
+ * Leído en `printik_pista.php` de Salud 4 el 2026-08-18, que es el archivo al
+ * que el portal le POSTea:
  *
- * **Por qué NO `GS V 66 0`, que fue el primer intento (v2.661.5) y colgó la
- * sala.** Son cuatro bytes y el último es un CERO. El ticket no va directo al
- * papel: viaja por HTTP hasta el programa de la caja y pasa por PHP, y un byte
- * cero al final de un texto es justo lo que ese recorrido recorta. A la
- * impresora le llegó `GS V 66` sin el parámetro que ese comando exige, se quedó
- * esperándolo, y **se comió el ticket siguiente del sistema de facturación**
- * creyendo que era el número que le faltaba. Un solo síntoma con dos caras: no
- * cortaba y además rompía al otro sistema.
+ *     $string .= chr(29).chr(86)."1";   // CORTAR PAPEL AUTOMATICO
  *
- * De ahí la regla: **el comando de corte no lleva parámetros ni bytes en cero.**
- * `GS V 0` (corte total) está descartado por lo mismo: termina en `\x00`.
+ * Eso es `GS V '1'` —corte parcial—, y viaja DESPUÉS del pie junto con el pulso
+ * del cajón. O sea que el ticket del portal siempre tuvo su corte.
  *
- * Corte PARCIAL y no total: deja una pestaña sin cortar, así el ticket queda
- * colgando en vez de caerse al piso mientras el cajero cobra.
+ * **Por qué esto costó dos versiones.** Un reporte de «no corta» se leyó como
+ * «falta el comando», y se agregó uno (v2.661.5, `GS V 66 0`) que colgó la sala:
+ * termina en un byte CERO, el viaje por HTTP+PHP lo recorta, y la impresora se
+ * quedaba esperando el parámetro comiéndose el trabajo siguiente. La segunda
+ * versión (v2.661.7) usó el comando correcto pero seguía sobrando. **No cortaba
+ * porque no llegaba NADA al papel** —era permiso de escritura sobre el
+ * dispositivo, ver §5 del doc—, no porque faltara la orden.
  *
- * Va DESPUÉS del margen en blanco y no en su lugar: la cuchilla está unos
- * centímetros arriba del cabezal, así que sin esos 12 saltos el corte caería
- * sobre texto todavía adentro de la impresora.
+ * La lección: antes de agregar un comando a este camino, leer qué manda ya el
+ * programa de la caja. Los bytes que agrega el portal se SUMAN a los suyos.
  */
-const CORTAR_PAPEL = '\x1d\x56\x01';
 
 /**
  * Columnas del ticket del origen, contadas sobre un ticket real.
@@ -702,7 +697,7 @@ export function seccionesParaElPrograma(ticket) {
         //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE) + CORTAR_PAPEL,
+        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
         img: '', qr: '', qr_farmalasa: '',
     };
 }

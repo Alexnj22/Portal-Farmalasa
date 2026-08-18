@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.8 — El corte ya lo manda el programa de la caja
+
+Saca el `GS V 1` que v2.661.7 habia agregado al pie. **Sobraba**: leyendo
+`printik_pista.php` —el archivo al que el portal le POSTea— aparece que el
+programa de la caja ya manda el corte por su cuenta, despues del pie y junto con
+el pulso del cajon:
+
+```php
+$string .= chr(29).chr(86)."1";   // CORTAR PAPEL AUTOMATICO
+```
+
+O sea que el ticket del portal **siempre tuvo su corte**. Dejarlo en el pie
+cortaba dos veces.
+
+**Por que costo tres versiones.** Un reporte de «no corta» se leyo como «falta el
+comando». No faltaba: **no llegaba NADA al papel**, ni el texto ni el corte,
+porque el servidor web no tenia permiso de escritura sobre el dispositivo — el
+propio archivo lo documenta en su primera linea (`chmod 777 /dev/usb/lp0`) y la
+regla de udev de esta mañana lo habia dejado en 0660. Arreglado el permiso, el
+corte aparecio solo.
+
+Queda escrito como regla en el archivo y afirmado en el test —que ahora exige la
+AUSENCIA del comando, no sólo el margen—: **antes de agregar un byte a este
+camino, leer que manda ya el programa de la caja.** Lo que el portal envia se
+SUMA a lo suyo, no lo reemplaza.
+
 ## v2.661.7 — El ticket del portal corta, con el comando medido
 
 El pie del ticket cierra con `GS V 1` — corte parcial, tres bytes y ninguno en

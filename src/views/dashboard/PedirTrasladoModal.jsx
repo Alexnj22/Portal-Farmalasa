@@ -14,20 +14,22 @@ import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario'
 
 // Pedirle un producto a otra sala.
 //
-// Se abre de dos maneras, y la diferencia es sólo con cuánto se llega:
+// **Se abre desde la consulta de inventario, y `producto` viene puesto.** La
+// lista ya sabe qué producto, qué salas lo tienen, cuántas unidades y con qué
+// lotes; quedan tres decisiones: a cuál pedirle, cuánto, y para qué.
 //
-//  · **Desde la consulta de inventario** (`producto` viene puesto): la lista ya
-//    sabe qué producto, qué salas lo tienen, cuántas unidades y con qué lotes.
-//    Quedan tres decisiones: a cuál pedirle, cuánto, y para qué.
-//  · **Desde Solicitudes** (`producto` llega en nulo, 2026-08-15): el primer
-//    paso es elegir el producto, y de ahí en adelante es exactamente el mismo
-//    formulario. Las salas que lo tienen las trae `fetchDondeHay`, que es el
-//    camino que este archivo ya usaba cuando la búsqueda no las traía; los
-//    lotes no, así que ahí no se ofrece elegirlos — no se inventa un reparto
-//    sobre datos que no se tienen.
+// ── La puerta sin producto se cerró (2026-08-18) ───────────────────────────
+// Entre el 2026-08-15 y hoy este modal también se abría desde «Nueva solicitud»
+// con `producto` en nulo, y empezaba por `BuscadorDeProducto`. Se quitó a
+// pedido del usuario, y el motivo es lo que hay que saber antes de reabrirla:
+// por ese camino NO hay lotes —`fetchDondeHay` trae las salas y las unidades,
+// no el reparto—, así que la solicitud salía sin decir de qué lote tenía que
+// salir el producto y quien despacha lo elegía por su cuenta. La elección de
+// lote es del que pide («los lotes MANDAN», 2026-08-07).
 //
-// Antes esa segunda puerta no existía y el motivo escrito era «sin ese producto
-// no tiene primera pantalla». Ahora la tiene, y es la compartida.
+// La rama de `BuscadorDeProducto` sigue escrita y hoy no la alcanza nadie: si
+// alguna vez se vuelve a montar este modal sin producto, hay que resolver
+// primero de dónde salen los lotes, no sólo de dónde sale el producto.
 //
 // El «para qué» es obligatorio en los dos casos: es lo único que queda escrito
 // en el movimiento de las dos salas.

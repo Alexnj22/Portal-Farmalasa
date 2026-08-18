@@ -1,7 +1,7 @@
-import { ArrowLeftRight, PackageMinus, Receipt, TrendingUp } from 'lucide-react';
+import { PackageMinus, Receipt, TrendingUp } from 'lucide-react';
 
 /**
- * Las CUATRO familias de solicitud que hablan de la SALA y que se pueden abrir
+ * Las TRES familias de solicitud que hablan de la SALA y que se pueden abrir
  * desde «Nueva solicitud» — las mismas baldosas del tablero.
  *
  * Viven en su propio archivo y no dentro del modal porque la vista necesita
@@ -9,12 +9,19 @@ import { ArrowLeftRight, PackageMinus, Receipt, TrendingUp } from 'lucide-react'
  * módulo que exporta un componente y además una función suelta rompe el
  * refresco en caliente (regla `react-refresh/only-export-components`).
  *
- * El **traslado entre salas** era tres, y estaba afuera con este motivo escrito:
- * «su formulario arranca con un producto ya elegido y sin ese producto no tiene
- * primera pantalla». Desde el 2026-08-15 la tiene —el buscador de producto se
- * extrajo a `BuscadorDeProducto` y `PedirTrasladoModal` lo usa cuando llega sin
- * producto—, así que ya no hay razón para que el circuito empiece en el
- * tablero y se conteste en otro lado.
+ * ── «Pedir a otra sala» NO está acá, y no es un olvido (2026-08-18) ────────
+ * Fue la cuarta familia entre el 2026-08-15 y hoy. Se quitó porque desde acá la
+ * solicitud salía INCOMPLETA: entrando por este menú no hay ninguna pantalla de
+ * lotes detrás, así que el pedido viajaba sin decir de qué lote tenía que salir
+ * el producto, y quien despacha terminaba eligiéndolo por su cuenta.
+ *
+ * Pedirle producto a otra sala se hace desde **Consulta de inventario**, donde
+ * quien pide está mirando los lotes de esa sala y puede descartar el que no
+ * quiere («los lotes MANDAN», decisión del usuario 2026-08-07). Esa elección
+ * viaja con la solicitud y el despacho la respeta.
+ *
+ * O sea que la puerta no se cerró: se dejó la única que lleva el dato completo.
+ * Decisión del usuario, 2026-08-18.
  */
 export const FAMILIAS = [
     {
@@ -40,21 +47,6 @@ export const FAMILIAS = [
         permiso: 'dash_minmax_req',
         color: 'text-brand-text', bg: 'bg-brand/5 border-brand/20 hover:border-brand/40',
         iconBg: 'bg-brand/10',
-    },
-    {
-        key: 'traslado', icon: ArrowLeftRight,
-        label: 'Pedir a otra sala',
-        // Sin la palabra «traslado» a propósito: quien lo pide está pensando en
-        // que le falta un producto, no en el nombre del movimiento. El módulo
-        // sigue llamándose Traslados donde se administra.
-        desc: 'Pedirle a otra sala un producto que acá hace falta',
-        // La misma llave que la consulta de inventario, que es desde donde ya se
-        // podía pedir. Es la MISMA capacidad —«puede pedirle producto a otra
-        // sala»— y una llave nueva sería un segundo interruptor para una puerta
-        // que ya tiene el suyo.
-        permiso: 'dash_inv_search',
-        color: 'text-chart-3-text', bg: 'bg-chart-3/5 border-chart-3/20 hover:border-chart-3/40',
-        iconBg: 'bg-chart-3/10',
     },
 ];
 

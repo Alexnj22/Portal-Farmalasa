@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.658.4 — Pedir a otra sala se hace desde Consulta de inventario
+
+«Pedir a otra sala» era una de las cuatro opciones de **Nueva solicitud** en
+Solicitudes de Sucursal, desde el 15-ago. Se quitó: por ese camino la solicitud
+salía incompleta.
+
+Detrás de ese menú no hay ninguna pantalla de lotes, así que el pedido viajaba
+sin decir de qué lote tenía que salir el producto, y quien despacha lo elegía
+por su cuenta. La elección del lote es de quien pide — puede ver cuál está por
+vencer y descartarlo — y ahí se perdía.
+
+Desde **Consulta de inventario** sí va todo: quien pide está mirando los lotes
+de esa sala, elige cuáles y esa elección viaja con la solicitud y se respeta al
+despachar. Esa era ya la puerta principal; ahora es la única, así que no hay dos
+caminos que produzcan solicitudes distintas.
+
+**Quién lo nota:** los Auxiliares de Bodega (5 personas) tenían *sólo* el
+permiso de esa opción, así que en Solicitudes ya no les aparece el botón
+«Nueva solicitud» — un menú vacío es peor que ningún botón. Piden desde Consulta
+de inventario, igual que el resto y con el mismo permiso de siempre.
+
 ## v2.658.3 — La consulta de inventario deja de traerse media bodega para pintar una letra
 
 Reportado: «el sistema está lento en la consulta de inventario, al buscar se

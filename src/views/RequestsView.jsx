@@ -32,7 +32,6 @@ import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
  * vista lo necesita antes de decidir si dibuja el botón. */
 const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
-const PedirTrasladoModal  = lazy(() => import('./dashboard/PedirTrasladoModal'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
 
@@ -303,19 +302,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     // ── Crear ────────────────────────────────────────────────────────────────
     const [nuevaAbierta, setNuevaAbierta] = useState(false);
     const [prefillEmpleado, setPrefillEmpleado] = useState('');
-
-    /* Pedirle producto a otra sala. Es la cuarta familia operativa y la única
-     * que no entra en una ranura del modal de «Nueva solicitud»: trae su propio
-     * diálogo, así que aquél se cierra y éste se abre. Dos ventanas encimadas
-     * serían dos superficies peleando por el mismo toque en el teléfono.
-     *
-     * `useCallback` no es adorno: el hijo lo dispara desde un efecto, y una
-     * función nueva en cada render lo volvería a disparar en bucle. */
-    const [pidiendoTraslado, setPidiendoTraslado] = useState(false);
-    const abrirPedirTraslado = useCallback(() => {
-        setNuevaAbierta(false);
-        setPidiendoTraslado(true);
-    }, []);
 
     // Cancelar la propia. No es una decisión —no la toma quien aprueba y no
     // lleva motivo— así que viaja aparte, por `accionPropia` del modal.
@@ -853,7 +839,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     hasPermission={hasPermission}
                     branchIdUsuario={user?.branchId ?? user?.branch_id}
                     alcanceTodas={alcance === 'ALL'}
-                    onPedirTraslado={abrirPedirTraslado}
                 />
             ) : (
                 <ModalNuevaPersonal
@@ -869,18 +854,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     onEnviado={() => fetchRequests(criterios)}
                 />
             )}</Suspense>}
-
-            {/* Se monta SOLO al pedirlo: trae el buscador del catálogo y las
-                presentaciones del producto, y nada de eso tiene por qué viajar
-                con la vista. */}
-            {pidiendoTraslado && (
-                <Suspense fallback={null}>
-                    <PedirTrasladoModal
-                        onClose={() => setPidiendoTraslado(false)}
-                        onListo={recargarSolicitudes}
-                    />
-                </Suspense>
-            )}
         </GlassViewLayout>
     );
 };

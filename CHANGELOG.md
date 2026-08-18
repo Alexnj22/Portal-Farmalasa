@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.662.0 — Quitar una caja de impresion que ya no existe
+
+Pregunta del usuario: *«¿como puedo eliminar cajas de las salas? por las que
+quedaron de Salud 3 que no podia acceder por la contrasena»*. **No se podia**:
+la pantalla sabia registrar cajas y no sabia sacarlas, y la tabla no tiene
+policy de DELETE, asi que la fila se quedaba para siempre.
+
+Medido en produccion: Salud 3 tenia **tres** cajas —dos que nunca dieron un
+latido, una funcionando—. Dos filas muertas en una lista de cinco hacen dudar
+de la que si sirve, que es exactamente lo que esta pantalla existe para
+contestar.
+
+Ahora cada caja tiene su boton de quitar, con confirmacion, y **el aviso cambia
+segun lo que esa caja este haciendo**: quitar una que nunca contesto es limpiar
+la lista; quitar la que esta imprimiendo deja a esa sala sin donde salir el
+papel, y lo dice con el nombre de la sala. Un solo texto para las dos cosas
+haria que la segunda se apruebe con la confianza de la primera.
+
+Lo hace `eliminar_caja_de_impresion()` en la base (SECURITY DEFINER, pide
+`can_edit` en el modulo impresion — el mismo permiso que registrarla). Borra la
+fila de verdad en vez de marcarla inactiva: `activo=false` la dejaria en la
+lista diciendo lo mismo que hoy. Tres detalles que decide la funcion y no la
+pantalla:
+
+- **El historial de la cola se conserva**, sin el puntero a la caja. Lo que ya
+  salio por ella sigue estando.
+- **Lo que quedo EN LA MANO de esa caja pasa a ERROR con el motivo escrito**, no
+  vuelve a la cola: la caja se borra sin poder confirmar si el papel salio, asi
+  que reencolarlo puede imprimir dos veces el mismo documento, y dejarlo en
+  IMPRIMIENDO lo vuelve un fantasma que nadie reclama.
+- **Borrar dos veces avisa.** Sin eso, dos pestanias abiertas contestan «listo»
+  las dos veces y la segunda no hizo nada.
+
+Queda en la bitacora con la sala, el nombre y el equipo — no con el id de una
+fila que ya no existe.
+
 ## v2.661.9 — El ticket que va a la cola de la sala corta el papel
 
 El usuario lo levanto otra vez: *«ya me funciona, pero haz que corte

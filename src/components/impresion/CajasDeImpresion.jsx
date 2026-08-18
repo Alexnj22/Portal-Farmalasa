@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, Copy, Plus, Printer } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Copy, Plus, Printer, Trash2 } from 'lucide-react';
 import Button from '../common/Button';
+import ConfirmModal from '../common/ConfirmModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { crearCodigoDeVinculacion, fetchCajasDeImpresion, fetchColaDeImpresion } from '../../data/impresion';
+import {
+    crearCodigoDeVinculacion, eliminarCajaDeImpresion,
+    fetchCajasDeImpresion, fetchColaDeImpresion,
+} from '../../data/impresion';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -61,6 +65,8 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const [nombre, setNombre] = useState('');
     const [nueva, setNueva] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    const [aBorrar, setABorrar] = useState(null);
+    const [borrando, setBorrando] = useState(false);
 
     const cargar = useCallback(async () => {
         setCajas(await fetchCajasDeImpresion());
@@ -97,6 +103,28 @@ export default function CajasDeImpresion({ puedeEditar }) {
             showToast?.('No se pudo copiar', 'Selecciónalo y cópialo a mano.', 'error');
         }
     }, [showToast]);
+
+    const borrar = useCallback(async () => {
+        if (!aBorrar || borrando) return;
+        setBorrando(true);
+        const { data, error } = await eliminarCajaDeImpresion(aBorrar.id);
+        setBorrando(false);
+        if (error) {
+            showToast?.('No se pudo quitar', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
+            return;
+        }
+        // Sacar una caja deja una sala sin dónde imprimir si era la única, así
+        // que queda en la bitácora con su sala y su nombre — no alcanza con el
+        // id de una fila que ya no existe.
+        useStaff.getState().appendAuditLog('IMPRESION_CAJA_ELIMINADA', String(aBorrar.branch_id), {
+            caja: data || aBorrar.nombre,
+            sala: nombreSala[aBorrar.branch_id] || aBorrar.branch_id,
+            equipo: aBorrar.equipo,
+        });
+        showToast?.('Caja quitada', `Ya no aparece «${data || aBorrar.nombre}».`, 'success');
+        setABorrar(null);
+        cargar();
+    }, [aBorrar, borrando, nombreSala, showToast, cargar]);
 
     return (
         <div className="space-y-4">
@@ -156,6 +184,13 @@ export default function CajasDeImpresion({ puedeEditar }) {
                         <span className={`text-caption font-bold shrink-0 ${latido.vivo ? 'text-success-text' : 'text-content-3'}`}>
                             {latido.txt}
                         </span>
+                        {puedeEditar && (
+                            <Button
+                                variant="ghost" size="sm" icon={Trash2} iconOnly
+                                aria-label={`Quitar ${c.nombre}`}
+                                onClick={() => setABorrar(c)}
+                            />
+                        )}
                     </div>
                 );
             })}
@@ -213,6 +248,28 @@ export default function CajasDeImpresion({ puedeEditar }) {
                     ))}
                 </div>
             )}
+
+            {/* El aviso cambia según lo que esa caja esté haciendo AHORA: quitar
+                una que nunca dio señales es limpiar la lista, y quitar la que
+                está imprimiendo deja a esa sala sin dónde salir el papel. Un
+                solo texto para las dos cosas haría que la segunda se apruebe con
+                la confianza de la primera. */}
+            <ConfirmModal
+                isOpen={!!aBorrar}
+                onClose={() => (borrando ? null : setABorrar(null))}
+                onConfirm={borrar}
+                title={`¿Quitar «${aBorrar?.nombre ?? ''}»?`}
+                message={
+                    aBorrar?.ultimo_latido
+                        ? `Esta caja está contestando: ${nombreSala[aBorrar.branch_id] || 'esa sala'} `
+                          + 'deja de recibir papel hasta que la vuelvas a instalar. '
+                          + 'Lo que ya se imprimió por ella se conserva.'
+                        : 'Nunca dio señales de vida, así que no está imprimiendo nada. '
+                          + 'Desaparece de la lista y no se puede deshacer.'
+                }
+                confirmText="Sí, quitar"
+                isProcessing={borrando}
+            />
         </div>
     );
 }

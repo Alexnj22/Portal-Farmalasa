@@ -69,6 +69,25 @@ export function crearCodigoDeVinculacion({ branchId, nombre }) {
 }
 
 /**
+ * Saca una caja de la lista. **Borra la fila, no la desactiva.**
+ *
+ * Existe porque registrar una caja es barato y equivocarse también: un código
+ * que se generó dos veces, o una instalación que hubo que repetir porque no se
+ * pudo entrar a esa computadora, deja filas que no contestan nunca. Salud 3
+ * llegó a tener tres cajas —dos muertas y la buena— y una lista así hace dudar
+ * de la única que sirve, que es justo lo que la pantalla existe para contestar.
+ *
+ * `activo = false` no habría alcanzado: la dejaría en la lista diciendo lo
+ * mismo. El historial de lo que ya se imprimió por ella SÍ se conserva, sin el
+ * puntero a la caja — eso lo resuelve la función en la base.
+ *
+ * Devuelve el nombre de la que se fue, para que la pantalla pueda decirlo.
+ */
+export function eliminarCajaDeImpresion(id) {
+    return supabase.rpc('eliminar_caja_de_impresion', { p_id: id });
+}
+
+/**
  * Lo último que pasó por la cola de una sala — para ver si el papel salió.
  *
  * Es la respuesta a algo que hasta ahora no se podía saber: por el camino

@@ -94,6 +94,43 @@ export async function buscarInventarioGlobal(termino) {
     return { filas: data ?? [], error: null };
 }
 
+/** Cuántos PRODUCTOS trae una búsqueda antes de que la pantalla deje de servir. */
+export const MAX_PRODUCTOS_BUSQUEDA = 60;
+
+/**
+ * La misma búsqueda, pero con techo — y diciendo cuánto hay detrás.
+ *
+ * La de arriba no tiene ninguno, y eso no es una hipótesis: medido el
+ * 2026-08-18 en producción, «a» son 16,722 filas, 4.8 MB y 12,746 tarjetas que
+ * el navegador pinta una por una con su propia animación. La pestaña se traba.
+ * Y exigir tres letras no alcanza —«mg » son 6,082 filas y «tab» 4,738—, porque
+ * el emparejamiento es por subcadena y esas letras viven adentro de «500 MG» y
+ * «TABLETA».
+ *
+ * El techo es por PRODUCTO, no por fila: cortar por fila parte una tarjeta a la
+ * mitad y esconde una sala, que es justo lo que esta pantalla existe para
+ * contestar. Cada producto que sale trae TODOS sus lotes de TODAS las salas.
+ *
+ * `total` es el número real de productos que emparejan, para que la pantalla
+ * pueda decir «60 de 138». Un tope que no se anuncia miente.
+ *
+ * Verificado contra la función vieja sobre 16 términos reales: cuando el total
+ * no llega al tope, **cero filas de diferencia** en los dos sentidos; sólo
+ * recortan los tres que lo superan. Y el payload del peor caso baja de 4,727 kB
+ * a 126 kB.
+ */
+export async function buscarInventarioGlobalV2(termino, maxProductos = MAX_PRODUCTOS_BUSQUEDA) {
+    const { data, error } = await supabase.rpc('buscar_inventario_global_v2', {
+        p_search: termino,
+        p_max_productos: maxProductos,
+    });
+    if (error) {
+        console.error('buscarInventarioGlobalV2:', error.message);
+        return { filas: [], total: 0, error };
+    }
+    return { filas: data?.filas ?? [], total: data?.total_productos ?? 0, error: null };
+}
+
 // Inventario con stock (cantidad > 0) que matchea por descripción O por una
 // lista de product IDs (vía principio_activo). Incluye vencidos — el
 // consumidor los separa. Paginado con fetchAllRows.

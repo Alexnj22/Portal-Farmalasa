@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.658.3 — La consulta de inventario deja de traerse media bodega para pintar una letra
+
+Reportado: «el sistema está lento en la consulta de inventario, al buscar se
+traba». Y la pregunta que lo ordenó todo: «¿por qué hace dos días funcionaba
+bien?».
+
+**Lo que se trababa no era la base, era el navegador.** El buscador salía a
+consultar con la **primera tecla**, y la primera tecla es la peor: medido en
+producción, «a» devuelve **16,722 filas, 4.8 MB y 12,746 tarjetas**, cada una
+pintada con su propia animación. La base contesta eso en 261 ms; lo que se
+queda clavado es la pestaña. Y escribir «amoxicilina» con pausas normales
+dispara la cadena «a» → «am» → «amo»: la primera vuelta todavía está pintando
+cuando llega la segunda.
+
+Exigir tres letras no alcanzaba, y eso hubo que medirlo antes de creerlo:
+«mg » son 6,082 filas y «tab» 4,738, porque el emparejamiento es por subcadena
+y esas letras viven adentro de «500 MG» y «TABLETA». Así que el techo va en la
+consulta, no en el largo del texto.
+
+**El techo es por producto, no por fila.** Cortar por fila parte una tarjeta a
+la mitad y esconde una sala, que es exactamente la pregunta que esta pantalla
+existe para contestar. Cada producto que sale trae todos sus lotes de todas las
+salas, y la pantalla dice «Mostrando 60 de 138 productos» — un tope callado se
+lee como «no hay más», que es una respuesta falsa.
+
+Verificado contra la búsqueda vieja sobre 16 términos reales: **cuando el total
+no llega al tope, cero filas de diferencia en los dos sentidos**. Sólo recortan
+los tres que lo superan, y esos lo anuncian. El peor payload baja de **4,727 kB
+a 126 kB (37 veces menos)**; las búsquedas normales quedan idénticas, byte por
+byte.
+
+De paso se le puso desempate al orden. `ORDER BY (NOT por_nombre), descripcion,
+fecha_vencimiento` dejaba sin definir el orden de las filas empatadas en las
+tres, y ese defecto ya había mordido antes (salas que aparecían o no entre dos
+búsquedas iguales). Ahora sala, lote y presentación cierran la clave.
+
+**Y entrar a Inventario costaba dos segundos antes de escribir nada.** El
+selector de sucursal pone «N items» bajo cada sala, y para eso pedía las
+últimas 30 filas de `inventory_sync_log` **sin filtrar**. Para un `ORDER BY
+synced_at` a secas no hay índice que sirva: el plan real era un **Parallel Seq
+Scan de 775,868 filas para devolver 30** — media 2,099 ms, pico 7,818 ms, cada
+vez que alguien abre la pantalla. Y se llevaba los **dos** workers paralelos de
+toda la instancia, así que mientras corría el resto de la base iba en un solo
+hilo. Filtrar `is_vencidos` lo resuelve sin tocar la tabla: el índice
+`(is_vencidos, synced_at DESC)` ya existía y recién ahora lo cubre. **0.147 ms.**
+
+**Por qué hace dos días funcionaba.** Nadie rompió el buscador — no se toca
+desde el 15-ago. Lo que cambió fue el margen. `inventory_sync_log` crece 10,080
+filas por día y el **2026-08-18 tocó su techo de retención de 90 días**: venía
+encareciéndose ~1% por día durante tres meses. Encima, el 17-ago entró carga
+nueva y permanente (un cron **cada minuto** que hace tres días no existía) junto
+con seis módulos estrenados. En una instancia con 256 MB de caché y dos workers
+paralelos, lo que antes se disimulaba dejó de disimularse.
+
 ## v2.658.2 — El lote reservado se cruza por número, no por fecha
 
 Sale de una pregunta del usuario sobre la pantalla de solicitar: «al momento de

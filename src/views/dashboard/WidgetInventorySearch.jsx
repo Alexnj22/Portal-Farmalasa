@@ -8,7 +8,8 @@ import { useAuth } from '../../context/AuthContext';
 import {
   fetchProductPhotoMap,
   fetchProductsByPrincipioActivo,
-  buscarInventarioGlobal,
+  buscarInventarioGlobalV2,
+  MAX_PRODUCTOS_BUSQUEDA,
   fetchInventoryByProductIds,
   fetchFaltantesConStockEnOtraSala,
 } from '../../data/inventory';
@@ -59,6 +60,13 @@ const BRANCH_ORDER = [6, 5, 1, 2, 3, 4, 7];
 // branch del portal → sucursal del sistema de origen. Son numeraciones
 // distintas; el mismo mapa que usa el tablero.
 const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+
+// Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
+// 16,722 filas —lo que empareja con «a»— y el navegador se quedaba pintando.
+// El techo por producto ya acota el payload; esto evita además la pregunta, que
+// con 25 personas consultando a la vez es trabajo que la base no tiene que pagar.
+// Tres es el mínimo con el que un nombre de producto empieza a distinguir algo.
+const MIN_LETRAS_BUSQUEDA = 3;
 
 const NEUTRAL_THEME = { dot: 'var(--chart-8)', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
 const VENCIDOS_THEME = { dot: 'var(--danger)', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
@@ -583,6 +591,10 @@ function PanelInventario({ query = '', onQueryChange }) {
   const [srsResults,     setSrsResults]     = useState(null);
   const [srsLoading,   setSrsLoading]   = useState(false);
   const [alternatives, setAlternatives] = useState([]);
+  // Cuántos productos emparejan DE VERDAD. Puede ser mayor que los que llegaron:
+  // la consulta trae a lo sumo `MAX_PRODUCTOS_BUSQUEDA`, y este número es el que
+  // permite decirlo en pantalla en vez de callarlo.
+  const [totalProductos, setTotalProductos] = useState(0);
   const debounceRef                     = useRef(null);
 
   // La sucursal de quien mira. El widget consulta TODAS las salas, pero
@@ -660,6 +672,7 @@ function PanelInventario({ query = '', onQueryChange }) {
     setSrsResults(null);
     setAlternatives([]);
     setVencidosProds([]);
+    setTotalProductos(0);
 
     try {
       // ── UN viaje, no cuatro (2026-08-07) ────────────────────────────────
@@ -669,10 +682,18 @@ function PanelInventario({ query = '', onQueryChange }) {
       // con ningún tramo pasando de 400 ms, o sea que la espera era la cadena
       // y no la base.
       //
-      // `buscarInventarioGlobal` las hace juntas del lado del servidor y trae
+      // `buscarInventarioGlobalV2` las hace juntas del lado del servidor y trae
       // el principio activo y la foto DENTRO de cada fila, así que acá ya no
       // queda nada que cruzar: los dos mapas se arman leyendo lo que llegó.
-      const { filas: data } = await buscarInventarioGlobal(q);
+      //
+      // ── Y viene con techo (2026-08-18) ──────────────────────────────────
+      // La versión sin techo devolvía TODO lo que emparejaba: «a» eran 16,722
+      // filas, 4.8 MB y 12,746 tarjetas, cada una con su animación. Eso no es
+      // una consulta lenta —la base contesta en 261 ms—, es un navegador que se
+      // queda pintando. Ahora vienen a lo sumo 60 productos y el total real
+      // aparte, para poder decir cuántos quedaron afuera.
+      const { filas: data, total } = await buscarInventarioGlobalV2(q, MAX_PRODUCTOS_BUSQUEDA);
+      setTotalProductos(total);
 
       const paMap = new Map();
       const photoMap = {};
@@ -740,9 +761,13 @@ function PanelInventario({ query = '', onQueryChange }) {
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    if (!query.trim()) {
+    // Antes alcanzaba con que hubiera UNA letra, y esa primera letra era la que
+    // traía 16,722 filas. Escribir «amoxicilina» con pausas normales disparaba
+    // la cadena «a» → «am» → «amo»: la primera vuelta ya dejaba la pestaña
+    // clavada repintando cuando llegaba la segunda.
+    if (query.trim().length < MIN_LETRAS_BUSQUEDA) {
       setResults(null); setDrillProduct(null); setSrsResults(null);
-      setAlternatives([]); setVencidosProds([]);
+      setAlternatives([]); setVencidosProds([]); setTotalProductos(0);
       return;
     }
     debounceRef.current = setTimeout(() => doSearch(query), 380);
@@ -899,6 +924,11 @@ function PanelInventario({ query = '', onQueryChange }) {
   /* ── SEARCH VIEW ─────────────────────────────────────────────────────────── */
   const hasResults   = results !== null && results.length > 0;
   const emptyResults = results !== null && results.length === 0;
+  // Escribió algo, pero todavía no lo suficiente como para preguntar.
+  const escribiendoCorto = query.trim().length > 0 && query.trim().length < MIN_LETRAS_BUSQUEDA;
+  // Emparejaron más productos de los que caben en pantalla. Se dice: un tope
+  // callado se lee como «no hay más», que es una respuesta falsa.
+  const hayRecorte = totalProductos > MAX_PRODUCTOS_BUSQUEDA;
 
   return (
     <div className="flex flex-col gap-2.5 flex-1 min-h-0">
@@ -915,7 +945,18 @@ function PanelInventario({ query = '', onQueryChange }) {
             La razón real por la que se abre este widget es que alguien
             preguntó por algo que no está — así que la pantalla en blanco lo
             adelanta en vez de esperar a que se escriba. */}
-        {!loading && results === null && faltantes.length > 0 && (
+        {/* Escribió una o dos letras: se lo dice, en vez de dejar la pantalla
+            como estaba (que se lee como «no encontró nada»). */}
+        {!loading && escribiendoCorto && (
+          <div className="flex flex-col items-center justify-center h-full gap-2">
+            <Package size={28} strokeWidth={1.5} className="text-content-3" />
+            <p className="text-label font-semibold text-content-3 text-center leading-snug">
+              Escribe al menos {MIN_LETRAS_BUSQUEDA} letras<br />para buscar
+            </p>
+          </div>
+        )}
+
+        {!loading && !escribiendoCorto && results === null && faltantes.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
               Sin existencia, puedes solicitar en estas sucursales
@@ -962,11 +1003,24 @@ function PanelInventario({ query = '', onQueryChange }) {
         )}
 
         {/* Initial state */}
-        {!loading && results === null && faltantes.length === 0 && (
+        {!loading && !escribiendoCorto && results === null && faltantes.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-content-3" />
             <p className="text-label font-semibold text-content-3 text-center leading-snug">
               Busca un producto para ver<br />su stock por sucursal
+            </p>
+          </div>
+        )}
+
+        {/* El tope, dicho. Sin esta línea la pantalla afirmaría que hay 60
+            productos cuando hay 138, que es peor que tardar. */}
+        {!loading && hasResults && hayRecorte && (
+          <div className="mb-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
+            <p className="text-caption font-bold text-content-2 leading-snug">
+              Mostrando {MAX_PRODUCTOS_BUSQUEDA} de {totalProductos.toLocaleString()} productos
+            </p>
+            <p className="text-micro text-content-3 mt-0.5">
+              Escribe el nombre más completo para afinar la búsqueda
             </p>
           </div>
         )}

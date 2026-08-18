@@ -103,5 +103,37 @@ titulo "7. PERMISOS PARA ESCRIBIRLE A LA IMPRESORA"
 echo "Grupos de $(whoami): $(id -Gn)"
 echo "(para escribir a /dev/usb/lp0 hace falta pertenecer al grupo dueño del dispositivo — ver punto 3)"
 
+titulo "8. ¿POR QUÉ SE TRABA? — falla intermitente que se cura apagando la impresora"
+echo "IMPORTANTE: esta sección sólo sirve si se corre MIENTRAS está fallando,"
+echo "ANTES de apagar y prender la ticketera. El reinicio borra la evidencia."
+echo
+echo "--- QUIÉN TIENE TOMADO EL DISPOSITIVO (la pregunta decisiva) ---"
+echo "El programa de facturación escribe DIRECTO a /dev/usb/lp0, sin pasar por CUPS."
+echo "Si cupsd u otro proceso lo tiene abierto, esa escritura falla en silencio."
+if [ -e /dev/usb/lp0 ]; then
+    if hay fuser; then sudo -n fuser -v /dev/usb/lp0 2>&1 || fuser -v /dev/usb/lp0 2>&1; fi
+    if hay lsof;  then sudo -n lsof /dev/usb/lp0 2>&1  || lsof /dev/usb/lp0 2>&1;  fi
+    hay fuser || hay lsof || echo "(sin fuser ni lsof instalados)"
+else
+    echo "/dev/usb/lp0 NO EXISTE en este momento — ESE es el hallazgo:"
+    echo "el sistema perdió la ticketera (cable, corriente o el módulo usblp)."
+fi
+echo
+echo "--- ¿hay una cola de CUPS apuntando a la MISMA ticketera? ---"
+echo "(si la hay y tiene trabajos pendientes, cupsd toma el USB y le gana al programa)"
+if hay lpstat; then
+    lpstat -v 2>&1 | grep -i usb || echo "(ninguna cola por USB)"
+    echo; echo "[trabajos pendientes ahora]"; lpstat -o 2>&1 | head -20
+fi
+echo
+echo "--- el USB, ¿se cae y vuelve sola? ---"
+{ sudo -n dmesg 2>/dev/null || dmesg 2>/dev/null; } \
+    | grep -iE 'usblp|usb .*(disconnect|new full|new high|reset)|lp[0-9]' | tail -30 \
+    || echo "(dmesg necesita permisos de administrador — correr el script con sudo)"
+echo
+echo "--- qué anotó CUPS la última vez que falló ---"
+sudo -n tail -40 /var/log/cups/error_log 2>/dev/null \
+    || echo "(error_log necesita permisos de administrador)"
+
 titulo "FIN"
 echo "Mandá este archivo completo. Nada de lo de arriba modificó la computadora."

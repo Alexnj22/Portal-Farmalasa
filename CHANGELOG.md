@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.3 — Diagnostico de ticketera trabada en la caja
+
+La ticketera de Salud 4 dejo de imprimir dos veces, y con ella los tickets del
+sistema de facturacion. Las dos veces se curo apagando y prendiendo la
+impresora, sin tocar nada — o sea que la causa sigue viva y no se sabe cual es.
+
+`scripts/diagnostico-caja.sh` gana una seccion 8 que contesta justo eso, y que
+**solo sirve corrida mientras esta fallando**: quien tiene tomado
+`/dev/usb/lp0`, si hay una cola de CUPS apuntando a la misma ticketera con
+trabajos pendientes, si el USB se cae y vuelve (`dmesg`) y que anoto CUPS en su
+`error_log`. Sigue siendo de solo lectura.
+
+El sospechoso que ordena la seccion: el programa de facturacion escribe
+**directo a `/dev/usb/lp0`**, sin pasar por CUPS (medido en Salud 3, §4 del
+doc). Si cupsd abre ese dispositivo para procesar o reintentar un trabajo, lo
+toma en exclusiva y esa escritura falla en silencio; apagar la impresora fuerza
+que el USB se re-enumere, cupsd pierde el control y vuelve a imprimir. Encaja
+con que se cayeran los dos sistemas juntos, con que el reinicio lo arregle y con
+que vuelva. Es hipotesis hasta que la salida del script la confirme o la mate.
+
+La autoprueba de esa ticketera (apagar, mantener FEED, prender) trajo ademas
+`Queuing function : Yes` — la funcion de turnos, que es por que FEED escupe un
+numero de turno con fecha de 2021 en vez de correr papel. No es la causa de la
+falla y sigue encendida.
+
 ## v2.661.2 — El traslado vuelve al lote reservado por lo que le sobra
 
 Dos traslados de DOLO APRANAX X 100 TAB pararon esta mañana con el mismo aviso

@@ -2,7 +2,7 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
@@ -132,10 +132,10 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 )}
             </div>
 
+            <div className="grid gap-2 xl:grid-cols-2 items-start">
             {visibleItems.map(item => {
                 const et      = ERROR_TIPO_LABEL[item.error_tipo];
                 const res     = item.resolucion_status;
-                const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
                 const dev     = devPorItem.get(item.id) ?? null;
 
                 // El estado lo lleva la TARJETA, con `data-tono` (§5.1). Antes
@@ -156,17 +156,11 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             {et && <Badge variant={et.variante} size="sm" className="shrink-0" uppercase={false}>{et.label}</Badge>}
                         </div>
 
-                        {/* Qty diff */}
-                        {(qtyDiff || item.cantidad_asignada != null) && (
-                            <div className="flex items-center gap-2 text-caption text-content-3 flex-wrap">
-                                {(() => { const sol = calcSolicitado(item); return sol != null ? <span>Solicitado: <strong className="text-content-2">{sol}</strong></span> : null; })()}
-                                <span>Enviado: <strong className="text-content-2">{item.cantidad_asignada}</strong></span>
-                                {item.cantidad_recibida != null && <>
-                                    <span className="text-content-3">→</span>
-                                    <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-danger' : 'text-success'}>{item.cantidad_recibida}</strong></span>
-                                </>}
-                            </div>
-                        )}
+                        {/* Las cifras son la EVIDENCIA del problema: de ahí sale
+                            qué se decide y por cuánto. Estaban en el tamaño más
+                            chico de la escala y en el tono más tenue, o sea al
+                            pie de la tarjeta que existe por ellas. */}
+                        <Cifras item={item} />
 
                         <div className="space-y-2">
 
@@ -199,6 +193,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                     </div>
                 );
             })}
+            </div>
 
             {/* ── Cierre de bodega (7A.1) ── */}
             {allConfirmed && !readOnly && (
@@ -344,6 +339,42 @@ function FilaResuelta({ item, abierta, onToggle, catalogo, empMap, dev, isBranch
                         esSupervision={esSupervision} empMap={empMap} readOnly />
                     <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly />
                 </div>
+            )}
+        </div>
+    );
+}
+
+// Las tres cifras del renglón, que son de lo que trata la tarjeta.
+//
+// «Solicitado» y «Enviado» pueden no coincidir y eso NO es un error: el
+// despacho redondea a la unidad en que se empaca (9 pedidos salen como 20
+// frascos). Verlas juntas es lo que hace entendible el número de abajo.
+function Cifra({ rotulo, valor, tono = 'text-content' }) {
+    return (
+        <div>
+            <p className="text-micro font-black text-content-3 uppercase tracking-widest leading-none">{rotulo}</p>
+            <p className={`text-body-xl font-black tabular-nums leading-tight ${tono}`}>{valor ?? '—'}</p>
+        </div>
+    );
+}
+
+function Cifras({ item }) {
+    const sol      = calcSolicitado(item);
+    const enviado  = item.cantidad_enviada ?? item.cantidad_asignada;
+    const fisico   = item.cantidad_recibida;
+    const delta    = (fisico == null || enviado == null) ? null : fisico - enviado;
+    const tonoFis  = delta == null || delta === 0 ? 'text-content'
+                   : delta < 0 ? 'text-danger-text' : 'text-success-text';
+    return (
+        <div className="flex items-end gap-4 flex-wrap">
+            {sol != null && <Cifra rotulo="Solicitado" valor={sol} tono="text-content-2" />}
+            <Cifra rotulo="Enviado" valor={enviado} tono="text-content-2" />
+            <ArrowRight size={13} className="text-content-3 mb-1.5 shrink-0" />
+            <Cifra rotulo="Físico" valor={fisico} tono={tonoFis} />
+            {delta != null && delta !== 0 && (
+                <Badge variant={delta < 0 ? 'danger' : 'success'} size="sm" uppercase={false} className="mb-1">
+                    {delta < 0 ? `Faltan ${-delta}` : `${delta} de más`}
+                </Badge>
             )}
         </div>
     );

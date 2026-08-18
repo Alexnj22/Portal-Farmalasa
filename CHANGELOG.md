@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.660.0 — Las diferencias en dos columnas, con las cifras al frente
+
+**Dos columnas desde 1280 px.** Con tres diferencias abiertas la lista medía más
+de una pantalla; ahora entran de a dos. Medido antes de partirlas: a 1440 cada
+columna queda en 696 px y cada opción del segmentado en 334, contra los ~175 que
+mide «Con un traslado» en versalitas. Por debajo de 1280 vuelve a una columna —
+dos opciones partidas en dos renglones dejan de leerse como un interruptor.
+
+**Las cifras pasan al frente.** Solicitado, enviado y físico estaban en el
+tamaño más chico de la escala y en el tono más tenue, al pie de la tarjeta que
+existe por ellas. Ahora son tres cifras de 16 px con su rótulo arriba, el físico
+teñido según hacia dónde falla, y una etiqueta que dice la diferencia sin que
+haya que restar:
+
+```
+SOLICITADO   ENVIADO       FÍSICO
+    9          20     →      21     1 de más
+```
+
+Ese formato además explica algo que antes parecía un error: **solicitado y
+enviado no tienen por qué coincidir**, porque el despacho redondea a la unidad
+en que se empaca. Nueve pedidos salen como veinte frascos.
+
+**Y «Proponer» vuelve a su ancho natural.** A lo ancho eran dos bloques del
+mismo color saturado por tarjeta —la opción elegida y la acción—, y dos áreas
+grandes del mismo acento compiten sin que gane ninguna. Ya no hace falta que sea
+enorme: el campo de nota que lo hacía ver chico ahora se pide sólo si alguien lo
+quiere.
+
+**La descripción dejó de repetir el rótulo.** Decía «La sala le regresa la
+cantidad a bodega — Sale un traslado de la sala a bodega…»: media frase gastada
+en lo que se acababa de leer. El rótulo dice quién hace qué, la ayuda dice la
+consecuencia.
+
 ## v2.659.7 — El cambio de vacaciones guarda quién lo decidió
 
 Cola del cambio anterior. Al decidir un cambio de fechas de vacaciones —lo

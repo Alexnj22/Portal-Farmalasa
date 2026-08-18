@@ -162,7 +162,7 @@ export default function DecisionDiferencia({
                         baja que las dos opciones de arriba, así que se leía como
                         un accesorio del campo de nota en vez de como el paso
                         siguiente. */}
-                    <Button tone="chart-3" size="md" className="flex-1" loading={ocupado} disabled={!elegida}
+                    <Button tone="chart-3" size="md" className="px-8" loading={ocupado} disabled={!elegida}
                         onClick={() => (necesitaFoto(elegida)
                             ? onPedirFoto?.(item, elegida, nota || null)
                             : decidir('proponer', elegida, nota || null))}>

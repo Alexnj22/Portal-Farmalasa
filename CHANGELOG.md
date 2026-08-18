@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.0 — Arriba lo que te toca, abajo lo que esperas
+
+Las diferencias de un pedido se parten en tres, y el corte **no es el estado**:
+es **si vos tenés algo que apretar**.
+
+| | |
+|---|---|
+| **Te toca resolver** | con la tarjeta entera: elegir, aceptar, contraproponer, firmar una llegada |
+| **Esperando** | un renglón, con de qué se está esperando |
+| **Ya resueltas** | un renglón, con quién la cerró |
+
+Agrupar por estado era el corte obvio y es peor de un lado: **una propuesta que
+espera a bodega no le pide nada a la sala**, y le seguía ocupando el lugar a lo
+que sí. Lo mismo un acuerdo cuyo traslado le toca mover a bodega. Ahora cada
+quien abre el pedido y ve arriba, y con la tarjeta completa, sólo lo que puede
+resolver ahora mismo.
+
+El renglón de «Esperando» dice de qué: *Contesta bodega* · *Lo ve supervisión* ·
+*Falta el traslado* · *Falta que llegue*. Y se abre entero si alguien quiere el
+detalle o quiere adelantarse.
+
+La regla vive en `tengoAlgoQueHacer` y está anclada en
+`tests/unit/decisionDiferencia.test.js`, con los dos lados de cada caso: lo que
+le toca a la sala, lo que le toca a bodega, y por qué supervisión ve casi todo
+como accionable (es la que destraba).
+
 ## v2.660.1 — El aviso «¿Sigues ahí?» ya no aparece apenas se entra en el teléfono
 
 **Lo que pasaba.** En el teléfono, con el portal instalado como app, el cartel

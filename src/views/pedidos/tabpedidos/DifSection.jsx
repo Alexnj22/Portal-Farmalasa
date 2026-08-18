@@ -2,14 +2,15 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
 import DevolucionBloque from './DevolucionBloque';
 import EmpChip from './EmpChip';
 import DecisionDiferencia from './DecisionDiferencia';
-import { fetchOpcionesDiferencia } from '../../../data/diferencias';
+import { fetchOpcionesDiferencia, opcionElegida } from '../../../data/diferencias';
+import { tengoAlgoQueHacer } from '../../../utils/decisionDiferencia';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },
@@ -94,14 +95,31 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
         return m;
     }, [devoluciones]);
 
-    // Una diferencia resuelta ya no pide nada: mostrarla con el mismo peso que
-    // una abierta hace que la lista mienta sobre cuánto trabajo queda. Van
-    // aparte, colapsadas a un renglón, y se abren si alguien quiere el detalle.
-    const abiertas  = difItems.filter(r => r.resolucion_status !== 'confirmada');
+    // ── Tres grupos, y el corte es «qué me toca» ─────────────────────────────
+    //
+    // Arriba, con la tarjeta entera, sólo lo que ESTA persona puede resolver
+    // ahora. Lo demás —lo acordado esperando que llegue algo, y una propuesta
+    // que espera al otro lado— baja a un renglón: no pide nada, y con el mismo
+    // peso que lo accionable hace que la lista mienta sobre cuánto falta.
+    //
+    // Agrupar por ESTADO era el corte obvio y es peor de un lado: una propuesta
+    // esperando a bodega no le pide nada a la sala y le seguía ocupando el
+    // lugar. La regla vive en `tengoAlgoQueHacer`, probada.
+    const clasificar = (r) => {
+        if (r.resolucion_status === 'confirmada') return 'resuelta';
+        const op  = opcionElegida(catalogo, r.error_tipo, r.resolucion_tipo);
+        const dev = devPorItem.get(r.id) ?? null;
+        return tengoAlgoQueHacer({
+            estado: r.resolucion_status ?? null, op, dev,
+            esSala: isBranch, esSupervision,
+        }) ? 'mia' : 'esperando';
+    };
+    const mias      = difItems.filter(r => clasificar(r) === 'mia');
+    const esperando = difItems.filter(r => clasificar(r) === 'esperando');
     const resueltas = difItems.filter(r => r.resolucion_status === 'confirmada');
-    const allConfirmed = difItems.length > 0 && abiertas.length === 0;
-    const visibleItems = showAll ? abiertas : abiertas.slice(0, DIF_MAX);
-    const hiddenCount  = abiertas.length - DIF_MAX;
+    const allConfirmed = difItems.length > 0 && resueltas.length === difItems.length;
+    const visibleItems = showAll ? mias : mias.slice(0, DIF_MAX);
+    const hiddenCount  = mias.length - DIF_MAX;
 
     // Cierre a nivel sucursal (7A.1): backend listo desde 2026-06-21
     // (pedido_sucursal_status.corregido_bodega_*/confirmado_correccion_*),
@@ -125,10 +143,14 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 <span className={`text-caption font-semibold uppercase tracking-wide ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
                     {allConfirmed
                         ? `Diferencias resueltas${resueltas.length > 1 ? ` (${resueltas.length})` : ''}`
-                        : `Diferencias — por resolver (${abiertas.length})`}
+                        : `Diferencias — te toca resolver (${mias.length})`}
                 </span>
-                {!allConfirmed && resueltas.length > 0 && (
-                    <span className="text-caption text-content-3">· {resueltas.length} resuelta{resueltas.length > 1 ? 's' : ''}</span>
+                {!allConfirmed && (esperando.length > 0 || resueltas.length > 0) && (
+                    <span className="text-caption text-content-3">
+                        {[esperando.length && `${esperando.length} esperando`,
+                          resueltas.length && `${resueltas.length} resuelta${resueltas.length > 1 ? 's' : ''}`]
+                            .filter(Boolean).join(' · ')}
+                    </span>
                 )}
             </div>
 
@@ -242,8 +264,32 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 
             {hiddenCount > 0 && (
                 <Button tone="warning" onClick={() => setShowAll(s => !s)}>
-                    {showAll ? 'Ver menos ↑' : `Ver las ${abiertas.length} por resolver ↓`}
+                    {showAll ? 'Ver menos ↑' : `Ver las ${mias.length} que te tocan ↓`}
                 </Button>
+            )}
+
+            {/* ── Lo acordado o propuesto que espera al otro lado ──
+                No pide nada a quien mira, pero tampoco está cerrado: el renglón
+                dice de qué se está esperando, y se abre si alguien quiere el
+                detalle o quiere adelantarse. */}
+            {esperando.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">
+                        Esperando ({esperando.length})
+                    </p>
+                    {esperando.map(item => (
+                        <FilaCompacta key={item.id} item={item} tono="warning" Icono={Clock}
+                            abierta={verResuelta === item.id}
+                            onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
+                            derecha={<EsperandoA item={item} catalogo={catalogo} isBranch={isBranch} />}
+                            catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
+                            isBranch={isBranch} esSupervision={esSupervision}
+                            onDecidirDiferencia={onDecidirDiferencia}
+                            onConfirmarLlegada={onConfirmarLlegada}
+                            onMoverDevolucion={onMoverDevolucion}
+                            onRecibirDevolucion={onRecibirDevolucion} />
+                    ))}
+                </div>
             )}
 
             {/* ── Las resueltas, plegadas ──
@@ -258,10 +304,13 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                         Ya resueltas ({resueltas.length})
                     </p>
                     {resueltas.map(item => (
-                        <FilaResuelta key={item.id} item={item} abierta={verResuelta === item.id}
+                        <FilaCompacta key={item.id} item={item} tono="success" Icono={CheckCircle2}
+                            abierta={verResuelta === item.id}
                             onToggle={() => setVerResuelta(v => (v === item.id ? null : item.id))}
+                            derecha={<EmpChip emp={item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null}
+                                              size="xs" tono="success-text" />}
                             catalogo={catalogo} empMap={empMap} dev={devPorItem.get(item.id) ?? null}
-                            isBranch={isBranch} esSupervision={esSupervision} />
+                            isBranch={isBranch} esSupervision={esSupervision} readOnly />
                     ))}
                 </div>
             )}
@@ -307,41 +356,62 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 }
 
 
-// Una diferencia ya cerrada, en un renglón. Lo que hay que poder leer sin abrir
-// es qué se decidió y quién lo cerró — el resto es historia y vive adentro.
-function FilaResuelta({ item, abierta, onToggle, catalogo, empMap, dev, isBranch, esSupervision }) {
-    const et  = ERROR_TIPO_LABEL[item.error_tipo];
-    const emp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por) : null;
+// Un renglón que no pide nada AHORA: lo acordado esperando que llegue algo, y
+// lo ya cerrado. Lo que hay que poder leer sin abrir es qué se decidió y de qué
+// se está esperando; el resto vive adentro.
+//
+// El chevron y no el ojo: acá se PLIEGA un grupo, y el ojo prometería «hay más
+// para ver» (§5.3).
+function FilaCompacta({
+    item, tono, Icono, abierta, onToggle, derecha, catalogo, empMap, dev,
+    isBranch, esSupervision, readOnly = false,
+    onDecidirDiferencia, onConfirmarLlegada, onMoverDevolucion, onRecibirDevolucion,
+}) {
+    const et = ERROR_TIPO_LABEL[item.error_tipo];
+    const hover = tono === 'success' ? 'hover:bg-success/5' : 'hover:bg-warning/5';
+    const tinta = tono === 'success' ? 'text-success' : 'text-warning';
     return (
-        <div data-surface="card" data-tono="success" className="rounded-card overflow-hidden">
+        <div data-surface="card" data-tono={tono} className="rounded-card overflow-hidden">
             <button type="button" onClick={onToggle} aria-expanded={abierta}
-                className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-success/5 transition-colors">
-                <CheckCircle2 size={13} className="text-success shrink-0" />
+                className={`w-full text-left px-3 py-2 flex items-center gap-2 transition-colors ${hover}`}>
+                <Icono size={13} className={`${tinta} shrink-0`} />
                 <span className="flex-1 text-label font-semibold text-content-2 truncate">
                     {item.products?.nombre}
                 </span>
                 {et && <Badge variant={et.variante} size="sm" className="shrink-0 hidden sm:inline-flex" uppercase={false}>{et.label}</Badge>}
-                <EmpChip emp={emp} size="xs" tono="success-text" />
+                {derecha}
                 {abierta
                     ? <ChevronUp   size={14} className="text-content-3 shrink-0" />
                     : <ChevronDown size={14} className="text-content-3 shrink-0" />}
             </button>
             {abierta && (
                 <div className="px-3 pb-2.5 space-y-2">
-                    <div className="flex items-center gap-2 text-caption text-content-3 flex-wrap">
-                        <span>Enviado: <strong className="text-content-2">{item.cantidad_asignada}</strong></span>
-                        {item.cantidad_recibida != null && <>
-                            <span>→</span>
-                            <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-danger' : 'text-success'}>{item.cantidad_recibida}</strong></span>
-                        </>}
-                    </div>
+                    <Cifras item={item} />
                     <DecisionDiferencia item={item} catalogo={catalogo} esSala={isBranch}
-                        esSupervision={esSupervision} empMap={empMap} readOnly />
-                    <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly />
+                        esSupervision={esSupervision} empMap={empMap} readOnly={readOnly}
+                        onDecidir={onDecidirDiferencia} onConfirmarLlegada={onConfirmarLlegada} />
+                    <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly={readOnly}
+                        onMover={onMoverDevolucion} onRecibir={onRecibirDevolucion} />
                 </div>
             )}
         </div>
     );
+}
+
+// De qué se está esperando, en tres palabras. Es lo único que justifica que el
+// renglón siga a la vista en vez de estar con los cerrados.
+function EsperandoA({ item, catalogo, isBranch }) {
+    const op = opcionElegida(catalogo, item.error_tipo, item.resolucion_tipo);
+    const texto = item.resolucion_status === 'propuesta'      ? 'Contesta bodega'
+                : item.resolucion_status === 'contrapropuesta' ? 'Contesta la sala'
+                : item.resolucion_status === 'escalada'        ? 'Lo ve supervisión'
+                : op?.mueve === 'traslado_a_sala'              ? 'Falta el traslado'
+                : op?.mueve === 'devolucion'                   ? 'Falta el traslado'
+                : op?.cierra_con === 'llegada_sala'            ? (isBranch ? 'Falta que llegue' : 'Lo confirma la sala')
+                : op?.cierra_con === 'llegada_bodega'          ? (isBranch ? 'Lo confirma bodega' : 'Falta que llegue')
+                : null;
+    if (!texto) return null;
+    return <span className="text-caption text-warning-text shrink-0 hidden sm:inline">{texto}</span>;
 }
 
 // Las tres cifras del renglón, que son de lo que trata la tarjeta.

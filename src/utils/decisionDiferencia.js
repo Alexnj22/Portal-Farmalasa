@@ -35,3 +35,40 @@ export function turnoDe(estado, { esSala = false, esSupervision = false } = {}) 
     if (estado === 'contrapropuesta') return (esSala || esSupervision) ? 'yo' : 'sala';
     return 'nadie';
 }
+
+/**
+ * ¿Tengo algo que apretar en este renglón, ahora?
+ *
+ * Es el corte que ordena la lista. La primera versión agrupaba por ESTADO —«lo
+ * acordado va aparte»— y ese corte es peor de un lado: una propuesta que espera
+ * a bodega no le pide nada a la sala, y le seguía ocupando el lugar de lo que sí.
+ * Lo que la persona necesita separado no es «en qué estado está» sino **qué me
+ * toca a mí**.
+ *
+ * Supervisión puede actuar en cualquier turno, así que para ella casi todo es
+ * accionable — y está bien: es la que destraba.
+ *
+ * @param op   la salida acordada, del catálogo (`mueve`, `cierra_con`)
+ * @param dev  el movimiento, si la salida acordada tiene uno
+ */
+export function tengoAlgoQueHacer({ estado, op = null, dev = null, esSala = false, esSupervision = false } = {}) {
+    if (estado === 'confirmada') return false;
+    if (estado == null || estado === 'propuesta' || estado === 'contrapropuesta' || estado === 'escalada') {
+        return turnoDe(estado, { esSala, esSupervision }) === 'yo';
+    }
+    if (estado !== 'acordada') return false;
+
+    // Acordado y sin movimiento: falta que alguien vea el producto, y lo firma
+    // quien lo recibe.
+    if (op?.mueve === 'ninguno') {
+        const laFirmaLaSala = op.cierra_con === 'llegada_sala';
+        return esSupervision || (laFirmaLaSala ? esSala : !esSala);
+    }
+
+    // Hay un movimiento en vuelo. Sacarlo y confirmar su entrada las hace
+    // BODEGA — es la que tiene el producto de un lado o del otro.
+    if (dev && ['aceptada', 'enviada', 'error'].includes(dev.estado)) {
+        return esSupervision || !esSala;
+    }
+    return false;
+}

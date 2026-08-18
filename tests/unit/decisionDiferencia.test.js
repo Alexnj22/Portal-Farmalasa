@@ -66,3 +66,56 @@ describe('esCargoDeSupervision', () => {
         expect(esCargoDeSupervision(undefined)).toBe(false);
     });
 });
+
+// El corte que ordena la lista: arriba lo que me toca, abajo lo que espero.
+import { tengoAlgoQueHacer } from '../../src/utils/decisionDiferencia';
+
+const SIN_MOVER  = { mueve: 'ninguno', cierra_con: 'llegada_sala' };
+const A_BODEGA   = { mueve: 'ninguno', cierra_con: 'llegada_bodega' };
+const CON_MOVIM  = { mueve: 'devolucion', cierra_con: 'entrada_bodega' };
+
+describe('tengoAlgoQueHacer', () => {
+    it('sin proponer, le toca a la sala', () => {
+        expect(tengoAlgoQueHacer({ estado: null, ...SALA })).toBe(true);
+        expect(tengoAlgoQueHacer({ estado: null, ...BODEGA })).toBe(false);
+    });
+
+    it('una propuesta esperando a bodega NO le pide nada a la sala', () => {
+        // Es el caso que hizo cambiar el corte: agrupando por estado, esto
+        // seguía arriba ocupándole el lugar a lo que sí le toca.
+        expect(tengoAlgoQueHacer({ estado: 'propuesta', ...SALA })).toBe(false);
+        expect(tengoAlgoQueHacer({ estado: 'propuesta', ...BODEGA })).toBe(true);
+    });
+
+    it('acordado «que lo manden»: lo firma quien lo recibe', () => {
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: SIN_MOVER, ...SALA })).toBe(true);
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: SIN_MOVER, ...BODEGA })).toBe(false);
+    });
+
+    it('acordado «devolver en físico»: lo firma bodega', () => {
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: A_BODEGA, ...SALA })).toBe(false);
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: A_BODEGA, ...BODEGA })).toBe(true);
+    });
+
+    it('con un movimiento en vuelo, lo mueve bodega', () => {
+        const dev = { estado: 'aceptada' };
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: CON_MOVIM, dev, ...BODEGA })).toBe(true);
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: CON_MOVIM, dev, ...SALA })).toBe(false);
+    });
+
+    it('el movimiento ya recibido no le pide nada a nadie', () => {
+        const dev = { estado: 'recibida' };
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: CON_MOVIM, dev, ...BODEGA })).toBe(false);
+    });
+
+    it('lo cerrado nunca pide nada', () => {
+        expect(tengoAlgoQueHacer({ estado: 'confirmada', ...SALA })).toBe(false);
+        expect(tengoAlgoQueHacer({ estado: 'confirmada', ...SUPER })).toBe(false);
+    });
+
+    it('supervisión puede actuar en todo lo abierto — es la que destraba', () => {
+        expect(tengoAlgoQueHacer({ estado: 'escalada', ...SUPER })).toBe(true);
+        expect(tengoAlgoQueHacer({ estado: 'propuesta', ...SUPER })).toBe(true);
+        expect(tengoAlgoQueHacer({ estado: 'acordada', op: A_BODEGA, ...SUPER })).toBe(true);
+    });
+});

@@ -161,13 +161,22 @@ export async function searchInventory({ term, productIds = [] }) {
 }
 
 // Inventario con stock filtrado directo por una lista de product IDs — usado
-// para la sección "Alternativas en inventario" tras una búsqueda SRS.
+// para la sección "Alternativas en inventario" tras una búsqueda SRS y para los
+// lotes del formulario de pedir a otra sala.
+//
+// Sale de `v_inventario_lotes` y no de `inventory` porque la vista agrega el
+// `factor` ya resuelto. Deducirlo acá era lo que hacía que la lista y el
+// formulario dijeran dos números distintos del mismo lote (2026-08-18).
+//
+// El `.in()` va sobre una columna que se REPITE —un producto tiene una fila por
+// sala, lote y presentación—, así que el tope de 1000 no lo acota la entrada:
+// lo pagina `fetchAllRows`.
 export async function fetchInventoryByProductIds(productIds) {
     if (!productIds?.length) return [];
     return await fetchAllRows(() =>
         supabase
-            .from('inventory')
-            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
+            .from('v_inventario_lotes')
+            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
             .gt('cantidad', 0)
             .in('erp_product_id', productIds)
             .order('descripcion')

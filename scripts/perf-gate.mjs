@@ -144,6 +144,21 @@ SELECT * FROM (
           FROM pg_proc WHERE proname='inventory_grouped' AND pronamespace='public'::regnamespace),
          'si volvió a llamar norm_search sobre la vista, perdió la columna precalculada'
   UNION ALL
+  -- El factor de una fila de inventario se resuelve en UN solo lugar
+  -- (\`v_inventario_lotes\`). El día que alguien lo vuelva a derivar dentro de
+  -- otra consulta, vuelven los dos números distintos del 2026-08-18 — y esa
+  -- copia además se paga por fila.
+  SELECT 'factor-en-un-solo-lugar',
+         (SELECT position('v_inventario_lotes' in definition) > 0
+             AND position('product_precios'    in definition) = 0
+          FROM pg_views WHERE schemaname='public' AND viewname='v_inventario_disponible'),
+         'si la existencia disponible volvió a cruzar el catálogo por su cuenta, hay dos reglas otra vez'
+  UNION ALL
+  SELECT 'busqueda-manda-el-factor',
+         (SELECT position('v_inventario_lotes' in pg_get_functiondef(oid)) > 0
+          FROM pg_proc WHERE proname='buscar_inventario_global_v2' AND pronamespace='public'::regnamespace),
+         'sin eso la búsqueda no manda el factor y el navegador vuelve a deducirlo de detalle'
+  UNION ALL
   SELECT 'busqueda-vieja-con-techo',
          (SELECT position('buscar_inventario_global_v2' in pg_get_functiondef(oid)) > 0
           FROM pg_proc WHERE proname='buscar_inventario_global' AND pronamespace='public'::regnamespace
@@ -188,6 +203,14 @@ const PLANES = [
     exigido: 'Index Only Scan',
     porque: 'Es el rango que pide el tablero. Sin Index Only Scan volvieron los heap fetches: 219.7 ms contra 8.8.',
   },
+  {
+    clave: 'plan-existencia-disponible',
+    sql: `SELECT sum(unidades) FROM public.v_inventario_disponible`,
+    exigido: 'Memoize',
+    porque: 'Resolver el factor cuesta un lateral por fila; el Memoize lo cobra una vez por '
+          + '(producto, presentación, detalle) y es lo que deja el barrido en 97 ms. Sin él, '
+          + 'son 17,719 laterales — la primera forma de esto llevó los faltantes de 122 a 692 ms.',
+  },
 ];
 
 /* ── D. Presupuestos de tiempo ───────────────────────────────────────────────
@@ -200,6 +223,17 @@ const TIEMPOS = [
   { clave: 'venta-por-hora-90d',        sql: `SELECT count(*) FROM public.branch_hourly_sales WHERE branch_id=2 AND sale_date >= CURRENT_DATE-90` },
   { clave: 'nombre-de-cliente',         sql: `SELECT count(*) FROM public.customers WHERE name = ANY (ARRAY(SELECT c.name FROM public.customers c ORDER BY c.id LIMIT 80))` },
   { clave: 'estado-sincronizacion',     sql: `SELECT count(*) FROM (SELECT checked_at FROM public.v_sync_health WHERE domain IN ('products','minmax','purchases','backup') ORDER BY checked_at DESC LIMIT 200) z` },
+  // Las dos que faltaban, y se notó tarde: el 2026-08-18 un cambio en
+  // `v_inventario_disponible` llevó los faltantes de 122 a 692 ms y ningún
+  // gate lo vio, porque nadie medía esta vista. La llaman las cuatro puertas
+  // de traslados —el widget del tablero al entrar, la consulta de inventario,
+  // la pantalla de aprobar y el trigger que valida la solicitud—.
+  //
+  // Techos más ajustados que el resto a propósito: acá el modo de falla
+  // conocido es 5x, así que un techo de 5x no lo atajaría. Medido en 6
+  // corridas: 163–186 ms.
+  { clave: 'faltantes-en-otra-sala',    sql: `SELECT count(*) FROM public.get_faltantes_con_stock_en_otra_sala(6, 20)` },
+  { clave: 'donde-hay-un-producto',     sql: `SELECT public.get_donde_hay(187, 5)` },
 ];
 
 /* ── El canal hacia producción ────────────────────────────────────────────────

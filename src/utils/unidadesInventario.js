@@ -16,10 +16,25 @@
 // corrección llegaría a una sola — que es literalmente lo que acababa de pasar
 // con la presentación del lote, arreglada en la lista y olvidada en el detalle.
 
-// El factor sale de `detalle`. Medido sobre las 24,181 filas del inventario:
-// 24,031 vienen en formato `1xN` limpio, 48 con un `1` pelado y 102 con
-// variantes de espaciado (`1 X 1`, `X 25`, `1X 16`) que este parse cubre porque
-// normaliza los espacios antes de leer.
+// ── El factor lo manda la base, y ya no se deduce acá (2026-08-18) ────────
+//
+// Hasta hoy este archivo lo leía de `detalle` y `v_inventario_disponible` lo
+// leía del catálogo, así que la MISMA pantalla decía dos números distintos: la
+// Consulta de Inventario mostraba «Bodega · 3 uds» de CLOPRIM X 3 AMPOLLAS y el
+// formulario de pedirlo, abierto desde esa fila, decía «Bodega — 1 unidad». Y
+// como la guarda del formulario y el trigger de la base leen ese 1, la caja no
+// se podía pedir.
+//
+// El factor lo resuelve `factor_de_inventario` en la base —el catálogo dice qué
+// factores son posibles para la etiqueta y `detalle` elige entre ellos— y viaja
+// en la fila. Que dos fuentes coincidan es cuestión de suerte; que haya una
+// sola, no.
+//
+// `detalle` sigue leyéndose SÓLO como respaldo, para las filas que llegan por
+// un camino que todavía no manda `factor`. Medido sobre las 24,181 filas del
+// inventario: 24,031 vienen en formato `1xN` limpio, 48 con un `1` pelado y 102
+// con variantes de espaciado (`1 X 1`, `X 25`, `1X 16`) que este parse cubre
+// porque normaliza los espacios antes de leer.
 //
 // Sin número después de la x el factor es 1 —una presentación suelta— y NUNCA
 // 0: un 0 borraría la existencia en silencio, que es peor que contarla de menos.
@@ -31,7 +46,13 @@ export function factorDe(detalle) {
     return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
-export const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDe(row?.detalle);
+/** El factor de una fila: el que mandó la base, o el de `detalle` si no vino. */
+export function factorDeFila(row) {
+    const n = Number(row?.factor);
+    return Number.isFinite(n) && n > 0 ? n : factorDe(row?.detalle);
+}
+
+export const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDeFila(row);
 
 export const sumaUnidades = (lots) => (lots || []).reduce((s, r) => s + unidadesDe(r), 0);
 

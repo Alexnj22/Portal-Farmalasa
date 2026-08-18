@@ -7,6 +7,8 @@
     "abrir-inventario": 10,
     "venta-por-hora-90d": 36,
     "nombre-de-cliente": 10,
-    "estado-sincronizacion": 10
+    "estado-sincronizacion": 10,
+    "faltantes-en-otra-sala": 400,
+    "donde-hay-un-producto": 30
   }
 }

@@ -641,6 +641,30 @@ emergencia real, no para silenciar un hallazgo.
   **con su motivo escrito** (el único que hay hoy: el conteo cíclico, que guarda
   renglón por renglón). El baseline es la deuda del día que se escribió el gate
   y **sólo baja**: no se regenera para tapar un hallazgo nuevo.
+- **Antes de cerrar trabajo que toque consultas, índices o pantallas de
+  consulta: `npm run gate:perf`.** Mide contra producción. Nació el 2026-08-18,
+  después de que un reporte de sala («al buscar se traba») destapara **siete**
+  problemas de velocidad que llevaban meses vivos: un buscador que salía con la
+  primera tecla y traía 16,722 filas, un `Parallel Seq Scan` de 775,868 filas
+  para devolver 30, una vista que normalizaba fila por fila **dos veces**, la
+  tabla más grande de la base sin VACUUM programado, y tres índices que faltaban.
+  Ninguno dio error, ninguno apareció en un log, ninguno falló un gate — porque
+  no había ninguno que midiera velocidad. **Se enteró un usuario antes que el
+  repo.**
+
+  Tiene cuatro secciones y sólo una mira el reloj: constantes del código,
+  existencia de índices/columnas/crons, **forma del plan** (`EXPLAIN` sin
+  `ANALYZE`, determinista: ¿entra por índice o barre?) y recién después los
+  tiempos. La protección real es la estructural — los tiempos contra producción
+  compartida son ruidosos, así que sus techos están ~5× sobre lo medido a
+  propósito: vigilan que algo no vuelva a costar 700 ms, no que baje de 10 a 8.
+  Un gate que falla al azar se termina ignorando.
+
+  **El presupuesto NO se sube para que calle.** `--update-baseline` sólo BAJA
+  números, después de una mejora medida. En el hook de pre-commit corre sólo la
+  sección local (`--hook`), y únicamente si el commit toca los tres archivos
+  donde viven esas constantes: un gate de commit que necesita red falla sin
+  conexión y enseña a usar `--no-verify`.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

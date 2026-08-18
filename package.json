@@ -23,6 +23,7 @@
     "gate:doc": "node scripts/design-doc-gate.mjs",
     "gate:version": "node scripts/version-gate.mjs",
     "gate:migrations": "node scripts/migration-gate.mjs",
+    "gate:perf": "node scripts/perf-gate.mjs",
     "hooks:install": "git config core.hooksPath .githooks",
     "version:bump": "node scripts/version-bump.mjs",
     "worktree": "bash scripts/worktree.sh",

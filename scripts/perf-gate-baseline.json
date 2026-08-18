@@ -1,0 +1,12 @@
+{
+  "_comment": "Techos de gate:perf, en milisegundos. NO son metas: son el techo por encima del cual algo se rompió. Están puestos ~5x sobre lo medido el 2026-08-18 a propósito — medir contra producción compartida es ruidoso, y un gate que falla al azar se termina ignorando. Vigilan que una consulta no vuelva a costar 700 ms, no que baje de 10 a 8. La protección fina es estructural (índices, planes), no temporal. Regenerar SOLO al bajar: npm run gate:perf -- --update-baseline, que nunca sube un techo.",
+  "updated": "2026-08-18",
+  "presupuestos": {
+    "busqueda-del-tablero": 32,
+    "busqueda-vista-inventario": 43,
+    "abrir-inventario": 10,
+    "venta-por-hora-90d": 36,
+    "nombre-de-cliente": 10,
+    "estado-sincronizacion": 10
+  }
+}

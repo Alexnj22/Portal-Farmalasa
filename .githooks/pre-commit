@@ -106,6 +106,17 @@ if git diff --cached --name-only | grep -qE '^src/(views|components)/'; then
   node scripts/mobile-gate.mjs --hook || exit 1
 fi
 
+# perf-gate: sólo si el commit toca los tres archivos donde vive lo que evita
+# que la Consulta de Inventario se vuelva a trabar — el largo mínimo de la
+# búsqueda, el techo de productos y el filtro que le da índice al selector de
+# sucursal. `--hook` corre SÓLO esos chequeos: son locales e instantáneos.
+# El resto del gate (índices, forma del plan y tiempos) habla con producción y
+# va antes de cerrar, junto a gate:design — un gate de commit que necesita red
+# falla sin conexión y enseña a usar --no-verify.
+if git diff --cached --name-only | grep -qE '^src/(data/(inventory|inventarioTab)\.js|views/dashboard/WidgetInventorySearch\.jsx)$'; then
+  node scripts/perf-gate.mjs --hook || exit 1
+fi
+
 # Una hoja por sucursal en el PDF del Corte Z: sólo si el commit toca el archivo
 # que lo arma. Renderiza el documento con el motor de Node y CUENTA las páginas.
 #

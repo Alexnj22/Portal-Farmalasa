@@ -97,7 +97,7 @@ export const createVacationPlanSlice = (set, get) => ({
         return enriched;
     },
 
-    processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd) => {
+    processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd, approverNote = '') => {
         // action: 'APPROVED' | 'REJECTED'
 
         /* La solicitud se decide ANTES de tocar el plan, y no al revés.
@@ -110,6 +110,12 @@ export const createVacationPlanSlice = (set, get) => ({
          */
         const { error: reqErr, count } = await resolverApprovalRequest(requestId, {
             status: action,
+            // El motivo del rechazo. Este camino no lo escribía —la pantalla ni
+            // lo pedía—, así que un cambio de vacaciones rechazado no dejaba
+            // rastro de por qué: ni en la tarjeta, ni en el detalle, ni en la
+            // base. La pantalla lo exige desde el 2026-08-18.
+            ...(String(approverNote ?? '').trim()
+                ? { approver_note: String(approverNote).trim() } : {}),
             updated_at: new Date().toISOString(),
         });
         if (reqErr) { console.error('processChangeRequest request:', reqErr); return false; }

@@ -15,7 +15,7 @@ import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
-    personasDe, cuandoSeDecidio, salaQueEspera,
+    personasDe, cuandoSeDecidio, salaQueEspera, motivoDeRechazoCorto,
 } from './movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
@@ -161,6 +161,12 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
     // baldosa del tablero para decir que alguien se está durmiendo.
     const esperaLarga = req.status === 'PENDING' && ahora
         && (ahora - new Date(req.created_at).getTime()) > 2 * 86400000;
+    /* Por qué se rechazó, en la tarjeta y no sólo al abrirla.
+     *
+     * Una tarjeta que dice «Rechazada» y nada más obliga a abrir el detalle
+     * —o a preguntar por WhatsApp— para saber qué corregir, y quien pidió el
+     * producto está mirando justamente eso. Pedido del usuario, 2026-08-18. */
+    const motivoRechazo = motivoDeRechazoCorto(req);
 
     return (
         <button data-surface="card" onClick={() => onOpen(req)}
@@ -213,6 +219,21 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
 
                 <OjoDeTarjeta className="self-start mt-1" />
             </div>
+
+            {/* El motivo del rechazo, entre lo que se pidió y quién lo cerró.
+                Va ARRIBA del pie porque es contenido de la solicitud, no
+                metadato de la decisión — y porque en la lista es lo primero que
+                se busca cuando la tarjeta ya dice «Rechazada».
+
+                `line-clamp-2`: un motivo escrito a mano puede ser un párrafo, y
+                en una rejilla que iguala alturas eso estira toda la fila. Se
+                lee entero al abrirla. */}
+            {motivoRechazo && (
+                <p className="text-micro text-danger-text font-medium leading-snug line-clamp-2"
+                   title={motivoRechazo}>
+                    {motivoRechazo}
+                </p>
+            )}
 
             {/* El pie: cuándo entró y en manos de quién está. */}
             <div className="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-divider">

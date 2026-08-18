@@ -10,6 +10,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
+    motivoDeRechazo,
 } from './movimientoTexto';
 import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
@@ -757,6 +758,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
 export default function DetalleSolicitud({ req, employeesById, seleccion, onToggle, onCantidad, cantidades }) {
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
+    const motivoRechazo = motivoDeRechazo(req);
 
     const personaDelNivel = (ap) => (ap.approverId ? employeesById?.get(String(ap.approverId)) : null) ?? null;
 
@@ -777,10 +779,23 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                 </div>
             )}
 
-            {isRejected && req.approver_note && (
+            {/* El motivo del rechazo sale de `motivoDeRechazo`, que mira los DOS
+                campos. Acá se leía sólo `approver_note`, y un traslado guarda su
+                motivo en `metadata.rejection_reason` con el texto libre
+                OPCIONAL: medido el 2026-08-18, 6 de los 11 rechazos no tenían
+                `approver_note`, así que este bloque no se pintaba y el motivo
+                —que estaba guardado— no se veía en ninguna pantalla. */}
+            {motivoRechazo && (
                 <div className="px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                     <p className="text-micro font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
-                    <p className="text-body-sm text-danger-text font-medium leading-relaxed">{req.approver_note}</p>
+                    {motivoRechazo.titular && (
+                        <p className="text-body-sm text-danger-text font-bold leading-relaxed">{motivoRechazo.titular}</p>
+                    )}
+                    {/* El texto escrito a mano es la aclaración del motivo
+                        elegido, no otro motivo: va debajo y con menos peso. */}
+                    {motivoRechazo.detalle && (
+                        <p className="text-body-sm text-danger-text font-medium leading-relaxed">{motivoRechazo.detalle}</p>
+                    )}
                 </div>
             )}
 

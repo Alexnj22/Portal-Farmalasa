@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Notice from '../components/common/Notice';
+import PromptModal from '../components/common/PromptModal';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -370,6 +371,13 @@ const VacationPlanView = () => {
     const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
     const [confirmingEdit, setConfirmingEdit] = useState(false);
     const [processingRequestId, setProcessingRequestId] = useState(null);
+    /* La solicitud de cambio que se está rechazando, mientras se escribe por qué.
+     *
+     * Hasta el 2026-08-18 «Rechazar» resolvía de una y NO guardaba motivo en
+     * ningún campo: el empleado veía su cambio rechazado y no había forma de
+     * saber por qué, ni en la tarjeta ni en la base. Pedido del usuario: un
+     * rechazo se explica siempre. */
+    const [rechazandoCambio, setRechazandoCambio] = useState(null);
 
     // Active header for current year
     const activeHeader = useMemo(
@@ -623,7 +631,7 @@ const VacationPlanView = () => {
         else    useToastStore.getState().showToast('Error', 'No se pudo pre-aprobar el plan.', 'error');
     };
 
-    const handleProcessRequest = async (req, action) => {
+    const handleProcessRequest = async (req, action, motivo = '') => {
         setProcessingRequestId(req.id);
         const meta = req.metadata || {};
         const ok = await processChangeRequest(
@@ -632,8 +640,10 @@ const VacationPlanView = () => {
             meta.vacation_plan_id,
             action === 'APPROVED' ? meta.requested_start : null,
             action === 'APPROVED' ? meta.requested_end : null,
+            motivo,
         );
         setProcessingRequestId(null);
+        setRechazandoCambio(null);
         if (ok) {
             useToastStore.getState().showToast(
                 action === 'APPROVED' ? 'Cambio aprobado' : 'Cambio rechazado',
@@ -1088,7 +1098,7 @@ const VacationPlanView = () => {
                                                         <div className="flex items-center gap-2">
                                                             <Button tone="success" disabled={isProcessing} onClick={() => handleProcessRequest(req, 'APPROVED')}>{isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
                                                                 Aprobar</Button>
-                                                            <Button variant="destructive" icon={X} disabled={isProcessing} onClick={() => handleProcessRequest(req, 'REJECTED')}>Rechazar</Button>
+                                                            <Button variant="destructive" icon={X} disabled={isProcessing} onClick={() => setRechazandoCambio(req)}>Rechazar</Button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1101,6 +1111,23 @@ const VacationPlanView = () => {
                     </div>
                 </div>
             </GlassViewLayout>
+
+            {/* Un rechazo se explica. `required` no es adorno: sin motivo el
+                empleado ve «rechazado» y no sabe qué corregir, y en la base no
+                quedaba nada — este camino ni siquiera escribía `approver_note`.
+                Es `PromptModal` y no un diálogo propio porque el mismo pedido
+                se hace en la auditoría de asistencia. */}
+            <PromptModal
+                isOpen={Boolean(rechazandoCambio)}
+                onClose={() => setRechazandoCambio(null)}
+                onConfirm={(motivo) => handleProcessRequest(rechazandoCambio, 'REJECTED', motivo)}
+                title="Rechazar el cambio"
+                message="Se mantienen las fechas originales. Decile por qué."
+                placeholder="Por qué no se puede cambiar..."
+                confirmText="Rechazar"
+                isProcessing={Boolean(processingRequestId)}
+                required
+            />
         </>
     );
 };

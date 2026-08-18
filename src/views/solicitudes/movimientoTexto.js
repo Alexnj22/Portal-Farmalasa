@@ -262,3 +262,43 @@ export const cuandoSeDecidio = (req) => {
         : null;
     return ultima ?? req.decided_at ?? req.updated_at ?? null;
 };
+
+/**
+ * Por qué se rechazó una solicitud, mire quien la mire.
+ *
+ * **El motivo vive en DOS campos según el tipo**, y ése era el problema: un
+ * traslado lo guarda en `metadata.rejection_reason` —lo elige de una lista que
+ * la base valida— y los demás lo escriben libre en `approver_note`. Cada
+ * pantalla miraba uno solo, así que la mitad de los rechazos no mostraba motivo
+ * en ninguna parte. Medido el 2026-08-18 sobre los 11 rechazos reales: **6 no
+ * tenían `approver_note`** —eran traslados, con su motivo bien guardado del
+ * otro lado— y el detalle no pintaba nada. Un rechazo sin motivo a la vista
+ * obliga a preguntar por WhatsApp qué pasó.
+ *
+ * Los dos campos NO son alternativas: en un traslado pueden venir los dos, y
+ * entonces el elegido es el titular y lo escrito es la aclaración. Se devuelven
+ * separados para que quien pinta decida —la tarjeta muestra una línea, el
+ * detalle las dos— en vez de recibir una cadena ya armada que no puede partir.
+ *
+ * `null` cuando la solicitud no está rechazada o no dejó rastro. Que eso sea
+ * posible es deuda vieja: hoy las dos puertas exigen motivo, pero las filas de
+ * antes ya están escritas y no se inventa uno.
+ */
+export const motivoDeRechazo = (req) => {
+    if (!req || req.status !== 'REJECTED') return null;
+    const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    const elegido = String(meta.rejection_reason ?? '').trim();
+    const escrito = String(req.approver_note ?? '').trim();
+    // «Otro» no es un motivo: es el rótulo de que el motivo está escrito abajo.
+    // Mostrarlo como titular diría literalmente «Rechazada: otro».
+    const titular = elegido && elegido !== 'Otro' ? elegido : '';
+    if (!titular && !escrito) return null;
+    return { titular: titular || null, detalle: escrito || null };
+};
+
+/** El motivo en UNA línea, para donde no entra más — la tarjeta. */
+export const motivoDeRechazoCorto = (req) => {
+    const m = motivoDeRechazo(req);
+    if (!m) return null;
+    return [m.titular, m.detalle].filter(Boolean).join(' — ');
+};

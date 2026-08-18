@@ -56,7 +56,19 @@ export function Recorrido({ meta, className = '' }) {
  */
 export function DecisionTraslado({ fila, onHecho }) {
     const [modo,     setModo]     = useState(null);   // null | 'rechazo'
-    const [motivo,   setMotivo]   = useState(MOTIVOS_RECHAZO[0]);
+    /* Arranca VACÍO, no en el primer motivo de la lista.
+     *
+     * Venía `MOTIVOS_RECHAZO[0]`, o sea «Producto ya encargado» ya elegido, y
+     * eso convertía el motivo en un trámite: se apretaba Rechazar sin tocar el
+     * desplegable y la base lo aceptaba porque el valor estaba. Medido sobre
+     * los rechazos reales del 11 al 18 de agosto: **6 de 8 decían exactamente
+     * ese primer motivo**. No es que el producto estuviera encargado seis
+     * veces; es que nadie lo eligió.
+     *
+     * Es el mismo arreglo que las bolsas de efectivo (v2.657.7): un motivo que
+     * viene de fábrica no es un motivo, es un valor por defecto disfrazado de
+     * decisión. Pedido del usuario, 2026-08-18. */
+    const [motivo,   setMotivo]   = useState(null);
     const [texto,    setTexto]    = useState('');
     const [ocupado,  setOcupado]  = useState(false);
     const [error,    setError]    = useState('');
@@ -110,9 +122,11 @@ export function DecisionTraslado({ fila, onHecho }) {
         onHecho('REJECTED');
     };
 
-    // «Otro» sin texto no explica nada: es el motivo vacío con otro nombre, y la
-    // base lo rechaza igual. Se avisa acá para no gastar el viaje.
-    const puedeRechazar = motivo !== 'Otro' || texto.trim().length > 0;
+    // Sin motivo no hay rechazo, y «Otro» sin texto no explica nada: es el
+    // motivo vacío con otro nombre. Las dos cosas las rechaza la base igual —se
+    // avisan acá para no gastar el viaje— y las dos son la misma regla: quien
+    // rechaza tiene que decir por qué.
+    const puedeRechazar = Boolean(motivo) && (motivo !== 'Otro' || texto.trim().length > 0);
 
     return (
         <div className="flex flex-col gap-2">
@@ -169,7 +183,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                 <div className="flex flex-col gap-2">
                     <LiquidSelect
                         value={motivo}
-                        onChange={v => setMotivo(v ?? MOTIVOS_RECHAZO[0])}
+                        onChange={v => setMotivo(v ?? null)}
                         options={MOTIVOS_RECHAZO.map(m => ({ value: m, label: m }))}
                         placeholder="Motivo..."
                         clearable={false}

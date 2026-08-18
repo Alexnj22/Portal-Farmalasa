@@ -3,6 +3,7 @@ import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Button from '../components/common/Button';
+import PromptModal from '../components/common/PromptModal';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
@@ -911,6 +912,10 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const [isClosingQuincena, setIsClosingQuincena] = useState(false);
   const [shiftExceptions,   setShiftExceptions]   = useState([]);
   const [processingExId,    setProcessingExId]    = useState(null);
+  /* El turno extra que se está rechazando, mientras se escribe por qué. Hasta
+   * el 2026-08-18 «Rechazar» resolvía de una y no guardaba motivo en ningún
+   * campo, así que el empleado veía su turno rechazado sin saber la razón. */
+  const [rechazandoEx,     setRechazandoEx]     = useState(null);
   const [editingExId,       setEditingExId]       = useState(null);
   const [editStart,         setEditStart]         = useState('');
   const [editEnd,           setEditEnd]           = useState('');
@@ -1138,7 +1143,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   }, [isDemoMode, canEdit, user, appendAuditLog, showToast]);
 
   // ── Process SHIFT_EXCEPTION (confirm or reject) ─────────────────────────
-  const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd) => {
+  const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd, motivo = '') => {
     setProcessingExId(req.id);
     try {
       const meta = req.metadata || {};
@@ -1153,7 +1158,12 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
        * «Confirmado» que no era cierto. El UPDATE condicionado a PENDING es el
        * candado de todo lo que sigue. */
       const { error: reqErr, count } = await resolverApprovalRequest(req.id, {
-        status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString(),
+        status: newStatus, approver_id: user?.id,
+        /* El motivo del rechazo. Este camino no lo escribía y la pantalla no lo
+         * pedía: el empleado veía su turno extra rechazado sin saber por qué, y
+         * en la base no quedaba nada. Obligatorio desde el 2026-08-18. */
+        ...(String(motivo ?? '').trim() ? { approver_note: String(motivo).trim() } : {}),
+        updated_at: new Date().toISOString(),
       });
       if (reqErr) throw reqErr;
       if (count === 0) {
@@ -1276,6 +1286,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   );
 
   return (
+    <>
     <GlassViewLayout icon={AlertTriangle} title="Auditoría de tiempos" filtersContent={filtersContent}>
       {/* Correction modal */}
       <DayCorrectionModal
@@ -1348,7 +1359,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                             <Button tone="chart-3" disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}>Editar</Button>
                           </>
                         )}
-                        <Button variant="destructive" disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}>{isBusy ? '…' : 'Rechazar'}</Button>
+                        <Button variant="destructive" disabled={isBusy} onClick={() => setRechazandoEx(req)}>{isBusy ? '…' : 'Rechazar'}</Button>
                       </div>
                     )}
                   </div>
@@ -1460,6 +1471,25 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         })()}
       </div>
     </GlassViewLayout>
+
+      {/* Un rechazo se explica. Mismo diálogo canónico que usa el plan de
+          vacaciones para lo mismo — `required`, así que sin motivo no se
+          confirma. */}
+      <PromptModal
+        isOpen={Boolean(rechazandoEx)}
+        onClose={() => setRechazandoEx(null)}
+        onConfirm={async (motivo) => {
+          await handleProcessShiftException(rechazandoEx, 'REJECT', null, null, motivo);
+          setRechazandoEx(null);
+        }}
+        title="Rechazar el turno declarado"
+        message="No se le va a contar el turno extra. Decile por qué."
+        placeholder="Por qué no se confirma..."
+        confirmText="Rechazar"
+        isProcessing={Boolean(processingExId)}
+        required
+      />
+    </>
   );
 };
 

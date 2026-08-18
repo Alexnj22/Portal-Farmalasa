@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.659.5 — Un rechazo se explica, y el motivo se ve en la tarjeta
+
+Pedido del usuario: rechazar una solicitud tiene que exigir motivo, y ese motivo
+tiene que verse en la tarjeta. Al revisarlo aparecieron tres agujeros distintos.
+
+**El motivo del traslado venía elegido de fábrica.** El desplegable arrancaba en
+«Producto ya encargado», así que se apretaba Rechazar sin tocarlo y quedaba
+guardado como si alguien lo hubiera elegido. Se nota en los rechazos reales del
+11 al 18 de agosto: **6 de 8 dicen exactamente ese primer motivo**. No es que el
+producto estuviera encargado seis veces — es que nadie eligió. Ahora arranca
+vacío y sin elegir no se puede rechazar.
+
+**El motivo no se veía en ninguna parte, ni siquiera abriendo la solicitud.** El
+detalle leía un solo campo, y un traslado guarda su motivo en otro con el texto
+libre opcional: **6 de los 11 rechazos** tenían ese campo vacío, así que el
+recuadro «Motivo de rechazo» ni se pintaba aunque el motivo estuviera guardado.
+Hoy las dos pantallas leen los dos campos, y **la tarjeta muestra el motivo** sin
+tener que abrirla.
+
+**Dos pantallas rechazaban sin pedir nada.** El cambio de fechas de vacaciones y
+el turno declarado en la auditoría de tiempos resolvían de un clic y no
+guardaban motivo en ningún campo: el empleado veía su solicitud rechazada y no
+había forma de saber por qué, ni preguntando. Las dos piden el motivo ahora, y
+sin escribirlo el botón no confirma.
+
+Y la regla dejó de ser sólo de las pantallas: la base rechaza cualquier
+solicitud que se cierre como rechazada sin decir por qué, incluidos los ajustes
+de Min/Max. Una validación que sólo vive en la pantalla es una sugerencia.
+
 ## v2.659.4 — Los textos hablan como el portal
 
 Los textos del bloque de diferencias se escribieron sin leer **§26 de DESIGN.md

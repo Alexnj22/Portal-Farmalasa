@@ -474,6 +474,24 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
 /**
+ * Cortar el papel. `GS V 66 0`: avanzar 0 y corte parcial.
+ *
+ * **Faltaba, y por eso el ticket del portal salía sin cortar** (visto en Salud 4
+ * el 2026-08-18). El motor mandaba el margen en blanco de `SALTOS_DE_CORTE` —
+ * pensado para que quien arranca el papel a mano no se lleve la última línea—
+ * pero nunca la orden de usar la cuchilla, que esa ticketera sí tiene
+ * (`Cutter : Yes` en su autoprueba).
+ *
+ * Corte PARCIAL y no total a propósito: deja una pestaña sin cortar, así el
+ * ticket queda colgando en vez de caerse al piso mientras el cajero cobra.
+ *
+ * Va DESPUÉS del margen en blanco, no en su lugar: la cuchilla está unos
+ * centímetros más arriba que el cabezal, así que sin esos 12 saltos el corte
+ * caería sobre texto todavía adentro de la impresora.
+ */
+const CORTAR_PAPEL = '\x1dV\x42\x00';
+
+/**
  * Columnas del ticket del origen, contadas sobre un ticket real.
  *
  * `FIN_*` es la columna donde TERMINA cada importe, medida en la línea
@@ -674,7 +692,7 @@ export function seccionesParaElPrograma(ticket) {
         //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
+        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE) + CORTAR_PAPEL,
         img: '', qr: '', qr_farmalasa: '',
     };
 }

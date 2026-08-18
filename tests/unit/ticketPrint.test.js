@@ -81,7 +81,13 @@ describe('el ticket que se manda al programa de impresión', () => {
         // cuentan, no se buscan con `endsWith`: con cinco —lo que había hasta el
         // 2026-08-17— el corte se llevaba el final del ticket en la sala, y un
         // `endsWith('\n\n\n\n\n')` da verde igual con cinco que con doce.
-        expect(s.pie.match(/\n+$/)[0].length).toBe(12);
+        // El pie CIERRA con la orden de cortar —`GS V 66 0`, corte parcial—, y
+        // los saltos van ANTES: la cuchilla está arriba del cabezal, así que
+        // cortar sin ese margen cae sobre texto todavía adentro de la máquina.
+        // Se afirman las dos cosas por separado. El portal imprimió sin cortar
+        // hasta el 2026-08-18 justamente porque nadie afirmaba la primera.
+        expect(s.pie.endsWith('\x1dV\x42\x00')).toBe(true);
+        expect(s.pie.slice(0, -4).match(/\n+$/)[0].length).toBe(12);
     });
 
     // Los dos que siguen salieron del PRIMER ticket impreso desde el portal

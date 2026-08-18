@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.661.5 — El ticket del portal corta el papel
+
+Lo levanto el usuario en Salud 4: *«desde el portal la ticketera no corta
+automatico»*. Y no cortaba porque **el motor nunca mandaba la orden de cortar**.
+
+El ticket cerraba con `SALTOS_DE_CORTE` —12 saltos, ~35 mm de papel en blanco,
+medidos en sala el 2026-08-17— que existen para que quien arranca el papel A
+MANO no se lleve la ultima linea. O sea que el disenio asumia el corte manual, y
+la cuchilla de la ticketera (`Cutter : Yes` en su autoprueba) nunca se usaba.
+
+Ahora el pie cierra con `GS V 66 0` (`CORTAR_PAPEL`). **Corte parcial y no
+total**: deja una pestania sin cortar, asi el ticket queda colgando en vez de
+caerse mientras el cajero cobra. Va DESPUES del margen en blanco y no en su
+lugar — la cuchilla esta unos centimetros arriba del cabezal, asi que cortar sin
+esos 12 saltos caeria sobre texto todavia adentro de la maquina.
+
+El test de `ticketPrint` afirma las dos cosas por separado: que el pie termina
+en la orden de cortar, y que antes de ella siguen estando los 12 saltos. El
+portal imprimio sin cortar desde el primer dia justamente porque nadie afirmaba
+la primera.
+
 ## v2.661.4 — La ticketera se llama lp0 siempre, no por sorteo
 
 Cerrada la falla de Salud 4 que llevaba el dia entero: la ticketera dejaba de

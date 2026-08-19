@@ -45,9 +45,33 @@ import { opcionesDePresentacion } from '../../utils/presentacion';
 // base: el primero con la cascada turno → jefatura → Supervisión, el segundo
 // desde el mapa de salas. Un navegador que eligiera de dónde sale el producto o
 // quién lo autoriza no sería una pantalla, sería un permiso.
+//
+// Desde el 2026-08-19 sí se elige el ÁREA —el estante de operación de Bodega o
+// el de próximos a vencer—, y la diferencia con lo anterior es exacta: la
+// pantalla nombra un estante que ya vio en la lista, y qué número tiene ese
+// estante en el sistema lo sigue contestando el mapa. Elegir entre dos opciones
+// que la base ofreció no es lo mismo que dictarle una ubicación.
 
 const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 const NOMBRE_SALA = { 1:'Salud 1', 2:'Salud 2', 3:'Salud 3', 4:'Salud 4', 5:'La Popular', 6:'Bodega', 7:'Salud 5' };
+
+/**
+ * De dónde sale el producto, dicho con una sola cadena.
+ *
+ * Desde el 2026-08-19 una sala puede aparecer DOS veces en la lista: Bodega
+ * tiene su estante de operación y el área donde aparta lo próximo a vencer, y
+ * de los dos se puede pedir. El `erp_sucursal_id` dejó de alcanzar como
+ * identidad —las dos filas traen el 6— así que todo lo que elige, compara o
+ * indexa por origen usa ESTA clave: el desplegable, los lotes de cada estante y
+ * el descarte de lotes al cambiar de origen.
+ *
+ * Es el mismo problema que la clave de `groupInventory` en la consulta de
+ * inventario: cuando dos filas distintas comparten identificador, la que llega
+ * segunda pisa a la primera y nadie se entera.
+ */
+const claveOrigen = (d) => (
+    d?.vencidos ? `${d.erp_sucursal_id}:V` : String(d?.erp_sucursal_id ?? '')
+);
 
 const fmtVence = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
@@ -69,7 +93,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
        cada uno de los cinco sitios que lo leen. */
     const [elegido, setElegido] = useState(null);
     const producto = productoInicial ?? elegido;
-    const [salaId,   setSalaId]   = useState(null);
+    const [origenId, setOrigenId] = useState(null);   // la CLAVE del estante, no el id de sala
     const [presIdx,  setPresIdx]  = useState('0');
     const [presentaciones, setPresentaciones] = useState([]);
     const [cantidad, setCantidad] = useState('1');
@@ -124,7 +148,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             const porSala = {};
             for (const l of filas ?? []) {
                 if (l.erp_product_id !== producto.erp_product_id) continue;
-                (porSala[l.erp_sucursal_id] ||= []).push(l);
+                // Por ESTANTE y no por sala. Esta consulta siempre trajo los dos
+                // —nunca filtró `is_vencidos`— y los amontonaba bajo el mismo
+                // número de sucursal: pedirle a Bodega podía reservar un lote
+                // que está en el área de vencidos, o sea uno que la ubicación de
+                // origen del despacho ni siquiera ve.
+                (porSala[claveOrigen({ erp_sucursal_id: l.erp_sucursal_id, vencidos: l.is_vencidos })] ||= []).push(l);
             }
             setLotesTraidos(porSala);
         }).catch(() => {});
@@ -135,13 +164,17 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     // bajo su encabezado— y, si no viene ninguna, la de más existencia, que es
     // la que puede ceder sin quedarse corta.
     useEffect(() => {
-        if (donde.length === 0 || salaId !== null) return;
-        const sugerida = producto?.origen_sugerido != null
-            && donde.some(d => String(d.erp_sucursal_id) === String(producto.origen_sugerido))
-            ? producto.origen_sugerido
-            : donde[0].erp_sucursal_id;
-        setSalaId(String(sugerida));
-    }, [donde, salaId, producto?.origen_sugerido]);
+        if (donde.length === 0 || origenId !== null) return;
+        // `origen_sugerido` viaja como CLAVE, no como id de sala: apretar
+        // «Solicitar» sobre el renglón del área de vencidos de Bodega y caer en
+        // el estante normal de Bodega sería elegir por el usuario justo lo que
+        // acaba de elegir él.
+        const sugerido = producto?.origen_sugerido != null
+            && donde.some(d => claveOrigen(d) === String(producto.origen_sugerido))
+            ? String(producto.origen_sugerido)
+            : claveOrigen(donde[0]);
+        setOrigenId(sugerido);
+    }, [donde, origenId, producto?.origen_sugerido]);
 
     // La presentación viaja por SIGNIFICADO —tipo + factor—, nunca por su id:
     // el portal y el sistema de origen las numeran distinto y solo la etiqueta
@@ -156,7 +189,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         return () => { cancelado = true; };
     }, [producto?.erp_product_id]);
 
-    const sala     = donde.find(d => String(d.erp_sucursal_id) === String(salaId));
+    const sala     = donde.find(d => claveOrigen(d) === String(origenId));
     const pres     = presentaciones[Number(presIdx)] ?? null;
 
     // ── El paréntesis dice CUÁNTAS caben, no cuántas trae ────────────────────
@@ -214,7 +247,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             return { grave: true, texto: `Lo de ${sala.sala} ya está vencido (${fmtVence(sala.vence)}).` };
 
         const mejor = donde
-            .filter(d => d.erp_sucursal_id !== sala.erp_sucursal_id && d.unidades >= unidadesPedidas)
+            .filter(d => claveOrigen(d) !== claveOrigen(sala) && d.unidades >= unidadesPedidas)
             .filter(d => !d.vence || d.vence > sala.vence)
             .sort((a, b) => (a.vence ? 1 : -1) - (b.vence ? 1 : -1))[0];
 
@@ -252,14 +285,14 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     const [descartados, setDescartados] = useState(() => new Set());
 
     // Cambiar de sala invalida lo descartado: son lotes de la sala anterior.
-    useEffect(() => { setDescartados(new Set()); }, [salaId]);
+    useEffect(() => { setDescartados(new Set()); }, [origenId]);
 
     const lotesDeSala = useMemo(
         () => {
             const mapa = producto?.lotesPorSala ?? lotesTraidos;
-            return lotesEnUnidades(mapa?.[String(salaId)] ?? mapa?.[salaId] ?? []);
+            return lotesEnUnidades(mapa?.[String(origenId)] ?? []);
         },
-        [producto?.lotesPorSala, lotesTraidos, salaId],
+        [producto?.lotesPorSala, lotesTraidos, origenId],
     );
     const lotesVivos = useMemo(
         () => lotesDeSala.filter(l => !descartados.has(l.clave)),
@@ -297,6 +330,14 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     // La sala de origen: la que tiene el producto.
                     origen_erp_sucursal_id: sala.erp_sucursal_id,
                     origen_branch_name: sala.sala,
+                    // De qué ESTANTE de esa sala. Bodega tiene dos y la sucursal
+                    // sola no los distingue; es lo que la Edge Function traduce a
+                    // la ubicación real del sistema al despachar, y lo que la
+                    // base usa para medir la existencia contra el estante que
+                    // corresponde. Sólo viaja cuando es cierto: una clave en
+                    // `false` ensucia el metadata de las 189 solicitudes que no
+                    // tienen nada que ver con esto.
+                    ...(sala.vencidos ? { origen_vencidos: true } : {}),
                     total_unidades: unidades,
                     items: [{
                         erp_product_id:    producto.erp_product_id,
@@ -368,7 +409,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         atrás no es acá. */}
                     {elegido && !listo && (
                         <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
-                            onClick={() => { setElegido(null); setSalaId(null); setPresIdx('0'); setCantidad('1'); }}
+                            onClick={() => { setElegido(null); setOrigenId(null); setPresIdx('0'); setCantidad('1'); }}
                             aria-label="Elegir otro producto" />
                     )}
                     <Button variant="ghost" size="xs" icon={X} iconOnly
@@ -396,10 +437,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 ) : (
                     <>
                         <LiquidSelect
-                            value={salaId}
-                            onChange={v => setSalaId(v)}
+                            value={origenId}
+                            onChange={v => setOrigenId(v)}
                             options={donde.map(d => ({
-                                value: String(d.erp_sucursal_id),
+                                value: claveOrigen(d),
                                 // La fecha va en la etiqueta —y no solo en el
                                 // aviso— para verla AL elegir y no después de
                                 // haber elegido mal. Solo en los que llevan
@@ -445,6 +486,26 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         {esAntibiotico && (
                             <p className="text-micro font-semibold text-content-2 px-1 leading-snug">
                                 Bajo Receta — se traslada con su lote.
+                            </p>
+                        )}
+
+                        {/* ── De qué estante sale, cuando no es el de siempre ──
+                            El rótulo del desplegable ya lo dice, pero se lee al
+                            elegir y después se deja de mirar. Acá abajo queda a
+                            la vista mientras se decide la cantidad — que es el
+                            momento en que importa.
+
+                            Dice lo que hay que saber y no opina: en esa área
+                            Bodega aparta lo próximo a vencer, así que hay lotes
+                            con poca vida y también los hay ya vencidos. Cuál es
+                            cuál se ve renglón por renglón en «Saldría de», con
+                            su fecha, y ahí se puede descartar el que no sirva.
+                            Frenar el pedido no es de esta pantalla: quien
+                            confirma es Bodega, que tiene la caja delante. */}
+                        {sala?.vencidos && (
+                            <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                                Sale del área donde se aparta lo próximo a vencer. Revisa abajo la
+                                fecha de cada lote antes de pedirlo.
                             </p>
                         )}
 

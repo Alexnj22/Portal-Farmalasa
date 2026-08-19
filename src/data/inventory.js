@@ -171,12 +171,18 @@ export async function searchInventory({ term, productIds = [] }) {
 // El `.in()` va sobre una columna que se REPITE —un producto tiene una fila por
 // sala, lote y presentación—, así que el tope de 1000 no lo acota la entrada:
 // lo pagina `fetchAllRows`.
+//
+// Trae `is_vencidos` desde el 2026-08-19 y NO filtra por él, que es lo que
+// siempre hizo. La diferencia es que ahora quien la llama puede separar los dos
+// estantes de Bodega: sin esa columna, un lote del área de vencidos entraba en
+// la lista de lotes de Bodega como si estuviera en el estante de operación, y el
+// formulario podía reservar uno que la ubicación de origen del despacho ni ve.
 export async function fetchInventoryByProductIds(productIds) {
     if (!productIds?.length) return [];
     return await fetchAllRows(() =>
         supabase
             .from('v_inventario_lotes')
-            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
+            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad, is_vencidos')
             .gt('cantidad', 0)
             .in('erp_product_id', productIds)
             .order('descripcion')

@@ -220,8 +220,8 @@ Deno.serve(async (req) => {
 
     // ── Las ubicaciones de ORIGEN y DESTINO salen del mapa, no del cliente ─
     // Es la sala de OTRO: pedírsela al navegador sería dejar que elija de dónde
-    // sale el producto. La de trabajo es la que NO es de vencidos — Bodega tiene
-    // las dos y la de vencidos es un destino, nunca un origen.
+    // sale el producto. El navegador dice de qué ÁREA —y sólo eso—; qué número
+    // tiene esa área en el sistema lo contesta el mapa.
     //
     // La del destino venía en la solicitud, o sea del navegador. La pantalla de
     // pedido no la manda —no tiene por qué saberla— así que llegaba `undefined`,
@@ -230,12 +230,30 @@ Deno.serve(async (req) => {
     // a punta POR LA PANTALLA: el mismo camino por API pasaba, porque el script
     // de prueba se la pasaba a mano. La ubicación es una propiedad de la sala,
     // no un dato que el cliente elija.
-    const deTrabajo = (m: { inv_ubicaciones?: unknown } | null | undefined) => Number(
+    //
+    // ── El área de vencidos SÍ es un origen (2026-08-19) ──────────────────
+    // Hasta hoy acá se leía «la de vencidos es un destino, nunca un origen», y
+    // el origen era siempre la de trabajo. Es lo que hacía que un traslado del
+    // área de vencidos —si hubiera podido nacer— sacara el producto del estante
+    // equivocado: mismo producto, otro lote, otra existencia.
+    //
+    // El nombre engaña: ahí Bodega aparta lo PRÓXIMO a vencer. Medido el
+    // 2026-08-19: de 89 renglones con existencia, 75 estaban vigentes y 2
+    // vencidos. Pedido del usuario: que se pueda solicitar.
+    //
+    // El DESTINO no cambia nunca: lo que entra a una sala entra a su estante de
+    // trabajo, aunque haya salido del área de vencidos de Bodega. Una sala que
+    // recibe algo próximo a vencer lo pone a la venta — que es el punto.
+    const ubicacionDe = (
+      m: { inv_ubicaciones?: unknown } | null | undefined,
+      vencidos: boolean,
+    ) => Number(
       (Array.isArray(m?.inv_ubicaciones) ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[] : [])
-        .find((u) => !u.isVencidos)?.id ?? 0,
+        .find((u) => Boolean(u.isVencidos) === vencidos)?.id ?? 0,
     );
-    const ubicOrigen  = deTrabajo(porSucursal.get(erpOrigen));
-    const ubicDestino = deTrabajo(porSucursal.get(erpDestino));
+    const origenVencidos = meta.origen_vencidos === true;
+    const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen), origenVencidos);
+    const ubicDestino = ubicacionDe(porSucursal.get(erpDestino), false);
 
     // ══════════════════════════════════════════════════════════════════════
     // PASO 2 · RECIBIR (en destino)
@@ -457,7 +475,12 @@ Deno.serve(async (req) => {
     if (!ubicOrigen)
       return json({
         ok: false,
-        error: `No se conoce la ubicación de la sala de origen (${erpOrigen}).`,
+        error: origenVencidos
+          // La solicitud pide del área de vencidos y esa sala no tiene una. El
+          // trigger ya lo corta al crearla; esto cubre las que nacieron antes o
+          // por otro camino, y dice CUÁL de las dos cosas falta.
+          ? `La sala de origen (${erpOrigen}) no tiene área de vencidos.`
+          : `No se conoce la ubicación de la sala de origen (${erpOrigen}).`,
       }, 422);
 
     // ── Quién puede despachar: lo mismo que decide el RLS ─────────────────
@@ -516,9 +539,16 @@ Deno.serve(async (req) => {
     // supervisión se puede despachar desde una sala ajena, y entonces el origen
     // del listado no dice quién lo hizo.
     const codigoDespacha = codigoDeBranch(emp?.branch_id);
+
+    // Y de qué ÁREA salió, cuando no es la de siempre. El listado del sistema
+    // muestra origen y destino como SUCURSALES, así que dos traslados de Bodega
+    // se ven idénticos aunque uno haya salido del estante de próximos a vencer.
+    // Son 14 caracteres sobre los 200 del concepto y es el único sitio donde
+    // ese dato queda del lado del sistema de origen.
     const { concepto, recortado: conceptoRecortado, completo: conceptoCompleto } = armarConcepto(
       `PIDE ${conSala(solicitante, codigoDeBranch(solicitante?.branch_id))}`
-      + ` ENV ${conSala({ ...emp, name: quien.name }, codigoDespacha)}`,
+      + ` ENV ${conSala({ ...emp, name: quien.name }, codigoDespacha)}`
+      + (origenVencidos ? ' AREA VENCIDOS' : ''),
     );
 
     // ── Una sesión propia, en la sala de ORIGEN ───────────────────────────
@@ -808,6 +838,10 @@ Deno.serve(async (req) => {
       numero_vale: vale,
       erp_sucursal_origen: erpOrigen,
       erp_ubicacion_origen: ubicOrigen,
+      // De qué estante salió, dicho por su nombre y no por el número de la
+      // ubicación: el número sólo se entiende con el mapa a la vista.
+      // `undefined` en el caso normal — la clave ni aparece en el jsonb.
+      origen_vencidos: origenVencidos ? true : undefined,
       erp_sucursal_destino: erpDestino,
       concepto,
       concepto_recortado: conceptoRecortado,

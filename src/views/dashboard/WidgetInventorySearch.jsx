@@ -427,11 +427,18 @@ function LotesDeProducto({ lots, danger = false }) {
  * pedirlo. La única definición del botón vive acá para que no se vuelva a
  * agregar en una sola de las dos.
  */
-function PedirEnFila({ prod, branchName, onPedir }) {
-  if (!onPedir || onPedir.miSala === branchName) return null;
+function PedirEnFila({ prod, branchName, onPedir, vencidos = false }) {
   const id  = prod?.lots?.[0]?.erp_product_id;
   const suc = prod?.lots?.[0]?.erp_sucursal_id;
-  if (!id) return null;
+  if (!onPedir || !id) return null;
+  /* Pedirse a uno mismo no es un traslado — y eso se decide por SUCURSAL, no
+     por el rótulo. Desde que el área de vencidos de Bodega es un origen
+     (2026-08-19) hay un encabezado que dice «Bodega · Área de Vencidos», y ese
+     texto no coincide con «Bodega»: comparando nombres, a quien trabaja en
+     Bodega se le ofrecía pedirse su propio estante, y la base recién lo rebota
+     al enviar con «el origen y el destino son la misma sala».
+     El nombre queda de respaldo para las filas que no traen sucursal. */
+  if (suc != null ? Number(suc) === Number(onPedir.miErp) : onPedir.miSala === branchName) return null;
   return (
     // `primary` y `sm`: es LA acción de la fila y estaba compitiendo de igual a
     // igual con el número de unidades. A pedido del usuario tras verlo.
@@ -449,7 +456,9 @@ function PedirEnFila({ prod, branchName, onPedir }) {
         onPedir.abrir({
           erp_product_id: id,
           descripcion: prod.descripcion,
-          origen_sugerido: suc ?? null,
+          // La CLAVE del estante, no el id de la sala: Bodega aparece dos veces
+          // y el formulario tiene que abrir en el que se apretó.
+          origen_sugerido: suc != null ? (vencidos ? `${suc}:V` : String(suc)) : null,
         });
       }}
     >
@@ -628,6 +637,10 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
     if (!miErp) return null;
     return {
       miSala: ERP_BRANCH_MAP[miErp],
+      // La sucursal, además del nombre: es lo que decide si una fila es «mi
+      // propia sala». El rótulo dejó de servir para eso el día que Bodega pasó
+      // a tener dos encabezados — ver `PedirEnFila`.
+      miErp,
       // Los lotes de ese producto en cada sala viajan CON el pedido, tomados de
       // lo que ya está en pantalla. El modal podría volver a pedirlos, pero
       // entonces mostraría un dato que no tiene por qué coincidir con el que el
@@ -636,6 +649,13 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
       abrir: (p) => {
         const porSala = {};
         const vistos = new Set();
+        /* Los tres sitios donde este widget muestra existencia, y el área de
+           vencidos entre ellos: desde el 2026-08-19 de ahí también se pide, así
+           que sus lotes tienen que llegar al formulario o la lista «Saldría de»
+           aparecería vacía justo en el estante que se acaba de elegir.
+           Van bajo una CLAVE que incluye el estante —`6:V`—, nunca amontonados
+           con los de Bodega: son dos existencias distintas y quien despacha
+           entra por una sola de las dos ubicaciones. */
         for (const b of [...(results ?? []), ...(alternatives ?? [])]) {
           for (const prod of b.products ?? []) {
             for (const l of prod.lots ?? []) {
@@ -646,14 +666,20 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
               const k = `${l.erp_sucursal_id}|${l.lote ?? ''}|${l.fecha_vencimiento ?? ''}|${l.presentacion ?? ''}`;
               if (vistos.has(k)) continue;
               vistos.add(k);
-              (porSala[l.erp_sucursal_id] ||= []).push(l);
+              (porSala[String(l.erp_sucursal_id)] ||= []).push(l);
             }
+          }
+        }
+        for (const prod of vencidosProds ?? []) {
+          for (const l of prod.lots ?? []) {
+            if (l.erp_product_id !== p.erp_product_id) continue;
+            (porSala[`${l.erp_sucursal_id}:V`] ||= []).push(l);
           }
         }
         setPedido({ ...p, lotesPorSala: porSala });
       },
     };
-  }, [miErp, results, alternatives]);
+  }, [miErp, results, alternatives, vencidosProds]);
 
   const cargarFaltantes = useCallback(() => {
     if (!miErp) return;
@@ -873,11 +899,19 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
                       <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
-                    {/* Sobre lo vencido no hay nada que solicitar: ese renglón
-                        es un aviso de que existe, no una sala de la que salga. */}
-                    {!branch.isVencidos && (
-                      <PedirEnFila prod={prod} branchName={branch.name} onPedir={accionPedir} />
-                    )}
+                    {/* También del área de vencidos se pide (2026-08-19).
+                        Acá decía «sobre lo vencido no hay nada que solicitar», y
+                        el rótulo lo hacía sonar obvio: ahí Bodega aparta lo
+                        PRÓXIMO a vencer, no lo vencido. El renglón dejó de ser
+                        un aviso de que existe y volvió a ser un sitio del que
+                        sale producto. Las fechas siguen a la vista, lote por
+                        lote, para poder decidir con ellas. */}
+                    <PedirEnFila
+                      prod={prod}
+                      branchName={branch.name}
+                      onPedir={accionPedir}
+                      vencidos={branch.isVencidos}
+                    />
                   </div>
                   <div
                     className="rounded-xl overflow-hidden shadow-sm"
@@ -1103,6 +1137,18 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
                       </>
                     )}
                     <span className="text-caption font-black text-danger-text shrink-0 tabular-nums w-14 text-right">{lotTotal} uds</span>
+                    {/* La MISMA definición del botón que usan la lista de salas
+                        y el detalle, no una tercera: la única razón por la que
+                        acá no había uno era la regla de que de esta área no se
+                        pedía, y esa regla se cayó el 2026-08-19. Escribirlo a
+                        mano habría dejado tres copias de la acción más
+                        importante de la pantalla. */}
+                    <PedirEnFila
+                      prod={prod}
+                      branchName="Bodega · Área de Vencidos"
+                      onPedir={accionPedir}
+                      vencidos
+                    />
                   </div>
                 );
               })}

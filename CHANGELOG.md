@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.666.0 — El área de vencidos de Bodega se puede solicitar
+
+Pedido del usuario: «que se pueda solicitar los productos que tiene bodega en la
+bodega de vencidos. ahora no lo permite».
+
+**El nombre engañaba.** Esa área no es un depósito de producto vencido: es el
+estante donde Bodega aparta lo que está PRÓXIMO a vencer. Medido sobre sus 89
+renglones con existencia: **75 estaban vigentes** (el más próximo vence el
+1-sep), 12 sin fecha y sólo **2** vencidos de verdad. O sea que el portal tenía
+175 unidades de producto vendible escondidas detrás de un rótulo, y la única
+salida que les dejaba era esperar a que se vencieran.
+
+**Tres piezas lo negaban a la vez**, y arreglar una sola no habría alcanzado
+porque el circuito se corta en la primera:
+
+1. La consulta de inventario mostraba el área pero sin botón — decía
+   literalmente «sobre lo vencido no hay nada que solicitar».
+2. La validación de la base medía contra la existencia del estante normal, así
+   que la solicitud rebotaba con «la sala de origen no tiene N unidades» sobre
+   producto que estaba ahí, a la vista.
+3. El despacho sacaba siempre de la ubicación de trabajo. Aunque la solicitud
+   hubiera nacido, el producto habría salido del estante equivocado: mismo
+   producto, otro lote, otra existencia.
+
+**Sigue siendo Bodega quien confirma.** El área es un ORIGEN, no una sala: la
+solicitud guarda la sucursal de siempre más «de qué estante», así que el
+aprobador, el aviso, el RLS y la sala de respaldo quedaron intactos. Lo único
+que cambia es de dónde sale la caja.
+
+**Y las dos existencias no se suman.** Son dos estantes que el sistema
+sincroniza por separado, así que hay dos vistas y dos «en vuelo»: un traslado
+que salió del área de vencidos descontado del estante normal dejaría a Bodega
+figurando con menos de lo que tiene, y al revés dejaría pedir dos veces lo
+mismo. Por el mismo motivo la solicitud pendiente se cuenta por producto **y por
+estante**: pedirle a Bodega de un estante ya no choca contra lo pedido del otro.
+
+En pantalla: el área aparece como un origen más en «a qué sala», siempre al
+final —de ahí se pide cuando se decide, no por descarte—, con su fecha de
+vencimiento más próxima al lado. El formulario avisa de qué estante sale y la
+lista «Saldría de» muestra lote por lote con su fecha, para descartar el que no
+sirva antes de pedir.
+
+De paso, dos cosas que estaban mal desde antes y salieron al tirar de este hilo:
+los lotes que el formulario ofrecía para Bodega **mezclaban los dos estantes**
+(se podía reservar un lote que la ubicación de origen ni ve), y el botón
+«Solicitar» decidía «es mi propia sala» comparando el NOMBRE, que deja de
+funcionar en cuanto una sala tiene dos rótulos.
+
 ## v2.665.6 — En Android la cámara vuelve a abrirse al pedir una foto
 
 Reportado desde sala: «en la bitácora de antibióticos, o donde haya que subir

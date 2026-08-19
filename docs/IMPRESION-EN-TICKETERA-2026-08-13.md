@@ -462,6 +462,46 @@ Tres cosas que hay que saber antes de tocar esos bytes:
 Y el `CORTAR=1` del agente queda apagado: era de cuando el ticket no traía el
 suyo, y encenderlo hoy corta dos veces.
 
+### La ticketera no se comparte: CUPS le quita el dispositivo al otro sistema (2026-08-19)
+
+**Reporte de Salud 1, la mañana en que se instaló el agente ahí:** «si imprimo
+desde el portal, deja de imprimir el ERP; debo apagar y encender la ticketera
+para que imprima por el ERP de nuevo».
+
+No es un byte del ticket. Son **dos formas de abrir la misma impresora, y no
+conviven**:
+
+| Quién | Cómo escribe |
+|---|---|
+| Sistema de facturación (`printik_pista.php`) | **Directo a `/dev/usb/lp0`** — leído en su código, §5 bis |
+| Agente de la cola (hasta v2.664.4) | `lp -d POS-80 -o raw`, o sea **CUPS** |
+
+El backend `usb` de CUPS reclama la interfaz USB y **desengancha el módulo
+`usblp` del kernel**, que es justamente el que crea `/dev/usb/lp0`. Al terminar
+debería devolverlo; con estas impresoras muchas veces no lo hace. El archivo
+queda muerto, el otro sistema escribe al vacío, y apagar y prender la ticketera
+la vuelve a enumerar — que es exactamente el gesto que lo arregla.
+
+**Corregido en v2.664.5**: el agente le escribe al MISMO archivo que el otro
+programa (`DISPOSITIVO`, por defecto `/dev/usb/lp0`) y CUPS queda de respaldo
+para una caja donde ese archivo no exista o no se pueda escribir. Va por `dd`
+para poder ponerle plazo: una escritura a un dispositivo mudo se cuelga para
+siempre y con ella la cola de la sala entera.
+
+**Tres cosas que se deducen de esto y conviene tener presentes:**
+
+1. **Un canal nuevo hacia un aparato compartido se prueba contra el otro
+   programa, no solo.** El papel salió bien las cinco primeras veces: lo que se
+   rompió fue el sistema de al lado, y de eso el papel no dice nada.
+2. **`lp -o raw` estaba bien elegido y aun así era el camino equivocado.** El
+   modo crudo resolvía «que no me filtren los bytes»; el problema era «quién es
+   el dueño del dispositivo».
+3. **Sospechar de esto también en el cuelgue del 2026-08-18 en Salud 4**, que se
+   atribuyó entero a `GS V 66 0`. Aquel comando estaba mal por su cuenta —cuatro
+   bytes con un NUL al final— pero el síntoma es el mismo, y el agente de esa
+   caja ya imprimía por CUPS. No se puede afirmar cuál de los dos era; sí que
+   había dos causas posibles y sólo se corrigió una.
+
 ### Las piezas, si hace falta bajar un nivel
 
 | Función | Para qué |

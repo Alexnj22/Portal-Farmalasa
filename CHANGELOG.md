@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.664.5 — La ticketera no se comparte: el agente escribe donde escribe el otro sistema
+
+**Reporte urgente de Salud 1**, la mañana en que se instaló el agente ahí: «si
+imprimo desde el portal, deja de imprimir el otro sistema; debo apagar y
+encender la ticketera para que vuelva a imprimir».
+
+No era un byte del ticket. Era el **canal**: dos formas de abrir la misma
+impresora, y no conviven.
+
+| Quién | Cómo escribía |
+|---|---|
+| El sistema de facturación | **Directo a `/dev/usb/lp0`** |
+| El agente de la cola (hasta v2.664.4) | `lp -o raw`, o sea **CUPS** |
+
+El backend `usb` de CUPS reclama la impresora y **desengancha el módulo `usblp`
+del kernel**, que es justamente el que crea `/dev/usb/lp0`. Al terminar debería
+devolverlo y con estas impresoras muchas veces no lo hace: el archivo queda
+muerto, el otro sistema escribe al vacío, y apagar y prender la ticketera la
+vuelve a enumerar — que es exactamente el gesto que lo destrababa.
+
+**El agente ahora le escribe al MISMO archivo que el otro programa** y CUPS
+queda de respaldo, para una caja donde ese archivo no exista o no se pueda
+escribir. Tres detalles que no son de estilo:
+
+- Va por `dd` y no por un `open()` de Python, **para poder ponerle plazo**: una
+  escritura a un dispositivo mudo se cuelga para siempre, y con ella la cola de
+  esa sala entera. Un subproceso se puede matar; un `write()` bloqueado adentro
+  del agente, no.
+- Cuando cae al respaldo, **el motivo del dispositivo viaja con el del
+  respaldo** hasta el portal. Si un día todas las cajas terminan imprimiendo por
+  CUPS, eso tiene que poder leerse, no descubrirse cuando el otro sistema se
+  cae.
+- El instalador **avisa y pregunta** si el archivo existe pero no es escribible,
+  y su hoja de prueba sale por el mismo camino que va a usar el agente. Probar
+  por CUPS una caja que después imprime por el dispositivo no prueba nada — y
+  además deja al otro sistema sin ticketera justo al terminar de instalar.
+
+**Lo que enseña, más allá del arreglo**: un canal nuevo hacia un aparato
+compartido se prueba **contra el otro programa**, no solo. El papel salió bien
+las cinco primeras veces; lo que se rompió fue el sistema de al lado, y de eso
+el papel no dice nada. Y `lp -o raw` estaba bien elegido y aun así era el camino
+equivocado: resolvía «que no me filtren los bytes» cuando la pregunta era
+«quién es el dueño del dispositivo».
+
+Queda anotado que **el cuelgue del 18-ago en Salud 4** —atribuido entero a
+`GS V 66 0`— pudo ser esto mismo: el síntoma es idéntico y esa caja ya imprimía
+por CUPS. Había dos causas posibles y se corrigió una.
+
+**Para que le llegue a una caja hay que actualizarla**: copiar la carpeta
+`scripts/agente-impresion` a la computadora y correr `bash instalar.sh`, o
+reemplazar `agente.py` y reiniciar con
+`sudo systemctl restart farmalasa-impresion`.
+
 ## v2.664.4 — Al anular un vale sale la etiqueta nueva
 
 Pedido del usuario: corregir un vale cargado por error. Decisión, dicha por él:

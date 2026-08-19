@@ -67,6 +67,30 @@ está apagada o sin internet.
 sudo journalctl -u farmalasa-impresion -f
 ```
 
+**Imprimo desde el portal y el otro sistema deja de imprimir hasta que apago y
+prendo la ticketera.**
+Es lo que reportó Salud 1 el 19-ago-2026, y no es un byte del ticket: es el
+CANAL. El sistema de facturación le escribe directo a `/dev/usb/lp0`; cuando el
+agente imprime por CUPS, el backend `usb` de CUPS reclama la impresora y
+desengancha el módulo `usblp` del kernel, que es el que crea ese archivo — y
+muchas veces no lo devuelve. Apagar y prender la ticketera la vuelve a enumerar
+y el archivo revive.
+
+Desde v2.664.5 el agente le escribe **al mismo archivo que el otro sistema** y
+CUPS quedó de respaldo. Para comprobar por dónde está escribiendo esta caja:
+
+```bash
+sudo journalctl -u farmalasa-impresion -n 5 | grep 'Escribe en'
+```
+
+Si dice `CUPS`, falta el dispositivo o falta el permiso:
+
+```bash
+ls -l /dev/usb/lp0            # tiene que existir y ser escribible
+sudo chmod 666 /dev/usb/lp0   # el otro sistema pide lo mismo
+dmesg | grep -i usblp         # si no aparece, el módulo no cargó
+```
+
 **El papel sale pero no se corta.**
 Desde v2.661.9 **el ticket trae su propio corte** y esto no debería pasar: si
 pasa, la caja está recibiendo tickets viejos o la ticketera ignora el comando.
@@ -116,6 +140,12 @@ Supabase — la misma que viaja dentro del JavaScript del portal, o sea que la
 tiene cualquiera que abra la página. Lo que autoriza a esta caja es su *token*,
 y ése lo entrega el canje del código: nunca está escrito en el repositorio.
 `agente.conf`, que sí lo tiene, queda con permisos `600` y está en `.gitignore`.
+
+**Escribe al dispositivo, no a CUPS, y el orden no es preferencia.** Ver la
+pregunta de arriba: al revés, imprimir desde el portal deja al sistema de
+facturación sin ticketera. `DISPOSITIVO=` vacío en `agente.conf` fuerza CUPS —
+es la escotilla para una caja donde la ticketera no cuelgue de USB, no un ajuste
+para probar.
 
 **El agente no maqueta.** El contenido llega con sus columnas y sus códigos de
 impresora ya adentro, igual que lo que recibe el programa del sistema de

@@ -87,6 +87,31 @@ if [ -z "$IMPRESORA" ]; then
     [ -n "$IMPRESORA" ] || morir "No se eligió ninguna impresora."
 fi
 
+# El archivo del dispositivo es el canal PREFERIDO, no un detalle: el sistema de
+# facturación escribe ahí directo, y CUPS —cuyo backend `usb` desengancha el
+# `usblp` del kernel— le deja ese archivo muerto hasta que alguien apaga y
+# prende la ticketera. Pasó en Salud 1 el 2026-08-19. Ver el encabezado de
+# agente.py.
+DISPOSITIVO=""
+for d in /dev/usb/lp0 /dev/usb/lp1 /dev/lp0; do
+    [ -e "$d" ] && { DISPOSITIVO="$d"; break; }
+done
+if [ -n "$DISPOSITIVO" ]; then
+    if [ -w "$DISPOSITIVO" ]; then
+        verde "  ✓ Le escribe directo a $DISPOSITIVO (igual que el otro sistema)"
+    else
+        rojo "  ✗ $DISPOSITIVO existe pero esta computadora no puede escribirle."
+        gris "     Sin eso el papel sale por CUPS, y entonces el otro sistema"
+        gris "     deja de imprimir hasta apagar y prender la ticketera."
+        gris "     Se arregla con:  sudo chmod 666 $DISPOSITIVO"
+        read -r -p "  ¿Seguir igual? [s/N] " sigo
+        [[ "${sigo,,}" == "s" ]] || morir "Arreglá el permiso y volvé a correr esto."
+    fi
+else
+    rojo "  ! No aparece /dev/usb/lp0: el papel va a salir por CUPS."
+    gris "     Revisá que el módulo usblp esté cargado:  dmesg | grep -i usblp"
+fi
+
 # ── 3. El código del portal ──────────────────────────────────────────────────
 titulo "3) Vinculando con el portal"
 gris "  En el portal: Sistema → Prueba de impresión → Cajas de las salas"
@@ -129,6 +154,9 @@ SUPABASE_URL=$URL
 SUPABASE_ANON_KEY=$ANON
 DEVICE_ID=$DEV_ID
 DEVICE_TOKEN=$DEV_TOK
+# El archivo de la ticketera. Vacío (DISPOSITIVO=) fuerza CUPS, y con CUPS el
+# otro sistema deja de imprimir hasta apagar y prender la ticketera.
+DISPOSITIVO=$DISPOSITIVO
 # CORTAR=1   # el ticket ya trae su corte; esto agrega un segundo, y total
 EOF
 $SUDO chmod 600 "$DESTINO/agente.conf"
@@ -167,14 +195,25 @@ fi
 
 # ── 5. La prueba de verdad es el papel ───────────────────────────────────────
 titulo "5) Probando"
-printf '\x1b@PORTAL FARMALASA\n\nEsta caja quedo lista.\n%s\n%s\n\n\n\n' \
-    "$SALA" "$(date '+%d/%m/%Y %H:%M')" | lp -d "$IMPRESORA" -o raw >/dev/null 2>&1 \
-    && verde "  ✓ Se mandó una hoja de prueba" \
-    || rojo "  ✗ No se pudo imprimir la prueba (el agente igual quedó instalado)"
+# La prueba sale por el MISMO camino que va a usar el agente. Probar por CUPS
+# una caja que después imprime por el dispositivo no prueba nada — y además deja
+# al otro sistema sin ticketera justo al terminar de instalar.
+PRUEBA="$(printf '\x1b@PORTAL FARMALASA\n\nEsta caja quedo lista.\n%s\n%s\n\n\n\n\n\n\x1dV1' \
+    "$SALA" "$(date '+%d/%m/%Y %H:%M')")"
+if [ -n "$DISPOSITIVO" ] && [ -w "$DISPOSITIVO" ]; then
+    printf '%s' "$PRUEBA" | dd "of=$DISPOSITIVO" conv=notrunc status=none 2>/dev/null \
+        && verde "  ✓ Se mandó una hoja de prueba a $DISPOSITIVO" \
+        || rojo "  ✗ No se pudo imprimir la prueba (el agente igual quedó instalado)"
+else
+    printf '%s' "$PRUEBA" | lp -d "$IMPRESORA" -o raw >/dev/null 2>&1 \
+        && verde "  ✓ Se mandó una hoja de prueba por CUPS" \
+        || rojo "  ✗ No se pudo imprimir la prueba (el agente igual quedó instalado)"
+fi
 
 titulo "Listo."
 echo "  Sala:      $SALA"
 echo "  Ticketera: $IMPRESORA"
+echo "  Escribe a: ${DISPOSITIVO:-CUPS ($IMPRESORA)}"
 echo
 gris "  ¿Salió el papel de prueba? Entonces ya está."
 gris "  Para verlo trabajar:  sudo journalctl -u $SERVICIO -f"

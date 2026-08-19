@@ -2,8 +2,8 @@
 """
 Agente de impresión de la caja — Portal Farmalasa.
 
-Pregunta cada dos segundos si hay papel esperando para ESTA sala y lo tubea a
-la ticketera con `lp -o raw`. Corre en la computadora de la caja.
+Pregunta cada dos segundos si hay papel esperando para ESTA sala y le escribe
+los bytes a la ticketera. Corre en la computadora de la caja.
 
 ── Por qué existe ────────────────────────────────────────────────────────────
 El portal imprime mandando el ticket a `http://localhost` de la computadora que
@@ -19,6 +19,25 @@ Con este agente, el portal deja el documento en una cola con su sucursal y el
 papel sale acá. Y de paso cierra el lazo del acuse: por el camino directo, un
 «ok» significa «el programa recibió el pedido», nunca «salió papel». Acá se
 contesta si el comando funcionó.
+
+── Por dónde escribe, y por qué NO por CUPS ─────────────────────────────────
+**El sistema de facturación escribe directo a `/dev/usb/lp0`**, sin CUPS y sin
+cola —está leído en su propio código—. Y esa misma ticketera no se puede tener
+abierta de las dos maneras: cuando CUPS manda un trabajo, su backend `usb`
+RECLAMA la interfaz USB y desengancha el módulo `usblp` del kernel, que es
+justamente el que crea `/dev/usb/lp0`. Al terminar debería devolverlo y muchas
+veces no lo hace: el archivo queda muerto y **el otro sistema deja de imprimir
+hasta que alguien apaga y prende la ticketera**, que es lo que la vuelve a
+enumerar.
+
+Reportado en Salud 1 el 2026-08-19, la mañana que se instaló el agente ahí:
+«si imprimo desde el portal, deja de imprimir el ERP». No era un byte del
+ticket — era el canal.
+
+Por eso el agente escribe al MISMO archivo que el otro programa y CUPS queda
+sólo de respaldo, para una caja donde ese dispositivo no exista o no se pueda
+escribir. Es el canal que el sistema de facturación usa todos los días en esas
+cajas, así que no hay que probarlo desde cero.
 
 ── Lo que NO hace ───────────────────────────────────────────────────────────
 No maqueta. El contenido ya viene con sus columnas y sus códigos de impresora
@@ -38,6 +57,10 @@ import sys
 import time
 import urllib.error
 import urllib.request
+
+# El archivo de la ticketera, el mismo al que le escribe el sistema de
+# facturación. `DISPOSITIVO=` vacío en agente.conf lo apaga y fuerza CUPS.
+DISPOSITIVO_POR_DEFECTO = "/dev/usb/lp0"
 
 INTERVALO_SEG = 2.0
 # Al fallar la red no se pregunta más rápido: si el portal está caído, mil
@@ -75,6 +98,11 @@ def config():
     # total (`GS V 0`). Queda solo por si alguna caja recibe tickets de una
     # version vieja del portal, que no lo traian.
     cfg["CORTAR"] = str(cfg.get("CORTAR", "0")).lower() in ("1", "true", "si", "sí")
+
+    # Sin la clave escrita se usa el archivo de siempre. Escrita y vacía
+    # (`DISPOSITIVO=`) se apaga a proposito y todo va por CUPS — es la escotilla
+    # para una caja donde la ticketera no cuelgue de USB.
+    cfg["DISPOSITIVO"] = cfg.get("DISPOSITIVO", DISPOSITIVO_POR_DEFECTO).strip()
     return cfg
 
 
@@ -118,14 +146,41 @@ def bytes_del_ticket(job):
     return (job.get("contenido") or "").encode("latin-1", errors="replace")
 
 
-def imprimir(datos, impresora, cortar):
-    """Manda los bytes a la ticketera y devuelve (ok, detalle).
+def escribir_al_dispositivo(datos, ruta):
+    """Los bytes al archivo de la ticketera. Devuelve (ok, detalle).
+
+    Va por `dd` y no por un `open()` de Python **para poder ponerle plazo**: una
+    escritura a un dispositivo que no responde se queda colgada para siempre, y
+    con ella la cola entera de la sala. Un subproceso se puede matar; un
+    `write()` bloqueado adentro de este proceso, no.
+
+    `conv=notrunc` porque un archivo de dispositivo no se trunca, y pedirlo
+    seria pedirle algo que no significa nada.
+    """
+    try:
+        p = subprocess.run(
+            ["dd", "of=" + ruta, "conv=notrunc", "status=none"],
+            input=datos, capture_output=True, timeout=30,
+        )
+        if p.returncode != 0:
+            return False, (p.stderr or b"").decode("utf-8", "replace")[:300] or "dd fallo"
+        return True, "escrito en " + ruta
+    except subprocess.TimeoutExpired:
+        return False, "la ticketera no acepto los bytes en 30 segundos"
+    except Exception as e:                                   # noqa: BLE001
+        return False, "{}: {}".format(type(e).__name__, e)[:300]
+
+
+def imprimir_por_cups(datos, impresora):
+    """El respaldo. Devuelve (ok, detalle).
 
     `-o raw` es el único modo probado en esa impresora: el controlador de CUPS
     para POS nunca se verificó acá, y el modo crudo ya sacó papel legible.
+
+    **No es el camino preferido**, y no por velocidad: el backend `usb` de CUPS
+    desengancha el `usblp` del kernel y deja sin `/dev/usb/lp0` al sistema de
+    facturación, que imprime por ahí. Ver el encabezado del archivo.
     """
-    if cortar:
-        datos += b"\x1dV\x00"       # GS V 0 — corte total
     try:
         p = subprocess.run(
             ["lp", "-d", impresora, "-o", "raw"],
@@ -133,7 +188,8 @@ def imprimir(datos, impresora, cortar):
         )
         if p.returncode != 0:
             return False, (p.stderr or b"").decode("utf-8", "replace")[:400] or "lp fallo"
-        return True, (p.stdout or b"").decode("utf-8", "replace")[:200]
+        return True, "por CUPS ({}) {}".format(
+            impresora, (p.stdout or b"").decode("utf-8", "replace")[:150]).strip()
     except FileNotFoundError:
         return False, "No existe el comando `lp`: falta CUPS en esta computadora."
     except subprocess.TimeoutExpired:
@@ -142,10 +198,36 @@ def imprimir(datos, impresora, cortar):
         return False, "{}: {}".format(type(e).__name__, e)[:400]
 
 
+def imprimir(datos, impresora, cortar, dispositivo):
+    """Manda los bytes a la ticketera y devuelve (ok, detalle).
+
+    Primero el archivo del dispositivo —el mismo al que le escribe el sistema de
+    facturación—, y sólo si eso no se puede, CUPS. El orden importa y está
+    explicado en el encabezado del archivo: al reves, imprimir desde el portal
+    deja al otro sistema sin ticketera hasta que alguien la apaga y la prende.
+    """
+    if cortar:
+        datos += b"\x1dV\x00"       # GS V 0 — corte total
+
+    if dispositivo and os.path.exists(dispositivo):
+        ok, detalle = escribir_al_dispositivo(datos, dispositivo)
+        if ok:
+            return True, detalle
+        # El motivo del dispositivo VIAJA con el del respaldo: si un dia todas
+        # las cajas terminan imprimiendo por CUPS, eso tiene que poder leerse en
+        # el portal en vez de descubrirse cuando el otro sistema se cae.
+        ok2, detalle2 = imprimir_por_cups(datos, impresora)
+        return ok2, "{} (fallo {}: {})".format(detalle2, dispositivo, detalle)[:400]
+
+    return imprimir_por_cups(datos, impresora)
+
+
 def main():
     cfg = config()
-    print("Agente de impresion en marcha. Caja {}. Ctrl-C para salir."
-          .format(cfg["DEVICE_ID"][:8]), flush=True)
+    canal = (cfg["DISPOSITIVO"] if cfg["DISPOSITIVO"] and os.path.exists(cfg["DISPOSITIVO"])
+             else "CUPS (el dispositivo no esta)")
+    print("Agente de impresion en marcha. Caja {}. Escribe en: {}. Ctrl-C para salir."
+          .format(cfg["DEVICE_ID"][:8], canal), flush=True)
 
     espera = INTERVALO_SEG
     while True:
@@ -172,6 +254,7 @@ def main():
                 else:
                     ok, detalle = imprimir(
                         datos, job.get("impresora") or "pos-80", cfg["CORTAR"],
+                        cfg["DISPOSITIVO"],
                     )
                 print("[{}] {} — {}".format(
                     job.get("id"), job.get("titulo"),

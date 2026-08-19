@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.667.0 — Sacar dinero: cada motivo pide sólo lo suyo, y los montos van con punto
+
+El formulario de sacar dinero de una bolsa pedía lo mismo para todo, y por eso
+había motivos que no se podían registrar. Repaso del usuario, motivo por motivo
+(2026-08-19).
+
+**Pago a proveedor: ni boleta, ni identificación, y la foto opcional.** No pasa
+por el POS, así que el número de boleta no existe. Y *«quien se lleva el
+efectivo no debe salir, porque no es de la empresa»*: el cobrador del proveedor
+no tiene cuenta en el portal, o sea que pedirle carné o contraseña era pedir
+algo que no puede dar — con el formulario viejo, un pago a proveedor **no se
+podía registrar de ninguna manera**.
+
+**La foto pasa a tener tres estados: no, opcional y obligatoria.** Con un
+booleano no se podía decir lo que hacía falta: la remesa siempre deja boleta del
+POS, pero al proveedor *«a veces no deja el DTE»*, y cuando el efectivo sale
+para una compra urgente la compra todavía no ocurrió. Exigirla dejaba salidas
+imposibles de registrar; quitarla dejaba sin dónde poner las que sí llegan.
+`bolsas_tipos_salida.foto` es hoy `NO` / `OPCIONAL` / `OBLIGATORIA`.
+
+**Quien se lleva el efectivo se identifica igual que en la entrega.** *«debe
+salir como sale en entrega de efectivo, el lector o usuario / contraseña (así
+debe salir en todos los que lo requiera)»*. Se acabó el desplegable con la
+nómina entera más un campo de contraseña: era la pregunta contestada dos veces,
+porque el carné ya dice de quién es. Es el MISMO bloque de la entrega
+(`IdentidadDeQuienRetira`), no una copia — dos paneles iguales dejan de serlo en
+cuanto se toca uno.
+
+Va en un **segundo paso** y no debajo del formulario, por un motivo concreto: el
+detector del lector es un `keydown` global que no cancela la tecla, así que una
+ráfaga con el foco puesto en «detalle» escribiría el carné, a la vista, dentro
+del campo de texto. En el paso de identidad no hay ningún campo de texto.
+
+**Tres motivos salen de la lista.**
+
+- *Envío de efectivo a otra sala*: «no es opción».
+- *Dinero que vuelve a la bolsa*: «para eso existe la anulación de vales». Es
+  exactamente así — anular la salida devuelve el saldo solo. Registrar la vuelta
+  como un movimiento nuevo dejaba la salida original en pie y la bolsa con dos
+  papeles que se cancelan, en vez de con ninguno.
+- *Se abrió para cambiar sencillo*: no movía el saldo, pero el caso real es otro
+  —«a veces sí se saca dinero para cambiar monedas, pero no vuelve ese dinero a
+  la bolsa»— y eso es una salida con monto, no una apertura de neto cero.
+  Dejarlo invitaba a registrar como «no pasó nada» un dinero que sí se fue.
+
+### Los montos, siempre con punto
+
+*«en mi computadora funciona con `.` pero en otras solo con `,`. todos deben ser
+con `.`, ese debe ser el canónico de efectivo»*.
+
+El separador decimal de un campo numérico del navegador **lo decide el idioma de
+cada computadora**, no el portal. Y cuando la tecla no es la que ese navegador
+espera, no la rechaza con un aviso: **se la come**. O sea que el mismo campo, en
+dos cajas de la misma sala, guardaba cosas distintas — y «120,50» tecleado donde
+se esperaba punto entraba como **12050**.
+
+**21 campos de dinero en 15 archivos** pasaron a la máscara decimal, que acepta
+las dos teclas y deja siempre punto: sacar dinero de una bolsa, contar una bolsa,
+resolver una diferencia, pagos y servicios de una sucursal, salario base (alta,
+recontratación y novedad), los siete montos de una planilla, precio de una
+cotización, meta y gasto, cuentas por pagar, anticipo de personal y la
+mensualidad de un alquiler. (Las cuatro horas extra de la planilla comparten el
+mismo ayudante y se benefician igual, pero no son dinero.)
+
+Donde el `min`/`max` del navegador sí trabaja, el campo se queda como estaba: las
+horas extra topan contra el saldo del banco y «Días Trabajados» contra 16. Esas
+son cantidades, no dinero.
+
+Lo vigila `npm run gate:design` en la categoría `monto-nativo`, en cero y
+bloqueante (DESIGN.md §15.11.1). Reconoce el dinero por señales duras —el
+prefijo `$`, el ícono del dólar, el placeholder «0.00» o un nombre del
+vocabulario del dinero— y deja en paz las cantidades enteras.
+
 ## v2.666.1 — El traslado del pedido reconoce cuál es el suyo
 
 Lo levantó el usuario mirando el sistema de origen: tres productos de Salud 3

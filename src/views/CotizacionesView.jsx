@@ -271,7 +271,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 <PortalInput
                     label="P. Unitario (c/IVA)"
                     name={`cotiz-precio-${item._id}`}
-                    type="number" min="0" step="0.01" prefix="$"
+                    inputMode="decimal" maskType="DECIMAL" prefix="$"
                     value={item.precioUnitario}
                     onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
                     inputClassName="text-right"

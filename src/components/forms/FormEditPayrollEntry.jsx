@@ -83,12 +83,20 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     // 2026-07-27: era `<InputLabel>` + `<input className={glassInput}>`, o sea el
     // canónico reconstruido a mano. Ahora sale de PortalInput; los 7 campos de
     // este formulario se benefician de una sola línea.
+    // `maskType="DECIMAL"` y no `type="number"`: el separador decimal del campo
+    // nativo lo pone el idioma de CADA computadora, así que «12,5» se convertía
+    // en 125 en unas máquinas y «12.5» se perdía en otras — sin aviso, porque
+    // una tecla rechazada no falla. Estos siete campos no tienen `min`/`max`/
+    // `step`, así que la máscara no les saca nada; los cuatro de horas extra y
+    // «Días Trabajados» conservan el suyo (su tope es el saldo del banco) y por
+    // eso siguen siendo nativos.
     const numField = (key, label) => (
         <PortalInput
             key={key}
             name={key}
             label={label}
-            type="number"
+            inputMode="decimal"
+            maskType="DECIMAL"
             value={String(formData[key] ?? entry[key] ?? 0)}
             onChange={e => setFormData(f => ({ ...f, [key]: parseFloat(e.target.value) || 0 }))}
             inputClassName="tabular-nums"

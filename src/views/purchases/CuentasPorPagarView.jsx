@@ -247,7 +247,8 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
                             </div>
                             {puedeEditar && Number(d.saldo) > 0 && (
                                 <div className="w-28">
-                                    <PortalInput type="number" value={montos[d.document_id] ?? ''}
+                                    <PortalInput inputMode="decimal" maskType="DECIMAL"
+                                        value={montos[d.document_id] ?? ''}
                                         onChange={e => setMontos(m => ({ ...m, [d.document_id]: e.target.value }))}
                                         placeholder="0.00" tono="brand"
                                         aria-label={`Cuánto pagar de la factura del ${fmtFecha(d.fecha_emision)}`} />

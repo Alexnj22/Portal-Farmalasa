@@ -145,7 +145,8 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
                 {sit && <Notice variant={sit.tono}>{sit.texto}</Notice>}
 
                 <PortalInput
-                    label="Monto de la meta" name="monto" prefix="$" type="number"
+                    label="Monto de la meta" name="monto" prefix="$"
+                    inputMode="decimal" maskType="DECIMAL"
                     value={monto} onChange={(e) => setMonto(e.target.value)}
                     placeholder="0.00"
                     // Con el campo bloqueado, la píldora «requerido» pediría algo

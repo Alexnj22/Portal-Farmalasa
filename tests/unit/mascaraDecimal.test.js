@@ -66,6 +66,22 @@ describe('máscara DECIMAL', () => {
         expect(dec(undefined)).toBe('');
     });
 
+    // ── Y desde el 2026-08-19 es el canónico del DINERO ────────────────
+    // «en mi computadora funciona con . pero en otras solo con ,» (usuario).
+    // El separador que acepta `input[type=number]` lo decide el idioma de cada
+    // computadora: el mismo formulario guardaba distinto según la caja.
+    it('un monto con coma no se convierte en cien veces más', () => {
+        expect(dec('120,50')).toBe('120.50');
+        expect(Number(dec('120,50'))).toBe(120.5);
+        expect(Number(dec('120,50'))).not.toBe(12050);
+    });
+
+    it('los centavos sobreviven en las dos teclas', () => {
+        expect(Number(dec('0,05'))).toBe(0.05);
+        expect(Number(dec('0.05'))).toBe(0.05);
+        expect(Number(dec('1250,99'))).toBe(1250.99);
+    });
+
     // Las otras máscaras comparten la función; que DECIMAL no las toque.
     it('no cambia las máscaras que ya existían', () => {
         expect(applyInputMask('12345678', 'PHONE')).toBe('1234-5678');

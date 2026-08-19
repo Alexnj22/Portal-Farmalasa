@@ -88,7 +88,7 @@ export const FileUploader = ({ label, file, url, onChange }) => (
 // izquierda, misma superficie. Lo único propio es el estado local que evita
 // re-renderizar el formulario entero en cada tecla — eso se queda; el resto lo
 // dibuja el canónico (2026-07-28).
-export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon, ariaLabel }) => {
+export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon, ariaLabel, maskType, inputMode }) => {
     const [localValue, setLocalValue] = useState(value || '');
 
     useEffect(() => { setLocalValue(value || ''); }, [value]); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el input local con el prop controlado
@@ -96,6 +96,11 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <PortalInput
             type={type}
+            // `maskType` viaja hasta el canónico porque la mensualidad de un
+            // alquiler es dinero: sin él el campo era `type="number"` y el
+            // separador decimal lo decidía el idioma de cada computadora.
+            maskType={maskType}
+            inputMode={inputMode}
             icon={Icon}
             aria-label={ariaLabel ?? placeholder}
             required={required}

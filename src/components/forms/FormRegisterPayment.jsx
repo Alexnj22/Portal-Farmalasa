@@ -149,12 +149,11 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             </div>
                             <PortalInput
                                 aria-label="Monto del pago"
-                                type="number"
+                                inputMode="decimal"
+                                maskType="DECIMAL"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
                                 placeholder="0.00"
-                                min="0.01"
-                                step="0.01"
                                 required
                                 tono="brand"
                                 inputClassName="font-black text-content text-lg"

@@ -582,7 +582,7 @@ export default function ModalNuevaPersonal({
             return (
                 <PortalInput
                     label="Monto solicitado" name="sol-monto" prefix="$"
-                    type="number" min="1" step="1"
+                    inputMode="decimal" maskType="DECIMAL"
                     value={payload.amount || ''}
                     onChange={e => setPayload(p => ({ ...p, amount: e.target.value }))}
                     placeholder="0.00"

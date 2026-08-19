@@ -107,7 +107,8 @@ const BranchTabInmueble = ({
                             </label>
                             <LazyInput
                                 required
-                                type="number"
+                                inputMode="decimal"
+                                maskType="DECIMAL"
                                 icon={DollarSign}
                                 placeholder="0.00"
                                 className={`!bg-surface-card shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}

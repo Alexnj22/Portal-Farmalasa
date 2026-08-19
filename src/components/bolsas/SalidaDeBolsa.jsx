@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, HandCoins, Package } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
+import IdentidadDeQuienRetira from './IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import PruebaDeIdentidad from './PruebaDeIdentidad';
 import {
-    fetchEntidadesDeSalida, fetchTiposDeSalida, probarIdentidad, registrarSalida, subirComprobante,
+    fetchEntidadesDeSalida, fetchTiposDeSalida, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
@@ -39,15 +39,31 @@ import { useToastStore } from '../../store/toastStore';
  * había con qué agruparlas. El motivo que no tiene lista —«Pago a proveedor»—
  * sigue siendo un campo libre: lo decide el catálogo, no un `if` acá.
  *
- * ── Quien retira el efectivo se IDENTIFICA, no se elige de una lista ───────
- * Decisión del usuario: «debe escribir el usuario y la contraseña, así nos
- * aseguramos que sí sea él». Elegir un nombre lo hace cualquiera que sepa
- * escribirlo. La comprobación es del SERVIDOR —el navegador diciendo «ya
- * verifiqué» no es una verificación— y la clave viaja sólo en esa llamada: no se
- * guarda en ninguna tabla ni queda en el estado más de lo que dura el envío.
+ * ── La foto tiene TRES estados, no dos (2026-08-19) ────────────────────────
+ * `bolsas_tipos_salida.foto` es `NO` / `OPCIONAL` / `OBLIGATORIA`. Con un
+ * booleano, «pago a proveedor» no se podía registrar: exigía una foto que a
+ * veces no existe —«a veces no deja el DTE»— y quitarle la exigencia habría
+ * dejado también las que sí llegan sin dónde ponerlas. Lo mismo con una compra
+ * urgente: cuando el efectivo sale de la bolsa, la compra todavía no se hizo.
  *
- * En una remesa no hay a quién identificar: quien recibe es el cliente y lo
- * identifica la boleta del POS.
+ * ── Quien retira el efectivo se IDENTIFICA en un paso propio ───────────────
+ * El bloque es `IdentidadDeQuienRetira`, el MISMO de la entrega del efectivo,
+ * por pedido del usuario: «debe salir como sale en entrega de efectivo, el
+ * lector o usuario / contraseña». Antes acá había un desplegable con la nómina
+ * y un campo de contraseña — la pregunta contestada dos veces, porque el carné
+ * ya dice de quién es.
+ *
+ * Y va en un **segundo paso**, no debajo del formulario, por una razón concreta:
+ * el detector del lector es un `keydown` global que no cancela la tecla, así que
+ * una ráfaga con el foco puesto en «detalle» escribiría el carné dentro del
+ * `<textarea>`, a la vista. En el paso de identidad no hay ningún campo de
+ * texto. De paso, la pantalla queda igual que la de la entrega.
+ *
+ * No todos los motivos lo piden. Una remesa no: quien recibe es el cliente y lo
+ * identifica la boleta del POS. Un pago a proveedor tampoco, y eso lo decidió el
+ * usuario el 2026-08-19 — «quien se lleva el efectivo no debe salir, porque no
+ * es de la empresa»: el cobrador no tiene cuenta en el portal, así que pedirle
+ * carné era pedir algo que no existe.
  */
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
@@ -69,9 +85,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     const [boleta, setBoleta] = useState('');
     const [nota, setNota] = useState('');
     const [foto, setFoto] = useState(null);
-    const [quien, setQuien] = useState('');
-    const [metodo, setMetodo] = useState('CLAVE');
-    const [secreto, setSecreto] = useState('');
+    // 'FORMULARIO' → 'IDENTIDAD'. El segundo paso sólo existe para los motivos
+    // que piden receptor.
+    const [paso, setPaso] = useState('FORMULARIO');
+    const [persona, setPersona] = useState(null);
+    const [vale, setVale] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
 
@@ -99,14 +117,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         import('../../utils/bolsaComprobante').catch(() => {});
     }, [abierto]);
 
-    // Al cerrar se olvida TODO, y la clave la primera. Un secreto que sobrevive
-    // al diálogo es un secreto que alguien puede volver a mandar sin saberlo.
-    // El motivo también: si sobrevive, la próxima apertura muestra los campos de
-    // la salida anterior y vuelve a ser una decisión que nadie tomó.
+    // Al cerrar se olvida TODO, y el vale el primero: es un permiso de un solo
+    // uso que vive 5 minutos. El motivo también: si sobrevive, la próxima
+    // apertura muestra los campos de la salida anterior y vuelve a ser una
+    // decisión que nadie tomó.
     useEffect(() => {
         if (abierto) return;
         setTipo(''); setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
-        setQuien(''); setSecreto(''); setError(null);
+        setPaso('FORMULARIO'); setPersona(null); setVale(null); setError(null);
     }, [abierto]);
 
     const t = useMemo(() => tipos.find((x) => x.codigo === tipo) || null, [tipos, tipo]);
@@ -119,10 +137,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
 
     // Cambiar de motivo VACÍA la entidad. Sin esto, elegir «Remesa · RIA» y
     // corregir a «Pago a proveedor» dejaba a RIA escrita como proveedor: el
-    // campo se llama igual en los dos, pero el dato no es el mismo. Va en el
-    // manejador y no en un efecto sobre `tipo`: los dos cambian a la vez y son
-    // la misma decisión de quien usa la pantalla.
-    const elegirMotivo = useCallback((codigo) => { setTipo(codigo); setEntidad(''); }, []);
+    // campo se llama igual en los dos, pero el dato no es el mismo. Y suelta la
+    // identidad comprobada por lo mismo: el vale se emitió para la operación que
+    // se estaba armando, no para otra. Va en el manejador y no en un efecto
+    // sobre `tipo`: los dos cambian a la vez y son la misma decisión de quien
+    // usa la pantalla.
+    const elegirMotivo = useCallback((codigo) => {
+        setTipo(codigo); setEntidad(''); setPersona(null); setVale(null);
+    }, []);
 
     const lista = useMemo(() => disponibles(bolsas, saldos), [bolsas, saldos]);
     const n = Number(String(monto).replace(',', '.'));
@@ -131,7 +153,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         [lista, n],
     );
 
-    const falta = useMemo(() => {
+    /** Lo que falta ANTES de identificar a nadie. */
+    const faltaEnElFormulario = useMemo(() => {
         if (!t) return 'Falta el motivo.';
         if (!Number.isFinite(n) || n <= 0) return 'Falta cuánto.';
         if (!eleccion.alcanza) {
@@ -139,13 +162,37 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         }
         if (t.etiqueta_entidad && !entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
         if (t.pide_boleta && !boleta.trim()) return 'Falta el número de boleta.';
-        if (t.pide_foto && !foto) return 'Falta la foto del comprobante.';
-        if (t.pide_receptor && !quien) return 'Falta quién se lleva el efectivo.';
-        if (t.pide_receptor && !secreto.trim()) {
-            return metodo === 'CARNE' ? 'Falta escanear el carné.' : 'Falta la contraseña.';
-        }
+        if (t.foto === 'OBLIGATORIA' && !foto) return 'Falta la foto del comprobante.';
         return null;
-    }, [t, n, eleccion, lista, entidad, boleta, foto, quien, secreto, metodo]);
+    }, [t, n, eleccion, lista, entidad, boleta, foto]);
+
+    const falta = useMemo(() => {
+        if (faltaEnElFormulario) return faltaEnElFormulario;
+        if (t?.pide_receptor && (!persona || !vale)) return 'Falta identificar a quien se lo lleva.';
+        return null;
+    }, [faltaEnElFormulario, t, persona, vale]);
+
+    const alIdentificar = useCallback(({ persona: p, vale: v }) => {
+        setPersona(p);
+        setVale(v);
+    }, []);
+
+    /** Vuelve a la espera de identidad: el vale de antes ya no sirve para nada. */
+    const olvidarLaIdentidad = useCallback(() => {
+        setPersona(null);
+        setVale(null);
+    }, []);
+
+    // Volver a corregir el formulario suelta la identidad. El vale prueba que
+    // esa persona estuvo acá llevándose ESTO; si el monto o el motivo cambian,
+    // ya no prueba lo mismo. Además vive 5 minutos, así que reusarlo tras una
+    // corrección larga fallaría igual, pero recién al guardar.
+    const volverAlFormulario = useCallback(() => {
+        setPaso('FORMULARIO');
+        setPersona(null);
+        setVale(null);
+        setError(null);
+    }, []);
 
     const guardar = useCallback(async () => {
         if (falta || guardando) return;
@@ -160,47 +207,72 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 });
             }
 
-            // Primero se prueba la identidad; recién si sale bien se escribe el
-            // dinero. Son dos llamadas a propósito: la del secreto confirma
-            // sola, así que un intento fallido queda registrado aunque lo que
-            // sigue se aborte. Ver `probarIdentidad` en `data/bolsas.js`.
-            //
-            // «No coincide» llega como `motivo` y no como `error`: es un
-            // RESULTADO de la comprobación, y tiene que serlo para que el
-            // servidor pueda confirmar la transacción y dejar registrado el
-            // intento. Un `error` acá es de red o de permisos.
-            let vale = null;
-            if (t.pide_receptor) {
-                const r = await probarIdentidad({ employeeId: quien, metodo, secreto });
-                setSecreto('');   // se olvida apenas se manda, salga bien o mal
-                if (r.error) { setError(mensajeAmigable(r.error, 'Vuelve a intentar.')); return; }
-                if (r.motivo) { setError(r.motivo); return; }
-                vale = r.vale;
-            }
-
             const { data, error: err } = await registrarSalida({
                 tipo: t.codigo,
                 monto: n,
                 repartos: eleccion.repartos.map(({ bolsa_id, monto: m }) => ({ bolsa_id, monto: m })),
                 entidad, numeroBoleta: boleta, fotoUrl, nota,
-                recibidoPor: t.pide_receptor ? quien : null,
-                metodo: t.pide_receptor ? metodo : null,
-                vale,
+                recibidoPor: t.pide_receptor ? persona?.id : null,
+                vale: t.pide_receptor ? vale : null,
             });
-            setSecreto('');
-            if (err) { setError(mensajeAmigable(err, 'Vuelve a intentar en un momento.')); return; }
+            if (err) {
+                // El vale se gasta en el servidor y vive 5 minutos: si algo
+                // falló, el que había ya no vale y hay que volver a escanear.
+                if (t.pide_receptor) olvidarLaIdentidad();
+                setError(mensajeAmigable(err, 'Vuelve a intentar en un momento.'));
+                return;
+            }
 
             showToast?.('Salida registrada', `${data.folio} · ${formatMoney(n)}`, 'success');
             onHecho?.(data, eleccion.repartos);
             onClose?.();
         } catch (e) {
-            setSecreto('');
+            if (t?.pide_receptor) olvidarLaIdentidad();
             setError(mensajeAmigable(e, 'No se pudo registrar.'));
         } finally {
             setGuardando(false);
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
-        quien, metodo, secreto, showToast, onHecho, onClose]);
+        persona, vale, olvidarLaIdentidad, showToast, onHecho, onClose]);
+
+    const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
+
+    /* De dónde sale. Se muestra y no sólo se calcula: el papel que va a entrar a
+       esa bolsa dice justamente esto.
+
+       El folio no alcanza para saber CUÁL es sobre la mesa: las bolsas de una
+       sala se distinguen por el corte del que nacieron, y eso —día y hora— es lo
+       que dice la etiqueta pegada afuera. Pedido del usuario el 2026-08-17. */
+    const saleDe = eleccion.repartos.length > 0 && (
+        <div data-surface="card" className="p-3 space-y-1.5">
+            <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                Sale de
+            </span>
+            {eleccion.repartos.map((r) => {
+                const b = lista.find((x) => x.id === r.bolsa_id);
+                return (
+                    <div key={r.bolsa_id} className="flex items-baseline justify-between gap-2">
+                        <span className="text-label text-content truncate">
+                            {r.folio}
+                            <span className="text-caption text-content-3">
+                                {b ? ` · corte del ${fechaCorta(b.fecha)} ${hhmm(b.hora)}` : ''}
+                                {' '}· quedan {formatMoney((b?.saldo || 0) - r.monto)}
+                            </span>
+                        </span>
+                        <span className="text-label font-bold tabular-nums text-content shrink-0">
+                            {formatMoney(r.monto)}
+                        </span>
+                    </div>
+                );
+            })}
+            {eleccion.combinada && (
+                <p className="text-caption text-warning-text pt-1">
+                    Ninguna bolsa alcanzaba sola: van a salir {eleccion.repartos.length} vales,
+                    uno para cada bolsa.
+                </p>
+            )}
+        </div>
+    );
 
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
@@ -209,151 +281,145 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">Sacar dinero de una bolsa</h3>
                     <p className="text-caption text-content-3">
-                        {lista.length
-                            ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
-                            : 'No hay bolsas con efectivo en la sala'}
+                        {enIdentidad
+                            ? `${t.etiqueta} · ${formatMoney(n)}`
+                            : lista.length
+                                ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
+                                : 'No hay bolsas con efectivo en la sala'}
                     </p>
                 </div>
             </LiquidModal.Header>
 
             <LiquidModal.Body className="space-y-4">
-                {!lista.length && (
-                    <Notice variant="info" icon={Package}>
-                        <span className="font-bold">No hay de dónde sacar</span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            Las bolsas nacen al confirmar un corte. Si el efectivo ya se entregó,
-                            el dinero para la remesa sale de la caja.
-                        </span>
-                    </Notice>
-                )}
-
-                {/* El motivo va PRIMERO porque gobierna el resto del panel:
-                    de él dependen la remesadora, la boleta, la foto y si hay
-                    que identificar a alguien. Leerlo después de rellenar
-                    campos que él mismo decide es leerlo al revés. */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                            Motivo
-                        </span>
-                        <LiquidSelect
-                            value={tipo} onChange={elegirMotivo}
-                            options={tipos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
-                            placeholder="Elegir…" ariaLabel="Motivo de la salida"
+                {/* ── Paso 2: quién se lleva el efectivo ──────────────────────
+                    Sólo esto en pantalla, y a propósito: el lector es un
+                    `keydown` global y no cancela la tecla, así que mientras
+                    espera un carné no puede haber ningún campo de texto
+                    dibujado. Arriba queda el resumen de lo que se está por
+                    sacar, que es lo que la persona firma. */}
+                {enIdentidad ? (
+                    <>
+                        {saleDe}
+                        <IdentidadDeQuienRetira
+                            activo={!!abierto && !guardando}
+                            persona={persona}
+                            onIdentificada={alIdentificar}
+                            onOlvidar={olvidarLaIdentidad}
+                            bloqueado={guardando}
                         />
-                    </div>
-                    <PortalInput
-                        label="Cuánto" name="monto" type="number" inputMode="decimal"
-                        step="0.01" min="0" icon={HandCoins}
-                        value={monto} onChange={(e) => setMonto(e.target.value)}
-                        placeholder="0.00" inputClassName="tabular-nums"
-                    />
-                </div>
-
-                {/* De dónde sale. Se muestra y no sólo se calcula: el papel que
-                    va a entrar a esa bolsa dice justamente esto.
-
-                    El folio no alcanza para saber CUÁL es sobre la mesa: las
-                    bolsas de una sala se distinguen por el corte del que
-                    nacieron, y eso —día y hora— es lo que dice la etiqueta
-                    pegada afuera. Pedido del usuario el 2026-08-17. */}
-                {eleccion.repartos.length > 0 && (
-                    <div data-surface="card" className="p-3 space-y-1.5">
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                            Sale de
-                        </span>
-                        {eleccion.repartos.map((r) => {
-                            const b = lista.find((x) => x.id === r.bolsa_id);
-                            return (
-                                <div key={r.bolsa_id} className="flex items-baseline justify-between gap-2">
-                                    <span className="text-label text-content truncate">
-                                        {r.folio}
-                                        <span className="text-caption text-content-3">
-                                            {b ? ` · corte del ${fechaCorta(b.fecha)} ${hhmm(b.hora)}` : ''}
-                                            {' '}· quedan {formatMoney((b?.saldo || 0) - r.monto)}
-                                        </span>
-                                    </span>
-                                    <span className="text-label font-bold tabular-nums text-content shrink-0">
-                                        {formatMoney(r.monto)}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                        {eleccion.combinada && (
-                            <p className="text-caption text-warning-text pt-1">
-                                Ninguna bolsa alcanzaba sola: van a salir {eleccion.repartos.length} vales,
-                                uno para cada bolsa.
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                {/* ── De acá abajo, todo lo pide el MOTIVO ─────────────────────
-                    Sin motivo elegido no se pinta ninguno: la remesadora es de
-                    una remesa, no del formulario. Cuál aparece y cómo se rotula
-                    sale del catálogo (`bolsas_tipos_salida`), no de `if`s acá.
-
-                    Y si el campo tiene lista propia —las remesadoras—, es un
-                    desplegable: así lo que se guarda coincide con el catálogo
-                    por construcción y no por cómo lo escribió cada quien. */}
-                {t?.etiqueta_entidad && (opciones.length ? (
-                    <div>
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                            {t.etiqueta_entidad}
-                        </span>
-                        <LiquidSelect
-                            value={entidad} onChange={setEntidad}
-                            options={opciones}
-                            placeholder="Elegir…" ariaLabel={t.etiqueta_entidad}
-                        />
-                    </div>
+                    </>
                 ) : (
-                    <PortalInput
-                        label={t.etiqueta_entidad} name="entidad"
-                        value={entidad} onChange={(e) => setEntidad(e.target.value)}
-                        placeholder="A quién se le paga"
-                    />
-                ))}
-                {t?.pide_boleta && (
-                    <PortalInput
-                        label="Número de boleta" name="boleta"
-                        value={boleta} onChange={(e) => setBoleta(e.target.value)}
-                        placeholder="El de la boleta del POS"
-                    />
-                )}
-                {/* `FileField` y no un `<input type="file">` suelto: el canónico
-                    de §15.9. Las dos excepciones vivas son selectores de foto
-                    donde el disparador ES la imagen (avatar, foto de producto) —
-                    acá el adjunto es una fila más del formulario, que es
-                    exactamente el caso que el canónico resuelve, con su límite
-                    de tamaño y su estado de «falta y es error». */}
-                {t?.pide_foto && (
-                    <FileField
-                        label="Foto del comprobante"
-                        accept="image/*"
-                        maxSizeMB={10}
-                        file={foto}
-                        onChange={setFoto}
-                        emptyState="pending"
-                        hint="La boleta que imprimió el POS."
-                    />
-                )}
+                    <>
+                        {!lista.length && (
+                            <Notice variant="info" icon={Package}>
+                                <span className="font-bold">No hay de dónde sacar</span>
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    Las bolsas nacen al confirmar un corte. Si el efectivo ya se entregó,
+                                    el dinero para la remesa sale de la caja.
+                                </span>
+                            </Notice>
+                        )}
 
-                {/* Quién se lleva el efectivo. En una remesa no va: quien recibe
-                    es el cliente y lo identifica la boleta del POS. */}
-                {t?.pide_receptor && (
-                    <PruebaDeIdentidad
-                        quien={quien} onQuien={setQuien}
-                        metodo={metodo} onMetodo={setMetodo}
-                        secreto={secreto} onSecreto={setSecreto}
-                    />
-                )}
+                        {/* El motivo va PRIMERO porque gobierna el resto del panel:
+                            de él dependen la remesadora, la boleta, la foto y si hay
+                            que identificar a alguien. Leerlo después de rellenar
+                            campos que él mismo decide es leerlo al revés. */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                    Motivo
+                                </span>
+                                <LiquidSelect
+                                    value={tipo} onChange={elegirMotivo}
+                                    options={tipos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
+                                    placeholder="Elegir…" ariaLabel="Motivo de la salida"
+                                />
+                            </div>
+                            {/* `maskType="DECIMAL"` y no `type="number"`: el
+                                separador decimal del campo nativo lo pone el
+                                idioma de CADA computadora, así que el mismo
+                                portal aceptaba el punto en una caja y sólo la
+                                coma en la otra — y la tecla rechazada no avisa,
+                                se pierde. En dinero eso es un monto equivocado.
+                                La máscara acepta las dos y deja siempre punto,
+                                que es el canónico del efectivo. */}
+                            <PortalInput
+                                label="Cuánto" name="monto" inputMode="decimal"
+                                maskType="DECIMAL" icon={HandCoins}
+                                value={monto} onChange={(e) => setMonto(e.target.value)}
+                                placeholder="0.00" inputClassName="tabular-nums"
+                            />
+                        </div>
 
-                <PortalTextarea
-                    label="Detalle (opcional)" name="nota" rows={2}
-                    value={nota} onChange={(e) => setNota(e.target.value)}
-                    placeholder="Cualquier cosa que ayude a entenderlo después"
-                />
+                        {saleDe}
+
+                        {/* ── De acá abajo, todo lo pide el MOTIVO ─────────────
+                            Sin motivo elegido no se pinta ninguno: la remesadora es
+                            de una remesa, no del formulario. Cuál aparece y cómo se
+                            rotula sale del catálogo (`bolsas_tipos_salida`), no de
+                            `if`s acá.
+
+                            Y si el campo tiene lista propia —las remesadoras—, es un
+                            desplegable: así lo que se guarda coincide con el catálogo
+                            por construcción y no por cómo lo escribió cada quien. */}
+                        {t?.etiqueta_entidad && (opciones.length ? (
+                            <div>
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                    {t.etiqueta_entidad}
+                                </span>
+                                <LiquidSelect
+                                    value={entidad} onChange={setEntidad}
+                                    options={opciones}
+                                    placeholder="Elegir…" ariaLabel={t.etiqueta_entidad}
+                                />
+                            </div>
+                        ) : (
+                            <PortalInput
+                                label={t.etiqueta_entidad} name="entidad"
+                                value={entidad} onChange={(e) => setEntidad(e.target.value)}
+                                placeholder="A quién se le paga"
+                            />
+                        ))}
+                        {t?.pide_boleta && (
+                            <PortalInput
+                                label="Número de boleta" name="boleta"
+                                value={boleta} onChange={(e) => setBoleta(e.target.value)}
+                                placeholder="El de la boleta del POS"
+                            />
+                        )}
+                        {/* `FileField` y no un `<input type="file">` suelto: el canónico
+                            de §15.9. Las dos excepciones vivas son selectores de foto
+                            donde el disparador ES la imagen (avatar, foto de producto) —
+                            acá el adjunto es una fila más del formulario, que es
+                            exactamente el caso que el canónico resuelve, con su límite
+                            de tamaño y su estado de «falta y es error».
+
+                            Cuando es opcional se dice EN el rótulo y la caja va en
+                            neutro: la caja ámbar de «pendiente» sobre algo que no
+                            frena se lee como un error que no lo es. */}
+                        {t?.foto !== 'NO' && !!t && (
+                            <FileField
+                                label={t.foto === 'OPCIONAL'
+                                    ? 'Foto del comprobante (opcional)'
+                                    : 'Foto del comprobante'}
+                                accept="image/*"
+                                maxSizeMB={10}
+                                file={foto}
+                                onChange={setFoto}
+                                emptyState={t.foto === 'OPCIONAL' ? 'neutral' : 'pending'}
+                                hint={t.foto === 'OPCIONAL'
+                                    ? 'Si te dieron comprobante, adjuntalo.'
+                                    : 'La boleta que imprimió el POS.'}
+                            />
+                        )}
+
+                        <PortalTextarea
+                            label="Detalle (opcional)" name="nota" rows={2}
+                            value={nota} onChange={(e) => setNota(e.target.value)}
+                            placeholder="Cualquier cosa que ayude a entenderlo después"
+                        />
+                    </>
+                )}
 
                 {error && (
                     <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>
@@ -366,11 +432,30 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                         {falta || 'Se imprime el vale para dejarlo dentro de la bolsa'}
                     </span>
                     <div className="flex items-center gap-2 ml-auto">
-                        <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                        <Button variant="primary" icon={HandCoins} loading={guardando}
-                            disabled={!!falta} onClick={guardar}>
-                            Registrar e imprimir
-                        </Button>
+                        {enIdentidad ? (
+                            <Button variant="ghost" icon={ArrowLeft} onClick={volverAlFormulario}
+                                disabled={guardando}>
+                                Volver
+                            </Button>
+                        ) : (
+                            <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
+                        )}
+                        {/* Un motivo que pide receptor no se registra desde el
+                            formulario: primero se identifica a quien se lo lleva.
+                            El botón lo dice, en vez de quedar apagado sin
+                            explicar qué falta. */}
+                        {t?.pide_receptor && !enIdentidad ? (
+                            <Button variant="primary" icon={ArrowRight}
+                                disabled={!!faltaEnElFormulario}
+                                onClick={() => { setError(null); setPaso('IDENTIDAD'); }}>
+                                Continuar
+                            </Button>
+                        ) : (
+                            <Button variant="primary" icon={HandCoins} loading={guardando}
+                                disabled={!!falta} onClick={guardar}>
+                                Registrar e imprimir
+                            </Button>
+                        )}
                     </div>
                 </div>
             </LiquidModal.Footer>

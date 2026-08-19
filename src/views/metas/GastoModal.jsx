@@ -186,7 +186,8 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                                 </div>
                                 <div className="w-36 shrink-0">
                                     <PortalInput
-                                        label="Monto" name={`monto-${i}`} prefix="$" type="number" compact
+                                        label="Monto" name={`monto-${i}`} prefix="$" compact
+                                        inputMode="decimal" maskType="DECIMAL"
                                         value={f.monto} onChange={(e) => setFila(i, { monto: e.target.value })}
                                         placeholder="0.00"
                                     />

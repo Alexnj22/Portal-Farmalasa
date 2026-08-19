@@ -165,7 +165,7 @@ export function anularBolsa(id, motivo) {
  *
  * Varias bolsas a la vez —se entregan juntas, por días— y **con la identidad de
  * quien se lo lleva probada**: `vale` es el comprobante de un solo uso que
- * devolvió `probarIdentidad`, nunca el secreto.
+ * devolvió `identificarPorCarne` (o `identificarPorUsuario`), nunca el secreto.
  *
  * Devuelve la entrega, que es un hecho con folio propio: es lo que se imprime
  * para que lo firmen los dos y lo que administración confirma de recibido
@@ -225,10 +225,14 @@ const BUCKET_COMPROBANTES = 'payment-proofs';
  * identificar a quien retira—. Una lista de opciones que existe como tabla no
  * se escribe a mano; escrita dos veces, un motivo nuevo aparece en la base y no
  * en la pantalla, o al revés.
+ *
+ * `foto` es `NO` / `OPCIONAL` / `OBLIGATORIA` y no un booleano (2026-08-19):
+ * «que sea opcional la foto» del pago a proveedor no se podía decir con dos
+ * valores sin perder el caso de la remesa, que sí la exige siempre.
  */
 export async function fetchTiposDeSalida() {
     const { data, error } = await supabase.from('bolsas_tipos_salida')
-        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, pide_foto, pide_receptor')
+        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor')
         .eq('activo', true)
         .order('orden');
     if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }
@@ -280,12 +284,14 @@ export async function subirComprobante(archivo, { salaId, userId }) {
  * suma cierre exactamente contra el monto: sin eso, un vale podría quedar por
  * menos de lo que se sacó.
  *
- * `vale` es el comprobante de identidad que devolvió `probarIdentidad`, NO la
- * contraseña. El secreto nunca pasa por acá.
+ * `vale` es el comprobante de identidad que devolvió `identificarPorCarne` o
+ * `identificarPorUsuario`, NO la contraseña. El secreto nunca pasa por acá — y
+ * el método tampoco viaja: sale del propio vale, que es quien sabe cómo se
+ * comprobó.
  */
 export function registrarSalida({
     tipo, monto, repartos, entidad, numeroBoleta, fotoUrl, nota,
-    recibidoPor, metodo, vale,
+    recibidoPor, vale,
 }) {
     return supabase.rpc('registrar_salida_de_bolsa', {
         p_tipo: tipo,
@@ -296,46 +302,8 @@ export function registrarSalida({
         p_foto_url: fotoUrl || null,
         p_nota: nota || null,
         p_recibido_por: recibidoPor || null,
-        p_metodo: metodo || null,
         p_vale: vale || null,
     });
-}
-
-/**
- * Comprueba que quien retira el efectivo es quien dice, y devuelve un vale de
- * un solo uso que vive 5 minutos.
- *
- * ── Por qué es una llamada aparte y no un parámetro del registro ───────────
- * Antes el secreto viajaba dentro de `registrar_salida_de_bolsa`, que **aborta
- * la transacción** cuando no coincide. Abortar revierte todo, incluido
- * cualquier registro del intento: probar mil claves no dejaba una sola línea en
- * ninguna parte, y sin rastro no hay contra qué contar para bloquear. Partido
- * en dos, esta llamada confirma sola y su rastro sobrevive aunque lo que sigue
- * falle. Corta a los 5 fallos en 15 minutos **contra esa persona** — lo que hay
- * que encarecer es adivinarle el carné a alguien en concreto.
- *
- * ── Y por eso el «no coincide» viene como RESULTADO, no como error ─────────
- * El razonamiento de arriba se le escapaba a la propia función: registraba el
- * intento fallido y después lanzaba, y el `RAISE` revertía ese mismo INSERT. La
- * tabla contra la que cuenta el freno no crecía nunca (medido: 17 filas, las 17
- * de otro propósito, cero de `RETIRO`), así que el corte de los 5 no llegaba
- * jamás. Corregido en `20260817173157`: devuelve `{ vale }` o `{ motivo }` — un
- * `error` de verdad es sólo el de red o el de permisos.
- *
- * La comprobación es del servidor y no del navegador por dos motivos: el
- * navegador diciendo «ya verifiqué» no es una verificación, y
- * `signInWithPassword` en el cliente de siempre reemplazaría la sesión abierta
- * —la sala quedaría logueada como quien vino a retirar el dinero—.
- */
-export async function probarIdentidad({ employeeId, metodo, secreto }) {
-    const { data, error } = await supabase.rpc('probar_identidad', {
-        p_employee_id: employeeId,
-        p_metodo: metodo,
-        p_secreto: secreto,
-    });
-    if (error) return { error };
-    if (!data?.ok) return { motivo: data?.motivo || 'No se pudo comprobar la identidad.' };
-    return { vale: data.vale };
 }
 
 /**
@@ -346,9 +314,11 @@ export async function probarIdentidad({ employeeId, metodo, secreto }) {
  * aporta nada cuando el carné ya lo contesta, y la lista obligaba a publicarle
  * a la sala la nómina entera.
  *
- * A diferencia de `probarIdentidad`, el «no lo reconocí» viene como resultado y
- * no como error: el servidor necesita CONFIRMAR la transacción para que el
- * intento fallido quede registrado y el freno tenga contra qué contar.
+ * El «no lo reconocí» viene como RESULTADO y no como error: el servidor
+ * necesita CONFIRMAR la transacción para que el intento fallido quede
+ * registrado y el freno tenga contra qué contar. Un `RAISE` revertiría ese
+ * mismo INSERT y la tabla contra la que cuenta el freno no crecería nunca —
+ * pasó, y el corte de los 5 intentos no llegaba jamás.
  *
  * Devuelve `{ vale, persona }` o `{ motivo }` / `{ error }`.
  */

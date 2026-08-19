@@ -314,9 +314,8 @@ export default function ResolverDiferencia({
                                     <div className="w-28 shrink-0">
                                         <PortalInput
                                             name={`monto-${c.id}`}
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
+                                            inputMode="decimal"
+                                            maskType="DECIMAL"
                                             prefix="$"
                                             aria-label={`Cuánto repone ${c.name}`}
                                             value={montos.get(c.id) ?? ''}

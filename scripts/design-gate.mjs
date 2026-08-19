@@ -1872,6 +1872,56 @@ function scanFile(path) {
       }
     }
 
+    // ── `monto-nativo` (2026-08-19, CERO ABSOLUTO) ──────────────────────
+    // Un campo de DINERO con `type="number"`. El separador decimal de ese
+    // control lo pone el idioma de cada computadora, no el portal: en una caja
+    // el punto entra y en la de al lado lo tira sin avisar —o al revés con la
+    // coma—. Lo reportó el usuario el 2026-08-19: «en mi computadora funciona
+    // con . pero en otras solo con ,».
+    //
+    // Y lo peor no es que no deje escribir: es que **se come la tecla en
+    // silencio**. «24,90» tecleado en un campo que espera punto queda «2490».
+    // En una temperatura eso ya costó una lectura inventada (v2.647.x); en
+    // dinero es un monto equivocado en una bolsa de efectivo.
+    //
+    // El canónico es `maskType="DECIMAL"` sobre `type="text"`: acepta las dos
+    // teclas y deja siempre punto — que es lo que pidió el usuario, «todos
+    // deben ser con . ese debe ser el canónico de efectivo».
+    //
+    // Sólo mira los campos que son DINERO, y por señales duras: el prefijo `$`,
+    // el ícono del dólar, el placeholder «0.00», o un nombre/rótulo del
+    // vocabulario del dinero. Las cantidades enteras (cajas, unidades, días,
+    // edad, horas) se quedan nativas a propósito — ahí el `min`/`max`/`step`
+    // del navegador sí trabaja, y varias lo usan para topar contra un saldo.
+    //
+    // `step="0.01"` NO alcanza como señal, aunque suene a centavos: la viñeta de
+    // un proveedor lo usa y es un identificador («v3»), no plata. Y «horas a
+    // pagar» tampoco es dinero por decir «pagar» — por eso el vocabulario
+    // nombra la COSA (monto, salario, precio) y no el verbo.
+    {
+      const DINERO = /(monto|amount|salario|sueldo|precio|mensualidad|viatico|abono|cuota|remuner|efectivo|saldo|contado|bonific|deduc)/i;
+      const RE_CAMPO = /<(input|PortalInput|LazyInput)\b/g;
+      let mm;
+      while ((mm = RE_CAMPO.exec(sinComentarios2))) {
+        const tag = sinComentarios2.slice(mm.index, finEtiqueta(sinComentarios2, mm.index));
+        if (!/type=["'{\s]*number/.test(tag)) continue;
+        // Las interpolaciones se borran ANTES de mirar: un `aria-label={`Cantidad
+        // de ${x}`}` trae un `$` que no es de dinero, y sin esto la regla
+        // marcaba justo los campos de cantidad que tiene que dejar en paz.
+        const rotulos = (tag.match(/(?:name|label|aria-label)=\{?["'`]([^"'`]*)/g) || [])
+          .join(' ').replace(/\$\{[^}]*\}?/g, ' ').replace(/\$\{?/g, ' ');
+        const esDinero = /prefix=["']\$["']/.test(tag)
+          || /icon=\{DollarSign\}/.test(tag)
+          || /placeholder=["']0\.00["']/.test(tag)
+          || rotulos.includes('$')
+          || DINERO.test(rotulos);
+        if (!esDinero) continue;
+        const linea = sinComentarios2.slice(0, mm.index).split('\n').length;
+        findings.push({ line: linea, label: 'campo de dinero con `type="number"`: usar `maskType="DECIMAL"` (el separador decimal nativo depende del idioma de cada computadora)',
+          category: 'monto-nativo', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
     // ── `try-finally-mudo` (2026-07-29, CERO ABSOLUTO) ──────────────────
     // Un `try { … } finally { setLoading(false) }` SIN `catch`. Si la promesa
     // tira, el spinner se apaga, la lista queda vacía y el usuario lee "no hay

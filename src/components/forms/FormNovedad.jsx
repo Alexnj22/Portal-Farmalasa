@@ -713,7 +713,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     <div className="flex-1 max-w-xs"><PortalInput
                                         label="Nuevo Salario Base Mensual" name="nov-salario"
                                         tono="success" icon={DollarSign}
-                                        type="number" step="0.01" placeholder="0.00"
+                                        inputMode="decimal" maskType="DECIMAL" placeholder="0.00"
                                         value={formData?.newSalary || ''}
                                         colSpan={1}
                                         onChange={e => setFormData(prev => ({ ...prev, newSalary: e.target.value }))}

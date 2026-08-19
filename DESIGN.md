@@ -416,6 +416,13 @@ recibía `placeholder` en 28 sitios sin aceptarlo, y un `ConfirmModal` pasaba
 regalo. La firma se lee del componente, nunca de una tabla a mano; un
 componente con `...rest` queda fuera del chequeo.
 
+`monto-nativo` (2026-08-19) cubre §15.11.1: un campo de DINERO con
+`type="number"`. Nace en cero y es bloqueante. Reconoce el dinero por señales
+duras —`prefix="$"`, `icon={DollarSign}`, `placeholder="0.00"`, o un
+`name`/`label` del vocabulario del dinero— y borra las interpolaciones antes de
+mirar: sin eso, un `aria-label={\`Cantidad de ${x}\`}` traía un `$` que no era de
+plata y la regla marcaba justo los campos de cantidad que tiene que dejar en paz.
+
 Su hermana `segmentado-a-mano` cubre §15.3: un `.map()` de opciones cuyo
 `<Button>` decide su `variant`/`tone` comparando contra el parámetro del map es
 un `SegmentedControl` escrito a mano. Un botón suelto que cambia de tono según
@@ -3133,7 +3140,7 @@ hacer clic en la etiqueta no enfocaba nada.
 
 // ✅
 <PortalInput label="Monto solicitado" name="sol-monto" prefix="$"
-             type="number" value={monto} onChange={…} />
+             inputMode="decimal" maskType="DECIMAL" value={monto} onChange={…} />
 ```
 
 **Ranuras, para que no haya que salirse.** Cada una existe porque su ausencia
@@ -3178,6 +3185,47 @@ Valores: `brand`, `success`, `danger`, `warning`, `chart-1`, `chart-3`,
 Con `tono`, el contenedor NO emite `data-surface="input"`: esa regla de
 `index.css` va sin `@layer` y le ganaría a las utilidades de Tailwind, así que
 el borde tintado no se vería.
+
+#### 15.11.1 Un campo de DINERO nunca es `type="number"` (2026-08-19)
+
+Lo reportó el usuario: *«en mi computadora funciona con `.` pero en otras solo
+con `,`. todos deben ser con `.`, ese debe ser el canónico de efectivo»*.
+
+El separador decimal de `input[type=number]` **lo decide el idioma de cada
+computadora**, no el portal. Y cuando la tecla no es la que ese navegador
+espera, no la rechaza con un aviso: **se la come**. O sea que el mismo campo,
+en dos cajas de la misma sala, guarda cosas distintas — y «120,50» tecleado
+donde se esperaba punto se registra como **12050**.
+
+En una temperatura eso ya costó una lectura inventada (por eso nació
+`DECIMAL`, 2026-08-17). En una bolsa de efectivo es un monto equivocado con
+firma.
+
+```jsx
+// ❌ el separador lo pone el idioma del navegador, y la tecla rechazada no avisa
+<PortalInput label="Cuánto" prefix="$" type="number" step="0.01" min="0" … />
+
+// ✅ acepta punto Y coma, y deja siempre punto
+<PortalInput label="Cuánto" prefix="$" inputMode="decimal" maskType="DECIMAL" … />
+```
+
+`maskType="DECIMAL"` (en `utils/inputStyles.js`) acepta las dos teclas, guarda
+siempre con punto y recorta a dos decimales. Va sobre `type="text"` —que es el
+de fábrica—, así que `inputMode="decimal"` es lo que sigue dando el teclado
+numérico en el teléfono.
+
+**Lo que se pierde y por qué no importa acá:** `min`, `max` y `step` son inertes
+en un campo de texto. En dinero nunca eran la validación —el tope de una salida
+de bolsa lo pone el servidor contra el saldo real—, así que se quitan en vez de
+quedar decorando. **Donde sí trabajan, el campo se queda nativo**: las horas
+extra de la planilla topan contra el saldo del banco (`max={otBank.diurnal}`) y
+«Días Trabajados» contra 16. Esas son cantidades, no dinero.
+
+Lo vigila el gate en `monto-nativo` (cero absoluto). Reconoce el dinero
+por señales duras —`prefix="$"`, `icon={DollarSign}`, `placeholder="0.00"`, o un
+`name`/`label` del vocabulario del dinero— y deja en paz las cantidades enteras.
+`step="0.01"` **no** cuenta como señal: la viñeta de un proveedor lo usa y es un
+identificador, no plata.
 
 ### 15.12 Cuándo un `<input>` a mano es correcto — **CUATRO casos**
 

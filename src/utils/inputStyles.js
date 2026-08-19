@@ -37,6 +37,14 @@ export const applyInputMask = (value, type) => {
     // De paso arregla lo que el usuario ve: con `type="number"` el punto recién
     // aparece cuando se escribe el dígito siguiente, así que la pantalla parece
     // estar ignorando la tecla.
+    //
+    // ── Y es el canónico del DINERO desde el 2026-08-19 ────────────────────
+    // El mismo defecto, al revés y en producción: «en mi computadora funciona
+    // con . pero en otras solo con ,» (usuario). Cuál acepta el campo nativo lo
+    // decide el IDIOMA de cada computadora, así que el mismo formulario guarda
+    // cosas distintas según la caja — y «120,50» donde se espera punto entra
+    // como 12050. Todo campo de dinero va por acá; lo vigila el gate de diseño
+    // en `monto-nativo` (DESIGN.md §15.11.1).
     if (type === 'DECIMAL') {
         const negativo = /^\s*-/.test(value) ? '-' : '';
         const limpio = value.replace(/[^0-9.,]/g, '').replace(/,/g, '.');

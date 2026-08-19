@@ -130,7 +130,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Salario base */}
                     <PortalInput
                         label="Salario Base" name="rehire-salario" prefix="$"
-                        type="number" placeholder="0.00"
+                        inputMode="decimal" maskType="DECIMAL" placeholder="0.00"
                         value={formData.rehire_base_salary || ''}
                         onChange={e => set('rehire_base_salary', e.target.value)}
                     />

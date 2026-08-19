@@ -218,7 +218,7 @@ function Conteo({ bolsa, ocupado, onContar }) {
                 compact
                 name={`contado-${bolsa.id}`}
                 aria-label={`Cuanto se conto en la bolsa ${bolsa.folio}`}
-                type="number" inputMode="decimal" step="0.01" min="0"
+                inputMode="decimal" maskType="DECIMAL"
                 value={valor} onChange={(e) => setValor(e.target.value)}
                 placeholder={String(bolsa.monto_inicial)}
                 className="w-32"

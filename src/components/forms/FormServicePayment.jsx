@@ -106,7 +106,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                             name="servicio-amount"
                             label="Monto Mensual Aprox."
                             required
-                            type="number" min="0" step="0.01"
+                            inputMode="decimal" maskType="DECIMAL"
                             placeholder="0.00"
                             value={currentData.amount || ""}
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))}

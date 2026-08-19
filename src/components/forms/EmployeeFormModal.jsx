@@ -2077,7 +2077,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                                 {isEditMode
                                     ? <LockedField label="Salario Base" value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} />
-                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
+                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} inputMode="decimal" maskType="DECIMAL" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>
                         </div>

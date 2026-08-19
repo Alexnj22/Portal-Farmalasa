@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.4 — Un permiso que falta se ve igual que un dato que no existe
+
+La pantalla de Prueba de impresión decía **«Ninguna sala imprime todavía»** con
+las cinco cajas registradas, latiendo y con la de Salud 1 recién actualizada. Lo
+reportó el usuario con la captura: *«¿por qué no me salen los agentes que ya
+estaban en las otras sucursales?»*.
+
+**La causa la puse yo dos horas antes.** `impresion_dispositivos` no tiene un
+GRANT de tabla: tiene grants **por columna** —11 de 13—, porque `token` y
+`codigo_vinculacion` son credenciales y no pueden viajar al navegador. Y un
+`ADD COLUMN` **no hereda** ese grant: las dos columnas nuevas nacieron sin
+permiso para `authenticated`, PostgREST rechazó el select **entero**, y la capa
+de datos convirtió ese rechazo en una lista vacía.
+
+Dos correcciones, y la segunda importa más que la primera:
+
+1. **El grant** (`20260819160153`). `token` y `codigo_vinculacion` siguen sin
+   concederse.
+2. **El error deja de disfrazarse de dato.** `fetchCajasDeImpresion` devolvía
+   `[]` cuando la consulta fallaba, y `[]` es indistinguible de «no hay
+   ninguna» — un estado legítimo, con su propio aviso amable. Ahora el error
+   viaja y la pantalla dice **«No se pudo leer la lista de cajas»**, aclarando
+   que las registradas pueden estar imprimiendo igual.
+
+**Lo que enseña.** Una tabla con grants por columna no extiende el permiso a las
+columnas nuevas, y nada lo avisa: la migración entra limpia, el advisor no se
+queja y el síntoma aparece en una pantalla que ni se tocó. Antes de agregar una
+columna a una tabla así, mirar `information_schema.column_privileges` — si el
+conteo por rol es menor que el de columnas, hay grants por columna y **cada
+columna nueva pide el suyo**.
+
+Y el modo de falla es el de siempre en este proyecto: una consulta que devuelve
+cero filas no falla, así que un fallo convertido en cero filas se lee como una
+respuesta. Mandaba a reinstalar cinco agentes sanos.
+
 ## v2.665.3 — El agente recupera la ticketera que CUPS se quedó
 
 Salud 1 se actualizó, se imprimió desde el portal y **el otro sistema siguió sin

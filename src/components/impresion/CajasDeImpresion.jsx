@@ -103,9 +103,12 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const [aBorrar, setABorrar] = useState(null);
     const [borrando, setBorrando] = useState(false);
     const [publicada, setPublicada] = useState(null);
+    const [falloLaLista, setFalloLaLista] = useState(null);
 
     const cargar = useCallback(async () => {
-        setCajas(await fetchCajasDeImpresion());
+        const { cajas: filas, error } = await fetchCajasDeImpresion();
+        setCajas(filas);
+        setFalloLaLista(error || null);
         setCola(await fetchColaDeImpresion({ limite: 15 }));
         setPublicada(await fetchVersionPublicadaDelAgente());
     }, []);
@@ -191,7 +194,18 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 </Notice>
             )}
 
-            {!cajas.length && (
+            {falloLaLista && (
+                <Notice variant="danger" icon={AlertTriangle}>
+                    <span className="font-bold">No se pudo leer la lista de cajas</span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        Esto NO significa que no haya ninguna: significa que la consulta falló.
+                        Las cajas registradas pueden estar imprimiendo igual.
+                        {' '}<span className="text-content-3">{mensajeAmigable(falloLaLista, '')}</span>
+                    </span>
+                </Notice>
+            )}
+
+            {!cajas.length && !falloLaLista && (
                 <Notice variant="info" icon={Printer}>
                     <span className="font-bold">Ninguna sala imprime todavía</span>
                     <span className="block mt-0.5 font-normal text-content-2">

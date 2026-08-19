@@ -48,8 +48,17 @@ export async function fetchCajasDeImpresion() {
         .select('id, branch_id, nombre, equipo, impresora, activo, ultimo_latido, '
             + 'vinculada_at, created_at, agente_version, agente_canal')
         .order('nombre');
-    if (error) { console.error('impresion: fetchCajasDeImpresion failed:', error.message); return []; }
-    return data || [];
+    // El error VIAJA, no se convierte en lista vacía. Devolver `[]` hacía que la
+    // pantalla dijera «Ninguna sala imprime todavía» —un estado legítimo— con
+    // cinco cajas registradas y latiendo: pasó el 19-ago-2026, cuando dos
+    // columnas nuevas nacieron sin permiso de lectura y PostgREST rechazó el
+    // select entero. Un fallo que se disfraza de dato manda a buscar el problema
+    // al lugar equivocado, y acá mandaba a reinstalar cinco agentes sanos.
+    if (error) {
+        console.error('impresion: fetchCajasDeImpresion failed:', error.message);
+        return { cajas: [], error };
+    }
+    return { cajas: data || [], error: null };
 }
 
 /**

@@ -23,6 +23,8 @@ import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDE
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import FileField from '../common/FileField';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
+import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
@@ -255,6 +257,8 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
 const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, onValidationChange }) => {
 
     const employees = useStaffStore(state => state.employees);
+    // Se maneja con el dedo: decide si se ofrece la cámara para la foto oficial.
+    const esTactil = useCoarsePointer();
     // Fallback sin uso real hoy: el único caller (UnifiedModal) siempre pasa
     // activeTab controlado. Sin setter porque no hay UI de tabs interna que lo dispare.
     const [localActiveTab] = useState('personal');
@@ -1145,6 +1149,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="text-center sm:text-left">
                                     <h4 className="text-body-xl font-black text-content tracking-tight">Fotografía Oficial</h4>
                                     <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Usa una imagen clara y profesional. Aparecerá en el portal web y el kiosko biométrico.</p>
+                                    {/* Tocar el avatar abre el explorador de archivos: dentro
+                                        de la app eso NUNCA ofrece la cámara, hace falta un
+                                        input propio con `accept` comodín + `capture` juntos
+                                        (ver `capturaDeFoto.js`). En escritorio no aparece
+                                        porque ahí `capture` se ignora y sería el mismo
+                                        diálogo dos veces. */}
+                                    {esTactil && (
+                                        <>
+                                            <input type="file" {...PROPS_CAMARA} className="hidden"
+                                                onChange={handlePhotoUpload} id="photo-camara" />
+                                            <label htmlFor="photo-camara"
+                                                className="mt-2 inline-flex items-center gap-1.5 h-[max(34px,var(--tap-min))] px-3.5 rounded-btn cursor-pointer
+                                                    text-[12.5px] font-bold text-content bg-gradient-to-b from-surface-card to-surface-card-hover
+                                                    border border-border-card shadow-sm hover:shadow-md transition-shadow duration-[var(--dur-base)]">
+                                                <Camera size={14} strokeWidth={2.5} /> Tomar foto
+                                            </label>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 

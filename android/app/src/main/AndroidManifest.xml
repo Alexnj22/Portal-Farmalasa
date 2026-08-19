@@ -35,6 +35,21 @@
         </provider>
     </application>
 
+    <!-- Qué otras apps puede VER esta (Android 11+ / API 30).
+         Sin esta declaracion, resolveActivity(ACTION_IMAGE_CAPTURE) devuelve
+         null aunque el telefono tenga camara: Capacitor lo lee como "no hay
+         camara" y cae al explorador de archivos. El sintoma es el que reporto
+         sala el 2026-08-19 — al pedir una foto solo aparece la galeria.
+         La otra mitad del arreglo esta en src/utils/capturaDeFoto.js.
+         No hace falta el permiso CAMERA: la foto la toma OTRA app y vuelve por
+         el FileProvider de abajo. Declararlo obligaria a pedirlo en tiempo de
+         ejecucion y a marcar la camara como requisito de hardware. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

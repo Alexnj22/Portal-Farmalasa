@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Undo2, X, Check, Camera } from 'lucide-react';
+import { Undo2, X, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
+import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { MOTIVOS, MAX_FOTOS, viajaPorMotivo } from '../../data/devoluciones';
 
 // La sala pide devolver a bodega lo que no cuadró.
@@ -146,46 +147,14 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
                             <span className="text-micro text-content-3 font-semibold">{fotos.length} de {MAX_FOTOS}</span>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {fotos.map((f, i) => (
-                                <div key={`${f.name}-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover">
-                                    <img src={URL.createObjectURL(f)} alt={`Foto ${i + 1}`}
-                                        className="w-full h-full object-cover"
-                                        onLoad={ev => URL.revokeObjectURL(ev.currentTarget.src)} />
-                                    <button type="button" aria-label={`Quitar la foto ${i + 1}`}
-                                        onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
-                                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-surface-card border border-divider shadow-sm flex items-center justify-center hover:bg-danger/10 transition-colors">
-                                        <X size={12} strokeWidth={3} className="text-content-2" />
-                                    </button>
-                                </div>
-                            ))}
-                            {fotos.length < MAX_FOTOS && (
-                                <label className={`w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${
-                                    pideFoto && fotos.length === 0
-                                        ? 'border-warning/50 bg-warning/[0.06] hover:border-warning'
-                                        : 'border-border-card bg-surface-card-hover hover:border-brand/40'
-                                }`}>
-                                    {/* `capture="environment"`: en el teléfono abre la cámara
-                                        de atrás directo, que es donde está el producto. En
-                                        escritorio el atributo se ignora. */}
-                                    <input type="file" accept="image/jpeg,image/png,image/webp"
-                                        capture="environment" className="sr-only"
-                                        onChange={(ev) => {
-                                            const f = ev.target.files?.[0];
-                                            ev.target.value = '';   // permite volver a elegir la misma
-                                            if (!f) return;
-                                            if (f.size > 10 * 1024 * 1024) { setError('La foto no puede pasar de 10 MB'); return; }
-                                            setError('');
-                                            setFotos(prev => [...prev, f].slice(0, MAX_FOTOS));
-                                        }} />
-                                    <Camera size={20} strokeWidth={2}
-                                        className={pideFoto && fotos.length === 0 ? 'text-warning-text' : 'text-content-3'} />
-                                    <span className={`text-micro font-bold ${pideFoto && fotos.length === 0 ? 'text-warning-text' : 'text-content-3'}`}>
-                                        {fotos.length === 0 ? 'Agregar' : 'Otra'}
-                                    </span>
-                                </label>
-                            )}
-                        </div>
+                        {/* La tira canónica. Antes estaba escrita acá con un solo
+                            azulejo cuyo `capture` no abría la cámara — ver
+                            `FotosDeEvidencia` y `capturaDeFoto.js`. */}
+                        <FotosDeEvidencia
+                            fotos={fotos} onCambio={setFotos}
+                            max={MAX_FOTOS} maxMB={10}
+                            resaltar={pideFoto} onError={setError} alt="Foto"
+                        />
 
                         {pideFoto && fotos.length === 0 && (
                             <p className="text-micro text-warning-text font-semibold px-1 leading-snug">

@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.6 — En Android la cámara vuelve a abrirse al pedir una foto
+
+Reportado desde sala: «en la bitácora de antibióticos, o donde haya que subir
+foto, solo sale la galería». Era cierto en **todas** las pantallas con foto, y
+no era un permiso ni el teléfono.
+
+El portal corre dentro de una WebView, y ahí quien decide entre la cámara y el
+explorador de archivos evalúa esto, literal:
+
+    captureEnabled && acceptTypes.contains("image/*")
+
+`acceptTypes` es la lista de `accept` partida por comas y la comparación es de
+cadenas **exactas**. O sea que hacen falta las dos cosas juntas: el atributo
+`capture` y el token `image/*` tal cual en la lista. Si falta cualquiera de las
+dos, abre el explorador. Ninguno de los cinco selectores de foto cumplía:
+
+| dónde | qué tenía | por qué fallaba |
+|---|---|---|
+| Devolver · Descargue por daño · Foto de producto | `accept="image/jpeg,image/png,image/webp"` **+ `capture`** | la lista no trae el token `image/*` — el `capture` se ignoraba |
+| Bitácoras, comprobantes, expedientes (`FileField`) | `accept="image/*,application/pdf"` | sin `capture` |
+| Foto del empleado · comprobante de bolsa | `accept="image/*"` | sin `capture` |
+
+Los tres primeros **decían** abrir la cámara en su propio comentario. Nadie lo
+notó porque el explorador se abre igual y la foto termina subiéndose: el camino
+funciona, sólo que es el otro.
+
+Y faltaba una segunda mitad, fuera de JavaScript: con Android 11+ la app no
+"ve" a la cámara si el manifiesto no la declara, así que el sistema respondía
+que no hay cámara instalada y se caía al explorador por otra causa distinta.
+
+**Qué cambia en pantalla.** Donde se pide una foto ahora hay dos caminos: tomarla
+y elegir una que ya está. Las dos hacen falta —se fotografía el producto en el
+momento, pero también se adjunta la foto que alguien ya tenía— y un solo control
+no puede dar las dos. En computadora no aparece el botón de cámara: ahí el
+atributo no hace nada y serían dos botones abriendo el mismo diálogo.
+
+- `FileField` (bitácoras, comprobantes de pago, expedientes, permisos, SRS,
+  farmacovigilancia, novedades, bolsas): botón **Tomar foto** debajo de la fila.
+- Devolver y Descargue por daño: azulejos **Cámara** y **Galería**. Su tira de
+  fotos estaba escrita dos veces, letra por letra, con el mismo defecto en las
+  dos — ahora es un solo componente, `FotosDeEvidencia`.
+- Foto de producto y fotografía oficial del empleado: botón **Tomar foto**.
+
+La pareja `accept`+`capture` vive en una constante (`src/utils/capturaDeFoto.js`)
+y no escrita en cada archivo: es una sola decisión, y separarla es exactamente lo
+que hace que se rompa sin dar error. Anclado en `tests/unit/capturaDeFoto.test.js`,
+que vigila las dos mitades — la del navegador y la del manifiesto.
+
 ## v2.665.5 — Los dos problemas de una caja se dicen juntos
 
 Salud 1 estaba **atrasada** (todavía sin la corrección del rescate) **y** en

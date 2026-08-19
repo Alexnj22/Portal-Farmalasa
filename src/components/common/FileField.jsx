@@ -1,6 +1,9 @@
 import React, { useRef, useState, useCallback, memo } from 'react';
-import { UploadCloud, FileCheck2, Eye, X, Loader2 } from 'lucide-react';
+import { UploadCloud, FileCheck2, Eye, X, Loader2, Camera } from 'lucide-react';
 import ListRow from './ListRow';
+import Button from './Button';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
+import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
 import { openStoredFile } from '../../utils/storageFiles';
 
 /**
@@ -104,6 +107,16 @@ const FileField = memo(({
     className = '',
 }) => {
     const inputRef = useRef(null);
+    // La cámara va en un input APARTE del de archivos, no en el mismo con
+    // `capture` agregado: ese atributo obliga a la cámara y dejaría sin camino
+    // a quien tiene que adjuntar un PDF —la receta escaneada, el permiso—.
+    // Dos inputs, dos caminos, y cada uno con su `accept`. El porqué de la
+    // pareja `accept`+`capture` está en `capturaDeFoto.js`.
+    const camaraRef = useRef(null);
+    // Solo con el dedo. En escritorio `capture` se ignora y el botón abriría el
+    // mismo diálogo de archivos que la fila: dos controles idénticos, uno
+    // mintiendo. Misma regla que el selector de fechas (D3.12).
+    const esTactil = useCoarsePointer();
     // Contador de profundidad: `dragleave` dispara también al pasar de la fila
     // a un hijo suyo, así que un booleano parpadea. Y va en un ref, no en
     // estado: `dragover` se dispara decenas de veces por segundo y actualizar
@@ -119,6 +132,10 @@ const FileField = memo(({
 
     const abrirSelector = useCallback(() => {
         if (!inactivo) inputRef.current?.click();
+    }, [inactivo]);
+
+    const abrirCamara = useCallback(() => {
+        if (!inactivo) camaraRef.current?.click();
     }, [inactivo]);
 
     const aceptar = useCallback(archivo => {
@@ -180,6 +197,11 @@ const FileField = memo(({
     }, [file, url]);
 
     const peso = file ? formatearPeso(file.size) : null;
+
+    // Con archivo puesto no se ofrece: para cambiarlo está "Quitar", igual que
+    // pasa con "Elegir". Un segundo camino de reemplazo escondido detrás de un
+    // botón que sigue ahí sería un clic que pisa evidencia ya adjuntada.
+    const ofreceCamara = esTactil && !hayArchivo && !inactivo && aceptaImagenes(accept);
 
     // El texto de ayuda se DERIVA del límite en vez de escribirse aparte.
     // `FormPharmacovigilance` decía "Máx 5MB" mientras el código rechazaba a
@@ -247,6 +269,16 @@ const FileField = memo(({
                     : ''}
             />
 
+            {ofreceCamara && (
+                <Button
+                    variant="secondary" size="md" icon={Camera}
+                    onClick={abrirCamara}
+                    className="w-full mt-2"
+                >
+                    Tomar foto
+                </Button>
+            )}
+
             <input
                 ref={inputRef}
                 type="file"
@@ -258,6 +290,20 @@ const FileField = memo(({
                 // navegador no considera que haya cambiado. Varios formularios
                 // lo parchaban desde afuera con un ref (`fileInputRef.current
                 // .value = ''`); resolverlo acá los deja sin ese trabajo.
+                onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; aceptar(f); }}
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+            />
+
+            {/* El de la cámara. `aceptar` es el mismo de arriba: la foto pasa
+                por el mismo límite de tamaño y la misma validación de tipo que
+                un archivo elegido a mano. */}
+            <input
+                ref={camaraRef}
+                type="file"
+                {...PROPS_CAMARA}
+                disabled={inactivo}
                 onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; aceptar(f); }}
                 className="sr-only"
                 tabIndex={-1}

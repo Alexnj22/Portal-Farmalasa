@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-    AlertTriangle, ArrowLeft, CalendarX2, Camera, Check, CheckCircle2, ChevronRight, Loader2,
+    AlertTriangle, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, Loader2,
     PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
+import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -1227,50 +1228,15 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                 </span>
                             </div>
 
-                            <div className="flex items-center gap-2 flex-wrap">
-                                {fotos.map((f, i) => (
-                                    <div key={`${f.name}-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover group/foto">
-                                        <img src={URL.createObjectURL(f)} alt={`Daño ${i + 1}`}
-                                            className="w-full h-full object-cover"
-                                            onLoad={ev => URL.revokeObjectURL(ev.currentTarget.src)} />
-                                        {/* 24px y no 16: es un objetivo táctil sobre
-                                            una foto, y errarle borra la evidencia que
-                                            se acaba de tomar. */}
-                                        <button type="button" aria-label={`Quitar la foto ${i + 1}`}
-                                            onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
-                                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-surface-card border border-divider shadow-sm flex items-center justify-center hover:bg-danger/10 transition-colors">
-                                            <X size={12} strokeWidth={3} className="text-content-2" />
-                                        </button>
-                                    </div>
-                                ))}
-                                {fotos.length < MAX_FOTOS && (
-                                    <label className={`w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${
-                                        fotos.length === 0
-                                            ? 'border-warning/50 bg-warning/[0.06] hover:border-warning'
-                                            : 'border-border-card bg-surface-card-hover hover:border-brand/40'
-                                    }`}>
-                                        {/* `capture="environment"`: en el teléfono abre la
-                                            cámara de atrás directo, que es donde está el
-                                            producto. En escritorio el atributo se ignora y
-                                            queda el selector de archivos de siempre. */}
-                                        <input type="file" accept="image/jpeg,image/png,image/webp"
-                                            capture="environment" className="sr-only"
-                                            onChange={(ev) => {
-                                                const f = ev.target.files?.[0];
-                                                ev.target.value = '';   // permite volver a elegir la misma
-                                                if (!f) return;
-                                                if (f.size > 10 * 1024 * 1024) { setError('La foto no puede pasar de 10 MB'); return; }
-                                                setError('');
-                                                setFotos(prev => [...prev, f].slice(0, MAX_FOTOS));
-                                            }} />
-                                        <Camera size={20} strokeWidth={2}
-                                            className={fotos.length === 0 ? 'text-warning-text' : 'text-content-3'} />
-                                        <span className={`text-micro font-bold ${fotos.length === 0 ? 'text-warning-text' : 'text-content-3'}`}>
-                                            {fotos.length === 0 ? 'Agregar' : 'Otra'}
-                                        </span>
-                                    </label>
-                                )}
-                            </div>
+                            {/* La tira canónica. Antes estaba escrita acá —igual,
+                                letra por letra, que en `DevolverModal`— con un solo
+                                azulejo cuyo `capture` no abría la cámara: ver
+                                `FotosDeEvidencia` y `capturaDeFoto.js`. */}
+                            <FotosDeEvidencia
+                                fotos={fotos} onCambio={setFotos}
+                                max={MAX_FOTOS} maxMB={10}
+                                resaltar onError={setError} alt="Daño"
+                            />
 
                             {fotos.length === 0 && (
                                 <p className="text-micro text-warning-text font-semibold px-1 leading-snug">

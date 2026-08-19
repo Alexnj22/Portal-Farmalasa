@@ -40,6 +40,8 @@ import {
 import PortalInput from '../../components/common/PortalInput';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
+import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 
 
 const PRICE_FIELDS = [
@@ -956,6 +958,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     const [devolutivo, setDevolutivo]           = useState(!!product.devolutivo);
     const [savingDevolutivo, setSavingDevolutivo] = useState(false);
     const fileRef       = useRef(null);
+    // La cámara necesita su PROPIO input: `accept` con el comodín exacto y
+    // `capture` juntos, que es lo único que abre la cámara dentro de la app
+    // (ver `capturaDeFoto.js`). El de archivos conserva su lista fina, que es
+    // la que hace juego con los tipos que acepta el bucket `product-photos`.
+    const camaraRef     = useRef(null);
+    // En escritorio `capture` no hace nada y el botón sería un duplicado del
+    // de subir.
+    const esTactil      = useCoarsePointer();
 
     useEffect(() => { setDevolutivo(!!product.devolutivo); }, [product.devolutivo]);
 
@@ -1118,6 +1128,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 <Camera size={9} /> Foto del producto
                             </p>
                             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
+                            <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden"
+                                aria-hidden="true" tabIndex={-1} onChange={handlePhotoSelect} />
                             {pendingFile && (
                                 <PhotoEditorModal
                                     file={pendingFile}
@@ -1152,9 +1164,15 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     </div>
                                 )}
                             </button>
-                            {localFoto && (
-                                <Button variant="ghost" size="xs" className="mt-1.5" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
-                            )}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                {esTactil && (
+                                    <Button variant="secondary" size="xs" icon={Camera}
+                                        onClick={() => camaraRef.current?.click()}>Tomar foto</Button>
+                                )}
+                                {localFoto && (
+                                    <Button variant="ghost" size="xs" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
+                                )}
+                            </div>
                         </div>
 
                         {/* ── RIGHT: Precios ── */}

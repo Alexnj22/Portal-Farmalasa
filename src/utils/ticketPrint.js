@@ -968,34 +968,54 @@ export function guardarAjustesDeImpresion(ajustes) {
 /**
  * **Este es el que llama una pantalla.** Los otros dos son las mitades.
  *
- * Intenta primero el camino sin diálogo —el papel sale solo, como en la caja— y
- * si esta computadora no lo tiene, abre el diálogo del navegador. El respaldo es
- * seguro: sólo cae al diálogo cuando el envío directo **fue rechazado**, o sea
- * cuando nadie lo recibió, así que no puede imprimir dos veces.
- *
  * El ancho y el sistema salen de los ajustes de esta computadora; `ticket.ancho`
  * los pisa si la pantalla tiene un motivo para elegirlo.
- *
- * Lo que NO puede prometer es que el papel haya salido: la respuesta del programa
- * de la caja es opaca por construcción (ver `enviarAImpresoraDeLaComputadora`).
  *
  * `soloDirecta` es para los papeles que salen SOLOS, sin que nadie haya
  * apretado «imprimir»: al confirmar un corte, por ejemplo. Ahí el respaldo del
  * diálogo no sirve y estorba — quien confirma desde el teléfono se encontraría
  * con una ventana de impresión que no pidió.
  *
- * ── `sala`: el papel sale en la caja de ESA sucursal ───────────────────────
- * El camino directo sólo alcanza la computadora que tiene el navegador abierto,
- * y no puede alcanzar otra: apuntar a la IP de la caja es contenido mixto y el
- * navegador lo corta. Con `sala`, lo que no se pudo imprimir acá se deja en la
- * cola de esa sucursal y lo saca el agente que corre en su caja.
+ * ── El orden: la caja de la sala PRIMERO ───────────────────────────────────
  *
- * El orden importa y es el de la utilidad decreciente:
- *   1. **Acá mismo**, si esta computadora tiene la ticketera — el papel sale al
- *      instante y quien lo pidió lo tiene en la mano.
- *   2. **En la caja de la sala**, si sabemos cuál es — llega en dos segundos y
- *      es el único camino que funciona desde un teléfono.
- *   3. **El diálogo del navegador**, que es el respaldo de siempre.
+ * Hasta el 2026-08-19 se intentaba primero el camino directo de esta
+ * computadora, y eso fallaba justo donde tenía que funcionar. Medido en Salud 4
+ * ese día: en la computadora de la caja el programa del otro sistema **sí
+ * contesta** —por eso ese sistema imprime—, su respuesta llega **opaca**, y el
+ * portal daba el trabajo por impreso. No encolaba nada y no salía papel. La
+ * cola de esa sala tenía 8 documentos del día de la instalación y **ninguno en
+ * las 24 horas siguientes**, mientras las otras cinco salas encolaban 14, 14,
+ * 14, 16 y 11: las salas donde el portal funcionaba eran las que imprimían
+ * desde una computadora SIN ese programa.
+ *
+ * O sea que el camino que no se puede verificar iba adelante del que sí, y
+ * ganaba siempre en el único lugar donde importa. Un acuse ilegible no puede
+ * decidir: hoy el orden es el de la **evidencia decreciente**.
+ *
+ *   1. **La caja de la sala**, si esa sala tiene una registrada — el agente
+ *      contesta si el comando funcionó y llega en dos segundos (medido: 1.7).
+ *      En la computadora de la caja los dos caminos terminan en la MISMA
+ *      ticketera, así que preferir el que acusa recibo no cuesta nada.
+ *   2. **Esta computadora**, para la sala que no tiene caja registrada — el
+ *      papel sale al instante, pero «recibido» no es «salió».
+ *   3. **El diálogo del navegador**, el respaldo de siempre.
+ *
+ * `encolar_impresion` rechaza cuando esa sala no tiene ninguna caja registrada,
+ * así que llegar al paso 2 significa que la cola no era un camino, no que se
+ * prefirió el otro. Y no puede imprimir dos veces: cada paso corre sólo cuando
+ * el anterior fue rechazado.
+ *
+ * **Lo que sí cambia al poner la cola primero**: una caja registrada pero
+ * apagada ya no deja pasar al camino directo — el documento queda esperando en
+ * su cola y sale cuando la caja despierta. Es a propósito: ese documento es de
+ * ESA sala y ahí tiene que salir, y esperar es mejor que imprimirlo en la
+ * computadora de quien apretó el botón. Pero el aviso dice «sale en unos
+ * segundos», que con la caja apagada no es cierto; quién está latiendo se ve en
+ * Sistema → Prueba de impresión.
+ *
+ * Lo que sigue sin poder prometerse es el paso 2: la respuesta del programa de
+ * la caja es opaca por construcción (ver `enviarAImpresoraDeLaComputadora`).
+ * Por el paso 1, en cambio, `ok` significa que el agente escribió.
  *
  * @returns {Promise<{via: 'directa'|'cola'|'dialogo', ok: boolean, detalle: string}>}
  */
@@ -1006,9 +1026,6 @@ export async function imprimirDocumento(
     const doc = { ancho, ...ticket };
 
     if (!forzarDialogo) {
-        const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });
-        if (r.ok) return { via: 'directa', ok: true, detalle: r.detalle };
-
         if (sala != null) {
             // `await import`: la capa de datos de la cola no tiene por qué
             // viajar en el chunk de una vista que quizá nunca imprima.
@@ -1024,9 +1041,13 @@ export async function imprimirDocumento(
                     detalle: 'Se mandó a la caja de la sala. Sale en unos segundos.',
                 };
             }
-            // Sin caja registrada la función rechaza a propósito: una cola que
-            // nadie lee es papel que nunca sale. Se sigue al diálogo.
+            // Sin una caja registrada la función rechaza a propósito: una
+            // cola que nadie lee es papel que nunca sale. Se sigue a los otros
+            // dos caminos.
         }
+
+        const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });
+        if (r.ok) return { via: 'directa', ok: true, detalle: r.detalle };
 
         if (soloDirecta) return { via: 'directa', ok: false, detalle: r.detalle };
     }

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.667.2 — El ticket de una sala sale por su caja, no por la computadora de quien lo pide
+
+Salud 4 dejó de imprimir desde el portal mientras el otro sistema imprimía sin
+problema en esa misma computadora. El agente de la caja estaba sano: se le dejó
+un ticket de prueba en la cola y lo sacó en **1.7 segundos**, con papel a la
+vista.
+
+El defecto estaba antes. El portal intentaba **primero** el camino directo
+—hablarle al programa de impresión de esta computadora— y recién si eso fallaba
+usaba la cola de la sala. Pero **la respuesta de ese programa llega opaca**: un
+404 y un 200 se ven idénticos. En una computadora de sala ese programa contesta
+—por eso el otro sistema imprime— así que el portal daba el trabajo por hecho,
+no encolaba nada y no salía papel.
+
+Por eso fallaba en una sola sala: **Salud 4 es la que imprime desde la
+computadora de la caja**. La cola de esa sala tenía 8 documentos, todos del día
+de la instalación, y ninguno en las 24 horas siguientes; en el mismo período
+Salud 1, Salud 2, Salud 3, Salud 5 y La Popular encolaron 14, 14, 14, 16 y 11
+— todas imprimiendo desde una computadora sin ese programa, donde el paso que
+fallaba dejaba pasar al que funcionaba. No era una sala rota: era la única sala
+que llegaba al camino que no se puede verificar.
+
+Ahora el orden es el de la **evidencia decreciente**: primero la caja de la
+sala, que acusa recibo de verdad —el agente contesta si el comando funcionó—,
+después esta computadora, y al final el diálogo del navegador. En la
+computadora de la caja los dos caminos terminan en la misma ticketera, así que
+preferir el que se puede verificar no cuesta nada.
+
+Consecuencia a tener presente: una caja registrada pero apagada ya no deja
+pasar al camino directo — el documento espera en su cola y sale cuando la caja
+despierta. Es a propósito (ese papel es de esa sala), pero el aviso sigue
+diciendo «sale en unos segundos»; quién está latiendo se ve en Sistema →
+Prueba de impresión.
+
 ## v2.667.1 — La recepción del traslado ya no puede cargar dos veces
 
 Apareció rescatando los renglones de v2.666.1. Para saber si un traslado ya

@@ -66,8 +66,16 @@ const estadoDelAgente = (caja, publicada) => {
     // Un agente viejo no informa nada: es exactamente el que hay que actualizar,
     // y decir «sin datos» sería esconder la respuesta que se está buscando.
     if (!version) return { txt: 'versión vieja — hay que actualizarla', mal: true };
-    if (canal === 'CUPS') return { txt: 'imprime por CUPS — le quita la ticketera al otro sistema', mal: true };
-    if (publicada && version !== publicada) return { txt: `atrasada (${version})`, mal: true };
+
+    // Los dos problemas se DICEN JUNTOS, no gana uno. Con `if/else`, una caja
+    // atrasada Y en CUPS sólo mostraba el CUPS, y eso manda a revisar la
+    // impresora cuando lo que pasa es que la corrección todavía no le llegó —
+    // dos acciones distintas para un mismo renglón (Salud 1, 19-ago-2026).
+    const problemas = [];
+    if (publicada && version !== publicada) problemas.push('atrasada — la corrección aún no le llega');
+    if (canal === 'CUPS') problemas.push('imprime por CUPS, le quita la ticketera al otro sistema');
+    if (problemas.length) return { txt: problemas.join(' · '), mal: true };
+
     return { txt: `al día · escribe en ${canal || 'la ticketera'}`, mal: false };
 };
 

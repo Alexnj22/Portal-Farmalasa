@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.5 — Los dos problemas de una caja se dicen juntos
+
+Salud 1 estaba **atrasada** (todavía sin la corrección del rescate) **y** en
+CUPS, y el renglón sólo decía lo segundo. Eso manda a revisar la impresora
+cuando lo que pasa es que el arreglo todavía no le llegó — dos acciones
+distintas escondidas detrás de un `if/else` donde uno le ganaba al otro.
+
+Ahora se dicen los dos, separados por un punto medio. Un estado que resume de
+más se lee como un diagnóstico, y éste mandaba al lugar equivocado.
+
 ## v2.665.4 — Un permiso que falta se ve igual que un dato que no existe
 
 La pantalla de Prueba de impresión decía **«Ninguna sala imprime todavía»** con

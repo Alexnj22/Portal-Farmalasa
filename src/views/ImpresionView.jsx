@@ -14,6 +14,7 @@ import {
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
     comprobarLaConexion, permisoDeRedLocal,
     leerAjustesDeImpresion, guardarAjustesDeImpresion,
+    reglaDeColumnas, fechaHora,
 } from '../utils/ticketPrint';
 
 const EMPTY_ARRAY = [];
@@ -28,21 +29,9 @@ const EMPTY_ARRAY = [];
 // se desincronizan sin avisar — el síntoma sería un ticket más angosto en una
 // vista que en otra, visible sólo en papel.
 
-// La regla de columnas: un renglón de EXACTAMENTE n caracteres, con un dígito
-// cada 10. Se imprimen tres —32, 40 y 48— y el papel contesta cuál es el ancho
-// real: el que llega justo al borde sin partirse es la capacidad de la
-// impresora. Es la única forma honesta de saberlo; el modelo declarado y lo que
-// sale del rollo no siempre coinciden, y la pantalla no puede medirlo.
-const regla = (n) => Array.from({ length: n }, (_, i) => {
-    const c = i + 1;
-    if (c % 10 === 0) return String((c / 10) % 10);
-    if (c % 5 === 0) return '+';
-    return '-';
-}).join('');
-
-const dosDigitos = (n) => String(n).padStart(2, '0');
-const fechaHora = (d) => `${dosDigitos(d.getDate())}/${dosDigitos(d.getMonth() + 1)}/${d.getFullYear()}`
-    + ` ${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}`;
+// La regla de medir y el formato de fecha viven en `ticketPrint.js`: los usa
+// también el papel de prueba que se manda a la caja de una sala, y dos copias de
+// la regla serían dos instrumentos de medir distintos.
 
 // El navegador y el sistema, en palabras. Sirve para que la prueba impresa diga
 // desde dónde se hizo: la misma ticketera responde distinto según quién le
@@ -129,7 +118,8 @@ const ImpresionView = () => {
                 {
                     titulo: 'Cuántas letras entran',
                     texto: 'El renglón más largo que NO se parta en dos es el ancho de esta impresora.',
-                    monoespaciado: `32:\n${regla(32)}\n40:\n${regla(40)}\n48:\n${regla(48)}`,
+                    monoespaciado: `32:\n${reglaDeColumnas(32)}\n40:\n${reglaDeColumnas(40)}`
+                        + `\n48:\n${reglaDeColumnas(48)}`,
                 },
             ],
             items: {

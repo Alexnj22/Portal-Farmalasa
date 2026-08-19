@@ -806,6 +806,75 @@ export function ticketEnBase64(texto) {
     return btoa(bytes);
 }
 
+// La regla de columnas —que NO es el `regla()` de más arriba, el separador de
+// guiones bajos del ticket—: un renglón de EXACTAMENTE n caracteres, con un dígito
+// cada 10. Se imprimen tres —32, 40 y 48— y el papel contesta cuál es el ancho
+// real: el que llega justo al borde sin partirse es la capacidad de la
+// impresora. Es la única forma honesta de saberlo; el modelo declarado y lo que
+// sale del rollo no siempre coinciden, y la pantalla no puede medirlo.
+//
+// Vive acá y no en la pantalla de prueba porque la usan DOS papeles: el que se
+// imprime en esta computadora y el que se manda a la caja de una sala. Dos
+// definiciones de la regla serían dos instrumentos de medir distintos, y la
+// diferencia sólo se vería comparando dos papeles.
+export const reglaDeColumnas = (n) => Array.from({ length: n }, (_, i) => {
+    const c = i + 1;
+    if (c % 10 === 0) return String((c / 10) % 10);
+    if (c % 5 === 0) return '+';
+    return '-';
+}).join('');
+
+const dosDigitos = (n) => String(n).padStart(2, '0');
+export const fechaHora = (d) => `${dosDigitos(d.getDate())}/${dosDigitos(d.getMonth() + 1)}/${d.getFullYear()}`
+    + ` ${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}`;
+
+/**
+ * El papel que prueba UNA caja de sala, mandado por su cola.
+ *
+ * Existe porque hasta el 2026-08-19 no había forma de probar el agente desde el
+ * portal: el único botón de la pantalla de impresión usa el camino directo, o
+ * sea que después de actualizar una caja no se podía saber si imprimía sin
+ * gastar un documento de verdad. Eso fue lo que hizo parecer un problema del
+ * agente lo que era un problema del orden de la cascada (ver
+ * `imprimirDocumento`).
+ *
+ * Lleva la regla porque **el ancho del rollo se mide en la caja, no acá**: cada
+ * sala tiene su impresora y este papel es el que puede contestarlo sin que
+ * nadie viaje.
+ *
+ * Dice a qué caja se mandó, para que quien esté frente a la ticketera sepa si
+ * el papel que tiene en la mano es el que apretó alguien más — y quién.
+ */
+export function construirTicketDePruebaDeCaja({
+    caja = '', sala = '', quien = '', version = '', ancho = ANCHO_POR_DEFECTO, ahora = new Date(),
+} = {}) {
+    return {
+        ancho,
+        titulo: 'Prueba de la caja',
+        datos: [
+            ['Caja', caja || '—'],
+            ['Sala', sala || '—'],
+            ['La mandó', quien || '—'],
+            ['Fecha', fechaHora(ahora)],
+            ...(version ? [['Portal', `v${version}`]] : []),
+        ],
+        bloques: [
+            {
+                titulo: 'Cuántas letras entran',
+                texto: 'El renglón más largo que NO se parta en dos es el ancho de esta impresora.',
+                monoespaciado: `32:\n${reglaDeColumnas(32)}\n40:\n${reglaDeColumnas(40)}`
+                    + `\n48:\n${reglaDeColumnas(48)}`,
+            },
+        ],
+        barraPrueba: true,
+        pie: [
+            'Si este papel salió, esta caja imprime lo que',
+            'se le manda desde cualquier computadora o telefono.',
+            'Es una prueba: no es un comprobante.',
+        ],
+    };
+}
+
 /**
  * ¿El navegador tiene prohibido alcanzar la red local de esta computadora?
  *

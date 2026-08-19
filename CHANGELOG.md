@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.668.0 — Probar una caja de sala sin gastar un documento de verdad
+
+Cada caja registrada tiene ahora su botón **Probar** en Sistema → Prueba de
+impresión. Manda un papel corto a esa sala **por la cola** —el camino que se
+quiere probar— y a los cinco segundos la lista de abajo dice qué contestó el
+agente: «Impreso», o «No salió» con el motivo escrito.
+
+Hacía falta porque hasta ahora **no había forma de probar una caja desde el
+portal**. El único botón de esa pantalla, «Imprimir el ticket», usa el camino
+directo, que sólo alcanza a la computadora que tiene el navegador abierto: no
+toca el agente ni la cola. Después de actualizar una caja había que cerrar una
+bolsa de verdad para saber si imprimía, y si no salía papel no se podía separar
+«el agente está mal» de «el portal no le mandó nada». Eso es exactamente lo que
+pasó con Salud 4 el 19-ago.
+
+El papel de prueba lleva **la regla de columnas**, que es lo que contesta el
+ancho real de ese rollo: el renglón más largo que no se parte en dos. Cada sala
+tiene su impresora, así que esa pregunta sólo se puede contestar en la caja — y
+ahora se contesta sin que nadie viaje.
+
+También dice a qué caja se lo mandó y quién, porque la cola es **por sala, no
+por caja**: si una sala tuviera dos registradas, imprime la que pregunte
+primero, y ese renglón es lo único que distingue cuál contestó.
+
+El botón no pide permiso de edición: no cambia nada, gasta un papel, y quien
+mira esta pantalla porque una sala no imprime necesita poder contestarse eso.
+Queda apagado mientras la caja no esté instalada — sin agente el papel no sale
+de ningún lado.
+
 ## v2.667.2 — El ticket de una sala sale por su caja, no por la computadora de quien lo pide
 
 Salud 4 dejó de imprimir desde el portal mientras el otro sistema imprimía sin

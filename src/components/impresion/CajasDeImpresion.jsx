@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, Copy, Plus, Printer, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Copy, Plus, Printer, Send, Trash2 } from 'lucide-react';
 import Button from '../common/Button';
 import ConfirmModal from '../common/ConfirmModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import {
-    crearCodigoDeVinculacion, eliminarCajaDeImpresion,
+    crearCodigoDeVinculacion, eliminarCajaDeImpresion, encolarImpresion,
     fetchCajasDeImpresion, fetchColaDeImpresion, fetchVersionPublicadaDelAgente,
 } from '../../data/impresion';
+import { construirTicketDePruebaDeCaja, textoParaElRollo, ticketEnBase64 } from '../../utils/ticketPrint';
+import { APP_VERSION } from '../../version';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 
@@ -32,6 +35,15 @@ import { useToastStore } from '../../store/toastStore';
  * «Registrada» no significa «funciona»: significa que alguien la dio de alta. Lo
  * que dice si va a salir papel es cuándo preguntó por última vez. Por eso esa
  * columna se pinta y no se esconde detrás de un ícono verde.
+ *
+ * ── Y ni el latido prueba que salga papel: para eso está «Probar» ──────────
+ * Un latido dice que el agente pregunta, no que la ticketera escriba. Hasta el
+ * 2026-08-19 no había forma de probar una caja desde el portal —el botón
+ * «Imprimir el ticket» de esta misma pantalla usa el camino DIRECTO, que sólo
+ * alcanza a la computadora que tiene el navegador abierto—, así que después de
+ * actualizar un agente había que gastar un documento de verdad para saber si
+ * imprimía. Fue lo que hizo parecer un problema del agente lo que era un
+ * problema del orden de la cascada (ver `imprimirDocumento`).
  */
 
 const VACIO = [];
@@ -101,6 +113,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
     // render y le cambia la identidad al `useMemo` de abajo en cada uno.
     const branches = useStaff((s) => s.branches ?? VACIO);
     const showToast = useToastStore((s) => s.showToast);
+    const { user } = useAuth();
 
     const [cajas, setCajas] = useState([]);
     const [cola, setCola] = useState([]);
@@ -112,6 +125,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const [borrando, setBorrando] = useState(false);
     const [publicada, setPublicada] = useState(null);
     const [falloLaLista, setFalloLaLista] = useState(null);
+    const [probando, setProbando] = useState(null);
 
     const cargar = useCallback(async () => {
         const { cajas: filas, error } = await fetchCajasDeImpresion();
@@ -151,6 +165,47 @@ export default function CajasDeImpresion({ puedeEditar }) {
             showToast?.('No se pudo copiar', 'Selecciónalo y cópialo a mano.', 'error');
         }
     }, [showToast]);
+
+    /**
+     * Gasta un papel en esa caja para contestar la única pregunta que ni el
+     * latido ni la versión contestan: ¿escribe la ticketera?
+     *
+     * Va por la cola, que es el camino que se quiere probar, y **no** por el
+     * directo: el directo sólo alcanza a esta computadora.
+     *
+     * La cola es POR SALA, no por caja — si esa sala tiene dos registradas,
+     * imprime la que pregunte primero (`FOR UPDATE SKIP LOCKED`). Por eso el
+     * papel lleva escrito a qué caja se lo mandó y quién: con dos cajas, eso es
+     * lo único que distingue cuál contestó.
+     *
+     * Después de mandarlo espera y vuelve a leer: el agente pregunta cada 2
+     * segundos, así que a los 5 la cola de abajo ya dice «Impreso» o «No salió»
+     * con su motivo. Sin esa relectura habría que refrescar a mano justo cuando
+     * uno está mirando el papel.
+     */
+    const probar = useCallback(async (c) => {
+        if (probando) return;
+        setProbando(c.id);
+        const sala = nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`;
+        const { error } = await encolarImpresion({
+            branchId: c.branch_id,
+            titulo: 'PRUEBA DE LA CAJA',
+            contenidoB64: ticketEnBase64(textoParaElRollo(construirTicketDePruebaDeCaja({
+                caja: c.nombre, sala, quien: user?.name || '', version: APP_VERSION,
+            }))),
+        });
+        if (error) {
+            setProbando(null);
+            showToast?.('No se pudo mandar la prueba',
+                mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
+            return;
+        }
+        showToast?.('Mandado a la caja',
+            `Mira si sale papel en ${sala}. Abajo dice qué contestó.`, 'success');
+        await new Promise((r) => setTimeout(r, 5000));
+        await cargar();
+        setProbando(null);
+    }, [probando, nombreSala, user, showToast, cargar]);
 
     const borrar = useCallback(async () => {
         if (!aBorrar || borrando) return;
@@ -269,6 +324,19 @@ export default function CajasDeImpresion({ puedeEditar }) {
                         <span className={`text-caption font-bold shrink-0 ${latido.vivo ? 'text-success-text' : 'text-content-3'}`}>
                             {latido.txt}
                         </span>
+                        {/* «Probar» no pide `puedeEditar`: no cambia nada, gasta
+                            un papel — y quien mira esta pantalla porque una sala
+                            no imprime necesita poder contestarse eso sin pedir
+                            permisos. Se apaga mientras no esté instalada: sin
+                            agente el papel no sale de ningún lado. */}
+                        <Button
+                            variant="secondary" size="sm" icon={Send}
+                            loading={probando === c.id}
+                            disabled={!c.vinculada_at || (probando && probando !== c.id)}
+                            onClick={() => probar(c)}
+                        >
+                            Probar
+                        </Button>
                         {puedeEditar && (
                             <Button
                                 variant="ghost" size="sm" icon={Trash2} iconOnly

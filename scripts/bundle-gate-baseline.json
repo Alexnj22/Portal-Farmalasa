@@ -3,7 +3,10 @@
   "_motivos": {
     "FacturacionView": "Subido a mano el 2026-08-08 (medía 59 contra un techo de 57). No hay librería pesada: los 59 kB son 18.5 de la vista y el resto el kit canónico compartido (FilterBar 7.6, LiquidSelect 6.1, DataTable 3.9). El techo de 57 se generó el 2026-07-30 y AL DÍA SIGUIENTE la vista pasó su barra al canónico (v2.299.0, que le sumó CarrilCards y StatCard) y ganó la pestaña Observaciones (v2.308.0). O sea que creció por adoptar el estándar y por hacer más cosas, no por una regresión. Bajarlo exigiría des-canonicalizarla, que es al revés de lo que el proyecto quiere.",
     "DashboardView": "BAJADO a mano el 2026-08-08, de 196 a 118: el Inicio dejó de arrastrar `recharts` en su cierre estático (204 → 103 kB) porque el único gráfico de la pantalla pasa por `React.lazy`. El techo se aprieta a propósito en vez de dejarlo en 196 — con el techo viejo, volver a importar recharts de forma estática (+95 kB) daba 198 y pasaba raspando; con 118 salta enseguida, que es para lo que sirve el ratchet.",
-    "ProveedoresView": "Subido a mano el 2026-08-15, de 44 a 46 (medía 45). La vista NO creció: cambió el empaquetado. `git bisect` sobre las 309 revisiones desde que se fijó el techo señala v2.604.0 —«la campana decide en el sitio»—, y el desglose antes/después de ESE commit dice exactamente qué pasó: `HojaMovil` dejó de ir inlineada dentro del trozo de `ConfirmModal` y pasó a trozo propio, porque la campana empezó a usarla. Los mismos bytes en dos trozos en vez de uno cuestan la cabecera de gzip del segundo, y con el redondeo a kB eso son los 44 → 45. No hay nada que recortar: de los 45 kB, 9 son la vista y 36 el kit canónico que de verdad dibuja (LiquidSelect 6, GlassViewLayout 6, FilterBar 6, DataTable 4). Ni una librería pesada ni un modal que se pueda diferir. Se deja en 46 y no en 45 para que el próximo reparto de trozos —que no es una regresión de nadie— no vuelva a rebotar el gate; un salto de escalón real sigue saltando."
+    "ProveedoresView": "Subido a mano el 2026-08-15, de 44 a 46 (medía 45). La vista NO creció: cambió el empaquetado. `git bisect` sobre las 309 revisiones desde que se fijó el techo señala v2.604.0 —«la campana decide en el sitio»—, y el desglose antes/después de ESE commit dice exactamente qué pasó: `HojaMovil` dejó de ir inlineada dentro del trozo de `ConfirmModal` y pasó a trozo propio, porque la campana empezó a usarla. Los mismos bytes en dos trozos en vez de uno cuestan la cabecera de gzip del segundo, y con el redondeo a kB eso son los 44 → 45. No hay nada que recortar: de los 45 kB, 9 son la vista y 36 el kit canónico que de verdad dibuja (LiquidSelect 6, GlassViewLayout 6, FilterBar 6, DataTable 4). Ni una librería pesada ni un modal que se pueda diferir. Se deja en 46 y no en 45 para que el próximo reparto de trozos —que no es una regresión de nadie— no vuelva a rebotar el gate; un salto de escalón real sigue saltando.",
+    "PedidosView": "BAJADO a mano el 2026-08-19, de 151 a 29: las cinco pestañas pasaron a `lazy()` y el cierre estático de la vista quedó en 19 kB (era 154). Antes, entrar a Pedidos bajaba las cinco con RecepcionModal (1,959 líneas), CrearRutaModal (812), RutaMapModal (565) y FinalizarCajasModal (516) adentro, para mirar una. Medido: caer en Generar cuesta 41 kB (19 el cascarón + 22 la pestaña) contra 154. El techo se aprieta a propósito en vez de dejarlo en 151 —mismo criterio que DashboardView—: con el viejo, volver a importar una pestaña de forma estática pasaba raspando; con 29 salta enseguida. Lo que NO bajó es TabPedidos, que sola pesa 123 kB (59.9 su propio trozo + 16.3 avisoSalidaPedido) — el gate no la ve porque llega por `import()`, y es el próximo corte.",
+    "RequestsView": "Subido a mano el 2026-08-19, de 56 a 58 (medía 57). No hay librería pesada: los 57 kB son el kit canónico (LiquidSelect 6.1, GlassViewLayout 6.0, FilterBar 5.7) más las partes de la propia vista. El techo se generó el 2026-07-30 y desde entonces la vista creció por hacer más cosas, no por una regresión: `solicitudes/DetalleSolicitud.jsx` (849 líneas) y `solicitudes/TarjetaSolicitud.jsx` (527) NO existían ese día — son 48 commits de traslados, personas y operativas. Diferir DetalleSolicitud exigiría reestructurar TarjetaSolicitud, que también la usa NotificacionDetalle. Se deja en 58 y no en 57 para que un reparto de trozos no vuelva a rebotar el gate.",
+    "PermissionsView": "Subido a mano el 2026-08-19, de 47 a 49 (medía 48). No hay librería pesada: 10.6 kB son la vista, 7.8 el catálogo `permissionModules` y el resto el kit canónico. Y el catálogo es justo lo que creció: **197 → 543 líneas** desde que se fijó el techo el 2026-07-30, en 52 commits, porque el portal ganó módulos (Bitácoras, Cargar compra, Cuentas por pagar). No hay nada que diferir — ese catálogo ES lo que la pantalla dibuja. Se deja en 49 y no en 48 por el mismo margen de reparto."
   },
   "entry": 301,
   "vistas": {
@@ -15,7 +18,7 @@
     "BranchesView": 46,
     "BranchDetailView": 73,
     "RolesView": 42,
-    "PermissionsView": 47,
+    "PermissionsView": 49,
     "SchedulesView": 73,
     "EmployeeDetailView": 38,
     "TimeClockView": 48,
@@ -30,14 +33,14 @@
     "OrphanObjectsView": 30,
     "MaintenanceView": 37,
     "RawTestView": 11,
-    "RequestsView": 56,
+    "RequestsView": 58,
     "VacationPlanView": 52,
     "PayrollView": 47,
     "VentasView": 66,
     "CortesView": 72,
     "ProductosView": 87,
     "LaboratoriosView": 40,
-    "PedidosView": 151,
+    "PedidosView": 29,
     "GestionStockView": 53,
     "InventarioView": 49,
     "MinMaxView": 89,

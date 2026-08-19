@@ -220,7 +220,60 @@ Deno.serve(async (req) => {
     // la persona real: su columna «usuario» muestra siempre la cuenta del portal.
     let yo = "-";
 
-    if (interno) {
+    // ── La RECEPCIÓN que se retoma sola ───────────────────────────────────
+    // El despacho se retoma adoptando su fila de corrida. La recepción no deja
+    // ninguna, así que hasta el 2026-08-19 lo que no entraba en su presupuesto
+    // se quedaba ahí hasta que una persona viera la tarjeta y apretara
+    // «Reintentar». Medido en el pedido 120 de Salud 2: la recepción trabajó
+    // 238,8 s contra un techo de 240 y se cortó con 6 renglones sin entrar, que
+    // pasaron un día en tránsito —fuera de Bodega y sin entrar a la sala—
+    // mientras la tarjeta lo decía en rojo y nadie miraba.
+    //
+    // El cron dice QUÉ (pedido, sucursal) mirar; QUÉ recibir lo decide esta
+    // función: sale de `items_sin_ingresar`, que es «lo que la sala ya contó y
+    // no entró». Aunque el llamador pidiera otra cosa, acá no se ingresa a una
+    // sala nada que nadie haya contado — que es la única forma de que un
+    // reintento automático no invente que una caja llegó.
+    if (interno && cuerpo.accion === "recibir") {
+      pedidoId = String(cuerpo.pedido_id ?? "");
+      sucId = Number(cuerpo.erp_sucursal_id ?? 0);
+      if (!pedidoId || !sucId)
+        return json({ ok: false, error: "Faltan pedido_id o erp_sucursal_id." }, 400);
+
+      const { data: contados, error: contErr } = await admin
+        .rpc("items_sin_ingresar", { p_pedido_id: pedidoId, p_sucursal_id: sucId });
+      if (contErr) throw contErr;
+      const soloContados = (Array.isArray(contados) ? contados : []).map(Number).filter(Number.isFinite);
+      if (soloContados.length === 0)
+        return json({ ok: true, codigo: "NADA_QUE_REINTENTAR", recibidas: 0 });
+      // Se REEMPLAZA lo que viniera en el payload, no se suma: la lista de qué
+      // recibir es la que salió de la base, y nada más.
+      itemIds.length = 0;
+      itemIds.push(...soloContados);
+
+      // Firma con quien CONTÓ la caja, no con la máquina — igual que el
+      // despacho, que se retoma firmando con quien finalizó el pedido. Si no
+      // hay nadie anotado no se sigue: un ingreso sin responsable no es un
+      // asiento, y que no lo haya significa que algo más está mal.
+      const { data: conto } = await admin
+        .from("pedido_items").select("received_by")
+        .in("id", soloContados.slice(0, 200))
+        .not("received_by", "is", null)
+        .limit(1).maybeSingle();
+      if (!conto?.received_by)
+        return json({ ok: true, codigo: "SIN_QUIEN_CONTO", recibidas: 0 });
+      const { data: autor } = await admin
+        .from("employees").select("id, name, first_names, last_names")
+        .eq("id", conto.received_by).maybeSingle();
+      if (!autor) return json({ ok: true, codigo: "SIN_QUIEN_CONTO", recibidas: 0 });
+      quien = { id: autor.id as string, name: autor.name as string };
+      yo = nombreCorto(autor);
+
+      alcanceTodo = true;
+      accion = "recibir";
+      simulacro = false;
+      background = true;
+    } else if (interno) {
       const runId = String(cuerpo.run_id ?? "");
       if (!runId) return json({ ok: false, error: "Falta run_id." }, 400);
       const { data: run } = await admin

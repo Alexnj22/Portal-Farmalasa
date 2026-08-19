@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.668.1 — La recepción del pedido se retoma sola
+
+Seis renglones del pedido 120 de Salud 2 pasaron un día en tránsito —fuera de
+Bodega y sin entrar a la sala, o sea sin poder venderse—. La causa, medida:
+**la recepción trabajó 238,8 segundos contra un techo de 240** y se cortó.
+Recibió 364 renglones a ~656 ms cada uno y quedaron 6.
+
+Los 6 son exactamente **la cola de la lista**: la recepción procesa por número
+de hoja ascendente y las cajas especiales van al final. Se cortó a mitad de la
+hoja 11 —8 de sus 11 entraron— y las 3 cajas de Electrolit nunca se alcanzaron.
+La sala había confirmado las 11 hojas y las 3 cajas; no se saltó nada.
+
+**No es un error de lógica: es el techo haciendo su trabajo, y está apretado.**
+Esa misma mañana el pedido 119 recibió 383 renglones en una corrida igual y
+entró justo, a ~600 ms cada uno. Entre 365 y 385 renglones la recepción está
+exactamente en su límite, así que una sucursal grande entra o no entra según
+cómo conteste el sistema ese minuto.
+
+**Lo que faltaba era la continuación.** El despacho se retoma solo desde el
+11-ago: deja su fila de corrida y el cron `continuar-traslados-pedido` la
+adopta cada minuto. La recepción no deja ninguna fila, así que su único
+reintento era un botón — y el botón estaba ahí, en rojo, diciendo «6 sin
+ingresar» durante un día entero. Una alarma que depende de que alguien la mire,
+para un estado en el que la sala no puede facturar.
+
+Ahora hay simetría: el cron **`reintentar-ingreso-pedido`** corre cada 10
+minutos y termina lo que quedó.
+
+**Qué recibir NO lo decide el cron.** El cron sólo dice qué (pedido, sucursal)
+mirar; la función lo resuelve leyendo `items_sin_ingresar` —el mismo criterio
+que ya usaba el botón: «la sala lo contó y no entró»— y **reemplaza** con eso
+cualquier lista que le hubieran pasado. Un renglón que nadie contó no puede
+entrar por ahí: que su línea siga `enviada` es lo normal mientras la caja no se
+haya abierto, y meterlo al inventario solo sería inventar que llegó. Verificado
+midiendo la lista de trabajo: devuelve el pedido 120 y **deja fuera** los
+pedidos 124, 125 y 126, despachados y todavía sin contar.
+
+Dos decisiones más que se leen en el código: una línea en `error` **no** se
+reintenta sola (se cerró a propósito — un traslado anulado, por ejemplo), y el
+asiento se firma con **quien contó la caja**, no con la máquina, igual que el
+despacho firma con quien finalizó el pedido.
+
+Probado disparando exactamente la llamada del cron: los 6 entraron en 4
+segundos, firmados con Karen Figueroa, y el sistema los da por recibidos. El
+pedido 120 quedó en `sin_ingresar: 0`.
+
 ## v2.668.0 — Probar una caja de sala sin gastar un documento de verdad
 
 Cada caja registrada tiene ahora su botón **Probar** en Sistema → Prueba de

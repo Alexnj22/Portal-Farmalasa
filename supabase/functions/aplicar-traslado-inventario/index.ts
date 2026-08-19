@@ -58,6 +58,7 @@ import {
   conSala,
   disponibleEnBodega,
   estadoDeRecepcion,
+  existenciasDeUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -572,6 +573,13 @@ Deno.serve(async (req) => {
     let unidades = 0;
     let cortadoEn = -1;
 
+    // Sin lotes la casilla de la pantalla suma la ubicación de vencidos, así que
+    // el tope sale del reporte de ESTA ubicación — que acá puede ser justamente
+    // la de vencidos, porque desde el 2026-08-19 se puede pedir de ahí. Se lee
+    // UNA vez por solicitud y no por renglón: son 4 s, y adentro del bucle un
+    // traslado de cinco productos pagaría veinte. Ver `existenciasDeUbicacion`.
+    const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+
     for (let i = 0; i < lineas.length; i++) {
       if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
       const l = lineas[i];
@@ -634,7 +642,10 @@ Deno.serve(async (req) => {
       //
       // Y la cifra sale de los LOTES, no de la casilla de existencia — que trae
       // la del primer lote y no la del producto (ver `disponibleEnBodega`).
-      const hay = disponibleEnBodega(f, Number(unidad));
+      const hay = disponibleEnBodega(
+        f, Number(unidad),
+        enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
+      );
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",

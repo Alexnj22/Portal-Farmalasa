@@ -27,6 +27,8 @@ export const RECIBIR = `${BASE}/recibir_traslado.php`;
 export const SESION = `${BASE}/cambio_sesion.php`;
 export const LISTADO = `${BASE}/admin_traslados_dt.php`;
 export const VER = `${BASE}/ver_traslado.php`;
+// El mismo reporte del que el portal arma su inventario. Ver `existenciasDeUbicacion`.
+export const INVENTARIO = `${BASE}/reporte_inventario_json.php`;
 
 // El sistema no declara cuánto aguanta el `concepto` y no hay forma de leerlo
 // sin escribir. Se recorta a un largo conservador y se AVISA cuando pasa: un
@@ -248,7 +250,7 @@ export function leerFila(html: string): Fila {
  * mercadería que el reparto sí sabía armar.
  */
 export function disponibleEnBodega(
-  f: Fila, unidad: number,
+  f: Fila, unidad: number, enLaUbicacion?: number | null,
 ): { paquetes: number; unidades: number; lotes: number } {
   const u = Number(unidad) || 1;
   if (f.regulado && f.lotes.length) {
@@ -258,7 +260,98 @@ export function disponibleEnBodega(
       lotes: f.lotes.length,
     };
   }
-  return { paquetes: Math.floor(f.existencia / u), unidades: f.existencia, lotes: 0 };
+  // Sin control de lote NO se puede usar la casilla: el sistema la rotula
+  // «TOTAL STOCK» y es el total de la SUCURSAL —las dos ubicaciones sumadas—,
+  // ignorando por completo la que se le pide. Medido el 2026-08-19 pidiendo la
+  // misma fila para el área de trabajo y para la de vencidos: contesta idéntico.
+  //
+  //   BRONCOLEXIL JBE   3 en trabajo + 6 en vencidos → la casilla dice 9
+  //   ALCOHOL 90        25          + 5             → dice 30
+  //   TERMOMETRO        26          + 1             → dice 27
+  //
+  // O sea que el freno aprobaba despachar mercadería que está en el área de
+  // vencidos y NO se puede descargar de la de trabajo. El sistema lo rechaza
+  // después con «No hay suficiente stock en las ubicaciones», el renglón queda
+  // en error y alguien lo tiene que resolver a mano.
+  //
+  // `enLaUbicacion` es ese número bien leído (`existenciasDeUbicacion`). Cuando
+  // no se pudo leer llega `null` y se cae a la casilla: peor freno, pero el
+  // sistema sigue siendo la puerta de verdad y un freno que se cierra por una
+  // consulta secundaria dejaría de despachar por algo que no es del pedido.
+  const existencia = enLaUbicacion == null ? f.existencia : enLaUbicacion;
+  return { paquetes: Math.floor(existencia / u), unidades: existencia, lotes: 0 };
+}
+
+/**
+ * Cuánto hay de cada producto EN ESA UBICACIÓN, en unidades base.
+ *
+ * Sale del MISMO reporte del que el portal arma su inventario
+ * (`reporte_inventario_json.php`), así que no hay una segunda verdad: si la
+ * pantalla de existencias dice una cosa, el freno del despacho dice la misma.
+ *
+ * ── Las dos escalas, que es donde está la trampa ────────────────────────────
+ * El reporte da una fila **por lote y por presentación**, y su `cantidad` va en
+ * PAQUETES de esa presentación, no en unidades base. El factor lo trae la
+ * columna `detalle` con la forma «1x5». Sumar las cantidades a secas mezcla
+ * escalas y da un número que no es nada — me pasó al medirlo.
+ *
+ *   TRAMAL 100MG (1275) en el área de trabajo:
+ *     CAJA 1x5 lote 00341X  = 5   → 25 unidades
+ *     CAJA 1x5 lote L00246X = 2   → 10
+ *     CAJA 1x5 lote 00246X  = 11  → 55
+ *     UNIDAD 1x1 (los tres) = 0   →  0
+ *                                   ── 90, que es exactamente lo que suman sus
+ *                                      lotes en la pantalla de traslado.
+ *
+ * Comprobado así contra los lotes de 5 productos regulados —los únicos donde
+ * hay con qué contrastar—: 5 de 5 iguales, incluido el ORTODEL con 340.
+ *
+ * `detalle` es «1xN» en 4,838 de 4,848 filas; las 10 restantes («1», «BOTE»,
+ * «2X1») se leen como factor 1, que es quedarse corto y no de más.
+ *
+ * Devuelve `null` cuando no se pudo leer. Es a propósito: quien llama tiene que
+ * poder distinguir «no hay» de «no pregunté», y un producto que NO aparece en
+ * el reporte sí tiene 0 en esa ubicación.
+ */
+export async function existenciasDeUbicacion(
+  cookie: string, erpSucursal: number, ubicacion: number,
+): Promise<Map<number, number> | null> {
+  try {
+    const cuerpo = await pedir(
+      cookie,
+      `${INVENTARIO}?id_ubicacion=${encodeURIComponent(String(ubicacion))}`
+        + `&id_sucursal=${encodeURIComponent(String(erpSucursal))}`,
+      undefined,
+      { extra: { Referer: `${BASE}/dashboard.php` }, timeoutMs: 60_000 },
+    );
+    return existenciasDelReporte(JSON.parse(cuerpo));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * La cuenta sola, separada del viaje a la red para poder anclarla en las
+ * pruebas contra un payload REAL del sistema. Ver `existenciasDeUbicacion`.
+ */
+export function existenciasDelReporte(payload: unknown): Map<number, number> | null {
+  const factorDe = (detalle: unknown): number => {
+    const n = Number(String(detalle ?? "").match(/^\s*1\s*[xX]\s*(\d+)\s*$/)?.[1] ?? 1);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  };
+  const filas = (payload as { inventario?: unknown })?.inventario;
+  // Una lista vacía se trata como «no se pudo leer»: una ubicación de verdad
+  // vacía no existe en la práctica, y dar 0 a todo frenaría el pedido entero.
+  if (!Array.isArray(filas) || filas.length === 0) return null;
+  const mapa = new Map<number, number>();
+  for (const p of filas as Record<string, unknown>[]) {
+    const id = Number(p?.id_producto);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    const det = Array.isArray(p?.detalles) ? p.detalles as Record<string, unknown>[] : [];
+    const base = det.reduce((n, d) => n + Number(d?.cantidad ?? 0) * factorDe(d?.detalle), 0);
+    mapa.set(id, (mapa.get(id) ?? 0) + base);
+  }
+  return mapa;
 }
 
 /**

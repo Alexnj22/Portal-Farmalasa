@@ -5,6 +5,7 @@ import {
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
+  existenciasDeUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -827,6 +828,13 @@ Deno.serve(async (req) => {
       // `insert` no devuelve el id y el listado ignora el orden que se le pide.
       let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
 
+      // Cuánto hay DE VERDAD en el área de trabajo. La casilla de la pantalla
+      // de traslado es el total de la sucursal —vencidos incluidos— y no sirve
+      // de freno. Una sola lectura por corrida: 4 s y 1.5 MB para las 2,644
+      // filas de Bodega, contra ~370 ms por producto. Ver
+      // `existenciasDeUbicacion`.
+      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+
       let hechas = 0, fallidas = 0, sinTiempo = false;
 
       for (;;) {
@@ -875,9 +883,16 @@ Deno.serve(async (req) => {
           }
 
           // El tope sale de los LOTES, no de la casilla de existencia — que
-          // trae la del primer lote y no la del producto. Ver
+          // trae la del primer lote y no la del producto. Y sin lotes sale del
+          // reporte por ubicación, no de la casilla, que suma vencidos. Ver
           // `disponibleEnBodega`.
-          const hay = disponibleEnBodega(f, Number(pres.unidad));
+          //
+          // Ausente del reporte es CERO en esa ubicación, no «no sé»: el
+          // reporte trae el área entera.
+          const hay = disponibleEnBodega(
+            f, Number(pres.unidad),
+            enUbicacion ? (enUbicacion.get(Number(ln.erp_product_id)) ?? 0) : null,
+          );
           if (Number(ln.cantidad) > hay.paquetes) {
             await fallar(
               `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
@@ -1047,6 +1062,9 @@ Deno.serve(async (req) => {
       let total = 0;
       let unidades = 0;
       let verificados = 0;
+      // La misma lectura que hace el despacho: si esta pantalla contara de otra
+      // forma, pondría en cero productos que el despacho sí puede mandar.
+      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
 
       for (const it of items) {
         if (Date.now() - arranque > presupuesto) {
@@ -1094,7 +1112,10 @@ Deno.serve(async (req) => {
         // ser la MISMA cuenta que hace el despacho: si esta pantalla pone en
         // cero algo que el despacho sí podía mandar, Bodega deja de enviar
         // mercadería que está en el estante.
-        const hay = disponibleEnBodega(f, Number(pres.unidad));
+        const hay = disponibleEnBodega(
+          f, Number(pres.unidad),
+          enUbicacion ? (enUbicacion.get(Number(it.erp_product_id)) ?? 0) : null,
+        );
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",

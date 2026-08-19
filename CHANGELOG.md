@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.668.2 — El freno del despacho mira el estante, no la sucursal entera
+
+Salió investigando por qué un TERMOMETRO DIGITAL WELLPRO se rechaza al
+despacharse. **No explica ese caso** —queda abierto— pero destapó un defecto
+propio que sí estaba esperando para romper.
+
+Antes de mover un producto, el despacho comprueba que haya suficiente. Para un
+producto sin control de lote leía la casilla de la pantalla de traslado, que el
+propio sistema rotula **«TOTAL STOCK»**: es el total de la SUCURSAL —el área de
+trabajo más la de vencidos— e **ignora por completo la ubicación que se le
+pide**. Medido pidiendo la misma fila para las dos áreas de Bodega: contesta
+idéntico.
+
+| producto | en el estante | apartado en vencidos | lo que leía el freno |
+|---|---|---|---|
+| BRONCOLEXIL JBE | **3** | 6 | **9** |
+| ALCOHOL 90 X 240 ML | 25 | 5 | 30 |
+| TERMOMETRO DIGITAL | 26 | 1 | 27 |
+
+O sea que el freno aprobaba despachar mercadería apartada en vencidos, que no
+se puede descargar del estante. El sistema lo rechaza después con «No hay
+suficiente stock en las ubicaciones», el renglón queda en error y alguien lo
+resuelve a mano. BRONCOLEXIL es el que estaba en fila: cualquier pedido de 4 o
+más habría pasado el freno.
+
+Ahora el número sale de `reporte_inventario_json.php` — **el mismo reporte del
+que el portal arma su pantalla de existencias**, así que no hay una segunda
+verdad. Una lectura por corrida (4 s y 1.5 MB para las 2,644 filas de Bodega,
+contra ~370 ms por producto), y en el traslado entre salas una por solicitud y
+no por renglón.
+
+**La trampa estaba en las escalas**, y me mordió al medirlo: el reporte da una
+fila por lote **y por presentación**, y su `cantidad` va en PAQUETES, con el
+factor en la columna `detalle` («1x5»). Sumar las cantidades a secas da un
+número que no es nada. Bien contado, el TRAMAL da 5×5 + 2×5 + 11×5 = **90**,
+que es exactamente lo que suman sus lotes en la pantalla de traslado.
+Comprobado así contra 5 productos con lote controlado —los únicos donde hay una
+cifra independiente con qué contrastar—: **5 de 5 iguales**, incluido el ORTODEL
+con 340. Ancladas en `tests/unit/existenciasDeUbicacion.test.js` con el reporte
+real de Bodega.
+
+**Lo que no se tocó, a propósito:** con lote controlado la cuenta ya distinguía
+la ubicación (el mismo producto ofrece lotes distintos en cada área, medido),
+así que ese camino queda igual.
+
+**Y si el reporte no se puede leer, no se cierra:** se cae a la casilla de
+antes. El sistema sigue siendo la puerta de verdad, y un freno que se cierra
+por una consulta secundaria dejaría de despachar por algo que no es del pedido.
+Un producto ausente del reporte sí es cero — el reporte trae el área entera.
+
+El arreglo va a los cuatro lugares que hacían la misma cuenta: el despacho del
+pedido, **su simulacro** —que es lo que pone en cero los productos con problema
+en la pantalla de Bodega, y si contara distinto Bodega dejaría de enviar
+mercadería que sí está en el estante—, la devolución y el traslado entre salas.
+
 ## v2.668.1 — La recepción del pedido se retoma sola
 
 Seis renglones del pedido 120 de Salud 2 pasaron un día en tránsito —fuera de

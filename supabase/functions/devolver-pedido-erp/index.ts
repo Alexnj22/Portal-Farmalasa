@@ -5,6 +5,7 @@ import {
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
+  existenciasDeUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -505,6 +506,9 @@ Deno.serve(async (req) => {
       // La foto de los pendientes: el movimiento nuevo es el que no estaba. El
       // `insert` no devuelve el id y el listado ignora el orden que se le pide.
       let conocidos = await pendientesDeOrigen(cookie, ubicSala);
+      // Lo que hay de verdad en el área de trabajo de la sala. Ver
+      // `existenciasDeUbicacion`: la casilla de la pantalla suma vencidos.
+      const enUbicacion = await existenciasDeUbicacion(cookie, erpSala, ubicSala);
 
       for (const d of lista) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
@@ -548,7 +552,10 @@ Deno.serve(async (req) => {
         // lote, no la del producto (ver `disponibleEnBodega`). Acá el reparto de
         // abajo también sabe cubrir con varios, así que un tope por un solo lote
         // frenaría producto que sí está en la sala.
-        const hay = disponibleEnBodega(f, Number(pres.unidad));
+        const hay = disponibleEnBodega(
+          f, Number(pres.unidad),
+          enUbicacion ? (enUbicacion.get(Number(d.erp_product_id)) ?? 0) : null,
+        );
         if (Number(d.cantidad) > hay.paquetes) {
           await fallar(`De ${it.nombre} ${hayEnTexto(hay, "la sala")}: alcanzan para `
             + `${hay.paquetes} y la devolución son ${d.cantidad}.`);

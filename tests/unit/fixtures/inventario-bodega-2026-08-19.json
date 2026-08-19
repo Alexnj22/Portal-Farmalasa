@@ -1,0 +1,302 @@
+{
+ "capturado": "reporte_inventario_json.php de Bodega, 2026-08-19",
+ "trabajo": {
+  "inventario": [
+   {
+    "id_producto": "324",
+    "producto": "AKINETON RETARD 4MG X 20 TAB",
+    "detalles": [
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x1",
+      "lote": "1227161",
+      "fecha_vencimiento": "2027-07-01",
+      "cantidad": 1
+     },
+     {
+      "presentacion": "CAJA X 20",
+      "detalle": "1X1",
+      "lote": "1227161",
+      "fecha_vencimiento": "2027-07-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "481",
+    "producto": "ALCOHOL 90 X 240 ML",
+    "detalles": [
+     {
+      "presentacion": "BOTE",
+      "detalle": "1x1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2027-12-01",
+      "cantidad": 25
+     },
+     {
+      "presentacion": "FRASCO",
+      "detalle": "1X1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2027-12-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "2724",
+    "producto": "ALOPURINOL 300 MG X 100 TABS. ECOMED",
+    "detalles": [
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x10",
+      "lote": "6A096",
+      "fecha_vencimiento": "2030-01-01",
+      "cantidad": 0
+     },
+     {
+      "presentacion": "BLISTER",
+      "detalle": "1x1",
+      "lote": "6A096",
+      "fecha_vencimiento": "2030-01-01",
+      "cantidad": 5
+     },
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x10",
+      "lote": "6F125",
+      "fecha_vencimiento": "2030-06-01",
+      "cantidad": 2
+     },
+     {
+      "presentacion": "BLISTER",
+      "detalle": "1x1",
+      "lote": "6F125",
+      "fecha_vencimiento": "2030-06-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "3299",
+    "producto": "BEBELAC 3 X 900 GR",
+    "detalles": [
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2028-02-01",
+      "cantidad": 7
+     }
+    ]
+   },
+   {
+    "id_producto": "4839",
+    "producto": "BRONCOLEXIL JBE X 120 ML",
+    "detalles": [
+     {
+      "presentacion": "FRASCO",
+      "detalle": "1X1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2028-03-01",
+      "cantidad": 1
+     },
+     {
+      "presentacion": "FRASCO",
+      "detalle": "1X1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2028-04-01",
+      "cantidad": 2
+     }
+    ]
+   },
+   {
+    "id_producto": "912",
+    "producto": "ORTODEL PLUS X 100 TAB",
+    "detalles": [
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x100",
+      "lote": "6045",
+      "fecha_vencimiento": "2030-01-01",
+      "cantidad": 3
+     },
+     {
+      "presentacion": "BLISTER",
+      "detalle": "1x10",
+      "lote": "6045",
+      "fecha_vencimiento": "2030-01-01",
+      "cantidad": 4
+     },
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "6045",
+      "fecha_vencimiento": "2030-01-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "1545",
+    "producto": "TERMOMETRO DIGITAL WELLPRO",
+    "detalles": [
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "0000-00-00",
+      "cantidad": 26
+     }
+    ]
+   },
+   {
+    "id_producto": "1275",
+    "producto": "TRAMAL 100MG X 5 AMPOLLAS",
+    "detalles": [
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x5",
+      "lote": "00341X",
+      "fecha_vencimiento": "2029-09-01",
+      "cantidad": 5
+     },
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "00341X",
+      "fecha_vencimiento": "2029-09-01",
+      "cantidad": 0
+     },
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x5",
+      "lote": "L00246X",
+      "fecha_vencimiento": "2029-08-01",
+      "cantidad": 2
+     },
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "L00246X",
+      "fecha_vencimiento": "2029-08-01",
+      "cantidad": 0
+     },
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x5",
+      "lote": "00246X",
+      "fecha_vencimiento": "2029-08-01",
+      "cantidad": 11
+     },
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "00246X",
+      "fecha_vencimiento": "2029-08-01",
+      "cantidad": 0
+     }
+    ]
+   }
+  ]
+ },
+ "vencidos": {
+  "inventario": [
+   {
+    "id_producto": "324",
+    "producto": "AKINETON RETARD 4MG X 20 TAB",
+    "detalles": [
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x1",
+      "lote": "1214007",
+      "fecha_vencimiento": "2027-01-01",
+      "cantidad": 1
+     },
+     {
+      "presentacion": "CAJA X 20",
+      "detalle": "1X1",
+      "lote": "1214007",
+      "fecha_vencimiento": "2027-01-01",
+      "cantidad": 0
+     },
+     {
+      "presentacion": "CAJA",
+      "detalle": "1x1",
+      "lote": "1214007",
+      "fecha_vencimiento": "2027-07-01",
+      "cantidad": 4
+     },
+     {
+      "presentacion": "CAJA X 20",
+      "detalle": "1X1",
+      "lote": "1214007",
+      "fecha_vencimiento": "2027-07-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "481",
+    "producto": "ALCOHOL 90 X 240 ML",
+    "detalles": [
+     {
+      "presentacion": "BOTE",
+      "detalle": "1x1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2026-12-01",
+      "cantidad": 5
+     },
+     {
+      "presentacion": "FRASCO",
+      "detalle": "1X1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2026-12-01",
+      "cantidad": 0
+     }
+    ]
+   },
+   {
+    "id_producto": "4839",
+    "producto": "BRONCOLEXIL JBE X 120 ML",
+    "detalles": [
+     {
+      "presentacion": "FRASCO",
+      "detalle": "1X1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "2028-03-01",
+      "cantidad": 6
+     }
+    ]
+   },
+   {
+    "id_producto": "1545",
+    "producto": "TERMOMETRO DIGITAL WELLPRO",
+    "detalles": [
+     {
+      "presentacion": "UNIDAD",
+      "detalle": "1x1",
+      "lote": "GENERICO",
+      "fecha_vencimiento": "0000-00-00",
+      "cantidad": 1
+     }
+    ]
+   }
+  ]
+ },
+ "suma_de_lotes_ubicacion_1": {
+  "324": 1,
+  "912": 340,
+  "1275": 90,
+  "2724": 25
+ },
+ "casilla_total_stock": {
+  "324": 1,
+  "481": 30,
+  "912": 340,
+  "1275": 10,
+  "1545": 27,
+  "2724": 5,
+  "3299": 7,
+  "4839": 9
+ }
+}

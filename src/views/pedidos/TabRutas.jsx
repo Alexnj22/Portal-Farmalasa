@@ -10,8 +10,13 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { notifyBranch } from '../../utils/notify';
-import CrearRutaModal from './CrearRutaModal';
-import RutaMapModal   from './RutaMapModal';
+import { dialogoDiferido } from '../../utils/dialogoDiferido';
+
+/* Los dos diálogos llegan al abrirlos — ver `src/utils/dialogoDiferido.jsx`.
+   Van acá además de en TabPedidos: si una pestaña los difiere y la otra no,
+   quedan en el trozo de la que no, y la primera no ahorra nada. */
+const CrearRutaModal = dialogoDiferido(() => import('./CrearRutaModal'));
+const RutaMapModal   = dialogoDiferido(() => import('./RutaMapModal'));
 import Badge from '../../components/common/Badge';
 import {
     updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal,

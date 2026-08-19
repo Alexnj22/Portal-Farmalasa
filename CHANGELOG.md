@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.2 — Los diálogos de Pedidos se bajan al abrirlos
+
+Continuación de v2.665.1, que dejó dicho cuál era el próximo corte: partidas
+las cinco pestañas, `TabPedidos` seguía pesando **123 kB ella sola**. La causa
+era la misma regla, un nivel más adentro: la pestaña importaba **once diálogos
+de forma estática** —`RecepcionModal` (1,959 líneas), `CrearRutaModal` (812),
+`RutaMapModal` (565), `FinalizarCajasModal` (516) y siete más— así que ver una
+lista descargaba todos.
+
+Medido antes y después, en gzip, entrando a Pedidos y cayendo en cada pestaña:
+
+| | v2.665.0 | v2.665.1 | hoy |
+|---|---|---|---|
+| **Pedidos** | 154 kB | 142 kB | **97 kB** |
+| Rutas | 154 kB | 44 kB | **26 kB** |
+| Generar | 154 kB | 41 kB | 40 kB |
+| Reglas | 154 kB | 48 kB | 47 kB |
+| Métricas | 154 kB | 30 kB | 29 kB |
+
+`TabPedidos` bajó de 123 a **78 kB** y `TabRutas` de 25 a **8**. Las dos, porque
+los dos diálogos de rutas se difieren en las **dos** pestañas: si una los
+difiere y la otra no, quedan en el trozo de la que no y la primera no ahorra
+nada.
+
+**El latch de montado es lo que hace que esto sirva**, y es la parte que se
+rompe sola. Seis de los once diálogos se quedan montados con `open` en false
+para poder animar su salida; un `lazy()` puesto ahí sin más se renderizaría
+apenas carga la pestaña y **no ahorraría un byte, sin que nada falle**. El
+helper nuevo —`src/utils/dialogoDiferido.jsx`— monta al abrir y ya no
+desmonta, que es el patrón que estrenó `WidgetCortesSala` con
+`CorteDetalleModal` (v2.615.1).
+
+Los **sitios donde se usan no cambiaron**: sólo las líneas de import. Es lo que
+hace revisable un cambio de este tamaño en un archivo de 1,079 líneas que otras
+sesiones tocan.
+
+**Cinco pruebas nuevas**, porque acá lo que se rompe no se ve: si el latch deja
+de funcionar todo sigue andando y la pestaña simplemente vuelve a pesar 123 kB
+hasta que alguien mida el bundle a mano. Las pruebas afirman que con `open` en
+false **el trozo ni se pide**, que se pide recién al abrirse, que al cerrarse
+sigue montado, y que sin prop `open` se monta enseguida (el sitio ya decidió
+con un `&&`).
+
+**Verificado en navegador**: el barrido WebKit de iPhone 13 recorrió las cinco
+pestañas con diálogos (`PESTANAS=1 MODALES=1`) sin una reventada, y el smoke de
+Chromium pasa. Con una salvedad honesta: la cuenta de QA **no tiene pedidos**,
+así que `pedidos#pedidos` se pintó vacía y los once diálogos de esa pestaña no
+llegaron a abrirse en el navegador. Lo que los cubre es la prueba unitaria del
+helper, no el barrido.
+
+Entre el clic y el diálogo no se dibuja nada (`fallback={null}`), igual que el
+precedente. Si alguna vez se siente el hueco, se arregla en un solo sitio.
+
 ## v2.665.1 — Pedidos baja sólo la pestaña que se abre
 
 `gate:bundle` marcaba a PedidosView desde que se le fijó el techo el 2026-07-30

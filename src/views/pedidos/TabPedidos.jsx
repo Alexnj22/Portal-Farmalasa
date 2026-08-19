@@ -21,19 +21,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import RecepcionModal from './RecepcionModal';
-import LlegadaModal from './LlegadaModal';
-import ReenvioLlegadaModal from './ReenvioLlegadaModal';
-import FinalizarCajasModal from './FinalizarCajasModal';
-import CrearRutaModal    from './CrearRutaModal';
-import RutaMapModal      from './RutaMapModal';
-import ProgramarEntregaModal from './ProgramarEntregaModal';
-import DevolverModal from './DevolverModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import PauseModal from './tabpedidos/PauseModal';
-import AnularModal from './tabpedidos/AnularModal';
-import ApoioScanModal from './tabpedidos/ApoioScanModal';
 import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
@@ -46,6 +35,24 @@ import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
 import { usePedidosData } from './tabpedidos/usePedidosData';
 import { clickable } from '../../utils/clickable';
 import { esCargoDeSupervision } from '../../utils/decisionDiferencia';
+import { dialogoDiferido } from '../../utils/dialogoDiferido';
+
+/* Los once diálogos se bajan al ABRIRLOS, no al entrar a la pestaña: abrir
+ * Pedidos descargaba RecepcionModal (1,959 líneas), CrearRutaModal (812),
+ * RutaMapModal (565) y FinalizarCajasModal (516) —entre otros— para ver una
+ * lista. 123 → 78 kB gzip. El porqué y el latch de montado, en
+ * `src/utils/dialogoDiferido.jsx`; los sitios donde se usan no cambiaron. */
+const RecepcionModal        = dialogoDiferido(() => import('./RecepcionModal'));
+const LlegadaModal          = dialogoDiferido(() => import('./LlegadaModal'));
+const ReenvioLlegadaModal   = dialogoDiferido(() => import('./ReenvioLlegadaModal'));
+const FinalizarCajasModal   = dialogoDiferido(() => import('./FinalizarCajasModal'));
+const CrearRutaModal        = dialogoDiferido(() => import('./CrearRutaModal'));
+const RutaMapModal          = dialogoDiferido(() => import('./RutaMapModal'));
+const ProgramarEntregaModal = dialogoDiferido(() => import('./ProgramarEntregaModal'));
+const DevolverModal         = dialogoDiferido(() => import('./DevolverModal'));
+const PauseModal            = dialogoDiferido(() => import('./tabpedidos/PauseModal'));
+const AnularModal           = dialogoDiferido(() => import('./tabpedidos/AnularModal'));
+const ApoioScanModal        = dialogoDiferido(() => import('./tabpedidos/ApoioScanModal'));
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

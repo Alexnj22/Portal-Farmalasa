@@ -56,12 +56,11 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   conSala,
-  contenidoDeTraslado,
-  direccionesPorSucursal,
   disponibleEnBodega,
   estadoDeRecepcion,
   hayEnTexto,
   hoySV,
+  identificarTrasladoNuevo,
   norm,
   pendientesDeOrigen,
   RECIBIR,
@@ -790,34 +789,20 @@ Deno.serve(async (req) => {
     // misma sala—, se deja en null con los candidatos anotados. El traslado
     // entró igual; lo único que se pierde es poder recibirlo sin buscarlo a
     // mano, que es infinitamente mejor que recibir el de otro.
-    const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-    let nuevos = [...despues.keys()].filter((id) => !antes.has(id));
-    if (nuevos.length > 1) {
-      const dirDestino = direccionesPorSucursal(html).get(String(erpDestino));
-      if (dirDestino) {
-        const mismos = nuevos.filter((id) => {
-          const d = norm(despues.get(id) ?? "");
-          return d && (d === dirDestino || d.includes(dirDestino) || dirDestino.includes(d));
-        });
-        if (mismos.length > 0) nuevos = mismos;
-      }
-    }
     // Y si el destino tampoco alcanza —dos traslados de esta sala a la misma
     // sala, en el mismo instante— se mira lo que llevan adentro. Es el caso que
     // aparece cuando una sala pide dos productos distintos a la misma sala y
     // dos personas los despachan a la vez.
-    if (nuevos.length > 1) {
-      const buscado = lineas.map((l) => norm(l.descripcion ?? "")).filter(Boolean);
-      if (buscado.length > 0) {
-        const coinciden: string[] = [];
-        for (const id of nuevos) {
-          const c = await contenidoDeTraslado(cookie, id);
-          if (c && buscado.every((d) => c.includes(d))) coinciden.push(id);
-        }
-        if (coinciden.length > 0) nuevos = coinciden;
-      }
-    }
-    const idTraslado = nuevos.length === 1 ? nuevos[0] : null;
+    //
+    // Las dos vueltas vivían acá adentro, copiadas del helper compartido que
+    // nació con ellas y que nadie llamaba. Eso hizo que las otras dos funciones
+    // que despachan —el pedido y la devolución— se quedaran sin desempate
+    // durante meses, y el 2026-08-18 nueve renglones quedaron sin número. Una
+    // sola copia, la de `_shared`.
+    const despues = await pendientesDeOrigen(cookie, ubicOrigen);
+    const { id: idTraslado, candidatos: nuevos } = await identificarTrasladoNuevo(
+      cookie, antes, despues, html, erpDestino, lineas.map((l) => l.descripcion ?? ""),
+    );
     const aplicado = {
       at: new Date().toISOString(),
       by: quien.id, by_name: quien.name,

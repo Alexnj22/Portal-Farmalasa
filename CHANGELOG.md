@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.666.1 — El traslado del pedido reconoce cuál es el suyo
+
+Lo levantó el usuario mirando el sistema de origen: tres productos de Salud 3
+figuraban pendientes de recibir y el portal no los tenía amarrados. Uno era un
+BEBELAC 3 X 900 del pedido 121.
+
+**El traslado había entrado; lo que faltaba era su número.** El sistema no
+devuelve el número al crear un traslado y su listado ignora el orden que se le
+pide, así que el despacho lo deducía comparando la lista de pendientes de antes
+con la de después: el propio es «el que no estaba». El 18-ago, **2,9 segundos
+antes** del BEBELAC, Bodega despachó a mano una solicitud desde la MISMA
+ubicación. Aparecieron dos números nuevos, el portal no supo cuál era el suyo y
+guardó el renglón sin número.
+
+De ahí en adelante se cae solo: la recepción sólo levanta renglones que tienen
+número, así que ése nunca se pidió. La sala confirmó la caja, el portal marcó
+**recibido**, y en el sistema el producto quedó en tránsito —fuera de Bodega y
+sin entrar a la sala—, o sea sin poder venderse.
+
+**Fueron nueve renglones**, no tres: 3 de Salud 3 (pedido 121), 5 de Salud 2
+(120) y 1 de Salud 1 (119). Los nueve por lo mismo, reconstruidos uno por uno
+contra el sistema: en cada caso hay una solicitud despachada a mano desde
+Bodega dentro de una ventana de **0,7 a 4,8 segundos**. No es rareza — ese día
+hubo **63** de esas, y el despacho mete un traslado cada ~3,6 segundos durante
+una hora.
+
+**El arreglo ya estaba escrito y no lo llamaba nadie.** `identificarTrasladoNuevo`
+existe en `_shared/erp-traslado.ts` desde v2.558.0 con las dos vueltas de
+desempate —primero el destino, después el producto que el traslado lleva
+adentro—, pero `aplicar-traslado-inventario` se había quedado con su copia en
+línea y las otras dos funciones que despachan nunca lo usaron. Hoy las tres
+llaman a la misma, y la copia duplicada se borró.
+
+Medido contra las páginas reales de los 18 traslados candidatos: la regla vieja
+deja **9 de 9 sin número**; con el desempate quedan **9 de 9 identificados**. El
+destino resuelve 5 —la solicitud a mano iba a otra sala—; los otros 4 iban a la
+misma sala y sólo los separa el contenido (el BEBELAC, 30350, del PEDIASURE
+FRESA, 30349). Esas mismas páginas quedaron ancladas en
+`tests/unit/identificarTraslado.test.js`.
+
+**Dos frenos que importan tanto como el acierto:**
+
+- Si una página de detalle no se puede leer, **no se descarta a nadie**. Darla
+  por «no coincide» dejaría ganar al único que sí se leyó, y ése bien puede ser
+  el traslado de otra persona: quedarse sin número obliga a buscarlo a mano,
+  recibir el de otro mueve inventario ajeno y no se deshace solo.
+- `pendientesDeOrigen` pedía 200 filas y hoy hay **448 pendientes**. Medido: el
+  listado ignora `length` y las devolvió todas, con 200 y con 500 — o sea que la
+  suerte, no el código, evitó una foto recortada. Ahora se pide un techo alto y
+  se comprueba que vinieron todas; si faltan, devuelve vacío, que deja el
+  traslado sin número en vez de darle el de otro.
+
+El mensaje que queda cuando aun así no se puede desempatar ahora nombra a los
+candidatos, para no tener que buscarlos.
+
 ## v2.666.0 — El área de vencidos de Bodega se puede solicitar
 
 Pedido del usuario: «que se pueda solicitar los productos que tiene bodega en la

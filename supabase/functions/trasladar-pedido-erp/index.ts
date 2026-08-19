@@ -6,6 +6,7 @@ import {
   disponibleEnBodega,
   hayEnTexto,
   hoySV,
+  identificarTrasladoNuevo,
   nombreCorto,
   pendientesDeOrigen,
   repartirEnLotes,
@@ -834,10 +835,16 @@ Deno.serve(async (req) => {
             continue;
           }
 
+          // Cuál de los nuevos es el propio. NO alcanza con «el que no estaba»:
+          // Bodega despacha solicitudes a mano desde esta misma ubicación todo
+          // el día, y una que caiga entre las dos fotos aparece como candidata.
+          // Ahí desempatan el destino y, si los dos van a la misma sala, el
+          // producto que llevan adentro. Ver `identificarTrasladoNuevo`.
           const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-          const nuevos = [...despues.keys()].filter((id) => !conocidos.has(id));
+          const { id: idTraslado, candidatos } = await identificarTrasladoNuevo(
+            cookie, conocidos, despues, html, sucId, [it.nombre],
+          );
           conocidos = despues;
-          const idTraslado = nuevos.length === 1 ? nuevos[0] : null;
 
           hechas++;
           await admin.from("pedido_traslado_linea").update({
@@ -861,8 +868,8 @@ Deno.serve(async (req) => {
             // El traslado ENTRÓ igual; lo único que falta es su número para
             // poder recibirlo desde el portal. Se dice, no se calla.
             error_msg: idTraslado ? null
-              : `Entró, pero no se pudo distinguir cuál es entre ${nuevos.length} candidatos. `
-                + `Buscar «${ln.clave}» en el concepto.`,
+              : `Entró, pero no se pudo distinguir cuál es entre ${candidatos.length} candidatos `
+                + `(${candidatos.join(", ") || "ninguno"}). Buscar «${ln.clave}» en el concepto.`,
           }).eq("id", ln.id);
         }
       }

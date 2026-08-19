@@ -541,17 +541,28 @@ export async function resolverPresentacion(
  * Y los filtros con un valor que no entiende no fallan: devuelven las 27,000
  * filas con cara de éxito. `recordsFiltered === recordsTotal` es la señal de
  * que el filtro no se aplicó.
+ *
+ * ⚠️ **Una lista recortada es peor que ninguna.** Quien llama compara esta foto
+ * contra la de después para saber cuál traslado es el suyo; si faltan filas, el
+ * suyo puede no aparecer —o puede aparecer uno viejo que entró al recorte
+ * porque otro salió—. Medido el 2026-08-19: había **448 pendientes** desde
+ * Bodega y el listado devolvió las 448 con `length` en 200 y en 500, o sea que
+ * hoy **ignora `length`**. Que hoy lo ignore no es una garantía: se pide un
+ * techo alto y se comprueba que vinieron todas. Si no vinieron, se devuelve
+ * vacío —que deja el traslado sin número— en vez de una foto incompleta, que
+ * deja el número de otro.
  */
 export async function pendientesDeOrigen(
   cookie: string, ubicacionOrigen: number,
 ): Promise<Map<string, string>> {
   try {
     const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
-      draw: "0", start: "0", length: "200",
+      draw: "0", start: "0", length: "5000",
       origen: String(ubicacionOrigen), pro: "env", estado: "pe",
     }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
     const j = JSON.parse(cuerpo);
     if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return new Map();
+    if (j.data.length < Number(j.recordsFiltered ?? 0)) return new Map();
     // id → destino. El destino es la quinta columna y viene como la dirección
     // completa de la sucursal, que es lo que después permite desempatar.
     return new Map(
@@ -650,10 +661,22 @@ export async function contenidoDeTraslado(cookie: string, id: string): Promise<s
     const h = await pedir(cookie, `${VER}?id_traslado=${encodeURIComponent(id)}`, undefined, {
       extra: { Referer: `${BASE}/admin_traslados.php` },
     });
-    return norm(h.replace(/<[^>]+>/g, " "));
+    return textoDeTraslado(h);
   } catch {
     return "";
   }
+}
+
+/**
+ * El texto de esa pantalla, sin etiquetas y normalizado.
+ *
+ * Separado del viaje a la red para poder anclarlo contra páginas REALES en las
+ * pruebas — que es donde se ve que el nombre del producto sobrevive al
+ * recorte de etiquetas. Devuelve `""` para un HTML vacío, que es lo que
+ * `identificarTrasladoNuevo` lee como «no se pudo leer».
+ */
+export function textoDeTraslado(html: string): string {
+  return norm(String(html ?? "").replace(/<[^>]+>/g, " "));
 }
 
 /**
@@ -661,11 +684,27 @@ export async function contenidoDeTraslado(cookie: string, id: string): Promise<s
  *
  * El `insert` no devuelve el id y el listado no respeta el orden, así que el
  * propio es «el que aparece y antes no estaba». Si en el medio otra persona
- * despachó desde la misma sala aparecen dos, y ahí desempata el DESTINO; si ni
- * así queda uno solo, se mira lo que llevan adentro.
+ * despachó desde la misma ubicación aparecen dos, y ahí desempata el DESTINO;
+ * si ni así queda uno solo, se mira lo que llevan adentro.
  *
  * Devuelve null cuando no se puede desempatar. El traslado ENTRÓ igual: lo
  * único que se pierde es poder recibirlo sin buscarlo a mano.
+ *
+ * ── Por qué las dos vueltas hacen falta, medido ───────────────────────────
+ * El 2026-08-18 nueve renglones de los pedidos 119, 120 y 121 quedaron sin
+ * número. Los nueve por lo mismo: Bodega despachó una solicitud a mano —63 ese
+ * día, desde la MISMA ubicación— dentro de la ventana de 0,7 a 4,8 segundos
+ * que separa las dos fotos. Reconstruidos contra el sistema real:
+ *
+ * - Con el destino alcanza en 5 de 9 (la solicitud a mano iba a otra sala).
+ * - Los otros 4 iban a la misma sala y sólo los separa el contenido: el
+ *   BEBELAC 3 X 900 (30350) del PEDIASURE FRESA (30349) que salió 2,9 s antes.
+ *
+ * Con las dos vueltas, 9 de 9 quedan identificados sin ambigüedad. La prueba
+ * corre sobre esas mismas páginas: `tests/unit/identificarTraslado.test.js`.
+ *
+ * `leerContenido` se inyecta SÓLO para eso — para poder anclar el desempate
+ * contra páginas reales sin salir a la red. En producción nadie lo pasa.
  */
 export async function identificarTrasladoNuevo(
   cookie: string,
@@ -674,6 +713,7 @@ export async function identificarTrasladoNuevo(
   htmlPagina: string,
   erpDestino: number,
   descripciones: string[],
+  leerContenido: (cookie: string, id: string) => Promise<string> = contenidoDeTraslado,
 ): Promise<{ id: string | null; candidatos: string[] }> {
   let nuevos = [...despues.keys()].filter((id) => !antes.has(id));
 
@@ -691,12 +731,19 @@ export async function identificarTrasladoNuevo(
   if (nuevos.length > 1) {
     const buscado = descripciones.map((d) => norm(d)).filter(Boolean);
     if (buscado.length > 0) {
-      const coinciden: string[] = [];
-      for (const id of nuevos) {
-        const c = await contenidoDeTraslado(cookie, id);
-        if (c && buscado.every((d) => c.includes(d))) coinciden.push(id);
+      const contenidos = new Map<string, string>();
+      for (const id of nuevos) contenidos.set(id, await leerContenido(cookie, id));
+      // Una página que no se pudo leer NO descarta a su traslado. Darla por
+      // «no coincide» dejaría ganar al único que sí se leyó — y ése bien puede
+      // ser el de otra persona. Sin todas las páginas no se elimina a nadie:
+      // quedarse sin número obliga a buscarlo a mano, recibir el de otro mueve
+      // inventario ajeno y no se deshace solo.
+      if ([...contenidos.values()].every((c) => c)) {
+        const coinciden = nuevos.filter((id) =>
+          buscado.every((d) => (contenidos.get(id) ?? "").includes(d))
+        );
+        if (coinciden.length > 0) nuevos = coinciden;
       }
-      if (coinciden.length > 0) nuevos = coinciden;
     }
   }
 

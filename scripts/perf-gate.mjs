@@ -242,6 +242,21 @@ const TIEMPOS = [
  * una variable con `-` en el nombre — que es el caso de este repo. En vez de
  * mover ese archivo (ver decisión 3), se le da un directorio propio con lo
  * mínimo para que sepa a qué proyecto apunta. */
+/* Lo que el CLI escribe SIEMPRE, salga bien o mal. Si al filtrarlo no queda
+ * nada, el fallo no vino de él y el mensaje de `execFileSync` es todo lo que
+ * hay. */
+const RUIDO_DEL_CLI = [
+  /^Using workdir/,
+  /^Initialising login role/,
+  /^A new version of Supabase CLI/,
+  /^We recommend updating/,
+];
+const sinRuidoDelCli = (txt) => String(txt ?? '')
+  .split('\n')
+  .map(l => l.trimEnd())
+  .filter(l => l && !RUIDO_DEL_CLI.some(r => r.test(l)))
+  .join('\n');
+
 function abrirCanal() {
   const dir = join(tmpdir(), `perf-gate-${process.pid}`);
   mkdirSync(join(dir, 'supabase'), { recursive: true });
@@ -253,10 +268,29 @@ function abrirCanal() {
     rmSync(dir, { recursive: true, force: true });
     throw new Error('el proyecto no está linkeado (falta supabase/.temp)');
   }
+  /* El stderr se CAPTURA, no se descarta.
+   *
+   * Descartarlo tenía su motivo: el CLI escribe «Using workdir…»,
+   * «Initialising login role…» y el aviso de versión nueva en CADA llamada, o
+   * sea nueve párrafos de ruido por corrida. Pero cuando la llamada falla, ese
+   * mismo canal es lo ÚNICO que dice por qué, y el gate quedaba anunciando «no
+   * pude medir» sin poder decir de qué. Pasó el 2026-08-19: hubo que
+   * reproducir la corrida a mano, con el stderr a la vista, para descubrir que
+   * había sido transitorio — y la conclusión «transitorio» tampoco se podía
+   * sostener sin haber visto el mensaje.
+   *
+   * Capturado y mostrado SÓLO al fallar, el ruido sigue sin aparecer y el
+   * diagnóstico deja de exigir una segunda corrida. */
   const consultar = (sql) => {
-    const salida = execFileSync('supabase',
-      ['db', 'query', '--workdir', dir, '--linked', '--agent', 'no', '-o', 'json', sql],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 32 * 1024 * 1024 });
+    let salida;
+    try {
+      salida = execFileSync('supabase',
+        ['db', 'query', '--workdir', dir, '--linked', '--agent', 'no', '-o', 'json', sql],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 32 * 1024 * 1024 });
+    } catch (e) {
+      e.detalleCli = sinRuidoDelCli(e.stderr);
+      throw e;
+    }
     const i = salida.indexOf('[');
     if (i < 0) throw new Error('la respuesta no traía filas');
     return JSON.parse(salida.slice(i));
@@ -416,7 +450,14 @@ try { main(); } catch (e) {
   // Que no se pueda medir es un HALLAZGO, no una nota al pie — mismo criterio
   // que `gate:migrations --remote`. Un gate que no pudo medir no puede dar verde.
   console.log(`\n✗ No pude medir contra producción: ${String(e.message).split('\n')[0]}`);
-  console.log('  Hace falta el CLI de Supabase logueado y el proyecto linkeado:');
+  // Lo que contestó el CLI. Sin esto, «no pude medir» obliga a reproducir la
+  // corrida a mano para saber si fue un login vencido, una consulta rota o un
+  // tropiezo de red — tres cosas que se arreglan distinto.
+  if (e.detalleCli) {
+    console.log('\n  Lo que contestó:');
+    for (const l of e.detalleCli.split('\n').slice(-8)) console.log(`    ${l}`);
+  }
+  console.log('\n  Si no dijo nada más, suele ser el CLI sin login o el proyecto sin linkear:');
   console.log('    supabase login && supabase link --project-ref sacecdkdmsdvgqnrsett\n');
   process.exitCode = 1;
 }

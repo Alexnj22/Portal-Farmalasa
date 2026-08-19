@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.3 — El agente recupera la ticketera que CUPS se quedó
+
+Salud 1 se actualizó, se imprimió desde el portal y **el otro sistema siguió sin
+imprimir**. La pantalla nueva dijo por qué en una línea: versión `8b3e1099122f`
+—la publicada, o sea el agente corregido— y **canal `CUPS`**.
+
+O sea que la corrección de v2.664.5 estaba puesta y era inerte, por un círculo
+que se muerde la cola: CUPS tiene tomado el aparato → el archivo
+`/dev/usb/lp0` no existe → el agente no lo encuentra → usa CUPS → sigue tomado.
+La sala salía de ahí apagando y prendiendo la ticketera, que es re-enumerar el
+aparato a mano.
+
+**Ahora el agente lo recupera solo.** Si no encuentra el archivo, recarga el
+módulo del kernel (`modprobe -r usblp` y de vuelta) **antes** de caer al
+respaldo — hace lo mismo que apagar la ticketera, sin tocarla, y puede porque
+corre como servicio del sistema. Si falla —el módulo está en uso, no hay
+`modprobe`— se anota el motivo y se sigue por CUPS, igual que antes.
+
+Dos correcciones que salieron del mismo caso:
+
+- **Se prueban varias rutas, no una**: `/dev/usb/lp0`, `lp1`, `lp2` y
+  `/dev/lp0`. El número depende de en qué puerto la enchufaron y de qué otras
+  impresoras vio antes esa computadora, así que buscar una sola falla justo en
+  la caja que no la tiene en cero.
+- **El canal se mira en cada vuelta, no al arrancar.** Era una foto del
+  arranque, y el archivo aparece y desaparece con quien lo tenga tomado: la
+  pantalla habría seguido diciendo `CUPS` después de que el agente ya escribiera
+  bien. Mentía justo en el caso que importa.
+
+Y el instalador dejó de escribir `DISPOSITIVO=` vacío cuando no detecta ninguno:
+esa línea es **lo único que fuerza CUPS**, así que ponerla en la caja que no
+tiene el archivo era condenarla al problema que esto arregla. Sin la línea, el
+agente prueba la lista y recupera.
+
+**Esta corrección llega sola a Salud 1**, que ya tiene el agente que se
+actualiza. Es la primera vez que se usa ese camino.
+
 ## v2.665.2 — Los diálogos de Pedidos se bajan al abrirlos
 
 Continuación de v2.665.1, que dejó dicho cuál era el próximo corte: partidas

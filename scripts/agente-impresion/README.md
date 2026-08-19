@@ -105,13 +105,22 @@ CUPS quedó de respaldo. Para comprobar por dónde está escribiendo esta caja:
 sudo journalctl -u farmalasa-impresion -n 5 | grep 'Escribe en'
 ```
 
-Si dice `CUPS`, falta el dispositivo o falta el permiso:
+Si dice `CUPS`, el archivo del dispositivo no está. **Casi siempre es que CUPS
+se lo quedó** — su backend desengancha el módulo `usblp` y no lo devuelve—, y
+desde v2.665.1 el agente lo intenta recuperar solo (`modprobe -r usblp` y de
+vuelta) antes de caer al respaldo. Si aun así dice `CUPS`:
 
 ```bash
-ls -l /dev/usb/lp0            # tiene que existir y ser escribible
-sudo chmod 666 /dev/usb/lp0   # el otro sistema pide lo mismo
-dmesg | grep -i usblp         # si no aparece, el módulo no cargó
+ls -l /dev/usb/lp*                              # ¿existe alguno?
+lsmod | grep usblp                              # ¿está cargado el módulo?
+sudo modprobe -r usblp && sudo modprobe usblp   # recuperarlo a mano
+sudo systemctl restart farmalasa-impresion
 ```
+
+Si el módulo no carga nunca, esa computadora tiene `usblp` bloqueado y hay que
+mirar por dónde imprime el sistema de facturación: **el agente tiene que
+escribir al mismo archivo que él**, sea cual sea. Se le dice cuál con
+`DISPOSITIVO=/la/ruta` en `agente.conf`.
 
 **El papel sale pero no se corta.**
 Desde v2.661.9 **el ticket trae su propio corte** y esto no debería pasar: si

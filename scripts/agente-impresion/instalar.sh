@@ -108,8 +108,9 @@ if [ -n "$DISPOSITIVO" ]; then
         [[ "${sigo,,}" == "s" ]] || morir "Arreglá el permiso y volvé a correr esto."
     fi
 else
-    rojo "  ! No aparece /dev/usb/lp0: el papel va a salir por CUPS."
-    gris "     Revisá que el módulo usblp esté cargado:  dmesg | grep -i usblp"
+    rojo "  ! No aparece ningún /dev/usb/lp*. Suele ser que CUPS se quedó con la"
+    gris "     ticketera: el agente va a intentar recuperarla solo antes de usar"
+    gris "     CUPS. Para verlo a mano:  sudo modprobe -r usblp && sudo modprobe usblp"
 fi
 
 # ── 3. El código del portal ──────────────────────────────────────────────────
@@ -154,9 +155,12 @@ SUPABASE_URL=$URL
 SUPABASE_ANON_KEY=$ANON
 DEVICE_ID=$DEV_ID
 DEVICE_TOKEN=$DEV_TOK
-# El archivo de la ticketera. Vacío (DISPOSITIVO=) fuerza CUPS, y con CUPS el
-# otro sistema deja de imprimir hasta apagar y prender la ticketera.
-DISPOSITIVO=$DISPOSITIVO
+${DISPOSITIVO:+# El archivo de la ticketera, detectado al instalar.}
+${DISPOSITIVO:+DISPOSITIVO=$DISPOSITIVO}
+# Sin esa línea el agente prueba /dev/usb/lp0, lp1, lp2 y /dev/lp0, y si no hay
+# ninguno intenta recuperarlo antes de caer a CUPS. Escribirla VACÍA es lo único
+# que fuerza CUPS — y con CUPS el otro sistema deja de imprimir hasta apagar y
+# prender la ticketera.
 # CORTAR=1   # el ticket ya trae su corte; esto agrega un segundo, y total
 EOF
 $SUDO chmod 600 "$DESTINO/agente.conf"

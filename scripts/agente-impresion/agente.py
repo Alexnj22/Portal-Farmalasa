@@ -60,9 +60,11 @@ import time
 import urllib.error
 import urllib.request
 
-# El archivo de la ticketera, el mismo al que le escribe el sistema de
-# facturación. `DISPOSITIVO=` vacío en agente.conf lo apaga y fuerza CUPS.
-DISPOSITIVO_POR_DEFECTO = "/dev/usb/lp0"
+# Los archivos de la ticketera, en orden. Se usa el PRIMERO que exista: el
+# número depende de en qué puerto la enchufaron y de qué otras impresoras vio
+# antes esa computadora, así que buscar uno solo falla en la caja que no lo
+# tiene en cero. `DISPOSITIVO=` vacío en agente.conf lo apaga y fuerza CUPS.
+DISPOSITIVO_POR_DEFECTO = "/dev/usb/lp0,/dev/usb/lp1,/dev/usb/lp2,/dev/lp0"
 
 # De dónde se baja la versión nueva de este mismo archivo. Es el portal, servido
 # por HTTPS desde su propio dominio: quien controle esa dirección puede correr
@@ -114,10 +116,12 @@ def config():
     # version vieja del portal, que no lo traian.
     cfg["CORTAR"] = str(cfg.get("CORTAR", "0")).lower() in ("1", "true", "si", "sí")
 
-    # Sin la clave escrita se usa el archivo de siempre. Escrita y vacía
+    # Sin la clave escrita se usan los archivos de siempre. Escrita y vacía
     # (`DISPOSITIVO=`) se apaga a proposito y todo va por CUPS — es la escotilla
     # para una caja donde la ticketera no cuelgue de USB.
-    cfg["DISPOSITIVO"] = cfg.get("DISPOSITIVO", DISPOSITIVO_POR_DEFECTO).strip()
+    cfg["DISPOSITIVO"] = [r.strip() for r
+                          in cfg.get("DISPOSITIVO", DISPOSITIVO_POR_DEFECTO).split(",")
+                          if r.strip()]
 
     # `PORTAL_URL=` vacío apaga la actualización sola. Existe para una caja que
     # no deba tocarse sin aviso, no para "probar sin actualizar".
@@ -163,6 +167,46 @@ def bytes_del_ticket(job):
     # por si algo se escapo — un signo de pregunta se ve, una excepcion dejaria
     # el ticket sin salir.
     return (job.get("contenido") or "").encode("latin-1", errors="replace")
+
+
+def elegir_dispositivo(rutas):
+    """El primer archivo de ticketera que exista, o None."""
+    for r in rutas:
+        if r and os.path.exists(r):
+            return r
+    return None
+
+
+def rescatar_dispositivo(rutas):
+    """Le devuelve el dispositivo al kernel cuando CUPS se lo quedó.
+
+    **Esto es lo que rompe el círculo.** El backend `usb` de CUPS desengancha el
+    módulo `usblp` para hablarle a la impresora, y al terminar no siempre lo
+    devuelve: el archivo `/dev/usb/lp0` desaparece. Entonces este agente no lo
+    encuentra, cae a CUPS, y CUPS se lo vuelve a quedar. La sala sale de ahí
+    apagando y prendiendo la ticketera — que es re-enumerar el aparato a mano.
+
+    Recargar el módulo hace lo mismo sin tocar el aparato, y se puede porque
+    este agente corre como servicio del sistema. Si falla —el módulo está en
+    uso, no hay `modprobe`, la computadora no lo permite— no pasa nada: se anota
+    y se sigue por CUPS, igual que antes.
+
+    Medido en Salud 1 el 2026-08-19: el agente ya actualizado seguía informando
+    `CUPS` porque el archivo no existía al arrancar, y el sistema de facturación
+    seguía sin imprimir hasta que alguien apagaba la ticketera.
+    """
+    try:
+        subprocess.run(["modprobe", "-r", "usblp"], capture_output=True, timeout=15)
+        subprocess.run(["modprobe", "usblp"], capture_output=True, timeout=15)
+    except Exception as e:                                    # noqa: BLE001
+        return None, "no se pudo recargar usblp ({})".format(e)[:200]
+    # El kernel crea el archivo un instante despues de cargar el modulo.
+    for _ in range(10):
+        ruta = elegir_dispositivo(rutas)
+        if ruta:
+            return ruta, "se recupero {} (lo tenia tomado CUPS)".format(ruta)
+        time.sleep(0.3)
+    return None, None
 
 
 def escribir_al_dispositivo(datos, ruta):
@@ -217,28 +261,39 @@ def imprimir_por_cups(datos, impresora):
         return False, "{}: {}".format(type(e).__name__, e)[:400]
 
 
-def imprimir(datos, impresora, cortar, dispositivo):
+def imprimir(datos, impresora, cortar, rutas):
     """Manda los bytes a la ticketera y devuelve (ok, detalle).
 
     Primero el archivo del dispositivo —el mismo al que le escribe el sistema de
     facturación—, y sólo si eso no se puede, CUPS. El orden importa y está
     explicado en el encabezado del archivo: al reves, imprimir desde el portal
     deja al otro sistema sin ticketera hasta que alguien la apaga y la prende.
+
+    Y si el archivo no está, **primero se intenta recuperarlo**. No estar es el
+    sintoma normal de que CUPS se lo quedó, y caer a CUPS en ese momento es
+    justamente lo que lo mantiene tomado.
     """
     if cortar:
         datos += b"\x1dV\x00"       # GS V 0 — corte total
 
-    if dispositivo and os.path.exists(dispositivo):
-        ok, detalle = escribir_al_dispositivo(datos, dispositivo)
+    aviso = None
+    ruta = elegir_dispositivo(rutas)
+    if not ruta and rutas:
+        ruta, aviso = rescatar_dispositivo(rutas)
+
+    if ruta:
+        ok, detalle = escribir_al_dispositivo(datos, ruta)
         if ok:
-            return True, detalle
+            return True, " · ".join(x for x in (detalle, aviso) if x)
         # El motivo del dispositivo VIAJA con el del respaldo: si un dia todas
         # las cajas terminan imprimiendo por CUPS, eso tiene que poder leerse en
         # el portal en vez de descubrirse cuando el otro sistema se cae.
         ok2, detalle2 = imprimir_por_cups(datos, impresora)
-        return ok2, "{} (fallo {}: {})".format(detalle2, dispositivo, detalle)[:400]
+        return ok2, "{} (fallo {}: {})".format(detalle2, ruta, detalle)[:400]
 
-    return imprimir_por_cups(datos, impresora)
+    ok2, detalle2 = imprimir_por_cups(datos, impresora)
+    falta = aviso or "no hay ningun archivo de ticketera ({})".format(", ".join(rutas) or "ninguno")
+    return ok2, "{} — {}".format(detalle2, falta)[:400]
 
 
 # ── Actualizarse solo ────────────────────────────────────────────────────────
@@ -376,12 +431,12 @@ def main():
         return 0
 
     cfg = config()
-    canal = (cfg["DISPOSITIVO"] if cfg["DISPOSITIVO"] and os.path.exists(cfg["DISPOSITIVO"])
-             else "CUPS")
     version = mi_hash()
     print("Agente de impresion en marcha. Caja {}. Version {}. Escribe en: {}. "
           "Ctrl-C para salir."
-          .format(cfg["DEVICE_ID"][:8], version[:12], canal), flush=True)
+          .format(cfg["DEVICE_ID"][:8], version[:12],
+                  elegir_dispositivo(cfg["DISPOSITIVO"]) or "CUPS (no hay dispositivo)"),
+          flush=True)
 
     espera = INTERVALO_SEG
     # Se revisa apenas arranca: una caja que se prende a la mañana se pone al
@@ -389,7 +444,12 @@ def main():
     proxima_revision = 0.0
     while True:
         try:
-            filas = reclamar(cfg, version, canal)
+            # El canal se mira EN CADA VUELTA y no una vez al arrancar: el
+            # archivo del dispositivo aparece y desaparece con quien lo tenga
+            # tomado, asi que una foto del arranque miente en la pantalla — y
+            # justamente miente en el caso que importa.
+            filas = reclamar(cfg, version,
+                             elegir_dispositivo(cfg["DISPOSITIVO"]) or "CUPS")
             espera = INTERVALO_SEG
 
             # Sin trabajos la cola contesta una lista vacia: es lo normal, no un

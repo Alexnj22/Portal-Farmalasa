@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.667.1 — La recepción del traslado ya no puede cargar dos veces
+
+Apareció rescatando los renglones de v2.666.1. Para saber si un traslado ya
+había entrado a la sala, la recepción del pedido miraba **si la pantalla del
+sistema mostraba líneas** — y el propio archivo compartido documenta, desde el
+17-ago, que esa pantalla **sigue pintando las mismas filas y el mismo botón**
+para un traslado ya recibido (medido sobre el 29445 y el 29444). O sea que la
+única defensa contra cargar el producto dos veces no defendía de nada.
+
+No es hipotético: los 3 renglones de Salud 3 del pedido 121 entraron así,
+recibidos a mano desde el sistema. Si hubieran tenido su número, la recepción
+del portal los habría vuelto a cargar. Por eso se cuadraron a mano en vez de
+recibirlos.
+
+**La guarda buena ya existía** en `aplicar-traslado-inventario`
+(`estadoDeRecepcion`, que le pregunta al listado, que sí sabe). Faltaba en las
+otras dos: la recepción del pedido y la de la devolución. Ahora las tres
+preguntan antes de cargar, y las tres tratan los tres desenlaces:
+
+- **recibido** → se anota sin volver a cargar, diciendo que la carga no la hizo
+  esta llamada.
+- **anulado** → el producto no entró y no va a entrar; el renglón se cierra en
+  error para que no se reintente para siempre.
+- **no se pudo preguntar** → se hace lo de siempre. Una guarda que corta con lo
+  que no sabe deja de recibir por culpa de una consulta secundaria.
+
+Y la otra mitad del mismo hueco: cuando el sistema contesta un fallo, **eso no
+prueba que no entró**. Antes la línea volvía a la cola lista para un reintento
+sobre producto ya cargado; ahora se le vuelve a preguntar al listado y, si
+entró, se anota con el mensaje que el sistema devolvió.
+
+**Preguntar por renglón costaba demasiado para dejarlo así.** Medido contra el
+sistema: **253 ms** en Salud 3 y **878 ms** en Salud 2, según cuántos pendientes
+tenga la sala. Una hoja son ~35 renglones y se recibe en 18-45 s, así que
+preguntar de a uno la duplicaba — y una guarda que hace lenta la operación
+termina siendo una guarda que alguien quita. `lectorDeRecepcion` lee la cola
+**una vez por lote** y la reusa 20 segundos: 35 renglones pasan de 35 consultas
+a 1. Lo que se pierde está acotado y escrito: si alguien recibe por el sistema
+el mismo traslado que el portal está por recibir, la caché puede tener hasta 20
+segundos de atraso. Antes esa ventana no era de 20 segundos, era infinita.
+
+El caso que decide —«no está en la cola»— **no se contesta con la caché**: ahí
+se vuelve a preguntar fresco, porque es el único en que la respuesta cambia lo
+que se hace, y es raro.
+
+Probado contra el sistema real sobre los casos que importan: el 31320 recién
+despachado dice `pendiente`, y el 30350 (BEBELAC) y el 30671 (té de manzanilla)
+—los dos que Salud 3 recibió a mano— dicen `recibido`, que es exactamente donde
+la guarda frena la segunda carga. La caché y sus límites quedan anclados en
+`tests/unit/lectorDeRecepcion.test.js`.
+
 ## v2.667.0 — Sacar dinero: cada motivo pide sólo lo suyo, y los montos van con punto
 
 El formulario de sacar dinero de una bolsa pedía lo mismo para todo, y por eso

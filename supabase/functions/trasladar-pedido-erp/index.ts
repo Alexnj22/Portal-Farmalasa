@@ -4,9 +4,11 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   disponibleEnBodega,
+  estadoDeRecepcion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
+  lectorDeRecepcion,
   nombreCorto,
   pendientesDeOrigen,
   repartirEnLotes,
@@ -427,6 +429,12 @@ Deno.serve(async (req) => {
         // sistema, y recibir escribe en la sala que recibe.
         const cookie = await sesionEn(sucId, login);
 
+        // Con qué se comprueba, antes de cargar, si el traslado ya entró. Lee la
+        // cola una vez por lote en vez de una vez por renglón — ver
+        // `lectorDeRecepcion`. Se crea acá y no afuera para que cada corrida
+        // arranque con la cola fresca.
+        const comoVaLaEntrada = lectorDeRecepcion(cookie);
+
         for (const ln of lote) {
           if (Date.now() - arranque > presupuesto) break;
 
@@ -440,6 +448,51 @@ Deno.serve(async (req) => {
             .select("id").maybeSingle();
           if (!tomadaRec) continue;
 
+          // ── Se le pregunta al listado ANTES de cargar ─────────────────────
+          // Hasta el 2026-08-19 la única defensa contra cargar dos veces era el
+          // «no muestra líneas» de más abajo, y esa frase es FALSA:
+          // `recibir_traslado.php` sigue pintando las mismas filas y el mismo
+          // botón para un traslado YA recibido (medido el 2026-08-17 sobre el
+          // 29445 y el 29444). O sea que si alguien lo recibió por el sistema
+          // —cosa que pasa: los 3 de Salud 3 del pedido 121 entraron así— esta
+          // función lo cargaba de nuevo, y eso no se deshace solo.
+          //
+          // Quien sí sabe es el listado, con la sesión puesta en la sala que
+          // recibe. Es la misma guarda que `aplicar-traslado-inventario` ya
+          // tenía; acá faltaba.
+          //
+          // `desconocido` NO frena: si no se pudo preguntar se hace lo de
+          // siempre. Una guarda que corta con lo que no sabe deja de recibir
+          // por culpa de una consulta secundaria.
+          const antesDeRecibir = await comoVaLaEntrada(String(ln.id_traslado));
+
+          if (antesDeRecibir === "anulado") {
+            // Anulado es lo contrario de recibido: el producto NO entró y ya no
+            // va a entrar por este traslado. Se cierra en error para que no se
+            // reintente para siempre y alguien lo vuelva a pedir.
+            await admin.from("pedido_traslado_linea").update({
+              estado: "error",
+              error_msg: `El traslado ${ln.id_traslado} está anulado en el sistema: el producto no entró `
+                + `a la sala. Hay que volver a pedirlo.`,
+              updated_at: new Date().toISOString(),
+            }).eq("id", ln.id);
+            fallos.push({ clave: String(ln.clave), error: "El traslado está anulado en el sistema." });
+            continue;
+          }
+
+          if (antesDeRecibir === "recibido") {
+            await admin.from("pedido_traslado_linea").update({
+              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+              // Quién lo recibió no lo dice el sistema, así que no se inventa.
+              // Lo que sí hay que poder leer después es que la carga NO la hizo
+              // esta llamada: acá no se escribió inventario.
+              aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
+              updated_at: new Date().toISOString(),
+            }).eq("id", ln.id);
+            recibidas++;
+            continue;
+          }
+
           const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
             undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
 
@@ -447,12 +500,13 @@ Deno.serve(async (req) => {
             .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
 
           if (filas.length === 0) {
-            // Un traslado ya recibido deja de mostrar líneas. No es un error del
-            // portal: es que alguien lo recibió por el sistema. Se anota como
-            // recibido para que el pedido no quede colgado esperándolo.
+            // Queda como red, no como detector: una pantalla sin líneas no
+            // prueba que ya entró —lo prueba el listado, que ya se consultó
+            // arriba—, pero tampoco hay nada que enviar. Se anota para que el
+            // pedido no quede colgado esperándolo.
             await admin.from("pedido_traslado_linea").update({
               estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: "Ya no mostraba líneas: se había recibido o anulado desde el sistema.",
+              aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
               updated_at: new Date().toISOString(),
             }).eq("id", ln.id);
             recibidas++;
@@ -501,6 +555,20 @@ Deno.serve(async (req) => {
           }), { extra: { Referer: RECIBIR } }));
 
           if (!resp.ok) {
+            // Un fallo NO prueba que no entró: el sistema contesta cosas que no
+            // se pueden leer como éxito habiendo cargado el producto igual
+            // (medido en `aplicar-traslado-inventario` con el 29444 y el 29446).
+            // Volver a 'enviada' sin preguntar es dejar la línea lista para un
+            // reintento sobre producto ya cargado — la otra mitad del hueco.
+            if (await estadoDeRecepcion(cookie, String(ln.id_traslado)) === "recibido") {
+              await admin.from("pedido_traslado_linea").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+                updated_at: new Date().toISOString(),
+              }).eq("id", ln.id);
+              recibidas++;
+              continue;
+            }
             // Vuelve a 'enviada': el traslado sigue vivo y se puede reintentar.
             await admin.from("pedido_traslado_linea")
               .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",

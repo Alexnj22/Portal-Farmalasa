@@ -600,25 +600,36 @@ export async function pendientesDeOrigen(
  */
 export type EstadoDeRecepcion = "pendiente" | "recibido" | "anulado" | "desconocido";
 
+/**
+ * Los traslados que le faltan ENTRAR a la sala de la sesión.
+ *
+ * Un filtro con un valor que el listado no entiende NO falla: contesta las
+ * 28,000 filas con cara de éxito. `recordsFiltered === recordsTotal` es la
+ * señal de que no se aplicó, y entonces la respuesta no dice nada — igual que
+ * una lista recortada. En los dos casos devuelve `null`, que quien llama lee
+ * como «no se pudo preguntar», nunca como «no hay».
+ */
+async function idsDeRecepcion(cookie: string, estado: string): Promise<Set<string> | null> {
+  try {
+    const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
+      draw: "0", start: "0", length: "5000",
+      origen: "gen", pro: "rec", estado,
+    }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
+    const j = JSON.parse(cuerpo);
+    if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return null;
+    if (j.data.length < Number(j.recordsFiltered ?? 0)) return null;
+    return new Set((j.data as unknown[][]).map((f) => String(f?.[0] ?? "")).filter(Boolean));
+  } catch {
+    return null;
+  }
+}
+
+export const pendientesDeRecepcion = (cookie: string) => idsDeRecepcion(cookie, "pe");
+
 export async function estadoDeRecepcion(
   cookie: string, idTraslado: string,
 ): Promise<EstadoDeRecepcion> {
-  // Un filtro con un valor que el listado no entiende NO falla: contesta las
-  // 28,000 filas con cara de éxito. `recordsFiltered === recordsTotal` es la
-  // señal de que no se aplicó, y entonces la respuesta no dice nada.
-  const idsCon = async (estado: string): Promise<Set<string> | null> => {
-    try {
-      const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
-        draw: "0", start: "0", length: "5000",
-        origen: "gen", pro: "rec", estado,
-      }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
-      const j = JSON.parse(cuerpo);
-      if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return null;
-      return new Set((j.data as unknown[][]).map((f) => String(f?.[0] ?? "")).filter(Boolean));
-    } catch {
-      return null;
-    }
-  };
+  const idsCon = (estado: string) => idsDeRecepcion(cookie, estado);
 
   const pendientes = await idsCon("pe");
   if (!pendientes) return "desconocido";
@@ -630,6 +641,49 @@ export async function estadoDeRecepcion(
   const anulados = await idsCon("an");
   if (!anulados) return "desconocido";
   return anulados.has(String(idTraslado)) ? "anulado" : "recibido";
+}
+
+/**
+ * El mismo estado, pero para un LOTE de renglones, sin pagar la consulta en
+ * cada uno.
+ *
+ * Preguntar por renglón cuesta **250 a 880 ms** (medido el 2026-08-19: 253 ms
+ * en Salud 3, con pocos pendientes; 878 ms en Salud 2, con más de cien). Una
+ * hoja son ~35 renglones y se recibe en 18-45 s, así que preguntar de a uno la
+ * duplicaría — y una guarda que hace lenta la operación termina siendo una
+ * guarda que alguien quita.
+ *
+ * Así que la cola se lee UNA vez y se reusa mientras esté fresca. Lo que se
+ * pierde es acotado y explícito: si alguien recibe por el sistema el MISMO
+ * traslado que el portal está por recibir, la respuesta cachada puede tener
+ * hasta `ttlMs` de atraso. Antes de esto la ventana no era de 20 segundos: era
+ * infinita, porque no se preguntaba nunca.
+ *
+ * Y el caso que decide —«no está en la cola»— NO se contesta con la caché: se
+ * vuelve a preguntar fresco. Es el único en que la respuesta cambia lo que se
+ * hace (no cargar), y es raro, así que pagarlo no cuesta nada.
+ */
+export function lectorDeRecepcion(
+  cookie: string,
+  ttlMs = 20_000,
+  leerPendientes: (c: string) => Promise<Set<string> | null> = pendientesDeRecepcion,
+  leerEstado: (c: string, id: string) => Promise<EstadoDeRecepcion> = estadoDeRecepcion,
+): (idTraslado: string) => Promise<EstadoDeRecepcion> {
+  let cola: Set<string> | null = null;
+  let leidaEn = 0;
+  return async (idTraslado: string) => {
+    const id = String(idTraslado);
+    // `>=` y no `>`: así un `ttlMs` de 0 significa «no cachear», que es lo que
+    // cualquiera espera al pasar 0. Con `>` dos llamadas en el mismo
+    // milisegundo reusaban la cola aunque el plazo fuera cero.
+    if (!cola || Date.now() - leidaEn >= ttlMs) {
+      cola = await leerPendientes(cookie);
+      leidaEn = Date.now();
+    }
+    if (!cola) return "desconocido";
+    if (cola.has(id)) return "pendiente";
+    return await leerEstado(cookie, id);
+  };
 }
 
 /**

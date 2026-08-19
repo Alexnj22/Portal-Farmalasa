@@ -4,9 +4,11 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   disponibleEnBodega,
+  estadoDeRecepcion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
+  lectorDeRecepcion,
   nombreCorto,
   norm,
   pendientesDeOrigen,
@@ -250,6 +252,10 @@ Deno.serve(async (req) => {
 
       const cookie = await sesionEn(erpBodega, login);
 
+      // Con qué se comprueba, antes de cargar, si el movimiento ya entró a
+      // Bodega. Lee la cola una vez por lote — ver `lectorDeRecepcion`.
+      const comoVaLaEntrada = lectorDeRecepcion(cookie);
+
       for (const d of aRecibir) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
 
@@ -264,6 +270,43 @@ Deno.serve(async (req) => {
           if (!tomada) continue;
         }
 
+        // ── Se le pregunta al listado ANTES de cargar ────────────────────────
+        // El «no muestra líneas» de abajo NO sirve como detector: la pantalla
+        // sigue pintando las mismas filas para un movimiento ya recibido
+        // (medido el 2026-08-17 sobre el 29445 y el 29444). Sin esta consulta,
+        // uno que alguien recibió por el sistema se cargaba de nuevo — y en
+        // Bodega eso es existencia inventada. Misma guarda que
+        // `aplicar-traslado-inventario`; acá faltaba.
+        //
+        // `desconocido` no frena: se hace lo de siempre.
+        const antesDeRecibir = await comoVaLaEntrada(String(d.id_traslado));
+
+        if (antesDeRecibir === "anulado") {
+          if (!simulacro) {
+            await admin.from("pedido_devolucion").update({
+              estado: "error",
+              error_msg: `El movimiento ${d.id_traslado} está anulado en el sistema: el producto no entró `
+                + `a Bodega. Hay que volver a sacarlo de la sala.`,
+              updated_at: new Date().toISOString(),
+            }).eq("id", d.id);
+          }
+          fallos.push({ clave: d.clave, error: "El movimiento está anulado en el sistema." });
+          continue;
+        }
+
+        if (antesDeRecibir === "recibido") {
+          if (!simulacro) {
+            await admin.from("pedido_devolucion").update({
+              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+              aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
+              updated_at: new Date().toISOString(),
+            }).eq("id", d.id);
+            await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
+          }
+          hechas.push({ clave: d.clave, ya_estaba: true });
+          continue;
+        }
+
         const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(d.id_traslado))}`,
           undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
 
@@ -271,13 +314,13 @@ Deno.serve(async (req) => {
           .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
 
         if (filas.length === 0) {
-          // Un movimiento ya recibido deja de mostrar líneas. No es un error del
-          // portal: es que alguien lo recibió por el sistema. Se anota como
-          // recibido para que la devolución no quede colgada esperándolo.
+          // Queda como red, no como detector: el listado ya se consultó arriba y
+          // no lo daba por recibido, pero tampoco hay nada que enviar. Se anota
+          // para que la devolución no quede colgada esperándolo.
           if (!simulacro) {
             await admin.from("pedido_devolucion").update({
               estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: "Ya no mostraba líneas: se había recibido o anulado desde el sistema.",
+              aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
               updated_at: new Date().toISOString(),
             }).eq("id", d.id);
             await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
@@ -334,6 +377,20 @@ Deno.serve(async (req) => {
         }), { extra: { Referer: RECIBIR } }));
 
         if (!resp.ok) {
+          // Un fallo NO prueba que no entró: el sistema contesta cosas que no se
+          // pueden leer como éxito habiendo cargado el producto igual. Volver a
+          // 'enviada' sin preguntar deja la fila lista para un reintento sobre
+          // producto ya cargado — la otra mitad del hueco.
+          if (await estadoDeRecepcion(cookie, String(d.id_traslado)) === "recibido") {
+            await admin.from("pedido_devolucion").update({
+              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+              aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+              updated_at: new Date().toISOString(),
+            }).eq("id", d.id);
+            await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
+            hechas.push({ clave: d.clave, ya_estaba: true });
+            continue;
+          }
           // Vuelve a 'enviada': el movimiento sigue vivo y se puede reintentar.
           await admin.from("pedido_devolucion")
             .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la entrada.",

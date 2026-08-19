@@ -21,6 +21,143 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.665.1 — Pedidos baja sólo la pestaña que se abre
+
+`gate:bundle` marcaba a PedidosView desde que se le fijó el techo el 2026-07-30
+(153 kB contra 151). La causa no era una librería pesada: la vista importaba sus
+**cinco pestañas de forma estática**, así que abrir Pedidos descargaba las cinco
+—con `RecepcionModal` (1,959 líneas), `CrearRutaModal` (812), `RutaMapModal`
+(565) y `FinalizarCajasModal` (516) adentro— para mirar una.
+
+Ahora cada pestaña viaja en su propio trozo y llega al abrirla. Medido antes y
+después, en gzip:
+
+| | antes | después |
+|---|---|---|
+| **Entrar y caer en Generar** | 154 kB | **41 kB** (19 el cascarón + 22 la pestaña) |
+| Entrar e ir a Métricas | 154 kB | 30 kB |
+| Entrar e ir a Rutas | 154 kB | 44 kB |
+| Entrar e ir a Reglas | 154 kB | 48 kB |
+| Entrar e ir a Pedidos | 154 kB | 142 kB |
+| Cierre estático de la vista (lo que mide el gate) | 154 kB | **19 kB** |
+
+**Lo que el cuadro también dice**: recorrer las cinco pestañas ahora cuesta 162
+kB contra 154 — ocho más, por la cabecera de cada trozo. El cambio no ahorra
+bytes en total; **saca del camino crítico los que no se van a usar**. Y
+`TabPedidos` sigue pesando 123 kB ella sola (59.9 su trozo + 16.3
+`avisoSalidaPedido`): es el próximo corte, y el gate no la ve porque ya llega
+por `import()`.
+
+Es el mismo patrón que ya funcionó dos veces acá —recharts fuera del Inicio
+(204 → 103 kB, v2.521.2) y los cuatro formularios del tablero (133 → 86 kB,
+v2.615.1)—: `lazy()` + `Suspense`. **Sin precarga a propósito**: React se queda
+con el trozo después de la primera visita, así que sólo el primer clic de cada
+pestaña espera, y adelantar las cinco sería volver a bajar lo que este cambio
+dejó de bajar. La barra de pestañas y el buscador quedan FUERA del `Suspense`:
+son de la vista, no de la pestaña, y tienen que seguir respondiendo mientras el
+trozo llega.
+
+**Verificado en navegador de verdad**, que es donde falla un corte como éste:
+el barrido WebKit de iPhone 13 recorrió las cinco pestañas (`pedidos`,
+`#pedidos`, `#rutas`, `#metricas`, `#reglas`) sin una sola reventada, y el smoke
+de Chromium pasa «Pedidos carga sin errores».
+
+**Las otras dos que el gate marcaba no se bajaron: se les subió el techo con el
+motivo escrito**, que es lo que el propio script exige para aflojar (regenerar
+el baseline no sirve — sólo aprieta, nunca sube). Las dos crecieron por hacer
+más cosas y no tienen nada que diferir:
+
+- **RequestsView** 56 → 58 (mide 57). `solicitudes/DetalleSolicitud.jsx` (849
+  líneas) y `solicitudes/TarjetaSolicitud.jsx` (527) **no existían** el
+  2026-07-30 — son 48 commits de traslados, personas y operativas. Diferir el
+  detalle exigiría reestructurar la tarjeta, que también usa
+  `NotificacionDetalle`.
+- **PermissionsView** 47 → 49 (mide 48). El catálogo `permissionModules` pasó de
+  **197 a 543 líneas** en 52 commits, porque el portal ganó módulos (Bitácoras,
+  Cargar compra, Cuentas por pagar). Ese catálogo **es** lo que la pantalla
+  dibuja.
+
+El baseline se editó a mano entrada por entrada, no regenerado: había otra
+sesión con cambios sin commitear en `src/`, y una regeneración completa habría
+fijado techos medidos contra trabajo a medio hacer.
+
+## v2.665.0 — El agente se actualiza solo, y la pantalla dice cuál quedó atrás
+
+Nace de una pregunta del usuario al leer la corrección anterior: *«¿debo
+actualizar el agente en Salud 5 y Salud 1? ¿tendremos 2 agentes distintos?»*, y
+después *«¿hay alguna forma desde el portal… para no tener que ir a cada
+sucursal?»*.
+
+**La respuesta corta era incómoda: hay que tocar cada caja una vez.** Los cinco
+agentes instalados no se pueden actualizar a distancia por ningún camino — lo
+único que ejecutan es el comando de imprimir, y eso es a propósito: un ticket no
+puede convertirse en una orden. Lo que sí se podía era que fuera **la última
+vez**.
+
+### Una línea, sin copiar archivos
+
+```bash
+curl -fsSL https://portal.farmasalud.lat/agente-impresion/actualizar.sh | sudo bash
+```
+
+No toca `agente.conf` —token, sala e impresora quedan como están—, comprueba la
+firma de lo que baja, prueba que arranque antes de reemplazar nada y **vuelve
+sola a la versión anterior** si el agente no levanta. La pantalla de Sistema →
+Prueba de impresión la muestra, lista para copiar, cuando alguna caja está
+atrasada.
+
+### Y de ahí en adelante, sola
+
+El agente pregunta al arrancar y cada 15 minutos si hay una versión nueva.
+**Cuatro frenos, y ninguno es de más: una versión mala llega a las cinco cajas a
+la vez.**
+
+1. Lo bajado tiene que **coincidir con su firma** — un despliegue a medias sirve
+   un archivo que no corresponde a su hash.
+2. Tiene que **pesar algo**: una página de error no se instala.
+3. Tiene que **compilar**.
+4. Tiene que **arrancar**: se ejecuta el archivo nuevo con `--autoprueba` antes
+   de reemplazar. Sin esto, un error que sólo aparece al ejecutar deja la caja
+   reiniciándose cada diez segundos y sin imprimir — el peor final posible, y el
+   que ningún `compile()` detecta.
+
+Se mira **sólo con la cola vacía**: cambiar el archivo con un ticket en la mano
+es reiniciar en mitad de una impresión. La versión anterior queda al lado como
+`.anterior`.
+
+### Lo que se compara es el hash, no un número de versión
+
+Un número hay que acordarse de subirlo, y el día que alguien no lo sube las
+cajas creen estar al día corriendo otra cosa, sin que nada lo delate. El hash
+sale del archivo: no se puede olvidar ni mentir. Lo publica
+`scripts/publicar-agente.mjs` en cada build, desde el **único** archivo que
+existe (`scripts/agente-impresion/agente.py`); `public/agente-impresion/` es
+generado y está en `.gitignore` justamente para que no haya una segunda copia
+que se desincronice — el síntoma sería que las cajas se actualizan a código
+viejo, que es peor que no actualizarse.
+
+### La pantalla deja de callarse
+
+Cada caja informa en su latido qué versión corre y **por dónde le escribe a la
+ticketera** (migración `20260819154209`: dos columnas y una versión de
+`reclamar_impresion` que las guarda; la de dos parámetros queda igual y delega,
+así que las cinco cajas siguieron imprimiendo sin cambiar nada — verificado
+mirando el latido de las cinco después de aplicarla).
+
+Con eso la lista dice, por caja: **al día**, **atrasada**, **versión vieja — hay
+que actualizarla**, o **imprime por CUPS — le quita la ticketera al otro
+sistema**. Ese último no es un detalle técnico y por eso se pinta en rojo: es
+exactamente el estado que dejó a Salud 1 sin poder facturar. Y si no se puede
+leer la versión publicada, la pantalla **no opina** — decir «atrasada» porque
+falló una lectura enseña a ignorar el aviso.
+
+### Lo que cambia de verdad, y hay que saberlo
+
+**Quien controle `portal.farmasalud.lat/agente-impresion/` puede correr código
+en las cinco cajas.** Es la misma confianza que el portal ya tiene sobre esas
+computadoras, pero deja de ser cierto que «un ticket no puede ejecutar nada»:
+eso ahora vale para la cola, no para la actualización.
+
 ## v2.664.5 — La ticketera no se comparte: el agente escribe donde escribe el otro sistema
 
 **Reporte urgente de Salud 1**, la mañana en que se instaló el agente ahí: «si

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:staging": "vite --mode staging",
+    "prebuild": "node scripts/publicar-agente.mjs",
+    "agente:publicar": "node scripts/publicar-agente.mjs",
     "build": "vite build --outDir ${OUT_DIR:-dist}",
     "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
     "lint": "eslint .",

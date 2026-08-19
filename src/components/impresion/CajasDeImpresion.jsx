@@ -7,7 +7,7 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import {
     crearCodigoDeVinculacion, eliminarCajaDeImpresion,
-    fetchCajasDeImpresion, fetchColaDeImpresion,
+    fetchCajasDeImpresion, fetchColaDeImpresion, fetchVersionPublicadaDelAgente,
 } from '../../data/impresion';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -46,6 +46,41 @@ const haceCuanto = (iso) => {
     return { txt: `hace ${Math.round(ms / (24 * 60 * MINUTO))} días`, vivo: false };
 };
 
+/**
+ * Qué decir de una caja: si está al día y por dónde le escribe a la ticketera.
+ *
+ * **El canal no es un detalle técnico y por eso se pinta.** Una caja que
+ * imprime por CUPS le QUITA la ticketera al sistema de facturación —el backend
+ * `usb` de CUPS desengancha el dispositivo del kernel— y esa sala deja de poder
+ * facturar hasta que alguien apaga y prende el aparato. Pasó en Salud 1 el
+ * 19-ago-2026. Escrito en una nota de instalación no lo ve nadie; acá sí.
+ *
+ * Y sin versión publicada la pantalla NO opina: no poder leer el archivo no es
+ * lo mismo que estar atrasada, y mandar a actualizar una caja que estaba bien
+ * enseña a ignorar el aviso.
+ */
+const estadoDelAgente = (caja, publicada) => {
+    if (!caja.vinculada_at) return null;
+    const version = caja.agente_version || null;
+    const canal = caja.agente_canal || null;
+    // Un agente viejo no informa nada: es exactamente el que hay que actualizar,
+    // y decir «sin datos» sería esconder la respuesta que se está buscando.
+    if (!version) return { txt: 'versión vieja — hay que actualizarla', mal: true };
+    if (canal === 'CUPS') return { txt: 'imprime por CUPS — le quita la ticketera al otro sistema', mal: true };
+    if (publicada && version !== publicada) return { txt: `atrasada (${version})`, mal: true };
+    return { txt: `al día · escribe en ${canal || 'la ticketera'}`, mal: false };
+};
+
+/**
+ * La línea que pone al día una caja. Vive acá y se puede copiar de la pantalla
+ * a propósito: el agente **no se puede actualizar a distancia** —lo único que
+ * ejecuta es el comando de imprimir, y eso no se cambia—, así que alguien tiene
+ * que correr algo en esa computadora. Que sea UNA línea dictable por teléfono
+ * es la diferencia entre eso y viajar a cada sucursal.
+ */
+const LINEA_DE_ACTUALIZAR =
+    'curl -fsSL https://portal.farmasalud.lat/agente-impresion/actualizar.sh | sudo bash';
+
 const ESTADOS = {
     PENDIENTE:   { txt: 'Esperando',  icon: Clock,         clase: 'text-content-3' },
     IMPRIMIENDO: { txt: 'Saliendo',   icon: Printer,       clase: 'text-content-2' },
@@ -67,10 +102,12 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const [guardando, setGuardando] = useState(false);
     const [aBorrar, setABorrar] = useState(null);
     const [borrando, setBorrando] = useState(false);
+    const [publicada, setPublicada] = useState(null);
 
     const cargar = useCallback(async () => {
         setCajas(await fetchCajasDeImpresion());
         setCola(await fetchColaDeImpresion({ limite: 15 }));
+        setPublicada(await fetchVersionPublicadaDelAgente());
     }, []);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
@@ -98,7 +135,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const copiar = useCallback(async (texto) => {
         try {
             await navigator.clipboard.writeText(texto);
-            showToast?.('Copiado', 'Pégalo en el archivo agente.conf de esa caja.', 'success');
+            showToast?.('Copiado', 'Pégalo en la computadora de esa caja.', 'success');
         } catch {
             showToast?.('No se pudo copiar', 'Selecciónalo y cópialo a mano.', 'error');
         }
@@ -165,6 +202,26 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 </Notice>
             )}
 
+            {cajas.some((c) => estadoDelAgente(c, publicada)?.mal) && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    <span className="font-bold">Hay cajas que hay que poner al día</span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        En la computadora de esa caja, abre una terminal y pega esta línea. No
+                        pide nada más y no cambia la configuración de la caja — sólo el programa.
+                        Después de esto, cada caja se actualiza sola.
+                    </span>
+                    <code className="block mt-2 p-2 text-caption break-all bg-surface-card-hover border border-border-card">
+                        {LINEA_DE_ACTUALIZAR}
+                    </code>
+                    <span className="flex gap-2 mt-2">
+                        <Button size="sm" variant="secondary" icon={Copy}
+                            onClick={() => copiar(LINEA_DE_ACTUALIZAR)}>
+                            Copiar la línea
+                        </Button>
+                    </span>
+                </Notice>
+            )}
+
             {cajas.map((c) => {
                 // «Sin instalar» y «no contesta» son cosas distintas: la primera
                 // es un código que nadie canjeó, la segunda una caja apagada. Un
@@ -172,6 +229,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 const latido = c.vinculada_at
                     ? haceCuanto(c.ultimo_latido)
                     : { txt: 'sin instalar', vivo: false };
+                const agente = estadoDelAgente(c, publicada);
                 return (
                     <div key={c.id} data-surface="card" className="p-3 flex items-center gap-3 flex-wrap">
                         <Printer size={16} className="text-content-3 shrink-0" />
@@ -180,6 +238,11 @@ export default function CajasDeImpresion({ puedeEditar }) {
                             <p className="text-caption text-content-3 truncate">
                                 {nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`} · {c.impresora}
                             </p>
+                            {agente && (
+                                <p className={`text-caption truncate ${agente.mal ? 'text-danger-text font-bold' : 'text-content-3'}`}>
+                                    {agente.txt}
+                                </p>
+                            )}
                         </div>
                         <span className={`text-caption font-bold shrink-0 ${latido.vivo ? 'text-success-text' : 'text-content-3'}`}>
                             {latido.txt}

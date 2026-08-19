@@ -50,10 +50,12 @@ Ver README.md en esta misma carpeta.
 """
 
 import base64
+import hashlib
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -61,6 +63,19 @@ import urllib.request
 # El archivo de la ticketera, el mismo al que le escribe el sistema de
 # facturación. `DISPOSITIVO=` vacío en agente.conf lo apaga y fuerza CUPS.
 DISPOSITIVO_POR_DEFECTO = "/dev/usb/lp0"
+
+# De dónde se baja la versión nueva de este mismo archivo. Es el portal, servido
+# por HTTPS desde su propio dominio: quien controle esa dirección puede correr
+# código en las cajas, así que no puede ser un lugar cualquiera.
+PORTAL_POR_DEFECTO = "https://portal.farmasalud.lat"
+RUTA_PUBLICADA = "/agente-impresion/"
+# Cada cuánto se pregunta si hay versión nueva. No hace falta más seguido: el
+# día que sale una corrección, media hora de demora no cambia nada, y una
+# consulta cada 15 minutos por caja no se nota en ningún registro.
+INTERVALO_ACTUALIZAR_SEG = 900
+# Piso de tamaño para no instalar una respuesta truncada o una página de error
+# que igual traiga el hash correcto por casualidad. El agente pesa ~14 KB.
+MINIMO_BYTES_AGENTE = 4000
 
 INTERVALO_SEG = 2.0
 # Al fallar la red no se pregunta más rápido: si el portal está caído, mil
@@ -103,6 +118,10 @@ def config():
     # (`DISPOSITIVO=`) se apaga a proposito y todo va por CUPS — es la escotilla
     # para una caja donde la ticketera no cuelgue de USB.
     cfg["DISPOSITIVO"] = cfg.get("DISPOSITIVO", DISPOSITIVO_POR_DEFECTO).strip()
+
+    # `PORTAL_URL=` vacío apaga la actualización sola. Existe para una caja que
+    # no deba tocarse sin aviso, no para "probar sin actualizar".
+    cfg["PORTAL_URL"] = cfg.get("PORTAL_URL", PORTAL_POR_DEFECTO).strip().rstrip("/")
     return cfg
 
 
@@ -222,24 +241,179 @@ def imprimir(datos, impresora, cortar, dispositivo):
     return imprimir_por_cups(datos, impresora)
 
 
+# ── Actualizarse solo ────────────────────────────────────────────────────────
+#
+# Por qué existe: los agentes NO se pueden actualizar a distancia por ningún
+# otro camino — lo único que ejecutan es el comando de imprimir, y eso es a
+# propósito (un ticket no puede convertirse en una orden). La primera vez hay
+# que tocar cada caja; con esto, es la última.
+#
+# Lo que se compara es el HASH del archivo, no un número de versión escrito a
+# mano: un número hay que acordarse de subirlo, y el día que alguien no lo sube
+# las cajas creen estar al día con código viejo. El hash no se puede olvidar.
+
+
+def hash_de(datos):
+    return hashlib.sha256(datos).hexdigest()
+
+
+def mi_hash():
+    """El hash del archivo que se está ejecutando AHORA."""
+    with open(os.path.abspath(__file__), "rb") as f:
+        return hash_de(f.read())
+
+
+def bajar(url, timeout=30):
+    req = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def instalar_version_nueva(cfg, actual):
+    """Baja el agente publicado y lo instala si es otro. Devuelve (cambio, aviso).
+
+    Cuatro frenos, y ninguno es de más — una actualización mala llega a las
+    cinco cajas a la vez:
+
+      1. El hash de lo bajado tiene que ser el publicado (un despliegue a medias
+         sirve un archivo que no corresponde a su hash).
+      2. Tiene que pesar algo: una página de error no se instala.
+      3. Tiene que COMPILAR.
+      4. Tiene que ARRANCAR: se corre el archivo nuevo con `--autoprueba`, que
+         carga la configuración y sale. Sin esto, un error que sólo aparece al
+         ejecutar deja a la caja reiniciándose cada diez segundos para siempre,
+         y sin imprimir.
+
+    La versión anterior queda al lado como `.anterior`, para poder volver con un
+    `cp` desde la terminal de la sala.
+    """
+    base = cfg["PORTAL_URL"] + RUTA_PUBLICADA
+    publicado = bajar(base + "agente.sha256", timeout=15).decode("ascii", "replace").strip()[:64]
+    if not publicado or publicado == actual:
+        return False, None
+
+    datos = bajar(base + "agente.py")
+    if hash_de(datos) != publicado:
+        return False, "la copia publicada no coincide con su hash; no se instala"
+    if len(datos) < MINIMO_BYTES_AGENTE:
+        return False, "el archivo publicado pesa {} bytes; no se instala".format(len(datos))
+    try:
+        compile(datos, "agente.py", "exec")
+    except SyntaxError as e:
+        return False, "el archivo publicado no compila ({}); no se instala".format(e)
+
+    ruta = os.path.abspath(__file__)
+    tmp = os.path.join(tempfile.gettempdir(), "agente-nuevo-{}.py".format(publicado[:12]))
+    with open(tmp, "wb") as f:
+        f.write(datos)
+    # La configuracion viaja por ENTORNO y no por el archivo: el ejemplar de
+    # prueba vive en /tmp y ahi no hay ningun `agente.conf`, asi que sin esto la
+    # prueba fallaria SIEMPRE y ninguna caja se actualizaria nunca. (El token va
+    # en el entorno del hijo, no en su linea de comando: la linea la ve
+    # cualquiera con un `ps`.)
+    entorno = dict(os.environ)
+    for k in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "DEVICE_ID", "DEVICE_TOKEN"):
+        entorno[k] = cfg[k]
+    try:
+        p = subprocess.run([sys.executable, tmp, "--autoprueba"],
+                           capture_output=True, timeout=30, env=entorno,
+                           cwd=os.path.dirname(ruta))
+        if p.returncode != 0:
+            return False, "la version nueva no arranca ({}); no se instala".format(
+                (p.stderr or b"").decode("utf-8", "replace").strip()[:200])
+    except Exception as e:                                    # noqa: BLE001
+        return False, "no se pudo probar la version nueva ({}); no se instala".format(e)
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+    try:
+        with open(ruta, "rb") as f:
+            anterior = f.read()
+        with open(ruta + ".anterior", "wb") as f:
+            f.write(anterior)
+        # A un archivo abierto no se le escribe encima mientras corre: se escribe
+        # al lado y se renombra, que es atomico.
+        provisorio = ruta + ".nuevo"
+        with open(provisorio, "wb") as f:
+            f.write(datos)
+        os.chmod(provisorio, os.stat(ruta).st_mode)
+        os.replace(provisorio, ruta)
+    except OSError as e:
+        return False, "no se pudo escribir la version nueva ({})".format(e)
+
+    return True, "version nueva instalada ({} → {})".format(actual[:12], publicado[:12])
+
+
+def reclamar(cfg, version, canal):
+    """Pide trabajos y, de paso, cuenta qué versión corre y por dónde escribe.
+
+    El agente puede quedar más nuevo que la base —es el orden que se usó siempre
+    acá: primero la caja, después el portal—, así que si la función todavía no
+    acepta esos dos datos se la llama como antes. Un agente que no puede
+    informar su versión igual tiene que imprimir.
+    """
+    cuerpo = {"p_device": cfg["DEVICE_ID"], "p_token": cfg["DEVICE_TOKEN"],
+              "p_version": version[:12], "p_canal": canal}
+    try:
+        return rpc(cfg, "reclamar_impresion", cuerpo)
+    except urllib.error.HTTPError as e:
+        if e.code not in (400, 404):
+            raise
+        return rpc(cfg, "reclamar_impresion",
+                   {"p_device": cfg["DEVICE_ID"], "p_token": cfg["DEVICE_TOKEN"]})
+
+
 def main():
+    # `--autoprueba` es lo que corre la version en curso ANTES de instalar
+    # ésta: carga la configuracion y sale. Si algo revienta al arrancar, revienta
+    # acá y la version vieja se queda donde está.
+    if "--autoprueba" in sys.argv:
+        config()
+        print("autoprueba ok", flush=True)
+        return 0
+
     cfg = config()
     canal = (cfg["DISPOSITIVO"] if cfg["DISPOSITIVO"] and os.path.exists(cfg["DISPOSITIVO"])
-             else "CUPS (el dispositivo no esta)")
-    print("Agente de impresion en marcha. Caja {}. Escribe en: {}. Ctrl-C para salir."
-          .format(cfg["DEVICE_ID"][:8], canal), flush=True)
+             else "CUPS")
+    version = mi_hash()
+    print("Agente de impresion en marcha. Caja {}. Version {}. Escribe en: {}. "
+          "Ctrl-C para salir."
+          .format(cfg["DEVICE_ID"][:8], version[:12], canal), flush=True)
 
     espera = INTERVALO_SEG
+    # Se revisa apenas arranca: una caja que se prende a la mañana se pone al
+    # dia sola antes del primer ticket del dia.
+    proxima_revision = 0.0
     while True:
         try:
-            filas = rpc(cfg, "reclamar_impresion",
-                        {"p_device": cfg["DEVICE_ID"], "p_token": cfg["DEVICE_TOKEN"]})
+            filas = reclamar(cfg, version, canal)
             espera = INTERVALO_SEG
 
             # Sin trabajos la cola contesta una lista vacia: es lo normal, no un
             # error, y no se imprime nada en la consola para que el registro no
             # crezca con 30 lineas por minuto diciendo que no pasa nada.
             if not filas:
+                # La actualizacion se mira SOLO con la cola vacia: cambiar el
+                # archivo con un ticket en la mano es reiniciar en medio de una
+                # impresion.
+                if cfg["PORTAL_URL"] and time.monotonic() >= proxima_revision:
+                    proxima_revision = time.monotonic() + INTERVALO_ACTUALIZAR_SEG
+                    try:
+                        cambio, aviso = instalar_version_nueva(cfg, version)
+                    except Exception as e:                    # noqa: BLE001
+                        # Que el portal no conteste no es motivo para dejar de
+                        # imprimir: se anota y se sigue con la version de hoy.
+                        cambio, aviso = False, "no se pudo revisar la version: {}".format(e)[:200]
+                    if aviso:
+                        print("  " + aviso, flush=True)
+                    if cambio:
+                        # Salir con 0 alcanza: systemd tiene Restart=always y lo
+                        # levanta en diez segundos con el archivo nuevo.
+                        print("Reiniciando con la version nueva.", flush=True)
+                        return 0
                 time.sleep(espera)
                 continue
 

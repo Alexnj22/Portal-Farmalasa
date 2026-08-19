@@ -56,6 +56,28 @@ justamente para que no se confundan al leerlos.
 **¿Y si se vence el código?**
 Generás otro en el portal y volvés a correr `bash instalar.sh`.
 
+**¿Cómo se actualiza una caja sin ir a la sucursal?**
+Una línea en la terminal de esa computadora, dictable por teléfono:
+
+```bash
+curl -fsSL https://portal.farmasalud.lat/agente-impresion/actualizar.sh | sudo bash
+```
+
+No toca `agente.conf` —el token, la sala y la impresora quedan como están—,
+comprueba la firma de lo que baja, prueba que arranque antes de instalarlo y
+**vuelve sola a la versión anterior** si el agente no levanta.
+
+De ahí en adelante **no hace falta**: el agente pregunta cada 15 minutos si hay
+una versión nueva, la instala con los mismos frenos y se reinicia. La línea
+queda para una caja que quedó atrás o para no esperar los 15 minutos. El portal
+la muestra, lista para copiar, en Sistema → Prueba de impresión, y ahí también
+dice qué cajas están al día.
+
+**¿Y si la versión nueva está rota?** No se instala: tiene que coincidir con su
+firma, compilar y **arrancar** (se corre con `--autoprueba` antes de
+reemplazar). La anterior queda al lado como `agente.py.anterior`, así que desde
+la terminal de la sala se vuelve con un `cp` y un `systemctl restart`.
+
 **¿Cómo sé que está funcionando?**
 En el portal, esa caja va a decir **«ahora mismo»** al lado del nombre. Si dice
 «sin instalar», el código nunca se canjeó; si dice «hace 3 h», la computadora
@@ -140,6 +162,20 @@ Supabase — la misma que viaja dentro del JavaScript del portal, o sea que la
 tiene cualquiera que abra la página. Lo que autoriza a esta caja es su *token*,
 y ése lo entrega el canje del código: nunca está escrito en el repositorio.
 `agente.conf`, que sí lo tiene, queda con permisos `600` y está en `.gitignore`.
+
+**El agente se actualiza solo, y por eso los frenos importan.** Una versión mala
+llega a las cinco cajas a la vez. Lo que se compara es el **hash** del archivo y
+no un número de versión: un número hay que acordarse de subirlo, y el día que
+alguien no lo sube las cajas creen estar al día corriendo otra cosa. Lo publica
+`scripts/publicar-agente.mjs` en cada build, desde el ÚNICO archivo que existe
+—`scripts/agente-impresion/agente.py`—; `public/agente-impresion/` es generado y
+está en `.gitignore` justamente para que no haya una segunda copia que se
+desincronice.
+
+Y quien controle esa dirección puede correr código en las cinco cajas. Es la
+misma confianza que el portal ya tiene sobre esas computadoras, pero dejó de ser
+cierto que «un ticket no puede ejecutar nada»: eso sigue valiendo para la cola,
+no para la actualización.
 
 **Escribe al dispositivo, no a CUPS, y el orden no es preferencia.** Ver la
 pregunta de arriba: al revés, imprimir desde el portal deja al sistema de

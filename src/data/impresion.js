@@ -45,10 +45,35 @@ export function encolarImpresion({ branchId, titulo, contenidoB64 }) {
  */
 export async function fetchCajasDeImpresion() {
     const { data, error } = await supabase.from('impresion_dispositivos')
-        .select('id, branch_id, nombre, equipo, impresora, activo, ultimo_latido, vinculada_at, created_at')
+        .select('id, branch_id, nombre, equipo, impresora, activo, ultimo_latido, '
+            + 'vinculada_at, created_at, agente_version, agente_canal')
         .order('nombre');
     if (error) { console.error('impresion: fetchCajasDeImpresion failed:', error.message); return []; }
     return data || [];
+}
+
+/**
+ * El hash del agente **publicado**, para saber qué cajas quedaron atrás.
+ *
+ * Sale del mismo archivo que se bajan las cajas (`/agente-impresion/`), no de
+ * una constante del portal: si se comparara contra un número escrito acá, el
+ * día que alguien no lo actualiza la pantalla diría que están todas al día. Se
+ * compara lo publicado contra lo que cada caja informa, y ninguno de los dos lo
+ * escribe una persona.
+ *
+ * Devuelve `null` si no se puede leer — y entonces la pantalla no opina: decir
+ * «atrasada» porque no se pudo leer el archivo sería mandar a alguien a
+ * actualizar una caja que estaba bien.
+ */
+export async function fetchVersionPublicadaDelAgente() {
+    try {
+        const r = await fetch('/agente-impresion/agente.sha256', { cache: 'no-store' });
+        if (!r.ok) return null;
+        const txt = (await r.text()).trim();
+        return /^[0-9a-f]{64}$/.test(txt) ? txt.slice(0, 12) : null;
+    } catch {
+        return null;
+    }
 }
 
 /**

@@ -53,3 +53,4 @@ scripts/migracion-clientes/ops_por_municipio.json
 # Informes del barrido móvil: viven fuera de test-results/ porque Playwright
 # limpia ese directorio en cada corrida (ver barrido-total-movil.spec.js).
 barridos/
+public/agente-impresion/

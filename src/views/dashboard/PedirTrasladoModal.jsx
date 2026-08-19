@@ -12,6 +12,7 @@ import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
 import { fetchInventoryByProductIds } from '../../data/inventory';
 import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
+import { opcionesDePresentacion } from '../../utils/presentacion';
 
 // Pedirle un producto a otra sala.
 //
@@ -157,6 +158,22 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
 
     const sala     = donde.find(d => String(d.erp_sucursal_id) === String(salaId));
     const pres     = presentaciones[Number(presIdx)] ?? null;
+
+    // ── El paréntesis dice CUÁNTAS caben, no cuántas trae ────────────────────
+    // Hasta el 2026-08-19 ahí iba el factor: CLOPRIM X 3 AMPOLLAS con 3 unidades
+    // en Bodega ofrecía «CAJA X 3 (3)», y ese 3 se lee como «hay tres cajas»
+    // cuando hay una. Pedido del usuario: «debe salir la cantidad de esa
+    // presentación, no las unidades base».
+    //
+    // No cuesta una consulta: la existencia de la sala ya vino en `donde` y el
+    // factor en `presentaciones`, así que son dos números que ya están en
+    // memoria y una división. Y es la MISMA cuenta que decide si el pedido sale
+    // —`unidades <= sala.unidades`—, o sea que el desplegable pasó a mostrar el
+    // techo del formulario en vez de un dato suelto.
+    const opcionesPres = useMemo(
+        () => opcionesDePresentacion(presentaciones, sala ? sala.unidades : null),
+        [presentaciones, sala],
+    );
 
     const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
 
@@ -399,10 +416,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 <LiquidSelect
                                     value={presIdx}
                                     onChange={v => setPresIdx(v ?? '0')}
-                                    options={presentaciones.map((p, i) => ({
-                                        value: String(i),
-                                        label: `${p.tipo} (${p.factor})`,
-                                    }))}
+                                    options={opcionesPres}
                                     placeholder="Presentación..."
                                     clearable={false}
                                 />

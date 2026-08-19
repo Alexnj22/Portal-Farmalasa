@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.664.3 — El desplegable dice cuántas cajas hay, no cuántas trae
+
+Pedido del usuario sobre lo que quedó abierto en v2.664.2: *«debe salir la
+cantidad de esa presentación, no las unidades base. Por ejemplo si hay 3
+unidades y la caja es x3 debe salir caja x 3 (1) no (3)»*.
+
+Al pedirle un producto a otra sala, el desplegable de **Presentación** ponía un
+número entre paréntesis y ese número era el **factor** —cuántas unidades trae la
+presentación—. CLOPRIM X 3 AMPOLLAS, con 3 unidades en Bodega, ofrecía
+«CAJA X 3 **(3)**» cuando lo que hay es **una** caja. Los dos números se leen
+igual y el equivocado es el que estaba a la vista.
+
+Ahora dice cuántas de esa presentación se pueden pedir:
+
+| antes | ahora |
+|---|---|
+| UNIDAD (1) · CAJA X 3 (3) · CAJA (3) | UNIDAD (3) · CAJA X 3 (1) · CAJA (1) |
+
+**Es la misma cuenta que decide si el pedido sale.** El formulario compara
+`cantidad × factor` contra la existencia y el trigger `validar_solicitud_traslado`
+repite la comparación en la base, así que el paréntesis pasó a mostrar el techo
+del propio formulario en vez de un dato suelto.
+
+**Redondea siempre hacia abajo.** `applyPresRule` —la regla del 40% del MIN·MAX—
+vive en el mismo archivo y sube un pack cuando el residuo pasa el 40%: con 28
+unidades y cajas de 10 diría 3. Acá tienen que ser **2**, porque la tercera caja
+no está y ofrecerla produce una solicitud que el envío rechaza. Las dos reglas
+quedaron juntas en `src/utils/presentacion.js` con la diferencia escrita arriba,
+que es lo que evita elegir la equivocada.
+
+**Sin sala elegida no sale número**, sólo la etiqueta: no hay existencia contra
+la cual contar y uno inventado sería peor que ninguno.
+
+**Cuánto cuesta: nada.** La existencia de la sala ya venía en la respuesta de
+«dónde hay» y el factor en la del catálogo — son dos números que ya estaban en
+memoria y una división. Ni una consulta nueva, ni un cambio en la base.
+
+**El factor se escribe sólo cuando hace falta para distinguir.** Medido contra
+el catálogo de producción: de 5,712 parejas activas producto·presentación, la
+etiqueta se repite con dos factores distintos en **2** productos (ACIDO FOLICO
+5MG y CETRADOL, «CAJA» de 1 y de 10) — ahí y sólo ahí sale «CAJA ×10 (2)».
+Escribirlo siempre sería peor: el texto de la etiqueta **no** es el factor —de
+los 444 tipos que terminan en «X N», **236 tienen factor 1**, porque ahí la caja
+ES la unidad base— y dejaría «CAJA X 28 ×1» en pantalla.
+
+Lo que **no** cambió: las dos entradas repetidas de CLOPRIM («CAJA X 3» y
+«CAJA», las dos de 3) siguen ofreciéndose. Esa etiqueta viaja al despachar y
+unificarla sin medir ese camino puede romper el traslado.
+
+12 pruebas nuevas en `tests/unit/presentacion.test.js`, incluida la que enfrenta
+las dos reglas de redondeo.
+
 ## v2.664.2 — El inventario cuenta las unidades una sola vez
 
 Reporte del usuario: la Consulta de Inventario decía **«Bodega · 3 uds»** de

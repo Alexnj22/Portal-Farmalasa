@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.664.4 — Al anular un vale sale la etiqueta nueva
+
+Pedido del usuario: corregir un vale cargado por error. Decisión, dicha por él:
+**editar un vale no se agrega — se anula, como ya está— pero anularlo tiene que
+reimprimir el papel de la bolsa.**
+
+Anular ya existía completo desde v2.624.0 (motivo obligatorio, el dinero vuelve
+al saldo, el vale queda tachado y no borrado, y un `ANULAR_SALIDA` por bolsa en
+la bitácora con quién y por qué). Lo que faltaba era el papel: **la etiqueta
+pegada afuera dejaba de ser cierta en ese mismo instante y nadie la reemplazaba.**
+
+El hueco es exactamente el que la etiqueta existe para tapar. Una salida sí
+reimprimía —`imprimirTrasLaSalida` lo hace desde v2.622.0— porque el saldo
+había cambiado; anular cambia el saldo igual, y hacia el lado peor: la etiqueta
+queda diciendo **menos** efectivo del que hay adentro, y ese número es contra lo
+que administración cuenta al recibir la bolsa. Un vale de $200 anulado dejaba
+una etiqueta con $200 de faltante que nadie sacó.
+
+Ahora la anulación de un vale termina con la etiqueta nueva —numerada, «ANULA LA
+ANTERIOR», con la lista de vales al día— y el aviso del modal lo dice antes de
+apretar: «Hay que sacar el vale de adentro y pegarle la etiqueta nueva, que sale
+sola». Anular la **bolsa entera** no reimprime nada: una bolsa anulada no lleva
+etiqueta.
+
+**Por qué editar no se agrega.** El monto, el motivo, la entidad y el número de
+boleta salen IMPRESOS en el vale que está dentro de la bolsa, y ese papel es el
+que administración lee. Editarlos dejaría la pantalla diciendo una cosa y el
+papel otra, sin nada que lo delate — que es peor que no poder corregir. Corregir
+es anular y volver a registrar: dos folios, dos papeles, y el error visible.
+
+**Tres detalles que se rompen solos:**
+
+- **Las salidas se vuelven a pedir al servidor, no se toman de la pantalla.** La
+  anulación acaba de pasar, así que la lista en memoria es la de antes: impresa
+  con ella, la etiqueta nueva sale con el mismo número equivocado que se estaba
+  corrigiendo.
+- **El «Guardo» del papel es quien GUARDÓ el dinero, no quien anuló.** Sin
+  pasarlo, `imprimir` cae al usuario de la sesión y la etiqueta nueva habría
+  cambiado de nombre al reimprimirse. Por eso `cerradaPor` viaja como prop.
+- **La reimpresión vive en `useCerrarBolsa` (`reimprimirEtiqueta`), no en la
+  pantalla.** Era la tercera copia de «traer las salidas, imprimir, y avisar si
+  no salió»: `imprimirTrasLaSalida` pasó a llamarla, así que el aviso «la de
+  afuera dice un monto que ya no es» existe una sola vez.
+
+Que no salga el papel no deshace la anulación —ya está escrita—: avisa y sigue.
+
 ## v2.664.3 — El desplegable dice cuántas cajas hay, no cuántas trae
 
 Pedido del usuario sobre lo que quedó abierto en v2.664.2: *«debe salir la

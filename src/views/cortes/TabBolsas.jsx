@@ -630,11 +630,16 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
             {abierta && (
                 <Suspense fallback={null}>
                     <DetalleDeBolsa
-                bolsa={abierta}
-                sala={abierta ? nombreSala[abierta.branch_id] : ''}
-                onClose={() => setAbierta(null)}
-                onCambio={cargar}
-            />
+                        bolsa={abierta}
+                        sala={abierta ? nombreSala[abierta.branch_id] : ''}
+                        // Quién GUARDÓ el dinero, no quién está mirando: al
+                        // anular un vale la etiqueta se reimprime desde ahí
+                        // adentro, y sin esto el «Guardo» del papel nuevo
+                        // saldría con el nombre de quien anuló.
+                        cerradaPor={nombrePersona.get(abierta.cerrada_por)}
+                        onClose={() => setAbierta(null)}
+                        onCambio={cargar}
+                    />
                 </Suspense>
             )}
 

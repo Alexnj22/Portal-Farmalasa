@@ -35,6 +35,18 @@ import { useToastStore } from '../../store/toastStore';
  * Las dos anulaciones exigen motivo y sólo valen mientras la bolsa siga en la
  * sala: una vez entregada el dinero lo tiene otro, y la corrección es del
  * conteo, no de acá. Eso lo rechaza el servidor; la pantalla no ofrece el botón.
+ *
+ * **Corregir un vale es anularlo y volver a registrarlo — editarlo no existe, y
+ * es a propósito** (decisión del usuario, 2026-08-19). El monto, el motivo, la
+ * entidad y el número de boleta salen IMPRESOS en el vale que está dentro de la
+ * bolsa, y ese papel es el que administración lee: editarlos dejaría la pantalla
+ * diciendo una cosa y el papel otra, sin nada que lo delate.
+ *
+ * Y por lo mismo, **anular un vale reimprime la etiqueta de afuera**: el saldo
+ * cambió en ese instante, así que la que está pegada pasó a decir un efectivo
+ * que ya no es —de menos, que es el peor lado: administración cuenta contra ese
+ * número—. Es el mismo cierre que ya hacía una salida (`imprimirTrasLaSalida`)
+ * y que acá faltaba.
  */
 
 const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
@@ -59,7 +71,7 @@ const ACCION = {
     RESOLVER: 'Se resolvió la diferencia', ANULAR: 'Se anuló la bolsa',
 };
 
-export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
+export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {
     const { hasPermission } = useAuth();
     const puedeEditar = hasPermission('bolsas', 'can_edit');
     const showToast = useToastStore((s) => s.showToast);
@@ -89,7 +101,7 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
         () => (bolsa ? { [bolsa.branch_id]: sala || '' } : {}),
         [bolsa, sala],
     );
-    const { imprimirVale } = useCerrarBolsa({ nombreSala, origen: 'detalle' });
+    const { imprimirVale, reimprimirEtiqueta } = useCerrarBolsa({ nombreSala, origen: 'detalle' });
 
     /**
      * El vale que quedó (o tenía que quedar) dentro de la bolsa.
@@ -118,20 +130,26 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
 
     const confirmarAnulacion = useCallback(async (motivo) => {
         if (!anulando || !motivo?.trim()) return;
+        const eraBolsa = anulando.tipo === 'bolsa';
         setOcupado('anular');
-        const { error } = anulando.tipo === 'bolsa'
+        const { error } = eraBolsa
             ? await anularBolsa(bolsa.id, motivo)
             : await anularSalida(anulando.operacionId, motivo);
-        setOcupado(null);
         if (error) {
+            setOcupado(null);
             showToast?.('No se pudo anular', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
             return;
         }
-        showToast?.(anulando.tipo === 'bolsa' ? 'Bolsa anulada' : 'Salida anulada', '', 'success');
+        showToast?.(eraBolsa ? 'Bolsa anulada' : 'Salida anulada', '', 'success');
         setAnulando(null);
+        // Anular un vale devuelve ese dinero al saldo, así que la etiqueta
+        // pegada afuera dejó de ser cierta en este mismo instante. Una bolsa
+        // ANULADA no lleva etiqueta: ahí no hay nada que reimprimir.
+        if (!eraBolsa) await reimprimirEtiqueta(bolsa, cerradaPor);
+        setOcupado(null);
         onCambio?.();
-        if (anulando.tipo === 'bolsa') onClose?.(); else cargar();
-    }, [anulando, bolsa, showToast, onCambio, onClose, cargar]);
+        if (eraBolsa) onClose?.(); else cargar();
+    }, [anulando, bolsa, cerradaPor, showToast, onCambio, onClose, cargar, reimprimirEtiqueta]);
 
     if (!bolsa) return null;
 
@@ -323,7 +341,7 @@ export default function DetalleDeBolsa({ bolsa, sala, onClose, onCambio }) {
                     : `Anular el vale ${anulando?.folio}`}
                 message={anulando?.tipo === 'bolsa'
                     ? 'La bolsa deja de contar y su etiqueta ya no vale. Queda en la bitácora quién la anuló y por qué.'
-                    : 'El dinero vuelve al saldo de la bolsa. Hay que sacar el vale de adentro.'}
+                    : 'El dinero vuelve al saldo de la bolsa. Hay que sacar el vale de adentro y pegarle la etiqueta nueva, que sale sola.'}
                 placeholder="Por qué se anula…"
                 confirmText="Anular"
             />

@@ -156,6 +156,34 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     }, [showToast, nombreSala]);
 
     /**
+     * La etiqueta al día, cuando el saldo de la bolsa cambió.
+     *
+     * Las salidas las vuelve a pedir al servidor SIEMPRE: quien la llama acaba
+     * de mover el saldo, así que su copia en memoria es justamente la de antes
+     * del cambio. Una etiqueta impresa con la lista vieja sale con el mismo
+     * número equivocado que se estaba corrigiendo.
+     *
+     * Que no salga el papel no deshace lo que ya se escribió, así que avisa y
+     * sigue. El aviso importa: sin él queda pegada afuera una etiqueta que dice
+     * un efectivo que no es, y ese es el número contra el que administración
+     * cuenta.
+     */
+    const reimprimirEtiqueta = useCallback(async (bolsa, cerradaPor = null) => {
+        if (!bolsa) return false;
+        try {
+            return await imprimir(bolsa, {
+                cerradaPor,
+                salidas: await salidasDeLaEtiqueta(bolsa.id),
+            });
+        } catch (e) {
+            console.error('bolsas: la etiqueta nueva no se pudo imprimir:', e?.message);
+            showToast?.('Falta la etiqueta nueva',
+                `${bolsa.folio} - la de afuera dice un monto que ya no es. Reimprimila.`, 'error');
+            return false;
+        }
+    }, [imprimir, salidasDeLaEtiqueta, showToast]);
+
+    /**
      * **Los DOS papeles de una salida**, por cada bolsa de la que salió dinero.
      *
      * Vive acá y no en cada pantalla porque estaba escrito dos veces —la
@@ -196,25 +224,15 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             // que salía impresa.
             const vivas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
             const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
-            const { salidasParaEtiqueta } = await import('../utils/bolsaComprobante');
             const ultima = vivas[vivas.length - 1];
 
             if (ultima) {
                 try { await imprimirVale(ultima, bolsa, saldo); }
                 catch (e) { console.error('bolsas: el vale no se pudo imprimir:', e?.message); }
             }
-            try {
-                await imprimir({ ...bolsa, saldo }, {
-                    cerradaPor: nombrePersona?.get?.(bolsa.cerrada_por),
-                    salidas: salidasParaEtiqueta(vivas),
-                });
-            } catch (e) {
-                console.error('bolsas: la etiqueta nueva no se pudo imprimir:', e?.message);
-                showToast?.('Falta la etiqueta nueva',
-                    `${bolsa.folio} - la de afuera dice un monto que ya no es. Reimprimila.`, 'error');
-            }
+            await reimprimirEtiqueta(bolsa, nombrePersona?.get?.(bolsa.cerrada_por));
         }
-    }, [imprimir, imprimirVale, showToast]);
+    }, [imprimirVale, reimprimirEtiqueta, showToast]);
 
     /**
      * Cierra la bolsa del corte y manda la etiqueta a imprimir.
@@ -247,5 +265,5 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         return data;
     }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen, imprimir]);
 
-    return { cerrar, imprimir, imprimirVale, imprimirTrasLaSalida, ocupadoId };
+    return { cerrar, imprimir, imprimirVale, imprimirTrasLaSalida, reimprimirEtiqueta, ocupadoId };
 }

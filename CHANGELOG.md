@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.669.0 — El portal apaga solo la tarjeta de un traslado que ya entró
+
+_(pendiente de redactar)_
+
+## v2.668.4 — El aviso del barrido cuenta antes de afirmar
+
+La otra mitad de v2.668.3. Ahí se arregló la CAUSA de la alarma falsa; el texto
+del aviso seguía diciendo cosas que nunca miró:
+
+> «Las facturas anuladas sin invalidar y las que están sin sello siguen
+> esperando. Revisá que la función `regularizar-dte` siga desplegada con
+> --no-verify-jwt.»
+
+Esa primera frase estaba escrita a mano dentro del aviso, fija. La madrugada del
+20 de agosto no había **ninguna** esperando —cero sin sello, cero anuladas por
+invalidar— y el aviso la sostuvo igual. Un aviso que afirma sin mirar manda a
+buscar un atraso que no existe, que es peor que no decir nada.
+
+Ahora las cuenta antes de nombrarlas, con el mismo criterio con que el barrido
+arma su cola, y dice el número: «Hay 7 facturas esperando y no se van a mandar
+hasta que vuelva a correr», o «Ahora mismo no hay ninguna factura esperando,
+pero tiene que volver a correr antes de que entre la próxima». El conteo vive
+DENTRO de la rama de la alarma: en un día normal no se ejecuta ni una vez.
+
+Y se fue la jerga. El nombre del programa y el flag de su despliegue no son
+cosas del portal — quien lee el aviso necesita saber qué quedó sin hacer, no
+cómo se llama por dentro lo que lo hace.
+
 ## v2.668.3 — Los avisos largos se pueden leer enteros y el barrido deja rastro aunque no haya nada que hacer
 
 Un aviso llegó a la campana a las 8:00 diciendo «El barrido de Hacienda no

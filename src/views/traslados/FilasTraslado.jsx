@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeftRight, Clock, Loader2, PackageCheck, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
@@ -54,6 +55,30 @@ export function Recorrido({ meta, className = '' }) {
  * sugerencia se arma con el dato fresco y viaja en el aviso, y que «Otro» sin
  * texto no es un motivo.
  */
+/**
+ * Cuántos PAQUETES de un renglón puede mandar hoy la sala de origen.
+ *
+ * Las dos escalas son la trampa: la disponibilidad viene en unidades BASE y lo
+ * pedido en paquetes de la presentación. `factor` es lo que las une, y es la
+ * MISMA cuenta que hace el despachador contra el reporte del sistema —acá es una
+ * ayuda para que la casilla venga puesta, allá es la autoridad—.
+ *
+ * Nunca más de lo pedido: mandar de más no es mandar, es otro traslado.
+ */
+function paquetesQueSalen(linea, item) {
+    const factor  = Number(item?.factor) || 1;
+    const pedidos = Number(item?.cantidad) || 0;
+    const hay     = Math.floor(Number(linea?.unidades ?? 0) / factor);
+    return Math.max(0, Math.min(pedidos, hay));
+}
+
+/** Cómo se llama un renglón. El nombre guardado manda; el número es el repuesto. */
+function nombreDe(linea, items) {
+    return linea?.descripcion
+        ?? items?.[linea?.idx]?.descripcion
+        ?? `#${linea?.erp_product_id ?? '?'}`;
+}
+
 export function DecisionTraslado({ fila, onHecho }) {
     const [modo,     setModo]     = useState(null);   // null | 'rechazo'
     /* Arranca VACÍO, no en el primer motivo de la lista.
@@ -73,6 +98,22 @@ export function DecisionTraslado({ fila, onHecho }) {
     const [ocupado,  setOcupado]  = useState(false);
     const [error,    setError]    = useState('');
     const [disp,     setDisp]     = useState(null);   // null = todavía no se sabe
+    /* Cuántos paquetes sale de cada renglón, por índice y como texto —es lo que
+     * hay en la casilla—. Arranca en lo MÁXIMO que se puede mandar, que con
+     * existencia de sobra es lo pedido y con existencia corta es lo que hay:
+     * así la casilla ya trae la respuesta y sólo se toca para cambiarla. */
+    const [cuantos,  setCuantos]  = useState({});
+    /* Por qué no sale todo. Obligatorio en cuanto se manda de menos: es lo
+     * único que le va a explicar a quien pidió por qué le llegan 2 de 3. */
+    const [porQue,   setPorQue]   = useState('');
+
+    // Los renglones tal como se guardaron. De acá salen la presentación y la
+    // cantidad PEDIDA; la disponibilidad trae lo que hay. Son dos fuentes y no
+    // una porque lo pedido no cambia y lo que hay sí.
+    const items = useMemo(
+        () => (Array.isArray(fila.metadata?.items) ? fila.metadata.items : []),
+        [fila.metadata],
+    );
 
     // Se pregunta al abrir y no al apretar: entre que alguien pide y alguien
     // contesta, la sala pudo vender lo último que le quedaba —o habérselo
@@ -82,30 +123,81 @@ export function DecisionTraslado({ fila, onHecho }) {
         let cancelado = false;
         fetchDisponibilidadTraslado(fila.id).then(r => {
             if (cancelado || r.error) return;
-            setDisp(r.disponibilidad);
-            // Si ya no tiene, la única salida honesta es rechazar — y con el
-            // motivo que corresponde ya elegido, para no hacer buscar lo que el
-            // portal ya sabe. Se decide acá, donde llega la respuesta, y no en
-            // un efecto que vigile `disp`: es la misma decisión y un solo sitio.
-            if (r.disponibilidad && !r.disponibilidad?.origen?.puede) {
+            const d = r.disponibilidad;
+            setDisp(d);
+
+            const lin = Array.isArray(d?.lineas) ? d.lineas : [];
+            setCuantos(Object.fromEntries(
+                lin.map(l => [l.idx, String(paquetesQueSalen(l, items[l.idx]))]),
+            ));
+
+            // Si no queda NADA que mandar, la única salida honesta es rechazar
+            // — y con el motivo que corresponde ya elegido, para no hacer buscar
+            // lo que el portal ya sabe. Se decide acá, donde llega la respuesta,
+            // y no en un efecto que vigile `disp`: es la misma decisión y un
+            // solo sitio.
+            if (lin.length > 0 && lin.every(l => paquetesQueSalen(l, items[l.idx]) === 0)) {
                 setModo('rechazo');
                 setMotivo('Sin existencia en físico');
             }
         });
         return () => { cancelado = true; };
-    }, [fila.id]);
+    }, [fila.id, items]);
 
-    const puede = disp === null ? true : Boolean(disp?.origen?.puede);
-    const alternativas = disp?.alternativas ?? [];
-    // El texto que viaja en el aviso de rechazo. Se arma acá y no en la base
-    // porque acá está el dato fresco que se acaba de mirar.
-    const sugerencia = alternativas.length > 0
-        ? `Sí hay en ${alternativas.slice(0, 3).map(a => `${a.sala} (${a.unidades})`).join(', ')}`
-        : '';
+    const lineas = useMemo(() => (Array.isArray(disp?.lineas) ? disp.lineas : []), [disp]);
+
+    /* Todavía no se sabe qué hay: o está viajando la respuesta, o no se pudo
+     * preguntar. En los dos casos la tarjeta se comporta como antes de que esto
+     * existiera —se manda lo pedido y decide el servidor—, que es lo único
+     * honesto: dejar el botón apagado por una consulta que falló sería impedir
+     * despachar por un dato que es una ayuda, no la autoridad. */
+    const sinDatos = lineas.length === 0;
+
+    const pedidoDe = (idx) => Number(items[idx]?.cantidad) || 0;
+    const maxDe    = (l)   => paquetesQueSalen(l, items[l.idx]);
+    const saleDe   = (idx) => {
+        const n = Math.floor(Number(cuantos[idx]));
+        return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+
+    // Lo que va a viajar. Índices con su cantidad, nunca los renglones.
+    const aceptadas = lineas
+        .map(l => ({ i: l.idx, cantidad: Math.min(saleDe(l.idx), pedidoDe(l.idx)) }))
+        .filter(a => a.cantidad > 0);
+
+    // Que no quede NADA en físico es un hecho de la existencia; que no quede
+    // nada en las casillas es una decisión de quien despacha. Se distinguen a
+    // propósito: el aviso rojo habla de lo primero, y decir «ya no puedes» sobre
+    // alguien que acaba de escribir un cero sería contarle mal lo que pasó.
+    const nadaEnFisico = !sinDatos && lineas.every(l => maxDe(l) === 0);
+    const hayQueMandar = aceptadas.length > 0;
+    const recortado    = hayQueMandar && (
+        aceptadas.length < lineas.length || aceptadas.some(a => a.cantidad !== pedidoDe(a.i))
+    );
+
+    /* A quién más pedirle, por renglón. El texto viaja en el aviso de rechazo:
+     * quien pidió no tiene por qué volver a buscar dónde hay. Se arma acá y no
+     * en la base porque acá está el dato fresco que se acaba de mirar. */
+    const conAlternativa = lineas.filter(l => (l.alternativas ?? []).length > 0);
+    const sugerencia = conAlternativa.length === 0
+        ? ''
+        : conAlternativa.map((l) => {
+            const donde = l.alternativas.slice(0, 3).map(a => `${a.sala} (${a.unidades})`).join(', ');
+            // Con un solo renglón el nombre del producto ya está en la tarjeta y
+            // repetirlo alarga la frase; con varios es lo único que distingue
+            // una sugerencia de la otra.
+            return lineas.length === 1 ? `Sí hay en ${donde}` : `${nombreDe(l, items)}: ${donde}`;
+        }).join(' · ');
 
     const confirmar = async () => {
         setError(''); setOcupado(true);
-        const r = await despacharTraslado(fila.id);
+        const r = await despacharTraslado(
+            fila.id,
+            recortado ? porQue.trim() : '',
+            // `null` es «sale todo lo pedido»: el camino normal hace exactamente
+            // el mismo viaje que antes de que existiera el despacho parcial.
+            recortado ? aceptadas : null,
+        );
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo despachar.'); return; }
         // Con el desenlace: quien lo abrió desde un aviso necesita saber en qué
@@ -128,6 +220,10 @@ export function DecisionTraslado({ fila, onHecho }) {
     // rechaza tiene que decir por qué.
     const puedeRechazar = Boolean(motivo) && (motivo !== 'Otro' || texto.trim().length > 0);
 
+    // Y la misma regla del otro lado: mandar de menos también hay que explicarlo.
+    // El servidor lo exige igual; acá se avisa para no gastar el viaje.
+    const puedeConfirmar = sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0));
+
     return (
         <div className="flex flex-col gap-2">
             {/* Por qué te aparece un traslado de una sala que no es la tuya.
@@ -148,32 +244,96 @@ export function DecisionTraslado({ fila, onHecho }) {
 
             {/* Lo que la sala tiene AHORA, no cuando se lo pidieron — y ya con
                 lo que salió y todavía no aparece en el conteo descontado. */}
-            {disp && !puede && (
+            {nadaEnFisico && (
                 <p className="text-micro font-semibold text-danger-text leading-snug">
-                    Ya no puedes enviarlo: quedan {disp.origen?.unidades ?? 0}
-                    {(disp.origen?.en_vuelo ?? 0) > 0
-                        && ` (${disp.origen.en_vuelo} ya salieron y el conteo todavía no lo refleja)`}.
-                    {alternativas.length > 0 && ` ${sugerencia}.`}
+                    Ya no puedes enviarlo: quedan {lineas[0]?.unidades ?? 0}
+                    {(lineas[0]?.en_vuelo ?? 0) > 0
+                        && ` (${lineas[0].en_vuelo} ya salieron y el conteo todavía no lo refleja)`}.
+                    {sugerencia && ` ${sugerencia}.`}
                 </p>
             )}
 
-            {/* El mínimo INFORMA, no impide: que la sala quede en cero es
-                decisión de quien despacha. Decisión del usuario, 2026-08-06. */}
-            {disp && puede && (disp.origen?.minimo ?? 0) > 0
-              && (disp.origen.unidades - disp.pedido) < disp.origen.minimo && (
-                <p className="text-micro font-semibold text-warning-text leading-snug">
-                    Si lo envías, tu sala queda en {disp.origen.unidades - disp.pedido} y
-                    tu mínimo es {disp.origen.minimo}.
-                </p>
+            {/* ── Cuánto sale de cada renglón ─────────────────────────────────
+                Reportado así: «me solicitan 3 pero solo puedo mandar 2 porque ya
+                vendí 1 ahorita, ¿puedo modificar la cantidad a enviar?».
+
+                La casilla viene puesta en lo máximo que se puede mandar, así que
+                el caso normal —sale todo— se sigue despachando de un botón sin
+                tocar nada. Bajarla es la excepción, y entonces pide el motivo.
+
+                No aparece cuando ya no queda nada en físico: ahí no hay ninguna
+                cantidad que elegir y la única salida es rechazar. */}
+            {!nadaEnFisico && !sinDatos && (
+                <ul className="flex flex-col gap-1.5">
+                    {lineas.map(l => {
+                        const pedido = pedidoDe(l.idx);
+                        const max    = maxDe(l);
+                        const sale   = Math.min(saleDe(l.idx), pedido);
+                        const factor = Number(items[l.idx]?.factor) || 1;
+                        const queda  = (l.unidades ?? 0) - sale * factor;
+                        return (
+                            <li key={l.idx} className="flex items-center gap-2">
+                                {/* La casilla va PRIMERO para que el renglón se
+                                    lea como una frase: «[2] de 3 UNIDAD ·
+                                    alcanza para 2». Con el número a la derecha
+                                    hay que leerlo al revés. */}
+                                <div className="w-16 shrink-0">
+                                    <PortalInput
+                                        type="number"
+                                        min="0"
+                                        max={String(pedido)}
+                                        value={cuantos[l.idx] ?? ''}
+                                        onChange={e => setCuantos(c => ({ ...c, [l.idx]: e.target.value }))}
+                                        aria-label={`Cuántos envías de ${nombreDe(l, items)}`}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    {/* El nombre sólo cuando hay más de uno: con
+                                        un renglón la tarjeta ya lo dice arriba, y
+                                        repetirlo es ruido en el caso normal. */}
+                                    {lineas.length > 1 && (
+                                        <p className="text-micro font-semibold text-content leading-snug truncate">
+                                            {nombreDe(l, items)}
+                                        </p>
+                                    )}
+                                    <p className="text-micro text-content-3 leading-snug">
+                                        de {pedido} {items[l.idx]?.presentacion_tipo ?? ''}
+                                        {max < pedido && ` · alcanza para ${max}`}
+                                    </p>
+                                    {/* El mínimo INFORMA, no impide: que la sala
+                                        quede en cero es decisión de quien
+                                        despacha. Decisión del usuario,
+                                        2026-08-06. */}
+                                    {sale > 0 && (l.minimo ?? 0) > 0 && queda < l.minimo && (
+                                        <p className="text-micro font-semibold text-warning-text leading-snug">
+                                            Te quedas en {queda} y tu mínimo es {l.minimo}.
+                                        </p>
+                                    )}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+
+            {/* Mandar de menos hay que explicarlo: es lo único que va a llegarle
+                a quien pidió junto con la caja incompleta. */}
+            {recortado && (
+                <PortalTextarea
+                    value={porQue}
+                    onChange={e => setPorQue(e.target.value)}
+                    rows={2}
+                    placeholder="¿Por qué no sale todo?"
+                />
             )}
 
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
 
             {modo !== 'rechazo' ? (
                 <div className="flex gap-2">
-                    <Button size="sm" disabled={ocupado} onClick={confirmar}>
+                    <Button size="sm" disabled={ocupado || !puedeConfirmar} onClick={confirmar}>
                         {ocupado && <Loader2 size={13} className="animate-spin" />}
-                        {ocupado ? 'Enviando...' : 'Confirmar y enviar'}
+                        {ocupado ? 'Enviando...' : recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'}
                     </Button>
                     <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo('rechazo')}>
                         No puedo
@@ -190,7 +350,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                     />
                     {/* La sugerencia se muestra acá y además viaja en el aviso:
                         quien pidió no tiene por qué volver a buscar dónde hay. */}
-                    {alternativas.length > 0 && (
+                    {sugerencia && (
                         <p className="text-micro text-content-3 leading-snug px-1">
                             Se le va a sugerir: {sugerencia}
                         </p>
@@ -206,9 +366,9 @@ export function DecisionTraslado({ fila, onHecho }) {
                             {ocupado && <Loader2 size={13} className="animate-spin" />}
                             Rechazar
                         </Button>
-                        {/* Sin «Volver» cuando ya no tiene: no hay a dónde
+                        {/* Sin «Volver» cuando ya no queda nada: no hay a dónde
                             volver — confirmar sería prometer lo que no está. */}
-                        {puede && (
+                        {!nadaEnFisico && (
                             <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo(null)}>
                                 Volver
                             </Button>

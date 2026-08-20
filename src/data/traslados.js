@@ -193,8 +193,31 @@ async function invocar(body) {
     }
 }
 
-export const despacharTraslado = (requestId, nota = '') =>
-    invocar({ request_id: requestId, approver_note: nota, accion: 'enviar' });
+/**
+ * Despacha el traslado. `lineasAceptadas` es lo que sale cuando NO sale todo.
+ *
+ * Viaja como ÍNDICES con su cantidad —`[{ i, cantidad }]`— y nunca como los
+ * renglones: con los renglones, el navegador elegiría qué producto se mueve, y
+ * del otro lado hay credenciales para mover inventario de cualquier sala. Con
+ * índices lo único que puede hacer es señalar cuáles de los que ya se guardaron
+ * salen, y bajarles la cantidad. Mismo contrato que la aprobación parcial de
+ * carga y descarte.
+ *
+ * `null` significa «sale todo lo pedido», que es como funcionó siempre — y por
+ * eso se manda `null` y no la lista completa: el camino normal sigue siendo
+ * exactamente el mismo viaje que antes.
+ *
+ * La cantidad va en PAQUETES de la presentación del renglón, igual que
+ * `items[].cantidad`. El servidor la topa contra lo pedido de nuevo: esto es una
+ * sugerencia, no la autoridad.
+ */
+export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null) =>
+    invocar({
+        request_id: requestId,
+        approver_note: nota,
+        accion: 'enviar',
+        ...(lineasAceptadas ? { lineas_aceptadas: lineasAceptadas } : {}),
+    });
 
 export const recibirTraslado = (requestId) =>
     invocar({ request_id: requestId, accion: 'recibir' });

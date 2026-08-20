@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.674.0 — Quien despacha un traslado puede enviar lo que hay
+
+Ya se ve en pantalla. Te piden 3, vendiste una hace un rato y tienes 2: la
+tarjeta ahora trae una casilla con **2 ya puesto** —lo máximo que se puede
+mandar— y un renglón que dice «de 3 CAJA · alcanza para 2». Se aprieta *Enviar
+lo que hay* y sale. Antes ahí sólo quedaba rechazar entero.
+
+**La casilla viene con la respuesta puesta**, así que el caso normal —alcanza
+todo— se sigue despachando de un botón sin tocar nada, y hace exactamente el
+mismo viaje que antes: cuando no hay recorte no viaja ninguna lista de
+renglones. Bajar el número es la excepción.
+
+**Y bajarlo pide el motivo.** El botón queda apagado hasta escribirlo, porque es
+lo único que le va a llegar a quien pidió junto con la caja incompleta. Misma
+regla que el rechazo —«quien rechaza tiene que decir por qué»— y el servidor la
+exige igual: la pantalla avisa para no gastar el viaje.
+
+Tres cosas que se distinguen a propósito:
+
+- **Que no quede nada en físico** no es lo mismo que **vaciar la casilla**. Lo
+  primero es un hecho de la existencia y sigue llevando al rechazo con el motivo
+  ya elegido; lo segundo es una decisión de quien despacha, y ahí el botón se
+  apaga sin decirle «ya no puedes» a alguien que acaba de escribir un cero.
+- **El mínimo informa, no impide** — se mantiene, ahora renglón por renglón.
+- **El tope es lo pedido.** Escribir 30 donde piden 3 despacha 3. No da error en
+  ninguna parte: saldría en la caja.
+
+Anclado en 9 pruebas de la tarjeta (`tests/unit/despachoParcial.test.jsx`), que
+cubren los cuatro casos que se rompen por separado: alcanza todo, alcanza menos,
+no alcanza nada, y escribir de más.
+
+**Lo que todavía no cambia:** quien pidió no recibe aún el aviso de que le
+llegaron 2 de 3 con la sugerencia de dónde está la que falta. Es el último paso
+del plan.
+
 ## v2.673.0 — El despacho de un traslado puede salir con menos de lo pedido
 
 Reportado así: «me solicitan 3 pero solo puedo mandar 2 porque ya vendí 1

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.687.0 — El buscador del traslado es el de la consulta de inventario
+
+Reportado: *«me gustaría que al darle en agregar y seguir, abriera el de
+consulta de inventario, no esa nueva forma de modal»*.
+
+Buscaba en el **catálogo**: cada resultado traía el principio activo y el
+laboratorio, y para saber dónde había producto había que elegirlo primero y
+esperar la pantalla siguiente. Ahora cada resultado dice **qué salas lo tienen y
+cuántas unidades** —«Salud 1 (27) · Bodega (100)», de más a menos—, que es lo que
+la consulta de inventario contesta y lo que hace falta para decidir a quién
+pedirle. Elegir a ciegas y descubrir después que esa sala no lo tiene era el
+paso que sobraba.
+
+**Se buscó la misma información, no se copió la pantalla.** El agrupador de la
+consulta agrupa por SALA y dentro por producto, que es la forma de aquella
+vista; acá la pregunta es al revés —un producto, en qué salas está— así que lo
+que se comparte es la consulta y el cálculo de unidades (`sumaUnidades`), no un
+segundo agrupador. La consulta de inventario no se tocó.
+
+**Y las salas que muestra son para ELEGIR, no para pedir.** La lista con la que
+después se arma la solicitud —con su mínimo y su vencimiento por sala— la sigue
+contestando el servidor. Si el buscador la armara habría dos versiones de la
+misma respuesta, y la de acá no tiene el mínimo: el aviso de «quedaría bajo su
+mínimo» desaparecería sin que nada fallara.
+
+Hereda los 380 ms de espera de la consulta y no los 150 del buscador de
+catálogo: acá cada tecla trae la existencia de siete salas con sus lotes, no
+veinte filas de texto.
+
 ## v2.686.0 — La lista de la solicitud se edita, y el comentario se pide una vez
 
 Dos cosas reportadas sobre el compositor de v2.683.0.

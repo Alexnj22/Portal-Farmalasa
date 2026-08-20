@@ -77,7 +77,7 @@ vi.mock('../../src/store/staffStore', () => ({
 
 // El buscador, reducido a un botón por producto: lo que se prueba es la
 // composición, no cómo se busca.
-vi.mock('../../src/components/common/BuscadorDeProducto', () => ({
+vi.mock('../../src/components/common/BuscadorDeInventario', () => ({
     default: ({ onElegir }) => (
         <div>
             {[[202, 'AMOXICILINA 500'], [303, 'IBUPROFENO 400']].map(([id, nombre]) => (

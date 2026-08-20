@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, ArrowLeftRight, Check, CheckCircle2, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
-import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
+import BuscadorDeInventario from '../../components/common/BuscadorDeInventario';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -855,8 +855,16 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         </span>
                     </p>
                 ) : pestana === 'lista' ? null : !producto ? (
-                    <BuscadorDeProducto
+                    /* La MISMA búsqueda de la consulta de inventario: cada
+                     * resultado dice qué salas lo tienen y cuántas unidades.
+                     * Antes era el buscador de catálogo —principio activo y
+                     * laboratorio—, que obliga a elegir el producto a ciegas y
+                     * descubrir después que esa sala no lo tiene. Reportado el
+                     * 2026-08-20: «me gustaría que abriera el de consulta de
+                     * inventario, no esa nueva forma». */
+                    <BuscadorDeInventario
                         placeholder="Buscar el producto que hace falta…"
+                        nombreSala={(suc) => NOMBRE_SALA[suc] ?? `Sucursal ${suc}`}
                         invitacion={{
                             icono: ArrowLeftRight,
                             texto: 'Busca el producto que necesitas para ver qué salas lo tienen',

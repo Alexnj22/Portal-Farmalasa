@@ -174,8 +174,15 @@ const CarnesDelDiaView = () => {
         <GlassViewLayout icon={IdCard} title="Carnés del día" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-4">
                 {/* ── Emitir uno ──────────────────────────────────────────── */}
+                {/* Las tarjetas van SUELTAS sobre el cuerpo de la vista, sin un
+                    panel `data-surface="card"` que las envuelva. DESIGN.md §5.1:
+                    «no anides tarjetas». Y no es sólo el anillo doble: el cuerpo
+                    de vista YA es una tarjeta, así que envolverlas dejaba tres
+                    escalones de vidrio y el de más adentro salía más oscuro que
+                    la página — la tarjeta perdía el efecto y se veía como un
+                    recuadro plano. Es exactamente lo que reportó el usuario. */}
                 {busqueda.trim() && (
-                    <div data-surface="card" className="p-4 md:p-5">
+                    <div>
                         <h3 className="text-body-sm font-black uppercase tracking-widest text-content mb-3">
                             Imprimir un carné
                         </h3>
@@ -204,8 +211,14 @@ const CarnesDelDiaView = () => {
                                 {candidatos.map(e => (
                                     <div key={e.id} data-surface="card" className="p-4 flex flex-col gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
+                                            {/* `rounded-xl` va EN el avatar: su
+                                                contenedor tiene `overflow-hidden`
+                                                pero no radio propio, así que sin
+                                                esto la foto sale con las esquinas
+                                                cuadradas dentro de una tarjeta
+                                                redondeada. */}
                                             <LiquidAvatar src={e.photo} alt={e.name} fallbackText={e.name}
-                                                className="w-12 h-12 shrink-0" />
+                                                className="w-12 h-12 rounded-xl shrink-0 border border-border-card" />
                                             <div className="min-w-0">
                                                 <p className="text-body-sm font-black text-content truncate">{shortEmployeeName(e)}</p>
                                                 <p className="text-caption text-content-3 truncate">{e.role || 'Sin cargo'}</p>
@@ -231,7 +244,7 @@ const CarnesDelDiaView = () => {
                 )}
 
                 {/* ── Los que andan sueltos ───────────────────────────────── */}
-                <div data-surface="card" className="p-4 md:p-5">
+                <div>
                     <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                         <h3 className="text-body-sm font-black uppercase tracking-widest text-content">
                             Vigentes ahora{!cargando && !fallo && (
@@ -278,7 +291,7 @@ const CarnesDelDiaView = () => {
                                             <div key={c.id} data-surface="card" className="p-4 flex flex-col gap-3">
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <LiquidAvatar src={c.foto} alt={c.nombre} fallbackText={c.nombre}
-                                                        className="w-12 h-12 shrink-0" />
+                                                        className="w-12 h-12 rounded-xl shrink-0 border border-border-card" />
                                                     <div className="min-w-0">
                                                         <p className="text-body-sm font-black text-content truncate">{c.nombre}</p>
                                                         <p className="text-caption text-content-3 truncate">{c.cargo || 'Sin cargo'}</p>

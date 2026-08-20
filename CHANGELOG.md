@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.689.1 — las tarjetas de carnés recuperan el vidrio y la foto su marco
+
+Pregunta del usuario mirando la pantalla: *«¿las cards son canónicas? No
+parecen, mira la foto cómo se ve con el recuadro, y el liquidglass no tiene el
+efecto canónico»*. Las dos observaciones eran correctas y son dos defectos
+distintos.
+
+**El vidrio: tarjetas anidadas.** Las tarjetas estaban dentro de un panel
+`data-surface="card"` que las envolvía — y el **cuerpo de vista ya es una
+tarjeta**, así que había tres escalones de vidrio. DESIGN.md §5.1 lo dice con
+todas las letras («no anides tarjetas») y §"escalón" tiene el número: el nivel
+de más adentro sale con luminancia 0.387 contra 0.522 de la página, o sea **más
+oscuro que el fondo**. Por eso se veía como un recuadro plano en vez de vidrio.
+Las tarjetas van ahora sueltas sobre el cuerpo de la vista, con el título de
+sección como encabezado y nada más.
+
+**La foto: sin radio.** `LiquidAvatar` recorta con `overflow-hidden` pero no
+tiene radio propio — el radio lo pone quien lo llama, y yo no se lo puse. La
+foto salía con las esquinas cuadradas dentro de una tarjeta redondeada, que es
+el «recuadro» de la captura. Ahora lleva `rounded-xl` y su borde, como en el
+resto del portal.
+
+Lo que **sí** era canónico y no cambia: la tarjeta escrita a mano con
+`data-surface="card"` es una de las tres formas que DESIGN.md acepta para una
+tarjeta suelta en una vista, y el atributo trae el fondo, el borde, la sombra,
+el radio y el `backdrop-filter` — no había nada hardcodeado.
+
 ## v2.689.0 — El inventario no se reescribe cuando el sistema devuelve lo mismo
 
 **La frecuencia no se toca: sigue cada minuto**, y la sala ve las existencias

@@ -152,8 +152,13 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ type: 'spring', stiffness: 480, damping: 34 }}
-                        className="grid gap-1.5"
-                        style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                        /* Siete columnas fijas dan ~48px por celda en un teléfono
+                           de 390, y ahí el rótulo se recorta justo donde está el
+                           número: las cinco salas quedaban en «S.» y no se podía
+                           saber cuál era cuál. En dos filas de cuatro hay ~85px y
+                           el nombre entra entero. De `sm` para arriba sigue siendo
+                           una sola fila de siete, que es como se lee comparando. */
+                        className="grid gap-1.5 grid-cols-4 sm:grid-cols-7">
                         {ERP_ORDER.map(erpId => {
                             const bd        = branchData?.find(b => b.erp_sucursal_id === erpId);
                             const isCurrent = erpId === row._erp_sucursal_id;
@@ -171,7 +176,11 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     data-surface={isCurrent ? undefined : 'card'} className={`rounded-xl px-2 py-2 border transition-colors ${isCurrent ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30' : ''} ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                                         <span className="text-micro font-black text-content-3 truncate leading-tight">
-                                            {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.')}
+                                            {/* `Pop.` es la abreviatura que ya usa el resto
+                                                del panel; sin ella «La Popular» no entra en
+                                                la celda ni con dos filas y sale con puntos
+                                                suspensivos. */}
+                                            {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                         </span>
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
                                     </div>
@@ -353,9 +362,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         <div style={glassSection}>
                             {isBodega ? (
                                 /* Bodega: 3 columnas — compras + ventas red + MIN·MAX por sucursal */
-                                <div className="grid grid-cols-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3">
                                     {/* Compras */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2 border-b sm:border-b-0 sm:border-r border-border-card">
                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -381,7 +390,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                         }
                                     </div>
                                     {/* Ventas — todas las sucursales con badge */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2 border-b sm:border-b-0 sm:border-r border-border-card">
                                         <span className="text-micro font-black uppercase tracking-widest text-success">Últimas ventas</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -453,9 +462,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 </div>
                             ) : (
                                 /* Sucursales: 2 columnas — compras + ventas de la sucursal */
-                                <div className="grid grid-cols-2" style={{ divideX: '1px solid var(--border-card)' }}>
+                                <div className="grid grid-cols-1 sm:grid-cols-2">
                                     {/* Compras */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2 border-b sm:border-b-0 sm:border-r border-border-card">
                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -515,9 +524,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     {/* ── Proyección + Historial (2 columnas en la misma fila al fondo) ── */}
                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) || historyData.length > 0 ? (
                         <div style={glassSection}>
-                            <div className="grid grid-cols-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2">
                                 {/* Proyección de stock */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
+                                <div className="px-4 py-2.5 flex flex-col gap-2 border-b sm:border-b-0 sm:border-r border-border-card">
                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Proyección de stock</span>
                                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
                                         <div className="flex items-center gap-6 flex-wrap">

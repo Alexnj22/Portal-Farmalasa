@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.694.2 — el panel de Mín·Máx se lee en el teléfono
+
+Reportado con una captura: *«eso es en min y max. no se ve bien»*. El panel del
+producto ya se **abría** en el teléfono desde v2.693.0, y ahí se vio lo que
+antes no se podía ver — adentro seguía siendo una rejilla de escritorio metida
+a la fuerza en 390px.
+
+**Las siete sucursales, en dos filas de cuatro.** El carril era
+`repeat(7, minmax(0, 1fr))` fijo: ~48px por celda, y el rótulo se recortaba
+justo donde está el número. Las cinco salas quedaban en **«S.»**, todas iguales,
+o sea que la tarjeta más importante del panel —cuál sala tiene qué— no se podía
+leer. Con cuatro columnas hay ~85px y entran «S.1», «S.4», «Bodega». De `sm`
+para arriba sigue siendo una sola fila de siete, que es como se comparan.
+«La Popular» pasa a «Pop.», la abreviatura que el resto del panel ya usaba.
+
+**Las tres rejillas de columnas se apilan.** *Últimas compras / Últimas ventas*,
+*Proyección / Historial de cálculos* y la variante de Bodega de tres columnas
+partían el ancho en dos o tres a cualquier tamaño. En 390px eso dejaba ~180px
+por columna: el **Historial de cálculos salía cortado a media cifra** («0.2,»
+contra el filo) y los nombres de proveedor y cliente no entraban. Apiladas, cada
+bloque usa el ancho completo. Son `sm:` — en escritorio no cambia nada.
+
+**El filete que las separa cambia de lado.** Estaba escrito como
+`style={{ borderRight }}` en cuatro sitios, o sea imposible de hacer
+responsive: apilado quedaba colgando en el aire a la derecha y las secciones se
+pegaban sin nada que las separara. Ahora es `border-b sm:border-b-0 sm:border-r`.
+De paso se cayó un `style={{ divideX: … }}` que no era una propiedad de CSS y no
+dibujaba nada desde el día que se escribió.
+
+Medido en WebKit iPhone 13 contra producción, abriendo el detalle de cada vista
+tocada y contando lo que se sale a lo ancho **sin poder alcanzarse** (un carril
+con `overflow-x` no cuenta, y `text-overflow: ellipsis` tampoco: desborda por
+diseño). Mín·Máx, Ventas, Inventario, Facturas de compra, Libros de IVA y Libro
+de compras completo quedan en **cero**. Cotizaciones queda confirmada aparte:
+su toque no abre un diálogo sino que cambia de pantalla, así que se verificó por
+el contenido —«COT-2026-00001 · Lista · Editar · Anular · Imprimir/PDF»— y no
+por el selector.
+
 ## v2.694.1 — Bolsas: las fechas filtran de verdad, separado por sucursal y las dos acciones en el widget
 
 Tres correcciones de la pestaña «Bolsas de efectivo», las tres del usuario

@@ -201,27 +201,37 @@ export async function fetchEstadoDeGrupos(grupoIds) {
     return { grupos, error: null };
 }
 
+/**
+ * Los traslados DESPACHADOS y todavía SIN RECIBIR.
+ *
+ * ── Por qué el filtro está en la base y no acá (2026-08-20) ─────────────────
+ * Lo estuvo. Traía las 201 primeras solicitudes APROBADAS con su `metadata`
+ * jsonb entero y filtraba en JavaScript, con este motivo escrito: «son dos
+ * claves dentro del mismo jsonb y el filtro de PostgREST sobre ausencia de
+ * clave anidada no distingue "no existe" de "es null"». El motivo era cierto y
+ * la conclusión no: lo que no puede hacer PostgREST sí lo hace una función.
+ *
+ * Costaba **397 kB por carga del Inicio** —el 41% de todo lo que baja la
+ * pantalla— para quedarse con unas veinte filas.
+ *
+ * Y el peso no era lo peor. Hay 205 solicitudes aprobadas y el `.range(0, 200)`
+ * cortaba en 201, **antes** de filtrar: medido el 2026-08-20, cumplían la
+ * condición 19 y el portal mostraba 16. Tres cajas despachadas y sin recibir no
+ * aparecían en ninguna pantalla, y el número seguía creciendo. Verificado
+ * contra la implementación vieja: 0 filas perdidas, 0 valores distintos, y las
+ * que faltaban aparecieron.
+ *
+ * `get_traslados_por_recibir` es INVOKER: el RLS sigue decidiendo quién ve qué,
+ * igual que cuando la consulta salía del navegador.
+ */
 export async function fetchTrasladosPorRecibir({ branchId = null } = {}) {
-    let q = supabase
-        .from('approval_requests')
-        // `approver_id` y `created_at` para poder decir el circuito entero:
-        // quién lo pidió y cuándo, y quién lo despachó. Sin ellos la tarjeta
-        // mostraba una caja en camino sin nadie a los dos lados — reportado:
-        // «no sale quién solicitó, quién lo aprobó».
-        .select('id, employee_id, approver_id, note, metadata, created_at, updated_at')
-        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
-        .eq('status', 'APPROVED')
-        .order('updated_at', { ascending: true })
-        .range(0, 200);
-    // El destino, cuando el alcance es de una sola sala. Texto adentro del
-    // jsonb, igual que arriba.
-    if (branchId) q = q.eq('metadata->>branch_id', String(branchId));
-    const { data, error } = await q;
-    // Ya despachado y todavía sin recibir. Se filtra acá y no en la consulta
-    // porque son dos claves dentro del mismo jsonb y el filtro de PostgREST
-    // sobre ausencia de clave anidada no distingue «no existe» de «es null».
-    const filas = (data ?? []).filter(r => r.metadata?.erp_traslado && !r.metadata?.erp_recibido);
-    return { filas, error };
+    // `branchId ? … : null` y no `!= null`: la versión vieja filtraba dentro de
+    // un `if (branchId)`, así que un 0 o una cadena vacía significaban «todas
+    // las salas». Se conserva esa lectura — cambiarla acá movería el alcance.
+    const { data, error } = await supabase.rpc('get_traslados_por_recibir', {
+        p_branch_id: branchId ? String(branchId) : null,
+    });
+    return { filas: data ?? [], error };
 }
 
 /**

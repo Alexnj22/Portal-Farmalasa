@@ -264,33 +264,33 @@ export async function contarPorVencer({ erpSucursalId }) {
     // la baldosa dice «líneas» y no «productos» — cambiarlo por un conteo de
     // productos distintos daría un número más chico y menos accionable, porque
     // lo que se descarga es el lote.
-    const tramo = (desde, hasta) => {
-        let q = supabase
-            .from('inventory')
-            .select('erp_product_id', { count: 'exact', head: true })
-            .eq('erp_sucursal_id', Number(erpSucursalId))
-            .eq('is_vencidos', false)
-            .gt('cantidad', 0)
-            .not('fecha_vencimiento', 'is', null)
-            .lt('fecha_vencimiento', hasta);
-        if (desde) q = q.gte('fecha_vencimiento', desde);
-        return q;
-    };
-
-    // Tres conteos y no una lista que se agrupe acá: `head: true` no trae
-    // filas, y una sala grande pasa las 1000 que PostgREST devuelve en
-    // silencio. Van en paralelo, así que cuestan un round-trip, no tres.
-    const [a, b, c] = await Promise.all([
-        tramo(null, hoy),   // ya vencido
-        tramo(hoy, en7),    // vence dentro de 7 días
-        tramo(en7, en30),   // dentro de 30
-    ]);
+    // ── Un recorrido, no tres (2026-08-20) ──────────────────────────────────
+    // Esto eran tres `HEAD` a `inventory` con `count: exact`. Salían en
+    // paralelo —así que costaban un round-trip de reloj, y el comentario que
+    // lo decía era cierto—, pero eran tres conexiones y tres recorridos del
+    // índice sobre la tabla más caliente de la base. Medidos en producción
+    // dentro de la carga del Inicio: 188, 198 y 206 ms, y ahí no compiten con
+    // nadie más que con las otras 48 llamadas de la misma avalancha.
+    //
+    // `contar_inventario_por_vencer` hace los tres tramos con `count(*)
+    // FILTER` en una pasada. Verificado contra los tres HEAD en las SIETE
+    // salas: los 21 números, iguales.
+    //
+    // Las fechas siguen calculándose ACÁ y viajan como parámetro: el corte a
+    // UTC-6 de arriba es el que decide si un lote que vence hoy cuenta como
+    // vencido, y moverlo al servidor cambiaría los números.
+    const { data, error } = await supabase.rpc('contar_inventario_por_vencer', {
+        p_erp_sucursal_id: Number(erpSucursalId),
+        p_hoy: hoy,
+        p_en7: en7,
+        p_en30: en30,
+    });
 
     return {
-        vencidas: a.count ?? 0,
-        en7:      b.count ?? 0,
-        en30:     c.count ?? 0,
-        error: a.error ?? b.error ?? c.error ?? null,
+        vencidas: data?.vencidas ?? 0,
+        en7:      data?.en7      ?? 0,
+        en30:     data?.en30     ?? 0,
+        error: error ?? null,
     };
 }
 

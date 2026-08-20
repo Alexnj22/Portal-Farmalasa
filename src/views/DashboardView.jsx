@@ -1840,7 +1840,13 @@ const DashboardView = ({ openModal }) => {
         });
         setTodaySales(map); setTodayLoading(false);
       });
-  }, [branches]);
+  // `branches.length` y no `branches` (2026-08-20). El efecto sólo mira si YA
+  // hay sucursales —no lee ni una de ellas: el mapa se arma con los
+  // `branch_id` que devuelve la consulta—, pero dependía del array, y el store
+  // lo reescribe dos veces al arrancar. Resultado medido en producción: DOS
+  // peticiones idénticas (`sale_date=eq.<hoy>`) en cada carga del Inicio. Con
+  // la longitud se dispara una sola vez y el dato es el mismo.
+  }, [branches.length]);
 
   useEffect(() => {
     if (!salesBranch) { setSalesStats({ days:[], generalHours:[], specificHours:{} }); return; }

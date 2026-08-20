@@ -25,7 +25,7 @@ import { useToastStore } from '../store/toastStore';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
-import BotonCarneDePapel from '../components/personal/BotonCarneDePapel';
+import CarneDelDia from '../components/personal/CarneDelDia';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -43,11 +43,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
-    // Dos permisos distintos para dos papeles distintos: el del día CREA una
-    // credencial que se muere sola; el de plástico REIMPRIME la permanente, que
-    // es la misma que `kiosk_pin` deja ver.
-    const puedeCarneDelDia = hasPermission('carne_temporal', 'can_edit');
-    const puedeReimprimirCarne = hasPermission('kiosk_pin', 'can_view');
+    // UN solo permiso para los DOS papeles — corrección del usuario el
+    // 2026-08-20: «los que pueden imprimir carné solo es admin». Antes la
+    // reimpresión del plástico colgaba de `kiosk_pin`, que tiene otra lista de
+    // roles y además significa otra cosa (ver y copiar el PIN de marcación, que
+    // es lo que decide si a alguien se le muestra el suyo en su propia
+    // pantalla). Dos llaves con listas distintas para «imprimir un carné» es
+    // exactamente lo que él vio y corrigió.
+    const puedeImprimirCarne = hasPermission('carne_temporal', 'can_edit');
     
     const [_activeTab, _setActiveTab] = useState('history');
     const currentTab = activeTab || _activeTab;
@@ -529,22 +532,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <Button tone="warning" icon={KeyRound} onClick={handleResetPassword}>Contraseña</Button>
                                             </div>
                                         )}
-                                        {(puedeCarneDelDia || puedeReimprimirCarne) && (
-                                            <div className="flex flex-wrap gap-2 mt-1 justify-center animate-in fade-in duration-[var(--dur-slow)]">
-                                                {puedeCarneDelDia && (
-                                                    <BotonCarneDePapel
-                                                        employeeId={emp.id}
-                                                        nombre={emp.name}
-                                                        cargo={emp.role || ''}
-                                                        sala={branch?.name || ''}
-                                                        motivo="Desde el perfil"
-                                                    >Carné del día</BotonCarneDePapel>
-                                                )}
-                                                {puedeReimprimirCarne && (
-                                                    <Button variant="secondary" icon={Printer} onClick={reimprimirCarne}>
-                                                        Reimprimir carné
+                                        {puedeImprimirCarne && (
+                                            <div className="mt-1 animate-in fade-in duration-[var(--dur-slow)]">
+                                                <CarneDelDia
+                                                    employeeId={emp.id}
+                                                    nombre={emp.name}
+                                                    cargo={emp.role || ''}
+                                                    sala={branch?.name || ''}
+                                                />
+                                                <div className="flex justify-center mt-2">
+                                                    <Button variant="secondary" size="sm" icon={Printer} onClick={reimprimirCarne}>
+                                                        Reimprimir el carné de plástico
                                                     </Button>
-                                                )}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

@@ -14,7 +14,7 @@ import { entregarCarneDePapel } from '../../utils/entregarCarneDePapel';
  * ningún botón (lo imprime sola al guardar), y esa pieza no puede ser una copia.
  */
 export default function BotonCarneDePapel({
-    employeeId, nombre, cargo = '', sala = '', motivo = null,
+    employeeId, nombre, cargo = '', sala = '', motivo = null, alImprimir,
     children = 'Imprimir carné del día', ...rest
 }) {
     const { user } = useAuth();
@@ -24,11 +24,15 @@ export default function BotonCarneDePapel({
         if (!employeeId || ocupado) return;
         setOcupado(true);
         try {
-            await entregarCarneDePapel({
+            const r = await entregarCarneDePapel({
                 employeeId, nombre, cargo, sala, motivo,
                 salaId: user?.branchId ?? null,
                 emitidoPor: user?.name || '',
             });
+            // Se avisa aunque el papel no haya salido: el carné YA quedó
+            // emitido y el anterior YA murió, así que la pantalla que lista los
+            // vigentes está desactualizada en los dos casos.
+            alImprimir?.(r);
         } catch (err) {
             // `entregarCarneDePapel` avisa de sus propios fallos; lo que llega
             // acá es lo que ni siquiera pudo intentarlo. Sin este aviso el botón
@@ -42,7 +46,7 @@ export default function BotonCarneDePapel({
         } finally {
             setOcupado(false);
         }
-    }, [employeeId, ocupado, motivo, nombre, cargo, sala, user]);
+    }, [employeeId, ocupado, motivo, nombre, cargo, sala, user, alImprimir]);
 
     return (
         <Button tone="chart-8" icon={Printer} loading={ocupado} onClick={imprimir} {...rest}>

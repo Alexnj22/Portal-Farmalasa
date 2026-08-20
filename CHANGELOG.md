@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.679.0 — imprimir un carné es sólo de Administración, y un carné se puede anular
+
+Dos correcciones del usuario sobre v2.677.0, mirando la pantalla.
+
+### «Los que pueden imprimir carné solo es admin»
+
+El permiso `carne_temporal` había salido con cinco roles —los mismos que editan
+el listado de personal, más Gerencia—. Eso era una inferencia, no una decisión
+suya. Queda en **Administrador** (más `QA / Testing (CI)`, que no es una persona
+sino la cuenta con la que se ejercita el portal).
+
+Y de paso se arregló lo que él vio y que era el fondo del asunto: **había DOS
+llaves con listas distintas para «imprimir un carné»**. La reimpresión de la
+etiqueta del carné de plástico colgaba de `kiosk_pin`, que tiene otros cinco
+roles —incluido Compras y Logística, que él nombró— y que además significa otra
+cosa: ver y copiar el PIN de marcación, lo que decide si a alguien se le muestra
+el suyo en su propia pantalla. Hoy **los dos papeles piden el mismo permiso**
+(`carne_temporal`) y `kiosk_pin` se quedó donde estaba, haciendo lo suyo.
+
+### Un carné de papel se puede anular
+
+La función existía en la base desde v2.677.0 y no tenía botón, o sea que no
+existía. El perfil ahora dice si esa persona tiene un carné de papel vigente y
+deja matarlo: deja de escanear, se le cierra la sesión abierta con él y su
+cuenta queda sin contraseña conocida.
+
+Hace falta porque **un papel se pierde**. Vence solo a medianoche, pero entre
+que se traspapela y que vence pueden pasar doce horas, y en esas doce horas abre
+el portal y marca en el kiosco igual que el de plástico. Sin el botón, la única
+salida era reimprimirlo —que sí mata el anterior— y tirar el papel nuevo: usar
+un efecto secundario como si fuera la función.
+
+El estado se dice siempre, incluso cuando falla la lectura: «no se pudo leer» y
+«no tiene» no se pintan igual, porque un carné vivo que no se ve es un papel que
+nadie va a anular.
+
+### Sigue igual
+
+El código de barras es **el mismo del carné de plástico** (CODE128). Lo que
+cambia es el valor que lleva adentro, no el tipo de código.
+
 ## v2.678.0 — Las solicitudes hermanas se ven juntas y se reciben de una vez
 
 La otra mitad de v2.676.0. Pedir en una sola vez a tres salas produce tres

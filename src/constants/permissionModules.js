@@ -166,6 +166,15 @@ const GRUPOS_CRUDOS = [
                 // al revés que las otras `*_ver_montos`, que se sembraron para
                 // todo rol que ya veía el módulo padre.
                 { key: 'bolsas_ver_montos', label: 'Ver los montos', tipo: 'cap' },
+                // El carril de resumen del circuito: cuánto hay en la sala, en
+                // camino, por contar y sin resolver. Va aparte de
+                // `bolsas_ver_montos` porque son dos preguntas —ver el resumen y
+                // ver cuánta plata hay—: sin montos el carril cuenta BOLSAS, que
+                // es lo que la sala necesita para moverlas. Pedido del usuario
+                // (2026-08-20): «necesita cards la vista, con permiso, solo para
+                // admin ahora». Arranca encendida sólo para el área
+                // administrativa, igual que `bolsas_ver_montos`.
+                { key: 'bolsas_ver_cards', label: 'Ver las tarjetas de resumen', tipo: 'cap' },
             ]},
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },

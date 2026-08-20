@@ -2202,11 +2202,24 @@ function scanFile(path) {
   // no cruza archivos. Se dejan contando —son hallazgos sin verificar, no
   // hallazgos descartados— para que nadie los dé por buenos sin mirar.
   if (!hasException(path, 'carril-pildora') && /\bFilter(Pill|Bar)\b/.test(text)) {
+    // La ventana de 800 caracteres se mide sobre el CÓDIGO, no sobre la prosa
+    // (2026-08-20). Se leía el texto crudo, así que un comentario largo entre el
+    // contenedor y el carril empujaba al `<div>` fuera de la ventana: `apertura`
+    // quedaba vacía, `unaFila` daba falso y el gate acusaba un layout correcto.
+    // Pasó en `CortesView` al documentar por qué Bolsas tiene su propio carril —
+    // y acusó a los DOS, incluido el que llevaba meses bien.
+    //
+    // Es la regla #1 de los gates de material —«un detector tiene que enmascarar
+    // los comentarios»— con el daño al revés: acá el comentario no inventa un
+    // hallazgo, esconde la prueba de que no lo hay. `sinComentarios` los deja en
+    // blancos (para no correr los offsets) y el colapso de espacios hace que los
+    // 800 midan código.
+    const limpioCarril = sinComentarios(text);
     const CARRIL_RE = /<CarrilCards\b/g;
     let c;
-    while ((c = CARRIL_RE.exec(text))) {
-      const linea = text.slice(0, c.index).split('\n').length;
-      const antes = text.slice(Math.max(0, c.index - 800), c.index);
+    while ((c = CARRIL_RE.exec(limpioCarril))) {
+      const linea = limpioCarril.slice(0, c.index).split('\n').length;
+      const antes = limpioCarril.slice(0, c.index).replace(/\s+/g, ' ').slice(-800);
       const iDiv = antes.lastIndexOf('<div');
       const apertura = iDiv >= 0 ? antes.slice(iDiv) : '';
       // Es UNA fila si el contenedor es `flex` sin apilar (`flex-col`) y sin
@@ -2235,7 +2248,7 @@ function scanFile(path) {
       }
       // Sin `flex-1` el carril no cede el ancho sobrante y la píldora se come
       // el renglón: es la otra mitad del canónico de `StaffManagementView`.
-      const tag = text.slice(c.index, c.index + 240);
+      const tag = limpioCarril.slice(c.index, c.index + 240);
       if (!/flex-1/.test(tag)) {
         findings.push({
           line: linea, category: 'carril-pildora',

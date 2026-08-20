@@ -40,6 +40,15 @@ const VACIO = [];
 // navegador en otro huso mostraría el día equivocado sin avisar.
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
+// El default del historial de Bolsas: 30 días contados en hora de El Salvador,
+// que es el huso en el que vive la fecha de un corte. Es una función y no una
+// constante porque la vista puede quedar abierta cruzando la medianoche.
+const ULTIMOS_30 = () => {
+    const finMs = Date.now() - 6 * 3600_000;
+    const ini = new Date(finMs - 29 * 86_400_000).toISOString().slice(0, 10);
+    return `${ini}|${new Date(finMs).toISOString().slice(0, 10)}`;
+};
+
 const correrDia = (fecha, dias) => {
     const d = new Date(`${fecha}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() + dias);
@@ -107,6 +116,21 @@ const CortesView = () => {
     // resolvió, y ofrecerle el filtro sería un control que no recorta nada.
     const alcanceTodas = getScope('cortes_caja') === 'ALL';
 
+    // ── Dos pestañas, y estas SÍ son secciones ──────────────────────────────
+    //
+    // Los estados de un corte se fueron a la píldora del cuerpo porque eran
+    // recortes de la misma lista (ver la nota de `ESTADOS`). «Bolsas» es otra
+    // cosa: son otras filas, otras acciones y otro público —la sala entrega,
+    // administración cuenta—, o sea una sección de verdad.
+    //
+    // Va acá y no en un módulo aparte porque es lo que le pasa al MISMO dinero
+    // después del corte: separarlo obligaría a saltar de pantalla para seguir un
+    // billete. Pedido del usuario (2026-08-15): «hacé la vista con lo que hay en
+    // cortes de caja como una pestaña».
+    const [tab, setTab] = usePestanaEnUrl(verBolsas ? CORTES_TABS : [], 'cortes');
+    const enBolsas = tab === 'bolsas';
+
+
     // Arranca en HOY (regla del usuario, 2026-08-14). El período es
     // `PeriodPicker` y no tres chips de «7 · 30 · 90 días»: los chips contestan
     // tres preguntas y la pregunta real —«¿qué pasó el martes?»— no era ninguna
@@ -117,8 +141,28 @@ const CortesView = () => {
     //
     // Su `value` es la cadena `inicio|fin` — el formato del canónico, el mismo
     // que usa Ventas.
+    // ── Y Bolsas tiene el SUYO, que no arranca en Hoy ───────────────────────
+    //
+    // En Bolsas el período no recorta la pantalla: las tres etapas pendientes
+    // —en la sala, en camino, por contar— lo ignoran a propósito, porque una
+    // bolsa que lleva seis días esperando es justamente la que hay que ver.
+    // Sólo recorta el archivo de las contadas.
+    //
+    // Con el período de Cortes compartido, la píldora decía **«Hoy»** encima de
+    // una pantalla llena de bolsas de cualquier fecha, y además el archivo salía
+    // casi siempre vacío. Reportado por el usuario el 2026-08-20: «no tiene
+    // sentido que el filtro de fecha sea hoy, porque no sólo están los cortes de
+    // hoy, están todos los que están pendientes en cada sucursal». Un rótulo que
+    // no describe lo que hay en pantalla es peor que no tener filtro.
+    //
+    // Son dos estados y no uno con default variable: son dos preguntas
+    // distintas, y mover una no tiene por qué mover la otra. Además el fetch de
+    // los cortes tiene que seguir mirando SU rango — con uno solo, entrar a
+    // Bolsas dispararía una consulta de cortes de 30 días sin que nadie la pida.
     const [periodo, setPeriodo] = useState(() => `${hoySV()}|${hoySV()}`);
+    const [periodoBolsas, setPeriodoBolsas] = useState(() => ULTIMOS_30());
     const [desde, hasta] = periodo.split('|');
+    const [desdeBolsas, hastaBolsas] = periodoBolsas.split('|');
     const [estado, setEstado] = useState('TODOS');
     const [diferencia, setDiferencia] = useState('TODAS');
     const [busqueda, setBusqueda] = useState('');
@@ -283,15 +327,26 @@ const CortesView = () => {
     );
 
     const HOY = `${hoySV()}|${hoySV()}`;
-    const verPeriodo = useCallback((v) => { setPeriodo(v || HOY); setPagina(1); }, [HOY]);
-    const esHoy = periodo === HOY;
+    // La píldora es UNA, así que su ranura de fecha maneja el período de la
+    // pestaña que está abierta — y «limpiar» devuelve al default de ESA, que en
+    // Bolsas no es Hoy.
+    const periodoVisible = enBolsas ? periodoBolsas : periodo;
+    const periodoBase    = enBolsas ? ULTIMOS_30() : HOY;
+    const verPeriodo = useCallback((v) => {
+        const base = enBolsas ? ULTIMOS_30() : `${hoySV()}|${hoySV()}`;
+        if (enBolsas) setPeriodoBolsas(v || base);
+        else { setPeriodo(v || base); setPagina(1); }
+    }, [enBolsas]);
+    // «Está en su default», no «es hoy»: en Bolsas el default son 30 días.
+    const periodoIntacto = periodoVisible === periodoBase;
 
     // Las flechas corren el período por SU propia unidad: un día pasa al día
     // siguiente, un mes al mes siguiente, un año al año siguiente. La cuenta
     // vive en `PeriodPicker` —es quien define el formato `inicio|fin`— para que
     // quien lo escribe y quien lo corre no puedan discrepar.
-    const { unidad } = granularidadDePeriodo(periodo);
-    const correr = useCallback((dir) => verPeriodo(correrPeriodo(periodo, dir)), [periodo, verPeriodo]);
+    const { unidad } = granularidadDePeriodo(periodoVisible);
+    const correr = useCallback((dir) => verPeriodo(correrPeriodo(periodoVisible, dir)),
+        [periodoVisible, verPeriodo]);
 
     // Las tarjetas del carril son el ATAJO de su ranura: apretar «Faltante»
     // aplica el mismo filtro que elegirlo en la píldora, y volver a apretarla lo
@@ -305,23 +360,11 @@ const CortesView = () => {
     const metricaActiva = (m) => (m.filtro === 'estado' ? estado : diferencia) === m.valor;
 
     const limpiar = () => {
-        setSala(''); setPeriodo(HOY); setEstado('TODOS'); setDiferencia('TODAS');
+        setSala(''); setPeriodo(HOY); setPeriodoBolsas(ULTIMOS_30());
+        setEstado('TODOS'); setDiferencia('TODAS');
         setBusqueda(''); setPagina(1);
     };
 
-    // ── Dos pestañas, y estas SÍ son secciones ──────────────────────────────
-    //
-    // Los estados de un corte se fueron a la píldora del cuerpo porque eran
-    // recortes de la misma lista (ver la nota de `ESTADOS`). «Bolsas» es otra
-    // cosa: son otras filas, otras acciones y otro público —la sala entrega,
-    // administración cuenta—, o sea una sección de verdad.
-    //
-    // Va acá y no en un módulo aparte porque es lo que le pasa al MISMO dinero
-    // después del corte: separarlo obligaría a saltar de pantalla para seguir un
-    // billete. Pedido del usuario (2026-08-15): «hacé la vista con lo que hay en
-    // cortes de caja como una pestaña».
-    const [tab, setTab] = usePestanaEnUrl(verBolsas ? CORTES_TABS : [], 'cortes');
-    const enBolsas = tab === 'bolsas';
 
     // ── Las acciones de Bolsas viven en la píldora (§17) ────────────────────
     // «los botones de sacar dinero, entregar dinero, deben estar en el
@@ -331,6 +374,11 @@ const CortesView = () => {
     // hay en la sala para poder deshabilitarlas— habría que cargar las bolsas
     // dos veces, una por pantalla.
     const [accionesBolsas, setAccionesBolsas] = useState(VACIO);
+
+    // El carril de Bolsas lo publica la pestaña, igual que sus acciones: es ella
+    // la que tiene las bolsas cargadas, y pedirlas dos veces para poder contarlas
+    // acá arriba sería cargar la pantalla dos veces.
+    const [metricasBolsas, setMetricasBolsas] = useState(VACIO);
 
     const filtersContent = (
         <ViewTabBar
@@ -354,10 +402,19 @@ const CortesView = () => {
                     abuelo de la píldora y le descuenta 314px lo tenga al lado o
                     no. En renglones separados no falla: roba ancho en silencio. */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    {/* El carril describe los CORTES del período: en Bolsas no
-                        dice nada de lo que hay en pantalla, y una fila de
-                        métricas que no habla de lo que se está mirando es peor
-                        que no tenerla. */}
+                    {/* Cada pestaña tiene SU carril: el de Cortes describe los
+                        cortes del período, el de Bolsas describe el circuito del
+                        efectivo. Hasta el 2026-08-20 Bolsas no tenía —«una fila
+                        de métricas que no habla de lo que se está mirando es peor
+                        que no tenerla»—, y el usuario pidió el suyo: «necesita
+                        cards la vista». El de Bolsas lo publica la pestaña, y va
+                        detrás de `bolsas_ver_cards`.
+
+                        Las de Bolsas NO filtran al tocarlas, y por eso van sin
+                        `onClick`: las etapas ya son las secciones de la pantalla,
+                        así que una tarjeta que filtrara escondería la mitad del
+                        proceso — el mismo motivo por el que Bolsas no tiene
+                        ranura de estado. */}
                     {!enBolsas ? (
                         <CarrilCards className="flex-1" ariaLabel="Resumen de los cortes del período">
                             {METRICAS.map((m) => (
@@ -365,6 +422,14 @@ const CortesView = () => {
                                     label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
                                     active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
                                     loading={cargando} />
+                            ))}
+                        </CarrilCards>
+                    ) : metricasBolsas.length > 0 ? (
+                        <CarrilCards className="flex-1" ariaLabel="Resumen del efectivo en bolsas">
+                            {metricasBolsas.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={m.value} sub={m.sub}
+                                    valueCls={m.valueCls} />
                             ))}
                         </CarrilCards>
                     ) : <div className="flex-1" />}
@@ -377,7 +442,7 @@ const CortesView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             acciones={enBolsas ? accionesBolsas : VACIO}
-                            activeCount={[sala, !esHoy,
+                            activeCount={[sala, !periodoIntacto,
                                 !enBolsas && estado !== 'TODOS',
                                 !enBolsas && diferencia !== 'TODAS'].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
@@ -398,14 +463,18 @@ const CortesView = () => {
                                 justamente para cuando el centro no es texto sino
                                 un control que se abre. Tocar «Hoy» abre el panel;
                                 las flechas corren el período por su unidad. */}
-                            <FilterBar.Section active={!esHoy} onClear={() => verPeriodo(HOY)} label="fecha">
+                            {/* En Bolsas se rotula «historial» y no «fecha»: es lo
+                                único que recorta —el archivo de las contadas—, y
+                                llamarlo «fecha» prometía que filtraba la pantalla. */}
+                            <FilterBar.Section active={!periodoIntacto} onClear={() => verPeriodo(null)}
+                                label={enBolsas ? 'historial' : 'fecha'}>
                                 <PeriodStepper
                                     unit={unidad}
                                     onPrev={() => correr(-1)}
                                     onNext={() => correr(1)}
-                                    nextDisabled={periodoAlcanzaHoy(periodo)}
+                                    nextDisabled={periodoAlcanzaHoy(periodoVisible)}
                                 >
-                                    <PeriodPicker value={periodo} onChange={verPeriodo} placeholder="Período…" />
+                                    <PeriodPicker value={periodoVisible} onChange={verPeriodo} placeholder="Período…" />
                                 </PeriodStepper>
                             </FilterBar.Section>
 
@@ -442,8 +511,8 @@ const CortesView = () => {
                     corte: en la sala → entregada → recibida → contada. Comparte
                     con Cortes la sucursal y el período; el resto es suyo. */}
                 {enBolsas && (
-                    <TabBolsas desde={desde} hasta={hasta} sala={sala} nombreSala={nombreSala}
-                        onAcciones={setAccionesBolsas} />
+                    <TabBolsas desde={desdeBolsas} hasta={hastaBolsas} sala={sala} nombreSala={nombreSala}
+                        onAcciones={setAccionesBolsas} onMetricas={setMetricasBolsas} />
                 )}
 
                 {!enBolsas && (<>
@@ -495,7 +564,7 @@ const CortesView = () => {
                     ) : (
                         <EmptyState
                             compact icon={Wallet}
-                            title={esHoy ? 'Sin cortes hoy' : 'Sin cortes en estas fechas'}
+                            title={periodoIntacto ? 'Sin cortes hoy' : 'Sin cortes en estas fechas'}
                             subtitle="La vista arranca en el día de hoy. Amplía las fechas para ver más atrás."
                             action={<Button variant="secondary" icon={CalendarDays}
                                 onClick={() => verPeriodo(`${correrDia(hoySV(), -6)}|${hoySV()}`)}>

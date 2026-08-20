@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.694.0 — Bolsas de efectivo: su propio período, su carril y el comprobante adentro
+
+Cinco cosas de la pestaña «Bolsas de efectivo», las cinco reportadas por el
+usuario mirándola en producción.
+
+**El filtro de fecha decía «Hoy» sobre una pantalla que no era de hoy.** Bolsas
+compartía el período con Cortes, y ese arranca en Hoy — pero en Bolsas el
+período no recorta la pantalla: las tres etapas pendientes (en la sala, en
+camino, por contar) lo ignoran a propósito, porque una bolsa que lleva seis días
+esperando es justamente la que hay que ver. O sea que la píldora rotulaba «Hoy»
+encima de bolsas de cualquier fecha, y encima el archivo de las contadas salía
+casi siempre vacío. Ahora Bolsas tiene **su propio período**, que arranca en los
+últimos 30 días; la ranura se rotula **«historial»** y no «fecha», porque es lo
+único que recorta; y la sección «Contadas» dice en pantalla hasta dónde llega y
+que las de arriba se muestran completas.
+
+Son dos estados y no uno con default variable: son dos preguntas distintas, y
+con uno solo entrar a Bolsas habría disparado una consulta de cortes de 30 días
+que nadie pidió.
+
+**El carril de resumen, detrás de un permiso nuevo.** Cuatro tarjetas —en la
+sala, en camino, por contar, sin resolver— con el estado del circuito, no del
+período. «En camino» avisa en su propio subtítulo cuando hay alguna de más de un
+día: es el estado más riesgoso (el dinero no está ni en la sala ni en
+administración) y era el único que no se veía sin bajar hasta su sección. No
+filtran al tocarlas: las etapas ya SON las secciones de la pantalla.
+
+El permiso es **`bolsas_ver_cards`**, encendido para el área administrativa —los
+mismos cuatro cargos que ya tenían `bolsas_ver_montos`, derivados de esa tabla y
+no escritos a mano—. Es una llave aparte de los montos a propósito: sin montos el
+carril cuenta BOLSAS, que es lo que la sala necesita para moverlas y no dice
+cuánta plata hay.
+
+Y sobre la pregunta de si los totales los ve cualquiera: **no**. Van detrás de
+`bolsas_ver_montos`, hoy en Administrador, Gerente General, Talento Humano y
+Supervisión de Ventas. Los cuatro cargos de sala ven las bolsas y ni una cifra.
+
+**Ordenadas por sucursal y después por fecha.** Sólo por fecha, las bolsas de las
+seis salas quedaban intercaladas; y quien mira una etapa mira una sala, porque
+entregar, recibir y contar se hacen por sala. Las contadas van igual por sala,
+pero de la más reciente a la más vieja dentro de cada una: es un archivo.
+
+**El comprobante se ve en el mismo panel.** «Ver el comprobante» abría una
+pestaña nueva del navegador, así que se perdía el detalle de la bolsa —la
+bitácora, los vales, el saldo— justo cuando se lo estaba comparando contra la
+foto. Ahora la foto se abre ahí adentro, firmada al apretar (el bucket es
+privado) y no al abrir el detalle; un toque sobre ella la amplía a pantalla
+completa con el `PhotoLightbox` canónico.
+
+**Un arreglo del gate de diseño, de paso.** `carril-pildora` medía su ventana de
+800 caracteres sobre el texto CRUDO, así que un comentario largo entre el
+contenedor y el carril empujaba al `<div>` fuera de la ventana y el gate acusaba
+un layout correcto — acusó a los dos carriles de esta vista, incluido el que
+llevaba meses bien. Hoy la ventana se mide sobre el código. Es la regla #1 de los
+gates de material («un detector tiene que enmascarar los comentarios») con el
+daño al revés: acá el comentario no inventaba un hallazgo, escondía la prueba de
+que no lo había. Verificado contra una regresión fabricada: el detector sigue
+mordiendo.
+
 ## v2.693.1 — el detalle del documento de compra entra entero en el teléfono
 
 Cierre de lo reportado como *«en facturas de compra cuando abro una card me da

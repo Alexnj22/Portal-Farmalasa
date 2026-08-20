@@ -6,12 +6,13 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PromptModal from '../common/PromptModal';
 import { EmptyState, SkeletonText } from '../common/StateViews';
+import PhotoLightbox from '../common/PhotoLightbox';
 import {
     anularBolsa, anularSalida, fetchEventosDeBolsa, fetchSalidasDeBolsa,
 } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { openStoredFile } from '../../utils/storageFiles';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -82,6 +83,36 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
     const [ocupado, setOcupado] = useState(null);
     // Qué se está anulando: la bolsa entera, o una salida concreta.
     const [anulando, setAnulando] = useState(null);
+
+    /**
+     * El comprobante se ve ACÁ, no en otra pestaña.
+     *
+     * Hasta el 2026-08-20 el botón llamaba a `openStoredFile`, que abre una
+     * pestaña nueva: el usuario perdía el detalle de la bolsa —la bitácora, los
+     * vales, el saldo— justo cuando lo estaba comparando contra la foto, y
+     * volver significaba cerrar la pestaña y buscar la bolsa otra vez. «que se
+     * vea ahí mismo en el modal, no que abra otra pestaña».
+     *
+     * La URL guardada es un identificador, no algo que se pueda pintar: el
+     * bucket `payment-proofs` es privado y hay que firmarla. Se firma al
+     * apretar y no al abrir el detalle — una bolsa puede traer varios vales, y
+     * firmar todas las fotos por si acaso es pedir enlaces que nadie va a ver.
+     */
+    const [foto, setFoto] = useState(null);   // { id, url } | { id, error }
+    const [firmando, setFirmando] = useState(null);
+    // La misma foto, a pantalla completa. `PhotoLightbox` es el canónico.
+    const [ampliada, setAmpliada] = useState(null);
+    const verComprobante = useCallback(async (mov) => {
+        if (foto?.id === mov.movimiento_id) { setFoto(null); return; }
+        setFirmando(mov.movimiento_id);
+        try {
+            const url = await getSignedFileUrl(mov.foto_url);
+            setFoto(url ? { id: mov.movimiento_id, url } : { id: mov.movimiento_id, error: true });
+        } catch {
+            setFoto({ id: mov.movimiento_id, error: true });
+        }
+        setFirmando(null);
+    }, [foto]);
 
     const cargar = useCallback(async () => {
         if (!bolsa) return;
@@ -252,12 +283,16 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
 
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         {/* La foto del comprobante: el bucket es privado, así que
-                                            se abre firmada — la URL guardada es un identificador,
-                                            no algo que se pueda pintar tal cual. */}
+                                            se firma — la URL guardada es un identificador, no algo
+                                            que se pueda pintar tal cual. Se abre ACÁ ADENTRO; el
+                                            porqué está arriba, en `verComprobante`. */}
                                         {s.foto_url && (
                                             <Button variant="secondary" size="sm" icon={Image}
-                                                onClick={() => openStoredFile(s.foto_url)}>
-                                                Ver el comprobante
+                                                loading={firmando === s.movimiento_id}
+                                                onClick={() => verComprobante(s)}>
+                                                {foto?.id === s.movimiento_id
+                                                    ? 'Ocultar el comprobante'
+                                                    : 'Ver el comprobante'}
                                             </Button>
                                         )}
                                         {/* Se puede volver a sacar aunque la bolsa ya no esté en
@@ -279,6 +314,24 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                                             </Button>
                                         )}
                                     </div>
+
+                                    {/* Un toque sobre la foto la abre a pantalla completa: acá
+                                        entra dentro del ancho del panel, y un número de boleta
+                                        escrito a mano no siempre se lee a ese tamaño. */}
+                                    {foto?.id === s.movimiento_id && (
+                                        foto.error ? (
+                                            <Notice variant="warning" icon={Image}>
+                                                No se pudo abrir el comprobante. Vuelve a intentar en un momento.
+                                            </Notice>
+                                        ) : (
+                                            <button type="button" onClick={() => setAmpliada(foto.url)}
+                                                aria-label={`Ampliar el comprobante del vale ${s.vale_folio || ''}`}
+                                                className="block w-full overflow-hidden rounded-2xl border border-divider">
+                                                <img src={foto.url} alt={`Comprobante del vale ${s.vale_folio || ''}`}
+                                                    className="block w-full max-h-[22rem] object-contain bg-surface-card-hover" />
+                                            </button>
+                                        )
+                                    )}
                                 </div>
                             ))}
                         </section>
@@ -329,6 +382,9 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                     </div>
                 </LiquidModal.Footer>
             </LiquidModal>
+
+            <PhotoLightbox src={ampliada} alt="Comprobante de la salida"
+                onClose={() => setAmpliada(null)} />
 
             <PromptModal
                 isOpen={!!anulando}

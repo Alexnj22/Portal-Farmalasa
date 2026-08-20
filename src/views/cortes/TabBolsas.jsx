@@ -86,11 +86,18 @@ const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
 }) : '');
 const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
+    day: 'numeric', month: 'long', timeZone: 'UTC',
+}) : '');
 const diasDesde = (f) => Math.max(0, Math.round(
     (Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${f}T12:00:00Z`)) / 86_400_000,
 ));
 
 const DIAS_DE_ALARMA = 4;
+
+// Una sola referencia vacía: devolver `[]` en cada render haría que el carril de
+// la vista se creyera cambiado siempre.
+const VACIO = [];
 
 // `monto_inicial` es lo que se guardó; el SALDO es lo que debe haber en billetes
 // hoy. Desde que se puede sacar dinero de una bolsa, sumar lo guardado sería
@@ -290,11 +297,12 @@ function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio, verMontos }) 
     );
 }
 
-export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }) {
+export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, onMetricas }) {
     const { hasPermission } = useAuth();
     const puedeEntregar = hasPermission('bolsas', 'can_edit');
     const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
     const verMontos = hasPermission('bolsas_ver_montos');
+    const verCards = hasPermission('bolsas_ver_cards');
     const showToast = useToastStore((s) => s.showToast);
     const empleados = useStaff((st) => st.employees);
 
@@ -308,6 +316,14 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
     // Qué bolsa está abierta en el detalle: es donde viven la foto del
     // comprobante, la bitácora y las dos anulaciones.
     const [abierta, setAbierta] = useState(null);
+
+    // El rango, dicho en la pantalla. La píldora ya lo muestra, pero arriba y
+    // fuera de la sección que recorta: quien mira «Contadas» y la ve corta
+    // necesita leer ahí mismo hasta dónde llega. Un solo día se dice «del 20 de
+    // agosto», no «del 20 al 20».
+    const rangoEnPalabras = useMemo(() => (desde === hasta
+        ? `del ${fechaLarga(desde)}`
+        : `del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`), [desde, hasta]);
 
     const { imprimir, imprimirTrasLaSalida } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
     const nombrePersona = useMemo(() => {
@@ -345,17 +361,31 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
         [bolsas, sala],
     );
 
+    // Primero por SUCURSAL y después por fecha (pedido del usuario, 2026-08-20).
+    // Ordenadas sólo por fecha, las bolsas de las seis salas quedaban intercaladas
+    // —una de Salud 1, una de Salud 4, otra de Salud 1— y quien mira una etapa
+    // mira una sala: entregar, recibir y contar se hacen por sala, no por día.
+    // Se ordena por el NOMBRE de la sala y no por su id: el id no es el orden que
+    // ve nadie.
     const porEstado = useCallback(
         (e) => deLaSala.filter((b) => b.estado === e)
-            .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))
+            .sort((a, b) => String(nombreSala[a.branch_id] || '').localeCompare(String(nombreSala[b.branch_id] || ''), 'es')
+                || String(a.fecha).localeCompare(String(b.fecha))
                 || String(a.hora).localeCompare(String(b.hora))),
-        [deLaSala],
+        [deLaSala, nombreSala],
     );
 
     const enSala     = useMemo(() => porEstado('ABIERTA'), [porEstado]);
     const enCamino   = useMemo(() => porEstado('ENTREGADA'), [porEstado]);
     const porContar  = useMemo(() => porEstado('RECIBIDA'), [porEstado]);
-    const contadas   = useMemo(() => porEstado('CONTADA').reverse(), [porEstado]);
+    // Las contadas van igual por sala, pero de la más reciente a la más vieja
+    // DENTRO de cada una: es un archivo, y de un archivo se mira el final.
+    // (`.reverse()` sobre la lista entera invertía también el orden de las salas.)
+    const contadas   = useMemo(() => porEstado('CONTADA')
+        .sort((a, b) => String(nombreSala[a.branch_id] || '').localeCompare(String(nombreSala[b.branch_id] || ''), 'es')
+            || String(b.fecha).localeCompare(String(a.fecha))
+            || String(b.hora).localeCompare(String(a.hora))),
+        [porEstado, nombreSala]);
 
     const sinResolver = useMemo(
         () => contadas.filter((b) => Math.abs(diferenciaDe(b) ?? 0) >= 0.01 && !b.dif_at),
@@ -483,6 +513,49 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
         },
     ] : []), [puedeEntregar, enSala.length]);
 
+    // ── El carril, publicado a la píldora de la vista ──────────────────────
+    // «necesita cards la vista» (usuario, 2026-08-20). Las cuatro cifras son las
+    // del CIRCUITO, no las del período: tres etapas pendientes —que ignoran el
+    // período a propósito— más lo que quedó sin resolver del archivo.
+    //
+    // «En camino» lleva su propio subtítulo cuando hay alguna de más de un día:
+    // es el estado más riesgoso —el dinero no está ni en la sala ni en
+    // administración— y era el único que no se veía sin bajar hasta su sección.
+    //
+    // Los montos siguen a `bolsas_ver_montos` y NO a este permiso: son dos
+    // preguntas distintas —ver el resumen y ver cuánta plata hay—, y con una
+    // sola llave el carril se habría llevado los montos a quien no los ve.
+    const metricas = useMemo(() => {
+        if (!verCards) return VACIO;
+        const cifra = (lista) => (verMontos ? formatMoney(suma(lista)) : String(lista.length));
+        const cuantas = (n) => `${n} ${n === 1 ? 'bolsa' : 'bolsas'}`;
+        return [
+            { clave: 'sala', icon: Package, label: 'En la sala',
+              value: cifra(enSala), sub: cuantas(enSala.length),
+              iconBg: 'bg-brand/10', iconCls: 'text-brand-text' },
+            { clave: 'camino', icon: Send, label: 'En camino',
+              value: cifra(enCamino),
+              sub: enCaminoViejas.length
+                  ? `${cuantas(enCamino.length)} · ${enCaminoViejas.length} de más de un día`
+                  : cuantas(enCamino.length),
+              iconBg: enCaminoViejas.length ? 'bg-warning/10' : 'bg-surface-card-hover',
+              iconCls: enCaminoViejas.length ? 'text-warning-text' : 'text-content-3',
+              valueCls: enCaminoViejas.length ? 'text-warning-text' : 'text-content' },
+            { clave: 'contar', icon: Banknote, label: 'Por contar',
+              value: cifra(porContar), sub: cuantas(porContar.length),
+              iconBg: 'bg-surface-card-hover', iconCls: 'text-content-3' },
+            { clave: 'sinResolver', icon: Scale, label: 'Sin resolver',
+              value: String(sinResolver.length),
+              sub: sinResolver.length ? 'contadas y sin cuadrar' : 'todo cuadrado',
+              iconBg: sinResolver.length ? 'bg-danger/10' : 'bg-success/10',
+              iconCls: sinResolver.length ? 'text-danger-text' : 'text-success-text',
+              valueCls: sinResolver.length ? 'text-danger-text' : 'text-success-text' },
+        ];
+    }, [verCards, verMontos, enSala, enCamino, enCaminoViejas, porContar, sinResolver]);
+
+    useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
+    useEffect(() => () => onMetricas?.(VACIO), [onMetricas]);
+
     useEffect(() => { onAcciones?.(acciones); }, [acciones, onAcciones]);
     // Al salir de la pestaña la píldora tiene que quedar sin ellas: son acciones
     // de Bolsas, no de la vista.
@@ -591,7 +664,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones }
             <Etapa
                 icon={ShieldCheck}
                 titulo="Contadas"
-                ayuda="El historial del período. Lo que se contó queda; resolver una diferencia no lo cambia."
+                ayuda={`El historial ${rangoEnPalabras}. Es lo único que recorta el filtro de fechas: las tres etapas de arriba se muestran completas. Lo que se contó queda; resolver una diferencia no lo cambia.`}
                 bolsas={conNodo(contadas, {
                     pie: (b) => {
                         const dif = diferenciaDe(b);

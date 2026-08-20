@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ArrowLeftRight, CheckCircle2, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Check, CheckCircle2, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -143,6 +143,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * los mismos rótulos: dos compositores que hacen lo mismo con dos dibujos
      * distintos obligan a aprender dos veces. */
     const [pestana, setPestana] = useState('agregar');
+    /* Qué renglón de la lista está abierto para corregir. Uno a la vez: dos
+     * abiertos serían dos formularios en una lista, que es lo que la tarjeta
+     * cerrada vino a evitar. */
+    const [editando, setEditando] = useState(null);
     /* Lo último que entró. El contador de la pestaña sube, pero un número que
      * cambia no dice CUÁL entró — y en una tanda de productos parecidos eso es
      * justo lo que hay que poder confirmar sin cambiar de pestaña. */
@@ -423,7 +427,17 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             erp_sucursal_id: sala.erp_sucursal_id,
             sala: sala.sala,
             vencidos: Boolean(sala.vencidos),
+            // Cuánto tiene esa sala, congelado al agregar. Sin esto, cambiar la
+            // cantidad desde la lista no tendría contra qué medirse: para
+            // entonces el formulario ya está en OTRO producto y `sala` es otra.
+            unidades: Number(sala.unidades ?? 0),
         },
+        /* Los lotes que quedaron en pie —los no descartados—. Se guardan para
+         * poder REPARTIR de nuevo si la cantidad cambia desde la lista: el
+         * reparto por lote es lo que manda («los lotes MANDAN», 2026-08-07), y
+         * editar la cantidad sin rehacerlo dejaría un pedido de 5 con el reparto
+         * de 3 — un renglón que dice una cosa y lleva otra. */
+        lotesVivos,
         unidades,
         item: {
             erp_product_id:    producto.erp_product_id,
@@ -467,8 +481,13 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * COMPLETO —así que `aMedias` es falso— y `aEnviar` lo deja fuera. Sin esta
      * condición, Solicitar quedaría encendido y se llevaría todo menos lo que
      * la persona tiene delante, que es la peor de las salidas. */
+    /* Un renglón de la lista con problema —se le bajó la existencia, o se le
+     * subió la cantidad por encima de lo que hay— frena el envío. Marcarlo en
+     * rojo y dejar mandar sería un rojo decorativo. */
+    const conProblema = renglones.filter(r => r.problema);
+
     const puedeEnviar = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
-        && causa.trim().length > 0;
+        && conProblema.length === 0 && causa.trim().length > 0;
 
     const agregar = () => {
         if (!lineaActual || yaEstaEnLaLista) return;
@@ -486,7 +505,61 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         setDescartados(new Set());
     };
 
-    const quitar = (i) => setRenglones(prev => prev.filter((_, j) => j !== i));
+    /* Cambiar de pestaña con un renglón terminado a la vista lo AGREGA.
+     *
+     * Desde que «Solicitar» vive sólo en la pestaña de la lista, ir a mandar con
+     * el formulario lleno es exactamente lo que alguien hace después de
+     * completar el último producto. Sin esto, ese producto se quedaría afuera
+     * —o habría que frenar el envío con un aviso pidiendo volver a apretar
+     * «Agregar», que es pedirle a la persona que adivine el modelo interno. */
+    const irA = (destino) => {
+        if (destino === 'lista' && lineaActual && !yaEstaEnLaLista) agregar();
+        setPestana(destino);
+    };
+
+    const quitar = (i) => {
+        setRenglones(prev => prev.filter((_, j) => j !== i));
+        setEditando(null);
+    };
+
+    /* ── Cambiar la cantidad de un renglón ya agregado ─────────────────────
+     *
+     * Reportado el 2026-08-20: «en la solicitud no me sale editar, ni eliminar
+     * como en ajuste de inventario». Allá cada línea tiene su lápiz y su
+     * papelera; acá sólo había una equis chica, y para corregir un número había
+     * que quitar el renglón y volver a armarlo desde el buscador.
+     *
+     * Lo que NO se puede hacer es cambiar sólo el número: el renglón lleva su
+     * reparto por lote, y ese reparto se hizo para la cantidad vieja. Se rehace
+     * acá con los lotes que quedaron en pie al agregar. Si no alcanzan, el
+     * renglón queda marcado y el envío se frena — que es lo mismo que hace el
+     * formulario antes de dejar agregar.
+     */
+    const editarCantidad = (i, valor) => setRenglones(prev => prev.map((r, j) => {
+        if (j !== i) return r;
+        const cant  = Math.max(0, Math.floor(Number(valor)) || 0);
+        const unid  = cant * Number(r.item.factor || 1);
+        const lotes = r.lotesVivos ?? [];
+        const { reparto, faltan } = repartirPedido(lotes, unid);
+        return {
+            ...r,
+            unidades: unid,
+            // Por qué NO se puede mandar, si es que no se puede. Se guarda en el
+            // renglón y no se recalcula al pintar: lo que frena el envío y lo
+            // que se lee en la tarjeta tienen que ser el mismo juicio.
+            problema: cant <= 0 ? 'sin cantidad'
+                : unid > Number(r.origen.unidades ?? 0) ? `${r.origen.sala} tiene ${r.origen.unidades}`
+                : (lotes.length > 0 && faltan > 0) ? `faltan ${faltan} en los lotes`
+                : null,
+            item: {
+                ...r.item,
+                cantidad: cant,
+                lotes: lotes.length > 0
+                    ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
+                    : null,
+            },
+        };
+    }));
 
     const enviar = async () => {
         if (!puedeEnviar) return;
@@ -645,7 +718,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     <div className="shrink-0">
                         <SegmentedControl
                             value={pestana}
-                            onChange={setPestana}
+                            onChange={irA}
                             options={[
                                 { value: 'agregar', label: 'Agregar' },
                                 { value: 'lista',   label: `En la solicitud${renglones.length ? ` · ${renglones.length}` : ''}` },
@@ -681,7 +754,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         <p className="text-label text-content-3 font-medium py-8 text-center leading-snug">
                             Todavía no agregaste nada.<br />
                             <span className="text-micro">
-                                Elige el producto en «Agregar», ponle la cantidad y usa «Agregar y seguir».
+                                Elige el producto en «Agregar», ponle la cantidad y aprieta «Agregar».
                             </span>
                         </p>
                     ) : (
@@ -691,24 +764,75 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest px-1">
                                     {origen.sala}{origen.vencidos ? ' · próximos a vencer' : ''}
                                 </p>
-                                {renglones.map((r, i) => r.clave !== clave ? null : (
-                                    <div key={i}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-card"
-                                        style={{ background: 'var(--surface-card-hover)' }}>
-                                        <span className="text-caption font-black text-content shrink-0 tabular-nums">
-                                            {r.item.cantidad}
-                                        </span>
-                                        <span className="text-micro text-content-3 shrink-0">
-                                            {r.item.presentacion_tipo}
-                                        </span>
-                                        <span className="text-micro font-semibold text-content truncate min-w-0 flex-1">
-                                            {r.item.descripcion}
-                                        </span>
-                                        <Button size="xs" variant="ghost" icon={X} iconOnly
-                                            onClick={() => quitar(i)}
-                                            aria-label={`Quitar ${r.item.descripcion}`} />
-                                    </div>
-                                ))}
+                                {/* ── La tarjeta nace CERRADA, como en el ajuste ──
+                                    Muestra lo que hace falta para reconocer el
+                                    renglón —cuánto, de qué y en qué presentación—
+                                    y dos botones: lápiz y papelera. Abierta,
+                                    aparece la cantidad para corregirla.
+
+                                    Una con problema se abre sola: cerrada
+                                    mostraría el aviso de lo que le falta y ningún
+                                    campo donde arreglarlo, que es un callejón sin
+                                    salida. Mismo criterio que allá. */}
+                                {renglones.map((r, i) => {
+                                    if (r.clave !== clave) return null;
+                                    const abierta = editando === i || Boolean(r.problema);
+                                    return (
+                                        <div key={i} data-surface="card" className="px-3 py-2.5">
+                                            <div className="flex items-start gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-body-sm font-black text-content truncate">
+                                                        {r.item.descripcion}
+                                                    </p>
+                                                    {!abierta && (
+                                                        <p className="text-micro font-semibold text-content-2 mt-0.5 truncate">
+                                                            {r.item.cantidad} × {r.item.presentacion_tipo}
+                                                            {' · '}{r.unidades} {r.unidades === 1 ? 'unidad' : 'unidades'}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {/* El de editar pasa a «listo» con la
+                                                    tarjeta abierta: es el mismo control,
+                                                    y mandar el foco a otro botón para
+                                                    cerrarla sería un salto de más.
+                                                    Apagado mientras el renglón tenga un
+                                                    problema — cerrarlo ahí sólo lo
+                                                    escondería. */}
+                                                <Button variant="ghost" size="xs" iconOnly
+                                                    icon={abierta ? Check : Pencil}
+                                                    aria-label={abierta ? 'Listo' : `Corregir ${r.item.descripcion}`}
+                                                    disabled={abierta && Boolean(r.problema)}
+                                                    onClick={() => setEditando(abierta ? null : i)} />
+                                                <Button variant="ghost" size="xs" icon={Trash2} iconOnly
+                                                    aria-label={`Quitar ${r.item.descripcion}`}
+                                                    onClick={() => quitar(i)} />
+                                            </div>
+
+                                            {abierta && (
+                                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                    <div className="w-20">
+                                                        <PortalInput
+                                                            type="number" min="1"
+                                                            value={String(r.item.cantidad)}
+                                                            onChange={e => editarCantidad(i, e.target.value)}
+                                                            aria-label={`Cantidad de ${r.item.descripcion}`}
+                                                        />
+                                                    </div>
+                                                    <span className="text-micro font-semibold text-content-2">
+                                                        {r.item.presentacion_tipo} · {r.unidades}{' '}
+                                                        {r.unidades === 1 ? 'unidad' : 'unidades'}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {r.problema && (
+                                                <p className="text-micro font-semibold text-danger-text mt-1 leading-snug">
+                                                    No se puede mandar así: {r.problema}.
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>
@@ -954,23 +1078,30 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     </>
                 )}
 
-                {/* ── El «para qué», uno para toda la solicitud ──────────────
-                    Fuera del formulario del producto a propósito: se sigue
-                    pidiendo una sola vez aunque la composición lleve seis
-                    renglones a tres salas, y sobre todo sigue estando a la vista
-                    después de agregar el último —cuando la pantalla volvió al
-                    buscador y el formulario ya no está—. Adentro del formulario,
-                    el campo desaparecía justo en el paso en que hay que
-                    apretar Solicitar. */}
-                {!listo && (producto || renglones.length > 0) && (
-                    <>
-                        <PortalTextarea
-                            value={causa}
-                            onChange={e => setCausa(e.target.value)}
-                            rows={2}
-                            placeholder="Para qué se pide — queda escrito en el movimiento"
-                        />
+                {/* ── El «para qué»: UNA vez, y en la pestaña donde se manda ──
+                    Reportado el 2026-08-20: «al agregar cada producto pide un
+                    comentario, y luego en el de "en la solicitud" pide otro, son
+                    un montón de comentarios los que pide».
 
+                    Era UN solo campo —el mismo estado— pintado en las dos
+                    pestañas, y por eso se leía como dos: nadie tiene por qué
+                    adivinar que dos casillas iguales en dos pantallas guardan lo
+                    mismo. Ahora vive donde vive el de Ajuste de Inventario: en la
+                    pestaña de la lista, junto al botón de mandar. Se escribe una
+                    vez aunque la composición lleve seis renglones a tres salas.
+
+                    Nunca fue por producto: el «para qué» es de la solicitud. */}
+                {!listo && pestana === 'lista' && renglones.length > 0 && (
+                    <PortalTextarea
+                        value={causa}
+                        onChange={e => setCausa(e.target.value)}
+                        rows={2}
+                        placeholder="Para qué se pide — queda escrito en el movimiento"
+                    />
+                )}
+
+                {!listo && (
+                    <>
                         {/* Un producto a medias no se pierde en silencio: se
                             dice cuál es y el botón no deja mandar hasta que se
                             complete o se suelte. */}
@@ -986,7 +1117,19 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         {yaEstaEnLaLista && (
                             <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
                                 {producto.descripcion} ya está en la lista para {sala?.sala}. Quítalo de
-                                arriba y agrégalo con la cantidad total.
+                                «En la solicitud» y agrégalo con la cantidad total.
+                            </p>
+                        )}
+
+                        {/* Un renglón marcado en rojo tiene que frenar el envío
+                            desde la otra pestaña también, o el botón se apaga sin
+                            que nada explique por qué. */}
+                        {conProblema.length > 0 && pestana === 'agregar' && (
+                            <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
+                                {conProblema.length === 1
+                                    ? `${conProblema[0].item.descripcion} no se puede mandar así.`
+                                    : `${conProblema.length} productos no se pueden mandar así.`}
+                                {' '}Corrígelo en «En la solicitud».
                             </p>
                         )}
 
@@ -1001,26 +1144,31 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             {!listo && (producto || renglones.length > 0) && (
                 <LiquidModal.Footer>
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                    {/* «Agregar y seguir» es la misma forma del ajuste de
-                        inventario, que ya se usa todos los días: se busca el
-                        producto, se pone la cantidad, se agrega, y el siguiente.
-                        Sólo aparece cuando el renglón está completo — un botón
-                        apagado al lado de otro apagado no dice cuál de los dos
-                        se está esperando. */}
-                    {pestana === 'agregar' && lineaLista && !yaEstaEnLaLista && (
-                        <Button variant="secondary" disabled={enviando} onClick={agregar}>
-                            Agregar y seguir
+
+                    {/* ── Un botón por pestaña, como en Ajuste de Inventario ───
+                        En «Agregar» se agrega; en «En la solicitud» se manda.
+                        Los dos a la vez era lo que hacía que el «para qué»
+                        tuviera que estar en las dos pantallas, y de ahí venía la
+                        sensación de que el portal pedía comentarios de más.
+
+                        «Agregar» sólo cuando el renglón está completo: un botón
+                        apagado al lado de otro apagado no dice cuál de los dos se
+                        está esperando. */}
+                    {pestana === 'agregar' ? (
+                        lineaLista && !yaEstaEnLaLista && (
+                            <Button disabled={enviando} onClick={agregar}>Agregar</Button>
+                        )
+                    ) : (
+                        <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
+                            {enviando && <Loader2 size={14} className="animate-spin" />}
+                            {enviando
+                                ? 'Enviando...'
+                                // Se dice cuántas van a salir ANTES de apretar: que
+                                // una composición se parta en tres solicitudes es
+                                // exactamente lo que no puede ser una sorpresa.
+                                : salasDestino > 1 ? `Solicitar a ${salasDestino} salas` : 'Solicitar'}
                         </Button>
                     )}
-                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
-                        {enviando && <Loader2 size={14} className="animate-spin" />}
-                        {enviando
-                            ? 'Enviando...'
-                            // Se dice cuántas van a salir ANTES de apretar: que
-                            // una composición se parta en tres solicitudes es
-                            // exactamente lo que no puede ser una sorpresa.
-                            : salasDestino > 1 ? `Solicitar a ${salasDestino} salas` : 'Solicitar'}
-                    </Button>
                 </LiquidModal.Footer>
             )}
         </LiquidModal>

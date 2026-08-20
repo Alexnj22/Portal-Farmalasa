@@ -106,9 +106,16 @@ const elegir = async (nombre) => {
     await act(async () => { fireEvent.click(screen.getByText(`elegir ${nombre}`)); });
 };
 const agregar = async () => {
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Agregar y seguir' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Agregar' })); });
+};
+// Ir a «En la solicitud» AGREGA el renglón terminado que esté a la vista: es lo
+// que alguien hace después de completar el último producto, y sin eso ese
+// producto se quedaría afuera.
+const irALista = async () => {
+    await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /En la solicitud/ })); });
 };
 const ponerCausa = async (t) => {
+    await irALista();
     await act(async () => {
         fireEvent.change(screen.getByPlaceholderText(/Para qué se pide/), { target: { value: t } });
     });
@@ -272,6 +279,66 @@ describe('después de agregar', () => {
             fireEvent.click(screen.getByRole('radio', { name: /En la solicitud/ }));
         });
         expect(screen.getByRole('button', { name: /Quitar EUTIROX 100/ })).toBeTruthy();
+    });
+});
+
+// ── Corregir sin volver a empezar ─────────────────────────────────────────
+// Reportado el 2026-08-20: «en la solicitud no me sale editar, ni eliminar como
+// en ajuste de inventario». Había una equis chica y nada más: para cambiar un
+// número había que quitar el renglón y volver a armarlo desde el buscador.
+describe('editar y quitar en «En la solicitud»', () => {
+    const abrirLapiz = async (nombre) => {
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: `Corregir ${nombre}` }));
+        });
+    };
+
+    it('el lápiz abre la cantidad y lo corregido es lo que viaja', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await irALista();
+        await abrirLapiz('EUTIROX 100');
+
+        await act(async () => {
+            fireEvent.change(screen.getByLabelText('Cantidad de EUTIROX 100'), { target: { value: '7' } });
+        });
+        await act(async () => {
+            fireEvent.change(screen.getByPlaceholderText(/Para qué se pide/), { target: { value: 'Se acabaron' } });
+        });
+        await solicitar();
+
+        expect(filasEnviadas()[0].metadata.items[0].cantidad).toBe(7);
+        expect(filasEnviadas()[0].metadata.total_unidades).toBe(7);
+    });
+
+    it('la papelera lo saca y el contador baja', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await irALista();
+        expect(screen.getByRole('radio', { name: /En la solicitud · 1/ })).toBeTruthy();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Quitar EUTIROX 100' }));
+        });
+        expect(screen.getByText(/Todavía no agregaste nada/)).toBeTruthy();
+    });
+
+    // Subir la cantidad por encima de lo que la sala tiene no puede quedar en un
+    // rojo decorativo: frena el envío, y lo dice en la tarjeta.
+    it('pasarse de lo que hay marca el renglón y frena el envío', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await irALista();
+        await abrirLapiz('EUTIROX 100');
+        await act(async () => {
+            fireEvent.change(screen.getByLabelText('Cantidad de EUTIROX 100'), { target: { value: '999' } });
+        });
+        await act(async () => {
+            fireEvent.change(screen.getByPlaceholderText(/Para qué se pide/), { target: { value: 'Se acabaron' } });
+        });
+
+        expect(screen.getByText(/No se puede mandar así: Salud 1 tiene 90/)).toBeTruthy();
+        expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
     });
 });
 

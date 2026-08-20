@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.686.0 — La lista de la solicitud se edita, y el comentario se pide una vez
+
+Dos cosas reportadas sobre el compositor de v2.683.0.
+
+**«En la solicitud no me sale editar, ni eliminar como en ajuste de
+inventario».** Había una equis chica y nada más: para corregir un número había
+que quitar el renglón y volver a armarlo desde el buscador. Ahora cada renglón es
+una tarjeta como las de allá —nace cerrada, con lo justo para reconocerla— y
+lleva **lápiz y papelera**. El lápiz abre la cantidad; vuelve a cerrarse con el
+mismo botón, que pasa a ser un tilde.
+
+Lo que no se podía hacer a la ligera es cambiar sólo el número: el renglón lleva
+su **reparto por lote**, y ese reparto se hizo para la cantidad vieja. Se rehace
+con los lotes que quedaron en pie al agregarlo —por eso el renglón se los
+guarda—; si no alcanzan, o si la cantidad se pasa de lo que la sala tiene, el
+renglón queda marcado y **el envío se frena**. Un rojo que deja mandar igual es
+un rojo decorativo. Una tarjeta con problema se abre sola: cerrada mostraría el
+aviso y ningún campo donde arreglarlo.
+
+**«Al agregar cada producto pide un comentario, y luego en "en la solicitud"
+pide otro, son un montón de comentarios los que pide».** Era **uno solo** —el
+mismo campo— pintado en las dos pestañas, y por eso se leía como dos: nadie
+tiene por qué adivinar que dos casillas iguales en dos pantallas guardan lo
+mismo. Ahora vive donde vive el de Ajuste de Inventario: en la pestaña de la
+lista, junto al botón de mandar, y se escribe una vez aunque la composición
+lleve seis renglones a tres salas.
+
+Eso trajo el otro cambio que faltaba para la paridad: **un botón por pestaña**.
+En «Agregar» se agrega; en «En la solicitud» se manda. Tener los dos a la vez era
+justamente lo que obligaba a que el «para qué» estuviera en las dos pantallas.
+
+Y con el envío mudado a la otra pestaña, **cambiar de pestaña con un renglón
+terminado a la vista lo agrega**. Es lo que alguien hace después de completar el
+último producto; sin eso ese producto se quedaría afuera, o habría que frenar el
+envío con un aviso pidiendo volver a apretar «Agregar» — que es pedirle a la
+persona que adivine el modelo interno.
+
+Tres pruebas nuevas: que lo corregido con el lápiz es lo que viaja, que la
+papelera lo saca y el contador baja, y que pasarse de lo que hay marca el
+renglón y apaga «Solicitar».
+
 ## v2.685.3 — Los cortes dejan de traer siete columnas que nadie lee
 
 Verificación de los tres puntos que la auditoría de ayer dejó anotados como «se

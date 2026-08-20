@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.690.3 — se levanta la tarjeta que apuntás, no la vista entera
+
+Reporte del usuario con captura: *«no tiene sentido que si entro a la card lo
+que se active sea el body; el body se debe activar sólo al cargar la vista y
+luego las cards»*. Tenía razón, y no era de esta pantalla: **le pasaba a las 33
+vistas del portal**.
+
+`:hover` matchea al elemento **y a todos sus ancestros**. Como el cuerpo de
+vista es `data-surface="card"`, al apuntar cualquier tarjeta el navegador
+considera hovereadas a las dos, y los lifts se sumaban — medido el 2026-08-02:
+4px en /staff, /schedules y /announcements contra los 2px de una tarjeta suelta.
+
+Eso ya estaba resuelto, **pero al revés**: la regla escrita entonces
+(`[card] [card]:hover { transform: none }`) callaba a la tarjeta **apuntada** y
+dejaba levantarse al contenedor. El síntoma medido era cierto y la causa estaba
+bien identificada; lo que estaba mal era **a quién se callaba**. Con el cuerpo
+de vista como contenedor de casi todo, el resultado neto era que el portal
+entero respondía al puntero y las tarjetas no.
+
+Ahora:
+
+- **La tarjeta que apuntás se levanta**, incluso si vive dentro de otra: gana la
+  de más adentro y sus contenedores se quedan quietos (`:has()`).
+- **El cuerpo de vista no responde al puntero.** Lleva `data-cuerpo="vista"`, un
+  atributo propio en vez de quitarle `data-surface="card"`: el material —fondo,
+  borde, radio, escalón de las anidadas— es el que tiene que seguir siendo, y lo
+  único que sobra es el lift.
+
+`:has()` es el selector correcto y no hay alternativa en CSS: hace falta mirar
+hacia ABAJO desde el contenedor. Donde no exista (Chrome <105, Safari <15.4,
+Firefox <121) la regla se ignora y vuelve el lift acumulado — degrada, no rompe.
+
+Queda escrito en `DESIGN.md` §5, reemplazando la regla vieja.
+
+## v2.690.2 — «Agregar» devuelve a la consulta en vez de abrir otro buscador
+
+Reportado con las dos capturas: desde «Terminar solicitud», apretar **AGREGAR**
+no llevaba a la consulta de inventario — abría otra vez el buscador propio del
+formulario, que es exactamente la forma que se había pedido quitar.
+
+v2.690.0 hizo que agregar un producto cerrara el formulario y devolviera a la
+consulta, pero dejó ese buscador vivo detrás de la pestaña. Quedó la mitad del
+cambio: la salida buena existía y la puerta vieja seguía abierta al lado.
+
+**El formulario ya no busca productos, y no le hace falta.** Siempre se abre
+DESDE la consulta —con un producto, o sin ninguno para terminar—, y las dos
+puertas que llegan a él (la baldosa del tablero y «Nueva solicitud → Pedir a
+otra sala») pasan por la misma consulta. Así que:
+
+- **«Agregar» sin un producto a la vista cierra el formulario** y te deja en la
+  consulta, que es donde están el buscador, las siete salas y los faltantes.
+- **La flecha de «elegir otro producto» hace lo mismo**, en vez de llevar a un
+  buscador propio.
+- El buscador que vivía adentro (`BuscadorDeInventario`, de v2.687.0) **se
+  borró**: sin nadie que lo abra era código muerto, y el que hay que mantener es
+  el de la consulta.
+
+Con un producto a la vista, «Agregar» sigue siendo la pestaña de siempre: su
+sala, su cantidad y sus lotes.
+
 ## v2.690.1 — La pregunta por la sesión deja de frenar al portal
 
 Al arrancar, el portal le pregunta al servidor si la sesión sigue viva —el

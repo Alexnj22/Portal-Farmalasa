@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
-import BuscadorDeInventario from '../../components/common/BuscadorDeInventario';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -536,6 +535,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * —o habría que frenar el envío con un aviso pidiendo volver a apretar
      * «Agregar», que es pedirle a la persona que adivine el modelo interno. */
     const irA = (destino) => {
+        /* «Agregar» sin un producto a la vista NO es una pestaña: es volver a la
+         * consulta de inventario, que es donde se eligen los productos. Con la
+         * lista terminada y este botón mostrando un buscador propio, la pantalla
+         * ofrecía otra vez la forma que se pidió quitar — reportado el
+         * 2026-08-20 con la captura de las dos. */
+        if (destino === 'agregar' && !producto) { onClose?.(); return; }
         if (destino === 'lista' && lineaActual && !yaEstaEnLaLista) agregar({ cerrar: false });
         setPestana(destino);
     };
@@ -696,10 +701,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         venga de donde venga. */}
                     {producto && !listo && pestana === 'agregar' && (
                         <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
-                            onClick={() => {
-                                setElegido(null); setOrigenId(null);
-                                setPresIdx('0'); setCantidad('1'); setDescartados(new Set());
-                            }}
+                            onClick={() => onClose?.()}
                             aria-label="Elegir otro producto" />
                     )}
                     <Button variant="ghost" size="xs" icon={X} iconOnly
@@ -875,34 +877,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             el producto sale de ahí.
                         </span>
                     </p>
-                ) : pestana === 'lista' ? null : !producto ? (
-                    /* La MISMA búsqueda de la consulta de inventario: cada
-                     * resultado dice qué salas lo tienen y cuántas unidades.
-                     * Antes era el buscador de catálogo —principio activo y
-                     * laboratorio—, que obliga a elegir el producto a ciegas y
-                     * descubrir después que esa sala no lo tiene. Reportado el
-                     * 2026-08-20: «me gustaría que abriera el de consulta de
-                     * inventario, no esa nueva forma». */
-                    <BuscadorDeInventario
-                        placeholder="Buscar el producto que hace falta…"
-                        nombreSala={(suc) => NOMBRE_SALA[suc] ?? `Sucursal ${suc}`}
-                        erpSucursal={miErp}
-                        invitacion={{
-                            icono: ArrowLeftRight,
-                            texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
-                        }}
-                        onElegir={(p) => {
-                            // `donde` viaja cuando el buscador ya lo sabe —las
-                            // filas de faltantes lo traen—: con él, el
-                            // formulario no vuelve a preguntar dónde hay.
-                            setElegido({
-                                erp_product_id: p.id,
-                                descripcion: p.nombre,
-                                ...(p.donde?.length ? { donde: p.donde } : {}),
-                            });
-                        }}
-                    />
-                ) : (
+                ) : pestana === 'lista' || !producto ? null : (
+
                     <>
                         <LiquidSelect
                             value={origenId}

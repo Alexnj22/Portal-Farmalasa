@@ -75,18 +75,6 @@ vi.mock('../../src/store/staffStore', () => ({
     useStaffStore: (sel) => sel({ appendAuditLog: vi.fn(async () => {}) }),
 }));
 
-// El buscador, reducido a un botón por producto: lo que se prueba es la
-// composición, no cómo se busca.
-vi.mock('../../src/components/common/BuscadorDeInventario', () => ({
-    default: ({ onElegir }) => (
-        <div>
-            {[[202, 'AMOXICILINA 500'], [303, 'IBUPROFENO 400']].map(([id, nombre]) => (
-                <button key={id} onClick={() => onElegir({ id, nombre })}>elegir {nombre}</button>
-            ))}
-        </div>
-    ),
-}));
-
 const PedirTrasladoModal = (await import('../../src/views/dashboard/PedirTrasladoModal.jsx')).default;
 const { useComposicionTraslado } = await import('../../src/store/composicionTraslado.js');
 
@@ -98,10 +86,12 @@ const IBU     = { erp_product_id: 303, descripcion: 'IBUPROFENO 400' };
  * cierra y devuelve a la consulta de inventario, y elegir el siguiente lo vuelve
  * a abrir. Que lo compuesto sobreviva a ese ciclo es justamente lo que hay que
  * probar, así que las pruebas lo montan y desmontan igual que la consulta. */
+let cerrado;
 const abrirCon = async (producto) => {
     cleanup();
+    cerrado = vi.fn();
     await act(async () => {
-        render(<PedirTrasladoModal producto={producto} onClose={() => {}} onListo={() => {}} />);
+        render(<PedirTrasladoModal producto={producto} onClose={cerrado} onListo={() => {}} />);
     });
 };
 const abrir = () => abrirCon(EUTIROX);
@@ -273,6 +263,24 @@ describe('después de agregar', () => {
 
     // «Terminar solicitud» en la consulta abre el formulario SIN producto: ahí
     // lo que se viene a hacer es revisar y mandar, no agregar.
+    // El formulario ya no busca productos: siempre se abre DESDE la consulta,
+    // con uno o sin ninguno para terminar. Así que «Agregar» sin producto a la
+    // vista es volver a la consulta, no otra pantalla adentro — que es lo que
+    // se pidió quitar y había vuelto a aparecer por acá (reportado 2026-08-20).
+    it('«Agregar» sin producto cierra y devuelve a la consulta', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        await terminar();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('radio', { name: /Agregar/ }));
+        });
+        expect(cerrado).toHaveBeenCalled();
+        // Y no dibuja ningún buscador propio.
+        expect(screen.queryByPlaceholderText(/Buscar el producto/)).toBeNull();
+    });
+
     it('abrir sin producto cae en la lista, con todo lo armado', async () => {
         await abrir();
         await ponerCantidad(3);

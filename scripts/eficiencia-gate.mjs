@@ -265,6 +265,7 @@ const baseline = Object.fromEntries(TOPES.map(k =>
 const fallos = [];
 const avisos = [];
 const medido = {};
+let estadoNuevo = null;
 
 // ══ SECCIÓN A · Local, sin red ═══════════════════════════════════════════════
 console.log('\n  \x1b[1mA · Lo que se puede ver sin salir a la red\x1b[0m\n');
@@ -443,17 +444,47 @@ if (!SOLO_LOCAL) {
         FROM pg_stat_user_tables
        WHERE n_tup_upd > 500 AND n_tup_upd > n_tup_ins * 3
        ORDER BY n_tup_upd DESC LIMIT 20`);
+    /* La tasa se mide entre DOS LECTURAS de este gate, no dividiendo el
+     * acumulado por el tiempo encendido.
+     *
+     * La primera versión hacía eso último y quedó roja el mismo día que se
+     * arreglaron tres tablas: el contador arrastra todo lo anterior al arreglo,
+     * así que la tasa baja de a poco y mientras tanto cualquier actividad normal
+     * la empuja arriba del tope. O sea que el instrumento acusaba una regresión
+     * que no existía — y un gate que se pone rojo por su propia aritmética es
+     * peor que no tenerlo.
+     *
+     * Entre dos lecturas, en cambio, se ve exactamente lo que pasó en el medio.
+     * `_estado` no es un tope: es la lectura anterior, y se refresca en cada
+     * corrida. Si el contador bajó, el servidor reinició y no hay nada que
+     * comparar: se vuelve a anotar y se dice. */
+    const crudo = churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0);
+    const prev = guardado._estado ?? null;
+    const horasDesde = prev?.medidoEn
+      ? (Date.now() - Date.parse(prev.medidoEn)) / 3_600_000
+      : 0;
+    let inutilesHora = null;
+    if (!prev || crudo < Number(prev.crudo ?? 0)) {
+      console.log(`\n  escrituras sin inserción: ${gris('primera lectura (o el servidor reinició) — se anota y se compara en la próxima')}`);
+    } else if (horasDesde < 0.05) {
+      console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — muy poco para una tasa`)}`);
+    } else {
+      inutilesHora = Math.round((crudo - Number(prev.crudo)) / horasDesde);
+      medido.escriturasInutilesHora = inutilesHora;
+      console.log(`\n  escrituras sin inserción por hora: ${inutilesHora.toLocaleString('es')} `
+                + `(tope ${Number(baseline.escriturasInutilesHora).toLocaleString('es')}) `
+                + gris(`· medido contra la lectura de hace ${horasDesde.toFixed(1)} h`));
+    }
+    estadoNuevo = { crudo, medidoEn: new Date().toISOString() };
     const horas = Math.max(Number(churn[0]?.horas ?? 1), 1);
-    const inutilesHora = Math.round(
-      churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0) / horas);
-    medido.escriturasInutilesHora = inutilesHora;
-    console.log(`\n  escrituras sin inserción por hora: ${inutilesHora.toLocaleString('es')} `
-              + `(tope ${Number(baseline.escriturasInutilesHora).toLocaleString('es')}) `
-              + gris(`· ventana de ${horas} h`));
+    // El desglose por tabla va con la vista LARGA —el acumulado desde que
+    // arrancó el servidor— porque sirve para reconocer al culpable, no para
+    // juzgar. Quien juzga es la tasa entre lecturas de arriba.
+    console.log(gris('      (desglose desde que arrancó el servidor, para ubicar de dónde sale)'));
     for (const t of churn.slice(0, 6))
       console.log(gris(`      ${String(Math.round(t.upd / horas)).padStart(6)}/h sobre ${String(t.filas).padStart(6)} filas `
                 + `· ${String(t.ins).padStart(5)} inserciones · ${String(t.pct_hot).padStart(3)}% HOT  ${t.tabla}`));
-    if (inutilesHora > baseline.escriturasInutilesHora)
+    if (inutilesHora !== null && inutilesHora > baseline.escriturasInutilesHora)
       fallos.push(`las escrituras sin inserción subieron a ${inutilesHora}/h contra ${baseline.escriturasInutilesHora}/h. `
                 + 'Una tabla que se reescribe sola no da error nunca: gasta WAL, ensucia los índices y '
                 + 'hace trabajar al autovacuum por nada. Y el 0% HOT es la parte cara: esa escritura '
@@ -491,15 +522,31 @@ if (!SOLO_LOCAL) {
 }
 
 // ══ Cierre ═══════════════════════════════════════════════════════════════════
+/* El estado se guarda SIEMPRE, aunque no se regenere el baseline: sin la
+ * lectura anterior no hay tasa que medir la próxima vez. Los topes, en cambio,
+ * sólo se tocan con `--update-baseline`. */
+if (estadoNuevo && !SOLO_LOCAL) {
+  const enDisco = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, 'utf8')) : {};
+  writeFileSync(BASELINE_FILE, JSON.stringify({ ...enDisco, _estado: estadoNuevo }, null, 2) + '\n');
+}
+
 if (REGENERAR) {
   const nuevo = {
     // Una clave que esta corrida no midió (p. ej. `--hook`, que no sale a la
     // red) conserva su tope: regenerar no puede ser una forma de borrarlo.
     ...Object.fromEntries(TOPES.map(k => [k,
-      Number.isFinite(medido[k]) ? Math.min(medido[k], baseline[k]) : baseline[k]])),
+      Number.isFinite(medido[k])
+        // La tasa de escrituras se mide en una ventana corta y es ruidosa: una
+        // ráfaga normal la sube. Su tope se pone al DOBLE de lo medido, con el
+        // mismo criterio que los tiempos de `gate:perf` — vigila que algo no
+        // vuelva a costar miles, no que baje de 619 a 600. Los demás son
+        // conteos exactos y van tal cual.
+        ? Math.min(k === 'escriturasInutilesHora' ? medido[k] * 2 : medido[k], baseline[k])
+        : baseline[k]])),
     nota: 'Sólo BAJA. Un número que sube es una decisión, y una decisión se escribe en el manifiesto '
         + 'con su motivo — no se absorbe regenerando este archivo.',
     actualizado: new Date().toISOString().slice(0, 10),
+    _estado: estadoNuevo ?? guardado._estado,
   };
   writeFileSync(BASELINE_FILE, JSON.stringify(nuevo, null, 2) + '\n');
   console.log(`\n  baseline actualizado: ${JSON.stringify({ ...nuevo, nota: undefined })}`);

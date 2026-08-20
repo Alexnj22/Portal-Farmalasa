@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.687.1 — el buscador de carnés va en el header y los vigentes se agrupan por sucursal
+
+Tres correcciones del usuario sobre la pantalla, con captura.
+
+**«Sigue sin el buscar en el header».** Tenía uno, pero adentro de la tarjeta:
+inventé un buscador donde el portal ya tiene el suyo. Ahora es el canónico
+(`ViewTabBar`), el mismo de todas las demás pantallas.
+
+Y al mudarlo apareció algo mejor que una economía: **el buscador del header
+filtra las dos mitades a la vez**. Al escribir un nombre se ve de una si esa
+persona **ya tiene un carné vivo** antes de imprimirle otro — que es justo lo que
+hay que mirar antes de apretar, y que con dos buscadores separados había que
+cruzar a mano. El contador lo dice cuando filtra: «Vigentes ahora (2 de 9)».
+
+**«Que se ordene por sucursal al haber más de 1».** Los vigentes se agrupan por
+sucursal, con el nombre de la sala y cuántos son. El encabezado de grupo aparece
+sólo cuando hay más de una: con una sola, un rótulo repetido en todas las
+tarjetas es ruido. «Sin sucursal» va al final — es la excepción, no una sala más.
+
+La sucursal por la que se agrupa es la de la **persona**, no la de la ticketera
+por donde salió el papel: la pregunta es «quién de tal sala anda con papel», y un
+carné se puede imprimir desde administración para alguien de otra sala. Por dónde
+salió sigue estando, en su propia línea de la tarjeta.
+
+**Se quitó el bloque de explicación de arriba.** Lo pidió el usuario y tiene
+razón: ocupaba dos renglones de ancho completo con algo que se lee una vez y
+después estorba todos los días.
+
 ## v2.687.0 — El buscador del traslado es el de la consulta de inventario
 
 Reportado: *«me gustaría que al darle en agregar y seguir, abriera el de

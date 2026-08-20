@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.676.0 — Una solicitud puede pedir varios productos a varias salas
+
+Pedido del usuario, tal cual: *«yo en salud 4 solicito eutirox 100 a salud 1,
+salud 2 y salud 3, cantidades distintas, lo hago en la misma solicitud, pero al
+darle en solicitar se envían como solicitudes separadas, así que cada sucursal ve
+solo lo de cada uno»*.
+
+Es exactamente lo que hace ahora. Al lado de *Solicitar* hay un botón **Agregar
+y seguir**: pone el renglón en una lista y devuelve el buscador para el
+siguiente. Es la misma forma del ajuste de inventario, que ya se usa todos los
+días.
+
+La lista se ve arriba, **agrupada por sala** — y esa agrupación no es decorativa:
+cada encabezado es una solicitud, y lo que cuelga de él es lo que esa sala va a
+ver. El botón dice **«Solicitar a 2 salas»** antes de apretarlo, porque que una
+composición se parta en varias no puede ser una sorpresa.
+
+**Por qué se parte, y no es una fila con varios orígenes.** Todo lo que hay
+debajo está clavado a UN origen: el RLS que decide quién la ve, la cascada del
+aprobador, el aviso, la sala de respaldo, el documento del sistema —uno por
+origen, con su número de vale— y el freno de duplicados. Y una sola fila haría
+que Salud 2 vea adentro de su solicitud los renglones de Salud 3.
+
+**Entran todas o no entra ninguna**: es un solo `insert`. Media composición
+enviada no se puede saber cuál mitad fue.
+
+Cuatro cosas que se pierden solas si no se cuidan, y que ahora tienen su prueba:
+
+- **El último producto no se pierde.** Se agrega uno, se arma el segundo y se
+  aprieta Solicitar sin haberlo agregado: entra igual. Y si está a medias, el
+  botón no deja mandar y dice cuál falta, en vez de tirarlo en silencio.
+- **El «para qué» salió del formulario del producto.** Sigue siendo uno solo
+  para toda la solicitud, y ahora sigue estando a la vista después de agregar el
+  último — antes desaparecía justo en el paso en que hay que apretar Solicitar.
+- **El mismo producto a la misma sala dos veces** se avisa acá, donde todavía se
+  puede arreglar sin perder lo demás. La base lo frena igual, pero frenaría la
+  composición entera.
+
+Y **tres carreras que el compositor destapó**, las tres del mismo molde: al
+cambiar de producto, lo del anterior seguía en memoria mientras llegaba lo
+nuevo. La lista de salas hacía que se eligiera sola una sala que ese producto no
+tiene —desplegable vacío, botón apagado y ninguna pista de por qué—; el mapa de
+lotes está indexado por estante, así que el del anterior contestaba igual; y la
+más cara, las **presentaciones**: las tres consultas viajan en paralelo, así que
+la de salas puede llegar antes, y en esa ventana el renglón está «completo» con
+la presentación del producto anterior. Se habría agregado una CAJA X 10 sobre un
+producto que se vende por unidad, y el factor multiplica: el error no se ve como
+un error, se ve como una cantidad.
+
+Las tres existían desde antes —cambiar de producto ya era posible por el
+buscador—; lo que cambió es que ahora es el camino normal. Las seis pruebas de
+`tests/unit/composicionTraslado.test.jsx` las dejan ancladas.
+
+**Falta:** que quien pidió vea las hermanas juntas y pueda recibir por sala. Es
+el paso 5 de `docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
+
 ## v2.675.1 — El tablero deja pasar el scroll de la página
 
 Reportado hoy: *«en inicio no puedo escrolear bien, solo escrolea internamente,

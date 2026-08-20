@@ -30,7 +30,15 @@ export const MOTIVOS_RECHAZO = [
     'Otro',
 ];
 
-/** Crea la solicitud. El aviso y el aprobador los pone la base, no esto. */
+/**
+ * Crea la solicitud. El aviso y el aprobador los pone la base, no esto.
+ *
+ * Acepta UNA fila o un ARRAY. El array es cómo sale una composición de varias
+ * salas —una solicitud por estante de origen— y va en un solo `insert` a
+ * propósito: entran todas o no entra ninguna. Si una choca contra el freno de
+ * duplicados, es mejor que no entre nada y se corrija a quedarse con media
+ * composición enviada y sin forma de saber cuál mitad.
+ */
 export function crearSolicitudTraslado(payload) {
     return supabase.from('approval_requests').insert(payload);
 }

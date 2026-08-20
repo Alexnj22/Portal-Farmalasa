@@ -91,8 +91,39 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
        catálogo trae `{ id, nombre }` y el resto del archivo habla de
        `{ erp_product_id, descripcion }`: se traduce acá, en el borde, y no en
        cada uno de los cinco sitios que lo leen. */
-    const [elegido, setElegido] = useState(null);
-    const producto = productoInicial ?? elegido;
+    /* Arranca en el producto con el que abrieron, cuando abrieron con uno.
+     *
+     * Antes era `productoInicial ?? elegido`, y eso hacía imposible SOLTARLO:
+     * poner `elegido` en null no cambiaba nada porque el inicial seguía ganando.
+     * Con el compositor eso es justo lo que hay que poder hacer —agregar el
+     * renglón y volver al buscador por el siguiente—, así que el inicial es
+     * ahora el valor con el que nace el estado y no una capa por encima. */
+    const [elegido, setElegido] = useState(productoInicial ?? null);
+    const producto = elegido;
+
+    /* ── Los renglones ya agregados ────────────────────────────────────────
+     *
+     * Una sola composición, varias solicitudes. Pedido del usuario:
+     *
+     *   «yo en salud 4 solicito eutirox 100 a salud 1, salud 2 y salud 3,
+     *    cantidades distintas, lo hago en la misma solicitud, pero al darle en
+     *    solicitar se envían como solicitudes separadas, así que cada sucursal
+     *    ve solo lo de cada uno»
+     *
+     * Cada renglón lleva SU sala, así que los dos casos salen de la misma
+     * lista: un producto a tres salas, o tres productos a una. Al enviar se
+     * agrupan por estante de origen y sale una solicitud por grupo.
+     *
+     * Por qué no una fila con varios orígenes: todo lo que hay debajo está
+     * clavado a UN origen —el RLS que decide quién la ve, la cascada del
+     * aprobador, el aviso, la sala de respaldo, el documento del sistema (uno
+     * por origen, con su número de vale) y el freno de duplicados—. Y una sola
+     * fila haría que Salud 2 vea adentro de su solicitud los renglones de
+     * Salud 3. */
+    const [renglones, setRenglones] = useState([]);
+    /* Con cuántas salas terminó, para poder decirlo al cerrar. Se guarda al
+     * enviar porque para entonces el formulario ya se vació. */
+    const [resumen, setResumen] = useState(null);
     const [origenId, setOrigenId] = useState(null);   // la CLAVE del estante, no el id de sala
     const [presIdx,  setPresIdx]  = useState('0');
     const [presentaciones, setPresentaciones] = useState([]);
@@ -119,6 +150,16 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     useEffect(() => {
         if (producto?.donde || !producto?.erp_product_id || !miErp) return;
         let cancelado = false;
+        /* Se limpia ANTES de preguntar, y eso no es prolijidad.
+         *
+         * Entre que se elige otro producto y llega su lista de salas, `donde`
+         * seguía siendo la del producto ANTERIOR: la sala se elegía sola sobre
+         * una lista que ya no era, y cuando llegaba la buena el efecto de abajo
+         * no la corregía porque `origenId` ya no era null. El formulario quedaba
+         * con una sala que ese producto no tiene, el botón apagado y nada que
+         * explicara por qué. Se veía poco cuando cambiar de producto era raro;
+         * con el compositor es el camino normal. */
+        setDondeTraido(null);
         fetchDondeHay(producto.erp_product_id, miErp).then(r => {
             if (!cancelado && !r.error) setDondeTraido(r.donde);
         });
@@ -143,6 +184,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     useEffect(() => {
         if (producto?.lotesPorSala || !producto?.erp_product_id) return;
         let cancelado = false;
+        // Mismo motivo que las salas de arriba: el mapa está indexado por
+        // estante, no por producto, así que el del anterior contesta igual y
+        // el reparto se armaría sobre lotes de otro producto.
+        setLotesTraidos(null);
         fetchInventoryByProductIds([producto.erp_product_id]).then(filas => {
             if (cancelado) return;
             const porSala = {};
@@ -164,7 +209,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     // bajo su encabezado— y, si no viene ninguna, la de más existencia, que es
     // la que puede ceder sin quedarse corta.
     useEffect(() => {
-        if (donde.length === 0 || origenId !== null) return;
+        if (donde.length === 0) return;
+        // Y también CORRIGE una sala que ya no está en la lista. Antes sólo
+        // elegía cuando `origenId` era null, así que una sala heredada del
+        // producto anterior se quedaba puesta y `sala` quedaba en `undefined`:
+        // el desplegable vacío, el botón apagado y ninguna pista de por qué.
+        if (origenId !== null && donde.some(d => claveOrigen(d) === String(origenId))) return;
         // `origen_sugerido` viaja como CLAVE, no como id de sala: apretar
         // «Solicitar» sobre el renglón del área de vencidos de Bodega y caer en
         // el estante normal de Bodega sería elegir por el usuario justo lo que
@@ -182,6 +232,16 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     useEffect(() => {
         if (!producto?.erp_product_id) return;
         let cancelado = false;
+        /* Y ésta es la que más caro sale de las tres.
+         *
+         * Las salas y los lotes se piden en paralelo con las presentaciones, así
+         * que la del producto NUEVO puede llegar antes que sus presentaciones.
+         * En esa ventana el renglón está «completo» —hay sala, hay cantidad— y
+         * `pres` todavía es la del producto ANTERIOR: se agregaría una
+         * CAJA X 10 sobre un producto que se vende por unidad. El factor
+         * multiplica, así que el error no se ve como un error, se ve como una
+         * cantidad. */
+        setPresentaciones([]);
         fetchPresentaciones([producto.erp_product_id]).then(r => {
             if (cancelado) return;
             setPresentaciones(r.porProducto.get(producto.erp_product_id) ?? []);
@@ -304,19 +364,117 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     );
     const hayLotes = lotesDeSala.length > 0;
 
-    const puedeEnviar = Boolean(
-        sala && pres && miErp && Number(cantidad) > 0 && causa.trim().length > 0
+    /* El renglón que se está armando está completo. NO incluye el «para qué»:
+     * ese es uno solo para toda la composición y se pide al enviar, no al
+     * agregar cada producto. */
+    const lineaLista = Boolean(
+        producto && sala && pres && miErp && Number(cantidad) > 0
         && unidades > 0 && unidades <= Number(sala.unidades ?? 0)
         // Con lotes a la vista, el pedido no sale si lo que queda no lo cubre:
         // mandarlo igual sería pedir algo que ya se sabe que no se puede dar.
         && (!hayLotes || faltan === 0),
     );
 
+    /* El renglón, ya con la forma con la que va a viajar. Se arma acá y no en
+     * dos lados —al agregar y al enviar— para que el que se manda directo y el
+     * que pasa por la lista sean el MISMO. */
+    const lineaActual = lineaLista ? {
+        clave: claveOrigen(sala),
+        origen: {
+            erp_sucursal_id: sala.erp_sucursal_id,
+            sala: sala.sala,
+            vencidos: Boolean(sala.vencidos),
+        },
+        unidades,
+        item: {
+            erp_product_id:    producto.erp_product_id,
+            descripcion:       producto.descripcion,
+            presentacion_tipo: pres.tipo,
+            factor:            pres.factor,
+            cantidad:          Number(cantidad),
+            // Los lotes MANDAN, no son una vista previa: decisión del usuario
+            // 2026-08-07. Quien despacha los ve en el pedido y saca de ésos.
+            lotes: hayLotes
+                ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
+                : null,
+        },
+    } : null;
+
+    /* El mismo producto al mismo estante DOS veces no es un pedido más grande:
+     * es una sola línea con la cantidad sumada. La base lo frena igual —y
+     * frenaría la composición ENTERA, porque las solicitudes se insertan
+     * juntas—, así que se avisa acá, donde todavía se puede arreglar sin perder
+     * lo demás. */
+    const yaEstaEnLaLista = Boolean(lineaActual) && renglones.some(
+        r => r.clave === lineaActual.clave
+          && r.item.erp_product_id === lineaActual.item.erp_product_id,
+    );
+
+    /* Un producto elegido a medias bloquea el envío en vez de perderse.
+     *
+     * Es el error que se comete solo: se agrega uno, se empieza el segundo, y
+     * se aprieta Solicitar sin haberlo agregado. Mandar sin él lo tira en
+     * silencio; se prefiere no dejar mandar y decir cuál falta. */
+    const aMedias = Boolean(producto) && !lineaLista;
+
+    // Lo que se va a mandar: lo agregado más el que está a la vista, si está
+    // completo. Así el último producto no se pierde por no haberlo agregado.
+    const aEnviar = [...renglones, ...(lineaActual && !yaEstaEnLaLista ? [lineaActual] : [])];
+
+    // Cuántas solicitudes van a salir: una por estante de origen.
+    const salasDestino = new Set(aEnviar.map(r => r.clave)).size;
+
+    /* `!yaEstaEnLaLista` no sobra: con un duplicado a la vista el renglón está
+     * COMPLETO —así que `aMedias` es falso— y `aEnviar` lo deja fuera. Sin esta
+     * condición, Solicitar quedaría encendido y se llevaría todo menos lo que
+     * la persona tiene delante, que es la peor de las salidas. */
+    const puedeEnviar = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
+        && causa.trim().length > 0;
+
+    const agregar = () => {
+        if (!lineaActual || yaEstaEnLaLista) return;
+        setRenglones(prev => [...prev, lineaActual]);
+        setError('');
+        // El formulario vuelve al buscador, listo para el siguiente. La sala no
+        // se conserva a propósito: cada producto tiene su propio mapa de quién
+        // lo tiene, y arrastrar la anterior propondría una que quizá no lo
+        // tenga.
+        setElegido(null);
+        setOrigenId(null); setPresIdx('0'); setCantidad('1');
+        setDescartados(new Set());
+    };
+
+    const quitar = (i) => setRenglones(prev => prev.filter((_, j) => j !== i));
+
     const enviar = async () => {
         if (!puedeEnviar) return;
         setError(''); setEnviando(true);
         try {
-            const { error: e } = await crearSolicitudTraslado({
+            /* ── Una composición, una solicitud POR ESTANTE de origen ───────
+             *
+             * Se agrupa por `clave` —sucursal + estante— y no por sucursal a
+             * secas: Bodega tiene el estante de operación y el área donde
+             * aparta lo próximo a vencer, y de los dos se puede pedir. Son dos
+             * despachos distintos, con dos ubicaciones distintas del sistema.
+             *
+             * El orden de los renglones dentro de cada solicitud es el orden en
+             * que se agregaron, y eso importa: la posición en `items` es el
+             * nombre del renglón para todo el circuito —así lo señala quien
+             * despacha cuando manda de menos—. */
+            const porSala = new Map();
+            for (const r of aEnviar) {
+                if (!porSala.has(r.clave)) porSala.set(r.clave, []);
+                porSala.get(r.clave).push(r);
+            }
+
+            /* Qué las hace hermanas. Sólo cuando de verdad hay más de una: con
+             * una sola solicitud no hay nada que agrupar, y una clave que
+             * aparece siempre no distingue nada. */
+            const grupoId = porSala.size > 1
+                ? (globalThis.crypto?.randomUUID?.() ?? String(Date.now()))
+                : null;
+
+            const filas = [...porSala.values()].map(grupo => ({
                 employee_id: user?.id,
                 type: 'INVENTORY_TRANSFER_REQUEST',
                 status: 'PENDING',
@@ -328,8 +486,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
                     erp_sucursal_id: miErp,
                     // La sala de origen: la que tiene el producto.
-                    origen_erp_sucursal_id: sala.erp_sucursal_id,
-                    origen_branch_name: sala.sala,
+                    origen_erp_sucursal_id: grupo[0].origen.erp_sucursal_id,
+                    origen_branch_name: grupo[0].origen.sala,
                     // De qué ESTANTE de esa sala. Bodega tiene dos y la sucursal
                     // sola no los distingue; es lo que la Edge Function traduce a
                     // la ubicación real del sistema al despachar, y lo que la
@@ -337,31 +495,37 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     // corresponde. Sólo viaja cuando es cierto: una clave en
                     // `false` ensucia el metadata de las 189 solicitudes que no
                     // tienen nada que ver con esto.
-                    ...(sala.vencidos ? { origen_vencidos: true } : {}),
-                    total_unidades: unidades,
-                    items: [{
-                        erp_product_id:    producto.erp_product_id,
-                        descripcion:       producto.descripcion,
-                        presentacion_tipo: pres.tipo,
-                        factor:            pres.factor,
-                        cantidad:          Number(cantidad),
-                        // Los lotes MANDAN, no son una vista previa: decisión
-                        // del usuario 2026-08-07. Quien despacha los ve en el
-                        // pedido y saca de ésos. Sin esto, descartar un lote
-                        // que vence pronto no cambiaría nada de lo que llega.
-                        lotes: hayLotes
-                            ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
-                            : null,
-                    }],
+                    ...(grupo[0].origen.vencidos ? { origen_vencidos: true } : {}),
+                    // Las hermanas de la misma composición, para que quien pidió
+                    // las vea juntas. Cada sala sigue viendo SÓLO la suya: esto
+                    // no abre nada, es un rótulo para el lado que las pidió.
+                    ...(grupoId ? { grupo_id: grupoId } : {}),
+                    total_unidades: grupo.reduce((s, r) => s + r.unidades, 0),
+                    items: grupo.map(r => r.item),
                 },
-            });
+            }));
+
+            /* Entran TODAS o no entra ninguna: es un solo `insert` con varias
+             * filas. Si una choca —el mismo producto a la misma sala ya
+             * esperando respuesta—, es mejor que no entre nada y se corrija,
+             * que quedarse con media composición enviada y sin forma de saber
+             * cuál mitad. */
+            const { error: e } = await crearSolicitudTraslado(filas);
             if (e) throw e;
 
             await appendAuditLog('TRASLADO_SOLICITADO', String(miBranch ?? ''), {
-                producto: producto.erp_product_id,
-                origen: sala.sala, cantidad: Number(cantidad), unidades, causa: causa.trim(),
+                solicitudes: filas.length,
+                productos: aEnviar.length,
+                salas: [...porSala.values()].map(g => g[0].origen.sala),
+                unidades: aEnviar.reduce((s, r) => s + r.unidades, 0),
+                causa: causa.trim(),
+                ...(grupoId ? { grupo_id: grupoId } : {}),
             });
 
+            setResumen({
+                solicitudes: filas.length,
+                salas: [...porSala.values()].map(g => g[0].origen.sala),
+            });
             setListo(true);
             setTimeout(() => { onListo?.(); onClose?.(); }, 2200);
         } catch (e) {
@@ -372,11 +536,13 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             // La excepción es el índice de duplicados: ahí Postgres contesta
             // «duplicate key value violates unique constraint», que no le dice
             // nada a nadie y encima suena a que el portal se rompió. Lo que hay
-            // que decir es qué hacer: la cantidad va en el mismo pedido.
+            // que decir es qué hacer: la cantidad va en el mismo pedido. (El
+            // trigger que vigila renglón por renglón ya contesta esa frase él
+            // mismo; esto cubre al índice, que sigue de red abajo.)
             const msg = String(e?.message ?? '');
             setError(
                 msg.includes('approval_requests_un_traslado_pendiente')
-                    ? `Ya hay una solicitud de este producto a ${sala?.sala ?? 'esa sala'} esperando respuesta. `
+                    ? 'Ya hay una solicitud de ese producto a esa sala esperando respuesta. '
                       + 'Si necesitas más, súbele la cantidad a esa solicitud o pídeselo a otra sala.'
                 : msg.includes('row-level security')
                     ? 'No tienes permiso para solicitar traslados.'
@@ -404,12 +570,18 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             {producto ? 'Solicitar a otra sala' : 'Elige el producto'}
                         </p>
                     </div>
-                    {/* Volver al buscador sólo cuando hubo buscador: si el
-                        producto llegó puesto desde la consulta de inventario,
-                        atrás no es acá. */}
-                    {elegido && !listo && (
+                    {/* Volver al buscador.
+                        Antes sólo aparecía cuando el producto había salido del
+                        buscador —«si llegó puesto desde la consulta de
+                        inventario, atrás no es acá»—. Con el compositor sí es
+                        acá: soltar el producto es cómo se elige el siguiente,
+                        venga de donde venga. */}
+                    {producto && !listo && (
                         <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
-                            onClick={() => { setElegido(null); setOrigenId(null); setPresIdx('0'); setCantidad('1'); }}
+                            onClick={() => {
+                                setElegido(null); setOrigenId(null);
+                                setPresIdx('0'); setCantidad('1'); setDescartados(new Set());
+                            }}
                             aria-label="Elegir otro producto" />
                     )}
                     <Button variant="ghost" size="xs" icon={X} iconOnly
@@ -418,6 +590,46 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             </LiquidModal.Header>
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
+                {/* ── Lo que ya lleva la solicitud ──────────────────────────
+                    Va ARRIBA del formulario: es lo que hay que poder mirar
+                    mientras se agrega el siguiente —«¿ya puse la amoxicilina?»—
+                    y abajo del todo quedaría fuera de la vista en cuanto la
+                    lista pase de tres.
+
+                    Se agrupa por sala porque así es como va a salir: cada
+                    encabezado es una solicitud, y lo que cuelga de él es lo que
+                    ESA sala va a ver. Verlo antes de mandar es lo que hace que
+                    «se dividen en solicitudes separadas» no sea una sorpresa. */}
+                {!listo && renglones.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                        {[...new Map(renglones.map(r => [r.clave, r.origen])).entries()].map(([clave, origen]) => (
+                            <div key={clave} className="flex flex-col gap-1">
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest px-1">
+                                    {origen.sala}{origen.vencidos ? ' · próximos a vencer' : ''}
+                                </p>
+                                {renglones.map((r, i) => r.clave !== clave ? null : (
+                                    <div key={i}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-card"
+                                        style={{ background: 'var(--surface-card-hover)' }}>
+                                        <span className="text-caption font-black text-content shrink-0 tabular-nums">
+                                            {r.item.cantidad}
+                                        </span>
+                                        <span className="text-micro text-content-3 shrink-0">
+                                            {r.item.presentacion_tipo}
+                                        </span>
+                                        <span className="text-micro font-semibold text-content truncate min-w-0 flex-1">
+                                            {r.item.descripcion}
+                                        </span>
+                                        <Button size="xs" variant="ghost" icon={X} iconOnly
+                                            onClick={() => quitar(i)}
+                                            aria-label={`Quitar ${r.item.descripcion}`} />
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {!producto ? (
                     <BuscadorDeProducto
                         placeholder="Buscar el producto que hace falta…"
@@ -429,9 +641,15 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     />
                 ) : listo ? (
                     <p className="text-label font-semibold text-success-text py-6 text-center leading-snug">
-                        Solicitud enviada.<br />
+                        {resumen?.solicitudes > 1
+                            ? `${resumen.solicitudes} solicitudes enviadas.`
+                            : 'Solicitud enviada.'}<br />
                         <span className="text-content-3 font-medium">
-                            {sala?.sala} decide y el producto sale de ahí.
+                            {/* Se nombran las salas: quien pidió tiene que saber
+                                a quiénes les llegó, porque cada una decide por
+                                su cuenta y cada una le va a contestar aparte. */}
+                            {(resumen?.salas ?? []).join(', ')} {resumen?.solicitudes > 1 ? 'deciden' : 'decide'} y
+                            el producto sale de ahí.
                         </span>
                     </p>
                 ) : (
@@ -584,6 +802,19 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             </div>
                         )}
 
+                    </>
+                )}
+
+                {/* ── El «para qué», uno para toda la solicitud ──────────────
+                    Fuera del formulario del producto a propósito: se sigue
+                    pidiendo una sola vez aunque la composición lleve seis
+                    renglones a tres salas, y sobre todo sigue estando a la vista
+                    después de agregar el último —cuando la pantalla volvió al
+                    buscador y el formulario ya no está—. Adentro del formulario,
+                    el campo desaparecía justo en el paso en que hay que
+                    apretar Solicitar. */}
+                {!listo && (producto || renglones.length > 0) && (
+                    <>
                         <PortalTextarea
                             value={causa}
                             onChange={e => setCausa(e.target.value)}
@@ -591,20 +822,55 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             placeholder="Para qué se pide — queda escrito en el movimiento"
                         />
 
+                        {/* Un producto a medias no se pierde en silencio: se
+                            dice cuál es y el botón no deja mandar hasta que se
+                            complete o se suelte. */}
+                        {aMedias && renglones.length > 0 && (
+                            <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                                Te falta terminar {producto.descripcion}. Complétalo para que entre, o
+                                usa la flecha de arriba para dejarlo fuera.
+                            </p>
+                        )}
+
+                        {/* El mismo producto al mismo estante dos veces es una
+                            sola línea con la cantidad sumada, no dos pedidos. */}
+                        {yaEstaEnLaLista && (
+                            <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                                {producto.descripcion} ya está en la lista para {sala?.sala}. Quítalo de
+                                arriba y agrégalo con la cantidad total.
+                            </p>
+                        )}
+
                         {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                     </>
                 )}
             </LiquidModal.Body>
 
-            {/* Sin producto todavía no hay nada que solicitar: el pie sería un
-                botón apagado sin ninguna pista de qué lo enciende. La salida en
-                ese paso es la X del encabezado. */}
-            {!listo && producto && (
+            {/* Sin producto y sin nada agregado todavía no hay qué solicitar: el
+                pie sería un botón apagado sin ninguna pista de qué lo enciende.
+                La salida en ese paso es la X del encabezado. */}
+            {!listo && (producto || renglones.length > 0) && (
                 <LiquidModal.Footer>
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                    {/* «Agregar y seguir» es la misma forma del ajuste de
+                        inventario, que ya se usa todos los días: se busca el
+                        producto, se pone la cantidad, se agrega, y el siguiente.
+                        Sólo aparece cuando el renglón está completo — un botón
+                        apagado al lado de otro apagado no dice cuál de los dos
+                        se está esperando. */}
+                    {lineaLista && !yaEstaEnLaLista && (
+                        <Button variant="secondary" disabled={enviando} onClick={agregar}>
+                            Agregar y seguir
+                        </Button>
+                    )}
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
                         {enviando && <Loader2 size={14} className="animate-spin" />}
-                        {enviando ? 'Enviando...' : 'Solicitar'}
+                        {enviando
+                            ? 'Enviando...'
+                            // Se dice cuántas van a salir ANTES de apretar: que
+                            // una composición se parta en tres solicitudes es
+                            // exactamente lo que no puede ser una sorpresa.
+                            : salasDestino > 1 ? `Solicitar a ${salasDestino} salas` : 'Solicitar'}
                     </Button>
                 </LiquidModal.Footer>
             )}

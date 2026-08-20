@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.673.0 — El despacho de un traslado puede salir con menos de lo pedido
+
+Reportado así: «me solicitan 3 pero solo puedo mandar 2 porque ya vendí 1
+ahorita, ¿puedo modificar la cantidad a enviar?». No se podía: la tarjeta
+comparaba contra lo pedido entero, y con 2 de 3 no dejaba ni apretar Confirmar
+—pasaba directo al rechazo—. Aunque se forzara, el servidor lo rebotaba con
+«alcanzan para 2 y se pidieron 3».
+
+Esto es el lado del servidor. **La pantalla todavía no lo usa**, así que hoy
+sigue saliendo todo o nada; lo que cambia es que ya se puede pedir menos y queda
+registrado. Segundo paso de
+`docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
+
+**La solicitud sigue diciendo 3.** Eso es la firma de quien pidió, y bajarle el
+número borraría que faltó una: `metadata.items` no se toca, y lo que salió se
+anota aparte con su motivo. Es exactamente lo que hizo el pedido a Bodega con
+`cantidad_enviada` —«se daba por hecho que salía lo asignado, y no es cierto»—,
+y por el mismo motivo.
+
+Tres reglas, copiadas de la aprobación parcial de carga y descarte, donde ya
+estaban escritas: **sólo hacia abajo** (despachar más de lo que pidieron no es
+despachar, es otra solicitud sin el motivo ni la firma de quien la habría
+pedido), **motivo obligatorio** cuando no sale todo, y **el tope lo pone el
+servidor** — la pantalla también lo topa, pero la pantalla es una sugerencia.
+
+**La regla del recorte vive en `_shared/lineasAceptadas.ts`, con prueba.** Es la
+misma que `aplicar-movimiento-inventario` tenía escrita a mano, y dos copias de
+un mismo contrato es cómo una se arregla y la otra no. Está anclada en 17
+pruebas porque lo que decide es cuánta medicina sale de una sala: la que no
+puede fallar es que **piden 3, el cliente dice 30 y salen 3** — un tope
+invertido no da error en ninguna parte, sale en la caja. (La función de carga y
+descarte conserva la suya por ahora: no se refactoriza una que mueve inventario
+real en el mismo cambio que estrena otra.)
+
+**Y el despacho ahora anota cuánto tardó cada renglón.** No es diagnóstico de
+sobra: de ahí va a salir el tope de productos por solicitud. El despacho corta a
+los 110 segundos, y como hasta hoy toda solicitud tuvo un solo renglón, el costo
+del segundo no se puede deducir de ninguna medición vieja. Se mide en vez de
+inventarlo.
+
 ## v2.672.0 — La base admite pedir varios productos en una sola solicitud
 
 Pedirle producto a otra sala es, hasta hoy, **un producto a una sala**. Quien

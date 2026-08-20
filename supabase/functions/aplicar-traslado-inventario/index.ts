@@ -72,6 +72,12 @@ import {
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 
+// Cuánto de lo pedido sale de verdad. Vive aparte de los parsers porque
+// `erp-traslado.ts` dice de sí mismo que las decisiones de cantidad se quedan
+// fuera de él, y está anclado en `tests/unit/lineasAceptadas.test.js`: lo que
+// decide es cuánto medicamento sale de una sala.
+import { elegirLineasAceptadas, loQueNoEntro } from "../_shared/lineasAceptadas.ts";
+
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
 const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
@@ -153,7 +159,7 @@ Deno.serve(async (req) => {
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // decide sale del JWT y no se recibe nunca por parámetro.
-    const { request_id, approver_note, accion } = await req.json().catch(() => ({}));
+    const { request_id, approver_note, accion, lineas_aceptadas } = await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
 
@@ -473,6 +479,32 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
     if (lineas.length === 0)
       return json({ ok: false, error: "La solicitud no pide ni un producto." }, 422);
+
+    // ── Qué sale de lo que se pidió ──────────────────────────────────────
+    // `lineas` es lo que la solicitud PIDE y no se toca de acá al final;
+    // `envio` es lo que se despacha, que puede ser menos. Son dos cosas
+    // distintas y por eso son dos variables: confundirlas es exactamente cómo
+    // se pierde el rastro de lo que faltó.
+    const { aceptadas, error: errRecorte } = elegirLineasAceptadas(
+      lineas, lineas_aceptadas,
+      "No quedó ningún producto para despachar. Si no sale nada, rechaza la solicitud.",
+    );
+    if (errRecorte) return json({ ok: false, codigo: "NADA_QUE_ENVIAR", error: errRecorte }, 422);
+
+    const envio: Linea[] = aceptadas.map((a) => ({ ...lineas[a.i], cantidad: a.cantidad }));
+    const { ajustados, fuera, parcial: esParcial } = loQueNoEntro(lineas, aceptadas);
+
+    // El motivo es obligatorio cuando no sale todo: es lo único que le va a
+    // explicar a quien pidió por qué le llegan 2 de 3. Misma regla que el
+    // rechazo —«quien rechaza tiene que decir por qué»— y misma que la
+    // aprobación parcial de carga y descarte.
+    const motivoParcial = String(approver_note ?? "").trim();
+    if (esParcial && !motivoParcial)
+      return json({
+        ok: false, codigo: "FALTA_MOTIVO",
+        error: "Si no sale todo lo que se pidió, hay que decir por qué.",
+      }, 422);
+
     if (!ubicOrigen)
       return json({
         ok: false,
@@ -581,9 +613,17 @@ Deno.serve(async (req) => {
     // traslado de cinco productos pagaría veinte. Ver `existenciasDeUbicacion`.
     const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
 
-    for (let i = 0; i < lineas.length; i++) {
+    // Cuánto tardó cada renglón contra el sistema de origen. No es diagnóstico
+    // de sobra: es de dónde va a salir el TOPE de productos por solicitud.
+    // Hasta hoy toda solicitud tuvo un renglón, así que el costo marginal del
+    // segundo no se puede deducir de ninguna medición vieja — se anota acá y el
+    // número se elige con datos en vez de inventarlo.
+    const msPorRenglon: number[] = [];
+
+    for (let i = 0; i < envio.length; i++) {
       if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
-      const l = lineas[i];
+      const arranqueRenglon = Date.now();
+      const l = envio[i];
       const nombre = l.descripcion ?? String(l.erp_product_id);
 
       const filaHtml = await pedir(cookie, TRASLADO, new URLSearchParams({
@@ -723,6 +763,8 @@ Deno.serve(async (req) => {
           numero_lote: r.lote,
         });
       }
+
+      msPorRenglon.push(Date.now() - arranqueRenglon);
     }
 
     // Un tope que no se anuncia es un truncamiento silencioso: si el presupuesto
@@ -731,7 +773,7 @@ Deno.serve(async (req) => {
     if (cortadoEn >= 0)
       return json({
         ok: false, codigo: "SIN_TIEMPO",
-        error: `No alcanzó el tiempo: se verificaron ${cortadoEn} de ${lineas.length} productos. `
+        error: `No alcanzó el tiempo: se verificaron ${cortadoEn} de ${envio.length} productos. `
              + `Divide la solicitud en tandas más chicas.`,
       }, 504);
 
@@ -795,7 +837,7 @@ Deno.serve(async (req) => {
      * y ese único bien puede ser el de otra persona. El contenido es requisito.
      */
     const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-    const descripciones = lineas.map((l) => l.descripcion ?? "");
+    const descripciones = envio.map((l) => l.descripcion ?? "");
 
     let idTraslado: string | null;
     let nuevos: string[];
@@ -882,8 +924,38 @@ Deno.serve(async (req) => {
       // PRODUCTOS, no renglones: el detalle lo lee como «N productos» y desde
       // que una línea puede salir de varios lotes `partes.length` cuenta lotes.
       // Acá ya se verificaron todos —el bucle sale por `return` o completo—.
-      lineas: lineas.length,
-      renglones: partes.length !== lineas.length ? partes.length : undefined,
+      lineas: envio.length,
+      renglones: partes.length !== envio.length ? partes.length : undefined,
+      // ── Lo que NO salió, y por qué ──────────────────────────────────────
+      // `metadata.items` sigue diciendo lo que se pidió; esto dice lo que
+      // salió. Sin las dos cosas por separado no hay forma de saber después que
+      // faltó algo: la solicitud se leería como cumplida entera.
+      //
+      // `undefined` cuando salió todo — la clave ni aparece en el jsonb, y así
+      // «tiene parcial» es lo mismo que «no salió completo».
+      parcial: esParcial
+        ? {
+          motivo: motivoParcial,
+          // Renglones que salieron con menos de lo pedido.
+          ajustados: ajustados.map((a) => ({
+            i: a.i,
+            erp_product_id: lineas[a.i].erp_product_id,
+            descripcion: lineas[a.i].descripcion,
+            pedida: Number(lineas[a.i].cantidad) || 0,
+            enviada: a.cantidad,
+          })),
+          // Renglones que no salieron en absoluto.
+          fuera: fuera.map((i) => ({
+            i,
+            erp_product_id: lineas[i].erp_product_id,
+            descripcion: lineas[i].descripcion,
+            pedida: Number(lineas[i].cantidad) || 0,
+          })),
+        }
+        : undefined,
+      // De dónde va a salir el tope de productos por solicitud (ver el bucle).
+      ms_por_renglon: msPorRenglon,
+      ms_total: Date.now() - arranque,
       // Qué se apartó de lo pedido sin llegar a frenarlo.
       avisos: avisosTraslado.length ? avisosTraslado : undefined,
       unidades,

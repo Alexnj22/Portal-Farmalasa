@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.675.1 — El tablero deja pasar el scroll de la página
+
+Reportado hoy: *«en inicio no puedo escrolear bien, solo escrolea internamente,
+así que si quiero escrolear todo debo salir y buscar otro lugar. lo mismo pasa
+en android. en iphone si funciona bien»*.
+
+**Es el arreglo del 14-ago (v2.604.2) visto desde el otro lado**, y ahí está lo
+que había que resolver: aquel día el reclamo fue el opuesto —*«si scroleo y se
+acaba el scroll interno, hace scroll externo, así que se mueve»*— y se puso
+`overscroll-contain` en los 26 scrollers del tablero. El valor cumple, pero no
+distingue el encadenamiento **accidental** —a mitad de un gesto, cuando la lista
+se acaba— del **deliberado** —el gesto que empieza con la lista ya en su tope y
+quiere mover la página—. Apaga los dos, y como las baldosas cubren el Inicio
+entero, no queda dónde agarrar la página.
+
+Y el iPhone «funciona bien» porque WebKit no bloquea el encadenamiento de un
+scroller anidado como sí lo hace Chrome. O sea que **cuál es el comportamiento
+correcto ya estaba contestado**: la lista se recorre entera, y el gesto
+siguiente mueve la página.
+
+Así que no se elige entre los dos reportes, se cumplen los dos:
+
+| entrada | dónde | qué hace |
+|---|---|---|
+| rueda | `src/utils/scrollEncadenado.js` | contiene dentro del gesto; encadena si el gesto EMPIEZA en el borde (un hueco > 200ms es un gesto nuevo) |
+| dedo | `index.css`, §scroll del tablero | encadena como el iPhone bajo `@media (hover: none)` — en un dedo la dirección no se sabe antes de que el navegador ya eligió a quién scrollear |
+
+**La decisión se toma una vez y dura todo el gesto**, y ese detalle es el
+arreglo entero: reponer `contain` en cada evento de continuación parece lo
+prudente y deja el escape sin efecto, porque una rueda emite decenas de eventos
+por empujón y el segundo ya volvería a trabar el gesto que acababa de
+habilitarse. Lo ancla `tests/unit/scrollEncadenado.test.js` (10 casos): un test
+que sólo mirara la posición del scroller daría verde con las dos versiones
+rotas.
+
+La clase `overscroll-contain` se queda y la categoría `scroll-encadenado` del
+gate de diseño sigue bloqueante: quitarla revive el reporte del 14-ago. El gate
+y su skill ahora dicen dónde vive el escape, para que la próxima sesión no
+resuelva esto moviendo la tecla de vuelta.
+
+**Sin verificar en el navegador todavía** — falta probarlo con la rueda en
+escritorio y con el dedo en Android.
+
 ## v2.675.0 — Un gate que mira cuánto le pide el portal al sistema
 
 `npm run gate:eficiencia`. No mide velocidad —eso es `gate:perf`—: mide

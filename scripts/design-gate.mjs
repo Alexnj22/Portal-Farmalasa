@@ -2635,6 +2635,22 @@ function scanFile(path) {
   // scrollean dependen de cuántos datos traen, así que la lista no se puede
   // sacar del código. Estaba resuelto en `WidgetInventorySearch` y en ningún
   // otro: el patrón existía y no había nada que lo propagara.
+  //
+  // ── Y la vuelta de tuerca del 2026-08-20 ────────────────────────────────
+  // `overscroll-contain` apaga los DOS encadenamientos: el accidental (a mitad
+  // de un gesto, cuando la lista se acaba) y el deliberado (el gesto que
+  // empieza con la lista ya en su tope). Con las baldosas cubriendo el Inicio,
+  // lo segundo dejaba la página sin dónde agarrarse: «solo escrolea
+  // internamente, si quiero escrolear todo debo salir y buscar otro lugar. lo
+  // mismo en android. en iphone si funciona bien».
+  //
+  // La clase se queda —y esta categoría también— porque sigue siendo el piso
+  // correcto. Lo que se le agregó es el escape, y vive en dos sitios que hay
+  // que conocer ANTES de mover nada acá:
+  //   · rueda → `src/utils/scrollEncadenado.js`
+  //   · dedo  → `index.css`, §scroll del tablero
+  // Si algún día esta categoría se apaga «porque el scroll no se puede mover»,
+  // el arreglo es ése, no quitar la clase: quitarla revive el reporte del 14.
   const enTablero = path.startsWith('src/views/dashboard/') || path === 'src/views/DashboardView.jsx';
   if (enTablero && !hasException(path, 'scroll-encadenado')) {
     lines.forEach((line, i) => {

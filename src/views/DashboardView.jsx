@@ -78,6 +78,7 @@ import {
 import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissions';
 import { clickable } from '../utils/clickable';
 import { reacomodar } from '../utils/acomodoWidgets';
+import { permitirEscapeDelScroll } from '../utils/scrollEncadenado';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
@@ -1541,6 +1542,14 @@ const DashboardView = ({ openModal }) => {
   const dndRef      = useRef({ active: null, snap: null, started: false, startX: 0, startY: 0 });
   const dndListeners = useRef({ move: null, up: null });
   const gridRef      = useRef(null);
+
+  // ── El escape del scroll de una baldosa (2026-08-20) ───────────────────────
+  // Las baldosas cubren el Inicio entero y todas llevan `overscroll-contain`
+  // (v2.604.2, para que revisar una lista no mueva el tablero de atrás). El
+  // efecto secundario: con la rueda encima de una baldosa la página no se podía
+  // mover NUNCA, así que había que buscar un hueco entre baldosas. El detalle
+  // —y por qué esto no revierte el arreglo del 14-ago— vive en el módulo.
+  useEffect(() => permitirEscapeDelScroll(gridRef.current), [activeLayout, activeTab]);
   const widgetLayoutRef = useRef(widgetLayout[activeTab] || {});
   const widgetSizesRef  = useRef(widgetSizes[activeTab]  || {});
   // Mismo patrón de espejo ref↔state que mobileLayoutRef/mobileSizesRef y
@@ -3820,6 +3829,9 @@ const DashboardView = ({ openModal }) => {
         /* Main widget grid — 4 cols desktop, 2 cols mobile */
         <div
           ref={gridRef}
+          /* Marca la rejilla para la regla táctil de §scroll del tablero
+             (index.css): en un dedo las baldosas encadenan como en el iPhone. */
+          data-rejilla-widgets=""
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
           style={{ gridAutoRows: `${isMobile ? ROW_H_MOVIL : ROW_H}px` }}
         >

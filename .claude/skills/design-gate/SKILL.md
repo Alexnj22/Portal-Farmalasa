@@ -183,6 +183,35 @@ Dos cosas que costaron una vuelta:
    comprobación fue `getComputedStyle(el).overscrollBehaviorY` sobre los
    elementos que efectivamente tenían `scrollHeight > clientHeight`.
 
+### La vuelta de tuerca (2026-08-20): la categoría se queda, el escape se agrega
+
+Seis días después llegó el reporte **opuesto**, del mismo usuario y sobre la
+misma tecla: *«en inicio no puedo escrolear bien, solo escrolea internamente,
+así que si quiero escrolear todo debo salir y buscar otro lugar. lo mismo pasa
+en android. en iphone si funciona bien»*.
+
+No se contradicen. `overscroll-behavior: contain` no distingue el
+encadenamiento **accidental** —a mitad de un gesto, cuando la lista se acaba,
+que es el reporte del 14— del **deliberado** —el gesto que empieza con la lista
+ya en su tope y quiere mover la página—. Apaga los dos, y como las baldosas
+cubren el Inicio entero, no queda dónde agarrar la página.
+
+Y el iPhone «funciona bien» porque WebKit no bloquea el encadenamiento de un
+scroller anidado como lo hace Chrome. O sea que el usuario ya validó cuál es el
+comportamiento correcto: la lista se recorre entera, y el **siguiente** gesto
+mueve la página.
+
+Se cumplen los dos reportes en vez de elegir uno:
+
+| entrada | dónde | qué hace |
+|---|---|---|
+| rueda | `src/utils/scrollEncadenado.js` | contiene dentro del gesto; encadena si el gesto EMPIEZA en el borde (hueco > 200ms = gesto nuevo) |
+| dedo | `index.css`, §scroll del tablero | `overscroll-behavior: auto` bajo `@media (hover: none)` — el modelo del iPhone, porque en un dedo la dirección no se sabe antes de que el navegador ya eligió a quién scrollear |
+
+**La clase `overscroll-contain` se queda y esta categoría sigue bloqueante.** Si
+alguna vez vuelve el reclamo «no puedo scrollear el tablero», el arreglo es
+revisar esos dos sitios — quitar la clase revive el reporte del 14-ago.
+
 ## `tarjeta-a-mano` ensanchada (2026-08-16) — el cero era del detector
 
 La categoría llegó a **0 el 2026-07-28** (184 → 31 → 0) y quedó bloqueante. En

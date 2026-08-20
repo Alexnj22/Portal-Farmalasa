@@ -3299,6 +3299,38 @@ html, body, #root {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   §scroll del tablero · LA BALDOSA DEJA PASAR EL DEDO — 2026-08-20
+
+   Las baldosas del Inicio llevan `overscroll-contain` desde v2.604.2, y ahí
+   la petición era la contraria a ésta: «si scroleo y se acaba el scroll
+   interno, hace scroll externo, así que se mueve». Lo que ese valor no
+   distingue es el encadenamiento ACCIDENTAL —a mitad de un gesto, cuando la
+   lista se acaba— del DELIBERADO —el gesto que empieza con la lista ya en su
+   tope—. Apagados los dos, y con las baldosas cubriendo la pantalla, en un
+   teléfono no queda dónde agarrar la página: reportado el 2026-08-20, en
+   Android, junto con «en iphone si funciona bien».
+
+   El iPhone funciona porque WebKit no bloquea el encadenamiento de un scroller
+   anidado como lo hace Chrome. O sea que el comportamiento que el usuario ya
+   valida es el de encadenar, y eso es lo que se le devuelve AL DEDO — donde no
+   hay forma de saber la dirección del gesto antes de que el navegador ya haya
+   elegido a quién scrollear, así que la lógica fina no es aplicable.
+
+   La rueda NO pasa por acá: ahí sí se puede distinguir un gesto de otro, y lo
+   hace `src/utils/scrollEncadenado.js` — contener dentro del gesto, encadenar
+   cuando el gesto empieza en el borde. Los dos reportes cumplidos, ninguno
+   revertido.
+
+   `overscroll-behavior` sólo actúa EN el borde: dejarlo en `auto` no impide
+   que la lista se recorra entera primero, que es exactamente lo que hace el
+   iPhone. */
+@media (hover: none) {
+  [data-rejilla-widgets] .overscroll-contain {
+    overscroll-behavior: auto;
+  }
+}
+
 html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;

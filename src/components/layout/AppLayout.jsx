@@ -736,10 +736,20 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
                 data-interactive=""
-                className={`w-full flex items-center gap-2.5 rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
+                // `w-full` + `ml-2` en el ítem indentado lo hacía **8px más ancho
+                // que su hueco**: el ancho es el 100% del padre y el margen lo
+                // corre además hacia la derecha. Se veía sólo al apuntarlo,
+                // porque es cuando aparece el canto: el panel del sidebar es
+                // `overflow-hidden` y le cortaba el filo derecho, así que el
+                // anillo salía abierto. Reportado con captura el 2026-08-20
+                // sobre el grupo Sistema. El ancho tiene que DESCONTAR el
+                // margen — un `w-full` con margen lateral desborda siempre, y
+                // el fondo al 8% de estos ítems es demasiado tenue para que se
+                // note sin el canto encima.
+                className={`flex items-center gap-2.5 rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
                     min-h-[var(--tap-min)] ${isExpanded
-                        ? (indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5')
-                        : 'justify-center px-0 gap-0 py-3 xl:py-3.5'}
+                        ? (indent ? 'w-[calc(100%-0.5rem)] px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'w-full px-3 py-3 xl:px-4 xl:py-3.5')
+                        : 'w-full justify-center px-0 gap-0 py-3 xl:py-3.5'}
                     ${isActive ? 'text-[rgb(var(--sidebar-ink))]' : navItemInactive}
                     ${focusRing}
                     active:scale-[0.99] active:translate-y-0`}

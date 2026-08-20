@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.692.2 — el ítem indentado del sidebar deja de desbordar su hueco
+
+Segunda captura del usuario sobre el mismo síntoma: un anillo claro abierto por
+la derecha en un ítem del grupo Sistema. **La causa no era el color ni el foco
+—mi primera lectura, equivocada— sino la maquetación.**
+
+Los ítems hijos del sidebar llevaban `w-full` **y** `ml-2`: el ancho es el 100%
+del padre y el margen los corre además 8px hacia la derecha, así que medían 8px
+más que su hueco. El panel del sidebar es `overflow-hidden` y les cortaba ese
+sobrante.
+
+**Se veía sólo al apuntarlos** porque es cuando aparece el canto —el filo de 1px
+que corre el perímetro— y el canto sigue la caja del ítem: al estar la caja
+cortada, el anillo salía abierto. El fondo de hover de estos ítems es un 8% de
+opacidad, demasiado tenue para que el desborde se notara sin ese filo encima.
+
+El ancho ahora descuenta el margen. Un `w-full` con margen lateral desborda
+siempre — es de manual, y lo que lo escondía era justamente que casi nada se
+dibuja en ese borde.
+
+Se conserva de v2.692.1 el anillo de foco hacia adentro en el sidebar: no era la
+causa de esto, pero se recortaba por el mismo `overflow-hidden` y el arreglo
+sigue siendo correcto.
+
 ## v2.692.1 — el anillo de foco del sidebar deja de recortarse
 
 Reporte del usuario con captura, sobre un ítem del grupo Sistema: un rectángulo

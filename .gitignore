@@ -54,3 +54,4 @@ scripts/migracion-clientes/ops_por_municipio.json
 # limpia ese directorio en cada corrida (ver barrido-total-movil.spec.js).
 barridos/
 public/agente-impresion/
+scripts/.eficiencia-gate-estado.json

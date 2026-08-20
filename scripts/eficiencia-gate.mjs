@@ -46,6 +46,15 @@ import { join } from 'node:path';
 import { abrirCanal } from './lib/canal-supabase.mjs';
 
 const BASELINE_FILE = 'scripts/eficiencia-gate-baseline.json';
+/* La lectura anterior NO va en el baseline, aunque ahí nació.
+ *
+ * El baseline es un acuerdo del repo —lo que no puede subir— y se commitea; la
+ * lectura anterior es de ESTE clon y cambia en cada corrida. Mezclarlos hacía
+ * que correr el gate dejara el archivo sucio, y en un árbol con varias sesiones
+ * eso es ruido permanente en `git status` y un conflicto esperando. Va afuera y
+ * sin versionar: un clon nuevo simplemente no tiene lectura anterior, que es un
+ * caso que el gate ya sabe contestar. */
+const ESTADO_FILE = 'scripts/.eficiencia-gate-estado.json';
 const SOLO_LOCAL = process.argv.includes('--hook');
 const REGENERAR = process.argv.includes('--update-baseline');
 
@@ -459,15 +468,21 @@ if (!SOLO_LOCAL) {
      * corrida. Si el contador bajó, el servidor reinició y no hay nada que
      * comparar: se vuelve a anotar y se dice. */
     const crudo = churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0);
-    const prev = guardado._estado ?? null;
+    const prev = existsSync(ESTADO_FILE)
+      ? JSON.parse(readFileSync(ESTADO_FILE, 'utf8'))
+      : null;
     const horasDesde = prev?.medidoEn
       ? (Date.now() - Date.parse(prev.medidoEn)) / 3_600_000
       : 0;
     let inutilesHora = null;
     if (!prev || crudo < Number(prev.crudo ?? 0)) {
       console.log(`\n  escrituras sin inserción: ${gris('primera lectura (o el servidor reinició) — se anota y se compara en la próxima')}`);
-    } else if (horasDesde < 0.05) {
-      console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — muy poco para una tasa`)}`);
+    } else if (horasDesde < 0.25) {
+      /* Quince minutos, no tres. Con ventanas cortas la tasa salta: la misma
+       * base dio 619/h sobre seis minutos y 1.330/h sobre dos, sin que hubiera
+       * cambiado nada. Un tope contra un número así se convierte en un gate que
+       * falla al azar, y ésos se terminan salteando. */
+      console.log(`\n  escrituras sin inserción: ${gris(`pasaron ${Math.round(horasDesde * 60)} min desde la lectura anterior — hacen falta 15 para que la tasa signifique algo`)}`);
     } else {
       inutilesHora = Math.round((crudo - Number(prev.crudo)) / horasDesde);
       medido.escriturasInutilesHora = inutilesHora;
@@ -525,10 +540,8 @@ if (!SOLO_LOCAL) {
 /* El estado se guarda SIEMPRE, aunque no se regenere el baseline: sin la
  * lectura anterior no hay tasa que medir la próxima vez. Los topes, en cambio,
  * sólo se tocan con `--update-baseline`. */
-if (estadoNuevo && !SOLO_LOCAL) {
-  const enDisco = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, 'utf8')) : {};
-  writeFileSync(BASELINE_FILE, JSON.stringify({ ...enDisco, _estado: estadoNuevo }, null, 2) + '\n');
-}
+if (estadoNuevo && !SOLO_LOCAL)
+  writeFileSync(ESTADO_FILE, JSON.stringify(estadoNuevo, null, 2) + '\n');
 
 if (REGENERAR) {
   const nuevo = {
@@ -546,7 +559,6 @@ if (REGENERAR) {
     nota: 'Sólo BAJA. Un número que sube es una decisión, y una decisión se escribe en el manifiesto '
         + 'con su motivo — no se absorbe regenerando este archivo.',
     actualizado: new Date().toISOString().slice(0, 10),
-    _estado: estadoNuevo ?? guardado._estado,
   };
   writeFileSync(BASELINE_FILE, JSON.stringify(nuevo, null, 2) + '\n');
   console.log(`\n  baseline actualizado: ${JSON.stringify({ ...nuevo, nota: undefined })}`);

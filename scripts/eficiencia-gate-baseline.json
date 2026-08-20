@@ -4,10 +4,6 @@
   "cronsSinMedir": 21,
   "sondeosNavegador": 8,
   "escriturasInutilesHora": 1240,
-  "nota": "Sólo BAJA. Un número que sube es una decisión, y una decisión se escribe en el manifiesto con su motivo — no se absorbe regenerando este archivo. `escriturasInutilesHora` lleva el doble de lo medido porque su ventana es corta y ruidosa: vigila que algo no vuelva a costar miles, no que baje de 619 a 600. Medido el 2026-08-20 entre dos lecturas: 619/h, contra ~5.347/h antes de los arreglos del latido y de las compras.",
-  "actualizado": "2026-08-20",
-  "_estado": {
-    "crudo": 118092,
-    "medidoEn": "2026-08-20T16:03:04.989Z"
-  }
+  "nota": "Sólo BAJA. Un número que sube es una decisión, y una decisión se escribe en el manifiesto con su motivo — no se absorbe regenerando este archivo. `escriturasInutilesHora` lleva el doble de lo medido porque su ventana es corta y ruidosa: vigila que algo no vuelva a costar miles, no que baje de 619 a 600. Medido el 2026-08-20 entre dos lecturas separadas 6 min: 619/h, contra ~5.347/h antes de los arreglos del latido y de las compras. OJO: ese 619 sale de una ventana de 6 minutos, y la misma base dio 1.330/h sobre 2 minutos — por eso el gate ahora exige 15 minutos entre lecturas. La primera medición con esa ventana manda, y si sale más baja, este tope baja con ella.",
+  "actualizado": "2026-08-20"
 }

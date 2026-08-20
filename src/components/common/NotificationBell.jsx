@@ -146,6 +146,49 @@ const UndoProgress = ({ isDark }) => (
     </div>
 );
 
+/* ── El cuerpo del aviso, y saber si se está cortando ──────────────────────
+ *
+ * La tarjeta muestra tres renglones. Un aviso del sistema puede tener seis
+ * —«El barrido de Hacienda no corrió anoche» tiene 200 caracteres— y hasta hoy
+ * no había forma de leer el resto: el control para desplegar existía sólo para
+ * las solicitudes, o sea que el aviso más largo del portal era el único que no
+ * se podía abrir.
+ *
+ * Se MIDE el párrafo en vez de contar caracteres: que un texto entre en tres
+ * renglones depende del ANCHO —el mismo aviso entra en el panel de escritorio y
+ * se corta en el teléfono—, así que un umbral por largo pondría el control
+ * donde no hace falta, y un control que al tocarlo no despliega nada se lee
+ * como que la tarjeta está rota.
+ *
+ * Avisa hacia arriba en vez de resolverlo acá porque el control no puede vivir
+ * dentro de la tarjeta: su cara ya es un <button> y un botón adentro de otro no
+ * es HTML válido. Va abajo, junto a «Ver detalle» — la misma lección que ese
+ * control ya había dejado. */
+const CuerpoDeNotificacion = ({ id, texto, recortar, clase, onRecorte }) => {
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const el = ref.current;
+        // Desplegado no se puede medir: sin el recorte, el alto del contenido y
+        // el de la caja coinciden y la medición diría «entra». Se conserva la
+        // última medición, que es la que decidió mostrar el control.
+        if (!el || !recortar) return undefined;
+        const medir = () => onRecorte(id, el.scrollHeight - el.clientHeight > 1);
+        medir();
+        if (typeof ResizeObserver === 'undefined') return undefined;
+        // Girar el teléfono cambia el ancho y con él la respuesta.
+        const ro = new ResizeObserver(medir);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [id, texto, recortar, onRecorte]);
+
+    return (
+        <p ref={ref} className={`text-body-sm font-medium leading-snug mt-0.5 ${recortar ? 'line-clamp-3' : ''} ${clase}`}>
+            {texto}
+        </p>
+    );
+};
+
 // ============================================================================
 // 🔔 Campana de notificaciones — canal personal (sistema → ti).
 // Los AVISOS siguen en /my-announcements; aquí solo una fila fijada si hay
@@ -177,6 +220,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // abrir otra obliga a re-leer el aviso anterior para comparar dos
     // solicitudes, que es justo lo que se hace cuando llegan tres seguidas.
     const [expandidas, setExpandidas] = useState(() => new Set());
+    // Qué cuerpos NO entran en los tres renglones de la tarjeta. Lo reporta
+    // cada párrafo al medirse; acá sólo decide si la fila lleva control para
+    // desplegarse. Ver `CuerpoDeNotificacion`.
+    const [cuerposCortados, setCuerposCortados] = useState(() => new Set());
     // Borrados en ventana de deshacer: [{ key, ids: string[], isAll }]
     const [pendingDeletes, setPendingDeletes] = useState([]);
     const rootRef = useRef(null);
@@ -366,6 +413,19 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         s.has(id) ? s.delete(id) : s.add(id);
         return s;
     });
+
+    // Estable a propósito: viaja como prop a cada párrafo y ahí vive dentro de
+    // un efecto. Si cambiara en cada pintada, el efecto se volvería a montar
+    // solo. Y devuelve el MISMO Set cuando la respuesta no cambió —que es
+    // siempre, después de la primera medición— para no repintar la lista.
+    const marcarCuerpoCortado = useCallback((id, cortado) => {
+        setCuerposCortados(prev => {
+            if (prev.has(id) === cortado) return prev;
+            const s = new Set(prev);
+            cortado ? s.add(id) : s.delete(id);
+            return s;
+        });
+    }, []);
 
     const handleNotifClick = (n) => {
         if (!n.read_at) markNotificationRead(n.id);
@@ -876,8 +936,15 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                     ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
                                                     : (n.link ? (etiquetaDeAccion(n) || 'Ver') : null);
 
-                                                const expandible = puedeExpandir(n);
-                                                const abierta    = expandidas.has(n.id);
+                                                // Dos motivos para desplegar una tarjeta, y sólo el
+                                                // primero existía: el detalle de una solicitud, y un
+                                                // cuerpo que no entra en tres renglones. El segundo
+                                                // dejaba sin leer justo a los avisos del sistema, que
+                                                // son los que más texto tienen.
+                                                const tieneDetalle = puedeExpandir(n);
+                                                const abierta      = expandidas.has(n.id);
+                                                const cuerpoCortado = cuerposCortados.has(n.id);
+                                                const expandible    = tieneDetalle || cuerpoCortado;
                                                 // Interactiva es la que hace ALGO al tocarla, y desde que
                                                 // el toque es uno solo eso significa «lleva a su
                                                 // pantalla». De eso depende el realce, que es la promesa
@@ -961,7 +1028,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     {tituloSinEmoji(n.title)}
                                                                 </p>
                                                                 {n.body && (
-                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 ${abierta ? '' : 'line-clamp-3'} ${cx.rowBody}`}>{n.body}</p>
+                                                                    <CuerpoDeNotificacion
+                                                                        id={n.id}
+                                                                        texto={n.body}
+                                                                        recortar={!abierta}
+                                                                        clase={cx.rowBody}
+                                                                        onRecorte={marcarCuerpoCortado}
+                                                                    />
                                                                 )}
 
                                                                 {/* ── De quién y de qué sala ──────────────────────
@@ -1040,7 +1113,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     aria-expanded={abierta}
                                                                     onClick={(e) => { e.stopPropagation(); alternarExpansion(n.id); }}
                                                                 >
-                                                                    {abierta ? 'Ocultar detalle' : 'Ver detalle'}
+                                                                    {/* El rótulo nombra lo que se despliega. En un
+                                                                        aviso del sistema no hay ningún «detalle» que
+                                                                        abrir: lo que falta es el resto del mensaje. */}
+                                                                    {tieneDetalle
+                                                                        ? (abierta ? 'Ocultar detalle'  : 'Ver detalle')
+                                                                        : (abierta ? 'Ocultar mensaje'  : 'Ver mensaje completo')}
                                                                 </Button>
                                                                 {/* El estado de una solicitud ya decidida: sin
                                                                     esto, una aprobada y una pendiente se leen
@@ -1060,7 +1138,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             las fotos de evidencia y el motivo escrito.
                                                             Se monta SOLO al abrirla — el contenido pesa y no
                                                             tiene por qué viajar por cada fila de la lista. */}
-                                                        {abierta && (
+                                                        {abierta && tieneDetalle && (
                                                             <div className={`relative px-3.5 pb-3 pt-2 border-t ${cx.headerBorder}`}>
                                                                 <NotificacionDetalle notif={n} />
                                                             </div>

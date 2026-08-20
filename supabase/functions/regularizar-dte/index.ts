@@ -265,11 +265,58 @@ Deno.serve(async (req) => {
       : (bolsa === "sin_sello" ? 0 : await contar("anuladas"))
         + (bolsa === "anuladas" ? 0 : await contar("sin_sello"));
 
-    if (!pendientes.length)
-      return json({ ok: true, revisadas: 0, resueltas: 0, fallidas: 0,
-                    total_pendiente: totalPendiente, restantes: totalPendiente,
+    // El registro de la corrida. Una sola forma para los dos finales —con y sin
+    // pendientes—: escritos por separado, el día que se agregue un dato al
+    // resumen lo tendría uno solo de los dos.
+    const registrarCorrida = async (resumen: Record<string, unknown>, severity: string) => {
+      const { error: auditErr } = await admin.from("audit_logs").insert({
+        action:    "DTE_REGULARIZADO",
+        target_id: alcance === "una" ? String(invoice_id) : alcance,
+        user_id:   actorId,
+        user_name: actorNombre,
+        // El barrido de las 22:30 no lo dispara una persona: es del sistema, y
+        // decir lo contrario ensuciaría la bitácora.
+        source:    esCron ? "SYSTEM" : "ADMIN_PANEL",
+        severity,
+        branch_id: alcance === "sucursal" ? Number(branch_id) : null,
+        details: {
+          alcance, por: actorNombre,
+          total_pendiente: totalPendiente,
+          // Anuladas que Hacienda nunca recibió: no hay nada que invalidar y no
+          // se intentan. Se anotan para que no desaparezcan del radar.
+          anuladas_sin_tramite: anuladasSinTramite,
+          excluidas: excluidas.size,
+          ...resumen,
+        },
+      });
+      if (auditErr) console.error("audit_logs:", auditErr.message);
+    };
+
+    if (!pendientes.length) {
+      // ── Una noche sin nada pendiente TAMBIÉN deja rastro (2026-08-20) ────
+      // Antes esto salía sin escribir en la bitácora, y el rastro es
+      // justamente lo que el vigilante de las 8:00 usa para saber si el
+      // barrido corrió: sin fila, `alertar_barrido_dte` avisa «no corrió
+      // anoche». Pasó esta madrugada — el cron salió a las 22:30 en punto
+      // (`cron.job_run_details`, job 206, succeeded), no había una sola
+      // factura sin sello ni anulada por invalidar, y la alarma llegó igual.
+      //
+      // Una alarma que se dispara sin que pase nada es peor que no tenerla:
+      // enseña a ignorarla, y el día que el barrido falle de verdad va a
+      // parecer una más. «No hubo nada que hacer» y «no corrió» son cosas
+      // distintas y ahora se distinguen en la bitácora.
+      const sinNadaQueHacer = {
+        revisadas: 0, resueltas: 0, fallidas: 0, con_observaciones: 0,
+        restantes: totalPendiente,
+        cortada_por_tiempo: false, segunda_vuelta: false,
+        fichas_corregidas: 0, segunda_vuelta_motivo: null,
+        detalle: [],
+      };
+      await registrarCorrida(sinNadaQueHacer, "INFO");
+      return json({ ok: true, total_pendiente: totalPendiente,
                     anuladas_sin_tramite: anuladasSinTramite,
-                    excluidas: excluidas.size, detalle: [] });
+                    excluidas: excluidas.size, ...sinNadaQueHacer });
+    }
 
     // Responsable de las invalidaciones: el mismo siempre, definido por la
     // empresa. No es quien aprieta el botón — es quien responde legalmente.
@@ -503,39 +550,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { error: auditErr } = await admin.from("audit_logs").insert({
-      action:    "DTE_REGULARIZADO",
-      target_id: alcance === "una" ? String(invoice_id) : alcance,
-      user_id:   actorId,
-      user_name: actorNombre,
-      // El barrido de las 22:30 no lo dispara una persona: es del sistema, y
-      // decir lo contrario ensuciaría la bitácora. Y un fallo es WARNING, no
-      // INFO — si no, se pierde entre las corridas que salieron bien.
-      source:    esCron ? "SYSTEM" : "ADMIN_PANEL",
-      severity:  (fallidas > 0 || conObservaciones > 0 || cortadaPorTiempo) ? "WARNING" : "INFO",
-      branch_id: alcance === "sucursal" ? Number(branch_id) : null,
-      details: {
-        alcance, por: actorNombre,
-        revisadas: procesadas, resueltas, fallidas,
-        con_observaciones: conObservaciones,
-        total_pendiente: totalPendiente,
-        restantes: Math.max(0, totalPendiente - resueltas),
-        // Anuladas que Hacienda nunca recibió: no hay nada que invalidar y no
-        // se intentan. Se anotan para que no desaparezcan del radar.
-        anuladas_sin_tramite: anuladasSinTramite,
-        excluidas: excluidas.size,
-        cortada_por_tiempo: cortadaPorTiempo,
-        segunda_vuelta: segundaVueltaHecha,
-        // Cuántas fichas se tocaron para lograrlo. Es lo que separa «entró» de
-        // «entró porque le arreglamos el dato», y quien aprieta el botón lo ve.
-        fichas_corregidas: corregidas,
-        // Por qué NO se hizo. Sin esto, una noche sin segunda vuelta se lee
-        // igual que una noche en la que no hacía falta — y son cosas distintas.
-        segunda_vuelta_motivo: segundaVueltaMotivo,
-        detalle,
-      },
-    });
-    if (auditErr) console.error("audit_logs:", auditErr.message);
+    // Un fallo es WARNING, no INFO — si no, se pierde entre las corridas que
+    // salieron bien.
+    await registrarCorrida({
+      revisadas: procesadas, resueltas, fallidas,
+      con_observaciones: conObservaciones,
+      restantes: Math.max(0, totalPendiente - resueltas),
+      cortada_por_tiempo: cortadaPorTiempo,
+      segunda_vuelta: segundaVueltaHecha,
+      // Cuántas fichas se tocaron para lograrlo. Es lo que separa «entró» de
+      // «entró porque le arreglamos el dato», y quien aprieta el botón lo ve.
+      fichas_corregidas: corregidas,
+      // Por qué NO se hizo. Sin esto, una noche sin segunda vuelta se lee
+      // igual que una noche en la que no hacía falta — y son cosas distintas.
+      segunda_vuelta_motivo: segundaVueltaMotivo,
+      detalle,
+    }, (fallidas > 0 || conObservaciones > 0 || cortadaPorTiempo) ? "WARNING" : "INFO");
 
     return json({
       ok: true,

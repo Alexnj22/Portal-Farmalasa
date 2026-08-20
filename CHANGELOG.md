@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.668.3 — Los avisos largos se pueden leer enteros y el barrido deja rastro aunque no haya nada que hacer
+
+Un aviso llegó a la campana a las 8:00 diciendo «El barrido de Hacienda no
+corrió anoche», cortado a tres renglones y sin forma de leer el resto. Las dos
+cosas eran problemas distintos y las dos estaban del lado del portal.
+
+**El mensaje se podía cortar y no se podía abrir.** La tarjeta recorta el cuerpo
+a tres renglones y el control para desplegarla existía SÓLO para las
+solicitudes: se prendía con `metadata.request_id`. O sea que los avisos del
+sistema —los que más texto tienen, porque explican qué pasó y qué hacer— eran
+justamente los únicos que no se podían terminar de leer. Ahora la tarjeta mide
+su propio párrafo y, si no entra, ofrece «Ver mensaje completo». Se mide en vez
+de contar caracteres porque que un texto entre en tres renglones depende del
+ancho: el mismo aviso entra en el panel de escritorio y se corta en el teléfono,
+y un control que al tocarlo no despliega nada se lee como que la tarjeta está
+rota.
+
+**La alarma era falsa: el barrido sí corrió.** Salió a las 22:30 en punto y no
+tenía una sola factura que mandar —ni sin sello ni anulada por invalidar—, así
+que salió por su atajo… sin escribir en la bitácora. Y esa fila es exactamente
+lo que el vigilante de las 8:00 mira para saber si corrió: sin fila, avisa «no
+corrió anoche». Ahora una corrida sin nada que hacer también se anota, con sus
+contadores en cero. «No había nada que hacer» y «no corrió» son cosas distintas
+y hasta hoy se veían iguales.
+
+Importa más de lo que parece: una alarma que se dispara sin que pase nada enseña
+a ignorarla, y el día que el barrido falle de verdad va a parecer una más.
+
 ## v2.668.2 — El freno del despacho mira el estante, no la sucursal entera
 
 Salió investigando por qué un TERMOMETRO DIGITAL WELLPRO se rechaza al

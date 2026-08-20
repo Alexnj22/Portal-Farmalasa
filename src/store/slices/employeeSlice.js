@@ -587,6 +587,9 @@ export const createEmployeeSlice = (set, get) => ({
                 account_type: formData.account_type || 'AHORRO',
                 
                 kiosk_pin: formData.kiosk_pin || null,
+                // La marca «todavía no tiene carné»: es lo que habilita
+                // imprimirle uno de papel sin el permiso aparte.
+                carne_pendiente: !!formData.carne_pendiente,
                 status: 'ACTIVO',
                 photo_url: null,
             };

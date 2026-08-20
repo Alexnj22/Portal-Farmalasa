@@ -21,6 +21,82 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.677.0 — un carné de papel que sale de la ticketera y sólo vale hoy
+
+Pedido del usuario: *«necesito que me permitas imprimir en la ticketera el
+código de barras, desde: 1. la creación de un nuevo personal marcado con que aún
+no tiene carné. 2. el perfil del personal. debe haber un permiso para el 2 […]
+si imprimo un "carné" en la ticketera funcionaría para el lector de barras?
+sería como un acceso temporal, y quisiera que sea así, que solo funcione ese
+día.»*
+
+**Sí funciona, pero no imprimiendo el carné de siempre.** El código de barras
+del carné plástico es el `kiosk_pin`, y ese valor **es la contraseña del portal**
+de esa persona: `ensure_user_by_code` abre la cuenta `{pin}@staff.local` con él.
+En un ticket térmico quedaría la credencial permanente sobre un mostrador, sin
+vencimiento. Así que «que valga sólo hoy» pidió una credencial **distinta**, y
+eso es lo que se construyó.
+
+### El carné del día
+
+- Un secreto aleatorio de 10 caracteres (alfabeto de 31, sin `0/O` ni `1/I/L`),
+  guardado **hasheado** en `carnes_temporales` y devuelto en claro **una sola
+  vez**, para el papel. Vence a **medianoche de El Salvador** del día en que se
+  imprimió, y la hora la calcula el servidor.
+- **Abre lo mismo que el carné de plástico** (decisión del usuario): entrar al
+  portal, marcar en el kiosco, anotarse de apoyo en un pedido y recibir el
+  efectivo. Las cuatro puertas aprendieron a reconocerlo —`ensure_user_by_code`,
+  `kiosco_identificar`, `identificar_por_carne`, `probar_identidad_por_carne`—
+  siempre **al final**, después del PIN y del código.
+- **Al vencer se cierra solo, y por las tres puertas.** La cuenta que respalda
+  al papel queda con una contraseña que nadie conoce y sin sesiones, así que no
+  sirve ni yendo directo a Auth con el correo. Verificado de punta a punta en el
+  branch de pruebas: sesión abierta con el papel → `invalid_credentials` después
+  de la purga. La corre un cron a las 00:10 SV.
+- **Reimprimir mata el anterior en el acto**: dos papeles vivos del mismo carné
+  es un papel que alguien creyó haber invalidado.
+- **Un carné de papel no marca en una sala que no es la suya**: el kiosco y el
+  apoyo le exigen la misma cobertura de sucursal que a los otros dos métodos.
+- Queda escrito en la bitácora de identidad como `CARNE_TEMPORAL`: una entrada
+  con papel no se ve igual que una con el carné de plástico.
+
+### Dónde se imprime
+
+- **Al dar de alta**, con la casilla «Todavía no tiene carné»: al guardar, el
+  papel sale solo. No hace falta el permiso nuevo — quien da de alta ya le pone
+  código y cargo a esa ficha.
+- **Desde el perfil**, con el permiso nuevo **Carné del día** (`carne_temporal`).
+- El papel sale por la ticketera de **quien imprime**, no la del empleado: se
+  entrega en mano.
+- **Y aparte, «Reimprimir carné»** (con el permiso de PIN de marcación, que ya
+  existía) saca la etiqueta de 85 × 30 mm del carné de **plástico**, por el
+  diálogo del navegador. Ésa **no** va al rollo, a propósito.
+
+### El código de barras en el rollo
+
+`ticketPrint.js` aprendió a mandar `GS k`, o sea que las barras **las dibuja la
+impresora**: por los dos caminos de la ticketera sólo viaja texto, el SVG de
+`jsbarcode` no cabe. El valor va además **escrito debajo** (`GS H 2`) — el día
+que un lector no lea la simbología, ese renglón salva el papel.
+
+⚠️ **Cuál simbología lee el lector de la sala todavía no está medido.** El carné
+del día sale en CODE128, que es la del carné de plástico y por lo tanto la única
+probada contra esos lectores — pero probada contra una impresora de etiquetas,
+no contra una ticketera. La hoja de **Sistema → Prueba de impresión** ahora trae
+**las dos** (CODE128 y CODE39) para que el papel conteste; si contesta CODE39, lo
+que cambia es una constante en `carnePrint.js`. Y como un comando que la
+impresora no entienda **se traga el trabajo siguiente** —fue lo que colgó la
+ticketera de Salud 4 con `GS V 66 0`—, la primera prueba conviene mandarla por la
+cola de la sala y después comprobar que el sistema de facturación siga
+imprimiendo.
+
+### Y de paso
+
+- La etiqueta del carné de plástico vivía escrita dentro de `FormNovedad`; salió
+  a `utils/carnePrint` porque ahora la imprimen dos pantallas.
+- `employees.carne_pendiente` (con su columna en `employees_safe`: la vista
+  enumera columnas, y sin agregarla la casilla saldría siempre apagada al editar).
+
 ## v2.676.0 — Una solicitud puede pedir varios productos a varias salas
 
 Pedido del usuario, tal cual: *«yo en salud 4 solicito eutirox 100 a salud 1,

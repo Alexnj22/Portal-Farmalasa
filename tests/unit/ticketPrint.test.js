@@ -200,3 +200,48 @@ describe('el ticket que se manda al programa de impresión', () => {
         expect([...vuelta].every(c => c.charCodeAt(0) <= 0xFF)).toBe(true);
     });
 });
+
+// ── El código de barras del carné de papel ──────────────────────────────────
+//
+// Lo que estos tests pueden anclar es el CONTRATO de bytes: qué comando se
+// manda y con qué parámetros. Lo que NO pueden es que la impresora lo entienda
+// — eso sólo lo contesta el papel, y ya costó una sala: el test de `GS V 66 0`
+// estaba en verde mientras colgaba la ticketera de Salud 4 (v2.661.5).
+describe('ticketPrint · código de barras', () => {
+    const conCodigo = (simbologia) => ({
+        ...ticket(),
+        codigos: [{ valor: 'ARY3AM5GFP', simbologia }],
+    });
+
+    it('CODE128 va con su byte de largo, contando el prefijo {B', () => {
+        const bytes = textoParaElRollo(conCodigo('CODE128'));
+        // GS k I <n> {B <datos> — n = 10 datos + 2 del prefijo = 12
+        expect(bytes).toContain(`\x1dk\x49${String.fromCharCode(12)}{BARY3AM5GFP`);
+    });
+
+    it('CODE39 va sin largo y termina en NUL, que es un byte de EN MEDIO', () => {
+        const bytes = textoParaElRollo(conCodigo('CODE39'));
+        expect(bytes).toContain('\x1dk\x04ARY3AM5GFP\x00');
+        // Y ese NUL no queda al final del ticket: el del final es el que se
+        // pierde por el camino de HTTP + PHP (ver la constante CORTAR_PAPEL).
+        expect(bytes.endsWith('\x00')).toBe(false);
+    });
+
+    it('el valor se limpia a mayúsculas y dígitos antes de entrar a las barras', () => {
+        const bytes = textoParaElRollo({
+            ...ticket(),
+            codigos: [{ valor: ' ary3-am5 gfp ', simbologia: 'CODE39' }],
+        });
+        expect(bytes).toContain('\x1dk\x04ARY3AM5GFP\x00');
+    });
+
+    it('pide el valor legible DEBAJO de las barras', () => {
+        // Sin ese renglón, un lector que no lea la simbología deja el papel
+        // mudo: no hay forma de teclear lo que dice.
+        expect(textoParaElRollo(conCodigo('CODE128'))).toContain('\x1dH\x02');
+    });
+
+    it('un ticket sin códigos no manda ni un byte de barras', () => {
+        expect(textoParaElRollo(ticket())).not.toContain('\x1dk');
+    });
+});

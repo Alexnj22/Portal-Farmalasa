@@ -106,6 +106,62 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
 const MONO = "'DejaVu Sans Mono','Menlo','Consolas','Courier New',monospace";
 
 /**
+ * El valor que va adentro de las barras: mayúsculas y dígitos, nada más.
+ *
+ * Es el alfabeto que las dos simbologías del rollo aceptan sin cambiar de juego
+ * de caracteres, y es lo que lleva un carné (el PIN son 8 alfanuméricos). Vive
+ * acá arriba porque la limpian los TRES caminos —el SVG del navegador y los dos
+ * de la ticketera—: dos definiciones darían dos códigos distintos para el mismo
+ * carné, y eso sólo se vería pasando el papel por el lector.
+ */
+export const limpiarValorDeBarras = (valor) =>
+    String(valor ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/**
+ * Las barras como SVG, para el camino del navegador.
+ *
+ * `await import`: `jsbarcode` sólo hace falta cuando hay un carné que imprimir
+ * — es la regla de las librerías pesadas de CLAUDE.md, y este archivo lo
+ * importan pantallas que nunca imprimen un código de barras.
+ *
+ * El SVG se arma ACÁ y a la ventana de impresión viaja ya hecho. Es la misma
+ * decisión que tomó el carné de «cambio de código» (`FormNovedad`): una ventana
+ * abierta con `window.open('')` hereda el origen del portal, así que un
+ * `<script>` adentro del documento impreso vería el `localStorage` entero.
+ */
+export async function dibujarCodigoDeBarras(valor, simbologia = 'CODE128') {
+    const limpio = limpiarValorDeBarras(valor);
+    if (!limpio) return '';
+    const JsBarcode = (await import('jsbarcode')).default;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    JsBarcode(svg, limpio, {
+        format: simbologia, width: 2, height: 50, displayValue: false, margin: 0,
+    });
+    return new XMLSerializer().serializeToString(svg);
+}
+
+/**
+ * El mismo ticket con las barras de `ticket.codigos` ya dibujadas.
+ *
+ * `construirTicketHtml` es síncrono —lo llama un `useMemo` para pintar la vista
+ * previa— y dibujar un código de barras no lo es, así que el SVG se prepara
+ * antes. Un ticket sin códigos vuelve tal cual y **no baja la librería**.
+ *
+ * Un código que no se pudo dibujar queda con el SVG vacío en vez de tumbar la
+ * impresión: en el rollo las barras las dibuja la impresora igual, y el papel
+ * sigue llevando el valor escrito debajo.
+ */
+export async function conCodigosDibujados(ticket) {
+    const codigos = ticket?.codigos ?? [];
+    if (!codigos.length || codigos.every(c => c.svg != null)) return ticket;
+    const dibujados = await Promise.all(codigos.map(async (c) => (
+        c.svg != null ? c
+            : { ...c, svg: await dibujarCodigoDeBarras(c.valor, c.simbologia).catch(() => '') }
+    )));
+    return { ...ticket, codigos: dibujados };
+}
+
+/**
  * Cuántos caracteres entran de verdad en un renglón de la VISTA PREVIA.
  *
  * No son las 54 del rollo: el papel imprime en su letra chica y la vista dibuja
@@ -158,13 +214,14 @@ export function emparejarDatos(datos = [], ancho = COLUMNAS_TICKET.chica) {
  *   datos        — [[rótulo, valor], …]   los pares de arriba
  *   bloques      — [{ titulo, filas[]|texto|monoespaciado }, …]  el cuerpo
  *   items        — { columnas: [{label, ancho, alinear}], filas: [[…]] }
+ *   codigos      — [{ valor, simbologia, texto?, svg? }, …]  códigos de barras
  *   totales      — [[rótulo, valor, destacado?], …]
  *   pie          — [líneas]
  *   barraPrueba  — true para imprimir la barra de control del cabezal
  */
 export function construirTicketHtml(ticket) {
     const cfg = ANCHOS_ROLLO.find(a => a.mm === ticket.ancho) ?? ANCHOS_ROLLO[0];
-    const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [] } = ticket;
+    const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [], codigos = [] } = ticket;
 
     const filaPar = ([rot, val]) => `
       <div class="par"><span class="rot">${esc(rot)}</span><span class="val">${esc(val)}</span></div>`;
@@ -188,6 +245,16 @@ export function construirTicketHtml(ticket) {
         ${b.texto ? `<p class="texto">${esc(b.texto)}</p>` : ''}
         ${b.monoespaciado ? `<pre class="regla">${esc(b.monoespaciado)}</pre>` : ''}
         ${(b.filas ?? []).map(filaPar).join('')}
+      </div>`;
+
+    // El valor va SIEMPRE escrito debajo de las barras: si el lector de esa
+    // sala no lee la simbología, todavía se puede teclear. Un carné mudo no
+    // sirve para nada y no hay forma de saber que lo es sin pasarlo.
+    const codigoHtml = (c) => `
+      <div class="barras">
+        ${c.svg || ''}
+        <div class="valor">${esc(c.texto ?? c.valor)}</div>
+        ${c.leyenda ? `<div class="leyenda">${esc(c.leyenda)}</div>` : ''}
       </div>`;
 
     // `table-layout:fixed` es lo que hace que un nombre largo se parta en vez
@@ -271,6 +338,13 @@ export function construirTicketHtml(ticket) {
   .a-izq { text-align: left; } .a-der { text-align: right; } .a-cen { text-align: center; }
   .totales { margin-top: 1.5mm; padding-top: 1mm; border-top: 1px solid #000; }
   .totales .grande { font-size: 11pt; font-weight: 700; margin-top: .8mm; }
+  /* Las barras salen a todo el ancho disponible y nunca escaladas por debajo
+     de su tamaño natural: un código de barras encogido pierde los módulos
+     angostos y el lector deja de reconocerlo. Si no entra, se ve que no entra. */
+  .barras { margin: 2.5mm 0; text-align: center; }
+  .barras svg { max-width: 100%; height: auto; }
+  .barras .valor { font-size: 9.5pt; font-weight: 700; letter-spacing: .18em; margin-top: .8mm; }
+  .barras .leyenda { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .4px; }
   .barra { margin: 2mm 0; }
   .barra .solida { height: 4mm; background: #000; }
   .barra .franjas { height: 3mm; margin-top: .8mm;
@@ -294,6 +368,7 @@ export function construirTicketHtml(ticket) {
   ${ticket.titulo ? `<div class="titulo">${esc(ticket.titulo)}</div>` : ''}
   ${filasDeDatos.map(filaDeDatos).join('')}
   ${bloques.map(bloqueHtml).join('')}
+  ${codigos.map(codigoHtml).join('')}
   ${itemsHtml}
   ${totales.length ? `<div class="totales">${totales.map(filaTotal).join('')}</div>` : ''}
   ${ticket.barraPrueba ? '<div class="barra"><div class="solida"></div><div class="franjas"></div></div>' : ''}
@@ -497,6 +572,63 @@ const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `$
 const DESTACADO = `${ESC}!\x18`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
+// ── El código de barras ─────────────────────────────────────────────────────
+//
+// El rollo NO puede llevar el SVG que `jsbarcode` dibuja para el carné
+// plástico: por los dos caminos de la ticketera viaja texto con códigos ESC/POS
+// adentro, así que las barras las dibuja el APARATO (`GS k`), no el portal. En
+// el tercer camino —el diálogo del navegador— sí sale el SVG, porque ahí lo que
+// se imprime es HTML.
+//
+// **Cuál simbología lee el lector de la sala se contesta con papel en la mano,
+// no acá.** Por eso el ticket acepta las dos y la hoja de prueba imprime una de
+// cada una:
+//
+//   · **CODE128** es la del carné plástico —o sea, la única probada contra los
+//     lectores que ya hay en las salas—. Su comando es `GS k I <n> {B <datos>`,
+//     donde `n` es un byte de LARGO: con 8 caracteres vale 10, que es un salto
+//     de línea. Por el camino directo el ticket viaja dentro de un POST y pasa
+//     por PHP, y ese recorrido ya se comió un byte una vez (el `\x00` final de
+//     `GS V 66 0`, que colgó la ticketera de Salud 4 y con ella los tickets del
+//     sistema de facturación). Por la cola viaja en base64 y no corre ese riesgo.
+//   · **CODE39** usa `GS k \x04 <datos> \x00`: sin byte de largo, y su NUL va
+//     en MEDIO del ticket, que es la posición que sí sobrevive al pipe. Su
+//     alfabeto —mayúsculas y dígitos— cubre lo que lleva un carné. A cambio
+//     ocupa casi el doble de ancho por carácter.
+//
+// Un comando que la impresora no entienda la deja esperando los bytes que le
+// faltan y **se traga el trabajo siguiente**. Por eso la primera prueba va por
+// la cola de la sala (el agente escribe con `lp -o raw`, sin el programa ajeno
+// en el medio) y después se comprueba que el sistema de facturación siga
+// imprimiendo. Ver [[project_impresion_en_ticketera_2026_08_13]].
+export const SIMBOLOGIAS = ['CODE128', 'CODE39'];
+
+// Alto en puntos (~10 mm a 203 ppp) y ancho de módulo. Con 2 puntos por módulo
+// un CODE128 de 8 caracteres mide ~35 mm y un CODE39 ~62 mm: los dos entran en
+// el rollo de 80 mm de las salas, y el CODE39 con poco margen — si sale
+// partido, lo que baja es este número, no el alto.
+const BARRAS_ALTO   = '\x50';   // 80 puntos
+const BARRAS_MODULO = '\x02';   // 2 puntos por módulo
+const HRI_DEBAJO    = '\x02';   // el valor legible, impreso debajo de las barras
+
+/**
+ * Un código de barras en los bytes que entiende la impresora.
+ *
+ * Se limpia a mayúsculas y dígitos porque es lo que las DOS simbologías
+ * aceptan sin cambiar de juego de caracteres, y porque es exactamente lo que
+ * lleva un carné. Un valor con otra cosa adentro no se imprime a medias: se
+ * recorta acá, donde todavía se puede ver, en vez de salir mudo en el papel.
+ */
+function codigoDeBarrasParaElRollo({ valor, simbologia = 'CODE128' }) {
+    const limpio = limpiarValorDeBarras(valor);
+    if (!limpio) return '';
+    const ajustes = `${GS}h${BARRAS_ALTO}${GS}w${BARRAS_MODULO}${GS}H${HRI_DEBAJO}`;
+    const comando = simbologia === 'CODE39'
+        ? `${GS}k\x04${limpio}\x00`
+        : `${GS}k\x49${String.fromCharCode(limpio.length + 2)}{B${limpio}`;
+    return CENTRO + ajustes + comando;
+}
+
 /**
  * La orden de cortar el papel: `GS V '1'`, corte parcial.
  *
@@ -673,7 +805,7 @@ function encabezadoDeItems(columnas) {
  * que le toca mandar.
  */
 export function seccionesParaElPrograma(ticket) {
-    const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [] } = ticket;
+    const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [], codigos = [] } = ticket;
 
     // El nombre de la farmacia sale en letra grande; de la regla para abajo,
     // todo en chica. Cuando no hay líneas de encabezado —la etiqueta de una
@@ -700,6 +832,15 @@ export function seccionesParaElPrograma(ticket) {
             ...(b.texto ? enRenglones(b.texto, COLUMNAS_TICKET.chica) : []),
             b.monoespaciado ?? '',
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
+        ].filter(Boolean)),
+        // Los códigos de barras, cada uno con su valor ya impreso debajo por la
+        // propia impresora (`GS H 2`) y su leyenda en el renglón siguiente. El
+        // comando NO lleva `\n` adelante: viaja pegado al renglón que le toca,
+        // por lo mismo que los cambios de letra (un código solo se lleva un
+        // renglón de rollo).
+        ...codigos.flatMap(c => [
+            codigoDeBarrasParaElRollo(c),
+            ...(c.leyenda ? [c.leyenda] : []),
         ].filter(Boolean)),
         ...(items ? [
             IZQUIERDA + encabezadoDeItems(items.columnas),
@@ -829,6 +970,28 @@ export const fechaHora = (d) => `${dosDigitos(d.getDate())}/${dosDigitos(d.getMo
     + ` ${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}`;
 
 /**
+ * El valor que se imprime en las barras de prueba.
+ *
+ * Ocho caracteres, como el código de un carné real: el ancho que ocupa el
+ * código depende de cuántos son, así que probar con tres no contestaría si el
+ * de verdad entra en el rollo. Se lee igual a ojo, para que quien pase el
+ * lector pueda comparar lo que salió en la pantalla con lo que imprimió.
+ */
+export const VALOR_DE_PRUEBA_DE_BARRAS = 'PRUEBA12';
+
+/**
+ * Las dos barras de prueba: la misma cadena en las dos simbologías.
+ *
+ * Se imprimen JUNTAS y no una a la vez porque la pregunta no es «¿imprime?»
+ * sino «¿cuál de las dos lee el lector de la sala?», y eso se contesta pasando
+ * el lector por las dos en el mismo papel. La leyenda dice cuál es cuál: sin
+ * ella, quien está frente a la ticketera no puede reportar cuál funcionó.
+ */
+export const codigosDePrueba = (valor = VALOR_DE_PRUEBA_DE_BARRAS) => SIMBOLOGIAS.map(sim => ({
+    valor, simbologia: sim, leyenda: sim,
+}));
+
+/**
  * El papel que prueba UNA caja de sala, mandado por su cola.
  *
  * Existe porque hasta el 2026-08-19 no había forma de probar el agente desde el
@@ -865,7 +1028,12 @@ export function construirTicketDePruebaDeCaja({
                 monoespaciado: `32:\n${reglaDeColumnas(32)}\n40:\n${reglaDeColumnas(40)}`
                     + `\n48:\n${reglaDeColumnas(48)}`,
             },
+            {
+                titulo: 'Codigos de barras',
+                texto: 'Pasa el lector por los dos y anota cual reconoce.',
+            },
         ],
+        codigos: codigosDePrueba(),
         barraPrueba: true,
         pie: [
             'Si este papel salió, esta caja imprime lo que',
@@ -1092,7 +1260,11 @@ export async function imprimirDocumento(
     ticket, { forzarDialogo = false, soloDirecta = false, sala = null } = {},
 ) {
     const { ancho, sistema } = leerAjustesDeImpresion();
-    const doc = { ancho, ...ticket };
+    // Las barras del camino del navegador se dibujan ANTES de elegir camino: si
+    // se dibujaran sólo en la rama del diálogo, el ticket que sale por el rollo
+    // y el que sale por el navegador dejarían de ser el mismo documento. Con un
+    // ticket sin códigos no baja nada.
+    const doc = await conCodigosDibujados({ ancho, ...ticket });
 
     if (!forzarDialogo) {
         if (sala != null) {

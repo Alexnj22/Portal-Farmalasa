@@ -5,6 +5,7 @@ import {
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { useAuth } from '../context/AuthContext';
 import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
@@ -111,6 +112,9 @@ const getEmployeeValidationError = (formData, type) => {
 };
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
+    // Quién está dando de alta: su sucursal decide por qué ticketera sale el
+    // carné de papel (se entrega en mano, así que sale donde está esa persona).
+    const { user: quienEmite } = useAuth();
     const montadoParaSalida = useMontadoParaSalida(isOpen);
 
     const { branches, roles, shifts, saveWeeklyRoster, updateBranch, addBranch } = useStaff();
@@ -311,6 +315,24 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         );
                     } else if (showToast) {
                         showToast("Personal Registrado", "La ficha del empleado se guardó exitosamente.", "success");
+                    }
+
+                    // Marcado como que todavía no tiene carné: se le imprime uno
+                    // de papel en el acto. Es el pedido tal cual —«desde la
+                    // creación de un nuevo personal marcado con que aún no tiene
+                    // carné»—, y va DESPUÉS del alta porque el carné cuelga de un
+                    // empleado que ya existe. Si no sale papel, el aviso lo dice y
+                    // el botón del perfil lo reintenta: la ficha ya está guardada
+                    // y no se pierde nada.
+                    if (created?.id && finalData.carne_pendiente) {
+                        const { entregarCarneDePapel } = await import('../utils/entregarCarneDePapel');
+                        await entregarCarneDePapel({
+                            employeeId: created.id,
+                            nombre: `${finalData.first_names ?? ''} ${finalData.last_names ?? ''}`.trim(),
+                            salaId: quienEmite?.branchId ?? null,
+                            emitidoPor: quienEmite?.name || '',
+                            motivo: 'Alta de personal',
+                        });
                     }
                 }
 

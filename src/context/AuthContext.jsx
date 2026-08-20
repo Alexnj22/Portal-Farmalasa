@@ -907,6 +907,13 @@ export const AuthProvider = ({ children }) => {
             'ensure_user_by_code timeout',
           );
 
+          // El carné de PAPEL vale hasta medianoche. El servidor es el único que
+          // puede decirlo —el reloj del navegador no cuenta— y lo dice con este
+          // motivo exacto. Se cierra la sesión SÓLO ante ese veredicto: un fallo
+          // de red o un `ok:false` de cualquier otra causa no echa a nadie, que
+          // es la diferencia entre un vencimiento y una caída de internet.
+          if (ensured?.error === 'CARNE_VENCIDO') { doLogout(); return; }
+
           if (fnErr || !ensured?.ok || !ensured?.user) return;
           if (!aliveRef.current) return;
 

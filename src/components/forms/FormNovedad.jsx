@@ -622,53 +622,22 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 className="mt-3 w-full"
                                 icon={Printer}
                                 disabled={!!codeConflict}
-                                // El código de barras se dibuja ACÁ y a la ventana sólo viaja el
-                                // SVG ya hecho. Antes el documento traía dos `<script>`, uno de
-                                // ellos desde `cdn.jsdelivr.net` — y una ventana abierta con
-                                // `window.open('')` **hereda el origen del portal**, así que ese
-                                // script de un tercero veía el `localStorage` entero, token de
-                                // sesión incluido. El documento que se imprime ahora no lleva
-                                // ni un `<script>`.
+                                // El documento y sus dos trampas —la ventana
+                                // sincrónica y el SVG dibujado acá, no por un
+                                // script de un tercero adentro del origen del
+                                // portal— viven en `utils/carnePrint`: el perfil
+                                // del empleado imprime la MISMA etiqueta, y dos
+                                // copias se desincronizan sin que nadie lo note
+                                // hasta tener los dos papeles al lado.
                                 onClick={async () => {
-                                    // La ventana se abre SINCRÓNICA dentro del gesto: si se
-                                    // abriera después del `await`, el bloqueador de emergentes
-                                    // la mata por no venir de una interacción.
+                                    // Sincrónica dentro del gesto: después de un
+                                    // `await` el bloqueador de emergentes la mata.
                                     const win = window.open('', '_blank', 'noopener');
-                                    if (!win) return;
-                                    const safeName = (activeEmployee?.name || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-                                    const safePin  = (formData.newKioskPin || '').replace(/[^A-Z0-9]/g, '');
-
-                                    let svgMarkup = '';
-                                    try {
-                                        const JsBarcode = (await import('jsbarcode')).default;
-                                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                        JsBarcode(svg, safePin, { format: 'CODE128', width: 2, height: 50, displayValue: false, margin: 0 });
-                                        svgMarkup = new XMLSerializer().serializeToString(svg);
-                                    } catch {
-                                        // Sin código de barras el carné no sirve: mejor cerrar la
-                                        // ventana que imprimir uno mudo que parece bueno.
-                                        win.close();
-                                        return;
-                                    }
-
-                                    win.document.write(`
-                                        <html>
-                                        <head>
-                                        <style>
-                                            @page { margin: 0; size: 85mm 30mm; }
-                                            body { margin: 0; padding: 8mm 4mm; font-family: Arial, sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-                                            h3 { margin: 0 0 3mm; font-size: 11pt; font-weight: bold; }
-                                            svg { max-width: 75mm; }
-                                        </style>
-                                        </head>
-                                        <body>
-                                            <h3>${safeName}</h3>
-                                            ${svgMarkup}
-                                        </body>
-                                        </html>
-                                    `);
-                                    win.document.close();
-                                    setTimeout(() => win.print(), 600);
+                                    const { imprimirEtiquetaDeCarne } = await import('../../utils/carnePrint');
+                                    await imprimirEtiquetaDeCarne(win, {
+                                        nombre: activeEmployee?.name || '',
+                                        valor: formData.newKioskPin || '',
+                                    });
                                 }}
                             >
                                 Imprimir Nuevo Carné

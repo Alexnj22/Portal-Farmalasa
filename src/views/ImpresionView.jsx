@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Printer, Ruler, CheckCircle2, AlertCircle, Send, Eye, Laptop, PlugZap } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import CajasDeImpresion from '../components/impresion/CajasDeImpresion';
@@ -14,7 +14,7 @@ import {
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
     comprobarLaConexion, permisoDeRedLocal,
     leerAjustesDeImpresion, guardarAjustesDeImpresion,
-    reglaDeColumnas, fechaHora,
+    reglaDeColumnas, fechaHora, codigosDePrueba, conCodigosDibujados,
 } from '../utils/ticketPrint';
 
 const EMPTY_ARRAY = [];
@@ -140,6 +140,11 @@ const ImpresionView = () => {
                 ['IVA 13%', '$3.10'],
                 ['TOTAL', '$26.95', true],
             ],
+            // Las dos simbologías juntas: la pregunta que este papel contesta no
+            // es «¿imprime barras?» sino «¿cuál de las dos lee el lector de la
+            // sala?», y eso se responde pasando el lector por las dos en el
+            // mismo papel.
+            codigos: codigosDePrueba(),
             barraPrueba: true,
             pie: [
                 'Esta hoja es una prueba: no es un comprobante',
@@ -149,7 +154,18 @@ const ImpresionView = () => {
         };
     }, [ancho, sucursal, user]);
 
-    const html = useMemo(() => construirTicketHtml(ticket), [ticket]);
+    // Las barras del HTML las dibuja `jsbarcode`, que se baja bajo demanda: el
+    // documento se arma en dos tiempos y la vista previa se pinta con lo que
+    // haya. Sin esperar al SVG saldría el ticket sin códigos y con ellos un
+    // segundo después, que es lo que se ve — no un parpadeo evitable.
+    const [ticketDibujado, setTicketDibujado] = useState(ticket);
+    useEffect(() => {
+        let vivo = true;
+        conCodigosDibujados(ticket).then(t => { if (vivo) setTicketDibujado(t); });
+        return () => { vivo = false; };
+    }, [ticket]);
+
+    const html = useMemo(() => construirTicketHtml(ticketDibujado), [ticketDibujado]);
 
     const opcionesAncho = ANCHOS_ROLLO.map(a => ({ value: String(a.mm), label: a.label }));
 
@@ -171,7 +187,7 @@ const ImpresionView = () => {
     const enviarDirecto = async () => {
         setEnviando(true);
         setResultado(null);
-        const r = await enviarAImpresoraDeLaComputadora(ticket, { sistema });
+        const r = await enviarAImpresoraDeLaComputadora(ticketDibujado, { sistema });
         // La dirección y el error crudo van a la pantalla, no al `console`: sin
         // ellos «no hay programa» y «el navegador lo bloqueó» se leen idénticos, y
         // el segundo pasa DENTRO de una sala con todo bien instalado. Quien está

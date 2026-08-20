@@ -32,6 +32,12 @@ const SELECT_COLS = `
     role:roles!employees_role_id_fkey ( name )
   `;
 
+// El correo de un carné de papel es `carne-<uuid del empleado>@staff.local`.
+// Reconocerlo por el correo y no por el metadata es a propósito: el metadata lo
+// puede reescribir cualquier actualización de la cuenta, el correo no.
+const esCorreoDeCarneTemporal = (email: string | undefined | null) =>
+  typeof email === "string" && email.startsWith("carne-") && email.endsWith("@staff.local");
+
 function getClientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
@@ -102,6 +108,28 @@ Deno.serve(async (req: Request) => {
   try {
     // ═══ Con sesión: devuelve el perfil de QUIEN PREGUNTA, y de nadie más ═══
     if (authenticatedUser) {
+      // El carné de papel vale hasta medianoche, y una sesión abierta con él no
+      // puede sobrevivirlo: la purga le cambia la contraseña a esa cuenta, pero
+      // eso sólo corta el refresco del token, no la sesión que ya está en un
+      // navegador. Acá se contesta explícito para que el portal cierre la
+      // sesión — y sólo acá, porque esta función corre en CADA refresco de
+      // token de TODOS: la consulta se hace únicamente si el correo es de un
+      // carné de papel.
+      if (esCorreoDeCarneTemporal(authenticatedUser.email)) {
+        const { data: vivos, error: errCarne } = await admin
+          .from("carnes_temporales")
+          .select("id")
+          .eq("auth_user_id", authenticatedUser.id)
+          .is("anulado_el", null)
+          .gt("vence_el", new Date().toISOString())
+          .limit(1);
+        // Un error de la consulta NO cierra la sesión: se falla del lado de no
+        // echar a nadie por un problema de la base.
+        if (!errCarne && !vivos?.length) {
+          return json({ ok: false, error: "CARNE_VENCIDO" });
+        }
+      }
+
       const employee = await resolveEmployeeFromSession(authenticatedUser.id);
       if (!employee) return json({ ok: false, error: "NOT_FOUND" });
       if (employee.status && employee.status !== "ACTIVO") {
@@ -189,6 +217,23 @@ Deno.serve(async (req: Request) => {
         .limit(1));
     }
 
+    // Tercero, el carné de PAPEL del día. Va al final porque es la excepción
+    // —dura hasta medianoche y hay pocos vivos a la vez—, igual que en las tres
+    // funciones de la base que leen un carné. Lo resuelve la base: acá no se
+    // sabe ni se puede saber cuál es el secreto, sólo si alguien lo reconoce.
+    let porCarneTemporal = false;
+    if (!dbError && !rows?.length) {
+      const { data: quien } = await admin.rpc("resolver_carne_temporal", { p_valor: raw });
+      if (quien) {
+        porCarneTemporal = true;
+        ({ data: rows, error: dbError } = await admin
+          .from("employees")
+          .select(SELECT_COLS)
+          .eq("id", quien as string)
+          .limit(1));
+      }
+    }
+
     if (dbError) return json({ ok: false, error: "DB_ERROR", details: dbError.message });
     if (!rows?.length) {
       recordFailure(clientIp);
@@ -200,6 +245,20 @@ Deno.serve(async (req: Request) => {
     if (employee.status && employee.status !== "ACTIVO") {
       recordFailure(clientIp);
       return json({ ok: false, error: "INACTIVE" });
+    }
+
+    // La cuenta del carné de papel la creó `emitir-carne-temporal` cuando se
+    // imprimió, con el secreto por contraseña. Acá NO se crea: si no existe, el
+    // papel no vale — crearla con lo que se acaba de escanear convertiría este
+    // endpoint en una fábrica de cuentas.
+    if (porCarneTemporal) {
+      const email = `carne-${employee.id}@staff.local`;
+      const { data: cuenta } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+      if (!cuenta) {
+        recordFailure(clientIp);
+        return json({ ok: false, error: "NOT_FOUND" });
+      }
+      return json({ ok: true, isNewUser: false, user: { email, isKiosk: true } });
     }
 
     const matchedByKioskPin =

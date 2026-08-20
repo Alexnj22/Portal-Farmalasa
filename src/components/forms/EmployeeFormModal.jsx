@@ -2174,6 +2174,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <p className="text-micro font-bold text-content-3 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
                                         </div>
                                     )}
+
+                                    {/* El carné de PAPEL, para el que todavía no
+                                        tiene el de plástico. La marca es lo que
+                                        habilita imprimirlo al dar de alta sin el
+                                        permiso aparte — el trámite del ingreso no
+                                        se traba esperando un permiso. */}
+                                    <div className="mt-4 pt-4 border-t border-brand/20">
+                                        <Checkbox size="sm"
+                                            checked={!!formData.carne_pendiente}
+                                            onChange={(v) => setFormData(p => ({ ...p, carne_pendiente: v }))}
+                                            label={<span className="text-caption font-black uppercase tracking-widest text-content-2">Todavía no tiene carné</span>}
+                                        />
+                                        <p className="text-micro font-bold text-content-3 mt-1.5 ml-1">
+                                            {isEditMode
+                                                ? 'Puedes imprimirle un carné de papel desde su perfil. Vale hasta medianoche.'
+                                                : 'Al guardar se le imprime un carné de papel en la ticketera. Vale hasta medianoche de hoy.'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

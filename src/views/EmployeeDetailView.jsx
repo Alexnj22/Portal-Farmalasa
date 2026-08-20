@@ -13,7 +13,7 @@ import {
     MapPin, Briefcase, HeartPulse,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
-    Copy
+    Copy, Printer
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../data/constants';
@@ -22,8 +22,10 @@ import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
+import { mensajeAmigable } from '../utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
-import { fetchEmployeeTimeline } from '../data/employees';
+import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
+import BotonCarneDePapel from '../components/personal/BotonCarneDePapel';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -41,6 +43,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
+    // Dos permisos distintos para dos papeles distintos: el del día CREA una
+    // credencial que se muere sola; el de plástico REIMPRIME la permanente, que
+    // es la misma que `kiosk_pin` deja ver.
+    const puedeCarneDelDia = hasPermission('carne_temporal', 'can_edit');
+    const puedeReimprimirCarne = hasPermission('kiosk_pin', 'can_view');
     
     const [_activeTab, _setActiveTab] = useState('history');
     const currentTab = activeTab || _activeTab;
@@ -312,6 +319,32 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     const handleResetPassword = () => setShowResetConfirm(true);
 
+    /**
+     * Reimprime la etiqueta del carné de PLÁSTICO — la de 85 × 30 mm, por el
+     * diálogo del navegador. No sale por la ticketera a propósito: lo que lleva
+     * adentro es el PIN permanente de esta persona, y un ticket térmico sobre un
+     * mostrador es justo lo que el carné del día existe para evitar.
+     *
+     * El PIN no viaja con la ficha —es una credencial, se pide aparte con la
+     * misma compuerta que gobierna verlo— así que se busca al apretar el botón.
+     */
+    const reimprimirCarne = async () => {
+        // La ventana se abre SINCRÓNICA dentro del gesto: después de un `await`
+        // el bloqueador de emergentes la mata.
+        const win = window.open('', '_blank', 'noopener');
+        const { showToast } = useToastStore.getState();
+        try {
+            const mapa = await fetchCredenciales([emp.id]);
+            const pin = mapa.get(emp.id)?.kiosk_pin;
+            const { imprimirEtiquetaDeCarne } = await import('../utils/carnePrint');
+            const r = await imprimirEtiquetaDeCarne(win, { nombre: emp.name, valor: pin });
+            if (!r.ok) showToast('No se pudo imprimir el carné', r.motivo, 'error');
+        } catch (err) {
+            win?.close();
+            showToast('No se pudo imprimir el carné', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    };
+
     const executeResetPassword = async () => {
         setIsResetting(true);
         try {
@@ -494,6 +527,24 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-[var(--dur-slow)]">
                                                 <Button icon={Pencil} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
                                                 <Button tone="warning" icon={KeyRound} onClick={handleResetPassword}>Contraseña</Button>
+                                            </div>
+                                        )}
+                                        {(puedeCarneDelDia || puedeReimprimirCarne) && (
+                                            <div className="flex flex-wrap gap-2 mt-1 justify-center animate-in fade-in duration-[var(--dur-slow)]">
+                                                {puedeCarneDelDia && (
+                                                    <BotonCarneDePapel
+                                                        employeeId={emp.id}
+                                                        nombre={emp.name}
+                                                        cargo={emp.role || ''}
+                                                        sala={branch?.name || ''}
+                                                        motivo="Desde el perfil"
+                                                    >Carné del día</BotonCarneDePapel>
+                                                )}
+                                                {puedeReimprimirCarne && (
+                                                    <Button variant="secondary" icon={Printer} onClick={reimprimirCarne}>
+                                                        Reimprimir carné
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
                                     </div>

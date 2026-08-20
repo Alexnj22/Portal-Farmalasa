@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.672.0 — La base admite pedir varios productos en una sola solicitud
+
+Pedirle producto a otra sala es, hasta hoy, **un producto a una sala**. Quien
+necesita tres cosas de Salud 1 abre el modal tres veces. Medido sobre las 215
+solicitudes que existen (11 al 20 de agosto): hubo 66 tandas —mismo día, mismo
+par de salas— y **33 de esas 66 fueron de más de un producto**, con 5.52
+productos en promedio y un récord de **24 a una sola sala en un día**. O sea que
+la mitad de las veces que alguien le pide a una sala le pide más de una cosa, y
+lo tiene que hacer de a uno. También se midió el otro caso: **15 veces** se
+pidió el mismo producto a varias salas el mismo día, hasta a 5.
+
+Esto es la mitad de abajo, y no cambia todavía ninguna pantalla. El plan
+completo —incluido despachar de menos y recibir por sala— está en
+`docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
+
+**Dos de las tres piezas de la base ya estaban.** El despachador
+(`aplicar-traslado-inventario`) recorre `lineas` desde siempre y su propio
+comentario habla de «un traslado de cinco productos», y la validación del alta
+(`validar_solicitud_traslado`) ya revisa producto, presentación, factor,
+cantidad y existencia **de cada renglón**. Las dos que miraban `items->0` y nada
+más son las que se corrigieron.
+
+**El cálculo de disponibilidad ahora contesta renglón por renglón.** Agrega
+`lineas`: qué hay en el estante de origen para cada producto, si alcanza y qué
+otras salas lo tienen. Las claves de arriba se conservan con el mismo
+significado que hoy —la base se despliega antes que la pantalla, y durante ese
+rato la pantalla vieja las sigue leyendo—; se verificó enfrentando las dos
+implementaciones **en el mismo instante** sobre 6 solicitudes reales, el área de
+vencidos y una de dos renglones: idénticas. La única diferencia deliberada es
+que «se puede» pasa a significar *todos* los renglones alcanzan, que con un
+renglón es la misma respuesta y con varios falla del lado seguro.
+
+**El freno de duplicados también.** Evita dos solicitudes pendientes del mismo
+producto entre las mismas salas —para que se le suba la cantidad a la que ya
+existe en vez de abrir otra— pero era un índice único sobre el primer renglón, y
+un índice no puede mirar los elementos de un array. Ahora lo vigila un trigger,
+renglón por renglón, con un candado de aviso para que dos personas que aprieten
+a la vez no entren las dos. **El índice no se borró**: sigue siendo cierto y
+atómico para el primer renglón, y queda de red abajo del trigger.
+
+Probado sobre producción sin dejar una fila: las cuatro pruebas —uno nuevo, el
+mismo otra vez, uno repetido en segunda posición (el caso que el índice no
+podía ver) y dos productos distintos juntos— corrieron dentro de una
+transacción que se deshace sola. Las cuatro dieron lo esperado, y quedaron 217
+traslados antes y después.
+
 ## v2.671.1 — El vigía de los cortes pregunta igual de seguido y molesta la mitad
 
 Salió de preguntarse si el portal no le estaba pidiendo demasiado al sistema.

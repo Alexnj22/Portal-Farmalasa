@@ -505,6 +505,21 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     const puedeEnviar = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
         && conProblema.length === 0 && causa.trim().length > 0;
 
+    /* ── El atajo de un solo producto ──────────────────────────────────────
+     *
+     * Pedido del usuario, 2026-08-20: «si solo quiero pedir un producto, en el
+     * primero que me salga solicitar el producto, y agregar otro producto».
+     *
+     * Y tiene razón: de las 215 solicitudes que existen, **todas** son de un
+     * producto. Obligar al caso normal a agregar, cambiar de pestaña y recién
+     * ahí mandar es cobrarle a los 215 el precio de los pocos que van a
+     * componer.
+     *
+     * Es sólo cuando la lista está VACÍA. Con algo ya agregado, mandar desde
+     * acá mandaría también lo de la lista sin que se vea — y ahí el botón tiene
+     * que llevar a mirarla, que es lo que hace «Agregar». */
+    const soloUno = pestana === 'agregar' && lineaLista && renglones.length === 0;
+
     /* Agregar y volver a la consulta.
      *
      * Pedido del usuario, 2026-08-20: «al dar en agregar más productos debe
@@ -1105,8 +1120,15 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     pestaña de la lista, junto al botón de mandar. Se escribe una
                     vez aunque la composición lleve seis renglones a tres salas.
 
-                    Nunca fue por producto: el «para qué» es de la solicitud. */}
-                {!listo && pestana === 'lista' && renglones.length > 0 && (
+                    Nunca fue por producto: el «para qué» es de la solicitud.
+
+                    ── Y por eso viaja al único sitio donde se puede mandar ──
+                    Con un solo producto se manda desde «Agregar» sin pasar por
+                    la lista (2026-08-20: «si solo quiero pedir un producto, en
+                    el primero que me salga solicitar el producto»), así que el
+                    campo aparece ahí. No son dos: es el mismo, y está donde está
+                    el botón que lo necesita. */}
+                {!listo && !soloUno && pestana === 'lista' && renglones.length > 0 && (
                     <PortalTextarea
                         value={causa}
                         onChange={e => setCausa(e.target.value)}
@@ -1148,6 +1170,17 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             </p>
                         )}
 
+                        {/* El «para qué» del atajo de un solo producto. Ver la
+                            nota de arriba: acompaña al botón que manda. */}
+                        {soloUno && (
+                            <PortalTextarea
+                                value={causa}
+                                onChange={e => setCausa(e.target.value)}
+                                rows={2}
+                                placeholder="Para qué se pide — queda escrito en el movimiento"
+                            />
+                        )}
+
                         {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                     </>
                 )}
@@ -1181,7 +1214,21 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         está esperando. */}
                     {pestana === 'agregar' ? (
                         lineaLista && !yaEstaEnLaLista && (
-                            <Button disabled={enviando} onClick={agregar}>Agregar</Button>
+                            soloUno ? (
+                                <>
+                                    {/* Agregar otro es la salida al compositor:
+                                        guarda éste y devuelve a la consulta. */}
+                                    <Button variant="secondary" disabled={enviando} onClick={agregar}>
+                                        Agregar otro producto
+                                    </Button>
+                                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
+                                        {enviando && <Loader2 size={14} className="animate-spin" />}
+                                        {enviando ? 'Enviando...' : 'Solicitar'}
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button disabled={enviando} onClick={agregar}>Agregar</Button>
+                            )
                         )
                     ) : (
                         <Button disabled={!puedeEnviar || enviando} onClick={enviar}>

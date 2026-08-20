@@ -102,8 +102,12 @@ const cantidad = () => screen.getByPlaceholderText('Cant.');
 const ponerCantidad = async (n) => {
     await act(async () => { fireEvent.change(cantidad(), { target: { value: String(n) } }); });
 };
+// Con la lista vacía el botón se llama «Agregar otro producto» —al lado del de
+// solicitar—; con algo ya agregado, «Agregar» a secas.
 const agregar = async () => {
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Agregar' })); });
+    await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Agregar( otro producto)?$/ }));
+    });
 };
 // Ir a «En la solicitud» AGREGA el renglón terminado que esté a la vista: es lo
 // que alguien hace después de completar el último producto, y sin eso ese
@@ -412,6 +416,44 @@ describe('editar y quitar en «En la solicitud»', () => {
 
         expect(screen.getByText(/No se puede mandar así: Salud 1 tiene 90/)).toBeTruthy();
         expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
+    });
+});
+
+// ── El atajo del producto suelto ──────────────────────────────────────────
+// «Si solo quiero pedir un producto, en el primero que me salga solicitar el
+// producto, y agregar otro producto» (2026-08-20). De las 215 solicitudes que
+// existen, TODAS son de un producto: obligarlas a agregar, cambiar de pestaña y
+// recién ahí mandar es cobrarle al caso normal el precio del raro.
+describe('pedir un solo producto', () => {
+    it('desde el primer producto se puede solicitar sin pasar por la lista', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await ponerCausa('Se acabaron en sala');   // el campo está ahí mismo
+        await solicitar();
+
+        const filas = filasEnviadas();
+        expect(filas).toHaveLength(1);
+        expect(filas[0].metadata.items).toHaveLength(1);
+        expect(filas[0].metadata.items[0]).toMatchObject({ erp_product_id: 101, cantidad: 3 });
+    });
+
+    it('y sin el «para qué» no deja mandarlo', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
+    });
+
+    // Con algo ya agregado, mandar desde acá mandaría también lo de la lista sin
+    // que se vea: ahí el botón tiene que llevar a mirarla.
+    it('con la lista ya empezada el atajo no aparece', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        await abrirCon(AMOXI);
+        await ponerCantidad(2);
+
+        expect(screen.queryByRole('button', { name: /^Solicitar/ })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Agregar' })).toBeTruthy();
     });
 });
 

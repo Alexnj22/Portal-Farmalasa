@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.691.0 — Un solo producto se solicita desde su misma pantalla
+
+Reportado: *«si solo quiero pedir un producto, en el primero que me salga
+solicitar el producto, y agregar otro producto»*.
+
+Tiene razón, y el número lo confirma: de las **215 solicitudes de traslado que
+existen, todas son de un producto**. Obligarlas a agregar, cambiar de pestaña y
+recién ahí mandar era cobrarle al caso normal el precio del raro.
+
+Ahora, con el primer producto puesto y la lista vacía, el pie ofrece las dos
+salidas: **«Agregar otro producto»** —guarda éste y devuelve a la consulta— y
+**«Solicitar»**, que lo manda ahí mismo. El «para qué» aparece en esa misma
+pantalla, junto al botón que lo necesita.
+
+**Y sigue siendo un solo comentario.** Lo que se corrigió en v2.686.0 no fue que
+hubiera dos campos —era uno solo pintado en dos pestañas a la vez— sino que se
+leyera como dos. Acá está donde está el botón que manda: con un producto, en su
+pantalla; con varios, en la lista. Nunca en las dos.
+
+**El atajo desaparece en cuanto hay algo en la lista.** Mandar desde el
+formulario con dos productos ya agregados mandaría también esos dos sin que se
+vean, y ahí el botón tiene que llevar a mirarlos — que es lo que hace
+«Agregar».
+
+Tres pruebas nuevas: que se puede mandar uno solo sin pasar por la lista, que
+sin el «para qué» no deja, y que con la lista empezada el atajo no aparece.
+
 ## v2.690.3 — se levanta la tarjeta que apuntás, no la vista entera
 
 Reporte del usuario con captura: *«no tiene sentido que si entro a la card lo

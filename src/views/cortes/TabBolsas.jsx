@@ -431,6 +431,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
 
     // La fecha de la pendiente más vieja que quedó afuera: es hasta dónde tiene
     // que estirarse el período para que el aviso deje de tener razón.
+    // El rango no trajo NADA. Con las cuatro etapas dibujadas eso son cuatro
+    // encabezados, cuatro líneas de ayuda y cuatro cajas de «no hay» apiladas —
+    // media pantalla explicando un vacío. Se dice una vez.
+    const vacioTotal = enPantalla.length === 0;
+
     const masViejaFuera = useMemo(
         () => pendientesFuera.reduce((min, b) => (min && min <= b.fecha ? min : b.fecha), null),
         [pendientesFuera],
@@ -660,23 +665,26 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 pantalla por mover unas fechas, y nada en pantalla lo delataría —
                 que es exactamente el modo en que este circuito puede perder
                 dinero sin un error. El botón trae el rango hasta la más vieja. */}
-            {pendientesFuera.length > 0 && (
-                <Notice variant="warning" icon={AlertTriangle}>
-                    <span className="font-bold">
-                        {pendientesFuera.length === 1
-                            ? 'Hay una bolsa pendiente fuera de estas fechas'
-                            : `Hay ${pendientesFuera.length} bolsas pendientes fuera de estas fechas`}
-                    </span>
-                    <span className="block mt-0.5 font-normal text-content-2">
-                        {verMontos && `Suman ${formatMoney(suma(pendientesFuera))}. `}
-                        Siguen esperando aunque el filtro no las muestre.
-                    </span>
-                    {onAmpliarPeriodo && masViejaFuera && (
-                        <Button variant="secondary" size="sm" icon={CalendarDays} className="mt-2"
+            {/* El aviso va en el `action` del canónico —texto a la izquierda,
+                botón a la derecha— y no con el botón metido en el cuerpo, que es
+                como salió primero: una caja del ancho de la pantalla, casi vacía,
+                con el botón colgando en su propio renglón. «Ese aviso nada que
+                ver, se ve súper mal» (usuario, 2026-08-20).
+
+                Y sólo sale cuando además HAY algo en pantalla. Si el rango no
+                trae nada, lo dice el vacío de abajo: dos textos diciendo lo mismo
+                sobre una pantalla en blanco es de lo que se quejaba. */}
+            {pendientesFuera.length > 0 && !vacioTotal && (
+                <Notice variant="warning" icon={AlertTriangle}
+                    action={onAmpliarPeriodo && masViejaFuera ? (
+                        <Button variant="secondary" size="sm" icon={CalendarDays}
                             onClick={() => onAmpliarPeriodo(masViejaFuera)}>
-                            Ver todas las pendientes
+                            Ver todas
                         </Button>
-                    )}
+                    ) : null}>
+                    {pendientesFuera.length === 1 ? 'Una bolsa pendiente' : `${pendientesFuera.length} bolsas pendientes`}
+                    {verMontos && ` por ${formatMoney(suma(pendientesFuera))}`}
+                    {' '}quedaron fuera de estas fechas y siguen esperando.
                 </Notice>
             )}
 
@@ -693,6 +701,21 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 </Notice>
             )}
 
+            {vacioTotal ? (
+                <EmptyState
+                    icon={Package}
+                    title="Sin bolsas en estas fechas"
+                    subtitle={pendientesFuera.length
+                        ? `${pendientesFuera.length === 1 ? 'La bolsa pendiente que hay está' : `Las ${pendientesFuera.length} bolsas pendientes que hay están`} fuera del rango${verMontos ? ` y suman ${formatMoney(suma(pendientesFuera))}` : ''}.`
+                        : 'Ninguna sala guardó efectivo en este período.'}
+                    action={onAmpliarPeriodo && masViejaFuera ? (
+                        <Button variant="secondary" icon={CalendarDays}
+                            onClick={() => onAmpliarPeriodo(masViejaFuera)}>
+                            Ver todas las pendientes
+                        </Button>
+                    ) : null}
+                />
+            ) : (<>
             {/* ── 1. En la sala ─────────────────────────────────────────── */}
             <Etapa
                 icon={Package}
@@ -816,6 +839,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 verMontos={verMontos}
                 vacio="Sin bolsas contadas en estas fechas"
             />
+
+            </>)}
 
             {abierta && (
                 <Suspense fallback={null}>

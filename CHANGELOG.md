@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.694.3 — El aviso de las bolsas fuera de rango deja de ocupar media pantalla
+
+Reportado con una captura: *«si filtra bien, pero ese aviso nada que ver, se ve
+súper mal»*. Dos defectos, y el segundo era el que ocupaba la pantalla.
+
+**El botón estaba metido en el CUERPO del aviso, no en su ranura de acción.**
+`Notice` tiene `action` justamente para esto —texto a la izquierda, acción a la
+derecha, alineadas—, y sin usarla el aviso salía como una caja del ancho de la
+vista, casi vacía, con el botón colgando en su propio renglón debajo del texto.
+Ahora es una línea con el botón al costado, como los otros avisos del portal.
+
+**Y cuatro secciones vacías apiladas.** Con un rango sin bolsas, la pantalla eran
+cuatro encabezados, cuatro líneas de ayuda y cuatro cajas de «no hay» — media
+pantalla explicando un vacío, más el aviso arriba diciendo otra vez lo mismo.
+Hoy, cuando el rango no trae nada, se dice **una** vez: un solo estado vacío que
+además explica que las pendientes que existen están fuera del rango, con el
+botón que lo estira. El aviso de arriba queda sólo para el caso mixto —hay algo
+en pantalla Y hay pendientes afuera—, que es cuando de verdad hace falta avisar.
+
 ## v2.694.2 — el panel de Mín·Máx se lee en el teléfono
 
 Reportado con una captura: *«eso es en min y max. no se ve bien»*. El panel del

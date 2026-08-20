@@ -665,6 +665,26 @@ emergencia real, no para silenciar un hallazgo.
   sección local (`--hook`), y únicamente si el commit toca los tres archivos
   donde viven esas constantes: un gate de commit que necesita red falla sin
   conexión y enseña a usar `--no-verify`.
+- **Antes de cerrar trabajo que agregue un cron, cambie una cadencia o toque una
+  edge function que habla con el sistema de origen: `npm run gate:eficiencia`.**
+  Nació el 2026-08-20 preguntándose si un barrido nuevo saturaba el sistema:
+  era 1 disparo al día, y el que pedía de verdad era la vigilancia de los cortes
+  —2.863 disparos, 13 peticiones cada uno, ~25.000 al día— que llevaba semanas
+  así sin que nadie lo mirara, porque **la cadencia vive en producción y el
+  costo por corrida vive en el código, y nada los juntaba**.
+
+  No mide velocidad (eso es `gate:perf`): mide **volumen y silencio**. Su
+  manifiesto `CRONS` declara, por cron, cuántas peticiones cuesta una corrida
+  **con su motivo escrito**; el gate suma peticiones/día contra el baseline
+  —que **sólo baja**—, y contra producción comprueba que ningún cron esté sin
+  declarar, que ninguna cadencia se haya apretado, que lo declarado siga vivo
+  (`backup-critical-tables` estuvo 17 días muerto) y que las llamadas salientes
+  contesten 200 (un redeploy sin `--no-verify-jwt` las deja en 401 **antes de
+  ejecutar una línea**, y ya pasó tres veces).
+
+  Un cron que falla se mide por **tasa, no por tropiezo**: un `job startup
+  timeout` suelto es un aviso, el 5% es rojo. Y un cron nuevo se mide antes de
+  entrar: `sistema: null` es deuda declarada, no un número inventado.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

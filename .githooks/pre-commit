@@ -117,6 +117,16 @@ if git diff --cached --name-only | grep -qE '^src/(data/(inventory|inventarioTab
   node scripts/perf-gate.mjs --hook || exit 1
 fi
 
+# eficiencia-gate: sólo si el commit toca una edge function o una migración —que
+# es por donde entra un cron nuevo o una cadencia apretada—. `--hook` corre SÓLO
+# lo local: el presupuesto declarado de peticiones al sistema de origen, los
+# `fetch` sin plazo y que cada cron del manifiesto apunte a una función que
+# existe. La otra mitad (cadencias reales, corridas fallidas, llamadas
+# salientes) habla con producción y va antes de cerrar, como perf y design.
+if git diff --cached --name-only | grep -qE '^(supabase/(functions|migrations)/|scripts/eficiencia-gate)'; then
+  node scripts/eficiencia-gate.mjs --hook || exit 1
+fi
+
 # Una hoja por sucursal en el PDF del Corte Z: sólo si el commit toca el archivo
 # que lo arma. Renderiza el documento con el motor de Node y CUENTA las páginas.
 #

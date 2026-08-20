@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.675.0 — Un gate que mira cuánto le pide el portal al sistema
+
+`npm run gate:eficiencia`. No mide velocidad —eso es `gate:perf`—: mide
+**volumen y silencio**.
+
+**Por qué faltaba.** Ayer la pregunta «¿este barrido no satura el sistema?» no
+se podía contestar sin una investigación a mano, porque **la cadencia de un cron
+vive en producción y el costo por corrida vive en el código, y nada los
+juntaba**. Cuando se juntaron, el barrido resultó ser 1 disparo al día y el que
+pedía de verdad era otro, corriendo así desde hacía semanas.
+
+**Lo que afirma.** Que ningún cron apareció sin declarar su costo; que ninguna
+cadencia se apretó en silencio; que lo declarado sigue vivo en producción
+—`backup-critical-tables` estuvo 17 días muerto y lo delató una alerta, no un
+gate—; y que las llamadas salientes contestan 200, que es donde se ve un
+redeploy sin `--no-verify-jwt` dejando al cron en 401 antes de ejecutar una
+línea.
+
+**Lo que NO puede afirmar, y por eso se declara.** Cuántas peticiones hace cada
+corrida sale del código y de cuántas vueltas dé su bucle. Se escribe en el
+manifiesto **con su motivo**, y lo que el gate vigila es que la suma no crezca.
+Los 21 que todavía no se midieron están anotados como `sistema: null` y contados
+aparte: un número que no se midió no se puede sumar a un presupuesto sin mentir.
+Hoy el presupuesto declarado es **11.728 peticiones al día**; revertir la mejora
+de los cortes lo llevaría a 25.168 y el gate lo dice con los dos números a la
+vista (probado).
+
+**Falla por tasa, no por tropiezo.** Su primera corrida se puso roja por 4
+corridas fallidas, y las 4 eran `job startup timeout` en dos minutos de la tarde
+anterior, repartidas entre crons distintos — el planificador no pudo arrancar,
+nada que ver con el trabajo. Sobre 2.864 corridas eso es 0,03%. Un gate que se
+pone rojo por eso es un gate que alguien empieza a saltear. Hoy el 5% es rojo y
+lo de abajo es un aviso con su mensaje a la vista.
+
+**Dos chequeos más que salieron de medir antes de escribir:**
+
+- **`fetch` sin plazo** en las edge functions (12 hoy). Uno colgado se lleva la
+  corrida entera, y como el cron no espera la respuesta, muere en silencio.
+- **Sondeos con red desde el navegador** (8 hoy, el más seguido cada 3 s). Cada
+  uno corre una vez **por pestaña abierta**: no aparece en ningún cron y se
+  multiplica por gente.
+
+**Y tres candidatos que se midieron y se dejaron afuera**, que es la otra mitad
+del trabajo: `.upsert(` en edge functions (26, la mayoría legítimos — un
+detector así sería un baseline de deuda sin clasificar), `updated_at` en el
+payload de un sync (5, y **3 son falsos positivos**: escriben sólo las filas que
+de verdad cambiaron) y `.select('*')` en el frontend (44, casi todos sobre
+tablas chicas). Un detector ruidoso es peor que no tenerlo.
+
+El canal de consulta contra producción salió de `perf-gate.mjs` a
+`scripts/lib/canal-supabase.mjs`: los dos gates lo usan y dos copias del manejo
+de ruido del CLI se separan solas — es la lección de los parsers de traslado.
+
 ## v2.674.0 — Quien despacha un traslado puede enviar lo que hay
 
 Ya se ve en pantalla. Te piden 3, vendiste una hace un rato y tienes 2: la

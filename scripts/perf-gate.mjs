@@ -59,9 +59,8 @@
  *   npm run gate:perf                     mide contra producción
  *   npm run gate:perf -- --update-baseline  baja los presupuestos a lo medido
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, rmSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { abrirCanal } from './lib/canal-supabase.mjs';
 import { join } from 'node:path';
 
 const BASELINE_FILE = 'scripts/perf-gate-baseline.json';
@@ -242,61 +241,9 @@ const TIEMPOS = [
  * una variable con `-` en el nombre — que es el caso de este repo. En vez de
  * mover ese archivo (ver decisión 3), se le da un directorio propio con lo
  * mínimo para que sepa a qué proyecto apunta. */
-/* Lo que el CLI escribe SIEMPRE, salga bien o mal. Si al filtrarlo no queda
- * nada, el fallo no vino de él y el mensaje de `execFileSync` es todo lo que
- * hay. */
-const RUIDO_DEL_CLI = [
-  /^Using workdir/,
-  /^Initialising login role/,
-  /^A new version of Supabase CLI/,
-  /^We recommend updating/,
-];
-const sinRuidoDelCli = (txt) => String(txt ?? '')
-  .split('\n')
-  .map(l => l.trimEnd())
-  .filter(l => l && !RUIDO_DEL_CLI.some(r => r.test(l)))
-  .join('\n');
-
-function abrirCanal() {
-  const dir = join(tmpdir(), `perf-gate-${process.pid}`);
-  mkdirSync(join(dir, 'supabase'), { recursive: true });
-  for (const f of ['config.toml', '.temp']) {
-    const origen = join('supabase', f);
-    if (existsSync(origen)) cpSync(origen, join(dir, 'supabase', f), { recursive: true });
-  }
-  if (!existsSync(join(dir, 'supabase', '.temp'))) {
-    rmSync(dir, { recursive: true, force: true });
-    throw new Error('el proyecto no está linkeado (falta supabase/.temp)');
-  }
-  /* El stderr se CAPTURA, no se descarta.
-   *
-   * Descartarlo tenía su motivo: el CLI escribe «Using workdir…»,
-   * «Initialising login role…» y el aviso de versión nueva en CADA llamada, o
-   * sea nueve párrafos de ruido por corrida. Pero cuando la llamada falla, ese
-   * mismo canal es lo ÚNICO que dice por qué, y el gate quedaba anunciando «no
-   * pude medir» sin poder decir de qué. Pasó el 2026-08-19: hubo que
-   * reproducir la corrida a mano, con el stderr a la vista, para descubrir que
-   * había sido transitorio — y la conclusión «transitorio» tampoco se podía
-   * sostener sin haber visto el mensaje.
-   *
-   * Capturado y mostrado SÓLO al fallar, el ruido sigue sin aparecer y el
-   * diagnóstico deja de exigir una segunda corrida. */
-  const consultar = (sql) => {
-    let salida;
-    try {
-      salida = execFileSync('supabase',
-        ['db', 'query', '--workdir', dir, '--linked', '--agent', 'no', '-o', 'json', sql],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 32 * 1024 * 1024 });
-    } catch (e) {
-      e.detalleCli = sinRuidoDelCli(e.stderr);
-      throw e;
-    }
-    const i = salida.indexOf('[');
-    if (i < 0) throw new Error('la respuesta no traía filas');
-    return JSON.parse(salida.slice(i));
-  };
-  return { consultar, cerrar: () => rmSync(dir, { recursive: true, force: true }) };
-}
+// El canal contra producción vive en `scripts/lib/canal-supabase.mjs` desde el
+// 2026-08-20: `gate:eficiencia` necesita el mismo, y dos copias del manejo de
+// ruido del CLI se separan solas.
 
 // Mide una consulta CORRIDAS veces del lado del servidor y devuelve la mejor.
 // Todo adentro de un viaje: el arranque del CLI cuesta más que las consultas.

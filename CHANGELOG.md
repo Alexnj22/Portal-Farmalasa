@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.694.1 — Bolsas: las fechas filtran de verdad, separado por sucursal y las dos acciones en el widget
+
+Tres correcciones de la pestaña «Bolsas de efectivo», las tres del usuario
+mirándola en producción sobre v2.694.0.
+
+**Las fechas ahora recortan TODA la pantalla.** «Al moverme entre fechas, aún
+así me muestra siempre las pendientes.» Era a propósito —las tres etapas
+pendientes ignoraban el período porque una bolsa de seis días es justamente la
+que hay que ver—, pero el efecto real es que mover el filtro no cambiaba nada, y
+es la segunda vez que lo reporta sobre el mismo control. Un filtro que no filtra
+enseña a desconfiar del que sí.
+
+Lo que protegía ese diseño se conserva de otra forma, y mejor: **lo que el rango
+deja afuera se dice**. Si quedan bolsas pendientes fuera de las fechas, arriba
+sale un aviso con cuántas son, cuánto suman y un botón que estira el período
+hasta la más vieja. Esconder una bolsa pendiente sólo es aceptable si la pantalla
+dice que la escondió — ese es el modo en que este circuito podría perder dinero
+sin un solo error.
+
+**Cada etapa va separada por sucursal**, con el mismo encabezado en versalitas
+que usan los cortes. En v2.694.0 se ordenaron por sala, y no alcanzó: en una
+rejilla de dos columnas, 56 bolsas seguidas se leen como una sola lista y el
+cambio de sala pasa entre dos tarjetas sin que nada lo marque.
+
+**Y el widget del Inicio recuperó las dos acciones.** «¿Y el widget para sacar
+dinero o entregarlo?» — preguntado teniendo «Entrega de remesas» delante, que es
+la misma acción que la vista llama **«Sacar dinero»**. La misma acción tenía dos
+nombres según la pantalla, y el de la baldosa empezaba con la palabra de la OTRA
+acción. Hoy se llaman igual en los dos lados. **«Entregar» faltaba**: vivía sólo
+en la pestaña con el argumento de que el widget es el atajo del día de la sala —
+pero entregar el efectivo ES lo que la sala hace en el día, y mandarla a otra
+pantalla para eso es justo lo que el atajo tenía que evitar. Sale con su
+comprobante impreso, el mismo que imprime la pestaña.
+
 ## v2.694.0 — Bolsas de efectivo: su propio período, su carril y el comprobante adentro
 
 Cinco cosas de la pestaña «Bolsas de efectivo», las cinco reportadas por el

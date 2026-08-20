@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
-    AlertTriangle, Banknote, CheckCircle2, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
+    AlertTriangle, Banknote, CalendarDays, CheckCircle2, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -53,10 +53,17 @@ const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBols
  * servidor rechaza que quien entregó firme la recepción — dos confirmaciones de
  * la misma persona no son un control, son dos clics.
  *
- * ── Lo pendiente no tiene fecha ─────────────────────────────────────────────
- * Las tres primeras etapas ignoran el período de la vista a propósito: una bolsa
- * que lleva seis días esperando es justamente la que hay que ver, y el período
- * arranca en «Hoy». El período recorta sólo el historial de las contadas.
+ * ── El período recorta TODO, y lo que esconde lo dice ───────────────────────
+ * Hasta el 2026-08-20 las tres etapas pendientes lo ignoraban: la idea era que
+ * una bolsa de seis días es justamente la que hay que ver. El efecto real fue
+ * otro — mover las fechas no cambiaba nada en pantalla, y el usuario lo reportó
+ * dos veces («no tiene sentido que el filtro de fecha sea hoy», y después «al
+ * moverme entre fechas, aún así me muestra siempre las pendientes»). Un filtro
+ * que no filtra enseña a desconfiar del que sí.
+ *
+ * Hoy recorta las cuatro etapas, y lo que el rango deja afuera sale en un aviso
+ * con un botón que estira el período hasta la pendiente más vieja. Esconder una
+ * bolsa pendiente sólo es aceptable si la pantalla dice que la escondió.
  *
  * ── Las dos acciones viven en la píldora ────────────────────────────────────
  * «los botones de sacar dinero, entregar dinero, deben estar en el filterpill»
@@ -274,8 +281,21 @@ function Resolver({ bolsa, ocupado, onResolver }) {
     );
 }
 
-/** Una etapa del circuito, con su total y su acción de conjunto. */
-function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio, verMontos }) {
+/**
+ * Una etapa del circuito, con su total y su acción de conjunto.
+ *
+ * ── Y separada POR SALA, como los cortes (2026-08-20) ───────────────────────
+ * «No está separado por sucursal, así como los cortes» (usuario). Ordenarlas por
+ * sala no alcanzaba: en una rejilla de dos columnas, 56 bolsas seguidas se leen
+ * como una sola lista y el cambio de sala pasa entre dos tarjetas sin que nada
+ * lo marque. Es el mismo encabezado en versalitas que usa `CortesView` para sus
+ * grupos, y por el mismo motivo: entregar, recibir y contar se hacen POR SALA.
+ *
+ * El encabezado sale igual con una sola sala. Repetirlo no cuesta nada y saber
+ * de qué sala es lo que se está mirando nunca sobra — que es justo lo que se
+ * pierde cuando alguien deja filtrada una sala y se olvida.
+ */
+function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, vacio, verMontos }) {
     return (
         <section className="space-y-2">
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
@@ -284,20 +304,35 @@ function Etapa({ icon: Icon, titulo, ayuda, bolsas, accion, vacio, verMontos }) 
                     {titulo}
                 </h3>
                 <span className="text-caption text-content-3 tabular-nums">
-                    {bolsas.length} {bolsas.length === 1 ? 'bolsa' : 'bolsas'}
-                    {verMontos && bolsas.length > 0 && ` · ${formatMoney(suma(bolsas))}`}
+                    {total} {total === 1 ? 'bolsa' : 'bolsas'}
+                    {verMontos && total > 0 && ` · ${formatMoney(montoTotal)}`}
                 </span>
             </div>
             {ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
             {accion}
-            {bolsas.length === 0
+            {total === 0
                 ? <EmptyState linea icon={Icon} title={vacio} />
-                : <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">{bolsas.map((b) => b.nodo)}</div>}
+                : grupos.map((g) => (
+                    <div key={g.branchId} className="space-y-1.5">
+                        <div className="flex items-baseline justify-between gap-3 px-1">
+                            <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                {g.nombre}
+                            </h4>
+                            <span className="text-micro text-content-3 tabular-nums">
+                                {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                {verMontos && ` · ${formatMoney(suma(g.lista))}`}
+                            </span>
+                        </div>
+                        <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+                            {g.lista.map((b) => b.nodo)}
+                        </div>
+                    </div>
+                ))}
         </section>
     );
 }
 
-export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, onMetricas }) {
+export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, onMetricas, onAmpliarPeriodo }) {
     const { hasPermission } = useAuth();
     const puedeEntregar = hasPermission('bolsas', 'can_edit');
     const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
@@ -334,10 +369,15 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
 
     const cargar = useCallback(async () => {
         setCargando(true);
-        // Las pendientes sin filtro de fecha —ver el encabezado— y las contadas
-        // del período, **por la fecha en que se CONTARON**. Filtrarlas por la
+        // Las pendientes se BAJAN todas y se recortan acá; las contadas ya vienen
+        // del período, **por la fecha en que se CONTARON** — filtrarlas por la
         // fecha del corte hacía que una bolsa vieja recién contada desapareciera
-        // de la pantalla al firmarla: el período arranca en «Hoy».
+        // de la pantalla al firmarla.
+        //
+        // Se bajan todas y no sólo las del rango porque el aviso de «hay N
+        // pendientes fuera de estas fechas» necesita saber que existen: son las
+        // que el filtro esconde, y esconderlas sin decirlo es justo lo que no
+        // puede pasar con dinero esperando en una sala.
         const [vivas, contadas] = await Promise.all([
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
@@ -361,6 +401,41 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         [bolsas, sala],
     );
 
+    // ── El período recorta TODA la pantalla, también lo pendiente ────────────
+    //
+    // Hasta el 2026-08-20 sólo recortaba el archivo de las contadas: las tres
+    // etapas pendientes lo ignoraban a propósito —una bolsa que lleva seis días
+    // esperando es la que hay que ver— y el resultado fue que mover las fechas
+    // no cambiaba nada en pantalla. «Al moverme entre fechas, aún así me muestra
+    // siempre las pendientes» (usuario, 2026-08-20). Un filtro que no filtra es
+    // peor que no tenerlo: enseña a desconfiar del que sí filtra.
+    //
+    // Lo que protegía el diseño viejo se conserva de otra forma, y mejor: lo que
+    // el rango deja afuera se DICE, con un botón que lo trae. Antes no se decía
+    // nada porque no había nada que decir; ahora el aviso es la única razón por
+    // la que esconder una bolsa pendiente es aceptable.
+    const enRango = useCallback(
+        (b) => String(b.fecha) >= String(desde) && String(b.fecha) <= String(hasta),
+        [desde, hasta],
+    );
+
+    const pendientesFuera = useMemo(
+        () => deLaSala.filter((b) => b.estado !== 'CONTADA' && !enRango(b)),
+        [deLaSala, enRango],
+    );
+
+    const enPantalla = useMemo(
+        () => deLaSala.filter((b) => b.estado === 'CONTADA' || enRango(b)),
+        [deLaSala, enRango],
+    );
+
+    // La fecha de la pendiente más vieja que quedó afuera: es hasta dónde tiene
+    // que estirarse el período para que el aviso deje de tener razón.
+    const masViejaFuera = useMemo(
+        () => pendientesFuera.reduce((min, b) => (min && min <= b.fecha ? min : b.fecha), null),
+        [pendientesFuera],
+    );
+
     // Primero por SUCURSAL y después por fecha (pedido del usuario, 2026-08-20).
     // Ordenadas sólo por fecha, las bolsas de las seis salas quedaban intercaladas
     // —una de Salud 1, una de Salud 4, otra de Salud 1— y quien mira una etapa
@@ -368,11 +443,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     // Se ordena por el NOMBRE de la sala y no por su id: el id no es el orden que
     // ve nadie.
     const porEstado = useCallback(
-        (e) => deLaSala.filter((b) => b.estado === e)
+        (e) => enPantalla.filter((b) => b.estado === e)
             .sort((a, b) => String(nombreSala[a.branch_id] || '').localeCompare(String(nombreSala[b.branch_id] || ''), 'es')
                 || String(a.fecha).localeCompare(String(b.fecha))
                 || String(a.hora).localeCompare(String(b.hora))),
-        [deLaSala, nombreSala],
+        [enPantalla, nombreSala],
     );
 
     const enSala     = useMemo(() => porEstado('ABIERTA'), [porEstado]);
@@ -482,21 +557,33 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         () => resolverDiferenciaBolsa(bolsa.id, via, causa),
         'Diferencia resuelta'), [correr]);
 
-    const conNodo = useCallback((lista, extra) => lista.map((b) => ({
-        ...b,
-        nodo: (
-            <Bolsa
-                key={b.id} bolsa={b} sala={nombreSala[b.branch_id]} personas={personas}
-                seleccionada={elegidas.has(b.id)}
-                onSeleccionar={extra?.elegible ? alternar : null}
-                alarma={extra?.alarma}
-                onAbrir={setAbierta}
-                verMontos={verMontos}
-            >
-                {extra?.pie?.(b)}
-            </Bolsa>
-        ),
-    })), [nombreSala, personas, elegidas, alternar, setAbierta, verMontos]);
+    // Arma los nodos y los reparte por sala, conservando el orden que ya traía la
+    // lista (sala, y dentro de la sala por fecha): un `Map` mantiene el orden de
+    // inserción, así que no hace falta volver a ordenar los grupos.
+    const conNodo = useCallback((lista, extra) => {
+        const porSala = new Map();
+        for (const b of lista) {
+            const nodo = (
+                <Bolsa
+                    key={b.id} bolsa={b} sala={nombreSala[b.branch_id]} personas={personas}
+                    seleccionada={elegidas.has(b.id)}
+                    onSeleccionar={extra?.elegible ? alternar : null}
+                    alarma={extra?.alarma}
+                    onAbrir={setAbierta}
+                    verMontos={verMontos}
+                >
+                    {extra?.pie?.(b)}
+                </Bolsa>
+            );
+            if (!porSala.has(b.branch_id)) porSala.set(b.branch_id, []);
+            porSala.get(b.branch_id).push({ ...b, nodo });
+        }
+        return [...porSala.entries()].map(([branchId, sub]) => ({
+            branchId,
+            nombre: nombreSala[branchId] || `Sucursal ${branchId}`,
+            lista: sub,
+        }));
+    }, [nombreSala, personas, elegidas, alternar, setAbierta, verMontos]);
 
     // ── Las dos acciones, publicadas a la píldora de la vista ───────────────
     // Ninguna depende de haber marcado bolsas: quien va a pagar una remesa sabe
@@ -567,6 +654,32 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
 
     return (
         <div className="space-y-6">
+            {/* Lo que el rango dejó afuera se DICE. Es la contraparte de que el
+                período ahora recorte también lo pendiente: sin este aviso, una
+                bolsa que lleva tres semanas en una sala desaparecería de la
+                pantalla por mover unas fechas, y nada en pantalla lo delataría —
+                que es exactamente el modo en que este circuito puede perder
+                dinero sin un error. El botón trae el rango hasta la más vieja. */}
+            {pendientesFuera.length > 0 && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    <span className="font-bold">
+                        {pendientesFuera.length === 1
+                            ? 'Hay una bolsa pendiente fuera de estas fechas'
+                            : `Hay ${pendientesFuera.length} bolsas pendientes fuera de estas fechas`}
+                    </span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        {verMontos && `Suman ${formatMoney(suma(pendientesFuera))}. `}
+                        Siguen esperando aunque el filtro no las muestre.
+                    </span>
+                    {onAmpliarPeriodo && masViejaFuera && (
+                        <Button variant="secondary" size="sm" icon={CalendarDays} className="mt-2"
+                            onClick={() => onAmpliarPeriodo(masViejaFuera)}>
+                            Ver todas las pendientes
+                        </Button>
+                    )}
+                </Notice>
+            )}
+
             {sinResolver.length > 0 && (
                 <Notice variant="danger" icon={AlertTriangle}>
                     <span className="font-bold">
@@ -585,7 +698,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 icon={Package}
                 titulo="En la sala"
                 ayuda="Nacen solas al confirmar el corte. La etiqueta se imprime acá y se pega a la bolsa."
-                bolsas={conNodo(enSala, {
+                grupos={conNodo(enSala, {
                     // Sin casilla: entregar dejó de elegirse bolsa por bolsa
                     // —el diálogo pregunta por DÍAS— y una casilla que ya no
                     // manda a ningún lado es adorno, no control.
@@ -605,8 +718,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                         </div>
                     ),
                 })}
+                total={enSala.length} montoTotal={suma(enSala)}
                 verMontos={verMontos}
-                vacio="Sin efectivo esperando en las salas"
+                vacio={pendientesFuera.length ? "Sin efectivo esperando en las salas en estas fechas" : "Sin efectivo esperando en las salas"}
             />
 
             {/* ── 2. Esperando recepción ──────────────────────────────────
@@ -634,7 +748,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 icon={Send}
                 titulo="Esperando recepción"
                 ayuda="Ya salieron de la sala. Administración confirma cuántas llegaron, sin contar el dinero todavía."
-                bolsas={conNodo(enCamino, { elegible: puedeContar })}
+                grupos={conNodo(enCamino, { elegible: puedeContar })}
+                total={enCamino.length} montoTotal={suma(enCamino)}
                 accion={puedeContar && elegidasEnCamino.length > 0 && (
                     <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
                         onClick={() => recibir(elegidasEnCamino)}>
@@ -643,7 +758,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                     </Button>
                 )}
                 verMontos={verMontos}
-                vacio="Nada en camino"
+                vacio={pendientesFuera.length ? "Nada en camino en estas fechas" : "Nada en camino"}
             />
 
             {/* ── 3. Por contar ─────────────────────────────────────────── */}
@@ -651,21 +766,22 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 icon={Banknote}
                 titulo="Por contar"
                 ayuda="Recibidas y sin contar. Un toque en «Cuadra» cuando el dinero coincide."
-                bolsas={conNodo(porContar, {
+                grupos={conNodo(porContar, {
                     pie: (b) => (puedeContar ? (
                         <Conteo bolsa={b} ocupado={ocupado === `contar-${b.id}`} onContar={contar} />
                     ) : null),
                 })}
+                total={porContar.length} montoTotal={suma(porContar)}
                 verMontos={verMontos}
-                vacio="Nada pendiente de contar"
+                vacio={pendientesFuera.length ? "Nada pendiente de contar en estas fechas" : "Nada pendiente de contar"}
             />
 
             {/* ── 4. Contadas ───────────────────────────────────────────── */}
             <Etapa
                 icon={ShieldCheck}
                 titulo="Contadas"
-                ayuda={`El historial ${rangoEnPalabras}. Es lo único que recorta el filtro de fechas: las tres etapas de arriba se muestran completas. Lo que se contó queda; resolver una diferencia no lo cambia.`}
-                bolsas={conNodo(contadas, {
+                ayuda={`El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.`}
+                grupos={conNodo(contadas, {
                     pie: (b) => {
                         const dif = diferenciaDe(b);
                         const cuadra = Math.abs(dif ?? 0) < 0.01;
@@ -696,6 +812,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                         );
                     },
                 })}
+                total={contadas.length} montoTotal={suma(contadas)}
                 verMontos={verMontos}
                 vacio="Sin bolsas contadas en estas fechas"
             />

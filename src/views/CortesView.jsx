@@ -512,7 +512,8 @@ const CortesView = () => {
                     con Cortes la sucursal y el período; el resto es suyo. */}
                 {enBolsas && (
                     <TabBolsas desde={desdeBolsas} hasta={hastaBolsas} sala={sala} nombreSala={nombreSala}
-                        onAcciones={setAccionesBolsas} onMetricas={setMetricasBolsas} />
+                        onAcciones={setAccionesBolsas} onMetricas={setMetricasBolsas}
+                        onAmpliarPeriodo={(desdeMin) => setPeriodoBolsas(`${desdeMin}|${hoySV()}`)} />
                 )}
 
                 {!enBolsas && (<>

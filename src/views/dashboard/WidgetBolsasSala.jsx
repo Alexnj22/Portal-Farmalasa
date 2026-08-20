@@ -1,20 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { AlertTriangle, Banknote, HandCoins, Package, Printer, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Banknote, HandCoins, Package, Printer, Send, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '../../data/bolsas';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchEntrega, fetchSaldos } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
-/* El formulario se baja al apretar «Entrega de remesas», no al entrar al Inicio:
+/* Los dos formularios se bajan al apretar su botón, no al entrar al Inicio:
  * arrastra el canónico de archivo y el selector de personas, y la baldosa se ve
  * entera sin tocar nada. */
 const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
+const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBolsas'));
 
 /**
  * Las bolsas de efectivo en el Inicio: lo que falta guardar y lo que espera el
@@ -23,8 +24,15 @@ const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa')
  * ── Es el ATAJO; el proceso vive en Cortes de caja → Bolsas ────────────────
  * «El widget es para acceder fácil, pero debe haber una vista donde se haga todo
  * el proceso» (usuario, 2026-08-15). Acá está lo que la sala necesita en el día:
- * cuánto efectivo hay guardado, sacar dinero para una remesa, e imprimir la
- * etiqueta. Entregar, recibir y contar viven en la pestaña.
+ * cuánto efectivo hay guardado, sacar dinero para una remesa, ENTREGARLO, e
+ * imprimir la etiqueta. Recibir y contar viven en la pestaña: son de
+ * administración, no de la sala.
+ *
+ * «Entregar» estuvo en la pestaña y sólo ahí hasta el 2026-08-20, con el
+ * argumento de que el widget es el atajo del día — pero entregar el efectivo ES
+ * lo que la sala hace en el día. Y «Sacar dinero» se llamaba acá «Entrega de
+ * remesas»: la misma acción con dos nombres según la pantalla, y el de acá
+ * empezando con la palabra de la OTRA acción.
  *
  * ── «Sin bolsa» es una EXCEPCIÓN, no una tarea ─────────────────────────────
  * La bolsa nace sola al confirmar el corte. Un corte confirmado sin bolsa es de
@@ -94,6 +102,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     const [error, setError] = useState(null);
     const [imprimiendo, setImprimiendo] = useState(null);
     const [sacando, setSacando] = useState(false);
+    const [entregando, setEntregando] = useState(false);
 
     const { cerrar, imprimir, imprimirTrasLaSalida, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
 
@@ -186,6 +195,35 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
         cargar();
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
+    /**
+     * Terminada la entrega sale UN papel: el comprobante que firman quien
+     * entrega y quien se lleva el dinero. Es el mismo que imprime la pestaña, y
+     * se arma igual — con `soloDirecta`, porque este papel también sale solo: si
+     * esta computadora no tiene la ticketera no se abre ningún diálogo.
+     */
+    const trasLaEntrega = useCallback(async (entrega) => {
+        try {
+            const d = await fetchEntrega(entrega.id);
+            if (d) {
+                const [{ imprimirDocumento }, { construirComprobanteDeEntrega }] = await Promise.all([
+                    import('../../utils/ticketPrint'),
+                    import('../../utils/bolsaComprobante'),
+                ]);
+                await imprimirDocumento(construirComprobanteDeEntrega({
+                    entrega: { folio: d.entrega?.folio, entregado_at: d.entrega?.entregada_at },
+                    sala: d.sala,
+                    bolsas: d.bolsas || [],
+                    entregadoPor: d.entregado_por,
+                    recibidoPor: d.recibido_por,
+                }), { soloDirecta: true, sala: entrega.branch_id });
+            }
+        } catch (err) {
+            // Que no salga el papel no deshace una entrega ya firmada.
+            console.error('bolsas: no se pudo imprimir el comprobante de entrega:', err?.message);
+        }
+        cargar();
+    }, [cargar]);
+
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
     return (
@@ -220,16 +258,33 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                         valueCls="text-success-text" />
                 </CarrilCards>
 
-                {/* «Entrega de remesas», lo que pidió el usuario: cuando hay que
-                    pagar una remesa y la caja no alcanza, el dinero sale de acá.
-                    Sólo aparece si hay de dónde sacarlo — un botón que siempre
-                    termina en «no hay bolsas» es un botón que enseña a no
-                    apretarlo. */}
+                {/* Las MISMAS dos acciones que la píldora de Cortes de caja, y
+                    con los mismos nombres.
+                    - «Sacar dinero»: cuando hay que pagar una remesa y la caja no
+                      alcanza, el dinero sale de acá. Se llamaba «Entrega de
+                      remesas», o sea que la misma acción tenía dos nombres según
+                      la pantalla, y encima uno arrancaba con la palabra de la
+                      OTRA acción. El usuario preguntó por ella el 2026-08-20 —«¿y
+                      el widget para sacar dinero o entregarlo?»— teniéndola
+                      delante.
+                    - «Entregar dinero»: faltaba. Vivía sólo en la pestaña con el
+                      argumento de que el widget es el atajo del día de la sala —
+                      pero entregar el efectivo ES lo que la sala hace en el día,
+                      y mandarla a otra pantalla para eso es justo lo que el
+                      atajo tenía que evitar.
+                    Los dos sólo aparecen si hay de dónde sacar: un botón que
+                    siempre termina en «no hay bolsas» enseña a no apretarlo. */}
                 {puedeGuardar && enSala.length > 0 && (
-                    <Button variant="secondary" size="sm" icon={HandCoins} className="w-full mt-1.5"
-                        onClick={() => setSacando(true)}>
-                        Entrega de remesas
-                    </Button>
+                    <div className="flex gap-1.5 mt-1.5">
+                        <Button variant="secondary" size="sm" icon={HandCoins} className="flex-1"
+                            onClick={() => setSacando(true)}>
+                            Sacar dinero
+                        </Button>
+                        <Button variant="primary" size="sm" icon={Send} className="flex-1"
+                            onClick={() => setEntregando(true)}>
+                            Entregar
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -360,6 +415,20 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     />
                 )}
             </div>
+
+            {entregando && (
+                <Suspense fallback={null}>
+                    <EntregaDeBolsas
+                        abierto={entregando}
+                        bolsas={enSala}
+                        saldoDe={(b) => Number(b.saldo ?? b.monto_inicial ?? 0)}
+                        verMontos={verMontos}
+                        nombreSala={enSala.length ? nombreSala[enSala[0].branch_id] : ''}
+                        onClose={() => setEntregando(false)}
+                        onHecho={trasLaEntrega}
+                    />
+                </Suspense>
+            )}
 
             {sacando && (
                 <Suspense fallback={null}>

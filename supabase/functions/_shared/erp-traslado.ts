@@ -827,6 +827,29 @@ export function textoDeTraslado(html: string): string {
 }
 
 /**
+ * ¿Ese traslado lleva DE VERDAD el producto de la solicitud?
+ *
+ * Es la guarda del barrido que apaga las tarjetas «Ya llegó, recibir». Saber
+ * que el traslado N ya no está pendiente NO alcanza para cerrar una tarjeta:
+ * hay que saber que el traslado N es el de ESA tarjeta. Si el número guardado
+ * fuera el de otro —el defecto que dejó nueve renglones sin número en los
+ * pedidos 119, 120 y 121, cerrado en v2.666.1— se estaría dando por llegado un
+ * producto que nunca salió.
+ *
+ * `contenido` es lo que devuelve `contenidoDeTraslado`, ya normalizado; el
+ * producto se normaliza acá para que los dos lados se comparen igual. Sin
+ * contenido devuelve `false` a propósito: no se pudo leer, así que no se sabe,
+ * y no saber nunca alcanza para cerrar.
+ */
+export function trasladoLlevaProducto(
+  contenido: string, producto: string | null | undefined,
+): boolean {
+  const buscado = norm(producto ?? "");
+  if (!contenido || !buscado) return false;
+  return contenido.includes(buscado);
+}
+
+/**
  * Cuál de los traslados nuevos es el propio.
  *
  * El `insert` no devuelve el id y el listado no respeta el orden, así que el

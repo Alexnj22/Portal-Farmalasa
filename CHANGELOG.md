@@ -23,7 +23,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.669.0 — El portal apaga solo la tarjeta de un traslado que ya entró
 
-_(pendiente de redactar)_
+Lo levantó el usuario mirando las dos pantallas: el portal decía que Salud 2
+tenía **dos** traslados por recibir y el sistema mostraba **uno solo** de ellos.
+Revisados uno por uno, no eran el mismo caso.
+
+| tarjeta | número | qué decía el sistema |
+|---|---|---|
+| DOLO APRANAX, de Salud 5 | 29932 | **PENDIENTE** — la tarjeta era correcta |
+| VASOTRATE, de Salud 3 | 29444 | **FINALIZADA desde el 17-ago** — ya había entrado |
+
+Y el otro pendiente del sistema —29458, PANADOL + DORIVAL— **no salió del
+portal**: lo hizo una persona desde su propio usuario, por eso no tiene tarjeta.
+Todo lo que despacha el portal entra con la misma cuenta y su concepto dice
+«PIDE … ENV …»; si la columna Envía muestra el nombre de una persona, ese
+traslado se hizo a mano.
+
+**Por qué la tarjeta se quedó abierta.** Se apaga cuando el portal anota la
+recepción, y hay dos formas de que el traslado entre sin que nadie escriba esa
+marca: que alguien lo reciba a mano en el sistema, o —la de este caso, ya
+documentada sobre el 29444 y el 29446— que el portal lo reciba, el sistema lo
+cargue y conteste algo que no se puede leer como éxito. El producto entra y la
+solicitud queda «en camino» para siempre.
+
+**Ahora el portal se lo pregunta solo**, cada media hora en horario de sala
+(`barrer-traslados-recibidos` + `traslados_por_barrer`). Lee dos listas por sala
+y cierra las tarjetas cuyo traslado el sistema ya tenía recibido. **No escribe
+una sola línea en el sistema**: un barrido capaz de cargar inventario sería otra
+cosa y tendría que justificarse aparte.
+
+**La guarda que lo hace seguro es el contenido, no el número.** «Ya no está
+pendiente» no alcanza para cerrar: si el número guardado fuera el de otro
+traslado —el defecto que dejó nueve renglones sin número en los pedidos 119, 120
+y 121, cerrado en v2.666.1— se estaría dando por llegado un producto que nunca
+salió. Antes de cerrar se abre el traslado y se comprueba que adentro está el
+producto de la tarjeta; si no se puede leer, o no coincide, no se cierra y se
+reporta. Anclado en `tests/unit/trasladoLlevaProducto.test.js` contra las
+páginas reales del 29444, el 29445 (mismo día, otra sala, otro producto: el
+contraejemplo) y el 29932.
+
+Tres cosas más que valen por lo que NO hacen: un traslado **anulado** no se
+cierra —ahí el producto no entró y darlo por recibido sería mentir—; la firma va
+en blanco con `via: sistema` porque el sistema no dice quién lo recibió y acá no
+se inventa una; y si otra persona cierra la tarjeta en el medio, el barrido no
+la pisa.
+
+**Medido sobre las 18 tarjetas abiertas de las 6 salas**: 17 correctas y 1
+fantasma, revisadas en **1,3 s**. La fantasma —el VASOTRATE— quedó cerrada.
 
 ## v2.668.4 — El aviso del barrido cuenta antes de afirmar
 

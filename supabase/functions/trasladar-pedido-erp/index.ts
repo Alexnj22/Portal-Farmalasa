@@ -18,6 +18,7 @@ import {
   traerFila,
   RECIBIR,
   TRASLADO,
+  trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 
 // Mueve al sistema de origen el pedido de reposición que Bodega ya terminó de
@@ -966,21 +967,58 @@ Deno.serve(async (req) => {
             numero_vale: vale,
           }), { extra: { Referer: TRASLADO } }));
 
-          if (!resp.ok) {
-            await fallar(`El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`);
-            continue;
-          }
-
-          // Cuál de los nuevos es el propio. NO alcanza con «el que no estaba»:
-          // Bodega despacha solicitudes a mano desde esta misma ubicación todo
-          // el día, y una que caiga entre las dos fotos aparece como candidata.
-          // Ahí desempatan el destino y, si los dos van a la misma sala, el
-          // producto que llevan adentro. Ver `identificarTrasladoNuevo`.
+          // La foto de DESPUÉS se toma pase lo que pase, porque hace falta
+          // tanto para saber cuál es el propio como para saber si salió pese al
+          // «no». Y `conocidos` se actualiza igual aunque esta línea falle: los
+          // traslados que aparecieron existen, y dejarlos como «no estaban»
+          // haría que la línea siguiente los cuente como candidatos suyos.
           const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-          const { id: idTraslado, candidatos } = await identificarTrasladoNuevo(
-            cookie, conocidos, despues, html, sucId, [it.nombre],
-          );
-          conocidos = despues;
+
+          let idTraslado: string | null;
+          let candidatos: string[];
+
+          if (!resp.ok) {
+            /* ── Un «no» del sistema no siempre significa que no salió ──────
+             *
+             * Es la misma lección que la recepción ya tenía aprendida —ahí se
+             * midió el 2026-08-17: diez respuestas de fallo y dos traslados
+             * FINALIZADOS igual—. Acá el desenlace es peor: la línea quedaría
+             * en error con el producto ya fuera del estante, y el pedido diría
+             * que nunca salió.
+             *
+             * Ojo con reusar `identificarTrasladoNuevo` para esto: esa función
+             * da por sentado que el propio existe, así que con UN solo traslado
+             * nuevo lo toma sin abrirlo — y acá ese único bien puede ser el de
+             * otra persona. Por eso se exige que el contenido coincida. */
+            const { id, nuevos } = await trasladoQueSalioPeseAlFallo(
+              cookie, conocidos, despues, [it.nombre],
+            );
+            conocidos = despues;
+            if (!id) {
+              await fallar(
+                `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`
+                // Aparecieron traslados nuevos y ninguno es claramente éste. No
+                // es lo mismo que «no salió nada», y quien lo reintente tiene
+                // que saberlo antes de despachar dos veces.
+                + (nuevos.length ? ` · aparecieron ${nuevos.length} traslado(s) nuevo(s) en esa ubicación (${nuevos.join(", ")}): comprobar antes de reintentar` : ""),
+              );
+              continue;
+            }
+            idTraslado = id;
+            candidatos = [id];
+            avisos.push(`el sistema contestó un fallo y sin embargo lo despachó: ${resp.msg || "sin detalle"}`);
+          } else {
+            // Cuál de los nuevos es el propio. NO alcanza con «el que no
+            // estaba»: Bodega despacha solicitudes a mano desde esta misma
+            // ubicación todo el día, y una que caiga entre las dos fotos
+            // aparece como candidata. Ahí desempatan el destino y, si los dos
+            // van a la misma sala, el producto que llevan adentro. Ver
+            // `identificarTrasladoNuevo`.
+            ({ id: idTraslado, candidatos } = await identificarTrasladoNuevo(
+              cookie, conocidos, despues, html, sucId, [it.nombre],
+            ));
+            conocidos = despues;
+          }
 
           hechas++;
           await admin.from("pedido_traslado_linea").update({

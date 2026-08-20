@@ -69,6 +69,7 @@ import {
   sesionEn as abrirSesionEn,
   TRASLADO,
   leerFila,
+  trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
@@ -781,39 +782,75 @@ Deno.serve(async (req) => {
       id_ubicacion_destino: "0",
       numero_vale: vale,
     }), { extra: { Referer: TRASLADO } }));
+    /* ── Un «no» del sistema no siempre significa que no salió ─────────────
+     *
+     * Es la misma lección que la RECEPCIÓN ya tenía aprendida más arriba, y que
+     * este lado no aplicaba: el 2026-08-17 hubo diez respuestas de fallo al
+     * recibir y dos de esos traslados terminaron FINALIZADOS igual. Del lado
+     * del envío el desenlace es peor — la solicitud volvería a PENDING con el
+     * producto ya fuera de la sala, y quien la vea la despacharía de nuevo.
+     *
+     * No sirve `identificarTrasladoNuevo` acá: esa función da por sentado que
+     * el propio existe, así que con UN solo traslado nuevo lo toma sin abrirlo,
+     * y ese único bien puede ser el de otra persona. El contenido es requisito.
+     */
+    const despues = await pendientesDeOrigen(cookie, ubicOrigen);
+    const descripciones = lineas.map((l) => l.descripcion ?? "");
+
+    let idTraslado: string | null;
+    let nuevos: string[];
+    let avisoDelFallo: string | undefined;
+
     if (!resp.ok) {
-      // Se suelta el candado en vez de esperar a que caduque: el rechazo del
-      // sistema suele ser algo que se corrige y se reintenta enseguida, y hacer
-      // esperar tres minutos por un error ajeno no protege de nada.
-      await admin.from("approval_requests")
-        .update({ metadata: meta }).eq("id", sol.id).eq("status", "PENDING");
-      return json({ ok: false, error: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}` }, 502);
+      const { id, nuevos: aparecieron } = await trasladoQueSalioPeseAlFallo(
+        cookie, antes, despues, descripciones,
+      );
+      if (!id) {
+        // Se suelta el candado en vez de esperar a que caduque: el rechazo del
+        // sistema suele ser algo que se corrige y se reintenta enseguida, y hacer
+        // esperar tres minutos por un error ajeno no protege de nada.
+        await admin.from("approval_requests")
+          .update({ metadata: meta }).eq("id", sol.id).eq("status", "PENDING");
+        return json({
+          ok: false,
+          error: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`
+            // Aparecieron traslados nuevos y ninguno es claramente éste. No es
+            // lo mismo que «no salió nada», y quien reintente tiene que saberlo
+            // antes de despachar dos veces.
+            + (aparecieron.length
+              ? `. Ojo: en ese momento salieron ${aparecieron.length} traslado(s) más desde esa sala, así que puede haber salido igual — comprobalo antes de volver a intentar.`
+              : ""),
+        }, 502);
+      }
+      idTraslado = id;
+      nuevos = [id];
+      avisoDelFallo = `El sistema contestó un fallo y sin embargo lo despachó: ${resp.msg || "sin detalle"}`;
+    } else {
+      // ── Recién ahora la solicitud es APPROVED ──────────────────────────
+      // El propio es el que aparece y antes no estaba. Si en el medio otra
+      // persona despachó desde la misma sala aparecen dos, y ahí desempata el
+      // DESTINO: el listado lo trae como la dirección larga y la página del
+      // traslado tiene la liga sucursal → dirección.
+      //
+      // Si ni así queda uno solo —dos despachos simultáneos de la misma sala a la
+      // misma sala—, se deja en null con los candidatos anotados. El traslado
+      // entró igual; lo único que se pierde es poder recibirlo sin buscarlo a
+      // mano, que es infinitamente mejor que recibir el de otro.
+      // Y si el destino tampoco alcanza —dos traslados de esta sala a la misma
+      // sala, en el mismo instante— se mira lo que llevan adentro. Es el caso que
+      // aparece cuando una sala pide dos productos distintos a la misma sala y
+      // dos personas los despachan a la vez.
+      //
+      // Las dos vueltas vivían acá adentro, copiadas del helper compartido que
+      // nació con ellas y que nadie llamaba. Eso hizo que las otras dos funciones
+      // que despachan —el pedido y la devolución— se quedaran sin desempate
+      // durante meses, y el 2026-08-18 nueve renglones quedaron sin número. Una
+      // sola copia, la de `_shared`.
+      ({ id: idTraslado, candidatos: nuevos } = await identificarTrasladoNuevo(
+        cookie, antes, despues, html, erpDestino, descripciones,
+      ));
     }
 
-    // ── Recién ahora la solicitud es APPROVED ────────────────────────────
-    // El propio es el que aparece y antes no estaba. Si en el medio otra
-    // persona despachó desde la misma sala aparecen dos, y ahí desempata el
-    // DESTINO: el listado lo trae como la dirección larga y la página del
-    // traslado tiene la liga sucursal → dirección.
-    //
-    // Si ni así queda uno solo —dos despachos simultáneos de la misma sala a la
-    // misma sala—, se deja en null con los candidatos anotados. El traslado
-    // entró igual; lo único que se pierde es poder recibirlo sin buscarlo a
-    // mano, que es infinitamente mejor que recibir el de otro.
-    // Y si el destino tampoco alcanza —dos traslados de esta sala a la misma
-    // sala, en el mismo instante— se mira lo que llevan adentro. Es el caso que
-    // aparece cuando una sala pide dos productos distintos a la misma sala y
-    // dos personas los despachan a la vez.
-    //
-    // Las dos vueltas vivían acá adentro, copiadas del helper compartido que
-    // nació con ellas y que nadie llamaba. Eso hizo que las otras dos funciones
-    // que despachan —el pedido y la devolución— se quedaran sin desempate
-    // durante meses, y el 2026-08-18 nueve renglones quedaron sin número. Una
-    // sola copia, la de `_shared`.
-    const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-    const { id: idTraslado, candidatos: nuevos } = await identificarTrasladoNuevo(
-      cookie, antes, despues, html, erpDestino, lineas.map((l) => l.descripcion ?? ""),
-    );
     const aplicado = {
       at: new Date().toISOString(),
       by: quien.id, by_name: quien.name,
@@ -851,7 +888,7 @@ Deno.serve(async (req) => {
       avisos: avisosTraslado.length ? avisosTraslado : undefined,
       unidades,
       total: Number(total.toFixed(4)),
-      msg: resp.msg,
+      msg: avisoDelFallo ?? resp.msg,
       detalle,
     };
 

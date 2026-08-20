@@ -84,14 +84,26 @@ Deno.serve(async (req) => {
     if (abiertas.length === 0)
       return json({ ok: true, simulacro, revisadas: 0, cerradas: [], codigo: "NADA_QUE_BARRER" });
 
-    // Una sesión por sala: la sucursal es estado GLOBAL de la sesión del
-    // sistema, así que las colas de recepción son las de la sala abierta.
+    // Las tarjetas se agrupan por sala porque la sucursal es estado GLOBAL de
+    // la sesión del sistema: la cola de entrada que se lee es la de la sala
+    // abierta, así que hay que abrirlas de a una y preguntar por las suyas.
     const porSala = new Map<number, typeof abiertas>();
     for (const f of abiertas) {
       const suc = Number(f.erp_sucursal_id);
       if (!porSala.has(suc)) porSala.set(suc, []);
       porSala.get(suc)!.push(f);
     }
+
+    // ── Una sola sesión para todas las salas ──────────────────────────────
+    // `sesionEn` pide un `login` porque quien la usa para ESCRIBIR necesita el
+    // suyo: la sucursal es estado global de la sesión, y dos escrituras que
+    // compartan cookie pueden terminar en la sala de la otra. Acá no se escribe
+    // nada y las salas se recorren de a una, así que alcanza con entrar una vez
+    // y cambiar de sala — y entrar cuesta 488 ms contra los 263 de cambiarse
+    // (medido el 2026-08-20). Con seis salas es la diferencia entre ~19 y ~14
+    // viajes por corrida.
+    let sesion: Promise<string> | null = null;
+    const unSoloLogin = () => (sesion ??= login());
 
     const cerradas: unknown[] = [];
     const anulados: unknown[] = [];
@@ -104,7 +116,7 @@ Deno.serve(async (req) => {
 
       let cookie: string;
       try {
-        cookie = await abrirSesionEn(suc, login);
+        cookie = await abrirSesionEn(suc, unSoloLogin);
       } catch (e) {
         // No se pudo abrir la sala: sus tarjetas quedan como estaban. Un
         // barrido que no pudo mirar no concluye nada.

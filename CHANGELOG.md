@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.671.0 — Un «no» del sistema ya no se cree sin comprobarlo
+
+Salió de una pregunta del usuario sobre el barrido de la versión anterior: *«no
+podría mejor hacer doble verificación al finalizar el proceso, sea de aceptación
+de traslado, pedido, o el envío?»*. Al ir a ver, la mitad ya estaba hecha y la
+otra mitad **faltaba justo donde más duele**.
+
+**Lo que ya estaba.** Al RECIBIR, las tres funciones vuelven a preguntarle al
+sistema antes de dar un fallo por bueno. Se agregó el 17-ago con el dato que lo
+justifica: diez respuestas de fallo ese día y **dos de esos traslados quedaron
+FINALIZADOS igual**.
+
+**Lo que faltaba: el ENVÍO.** Los tres caminos que despachan —el pedido, la
+devolución y el traslado entre salas— hacían `si el sistema dice que no,
+fallar`. La misma suposición que ya se había demostrado falsa del otro lado, y
+acá el desenlace es peor: la línea queda en error **con el producto ya fuera del
+estante**, el pedido dice que nunca salió, y quien vea el error lo despacha de
+nuevo.
+
+Ahora, ante un «no», se toma la foto de los pendientes y se busca si salió
+igual. Si aparece, se anota como despachado con el aviso de que el sistema
+contestó un fallo; si no, falla como antes.
+
+**Y no se pudo reusar el desempate que ya existía**, aunque parezca el mismo
+problema. `identificarTrasladoNuevo` da por sentado que el traslado propio
+existe —lo llama después de un éxito—, así que **con un solo candidato lo toma
+sin abrirlo**. Acá la premisa es la contraria, y ese único candidato bien puede
+ser el de otra persona: Bodega despachó 63 solicitudes a mano el 18-ago. Se
+anotaría el número ajeno sobre producto que nunca se movió. Por eso en
+`trasladoQueSalioPeseAlFallo` el contenido no es el desempate, es el
+**requisito**. Y cuando aparecieron traslados nuevos pero ninguno es claramente
+el propio, el mensaje lo dice: «puede haber salido igual — comprobalo antes de
+volver a intentar», que no es lo mismo que «no salió nada». 7 pruebas nuevas.
+
+**El barrido, en consecuencia, pesa menos y corre menos.** Medido contra el
+sistema: entrar cuesta 488 ms y cambiar de sala 263, así que ahora reusa **una
+sola sesión** para las seis salas en vez de una por sala — la corrida completa
+pasó de 1.203 ms a **834 ms**. Y pasa de cada media hora a **cada hora**: el
+caso que puede resolverse al final del proceso ya se resuelve ahí, y lo único
+que le queda —que alguien reciba un traslado a mano en el sistema— deja el
+producto YA en la sala, sin nada trabado. De ~600 pedidos al sistema por día a
+~220.
+
 ## v2.670.0 — El teléfono y la computadora guardan su tema aparte
 
 Lo pidió el usuario: *«unos les gusta en su teléfono negro liquid glass, y en el

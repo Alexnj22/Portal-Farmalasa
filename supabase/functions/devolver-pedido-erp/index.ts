@@ -18,6 +18,7 @@ import {
   traerFila,
   RECIBIR,
   TRASLADO,
+  trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 
 // Devuelve a Bodega lo que quedó de más en la sala después de contar la caja.
@@ -680,20 +681,49 @@ Deno.serve(async (req) => {
           numero_vale: vale,
         }), { extra: { Referer: TRASLADO } }));
 
-        if (!resp.ok) {
-          await fallar(`El sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`);
-          continue;
-        }
-
-        // Cuál de los nuevos es el propio. «El que no estaba» no alcanza: la
-        // sala despacha traslados a otras salas desde esta misma ubicación, y
-        // uno que caiga entre las dos fotos aparece como candidato. Desempatan
-        // el destino y el producto. Ver `identificarTrasladoNuevo`.
+        // La foto de DESPUÉS se toma pase lo que pase: hace falta tanto para
+        // saber cuál es el propio como para saber si salió pese al «no». Y
+        // `conocidos` se actualiza aunque esta devolución falle — los traslados
+        // que aparecieron existen, y dejarlos como «no estaban» haría que la
+        // siguiente los cuente como candidatos suyos.
         const despues = await pendientesDeOrigen(cookie, ubicSala);
-        const { id: idTraslado, candidatos } = await identificarTrasladoNuevo(
-          cookie, conocidos, despues, html, erpBodega, [it.nombre],
-        );
-        conocidos = despues;
+
+        let idTraslado: string | null;
+        let candidatos: string[];
+
+        if (!resp.ok) {
+          /* Un «no» del sistema no siempre significa que no salió: la recepción
+           * ya lo tenía aprendido (medido el 2026-08-17, diez respuestas de
+           * fallo y dos traslados FINALIZADOS igual). Acá el producto ya habría
+           * salido de la sala mientras el portal dice que sigue ahí.
+           *
+           * No sirve `identificarTrasladoNuevo`: da por sentado que el propio
+           * existe y con un único candidato lo toma sin abrirlo. Acá el
+           * contenido es requisito, no desempate. */
+          const { id, nuevos } = await trasladoQueSalioPeseAlFallo(
+            cookie, conocidos, despues, [it.nombre],
+          );
+          conocidos = despues;
+          if (!id) {
+            await fallar(
+              `El sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`
+              + (nuevos.length ? ` · aparecieron ${nuevos.length} traslado(s) nuevo(s) en esa ubicación (${nuevos.join(", ")}): comprobar antes de reintentar` : ""),
+            );
+            continue;
+          }
+          idTraslado = id;
+          candidatos = [id];
+          avisos.push(`el sistema contestó un fallo y sin embargo la despachó: ${resp.msg || "sin detalle"}`);
+        } else {
+          // Cuál de los nuevos es el propio. «El que no estaba» no alcanza: la
+          // sala despacha traslados a otras salas desde esta misma ubicación, y
+          // uno que caiga entre las dos fotos aparece como candidato. Desempatan
+          // el destino y el producto. Ver `identificarTrasladoNuevo`.
+          ({ id: idTraslado, candidatos } = await identificarTrasladoNuevo(
+            cookie, conocidos, despues, html, erpBodega, [it.nombre],
+          ));
+          conocidos = despues;
+        }
 
         await admin.from("pedido_devolucion").update({
           estado: "enviada",

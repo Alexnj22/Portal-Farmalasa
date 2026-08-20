@@ -827,6 +827,48 @@ export function textoDeTraslado(html: string): string {
 }
 
 /**
+ * Después de un «no» del sistema: ¿salió igual?
+ *
+ * ── Por qué no alcanza con `identificarTrasladoNuevo` ─────────────────────
+ * Esa función se llama cuando el `insert` contestó ÉXITO, así que se sabe que
+ * uno de los traslados nuevos es el propio y con un solo candidato se lo toma
+ * sin abrirlo. Acá la premisa es la contraria: no se sabe si el propio existe.
+ * Con un único traslado nuevo —el de otra persona, despachado en esos
+ * segundos— la misma regla contestaría que sí salió, y se anotaría el número
+ * ajeno sobre producto que nunca se movió. Por eso acá el contenido no es el
+ * desempate: es el REQUISITO.
+ *
+ * Devuelve el id sólo si UNO de los nuevos lleva todo lo que se quiso
+ * despachar. `nuevos` sale igual para que quien llama pueda decir «aparecieron
+ * traslados nuevos y ninguno es claramente el tuyo», que no es lo mismo que
+ * «no salió nada».
+ *
+ * `tope` acota lo que se abre: si en la ventana aparecieron muchos, esto no se
+ * puede contestar leyéndolos todos y la respuesta honesta es que no se sabe.
+ */
+export async function trasladoQueSalioPeseAlFallo(
+  cookie: string,
+  antes: Map<string, string>,
+  despues: Map<string, string>,
+  descripciones: string[],
+  leerContenido: (cookie: string, id: string) => Promise<string> = contenidoDeTraslado,
+  tope = 10,
+): Promise<{ id: string | null; nuevos: string[] }> {
+  const nuevos = [...despues.keys()].filter((id) => !antes.has(id));
+  const buscado = descripciones.map((d) => norm(d)).filter(Boolean);
+  if (nuevos.length === 0 || nuevos.length > tope || buscado.length === 0) {
+    return { id: null, nuevos };
+  }
+  const coinciden: string[] = [];
+  for (const id of nuevos) {
+    const contenido = await leerContenido(cookie, id);
+    // Una página que no se pudo leer no suma ni resta: no se sabe qué lleva.
+    if (contenido && buscado.every((d) => contenido.includes(d))) coinciden.push(id);
+  }
+  return { id: coinciden.length === 1 ? coinciden[0] : null, nuevos };
+}
+
+/**
  * ¿Ese traslado lleva DE VERDAD el producto de la solicitud?
  *
  * Es la guarda del barrido que apaga las tarjetas «Ya llegó, recibir». Saber

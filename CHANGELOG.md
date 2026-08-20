@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.692.0 — el vidrio pasa del marco de la vista a las tarjetas
+
+Pregunta del usuario, mirando una pantalla: *«¿por qué el body tiene el
+efecto?»*. Y detrás estaba la observación real: el marco grande de la vista se
+veía como vidrio —borde, brillo, desenfoque— y las tarjetas de adentro como
+rectángulos planos.
+
+**El motivo era estructural.** `GlassViewLayout` emitía `data-surface="card"` en
+su cuerpo, así que **toda tarjeta del portal era una «anidada»**, y la regla de
+§1.5 las aplanaba a propósito: sin desenfoque, sin sombra y sin lente, para que
+no quedara vidrio sobre vidrio a 1.02:1 de contraste —invisible—. La regla era
+correcta; lo que estaba mal era que el cuerpo de vista contara como tarjeta.
+
+Ahora el cuerpo **no es una superficie**. Las tarjetas quedan en primer nivel y
+se llevan el material que les corresponde, y §1.5 no se toca: la anidada sigue
+existiendo para quien de verdad anide.
+
+**No fue un salto a ciegas:** en teléfono el cuerpo ya venía sin card desde el
+2026-07-30 —la cadena de anchos se comía 92px de 320—, o sea que las 33 vistas
+ya se dibujaban así en móvil todos los días. Lo que cambia es que el escritorio
+pasa a verse como lo que ya funcionaba en la mano.
+
+De paso se retiró el atributo `data-cuerpo="vista"` que había durado un commit:
+apagaba el lift del cuerpo, y sin superficie no hay lift que apagar. Una regla
+que no puede matchear no es un interruptor.
+
 ## v2.691.1 — El modal respira y dice por qué no puedes solicitar
 
 Dos cosas de la pantalla de pedir a otra sala, reportadas con captura.

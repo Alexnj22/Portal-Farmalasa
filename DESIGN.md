@@ -557,9 +557,24 @@ Card hover (solo escritorio, `@media (hover: hover)`):
 }
 /* Se levanta la que APUNTÁS, no la que la contiene */
 [data-surface="card"]:has([data-surface="card"]:hover) { transform: none; box-shadow: var(--card-shadow); }
-/* Y el cuerpo de vista no se apunta nunca */
-[data-surface="card"][data-cuerpo="vista"]:hover     { transform: none; box-shadow: var(--card-shadow); }
 ```
+
+**El CUERPO DE VISTA ya no es una superficie (2026-08-20).** `GlassViewLayout`
+dejó de emitir `data-surface="card"` en su cuerpo — decisión del usuario, tras
+preguntar por qué el marco tenía el vidrio y las tarjetas no:
+
+> «¿Por qué el body tiene el efecto?»
+
+Mientras el cuerpo fue una tarjeta, **toda tarjeta del portal era una anidada** y
+§1.5 la aplanaba —sin desenfoque, sin sombra, sin lente— para evitar el 1.02:1
+de vidrio sobre vidrio. Al retirar esa capa las tarjetas quedan en primer nivel
+y se llevan su material, **sin tocar §1.5**: la anidada sigue existiendo para
+quien de verdad anide.
+
+No fue un salto a ciegas: **en teléfono el cuerpo ya venía sin card desde el
+2026-07-30** (la cadena de anchos se comía 92px de 320), o sea que las 33 vistas
+ya se dibujaban así en móvil todos los días. Lo que cambió es que el escritorio
+pasó a verse como lo que ya funcionaba en la mano.
 
 **Se levanta la tarjeta APUNTADA, y sus contenedores se quedan quietos
 (2026-08-20).** `:hover` matchea al elemento *y a todos sus ancestros*, así que
@@ -579,10 +594,10 @@ una tarjeta levantaba la vista entera mientras la tarjeta se quedaba quieta.
 El síntoma medido era cierto y la causa estaba bien identificada; lo que estaba
 mal era **a quién se callaba**. Dos consecuencias para quien escriba una vista:
 
-- **El cuerpo de vista no responde al puntero**, y por eso lleva
-  `data-cuerpo="vista"`. Va por atributo propio y no quitándole
-  `data-surface="card"`: el material —fondo, borde, radio, escalón de las
-  anidadas— es el que tiene que seguir siendo; lo único que sobra es el lift.
+- **El cuerpo de vista no responde al puntero** — hoy ni siquiera es una
+  superficie, así que no hay nada que callarle. Duró un commit un atributo
+  `data-cuerpo="vista"` que le apagaba sólo el lift; se retiró junto con la
+  superficie, porque una regla que no puede matchear no es un interruptor.
 - **`:has()` es el selector correcto y no hay alternativa**: hace falta mirar
   hacia ABAJO desde el contenedor. Donde no exista (Chrome <105, Safari <15.4,
   Firefox <121) la regla se ignora y vuelve el lift acumulado — degrada, no

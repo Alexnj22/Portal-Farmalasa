@@ -3006,15 +3006,10 @@ thead.sticky,
     box-shadow: var(--card-shadow);
   }
 
-  /* El CUERPO DE VISTA no se apunta. Se presenta al cargar y de ahí en más lo
-     que responde son las tarjetas que viven adentro. Va por atributo propio y
-     no quitándole `data-surface="card"`: el material —fondo, borde, radio,
-     escalón de las anidadas— es el que tiene que seguir siendo, y lo único que
-     sobra es la respuesta al puntero. */
-  [data-surface="card"][data-cuerpo="vista"]:hover {
-    transform: none;
-    box-shadow: var(--card-shadow);
-  }
+  /* El cuerpo de vista ya no aparece acá: desde el 2026-08-20 NO emite
+     `data-surface`, así que no hay nada que callarle. Duró un commit el
+     atributo `data-cuerpo="vista"` que le apagaba el lift; se retiró con la
+     superficie, porque una regla que no puede matchear no es un interruptor. */
 }
 
 /* ── El gel le gana al lift (2026-08-07) ──────────────────────────────────

@@ -2,7 +2,6 @@ import React, { useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
-import useMediaQuery from '../hooks/useMediaQuery';
 import useLayoutCompacto from '../hooks/useLayoutCompacto';
 import BarraFlotante from './common/BarraFlotante';
 import {
@@ -83,6 +82,8 @@ const GlassViewLayout = ({
     const canalesDeVista = useCanalesDeVista();
 
     // ── En teléfono la card del cuerpo NO va (2026-07-30) ──────────────────
+    // (Histórico: desde el 2026-08-20 no va en NINGÚN tamaño — ver abajo. Se
+    // conserva la medición porque es el antecedente que hizo seguro el cambio.)
     // Medida la cadena de anchos en un iPhone de 320px: del viewport al primer
     // texto se iban **92px (29%)** en cromo anidado, y la card del cuerpo era
     // parte del problema por dos vías — su borde, y el `px-2` que la separa del
@@ -98,8 +99,24 @@ const GlassViewLayout = ({
     // con un breakpoint de Tailwind: la decisión pasa por el hook. Y tiene que
     // ser `data-surface` ausente y no una clase que lo pise — el material de
     // `data-surface` gana la cascada contra cualquier clase equivalente (T2).
-    const esMovil = useMediaQuery('(max-width: 767px)');
-    const cuerpoConCard = !transparentBody && !esMovil;
+    // ── El cuerpo de vista dejó de ser una superficie (2026-08-20) ────────
+    //
+    // Decisión del usuario, después de preguntar por qué el marco tenía el
+    // vidrio y las tarjetas no: **el vidrio pasa a las tarjetas**. Mientras el
+    // cuerpo fue `data-surface="card"`, TODA tarjeta del portal era una
+    // «anidada» y la regla de §1.5 la aplanaba —sin desenfoque, sin sombra, sin
+    // lente— para que no quedara vidrio sobre vidrio a 1.02:1. Al sacar esta
+    // capa, las tarjetas quedan en primer nivel y se llevan el material que les
+    // corresponde, sin tocar esa regla: la anidada sigue existiendo para quien
+    // de verdad anide.
+    //
+    // **No es un salto a ciegas**: en teléfono el cuerpo ya venía SIN card
+    // desde el 2026-07-30 (la cadena de anchos se comía 92px de 320), o sea que
+    // las 33 vistas ya se dibujan así en móvil todos los días. Lo que cambia es
+    // que el escritorio pasa a verse como lo que ya funciona en la mano.
+    //
+    // `esMovil` se retira con esto: la condición dejó de tener dos ramas.
+    const cuerpoConCard = false;
 
     const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
     const floatStyle = {
@@ -309,15 +326,6 @@ const GlassViewLayout = ({
                 {/* Content body */}
                 <div className="px-0 md:px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
                     <div data-surface={cuerpoConCard ? 'card' : undefined}
-                        // El cuerpo de vista NO responde al puntero. `:hover`
-                        // matchea al elemento y a todos sus ancestros, así que
-                        // sin esto apuntar cualquier tarjeta de adentro
-                        // levantaba la vista entera —y la tarjeta se quedaba
-                        // quieta, porque la regla vieja callaba justo a la
-                        // apuntada—. Lo reportó el usuario el 2026-08-20. El
-                        // material sigue siendo el de tarjeta: lo único que se
-                        // apaga es el lift (ver `data-cuerpo` en index.css).
-                        data-cuerpo="vista"
                         // ── Esta card NO difumina ─────────────────────────
                         // No es una decisión estética: es que no tiene nada que
                         // difuminar. Detrás suyo está el fondo de la página, que

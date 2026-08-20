@@ -122,6 +122,33 @@ describe('opcionesDePresentacion — lo que se lee en el desplegable', () => {
             .toBe('CAJA X 28 (5)');
     });
 
+    // Reportado el 2026-08-20 con una captura: NERVIOSINA X 50 SOBRES, La
+    // Popular con 27 unidades y una CAJA de 50. El desplegable ofrecía «CAJA
+    // (0)», se podía elegir, y elegirla encendía tres avisos rojos a la vez
+    // sobre algo que nunca iba a poder pedirse de esa sala. El cero era exacto;
+    // lo que estaba mal era ofrecerlo como elegible y en cifra.
+    it('la presentación que no entra ni una vez se apaga y lo dice con palabras', () => {
+        const [caja] = opcionesDePresentacion([{ tipo: 'CAJA', factor: 50 }], 27);
+        expect(caja.label).toBe('CAJA — no alcanza para una');
+        expect(caja.disabled).toBe(true);
+    });
+
+    // No se esconde: que el producto se venda por caja de 50 y esta sala tenga
+    // 27 es información. Escondida, el desplegable queda con una sola opción y
+    // nada dice dónde se fue la otra.
+    it('sigue estando en la lista, apagada, junto a las que sí alcanzan', () => {
+        const opts = opcionesDePresentacion(
+            [{ tipo: 'UNIDAD', factor: 1 }, { tipo: 'CAJA', factor: 50 }], 27);
+        expect(opts.map(o => o.label)).toEqual(['UNIDAD (27)', 'CAJA — no alcanza para una']);
+        expect(opts.map(o => Boolean(o.disabled))).toEqual([false, true]);
+    });
+
+    it('sin sala elegida ninguna se apaga: todavía no hay contra qué medir', () => {
+        const opts = opcionesDePresentacion([{ tipo: 'CAJA', factor: 50 }], null);
+        expect(opts[0].label).toBe('CAJA');
+        expect(opts[0].disabled).toBeUndefined();
+    });
+
     it('lista vacía o ausente no rompe', () => {
         expect(opcionesDePresentacion([], 10)).toEqual([]);
         expect(opcionesDePresentacion(null, 10)).toEqual([]);

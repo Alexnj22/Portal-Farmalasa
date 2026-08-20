@@ -291,6 +291,22 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         [presentaciones, sala],
     );
 
+    /* La presentación elegida no puede quedar en una que no alcanza.
+     *
+     * `presIdx` arranca en '0' y no se movía al cambiar de sala, así que con la
+     * primera presentación apagada el formulario quedaba apuntando a ella: el
+     * desplegable mostraba una opción tachada y los avisos hablaban de una
+     * cantidad imposible. Se corre a la primera que sí alcanza — y si NINGUNA
+     * alcanza se queda donde está, porque ahí lo correcto no es elegir por el
+     * usuario sino decirle que en esa sala no hay para una. */
+    const primeraQueAlcanza = opcionesPres.find(o => !o.disabled)?.value ?? null;
+    const ningunaAlcanza = opcionesPres.length > 0 && primeraQueAlcanza === null;
+    useEffect(() => {
+        if (primeraQueAlcanza === null) return;
+        const elegida = opcionesPres.find(o => String(o.value) === String(presIdx));
+        if (!elegida || elegida.disabled) setPresIdx(primeraQueAlcanza);
+    }, [opcionesPres, presIdx, primeraQueAlcanza]);
+
     const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
 
     // Si lleva receta. Decide DOS cosas: el rótulo «Bajo Receta» y —por decisión
@@ -808,17 +824,56 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             </p>
                         )}
 
-                        {pres && Number(cantidad) > 0 && (
-                            <p className={`text-micro font-semibold px-1 ${
-                                unidades > Number(sala?.unidades ?? 0) ? 'text-danger-text' : 'text-content-3'
-                            }`}>
-                                {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
-                                {sala && ` · ${sala.sala} tiene ${sala.unidades}`}
-                                {/* Que quede en cero no impide nada: se dice para
-                                    que quien pide sepa qué está pidiendo. */}
-                                {sala && Number(sala.minimo ?? 0) > 0
-                                  && (Number(sala.unidades) - unidades) < Number(sala.minimo)
-                                  && ` y quedaría en ${Math.max(Number(sala.unidades) - unidades, 0)}, bajo su mínimo de ${sala.minimo}`}
+                        {/* ── Un aviso a la vez, y el que corresponde ───────────
+                            Antes era UNA frase que iba sumando cláusulas, y con
+                            un pedido que no alcanzaba salía así:
+
+                              «50 unidades · La Popular tiene 27 y quedaría en 0,
+                               bajo su mínimo de 62»
+
+                            Dos cosas mal. **«Quedaría en 0» no es cierto**: 27
+                            menos 50 no da 0, da que no se puede — el `Math.max`
+                            lo redondeaba a un número que se lee como un
+                            resultado. Y **el mínimo ahí no viene al caso**: si
+                            no alcanza, que además quede bajo el mínimo es una
+                            preocupación de un escenario que no va a ocurrir.
+
+                            Ahora son tres estados excluyentes, cada uno con su
+                            color: no alcanza (rojo, frena), alcanza pero deja a
+                            la sala corta (ámbar, INFORMA y no impide —decisión
+                            del usuario 2026-08-06—), y alcanza sin más (gris). */}
+                        {pres && Number(cantidad) > 0 && sala && (
+                            unidades > Number(sala.unidades ?? 0) ? (
+                                <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
+                                    No alcanza: pides {unidades} {unidades === 1 ? 'unidad' : 'unidades'} y
+                                    {' '}{sala.sala} tiene {sala.unidades}.
+                                    {Number(cantidad) > 1 && ' Baja la cantidad'}
+                                    {Number(cantidad) > 1 && opcionesPres.length > 1 && ' o elige otra presentación'}
+                                    {Number(cantidad) > 1 && '.'}
+                                </p>
+                            ) : Number(sala.minimo ?? 0) > 0
+                              && (Number(sala.unidades) - unidades) < Number(sala.minimo) ? (
+                                <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                                    {unidades} {unidades === 1 ? 'unidad' : 'unidades'} · {sala.sala} tiene
+                                    {' '}{sala.unidades} y quedaría en {Number(sala.unidades) - unidades},
+                                    bajo su mínimo de {sala.minimo}.
+                                </p>
+                            ) : (
+                                <p className="text-micro font-semibold text-content-3 px-1 leading-snug">
+                                    {unidades} {unidades === 1 ? 'unidad' : 'unidades'} · {sala.sala} tiene {sala.unidades}
+                                </p>
+                            )
+                        )}
+
+                        {/* Ninguna presentación entra ni una vez en lo que la
+                            sala tiene. El desplegable lo dice opción por opción;
+                            esto lo dice una vez y cierra: acá no hay cantidad
+                            que ajustar, hay que pedirle a otra sala. */}
+                        {ningunaAlcanza && sala && (
+                            <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
+                                {sala.sala} tiene {sala.unidades} {sala.unidades === 1 ? 'unidad' : 'unidades'}, y
+                                no alcanzan para una sola de las presentaciones de este producto.
+                                Elige otra sala.
                             </p>
                         )}
 
@@ -864,10 +919,33 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                         </div>
                                     );
                                 })}
-                                {faltan > 0 && (
+                                {/* ── Faltan unidades, pero NO siempre por lo mismo ──
+                                    Decía «con los lotes que dejaste faltan 23» aunque
+                                    no se hubiera dejado ninguno fuera: le echaba la
+                                    culpa a una decisión que la persona no tomó y la
+                                    mandaba a «volver a incluir alguno» cuando no había
+                                    nada que volver a incluir. Visto en la captura del
+                                    2026-08-20, con el único lote incluido.
+
+                                    Son dos causas distintas y cada una tiene su salida:
+                                    o descartaste lotes —y se vuelven a incluir— o la
+                                    sala no tiene tanto, y entonces lo único que se
+                                    puede hacer es pedir menos.
+
+                                    Y cuando la existencia tampoco alcanzaba, el aviso
+                                    de arriba ya lo dijo: repetirlo con otras palabras
+                                    hace dudar de si son dos problemas. */}
+                                {faltan > 0 && descartados.size > 0 && (
                                     <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
-                                        Con los lotes que dejaste faltan {faltan} {faltan === 1 ? 'unidad' : 'unidades'}.
-                                        Baja la cantidad o vuelve a incluir alguno.
+                                        Con los lotes que dejaste fuera faltan {faltan} {faltan === 1 ? 'unidad' : 'unidades'}.
+                                        Vuelve a incluir alguno o baja la cantidad.
+                                    </p>
+                                )}
+                                {faltan > 0 && descartados.size === 0 && unidades <= Number(sala?.unidades ?? 0) && (
+                                    <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
+                                        Los lotes de {sala?.sala ?? 'esa sala'} suman{' '}
+                                        {lotesDeSala.reduce((s, l) => s + Number(l.unidades ?? 0), 0)} unidades,
+                                        menos que las {unidades} que pides. Baja la cantidad.
                                     </p>
                                 )}
                             </div>

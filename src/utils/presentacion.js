@@ -69,11 +69,26 @@ export function opcionesDePresentacion(presentaciones, unidades) {
     return lista.map((p, i) => {
         const t = String(p?.tipo ?? '').trim();
         const nombre = factoresPorTipo.get(t).size > 1 ? `${t} ×${p?.factor}` : t;
-        return {
-            value: String(i),
-            label: unidades == null
-                ? nombre
-                : `${nombre} (${presentacionesEnteras(unidades, p?.factor)})`,
-        };
+        if (unidades == null) return { value: String(i), label: nombre };
+
+        const caben = presentacionesEnteras(unidades, p?.factor);
+        /* ── Ninguna entera: se ofrece APAGADA y se dice por qué ────────────
+         *
+         * «CAJA (0)» se podía elegir, y elegirla producía tres avisos rojos a la
+         * vez —«no alcanza», «quedaría bajo su mínimo», «faltan 23 unidades»—
+         * sobre una opción que NUNCA iba a poder pedirse desde esa sala.
+         * Reportado el 2026-08-20 con una captura: NERVIOSINA X 50 SOBRES, La
+         * Popular con 27 unidades y una CAJA de 50.
+         *
+         * El cero no era un error de cuenta: es exacto. Lo que estaba mal es
+         * ofrecer como elegible algo cuya única respuesta posible es un error, y
+         * hacerlo con un «(0)» que hay que interpretar. Se dice con palabras.
+         *
+         * No se ESCONDE: que el producto se venda por caja de 50 y esta sala
+         * tenga 27 es información — esconderla dejaría un desplegable de una
+         * sola opción sin explicar dónde se fue la otra. */
+        return caben === 0
+            ? { value: String(i), label: `${nombre} — no alcanza para una`, disabled: true }
+            : { value: String(i), label: `${nombre} (${caben})` };
     });
 }

@@ -39,6 +39,9 @@ const DONDE = {
     101: [{ erp_sucursal_id: 1, sala: 'Salud 1', unidades: 90, minimo: 0, vence: null }],
     202: [{ erp_sucursal_id: 2, sala: 'Salud 2', unidades: 80, minimo: 0, vence: null }],
     303: [{ erp_sucursal_id: 1, sala: 'Salud 1', unidades: 70, minimo: 0, vence: null }],
+    // El caso de la captura del 2026-08-20: NERVIOSINA X 50 SOBRES en La
+    // Popular, 27 unidades y un mínimo de 62. La caja es de 50.
+    404: [{ erp_sucursal_id: 5, sala: 'La Popular', unidades: 27, minimo: 62, vence: null }],
 };
 
 vi.mock('../../src/data/traslados', () => ({
@@ -57,6 +60,7 @@ const PRESENTACIONES = {
     101: [{ tipo: 'UNIDAD', factor: 1 }],
     202: [{ tipo: 'CAJA', factor: 10 }],
     303: [{ tipo: 'UNIDAD', factor: 1 }],
+    404: [{ tipo: 'CAJA', factor: 50 }, { tipo: 'UNIDAD', factor: 1 }],
 };
 
 vi.mock('../../src/data/inventoryMovements', () => ({
@@ -87,11 +91,12 @@ const PedirTrasladoModal = (await import('../../src/views/dashboard/PedirTraslad
 
 const EUTIROX = { erp_product_id: 101, descripcion: 'EUTIROX 100' };
 
-const abrir = async () => {
+const abrirCon = async (producto) => {
     await act(async () => {
-        render(<PedirTrasladoModal producto={EUTIROX} onClose={() => {}} onListo={() => {}} />);
+        render(<PedirTrasladoModal producto={producto} onClose={() => {}} onListo={() => {}} />);
     });
 };
+const abrir = () => abrirCon(EUTIROX);
 
 const cantidad = () => screen.getByPlaceholderText('Cant.');
 const ponerCantidad = async (n) => {
@@ -284,6 +289,52 @@ describe('cuando ya salió', () => {
 
         expect(screen.getByText(/2 solicitudes enviadas/)).toBeTruthy();
         expect(screen.getByText(/Salud 1, Salud 2 deciden/)).toBeTruthy();
+    });
+});
+
+// ── Los avisos cuando el pedido no entra ──────────────────────────────────
+// De la captura del 2026-08-20: NERVIOSINA X 50 SOBRES, La Popular con 27
+// unidades y mínimo 62, caja de 50. Salían tres avisos rojos a la vez, uno de
+// ellos culpando de unos lotes que nadie había descartado.
+describe('cuando la sala tiene poco', () => {
+    const NERVIOSINA = { erp_product_id: 404, descripcion: 'NERVIOSINA X 50 SOBRES' };
+
+    // La caja de 50 no entra ni una vez en 27 unidades: elegirla sólo podía
+    // producir un error, así que no se puede elegir — y la presentación queda
+    // en la que sí alcanza.
+    it('la presentación que no alcanza no queda elegida', async () => {
+        await abrirCon(NERVIOSINA);
+        expect(screen.getByText('UNIDAD (27)')).toBeTruthy();
+        expect(screen.queryByText(/CAJA \(0\)/)).toBeNull();
+    });
+
+    // Con 1 unidad sí alcanza; lo único que pasa es que la sala queda corta. Eso
+    // INFORMA y no impide —decisión del usuario 2026-08-06—, así que no puede
+    // decir «no alcanza».
+    it('quedar bajo el mínimo se avisa sin decir que no alcanza', async () => {
+        await abrirCon(NERVIOSINA);
+        expect(screen.getByText(/quedaría en 26, bajo su mínimo de 62/)).toBeTruthy();
+        expect(screen.queryByText(/No alcanza/)).toBeNull();
+    });
+
+    // Y cuando de verdad no alcanza, se dice UNA vez y con el número real: el
+    // texto viejo decía «quedaría en 0», que no es cierto —27 menos 40 no da
+    // cero, da que no se puede— y encima agregaba el mínimo, que ahí no viene
+    // al caso.
+    it('cuando no alcanza lo dice una vez, sin hablar del mínimo', async () => {
+        await abrirCon(NERVIOSINA);
+        await ponerCantidad(40);
+        expect(screen.getByText(/No alcanza: pides 40 unidades y La Popular tiene 27/)).toBeTruthy();
+        expect(screen.queryByText(/quedaría en/)).toBeNull();
+        expect(screen.queryByText(/bajo su mínimo/)).toBeNull();
+    });
+
+    // El que más molestaba: «con los lotes que dejaste faltan 23» con el único
+    // lote incluido. Le echaba la culpa a una decisión que nadie tomó.
+    it('no culpa de unos lotes que nadie descartó', async () => {
+        await abrirCon(NERVIOSINA);
+        await ponerCantidad(40);
+        expect(screen.queryByText(/lotes que dejaste/)).toBeNull();
     });
 });
 

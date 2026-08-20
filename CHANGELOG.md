@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.685.1 — Los avisos de «no alcanza» dicen una cosa sola y la verdadera
+
+Reportado con una captura: NERVIOSINA X 50 SOBRES, La Popular con 27 unidades,
+caja de 50. La pantalla contestaba con **tres avisos rojos a la vez**, y dos de
+ellos decían cosas que no eran ciertas.
+
+**«CAJA (0)» se podía elegir.** El cero era exacto —27 unidades no arman una
+caja de 50— pero se ofrecía como una opción más, y elegirla era la única forma
+de encender los otros dos avisos. Ahora esa opción aparece **apagada y con
+palabras**: «CAJA — no alcanza para una». No se esconde: que el producto se
+venda por caja de 50 y esta sala tenga 27 es información, y escondida dejaría un
+desplegable de una sola opción sin explicar dónde se fue la otra. La
+presentación elegida se corre sola a la primera que sí alcanza, y si ninguna
+alcanza se dice una vez y se cierra: hay que pedirle a otra sala.
+
+**«50 unidades · La Popular tiene 27 y quedaría en 0, bajo su mínimo de 62».**
+Era una frase que iba sumando cláusulas. «Quedaría en 0» no es cierto —27 menos
+50 no da cero, da que no se puede—: un `Math.max` redondeaba el negativo a un
+número que se lee como un resultado. Y el mínimo ahí no venía al caso: si no
+alcanza, que además quede bajo el mínimo es una preocupación de un escenario que
+no va a ocurrir. Ahora son tres estados excluyentes, cada uno con su color: **no
+alcanza** (rojo, y dice el número real), **alcanza pero deja a la sala corta**
+(ámbar — informa y no impide, decisión del usuario del 2026-08-06), y alcanza
+sin más (gris).
+
+**«Con los lotes que dejaste faltan 23 unidades. Baja la cantidad o vuelve a
+incluir alguno.»** — con el único lote incluido. Le echaba la culpa a una
+decisión que la persona no había tomado, y la mandaba a volver a incluir algo
+que nunca sacó. Son dos causas distintas y cada una tiene su salida: o dejaste
+lotes fuera —y se vuelven a incluir— o la sala no tiene tanto, y entonces lo
+único que se puede hacer es pedir menos. Y cuando la existencia tampoco
+alcanzaba, el aviso de arriba ya lo dijo: repetirlo con otras palabras hace
+dudar de si son dos problemas distintos.
+
+Siete pruebas nuevas, cuatro de ellas sobre el caso exacto de la captura.
+
 ## v2.685.0 — Sistema → Carnés del día, y el código nunca se imprime
 
 Dos pedidos del usuario después de probarlo en vivo («funciona»).

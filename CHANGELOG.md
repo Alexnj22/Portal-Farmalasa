@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.680.1 — «admin» son cuatro cargos, no uno
+
+Aclaración del usuario: *«el permiso lo debe tener admin (recuerda a admin como
+administrador, gerente, talento y supervision) y claro QA»*.
+
+En v2.679.0 leí «solo es admin» como el rol llamado **Administrador** y quité de
+`carne_temporal` a Gerente General, Talento Humano y Supervisión. Estaban bien:
+**«admin» acá es el ÁREA, no el rol**. Lo que él estaba señalando al decir
+«compras y logística no está ahí» era que ese cargo no pertenece al área — no
+que la lista se redujera a uno.
+
+Restaurados. Pueden imprimir un carné: **Administrador, Gerente General, Jefe/a
+de Talento Humano, Supervisor/a de Ventas** y QA / Testing.
+
+Lo que sí quedó bien de v2.679.0 y no se toca: los dos papeles —el carné del día
+y la etiqueta del de plástico— piden **el mismo** permiso, así que la lista no se
+puede volver a desincronizar. Compras y Logística sigue con `kiosk_pin`, que es
+otra cosa (ver el PIN de marcación) y nadie pidió cambiar.
+
+**La trampa, anotada para no repetirla:** un rótulo de la conversación no es una
+clave de la tabla. Es la misma regla de «un rótulo no es una clave» de
+`CLAUDE.md`, sólo que acá el rótulo venía de una frase y no de un formulario.
+Ante una palabra que suena a rol, preguntar qué cargos abarca **antes** de
+borrar filas de permisos.
+
 ## v2.680.0 — El aviso dice qué faltó y dónde está
 
 Último paso del plan de traslados. El aviso de que una sala contestó ya existía

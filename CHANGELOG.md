@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.689.0 — El inventario no se reescribe cuando el sistema devuelve lo mismo
+
+**La frecuencia no se toca: sigue cada minuto**, y la sala ve las existencias
+igual de frescas. Lo que se dejó de hacer es escribir en la base cuando el
+sistema devolvió exactamente lo mismo que la vez anterior.
+
+**El número que lo justifica**, medido antes de tocar nada:
+
+```
+por hora:  844.028 filas viajan  →  305 se escriben
+           una de cada 2.767 (el 0,036%)
+por corrida: ~14.000 filas enviadas → unas 5 escritas
+```
+
+Cada una de esas llamadas costaba 84 ms de base y 204 KB de registro de
+escritura, que después Realtime relee entero.
+
+**Cómo se decide.** La corrida le sigue preguntando al sistema cada minuto —eso
+es lo que mantiene la frescura— y calcula una huella de lo que recibió. Si es la
+misma que la vez anterior, no llama a la base. La huella cubre **exactamente**
+lo que decide si hay algo que escribir: el conjunto de claves —de ahí salen los
+borrados por diferencia— y los tres campos que la función compara. Va ordenada,
+porque el orden en que el sistema entrega sus filas no es estable: quedó
+demostrado el mismo día en las compras, donde 13 de 15 documentos volvían
+barajados.
+
+**Por qué se puede confiar en una huella:** porque `sync_inventory_batch` es el
+**único** que escribe `inventory` en toda la base — verificado sobre las
+funciones de Postgres y sobre el código del portal, donde todo lo demás lee. Si
+algo más la escribiera, la huella diría «igual» mientras la copia se aleja.
+
+**Y lleva válvula igual:** si la huella tiene más de 30 minutos se sincroniza
+completo aunque coincida. Una deriva por un camino que nadie previó se cura sola
+en media hora, a costa de dos corridas completas por hora en vez de 60.
+
+**Medido en producción, dos vueltas después del cambio:** 16 corridas, 0
+fallidas, frescura de 11 segundos, y **de las 8 áreas de la segunda vuelta sólo
+2 escribieron** — las otras 6 se saltearon.
+
+**Y una corrección de lo que había propuesto.** Iba a despublicar 7 tablas
+«que nadie escucha» de Realtime. Al verificar contra el código, **las 13
+publicadas tienen suscripción**: las que mostraban cero eran vistas que nadie
+tenía abiertas en ese instante (Pedidos, Rutas). Contar suscripciones activas
+dice quién está mirando ahora, no quién necesita mirar. No se despublicó
+ninguna.
+
 ## v2.688.0 — La presentación se corrige en la lista, y agregar vuelve a mostrar los faltantes
 
 Dos cosas más sobre el compositor, reportadas con capturas.

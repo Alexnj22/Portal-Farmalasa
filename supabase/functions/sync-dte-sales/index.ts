@@ -9,6 +9,23 @@ const LOGIN_URL = "https://clientesdte3.oss.com.sv/farma_salud/login.php";
 const DTE_BASE  = "https://clientesdte3.oss.com.sv/farma_salud/descarga_dte_emitidos_json.php";
 const INV_BASE  = "https://clientesdte3.oss.com.sv/farma_salud/reporte_inventario_json.php";
 
+/**
+ * La huella de un inventario: qué hay, en qué cantidad y con qué nombre.
+ *
+ * Cubre exactamente lo que decide si `sync_inventory_batch` escribe algo —el
+ * conjunto de `sync_key` y los tres campos que compara— y nada más. Ordenada,
+ * porque el orden en que el sistema entrega sus filas no es estable.
+ */
+async function huellaDelInventario(productIds: number[], filas: { sync_key: string; cantidad: number; descripcion: string | null; presentacion: string | null }[]): Promise<string> {
+  const texto = [...productIds].sort((a, b) => a - b).join(',') + '\n'
+    + filas
+      .map((r) => `${r.sync_key}|${r.cantidad}|${r.descripcion ?? ''}|${r.presentacion ?? ''}`)
+      .sort()
+      .join('\n');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
   let lastErr: any;
   for (let i = 0; i < attempts; i++) {
@@ -460,11 +477,9 @@ async function syncInventoryBranch(
     nombre: p.producto,
   })).filter(p => !isNaN(p.id) && p.id > 0);
 
-  if (productUpserts.length > 0) {
-    const { error: prodErr } = await supabase
-      .rpc('insert_missing_products', { p_rows: productUpserts });
-    if (prodErr) throw new Error(`insert_missing_products (inventario): ${prodErr.message}`);
-  }
+  // `insert_missing_products` se llama más abajo, junto con la escritura: si el
+  // inventario vino igual que la vez anterior tampoco puede haber un producto
+  // nuevo, y su lista entra en la huella justamente para asegurarlo.
 
   // Escritura vía RPC sync_inventory_batch (una llamada por sucursal/área):
   // solo escribe filas cuyo dato real cambió (antes se reescribían las ~24K
@@ -507,12 +522,74 @@ async function syncInventoryBranch(
   }
   const dedupedRows = Array.from(rowsByKey.values());
 
+  /* ── Si el sistema devolvió lo mismo, no se toca la base ─────────────────
+   *
+   * La corrida sigue siendo de cada minuto: la sala necesita existencias
+   * frescas y eso no se negocia. Lo que se saltea es la ESCRITURA cuando no hay
+   * nada que escribir. Medido el 2026-08-20: por hora viajan 844.028 filas y
+   * cambian 305 —una de cada 2.767— y cada llamada cuesta 84 ms de base y
+   * 204 KB de WAL, que después Realtime relee entero.
+   *
+   * La huella cubre EXACTAMENTE lo que decide una escritura: el conjunto de
+   * `sync_key` (de ahí salen los borrados por diferencia) y los tres campos que
+   * la RPC compara para actualizar. Si eso no cambió, la RPC escribiría cero.
+   *
+   * Va ordenada porque el orden del sistema no es estable —quedó demostrado el
+   * mismo día en las compras, donde 13 de 15 documentos volvían barajados—, y
+   * una huella que cambia por el orden no serviría para nada.
+   *
+   * Y la lista de productos entra en la huella para que `insert_missing_products`
+   * no se saltee un producto nuevo que todavía no tiene existencias. */
+  const huella = await huellaDelInventario(productUpserts.map((p) => p.id), dedupedRows);
+
+  // El error se mira, y su desenlace es SINCRONIZAR.
+  //
+  // Un `select` que falla en silencio dejaría `previa` en null, que acá se lee
+  // como «no hay huella» — o sea que se sincroniza igual. La dirección segura ya
+  // era ésa por casualidad; se hace explícita porque la casualidad no es una
+  // garantía: si mañana el default fuera saltear, el mismo fallo callado dejaría
+  // el inventario congelado sin que nadie se entere.
+  const { data: previa, error: huellaLeeErr } = await supabase
+    .from('inventory_sync_huella')
+    .select('huella, verificado_at')
+    .eq('erp_sucursal_id', erpId).eq('is_vencidos', isVencidos)
+    .maybeSingle();
+  if (huellaLeeErr)
+    console.error(`huella de inventario (${erpId}/${isVencidos}) no se pudo leer, se sincroniza igual: ${huellaLeeErr.message}`);
+
+  // La válvula: aunque la huella coincida, cada 30 minutos se escribe igual.
+  // Si algún día algo más escribiera `inventory` —hoy nada lo hace—, la deriva
+  // se cura sola en media hora en vez de quedarse para siempre.
+  const fresca = !huellaLeeErr && previa?.verificado_at
+    && (Date.now() - Date.parse(previa.verificado_at)) < 30 * 60_000;
+
+  if (previa?.huella === huella && fresca)
+    return { items: productos.length, rows: 0, sinCambios: true };
+
+  if (productUpserts.length > 0) {
+    const { error: prodErr } = await supabase
+      .rpc('insert_missing_products', { p_rows: productUpserts });
+    if (prodErr) throw new Error(`insert_missing_products (inventario): ${prodErr.message}`);
+  }
+
   const { data: result, error: rpcErr } = await supabase.rpc('sync_inventory_batch', {
     p_erp_sucursal_id: erpId,
     p_is_vencidos:     isVencidos,
     p_rows:            dedupedRows,
   });
   if (rpcErr) throw new Error(`sync_inventory_batch: ${rpcErr.message}`);
+
+  // Recién ahora: si la escritura falló, la próxima corrida la rehace.
+  const { error: huellaErr } = await supabase.from('inventory_sync_huella').upsert({
+    erp_sucursal_id: erpId,
+    is_vencidos:     isVencidos,
+    huella,
+    filas:           dedupedRows.length,
+    verificado_at:   new Date().toISOString(),
+  }, { onConflict: 'erp_sucursal_id,is_vencidos' });
+  // Que no se pueda anotar la huella no invalida el inventario que YA entró:
+  // se avisa y la próxima corrida vuelve a escribir, que es lo de antes.
+  if (huellaErr) console.error(`huella de inventario (${erpId}/${isVencidos}): ${huellaErr.message}`);
 
   return { items: productos.length, rows: result?.written ?? 0 };
 }

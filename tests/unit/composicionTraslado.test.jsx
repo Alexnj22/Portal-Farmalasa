@@ -223,6 +223,70 @@ describe('el último producto no se pierde', () => {
     });
 });
 
+// ── Dónde te deja «Agregar y seguir» ──────────────────────────────────────
+// Reportado el 2026-08-20: «al darle en agregar y seguir, no me gusta dónde me
+// lleva, no debería regresar al listado completo». La forma es la de Ajuste de
+// Inventario: se sigue en «Agregar», con una línea que dice qué entró y un
+// contador en la otra pestaña.
+describe('después de agregar', () => {
+    it('se queda en Agregar y dice cuál entró', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+
+        expect(screen.getByText(/EUTIROX 100 — agregado/)).toBeTruthy();
+        // Y el buscador está listo para el siguiente, no una pantalla de cero.
+        expect(screen.getByText('elegir AMOXICILINA 500')).toBeTruthy();
+    });
+
+    it('la otra pestaña lleva la cuenta de lo que va', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        expect(screen.getByRole('radio', { name: /En la solicitud · 1/ })).toBeTruthy();
+    });
+
+    // El rastro es del ÚLTIMO que entró: al elegir el siguiente se retira, o
+    // diría «agregado» sobre un producto que todavía se está armando.
+    it('el rastro se va al elegir el siguiente producto', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        await elegir('AMOXICILINA 500');
+        expect(screen.queryByText(/— agregado/)).toBeNull();
+    });
+
+    it('la lista vive en su pestaña, no encima del formulario', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+
+        // En «Agregar» no está.
+        expect(screen.queryByRole('button', { name: /Quitar EUTIROX 100/ })).toBeNull();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('radio', { name: /En la solicitud/ }));
+        });
+        expect(screen.getByRole('button', { name: /Quitar EUTIROX 100/ })).toBeTruthy();
+    });
+});
+
+describe('cuando ya salió', () => {
+    // El desenlace manda sobre las pestañas: guarda contra que la pantalla de
+    // «enviada» quede detrás de una pestaña y no se vea nunca.
+    it('la pantalla dice cuántas salieron y a qué salas', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        await elegir('AMOXICILINA 500');
+        await ponerCantidad(2);
+        await ponerCausa('Se acabaron en sala');
+        await solicitar();
+
+        expect(screen.getByText(/2 solicitudes enviadas/)).toBeTruthy();
+        expect(screen.getByText(/Salud 1, Salud 2 deciden/)).toBeTruthy();
+    });
+});
+
 describe('todas entran juntas o no entra ninguna', () => {
     it('viaja un solo insert con las dos filas', async () => {
         await abrir();

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ArrowLeftRight, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, CheckCircle2, Loader2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { useAuth } from '../../context/AuthContext';
@@ -124,6 +125,28 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     /* Con cuántas salas terminó, para poder decirlo al cerrar. Se guarda al
      * enviar porque para entonces el formulario ya se vació. */
     const [resumen, setResumen] = useState(null);
+
+    /* ── Las dos mitades del compositor, como en Ajuste de Inventario ──────
+     *
+     * Reportado por el usuario el 2026-08-20: «al darle en agregar y seguir, no
+     * me gusta dónde me lleva, no debería regresar al listado completo».
+     *
+     * Lo que pasaba: agregar devolvía al buscador con su invitación a pantalla
+     * completa —«busca el producto que necesitas»—, que es la MISMA pantalla del
+     * primer paso. Después de agregar tres productos, el portal seguía diciendo
+     * lo mismo que antes de agregar el primero: se lee como empezar de cero.
+     *
+     * La solución no se inventa acá: Ajuste de Inventario ya resolvió este
+     * formulario —«busco producto, agrego cantidad y lote, y lo agrego, luego el
+     * siguiente»— y lo hace con dos pestañas, «Agregar» y «En la solicitud · N»,
+     * más una línea que confirma qué acaba de entrar. Se copia esa forma, y con
+     * los mismos rótulos: dos compositores que hacen lo mismo con dos dibujos
+     * distintos obligan a aprender dos veces. */
+    const [pestana, setPestana] = useState('agregar');
+    /* Lo último que entró. El contador de la pestaña sube, pero un número que
+     * cambia no dice CUÁL entró — y en una tanda de productos parecidos eso es
+     * justo lo que hay que poder confirmar sin cambiar de pestaña. */
+    const [ultimo,  setUltimo]  = useState('');
     const [origenId, setOrigenId] = useState(null);   // la CLAVE del estante, no el id de sala
     const [presIdx,  setPresIdx]  = useState('0');
     const [presentaciones, setPresentaciones] = useState([]);
@@ -435,6 +458,9 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         if (!lineaActual || yaEstaEnLaLista) return;
         setRenglones(prev => [...prev, lineaActual]);
         setError('');
+        // Queda dicho cuál entró, y NO se cambia de pestaña: se sigue agregando
+        // desde donde se estaba. La lista está a un toque, con su contador.
+        setUltimo(lineaActual.item.descripcion ?? '');
         // El formulario vuelve al buscador, listo para el siguiente. La sala no
         // se conserva a propósito: cada producto tiene su propio mapa de quién
         // lo tiene, y arrastrar la anterior propondría una que quizá no lo
@@ -576,7 +602,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         inventario, atrás no es acá»—. Con el compositor sí es
                         acá: soltar el producto es cómo se elige el siguiente,
                         venga de donde venga. */}
-                    {producto && !listo && (
+                    {producto && !listo && pestana === 'agregar' && (
                         <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
                             onClick={() => {
                                 setElegido(null); setOrigenId(null);
@@ -590,17 +616,59 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             </LiquidModal.Header>
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
-                {/* ── Lo que ya lleva la solicitud ──────────────────────────
-                    Va ARRIBA del formulario: es lo que hay que poder mirar
-                    mientras se agrega el siguiente —«¿ya puse la amoxicilina?»—
-                    y abajo del todo quedaría fuera de la vista en cuanto la
-                    lista pase de tres.
+                {/* ── Las dos mitades, como en Ajuste de Inventario ─────────
+                    «Agregar» y «En la solicitud · N». Los rótulos son los
+                    mismos de allá a propósito: dos compositores que hacen lo
+                    mismo con dos nombres distintos obligan a aprender dos veces.
 
+                    El contador en la pestaña es lo que dice que la lista existe
+                    sin tener que ir a mirarla — y por eso la lista pudo salir de
+                    encima del formulario, que es lo que hacía que agregar se
+                    sintiera como volver al principio. */}
+                {!listo && (
+                    <div className="shrink-0">
+                        <SegmentedControl
+                            value={pestana}
+                            onChange={setPestana}
+                            options={[
+                                { value: 'agregar', label: 'Agregar' },
+                                { value: 'lista',   label: `En la solicitud${renglones.length ? ` · ${renglones.length}` : ''}` },
+                            ]}
+                        />
+                    </div>
+                )}
+
+                {/* Lo último que entró. El contador de la pestaña sube, pero un
+                    número que cambia no dice CUÁL entró — y en una tanda de
+                    productos parecidos eso es justo lo que hay que poder
+                    confirmar sin cambiar de pestaña. Se va al elegir el
+                    siguiente. */}
+                {!listo && pestana === 'agregar' && !producto && ultimo && (
+                    <p className="shrink-0 flex items-center gap-1.5 text-micro font-semibold text-success-text px-1">
+                        <CheckCircle2 size={12} strokeWidth={2.5} className="shrink-0" />
+                        <span className="truncate">{ultimo} — agregado</span>
+                    </p>
+                )}
+
+                {/* ── Lo que ya lleva la solicitud ──────────────────────────
                     Se agrupa por sala porque así es como va a salir: cada
                     encabezado es una solicitud, y lo que cuelga de él es lo que
                     ESA sala va a ver. Verlo antes de mandar es lo que hace que
-                    «se dividen en solicitudes separadas» no sea una sorpresa. */}
-                {!listo && renglones.length > 0 && (
+                    «se dividen en solicitudes separadas» no sea una sorpresa.
+
+                    Vivía encima del formulario, y ahí es donde molestaba: cada
+                    producto agregado empujaba el formulario más abajo, y al
+                    agregar el último la pantalla volvía a la invitación del
+                    primer paso. Acá tiene su propio lugar y su contador. */}
+                {!listo && pestana === 'lista' && (
+                    renglones.length === 0 ? (
+                        <p className="text-label text-content-3 font-medium py-8 text-center leading-snug">
+                            Todavía no agregaste nada.<br />
+                            <span className="text-micro">
+                                Elige el producto en «Agregar», ponle la cantidad y usa «Agregar y seguir».
+                            </span>
+                        </p>
+                    ) : (
                     <div className="flex flex-col gap-2">
                         {[...new Map(renglones.map(r => [r.clave, r.origen])).entries()].map(([clave, origen]) => (
                             <div key={clave} className="flex flex-col gap-1">
@@ -628,18 +696,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             </div>
                         ))}
                     </div>
+                    )
                 )}
 
-                {!producto ? (
-                    <BuscadorDeProducto
-                        placeholder="Buscar el producto que hace falta…"
-                        invitacion={{
-                            icono: ArrowLeftRight,
-                            texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
-                        }}
-                        onElegir={(p) => setElegido({ erp_product_id: p.id, descripcion: p.nombre })}
-                    />
-                ) : listo ? (
+                {/* El desenlace manda sobre las pestañas: cuando la solicitud
+                    ya salió no hay nada que agregar ni que revisar. */}
+                {listo ? (
                     <p className="text-label font-semibold text-success-text py-6 text-center leading-snug">
                         {resumen?.solicitudes > 1
                             ? `${resumen.solicitudes} solicitudes enviadas.`
@@ -652,6 +714,15 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             el producto sale de ahí.
                         </span>
                     </p>
+                ) : pestana === 'lista' ? null : !producto ? (
+                    <BuscadorDeProducto
+                        placeholder="Buscar el producto que hace falta…"
+                        invitacion={{
+                            icono: ArrowLeftRight,
+                            texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
+                        }}
+                        onElegir={(p) => { setUltimo(''); setElegido({ erp_product_id: p.id, descripcion: p.nombre }); }}
+                    />
                 ) : (
                     <>
                         <LiquidSelect
@@ -858,7 +929,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         Sólo aparece cuando el renglón está completo — un botón
                         apagado al lado de otro apagado no dice cuál de los dos
                         se está esperando. */}
-                    {lineaLista && !yaEstaEnLaLista && (
+                    {pestana === 'agregar' && lineaLista && !yaEstaEnLaLista && (
                         <Button variant="secondary" disabled={enviando} onClick={agregar}>
                             Agregar y seguir
                         </Button>

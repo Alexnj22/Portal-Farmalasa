@@ -21,6 +21,115 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.684.0 — El Inicio deja de bajarse 397 kB para mirar veinte filas
+
+Tres cambios de eficiencia en la carga del Inicio, cada uno verificado contra el
+resultado de hoy **antes** de darlo por bueno: es información en vivo y un
+número que cambia sin que nadie lo haya decidido es una mentira, no una mejora.
+
+**Medido en producción (recarga con caché caliente): 958 kB → 657 kB, 51 → 49
+llamadas.** El shell nunca fue el problema: pinta a los 220–350 ms y las tres
+corridas dieron **0 tareas largas**, así que esto tampoco es el vidrio.
+
+### 1. Los traslados por recibir se filtran en la base — y aparecieron tres que faltaban
+
+`fetchTrasladosPorRecibir` se bajaba las 201 primeras solicitudes APROBADAS con
+su `metadata` jsonb entero —**397 kB, el 41% de todo lo que baja la pantalla**—
+para quedarse con unas veinte filas. El filtro corría en el navegador con este
+motivo escrito: «PostgREST no distingue "no existe" de "es null" dentro de un
+jsonb anidado». El motivo era cierto; la conclusión no: lo que no puede hacer
+PostgREST lo hace una función.
+
+**Y el peso no era lo peor.** El `.range(0, 200)` cortaba en 201 filas *antes*
+de filtrar, y hay 205 aprobadas. Medido el 2026-08-20: **cumplían la condición
+19 y el portal mostraba 16**. Tres cajas despachadas y sin recibir no aparecían
+en ninguna pantalla, y como el corte es por antigüedad, el número iba a crecer.
+
+`get_traslados_por_recibir` es INVOKER a propósito: el RLS sigue decidiendo
+quién ve qué, igual que cuando la consulta salía del navegador. El predicado
+reproduce la verdad de **JavaScript** —ausente, null, `false`, `0` y cadena
+vacía son todos «no recibido»—, no la de SQL: un `IS NOT NULL` a secas habría
+dado por recibido un `false`. Verificado fila por fila contra la implementación
+vieja: **0 perdidas, 0 valores distintos, y las que faltaban aparecieron.**
+
+En el navegador: 397 kB → 31.5 kB.
+
+### 2. Los tres conteos de vencimiento son un solo recorrido
+
+El widget pedía vencidas / vence-en-7 / vence-en-30 con tres `HEAD` a
+`inventory`. Salían en paralelo —el comentario lo decía y era cierto—, pero eran
+tres conexiones y tres recorridos del índice sobre la tabla más caliente de la
+base, dentro de una avalancha de 51 llamadas donde cada una se encarece por la
+cola: medidos en 188, 198 y 206 ms.
+
+`contar_inventario_por_vencer` los hace con `count(*) FILTER` en una pasada.
+**Las tres fechas siguen calculándose en el navegador** y viajan como parámetro:
+el corte a UTC-6 es el que decide si un lote que vence hoy cuenta como vencido, y
+moverlo al servidor habría cambiado los números. Verificado en las **siete**
+salas: los 21 conteos, idénticos.
+
+### 3. Las ventas de hoy se pedían dos veces
+
+El efecto dependía del array `branches`, y el store lo reescribe dos veces al
+arrancar: dos peticiones idénticas (`sale_date=eq.<hoy>`) en cada carga. El
+efecto no lee ni una sucursal —arma el mapa con los `branch_id` que devuelve la
+consulta—, así que la dependencia honesta es `branches.length`.
+
+### Lo que se miró y se dejó como está
+
+- **`employees_safe` con `select=*`** (102 kB en la red). La auditoría lo
+  proponía y la medición lo desmintió: son **49 filas / 19 kB en disco**, y
+  acotar las columnas de un directorio que consume toda la app arriesga mucho
+  para ganar poco.
+- **`cortes_caja`, 121 kB cada 60 segundos.** Es lo segundo más pesado del
+  Inicio, pero el peso está repartido en 28 columnas (`observaciones` es el
+  1.4%), y la tarjeta del detalle se alimenta de la misma fila que la lista:
+  bajarlo exige separar lista y detalle, que ya no es un cambio de eficiencia.
+  Queda medido y anotado.
+- **`user_dashboard_prefs` ×2 y `roles` ×2.** Payloads mínimos y vidas
+  distintas: el tema tiene que llegar antes que nada para que la pantalla no
+  parpadee, y la consulta de `roles` de la sesión corre antes de que el store
+  exista. Unirlas cambiaría el arranque para ahorrar dos round-trips de 0 kB.
+
+## v2.683.0 — Pedir a otra sala se compone como el ajuste de inventario
+
+Reportado por el usuario sobre v2.676.0: *«al darle en agregar y seguir, no me
+gusta dónde me lleva, no debería regresar al listado completo, y tener como en
+ajuste de inventario de agregar — para tener un mismo nivel de diseño»*.
+
+Tenía razón y el diagnóstico es exacto. Agregar devolvía al buscador con su
+invitación a pantalla completa —«busca el producto que necesitas para ver qué
+salas lo tienen»—, que es **la misma pantalla del primer paso**. Después de
+agregar tres productos, el portal seguía diciendo lo mismo que antes de agregar
+el primero: se lee como empezar de cero. Y la lista de lo agregado, encima del
+formulario, empujaba el formulario más abajo con cada producto.
+
+Ahora es la forma de Ajuste de Inventario, **con sus mismos rótulos**: dos
+pestañas, **«Agregar»** y **«En la solicitud · N»**. Al agregar se sigue en
+«Agregar», con el buscador listo para el siguiente y una línea que confirma qué
+acaba de entrar —«EUTIROX 100 — agregado»—, que se retira al elegir el que
+sigue. El contador de la pestaña es lo que dice que la lista existe sin tener
+que ir a mirarla, y es lo que permitió sacarla de encima del formulario.
+
+**Los rótulos son los de allá a propósito**: dos compositores que hacen lo mismo
+con dos nombres distintos obligan a aprenderlos dos veces. Es la misma razón por
+la que el compositor se construyó copiando esa forma en vez de inventando una.
+
+Una diferencia deliberada con el ajuste: **«Solicitar» se queda en el pie, en
+las dos pestañas**. Allá el envío vive en la pestaña de la lista porque agregar
+es obligatorio; acá el camino normal —abrir desde la consulta de inventario con
+el producto puesto, poner la cantidad y mandar— es de un solo producto, y
+obligarlo a cambiar de pestaña para enviar sería empeorar lo que hoy hacen las
+215 solicitudes que existen. Lo que se agrega en el pie sólo aparece donde
+sirve: «Agregar y seguir» no se muestra en la pestaña de la lista, donde no hay
+formulario que agregar.
+
+Cinco pruebas nuevas: que agregar deja en «Agregar» y dice cuál entró, que el
+rastro se retira al elegir el siguiente, que el contador sube, que la lista vive
+en su pestaña y no encima del formulario, y que la pantalla de «enviada» sigue
+ganándole a las pestañas —esa última guarda contra que el desenlace quede detrás
+de una pestaña y no se vea nunca.
+
 ## v2.682.0 — el carné del día pregunta en qué sala sale
 
 Pedido del usuario: *«al darle imprimir carné del día, que me pregunte a qué

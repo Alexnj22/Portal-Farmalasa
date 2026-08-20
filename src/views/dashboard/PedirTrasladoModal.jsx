@@ -438,6 +438,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
          * editar la cantidad sin rehacerlo dejaría un pedido de 5 con el reparto
          * de 3 — un renglón que dice una cosa y lleva otra. */
         lotesVivos,
+        /* Las presentaciones de ESE producto, para poder cambiarla desde la
+         * lista. Se guardan por el mismo motivo que los lotes: cuando el
+         * renglón ya está agregado, el formulario está en otro producto y
+         * `presentaciones` es la de otro. Sin esto, corregir «pedí cajas y
+         * quería unidades» obliga a borrar el renglón y rehacerlo. */
+        presentaciones,
         unidades,
         item: {
             erp_product_id:    producto.erp_product_id,
@@ -535,10 +541,21 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * renglón queda marcado y el envío se frena — que es lo mismo que hace el
      * formulario antes de dejar agregar.
      */
-    const editarCantidad = (i, valor) => setRenglones(prev => prev.map((r, j) => {
+    const editarRenglon = (i, cambios) => setRenglones(prev => prev.map((r, j) => {
         if (j !== i) return r;
-        const cant  = Math.max(0, Math.floor(Number(valor)) || 0);
-        const unid  = cant * Number(r.item.factor || 1);
+
+        /* La presentación cambia el FACTOR, y el factor multiplica: pasar de
+         * UNIDAD a CAJA X 100 sin rehacer la cuenta convierte «1» en cien veces
+         * más producto. Por eso las dos correcciones —cantidad y presentación—
+         * salen de la misma función: si fueran dos, una de las dos se olvidaría
+         * de rehacer el reparto por lote. */
+        const tipo   = cambios.presentacion_tipo ?? r.item.presentacion_tipo;
+        const factor = Number(cambios.factor ?? r.item.factor) || 1;
+        const cant   = cambios.cantidad !== undefined
+            ? Math.max(0, Math.floor(Number(cambios.cantidad)) || 0)
+            : Number(r.item.cantidad) || 0;
+
+        const unid  = cant * factor;
         const lotes = r.lotesVivos ?? [];
         const { reparto, faltan } = repartirPedido(lotes, unid);
         return {
@@ -553,6 +570,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 : null,
             item: {
                 ...r.item,
+                presentacion_tipo: tipo,
+                factor,
                 cantidad: cant,
                 lotes: lotes.length > 0
                     ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
@@ -814,13 +833,43 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                                         <PortalInput
                                                             type="number" min="1"
                                                             value={String(r.item.cantidad)}
-                                                            onChange={e => editarCantidad(i, e.target.value)}
+                                                            onChange={e => editarRenglon(i, { cantidad: e.target.value })}
                                                             aria-label={`Cantidad de ${r.item.descripcion}`}
                                                         />
                                                     </div>
+                                                    {/* La presentación también se corrige acá. Sólo
+                                                        cuando hay más de una: con una sola, un
+                                                        desplegable de un elemento es un control que
+                                                        no decide nada. Mismo criterio que el ajuste. */}
+                                                    {(r.presentaciones ?? []).length > 1 ? (
+                                                        <div className="min-w-[9rem] flex-1">
+                                                            <LiquidSelect
+                                                                nano clearable={false}
+                                                                value={`${r.item.presentacion_tipo}|${r.item.factor}`}
+                                                                onChange={v => {
+                                                                    const [tipo, factor] = String(v).split('|');
+                                                                    editarRenglon(i, { presentacion_tipo: tipo, factor: Number(factor) });
+                                                                }}
+                                                                options={opcionesDePresentacion(
+                                                                    r.presentaciones, r.origen.unidades,
+                                                                ).map((o, k) => ({
+                                                                    // El valor viaja por SIGNIFICADO —tipo + factor— y no
+                                                                    // por índice: acá el índice no significa nada fuera de
+                                                                    // la lista que lo produjo.
+                                                                    value: `${r.presentaciones[k].tipo}|${r.presentaciones[k].factor}`,
+                                                                    label: o.label,
+                                                                    disabled: o.disabled,
+                                                                }))}
+                                                                ariaLabel={`Presentación de ${r.item.descripcion}`}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-micro font-semibold text-content-2">
+                                                            {r.item.presentacion_tipo}
+                                                        </span>
+                                                    )}
                                                     <span className="text-micro font-semibold text-content-2">
-                                                        {r.item.presentacion_tipo} · {r.unidades}{' '}
-                                                        {r.unidades === 1 ? 'unidad' : 'unidades'}
+                                                        {r.unidades} {r.unidades === 1 ? 'unidad' : 'unidades'}
                                                     </span>
                                                 </div>
                                             )}
@@ -865,11 +914,22 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     <BuscadorDeInventario
                         placeholder="Buscar el producto que hace falta…"
                         nombreSala={(suc) => NOMBRE_SALA[suc] ?? `Sucursal ${suc}`}
+                        erpSucursal={miErp}
                         invitacion={{
                             icono: ArrowLeftRight,
                             texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
                         }}
-                        onElegir={(p) => { setUltimo(''); setElegido({ erp_product_id: p.id, descripcion: p.nombre }); }}
+                        onElegir={(p) => {
+                            setUltimo('');
+                            // `donde` viaja cuando el buscador ya lo sabe —las
+                            // filas de faltantes lo traen—: con él, el
+                            // formulario no vuelve a preguntar dónde hay.
+                            setElegido({
+                                erp_product_id: p.id,
+                                descripcion: p.nombre,
+                                ...(p.donde?.length ? { donde: p.donde } : {}),
+                            });
+                        }}
                     />
                 ) : (
                     <>

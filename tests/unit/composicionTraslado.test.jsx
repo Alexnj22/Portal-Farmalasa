@@ -59,7 +59,7 @@ vi.mock('../../src/data/inventory', () => ({ fetchInventoryByProductIds: vi.fn(a
 const PRESENTACIONES = {
     101: [{ tipo: 'UNIDAD', factor: 1 }],
     202: [{ tipo: 'CAJA', factor: 10 }],
-    303: [{ tipo: 'UNIDAD', factor: 1 }],
+    303: [{ tipo: 'UNIDAD', factor: 1 }, { tipo: 'CAJA', factor: 10 }],
     404: [{ tipo: 'CAJA', factor: 50 }, { tipo: 'UNIDAD', factor: 1 }],
 };
 
@@ -309,6 +309,39 @@ describe('editar y quitar en «En la solicitud»', () => {
 
         expect(filasEnviadas()[0].metadata.items[0].cantidad).toBe(7);
         expect(filasEnviadas()[0].metadata.total_unidades).toBe(7);
+    });
+
+    // Reportado el 2026-08-20 sobre la tarjeta abierta: «¿y si quiero modificar
+    // la presentación?». Sólo se podía el número.
+    //
+    // Se ancla que el control ESTÉ y esté bien armado —con las presentaciones de
+    // ESE producto y marcando la suya—, no la mecánica de abrir el desplegable:
+    // el recálculo lo hace la misma función que la cantidad, que ya está probada
+    // arriba. Lo que no puede fallar es que el renglón se guarde sus
+    // presentaciones al agregarse: para cuando se corrige, el formulario está en
+    // otro producto y las de la pantalla son las de otro.
+    it('la tarjeta abierta ofrece cambiar la presentación de ESE producto', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+        await elegir('IBUPROFENO 400');   // UNIDAD (1) y CAJA (10)
+        await ponerCantidad(5);
+        await irALista();
+
+        await abrirLapiz('IBUPROFENO 400');
+        const select = screen.getByLabelText('Presentación de IBUPROFENO 400');
+        expect(select).toBeTruthy();
+        expect(select.textContent).toContain('UNIDAD (70)');   // lo que Salud 1 tiene de ESE producto
+    });
+
+    // Y donde hay una sola presentación no se dibuja un desplegable de un
+    // elemento: es un control que no decide nada.
+    it('con una sola presentación no hay desplegable', async () => {
+        await abrir();            // EUTIROX tiene sólo UNIDAD
+        await ponerCantidad(3);
+        await irALista();
+        await abrirLapiz('EUTIROX 100');
+        expect(screen.queryByLabelText('Presentación de EUTIROX 100')).toBeNull();
     });
 
     it('la papelera lo saca y el contador baja', async () => {

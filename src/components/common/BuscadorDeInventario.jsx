@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { Package } from 'lucide-react';
+import { Package, PackageMinus } from 'lucide-react';
 import SearchInput from './SearchInput';
 import ListRow from './ListRow';
 import { SkeletonText } from './StateViews';
-import { buscarInventarioGlobalV2 } from '../../data/inventory';
+import { buscarInventarioGlobalV2, fetchFaltantesConStockEnOtraSala } from '../../data/inventory';
 import { sumaUnidades } from '../../utils/unidadesInventario';
 
 // Elegir un producto viendo QUÉ SALAS LO TIENEN, como en la consulta de
@@ -38,19 +38,38 @@ import { sumaUnidades } from '../../utils/unidadesInventario';
 const esEstanteNormal = (r) => !r?.is_vencidos;
 
 /**
- * @param onElegir   Recibe `{ id, nombre }` — el mismo contrato que
- *                   `BuscadorDeProducto`, para que uno se pueda cambiar por el
- *                   otro sin tocar quien lo usa.
+ * @param onElegir   Recibe `{ id, nombre, donde? }` — el mismo contrato que
+ *                   `BuscadorDeProducto` más el `donde` cuando ya se conoce, que
+ *                   es un viaje menos para quien lo recibe.
  * @param nombreSala De número de sucursal a nombre. Lo pone quien lo usa: el
  *                   mapa vive en la pantalla, no acá.
+ * @param erpSucursal La sala de quien busca. Con ella, la pantalla en blanco
+ *                   muestra lo que a ESA sala le falta; sin ella, la invitación.
  */
 export default function BuscadorDeInventario({
-    onElegir, placeholder, invitacion, nombreSala,
+    onElegir, placeholder, invitacion, nombreSala, erpSucursal = null,
     accentColor = 'var(--brand)', EnvoltorioBusqueda = Fragment,
 }) {
     const [search,  setSearch]  = useState('');
     const [productos, setProductos] = useState([]);
     const [loading, setLoading] = useState(false);
+    /* Lo que a esta sala le falta y otra sí tiene. Es lo mismo que la consulta
+     * de inventario pone antes de que se escriba nada, y por el mismo motivo:
+     * quien abre esta pantalla suele venir a pedir algo que no tiene, así que
+     * la lista se adelanta en vez de esperar a que adivine el nombre.
+     *
+     * Reportado el 2026-08-20: «al dar en agregar más productos debe salir esto
+     * de nuevo», con la captura de esa lista. */
+    const [faltantes, setFaltantes] = useState([]);
+
+    useEffect(() => {
+        if (!erpSucursal) return undefined;
+        let cancelado = false;
+        fetchFaltantesConStockEnOtraSala(erpSucursal).then(r => {
+            if (!cancelado) setFaltantes(r.filas ?? []);
+        });
+        return () => { cancelado = true; };
+    }, [erpSucursal]);
 
     useEffect(() => {
         const q = search.trim();
@@ -117,7 +136,40 @@ export default function BuscadorDeInventario({
                     </div>
                 )}
 
-                {!loading && corto && (
+                {/* La pantalla en blanco NO está en blanco: trae lo que a esta
+                    sala le falta, con la misma cabecera y el mismo «min» que la
+                    consulta de inventario. Elegir uno lo lleva al formulario con
+                    sus salas ya sabidas — un viaje menos. */}
+                {!loading && corto && faltantes.length > 0 && (
+                    <div className="space-y-1.5">
+                        <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                            Sin existencia, puedes solicitar en estas sucursales
+                        </p>
+                        {faltantes.map(f => (
+                            <ListRow
+                                key={f.erp_product_id}
+                                onClick={() => onElegir({
+                                    id: f.erp_product_id, nombre: f.descripcion, donde: f.donde ?? null,
+                                })}
+                                leading={<PackageMinus size={13} className="text-warning-text" strokeWidth={2.5} />}
+                                iconBoxClass="bg-surface-card-hover border-border-card overflow-hidden"
+                                className="border-divider bg-surface-card hover:border-brand/40"
+                                title={f.descripcion}
+                                trailing={(
+                                    <span className="text-micro font-black text-content-3 shrink-0 tabular-nums">
+                                        min {f.min_units}
+                                    </span>
+                                )}
+                            >
+                                <span className="block text-micro text-content-2 font-semibold truncate">
+                                    {(f.donde ?? []).slice(0, 3).map(d => `${d.sala} ${d.unidades}`).join(' · ')}
+                                </span>
+                            </ListRow>
+                        ))}
+                    </div>
+                )}
+
+                {!loading && corto && faltantes.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
                         <IconoInvitacion size={28} strokeWidth={1.5} />
                         <p className="text-body-sm font-semibold text-content-3 text-center px-4">

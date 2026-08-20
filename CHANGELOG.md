@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.688.0 — La presentación se corrige en la lista, y agregar vuelve a mostrar los faltantes
+
+Dos cosas más sobre el compositor, reportadas con capturas.
+
+**«¿Y si quiero modificar la presentación?»** — la tarjeta abierta sólo dejaba
+cambiar el número. Ahora también la presentación, cuando el producto tiene más
+de una; con una sola no se dibuja un desplegable de un elemento, que es un
+control que no decide nada.
+
+Y no es un control más: **la presentación cambia el factor, y el factor
+multiplica**. Pasar de UNIDAD a CAJA X 10 sin rehacer la cuenta convierte 5 en
+cincuenta veces el producto. Por eso las dos correcciones —cantidad y
+presentación— salen de la misma función: separadas, una de las dos se olvidaría
+de rehacer el reparto por lote. El renglón se guarda **sus** presentaciones al
+agregarse, por el mismo motivo que ya se guardaba sus lotes: para cuando se
+corrige, el formulario está en otro producto y las de la pantalla son las de
+otro.
+
+**«Al dar en agregar más productos debe salir esto de nuevo»**, con la captura de
+la consulta de inventario. La pestaña «Agregar» abría con una invitación en
+blanco —«busca el producto que necesitas»—, que es la pantalla del primer paso.
+Ahora abre con **lo que a tu sala le falta y otra sí tiene**: la misma lista de
+la consulta, con su cabecera «Sin existencia, puedes solicitar en estas
+sucursales», las salas que lo tienen y el «min». Elegir uno lo lleva al
+formulario **con sus salas ya sabidas** — un viaje menos que buscarlo por
+nombre.
+
+Se reusa la misma consulta que alimenta esa lista en la consulta de inventario;
+esa vista no se tocó.
+
 ## v2.687.2 — la tarjeta dice dónde se imprimió el carné y quién lo autorizó
 
 Pedido del usuario: *«que salga en la card dónde se imprimió y quién autorizó»*.

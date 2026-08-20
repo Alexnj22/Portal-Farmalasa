@@ -45,6 +45,7 @@ const CarnesDelDiaView = () => {
     const [cargando, setCargando] = useState(true);
     const [fallo, setFallo] = useState(null);
     const [busqueda, setBusqueda] = useState('');
+    const [filtro, setFiltro] = useState('');
     const [aAnular, setAAnular] = useState(null);
     const [anulando, setAnulando] = useState(false);
 
@@ -80,13 +81,25 @@ const CarnesDelDiaView = () => {
 
     // Sólo personal activo: a alguien de baja el servidor no le emite carné, así
     // que ofrecerlo sería ofrecer un botón que siempre falla.
+    //
+    // Desde UNA letra, no dos: escribir «e» y no ver nada se lee como que el
+    // buscador no funciona, que es lo que reportó el usuario. El tope de 12 es
+    // para que la cuadrícula no se vuelva la nómina entera.
     const candidatos = useMemo(() => {
-        if (busqueda.trim().length < 2) return VACIO;
+        if (!busqueda.trim()) return VACIO;
         return employees
             .filter(e => (e.status ?? 'ACTIVO') === 'ACTIVO')
-            .filter(e => tokenMatch(busqueda, e.name, e.first_names, e.last_names, e.role))
-            .slice(0, 8);
+            .filter(e => tokenMatch(busqueda, e.name, e.first_names, e.last_names, e.role, e.username))
+            .slice(0, 12);
     }, [busqueda, employees]);
+
+    // La lista de vigentes también se busca: hoy son pocos, pero el día que una
+    // sala entera trabaje con papel —que es justo el día en que esta pantalla
+    // importa— hay que poder encontrar a UNO sin leerlos todos.
+    const filasVisibles = useMemo(() => {
+        if (!filtro.trim()) return filas;
+        return filas.filter(c => tokenMatch(filtro, c.nombre, c.sala, c.loEntrego));
+    }, [filas, filtro]);
 
     const anular = useCallback(async () => {
         if (!aAnular) return;
@@ -132,40 +145,64 @@ const CarnesDelDiaView = () => {
                         placeholder="Escribe el nombre de la persona"
                     />
 
-                    {busqueda.trim().length >= 2 && (
-                        <div className="mt-3 space-y-2">
-                            {candidatos.length === 0 && (
+                    {busqueda.trim() && (
+                        <div className="mt-4">
+                            {/* «No hay nadie cargado» y «nadie se llama así» son
+                                dos cosas distintas y se ven igual si las dos
+                                dicen «nadie con ese nombre». La primera manda a
+                                revisar cómo escribiste un nombre que está bien.
+                                Es la misma lección de `fetchCajasDeImpresion`. */}
+                            {candidatos.length === 0 && employees.length === 0 && (
+                                <EmptyState compact icon={Ban} iconClass="text-warning"
+                                    title="Todavía no se cargó el personal"
+                                    subtitle="Vuelve a entrar a la pantalla en unos segundos. Si sigue igual, no tienes permiso para ver el listado de personal." />
+                            )}
+                            {candidatos.length === 0 && employees.length > 0 && (
                                 <EmptyState compact icon={Search}
                                     title="Nadie con ese nombre"
                                     subtitle="Revisa cómo está escrito en su ficha." />
                             )}
-                            {candidatos.map(e => (
-                                <div key={e.id} data-surface="card"
-                                    className="flex items-center gap-3 p-3 bg-surface-card-hover/60">
-                                    <LiquidAvatar src={e.photo} alt={e.name} fallbackText={e.name}
-                                        className="w-9 h-9 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-body-sm font-bold text-content truncate">{shortEmployeeName(e)}</p>
-                                        <p className="text-caption text-content-3 truncate">{e.role || 'Sin cargo'}</p>
+                            {/* Tarjetas y no renglones (pedido del usuario,
+                                2026-08-20). Una fila con la foto de 36px a la
+                                izquierda y el botón perdido a la derecha se lee
+                                como una tabla: hay que recorrerla con el dedo
+                                para saber a quién le estás imprimiendo. La
+                                tarjeta pone la cara y el nombre arriba y la
+                                acción abajo, del ancho de la tarjeta — se
+                                reconoce a la persona antes de apretar. */}
+                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                {candidatos.map(e => (
+                                    <div key={e.id} data-surface="card" className="p-4 flex flex-col gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <LiquidAvatar src={e.photo} alt={e.name} fallbackText={e.name}
+                                                className="w-12 h-12 shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="text-body-sm font-black text-content truncate">{shortEmployeeName(e)}</p>
+                                                <p className="text-caption text-content-3 truncate">{e.role || 'Sin cargo'}</p>
+                                                <p className="text-micro text-content-3 truncate">
+                                                    {branches.find(b => String(b.id) === String(e.branchId))?.name || 'Sin sucursal'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <BotonCarneDePapel
+                                            className="w-full"
+                                            employeeId={e.id}
+                                            nombre={shortEmployeeName(e)}
+                                            cargo={e.role || ''}
+                                            sala={branches.find(b => String(b.id) === String(e.branchId))?.name || ''}
+                                            motivo="Desde Sistema"
+                                            alImprimir={releer}
+                                        >Imprimir carné</BotonCarneDePapel>
                                     </div>
-                                    <BotonCarneDePapel
-                                        size="sm"
-                                        employeeId={e.id}
-                                        nombre={shortEmployeeName(e)}
-                                        cargo={e.role || ''}
-                                        sala={branches.find(b => String(b.id) === String(e.branchId))?.name || ''}
-                                        motivo="Desde Sistema"
-                                        alImprimir={releer}
-                                    >Imprimir</BotonCarneDePapel>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* ── Los que andan sueltos ───────────────────────────────── */}
                 <div data-surface="card" className="p-4 md:p-5">
-                    <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                         <h3 className="text-body-sm font-black uppercase tracking-widest text-content">
                             Vigentes ahora {!cargando && !fallo && `(${filas.length})`}
                         </h3>
@@ -173,6 +210,16 @@ const CarnesDelDiaView = () => {
                             Actualizar
                         </Button>
                     </div>
+
+                    {/* El buscador aparece cuando hay suficientes como para
+                        perderse. Con dos tarjetas en pantalla, un campo de
+                        búsqueda es un control que estorba. */}
+                    {!cargando && !fallo && filas.length > 4 && (
+                        <div className="mb-3">
+                            <SearchInput value={filtro} onChange={setFiltro}
+                                placeholder="Buscar entre los vigentes" />
+                        </div>
+                    )}
 
                     {cargando && <SkeletonText lines={3} />}
 
@@ -188,23 +235,37 @@ const CarnesDelDiaView = () => {
                             subtitle="Los que se imprimieron antes de hoy ya dejaron de servir." />
                     )}
 
-                    {!cargando && !fallo && filas.length > 0 && (
-                        <div className="space-y-2">
-                            {filas.map(c => (
-                                <div key={c.id} data-surface="card"
-                                    className="flex items-center gap-3 p-3 bg-surface-card-hover/60">
-                                    <LiquidAvatar src={c.foto} alt={c.nombre} fallbackText={c.nombre}
-                                        className="w-9 h-9 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-body-sm font-bold text-content truncate">{c.nombre}</p>
-                                        <p className="text-caption text-content-3 truncate flex items-center gap-1">
-                                            <Clock size={11} className="shrink-0" />
-                                            Vale hasta medianoche
-                                            {c.sala ? ` · ${c.sala}` : ''}
-                                            {` · lo entregó ${c.loEntrego}`}
-                                        </p>
+                    {!cargando && !fallo && filas.length > 0 && filasVisibles.length === 0 && (
+                        <EmptyState compact icon={Search}
+                            title="Ninguno coincide"
+                            subtitle="Prueba con otro nombre o con la sala." />
+                    )}
+
+                    {!cargando && !fallo && filasVisibles.length > 0 && (
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {filasVisibles.map(c => (
+                                <div key={c.id} data-surface="card" className="p-4 flex flex-col gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <LiquidAvatar src={c.foto} alt={c.nombre} fallbackText={c.nombre}
+                                            className="w-12 h-12 shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-body-sm font-black text-content truncate">{c.nombre}</p>
+                                            <p className="text-caption text-content-3 truncate">{c.cargo || 'Sin cargo'}</p>
+                                        </div>
                                     </div>
-                                    <Button variant="destructive" size="sm" icon={Ban}
+
+                                    <div className="space-y-1">
+                                        <p className="text-caption text-content-2 flex items-center gap-1.5">
+                                            <Clock size={12} className="shrink-0 text-content-3" />
+                                            Vale hasta medianoche
+                                        </p>
+                                        {c.sala && (
+                                            <p className="text-caption text-content-3 truncate">Salió en {c.sala}</p>
+                                        )}
+                                        <p className="text-caption text-content-3 truncate">Lo entregó {c.loEntrego}</p>
+                                    </div>
+
+                                    <Button variant="destructive" className="w-full" icon={Ban}
                                         onClick={() => setAAnular(c)}>Anular</Button>
                                 </div>
                             ))}

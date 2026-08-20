@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.685.2 — los carnés del día se ven como tarjetas y la lista se busca
+
+Reporte del usuario sobre la pantalla nueva, con captura: *«falta buscar, que se
+vean como cards no como listas»*.
+
+**Tarjetas, no renglones.** Un renglón con la foto de 36 px a la izquierda y el
+botón perdido en el borde derecho se lee como una tabla: hay que recorrerlo con
+el dedo para saber a quién le estás imprimiendo o a quién le estás anulando el
+carné. La tarjeta pone la cara y el nombre arriba y la acción abajo, del ancho de
+la tarjeta. Vale para las dos listas de la pantalla — los resultados de la
+búsqueda y los vigentes.
+
+**Buscar:**
+
+- Los resultados salen desde **una** letra, no desde dos. Escribir «e» y no ver
+  nada se lee como que el buscador no funciona.
+- La búsqueda mira también el **usuario**, además del nombre y el cargo.
+- **Los vigentes ahora también se buscan** (por nombre, sala o quién lo entregó).
+  El campo aparece cuando hay más de cuatro: con dos tarjetas en pantalla un
+  buscador es un control que estorba.
+
+Y una distinción que faltaba: **«todavía no se cargó el personal» y «nadie se
+llama así» ya no se ven igual**. Decirle «nadie con ese nombre» a alguien que
+escribió bien el nombre lo manda a revisar lo que está bien, cuando el problema
+es otro — el listado no llegó, o no tiene permiso para verlo. Es la misma
+lección que dejó `fetchCajasDeImpresion` el 19-ago.
+
 ## v2.685.1 — Los avisos de «no alcanza» dicen una cosa sola y la verdadera
 
 Reportado con una captura: NERVIOSINA X 50 SOBRES, La Popular con 27 unidades,

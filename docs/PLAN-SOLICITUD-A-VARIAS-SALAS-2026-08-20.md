@@ -119,8 +119,8 @@ sale de esa medición en vez de un número inventado. Arranca conservador.
    subir), anota lo que salió y el tiempo de cada renglón. Desplegado, v31.
 3. ✅ **Decisión** (v2.674.0) — la tarjeta de quien despacha: casilla por
    renglón con lo máximo puesto, motivo obligatorio al recortar.
-4. ⬜ **Composición** — el modal multi-renglón y multi-sala, y la división al
-   enviar.
+4. ✅ **Composición** (v2.676.0) — «Agregar y seguir» en el modal, lista
+   agrupada por sala y la división al enviar en un solo `insert`.
 5. ⬜ **Agrupado** — la vista de quien pidió: las hermanas juntas, recibir por
    sala y confirmar todo.
 6. ⬜ **Avisos** — uno por sala que contesta, con la sugerencia de dónde está lo
@@ -138,15 +138,16 @@ que mirar la primera vez que alguien despache de menos:
 - **`erp_traslado.ms_por_renglon`**, que es de donde va a salir el tope de
   productos por solicitud del paso 4.
 
-### Cómo se va a construir el paso 4
+### Lo que dejó el paso 4
 
-Sin rehacer el modal. Hoy `PedirTrasladoModal` resuelve producto → sala →
-cantidad → lotes → motivo, y eso queda igual: lo que se agrega al lado del botón
-de enviar es **«Agregar y seguir»**, que empuja ese renglón a una lista y deja
-el formulario listo para el siguiente. Es la misma forma que el ajuste de
-inventario, que el usuario ya conoce —*«busco producto, agrego cantidad y lote,
-y lo agrego, luego el siguiente»*— y evita reescribir el camino por el que
-entraron las 215 solicitudes que existen.
+Se hizo sin rehacer el modal: `PedirTrasladoModal` sigue resolviendo producto →
+sala → cantidad → lotes, y al lado de enviar apareció **«Agregar y seguir»**. Al
+enviar, la lista se agrupa por **(sala, estante)** y sale una solicitud por
+grupo, todas con el mismo `grupo_id` cuando hay más de una.
 
-Al enviar, la lista se agrupa por **(sala, estante)** y sale una solicitud por
-grupo, todas con el mismo `grupo_id`.
+**Y destapó tres carreras que ya existían** y que el paso 5 conviene tener
+presentes, porque son del mismo molde: al cambiar de producto, lo del anterior
+seguía en memoria mientras llegaba lo nuevo —la lista de salas, el mapa de lotes
+y las presentaciones—. Las tres se arreglan limpiando el estado ANTES de
+preguntar. Cualquier pantalla que cambie de sujeto sin desmontarse tiene el
+mismo riesgo.

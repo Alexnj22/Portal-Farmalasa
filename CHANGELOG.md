@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.696.1 — Documentada la lectura de boletas y la prueba sobre recetas
+
+`docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md`: qué se construyó para el
+comprobante de una salida de dinero, **por qué bloquea** (decisión del usuario,
+con la objeción que se le hizo anotada), dónde vive ese bloqueo y por qué no está
+en la base, cuánto cuesta cada lectura con volumen medido de producción, y el
+resultado de la prueba con **cinco recetas reales**.
+
+Lo de las recetas es la parte que **no se construyó**, y el documento existe para
+que no se construya sin leerlo. Leídas con Opus 5: encabezado impreso 5/5,
+J.V.P.M. **3 de 5** —una receta usa otro registro y otra no identifica al
+médico—, apellido del paciente ~2 de 5, medicamentos legibles en 3 de 5. Las dos
+que fallaron son las dos mal fotografiadas, o sea que el editor mejora la
+lectura y no sólo el archivo.
+
+Los nombres de los pacientes no se transcriben: para lo que se medía —si la letra
+es descifrable— alcanza con «acerté el nombre de pila y fallé el apellido».
+
 ## v2.696.0 — las acciones de la fila, al mantener presionada la tarjeta
 
 Reportado sobre Mín·Máx: *«¿cómo obtengo acceso a los botones de acción? los

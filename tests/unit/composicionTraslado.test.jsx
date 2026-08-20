@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, cleanup } from '@testing-library/react';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Una composición, varias solicitudes.
@@ -88,22 +88,29 @@ vi.mock('../../src/components/common/BuscadorDeInventario', () => ({
 }));
 
 const PedirTrasladoModal = (await import('../../src/views/dashboard/PedirTrasladoModal.jsx')).default;
+const { useComposicionTraslado } = await import('../../src/store/composicionTraslado.js');
 
 const EUTIROX = { erp_product_id: 101, descripcion: 'EUTIROX 100' };
+const AMOXI   = { erp_product_id: 202, descripcion: 'AMOXICILINA 500' };
+const IBU     = { erp_product_id: 303, descripcion: 'IBUPROFENO 400' };
 
+/* Abrir el formulario es MONTARLO: desde el 2026-08-20 agregar un producto lo
+ * cierra y devuelve a la consulta de inventario, y elegir el siguiente lo vuelve
+ * a abrir. Que lo compuesto sobreviva a ese ciclo es justamente lo que hay que
+ * probar, así que las pruebas lo montan y desmontan igual que la consulta. */
 const abrirCon = async (producto) => {
+    cleanup();
     await act(async () => {
         render(<PedirTrasladoModal producto={producto} onClose={() => {}} onListo={() => {}} />);
     });
 };
 const abrir = () => abrirCon(EUTIROX);
+/** Lo que hace «Terminar solicitud» en la consulta: abrir sin producto. */
+const terminar = () => abrirCon(null);
 
 const cantidad = () => screen.getByPlaceholderText('Cant.');
 const ponerCantidad = async (n) => {
     await act(async () => { fireEvent.change(cantidad(), { target: { value: String(n) } }); });
-};
-const elegir = async (nombre) => {
-    await act(async () => { fireEvent.click(screen.getByText(`elegir ${nombre}`)); });
 };
 const agregar = async () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Agregar' })); });
@@ -115,7 +122,6 @@ const irALista = async () => {
     await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /En la solicitud/ })); });
 };
 const ponerCausa = async (t) => {
-    await irALista();
     await act(async () => {
         fireEvent.change(screen.getByPlaceholderText(/Para qué se pide/), { target: { value: t } });
     });
@@ -132,7 +138,12 @@ const filasEnviadas = () => {
     return Array.isArray(arg) ? arg : [arg];
 };
 
-beforeEach(() => { crearSolicitudTraslado.mockClear(); });
+beforeEach(() => {
+    crearSolicitudTraslado.mockClear();
+    // La composición vive en un store de módulo: sin esto, lo que arma una
+    // prueba se lo encuentra la siguiente.
+    useComposicionTraslado.setState({ renglones: [], causa: '' });
+});
 
 describe('dos productos a la misma sala', () => {
     it('sale UNA solicitud con los dos renglones y sin marca de grupo', async () => {
@@ -140,10 +151,11 @@ describe('dos productos a la misma sala', () => {
         await ponerCantidad(3);
         await agregar();
 
-        await elegir('IBUPROFENO 400');   // también en Salud 1
+        await abrirCon(IBU);              // también en Salud 1
         await ponerCantidad(5);
         await agregar();
 
+        await terminar();
         await ponerCausa('Se acabaron en sala');
         await solicitar();
 
@@ -164,10 +176,11 @@ describe('el mismo pedido a dos salas', () => {
         await ponerCantidad(3);           // EUTIROX → Salud 1
         await agregar();
 
-        await elegir('AMOXICILINA 500');  // → Salud 2
+        await abrirCon(AMOXI);            // → Salud 2
         await ponerCantidad(2);
         await agregar();
 
+        await terminar();
         await ponerCausa('Se acabaron en sala');
         await solicitar();
 
@@ -195,22 +208,26 @@ describe('el mismo pedido a dos salas', () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         await ponerCantidad(2);
+        await irALista();          // cambiar de pestaña agrega el que está a la vista
         await ponerCausa('Se acabaron en sala');
         expect(screen.getByRole('button', { name: 'Solicitar a 2 salas' })).toBeTruthy();
     });
 });
 
 describe('el último producto no se pierde', () => {
-    // Se agrega uno, se arma el segundo y se aprieta Solicitar sin agregarlo.
-    it('entra aunque no se haya apretado Agregar', async () => {
+    // Se arma el segundo y se va a la lista sin haber apretado «Agregar».
+    // Cambiar de pestaña lo agrega: es lo que alguien hace cuando terminó, y
+    // dejarlo afuera sería tirarlo en silencio.
+    it('cambiar de pestaña con el formulario lleno lo agrega', async () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
 
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         await ponerCantidad(2);
+        await irALista();
         await ponerCausa('Se acabaron en sala');
         await solicitar();
 
@@ -226,8 +243,9 @@ describe('el último producto no se pierde', () => {
         await ponerCantidad(3);
         await agregar();
 
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         await ponerCantidad(0);
+        await irALista();
         await ponerCausa('Se acabaron en sala');
 
         expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
@@ -241,14 +259,28 @@ describe('el último producto no se pierde', () => {
 // Inventario: se sigue en «Agregar», con una línea que dice qué entró y un
 // contador en la otra pestaña.
 describe('después de agregar', () => {
-    it('se queda en Agregar y dice cuál entró', async () => {
+    // Agregar CIERRA el formulario y devuelve a la consulta de inventario, que
+    // es donde se elige el siguiente (pedido del usuario, 2026-08-20). Lo
+    // agregado sobrevive a ese cierre: vive en el store, no en la pantalla.
+    it('lo agregado sobrevive a cerrar y volver a abrir', async () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
 
-        expect(screen.getByText(/EUTIROX 100 — agregado/)).toBeTruthy();
-        // Y el buscador está listo para el siguiente, no una pantalla de cero.
-        expect(screen.getByText('elegir AMOXICILINA 500')).toBeTruthy();
+        await abrirCon(AMOXI);     // la consulta abre el formulario con otro
+        expect(screen.getByRole('radio', { name: /En la solicitud · 1/ })).toBeTruthy();
+    });
+
+    // «Terminar solicitud» en la consulta abre el formulario SIN producto: ahí
+    // lo que se viene a hacer es revisar y mandar, no agregar.
+    it('abrir sin producto cae en la lista, con todo lo armado', async () => {
+        await abrir();
+        await ponerCantidad(3);
+        await agregar();
+
+        await terminar();
+        expect(screen.getByRole('button', { name: 'Quitar EUTIROX 100' })).toBeTruthy();
+        expect(screen.getByPlaceholderText(/Para qué se pide/)).toBeTruthy();
     });
 
     it('la otra pestaña lleva la cuenta de lo que va', async () => {
@@ -264,7 +296,7 @@ describe('después de agregar', () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         expect(screen.queryByText(/— agregado/)).toBeNull();
     });
 
@@ -324,7 +356,7 @@ describe('editar y quitar en «En la solicitud»', () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
-        await elegir('IBUPROFENO 400');   // UNIDAD (1) y CAJA (10)
+        await abrirCon(IBU);              // UNIDAD (1) y CAJA (10)
         await ponerCantidad(5);
         await irALista();
 
@@ -382,8 +414,10 @@ describe('cuando ya salió', () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         await ponerCantidad(2);
+        await agregar();
+        await terminar();          // «Terminar solicitud», desde la consulta
         await ponerCausa('Se acabaron en sala');
         await solicitar();
 
@@ -443,9 +477,10 @@ describe('todas entran juntas o no entra ninguna', () => {
         await abrir();
         await ponerCantidad(3);
         await agregar();
-        await elegir('AMOXICILINA 500');
+        await abrirCon(AMOXI);
         await ponerCantidad(2);
         await agregar();
+        await terminar();
         await ponerCausa('Se acabaron en sala');
         await solicitar();
 

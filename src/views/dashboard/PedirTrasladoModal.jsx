@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ArrowLeftRight, Check, CheckCircle2, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import BuscadorDeInventario from '../../components/common/BuscadorDeInventario';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -9,6 +9,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
+import { useComposicionTraslado } from '../../store/composicionTraslado';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
 import { fetchInventoryByProductIds } from '../../data/inventory';
@@ -102,7 +103,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     const [elegido, setElegido] = useState(productoInicial ?? null);
     const producto = elegido;
 
-    /* ── Los renglones ya agregados ────────────────────────────────────────
+    /* ── Los renglones ya agregados VIVEN FUERA de este modal ─────────────
      *
      * Una sola composición, varias solicitudes. Pedido del usuario:
      *
@@ -120,8 +121,20 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * aprobador, el aviso, la sala de respaldo, el documento del sistema (uno
      * por origen, con su número de vale) y el freno de duplicados—. Y una sola
      * fila haría que Salud 2 vea adentro de su solicitud los renglones de
-     * Salud 3. */
-    const [renglones, setRenglones] = useState([]);
+     * Salud 3.
+     *
+     * ⚠️ Y por qué en un STORE y no acá: agregar un producto CIERRA este modal
+     * para volver a la consulta de inventario a elegir el siguiente (pedido del
+     * usuario, 2026-08-20). Con la lista adentro, cerrarlo la borraría. Ver
+     * `store/composicionTraslado.js`. */
+    const renglones   = useComposicionTraslado(s => s.renglones);
+    const causa       = useComposicionTraslado(s => s.causa);
+    const setCausa    = useComposicionTraslado(s => s.setCausa);
+    const agregarAlStore = useComposicionTraslado(s => s.agregar);
+    const quitarDelStore = useComposicionTraslado(s => s.quitar);
+    const editarEnStore  = useComposicionTraslado(s => s.editar);
+    const limpiarStore   = useComposicionTraslado(s => s.limpiar);
+
     /* Con cuántas salas terminó, para poder decirlo al cerrar. Se guarda al
      * enviar porque para entonces el formulario ya se vació. */
     const [resumen, setResumen] = useState(null);
@@ -142,20 +155,18 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * más una línea que confirma qué acaba de entrar. Se copia esa forma, y con
      * los mismos rótulos: dos compositores que hacen lo mismo con dos dibujos
      * distintos obligan a aprender dos veces. */
-    const [pestana, setPestana] = useState('agregar');
+    /* Abre en «Agregar» cuando viene con un producto, y en la lista cuando no:
+     * abrirlo sin producto es lo que hace la consulta al apretar «terminar la
+     * solicitud», y ahí lo que se viene a hacer es revisar y mandar. */
+    const [pestana, setPestana] = useState(productoInicial ? 'agregar' : 'lista');
     /* Qué renglón de la lista está abierto para corregir. Uno a la vez: dos
      * abiertos serían dos formularios en una lista, que es lo que la tarjeta
      * cerrada vino a evitar. */
     const [editando, setEditando] = useState(null);
-    /* Lo último que entró. El contador de la pestaña sube, pero un número que
-     * cambia no dice CUÁL entró — y en una tanda de productos parecidos eso es
-     * justo lo que hay que poder confirmar sin cambiar de pestaña. */
-    const [ultimo,  setUltimo]  = useState('');
     const [origenId, setOrigenId] = useState(null);   // la CLAVE del estante, no el id de sala
     const [presIdx,  setPresIdx]  = useState('0');
     const [presentaciones, setPresentaciones] = useState([]);
     const [cantidad, setCantidad] = useState('1');
-    const [causa,    setCausa]    = useState('');
     const [enviando, setEnviando] = useState(false);
     const [listo,    setListo]    = useState(false);
     const [error,    setError]    = useState('');
@@ -495,17 +506,23 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     const puedeEnviar = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
         && conProblema.length === 0 && causa.trim().length > 0;
 
-    const agregar = () => {
+    /* Agregar y volver a la consulta.
+     *
+     * Pedido del usuario, 2026-08-20: «al dar en agregar más productos debe
+     * salir esto de nuevo», con la captura de la consulta de inventario. O sea
+     * que la pantalla siguiente no es otra vista adentro del formulario: es la
+     * consulta, con su buscador y su lista de faltantes, que es de donde se
+     * viene y donde está todo. Así que el formulario se cierra.
+     *
+     * Lo agregado NO se pierde al cerrar: vive en el store. Al elegir el
+     * siguiente producto el formulario vuelve a abrirse con la lista intacta, y
+     * la consulta muestra mientras tanto cuántos productos llevás. */
+    const agregar = ({ cerrar = true } = {}) => {
         if (!lineaActual || yaEstaEnLaLista) return;
-        setRenglones(prev => [...prev, lineaActual]);
+        agregarAlStore(lineaActual);
         setError('');
-        // Queda dicho cuál entró, y NO se cambia de pestaña: se sigue agregando
-        // desde donde se estaba. La lista está a un toque, con su contador.
-        setUltimo(lineaActual.item.descripcion ?? '');
-        // El formulario vuelve al buscador, listo para el siguiente. La sala no
-        // se conserva a propósito: cada producto tiene su propio mapa de quién
-        // lo tiene, y arrastrar la anterior propondría una que quizá no lo
-        // tenga.
+        if (cerrar) { onClose?.(); return; }
+        // Sin cerrar —al cambiar de pestaña— el formulario vuelve al buscador.
         setElegido(null);
         setOrigenId(null); setPresIdx('0'); setCantidad('1');
         setDescartados(new Set());
@@ -519,14 +536,11 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * —o habría que frenar el envío con un aviso pidiendo volver a apretar
      * «Agregar», que es pedirle a la persona que adivine el modelo interno. */
     const irA = (destino) => {
-        if (destino === 'lista' && lineaActual && !yaEstaEnLaLista) agregar();
+        if (destino === 'lista' && lineaActual && !yaEstaEnLaLista) agregar({ cerrar: false });
         setPestana(destino);
     };
 
-    const quitar = (i) => {
-        setRenglones(prev => prev.filter((_, j) => j !== i));
-        setEditando(null);
-    };
+    const quitar = (i) => { quitarDelStore(i); setEditando(null); };
 
     /* ── Cambiar la cantidad de un renglón ya agregado ─────────────────────
      *
@@ -541,44 +555,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * renglón queda marcado y el envío se frena — que es lo mismo que hace el
      * formulario antes de dejar agregar.
      */
-    const editarRenglon = (i, cambios) => setRenglones(prev => prev.map((r, j) => {
-        if (j !== i) return r;
-
-        /* La presentación cambia el FACTOR, y el factor multiplica: pasar de
-         * UNIDAD a CAJA X 100 sin rehacer la cuenta convierte «1» en cien veces
-         * más producto. Por eso las dos correcciones —cantidad y presentación—
-         * salen de la misma función: si fueran dos, una de las dos se olvidaría
-         * de rehacer el reparto por lote. */
-        const tipo   = cambios.presentacion_tipo ?? r.item.presentacion_tipo;
-        const factor = Number(cambios.factor ?? r.item.factor) || 1;
-        const cant   = cambios.cantidad !== undefined
-            ? Math.max(0, Math.floor(Number(cambios.cantidad)) || 0)
-            : Number(r.item.cantidad) || 0;
-
-        const unid  = cant * factor;
-        const lotes = r.lotesVivos ?? [];
-        const { reparto, faltan } = repartirPedido(lotes, unid);
-        return {
-            ...r,
-            unidades: unid,
-            // Por qué NO se puede mandar, si es que no se puede. Se guarda en el
-            // renglón y no se recalcula al pintar: lo que frena el envío y lo
-            // que se lee en la tarjeta tienen que ser el mismo juicio.
-            problema: cant <= 0 ? 'sin cantidad'
-                : unid > Number(r.origen.unidades ?? 0) ? `${r.origen.sala} tiene ${r.origen.unidades}`
-                : (lotes.length > 0 && faltan > 0) ? `faltan ${faltan} en los lotes`
-                : null,
-            item: {
-                ...r.item,
-                presentacion_tipo: tipo,
-                factor,
-                cantidad: cant,
-                lotes: lotes.length > 0
-                    ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
-                    : null,
-            },
-        };
-    }));
+    /* Corregir un renglón ya agregado. La cuenta la rehace el store: cantidad y
+     * presentación pasan por el mismo cálculo porque el factor multiplica, y
+     * separadas una de las dos se olvidaría de rehacer el reparto por lote. */
+    const editarRenglon = (i, cambios) => editarEnStore(i, cambios);
 
     const enviar = async () => {
         if (!puedeEnviar) return;
@@ -660,6 +640,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 solicitudes: filas.length,
                 salas: [...porSala.values()].map(g => g[0].origen.sala),
             });
+            /* La composición se vacía ACÁ y no al cerrar: cerrar es lo que se
+             * hace para ir a buscar el siguiente producto, y ahí lo que llevás
+             * tiene que seguir estando. Se vacía cuando de verdad salió. */
+            limpiarStore();
             setListo(true);
             setTimeout(() => { onListo?.(); onClose?.(); }, 2200);
         } catch (e) {
@@ -744,18 +728,6 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             ]}
                         />
                     </div>
-                )}
-
-                {/* Lo último que entró. El contador de la pestaña sube, pero un
-                    número que cambia no dice CUÁL entró — y en una tanda de
-                    productos parecidos eso es justo lo que hay que poder
-                    confirmar sin cambiar de pestaña. Se va al elegir el
-                    siguiente. */}
-                {!listo && pestana === 'agregar' && !producto && ultimo && (
-                    <p className="shrink-0 flex items-center gap-1.5 text-micro font-semibold text-success-text px-1">
-                        <CheckCircle2 size={12} strokeWidth={2.5} className="shrink-0" />
-                        <span className="truncate">{ultimo} — agregado</span>
-                    </p>
                 )}
 
                 {/* ── Lo que ya lleva la solicitud ──────────────────────────
@@ -920,7 +892,6 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
                         }}
                         onElegir={(p) => {
-                            setUltimo('');
                             // `donde` viaja cuando el buscador ya lo sabe —las
                             // filas de faltantes lo traen—: con él, el
                             // formulario no vuelve a preguntar dónde hay.
@@ -1211,7 +1182,17 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 La salida en ese paso es la X del encabezado. */}
             {!listo && (producto || renglones.length > 0) && (
                 <LiquidModal.Footer>
-                    <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                    {/* Con algo armado, cerrar y DESCARTAR son dos cosas
+                        distintas: la equis del encabezado sale un momento —es
+                        cómo se va a buscar el siguiente producto— y esto tira lo
+                        que llevás. Con la lista vacía son lo mismo y el botón se
+                        llama como siempre. */}
+                    <Button
+                        variant="secondary"
+                        onClick={() => { if (renglones.length > 0) limpiarStore(); onClose?.(); }}
+                    >
+                        {renglones.length > 0 ? 'Descartar todo' : 'Cancelar'}
+                    </Button>
 
                     {/* ── Un botón por pestaña, como en Ajuste de Inventario ───
                         En «Agregar» se agrega; en «En la solicitud» se manda.

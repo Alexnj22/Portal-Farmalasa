@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.690.0 — La solicitud sigue viva al volver a la consulta de inventario
+
+Lo que faltaba de v2.688.0. Ahí la pestaña «Agregar» **imitaba** la consulta de
+inventario adentro del formulario; ahora se vuelve a la consulta de verdad,
+con su buscador, sus siete salas y su lista de faltantes.
+
+Agregar un producto **cierra el formulario** y devuelve a la consulta. Eliges el
+siguiente ahí, se vuelve a abrir, y lo que llevabas sigue estando. Arriba de la
+lista aparece **«Llevas 2 productos en la solicitud — elige otro para agregarlo,
+o termínala»**, con el botón que vuelve al formulario a revisar y mandar.
+
+**Lo agregado dejó de vivir en el formulario.** Con la lista adentro, cerrarlo la
+borraba — y cerrarlo es justamente lo que hay que hacer para ir a buscar el
+siguiente producto. Vive en un store (`store/composicionTraslado.js`) por dos
+motivos: sobrevive al cierre, y la consulta se dibuja en **dos** sitios —la
+baldosa del tablero y su pantalla grande—, así que con el estado en el widget
+cada copia tendría su propia solicitud a medias y cuál se manda dependería de
+por cuál puerta se entró.
+
+No sobrevive a recargar la página, a propósito: una solicitud a medias que
+reaparece dos días después es peor que una que se perdió — quien la ve no sabe
+si la armó él, ni si la existencia que vio sigue estando.
+
+**Cerrar y descartar pasan a ser dos cosas distintas.** La equis del encabezado
+sale un momento —es cómo se va a buscar el siguiente producto— y el botón de al
+lado, que con algo armado se llama **«Descartar todo»**, tira lo que llevas. Con
+la lista vacía son lo mismo y sigue diciendo «Cancelar».
+
+Y **la composición se vacía cuando la solicitud sale**, no al cerrar el
+formulario.
+
+Se fue el rótulo «X — agregado»: existía para confirmar lo que entraba sin
+cambiar de pestaña, y ahora quien confirma es el aviso de la consulta, que
+además se ve desde donde se elige el siguiente.
+
+Las pruebas ahora **montan y desmontan** el formulario como lo hace la consulta,
+que es la única forma de probar lo que se vino a arreglar: que lo compuesto
+sobreviva a ese ciclo.
+
+**Lo que cambia y conviene saber:** un producto a medio llenar que se abandona
+cerrando con la equis se pierde, porque nunca se agregó. Dentro del formulario
+sigue sin perderse — cambiar a «En la solicitud» con el renglón terminado lo
+agrega.
+
 ## v2.689.1 — las tarjetas de carnés recuperan el vidrio y la foto su marco
 
 Pregunta del usuario mirando la pantalla: *«¿las cards son canónicas? No

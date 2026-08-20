@@ -23,6 +23,7 @@ import { unidadesDe, sumaUnidades } from '../../utils/unidadesInventario';
 import SearchInput from '../../components/common/SearchInput';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import { Carril, FranjaVacia } from './InstrumentoBaldosa';
+import { useComposicionTraslado } from '../../store/composicionTraslado';
 /* El formulario de pedir a otra sala se baja al APRETAR «Solicitar», no al
  * entrar al Inicio.
  *
@@ -597,6 +598,14 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
   const [vencidosProds,  setVencidosProds]  = useState([]);
   const [faltantes,      setFaltantes]      = useState([]);
   const [pedido,         setPedido]         = useState(null);   // el faltante que se está pidiendo
+  /* Volver a abrir el formulario SIN producto, para revisar y mandar lo que ya
+     se armó. Es lo que hace el aviso de abajo: agregar un producto cierra el
+     formulario y devuelve acá —pedido del usuario, 2026-08-20— así que tiene que
+     haber un camino de vuelta que no sea elegir otro producto. */
+  const [terminando,     setTerminando]     = useState(false);
+  /* Cuántos productos lleva la solicitud a medio armar. Vive en un store porque
+     sobrevive al formulario: ver `store/composicionTraslado.js`. */
+  const enLaSolicitud = useComposicionTraslado(s => s.renglones.length);
   const [srsResults,     setSrsResults]     = useState(null);
   const [srsLoading,   setSrsLoading]   = useState(false);
   const [alternatives, setAlternatives] = useState([]);
@@ -940,11 +949,11 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
             pantalla de búsqueda no llega hasta acá: sin montarlo también en
             esta rama, «Solicitar» pondría el producto en el estado y no se
             abriría nada. */}
-        {pedido && (
+        {(pedido || terminando) && (
           <Suspense fallback={null}>
             <PedirTrasladoModal
               producto={pedido}
-              onClose={() => setPedido(null)}
+              onClose={() => { setPedido(null); setTerminando(false); }}
               // Recarga los faltantes Y avisa hacia arriba: cuando esto vive
               // dentro de «Nueva solicitud», la lista de Solicitudes que quedó
               // atrás tiene que enterarse — `approval_requests` no viaja por
@@ -973,6 +982,26 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
     <div className="flex flex-col gap-2.5 flex-1 min-h-0">
 
       {error && <p className="shrink-0 px-1 text-label text-danger-text font-medium">{error}</p>}
+
+      {/* ── La solicitud que quedó a medio armar ──────────────────────────────
+          Agregar un producto cierra el formulario y devuelve acá, para elegir el
+          siguiente en esta misma pantalla (pedido del usuario, 2026-08-20). Sin
+          esta línea, lo agregado quedaría vivo y sin ninguna forma de volver a
+          él salvo elegir otro producto — y quien no recuerde que lo dejó
+          empezado no tendría cómo enterarse.
+
+          Va ARRIBA de la lista y no al pie: es lo que hay que ver al volver. */}
+      {enLaSolicitud > 0 && (
+        <div className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-brand/10 border border-brand/30">
+          <p className="flex-1 min-w-0 text-label font-semibold text-brand-text leading-snug">
+            Llevas {enLaSolicitud} {enLaSolicitud === 1 ? 'producto' : 'productos'} en la solicitud.
+            Elige otro para agregarlo, o termínala.
+          </p>
+          <Button size="sm" className="shrink-0" onClick={() => setTerminando(true)}>
+            Terminar solicitud
+          </Button>
+        </div>
+      )}
 
       {/* Results area */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1214,11 +1243,11 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
 
       {/* Se monta SOLO al pedir: si no, cada faltante de la lista traería sus
           presentaciones al abrir el widget. */}
-      {pedido && (
+      {(pedido || terminando) && (
         <Suspense fallback={null}>
           <PedirTrasladoModal
             producto={pedido}
-            onClose={() => setPedido(null)}
+            onClose={() => { setPedido(null); setTerminando(false); }}
             onListo={() => { cargarFaltantes(); onSolicitado?.(); }}
           />
         </Suspense>

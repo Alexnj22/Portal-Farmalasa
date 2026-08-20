@@ -9,13 +9,25 @@ import { signPhotosDeep } from '../utils/storageFiles';
 // siempre la cifra buena — cuenta mal los cobros de crédito, ver
 // `utils/cortesDiagnostico.js`.
 
+// Las 21 columnas que ALGUIEN lee. Eran 28 hasta el 2026-08-20: `tk_venta`,
+// `tk_ingresos`, `tk_subtotal`, `tk_vales`, `tk_retencion`, `capturado_at` y
+// `desfase_seg` no aparecían en una sola línea de `src/` fuera de esta lista
+// —verificado columna por columna—, así que viajaban en cada respuesta para que
+// nadie las mirara.
+//
+// No es un detalle de arranque: `WidgetCortesSala` repite esta consulta **cada
+// 60 segundos** mientras el Inicio esté abierto, y son 7 días de cortes (187
+// filas medidas). El peso de una fila de `cortes_caja` está repartido en sus
+// columnas —`observaciones` es apenas el 1.4%—, así que lo que se paga es la
+// CANTIDAD de columnas, y en JSON cada una viaja con su nombre en cada fila.
+//
+// Antes de sacar una de acá: `grep -rlw <columna> src/`. Si aparece en algún
+// lado, se queda — la lista existe para no traer de más, no para adivinar.
 const CAMPOS = `
     id, branch_id, erp_corte_id, tipo, fecha, hora, turno, empleado_texto,
     total_declarado, diferencia_erp, esperado,
-    tk_venta, tk_ingresos, tk_subtotal, tk_vales, tk_cobros_credito,
-    tk_total_caja, tk_retencion, tk_devoluciones, tk_tarjeta, tk_credito,
-    estado, motivo_descarte, observaciones, resuelto_por, resuelto_at,
-    capturado_at, desfase_seg
+    tk_cobros_credito, tk_total_caja, tk_devoluciones, tk_tarjeta, tk_credito,
+    estado, motivo_descarte, observaciones, resuelto_por, resuelto_at
 `;
 
 /**

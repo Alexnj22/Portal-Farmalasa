@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.685.3 — Los cortes dejan de traer siete columnas que nadie lee
+
+Verificación de los tres puntos que la auditoría de ayer dejó anotados como «se
+miró y se deja». Dos se confirmaron; **uno estaba mal razonado y se corrigió**.
+
+### Lo que cambió: `fetchCortes` pasa de 28 a 21 columnas
+
+`tk_venta`, `tk_ingresos`, `tk_subtotal`, `tk_vales`, `tk_retencion`,
+`capturado_at` y `desfase_seg` **no aparecen en una sola línea de `src/`** fuera
+de la lista que las pide — verificado columna por columna, y descartado que
+alguien recorra las claves de la fila (`Object.keys/entries/values`: cero
+apariciones en todo el módulo de cortes) o que haya una exportación que las
+vuelque. Nada las lee, así que sacarlas no puede cambiar una pantalla.
+
+Y no era sólo la carga inicial. Medido en el navegador durante 190 segundos:
+`WidgetCortesSala` repite la consulta a los **1, 61, 121 y 181 segundos** — son
+7 días de cortes, cada minuto, mientras el Inicio esté abierto.
+
+**121 kB → 92.2 kB por corrida**, o sea de ~7.3 MB a ~5.5 MB por hora de tablero
+abierto. Los tres consumidores de `fetchCortes` (el widget, `CortesView` y
+`useCortesDeAvisos`) reciben lo mismo que antes menos lo que no miraban.
+
+### Lo que se confirmó: `employees_safe` se queda con `select=*`
+
+De sus **83 columnas, 80 se referencian en `src/`**. Las tres que no
+(`blocked_reason`, `blocked_at`, `blocked_by`) son el 3.6%, y sus hermanas del
+mismo grupo (`blocked_until`) sí se usan.
+
+El dato que sí vale la pena tener escrito: de los 102 kB que pesa esa respuesta,
+**sólo ~18 kB son datos**. El resto son los nombres de los 83 campos repetidos en
+las 49 filas —`photo_url` sola es el 38% del contenido real—. O sea que el costo
+de esa consulta es la CANTIDAD de columnas, no lo que traen; bajarlo de verdad
+exigiría partir el directorio (una ficha liviana para toda la app, la completa
+sólo en el expediente), que es un rediseño y no un cambio de eficiencia.
+
+### Lo que estaba mal razonado: los pares de `roles` y `user_dashboard_prefs`
+
+Ayer se dijo que no se unían porque tenían «vidas distintas»: que el tema tenía
+que llegar antes que nada y que la consulta de `roles` de la sesión corría antes
+de que el store existiera. **La cronología lo desmiente**: los dos `roles` salen
+en t+439 y t+440 ms, y los dos `user_dashboard_prefs` en t+438 y t+525. Son
+simultáneos.
+
+La razón verdadera es otra, y sigue sosteniendo la decisión:
+
+- **`roles`**: la consulta chica (`max_price_level, is_su` de UN rol) la hace
+  `AuthContext`, y la grande el store. Unirlas obligaría a que la sesión dependa
+  del store, cuando es el store el que arranca detrás de la sesión. Se invierte
+  una dependencia para ahorrar un round-trip de 0 kB.
+- **`user_dashboard_prefs`**: son la misma fila, pero `useThemeSync` corre en
+  **toda** pantalla y la de layout sólo en Inicio. Unirlas haría que cada vista
+  del portal se baje el acomodo de widgets que no va a usar.
+
+Queda escrito para que la próxima revisión no repita el análisis con el
+argumento equivocado.
+
 ## v2.685.2 — los carnés del día se ven como tarjetas y la lista se busca
 
 Reporte del usuario sobre la pantalla nueva, con captura: *«falta buscar, que se

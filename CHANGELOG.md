@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.671.1 — El vigía de los cortes pregunta igual de seguido y molesta la mitad
+
+Salió de preguntarse si el portal no le estaba pidiendo demasiado al sistema.
+Medido: la vigilancia de los cortes es, de lejos, lo que más le pide —**2.863
+disparos en 24 h**, contra 1.433 del siguiente y 1 del barrido de traslados—.
+Cada corrida eran **13 peticiones**: un ingreso, más un cambio de sala y un
+listado por cada una de las 6 salas.
+
+**La cadencia no se toca, y esa es la premisa.** Quien corta la caja quiere
+verlo en el momento: si hubo diferencia tiene que poder revisarla y rehacer el
+corte ahí mismo. Cada 30 segundos se queda como está. Lo que se bajó es lo que
+cuesta cada corrida.
+
+**Dos ideas se probaron y se descartaron con datos**, que es la mitad del
+trabajo:
+
+- *Pedir las 6 salas en un solo listado.* No se puede: la sala es estado de la
+  sesión. Con `id_sucursal_dom` de cualquier valor el listado devuelve 146 bytes
+  y cero filas, y pedirlo sin acotar por sala —probado en el listado gemelo de
+  traslados— **se colgó a los 60 segundos** intentando devolver 30.255 filas. El
+  bucle por sala lo impone el sistema, no el portal.
+- *Saltarse las salas cerradas.* Suena obvio y está mal: **el corte llega
+  después de cerrar**. Hay 30 cortes detectados a las 21:00 y 13 a las 22:00,
+  con salas que cierran justo a esa hora. Filtrar por horario retrasaría
+  exactamente el corte del final del día, que es el que importa. Y ni siquiera
+  ahorraba: la ventana del cron (7 a 22) ya calza con el horario de las salas —
+  medido, 90 horas-sala contra 96, un 6%.
+
+**Lo que sí se pudo: no rehacer la sesión en cada vuelta.** Ingresar cuesta
+488 ms y cambiarse de sala 263, contra 83-152 del listado — o sea que más de la
+mitad del trabajo era preparar la sesión, no preguntar. Ahora hay una sesión por
+sala que sobrevive a la corrida, y la corrida son los **6 listados**: de 13
+peticiones a 6, **la mitad**, sin mover el reloj ni un segundo.
+
+**El riesgo que trae guardar la sesión, y cómo queda cerrado.** Una sesión
+vencida no da error: devuelve la pantalla entera en vez del fragmento. Eso ya se
+detectaba; ahora además se rehace la sesión y se pregunta una vez más. Y el
+cambio de sala **se comprueba antes de guardar** la sesión: una cookie parada en
+la sala equivocada devolvería los cortes de otra sala en cada corrida, guardados
+con el nombre de ésta. Eso es peor que no ver un corte — es verlo mal.
+
+**Verificado contra un día real**: leyendo el 19-ago devuelve 6, 8, 4, 7, 6 y 3
+cortes por sala, que es **exactamente** lo que ese día quedó guardado, y cero
+cortes nuevos. Cada sesión mira la sala que le toca.
+
 ## v2.671.0 — Un «no» del sistema ya no se cree sin comprobarlo
 
 Salió de una pregunta del usuario sobre el barrido de la versión anterior: *«no

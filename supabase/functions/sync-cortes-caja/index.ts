@@ -75,6 +75,80 @@ async function getSessionCookie(username: string, password: string): Promise<str
 }
 
 /**
+ * Una sesión POR SALA, viva entre corridas.
+ *
+ * ── Por qué ──────────────────────────────────────────────────────────────
+ * Esta función corre cada 30 segundos de 7 a 22, porque quien corta la caja
+ * quiere verlo en el momento: si hubo diferencia tiene que poder revisarla y
+ * rehacer el corte ahí mismo, no media hora después. Esa cadencia no se toca.
+ *
+ * Lo que sí se puede bajar es lo que cuesta CADA corrida. Antes eran 13
+ * peticiones al sistema: un ingreso + un cambio de sala y un listado por cada
+ * una de las 6 salas. Pero la sala es estado de la sesión y la sesión sobrevive
+ * a la corrida, así que teniendo una cookie ya parada en cada sala, la corrida
+ * es solamente los 6 listados. Medido el 2026-08-20: ingresar cuesta 488 ms,
+ * cambiarse de sala 263 y el listado 83-152. O sea que se va más de la mitad
+ * del trabajo en preparar la sesión, no en preguntar.
+ *
+ * ── La trampa, y cómo se detecta ─────────────────────────────────────────
+ * Una sesión vencida NO da error: `admin_corte.php` devuelve la pantalla
+ * entera en vez del fragmento, y eso ya se detectaba (mezclar esa respuesta con
+ * el listado real guardaría cortes de otro rango). Acá esa misma señal sirve
+ * para rehacer la sesión y volver a preguntar UNA vez. Si la segunda también
+ * viene entera, es otra cosa y se reporta como antes.
+ *
+ * Se probó primero si el listado podía traer las 6 salas de una: no. Con
+ * `id_sucursal_dom` de cualquier valor devuelve 146 bytes y cero filas, y sin
+ * acotar por sala el listado de traslados —el mismo patrón— tardó más de 60
+ * segundos intentando devolver 30.255 filas. El bucle por sala lo impone el
+ * sistema, no el portal.
+ */
+const sesiones = new Map<number, string>();
+
+async function sesionDeSala(erpId: number, username: string, password: string): Promise<string> {
+  const guardada = sesiones.get(erpId);
+  if (guardada) return guardada;
+  const cookie = await getSessionCookie(username, password);
+  // ⚠️ El cambio de sala se COMPRUEBA antes de guardar la sesión.
+  //
+  // Antes no se miraba, y con la sesión de un solo uso el daño de que fallara
+  // era de una corrida. Guardada, una cookie parada en la sala equivocada
+  // devolvería los cortes de OTRA sala en cada corrida siguiente, y se
+  // guardarían con el `branch_id` de ésta. Eso es peor que no ver un corte: es
+  // verlo mal. Si no se pudo fijar, la sesión no se guarda y esta sala reporta
+  // su error como cualquier otro fallo.
+  const r = await fetch(SESION_URL, {
+    method: "POST",
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ process: "set_sucursal", id_sucursal: String(erpId) }).toString(),
+    signal: AbortSignal.timeout(20_000),
+  });
+  let fijada = false;
+  try {
+    fijada = Boolean(JSON.parse(await r.text())?.success);
+  } catch {
+    fijada = false;
+  }
+  if (!fijada) throw new Error(`no se pudo abrir la sala ${erpId} en el sistema`);
+  sesiones.set(erpId, cookie);
+  return cookie;
+}
+
+async function listarCortes(cookie: string, fecha1: string, fecha2: string): Promise<string> {
+  const res = await fetch(CORTE_URL, {
+    method: "POST",
+    headers: {
+      Cookie: cookie,
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: new URLSearchParams({ process: "ok", fecha1, fecha2 }).toString(),
+    signal: AbortSignal.timeout(60_000),
+  });
+  return await res.text();
+}
+
+/**
  * "$ 1,590.29" → 1590.29 · "+     3.39" → 3.39 · "-621.17" → -621.17
  * Devuelve null cuando no hay número, para no confundir "no vino" con cero:
  * un cero inventado en una diferencia es exactamente el error que este módulo
@@ -182,7 +256,6 @@ Deno.serve(async (req) => {
     const onlyBranch = body.branchId != null ? Number(body.branchId) : null;
 
     const { username, password } = getCortesCreds();
-    const cookie = await getSessionCookie(username, password);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -201,29 +274,23 @@ Deno.serve(async (req) => {
     // 2026-08-03 en sync-corte-z: HTTP 200 con warnings de PHP adentro).
     for (const { branchId, erpId } of objetivo) {
       try {
-        await fetch(SESION_URL, {
-          method: "POST",
-          headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ process: "set_sucursal", id_sucursal: String(erpId) }).toString(),
-          signal: AbortSignal.timeout(20_000),
-        });
-
         // ── Cortes ──────────────────────────────────────────────────────────
-        const resLista = await fetch(CORTE_URL, {
-          method: "POST",
-          headers: {
-            Cookie: cookie,
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          body: new URLSearchParams({ process: "ok", fecha1, fecha2 }).toString(),
-          signal: AbortSignal.timeout(60_000),
-        });
-        const htmlLista = await resLista.text();
+        let cookie = await sesionDeSala(erpId, username, password);
+        let htmlLista = await listarCortes(cookie, fecha1, fecha2);
 
         // La pantalla completa en vez del fragmento significa que el filtro no
         // se aplicó (sesión caída o sin permiso). Guardar eso mezclaría cortes
         // de otro rango con los de hoy.
+        //
+        // Con la sesión guardada entre corridas, la causa normal es que se
+        // venció: se rehace y se pregunta UNA vez más. Si vuelve entera, es
+        // otra cosa y se reporta igual que antes — nunca se sigue con esa
+        // respuesta.
+        if (/<html/i.test(htmlLista)) {
+          sesiones.delete(erpId);
+          cookie = await sesionDeSala(erpId, username, password);
+          htmlLista = await listarCortes(cookie, fecha1, fecha2);
+        }
         if (/<html/i.test(htmlLista)) {
           resultados.push({ branchId, error: `respuesta no es el fragmento (${htmlLista.length}b)` });
           continue;

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.692.1 — el anillo de foco del sidebar deja de recortarse
+
+Reporte del usuario con captura, sobre un ítem del grupo Sistema: un rectángulo
+blanco cortado contra el filo derecho del sidebar.
+
+No es el hover: es el **anillo de foco**. La regla global lo dibuja con
+`outline-offset: 2px`, o sea **fuera** del control — y el panel del sidebar es
+`overflow-hidden`, así que se lo come. Como los ítems ocupan casi todo el ancho
+del panel, el anillo cae justo sobre el borde y lo que queda en pantalla es un
+recuadro a medias, que se lee como un defecto de dibujo y no como «este control
+tiene el foco».
+
+Dentro del sidebar el anillo va ahora **hacia adentro** (`outline-offset: -2px`):
+se ve entero y deja de depender de que su contenedor le deje sitio. Es lo normal
+en una lista — el ítem ES la caja, no tiene margen propio donde crecer.
+
+Alcanza también a los flyouts del sidebar (`sidebar-popover`), que tienen el
+mismo recorte.
+
 ## v2.692.0 — el vidrio pasa del marco de la vista a las tarjetas
 
 Pregunta del usuario, mirando una pantalla: *«¿por qué el body tiene el

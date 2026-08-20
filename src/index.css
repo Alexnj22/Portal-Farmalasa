@@ -3610,6 +3610,26 @@ a:focus-visible,
   outline-offset: 2px;
 }
 
+/* ── Dentro del sidebar el anillo va HACIA ADENTRO (2026-08-20) ───────────
+   El panel del sidebar es `overflow-hidden` (`AppLayout`, el div con
+   `data-surface="sidebar"`), y sus ítems ocupan casi todo el ancho. Un anillo
+   con `outline-offset` POSITIVO se dibuja fuera del ítem, o sea encima del
+   borde del panel — y el panel lo recorta. Lo que queda en pantalla es un
+   rectángulo blanco cortado contra el filo derecho, que se lee como un defecto
+   de dibujo y no como «este control tiene el foco». Lo reportó el usuario el
+   2026-08-20 con una captura, sobre un ítem de Sistema.
+
+   Hacia adentro se ve entero y deja de depender de que su contenedor le deje
+   sitio. Es el mismo motivo por el que un `ring` inset es lo normal en una
+   lista: el ítem ES la caja, no tiene margen propio donde crecer.
+
+   Va por `:is(...)` y no repitiendo la lista de arriba para que la única
+   diferencia entre las dos reglas sea la que importa — el offset. */
+[data-surface="sidebar"] :is(button, a, [role="button"], [tabindex]):focus-visible,
+[data-surface="sidebar-popover"] :is(button, a, [role="button"], [tabindex]):focus-visible {
+  outline-offset: -2px;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    ALERT GLOW — TabCatalogo product cards

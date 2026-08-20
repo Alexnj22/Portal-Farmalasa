@@ -19,11 +19,16 @@ import { supabase } from '../supabaseClient';
  * El secreto viaja UNA sola vez y no se guarda en ninguna parte: lo que sigue
  * es imprimirlo. Si esto falla, no hay papel — que es la falla correcta.
  *
+ * `impresoEn` es la sucursal por cuya ticketera se manda el papel (null = esta
+ * computadora). Se guarda CON el carné y no después: si se escribiera en un
+ * segundo paso, un fallo entre los dos dejaría un carné del que nadie sabe por
+ * dónde salió — y ése es justo el dato que se pide para poder auditarlo.
+ *
  * @returns {Promise<{ok:boolean, secreto?:string, vence_el?:string, nombre?:string, motivo?:string}>}
  */
-export async function emitirCarneTemporal(employeeId, motivo = null) {
+export async function emitirCarneTemporal(employeeId, motivo = null, impresoEn = null) {
     const { data, error } = await supabase.functions.invoke('emitir-carne-temporal', {
-        body: { employee_id: employeeId, motivo },
+        body: { employee_id: employeeId, motivo, impreso_en: impresoEn },
     });
 
     if (error) return { ok: false, motivo: 'No se pudo emitir el carné. Revisa tu conexión.' };
@@ -40,7 +45,7 @@ export async function emitirCarneTemporal(employeeId, motivo = null) {
 export function fetchCarnesTemporales(employeeId, limite = 10) {
     return supabase
         .from('carnes_temporales')
-        .select('id, created_at, vence_el, anulado_el, motivo, emitido_por')
+        .select('id, created_at, vence_el, anulado_el, motivo, emitido_por, impreso_en')
         .eq('employee_id', employeeId)
         .order('created_at', { ascending: false })
         .limit(limite);
@@ -63,7 +68,7 @@ export function fetchCarnesTemporales(employeeId, limite = 10) {
 export function fetchCarnesVigentes(limite = 50) {
     return supabase
         .from('carnes_temporales')
-        .select('id, created_at, vence_el, anulado_el, motivo, employee_id, emitido_por, branch_id')
+        .select('id, created_at, vence_el, anulado_el, motivo, employee_id, emitido_por, branch_id, impreso_en')
         .is('anulado_el', null)
         .gt('vence_el', new Date().toISOString())
         .order('created_at', { ascending: false })

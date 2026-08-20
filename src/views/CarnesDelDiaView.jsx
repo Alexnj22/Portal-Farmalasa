@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { IdCard, Ban, Clock, Search, ShieldCheck } from 'lucide-react';
+import { IdCard, Ban, Clock, Search, ShieldCheck, Printer, UserCheck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Button from '../components/common/Button';
@@ -85,7 +85,13 @@ const CarnesDelDiaView = () => {
             // es «quién de tal sala anda con papel», y un carné se puede
             // imprimir desde administración para alguien de otra sala.
             sala: nombreDeSala(emp?.branchId) || SIN_SUCURSAL,
-            salio: nombreDeSala(c.branch_id),
+            // Por dónde SALIÓ el papel, que no es la sucursal de la persona.
+            // `impreso_en` en null significa «la computadora de quien lo
+            // emitió» — se dice así y no se deja el renglón en blanco: una
+            // línea que falta se lee como «no se sabe», y acá sí se sabe.
+            impresoEn: c.impreso_en
+                ? (nombreDeSala(c.impreso_en) || `Sucursal ${c.impreso_en}`)
+                : 'La computadora de quien lo emitió',
             loEntrego: quien ? shortEmployeeName(quien) : '—',
         };
     }), [vigentes, porId, nombreDeSala]);
@@ -280,15 +286,32 @@ const CarnesDelDiaView = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-1">
+                                                {/* Los tres datos con los que se
+                                                    audita un papel suelto: hasta
+                                                    cuándo vale, por qué ticketera
+                                                    salió y quién lo autorizó. Cada
+                                                    uno con su rótulo — sin él,
+                                                    dos nombres seguidos no se
+                                                    distinguen. */}
+                                                <div className="space-y-1.5 pt-1 border-t border-divider">
                                                     <p className="text-caption text-content-2 flex items-center gap-1.5">
                                                         <Clock size={12} className="shrink-0 text-content-3" />
                                                         Vale hasta medianoche
                                                     </p>
-                                                    {c.salio && (
-                                                        <p className="text-caption text-content-3 truncate">Salió en {c.salio}</p>
-                                                    )}
-                                                    <p className="text-caption text-content-3 truncate">Lo entregó {c.loEntrego}</p>
+                                                    <div className="flex items-start gap-1.5">
+                                                        <Printer size={12} className="shrink-0 mt-0.5 text-content-3" />
+                                                        <p className="text-caption text-content-3 min-w-0">
+                                                            <span className="text-content-2 font-bold">Se imprimió en </span>
+                                                            {c.impresoEn}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-start gap-1.5">
+                                                        <UserCheck size={12} className="shrink-0 mt-0.5 text-content-3" />
+                                                        <p className="text-caption text-content-3 min-w-0">
+                                                            <span className="text-content-2 font-bold">Lo autorizó </span>
+                                                            {c.loEntrego}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
                                                 <Button variant="destructive" className="w-full" icon={Ban}

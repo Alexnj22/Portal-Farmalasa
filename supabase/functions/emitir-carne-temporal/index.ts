@@ -56,6 +56,12 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const employeeId = typeof body?.employee_id === "string" ? body.employee_id.trim() : "";
     const motivo     = typeof body?.motivo === "string" ? body.motivo.trim() : null;
+    // Por qué ticketera se mandó el papel. Se sabe ANTES de emitir porque el
+    // diálogo pregunta primero; null es «esta computadora». Se guarda CON el
+    // carné para que la tarjeta pueda decirlo — antes la pantalla pintaba la
+    // sucursal del EMPLEADO bajo el rótulo «salió en», que en el caso más común
+    // (administración imprimiendo para una sala) decía lo contrario.
+    const impresoEn  = Number.isFinite(body?.impreso_en) ? Number(body.impreso_en) : null;
     if (!/^[0-9a-fA-F-]{36}$/.test(employeeId)) {
       return json({ ok: false, error: "EMPLEADO_INVALIDO" });
     }
@@ -68,6 +74,7 @@ Deno.serve(async (req: Request) => {
     const { data: emitido, error: errEmitir } = await comoElUsuario.rpc("emitir_carne_temporal", {
       p_employee_id: employeeId,
       p_motivo: motivo,
+      p_impreso_en: impresoEn,
     });
     if (errEmitir) {
       const msg = String(errEmitir.message || "");

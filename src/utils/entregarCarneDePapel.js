@@ -31,7 +31,7 @@ export async function entregarCarneDePapel({
 }) {
     const { showToast } = useToastStore.getState();
 
-    const emitido = await emitirCarneTemporal(employeeId, motivo);
+    const emitido = await emitirCarneTemporal(employeeId, motivo, salaId);
     if (!emitido.ok) {
         showToast('No se emitió el carné', emitido.motivo, 'error');
         return { ok: false };

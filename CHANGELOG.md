@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.687.2 — la tarjeta dice dónde se imprimió el carné y quién lo autorizó
+
+Pedido del usuario: *«que salga en la card dónde se imprimió y quién autorizó»*.
+Quién autoriza ya estaba; **dónde se imprimió no se estaba guardando, y la
+pantalla lo mostraba igual**.
+
+La tarjeta pintaba `branch_id` bajo el rótulo «Salió en…», pero esa columna la
+escribe la emisión con la sucursal **del empleado**, no la de la ticketera. O
+sea que el rótulo prometía un dato que nadie había medido — y en el caso más
+común, administración imprimiendo para alguien de sala, decía exactamente lo
+contrario de la verdad. Es la misma familia que la regla del sello: se corrige
+guardando el dato, no cambiando el rótulo.
+
+Ahora `carnes_temporales.impreso_en` guarda la sucursal por cuya ticketera se
+mandó el papel, y se escribe **con** el carné y no en un segundo paso: un fallo
+entre los dos dejaría un carné del que nadie sabe por dónde salió, que es justo
+el dato que se pide para poder auditarlo. `NULL` significa «la computadora de
+quien lo emitió» — y se dice así, con todas las letras, en vez de dejar el
+renglón en blanco: una línea que falta se lee como «no se sabe», y acá sí se
+sabe.
+
+La tarjeta cierra con los tres datos con los que se audita un papel suelto, cada
+uno con su rótulo —sin él, dos nombres seguidos no se distinguen—: hasta cuándo
+vale, **se imprimió en** y **lo autorizó**.
+
 ## v2.687.1 — el buscador de carnés va en el header y los vigentes se agrupan por sucursal
 
 Tres correcciones del usuario sobre la pantalla, con captura.

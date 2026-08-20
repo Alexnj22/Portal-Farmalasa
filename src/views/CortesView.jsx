@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarDays, CheckCircle2, Clock, Landmark, Package, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
@@ -22,6 +23,15 @@ import { fetchCortes, fetchDiferencias, fetchPersonas } from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { tokenMatch } from '../utils/searchUtils';
+
+// Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
+// necesita la lista para validar el `?tab=` que llegue por la dirección. Quien
+// no ve Bolsas recibe la lista vacía y se queda en «cortes» aunque le escriban
+// `?tab=bolsas` a mano.
+const CORTES_TABS = [
+    { key: 'cortes', label: 'Cortes',             icon: Wallet  },
+    { key: 'bolsas', label: 'Bolsas de efectivo', icon: Package },
+];
 
 const VACIO = [];
 
@@ -310,7 +320,7 @@ const CortesView = () => {
     // después del corte: separarlo obligaría a saltar de pantalla para seguir un
     // billete. Pedido del usuario (2026-08-15): «hacé la vista con lo que hay en
     // cortes de caja como una pestaña».
-    const [tab, setTab] = useState('cortes');
+    const [tab, setTab] = usePestanaEnUrl(verBolsas ? CORTES_TABS : [], 'cortes');
     const enBolsas = tab === 'bolsas';
 
     // ── Las acciones de Bolsas viven en la píldora (§17) ────────────────────
@@ -324,10 +334,7 @@ const CortesView = () => {
 
     const filtersContent = (
         <ViewTabBar
-            tabs={verBolsas
-                ? [{ key: 'cortes', label: 'Cortes', icon: Wallet },
-                   { key: 'bolsas', label: 'Bolsas de efectivo', icon: Package }]
-                : []}
+            tabs={verBolsas ? CORTES_TABS : []}
             activeTab={tab}
             onTabChange={setTab}
             searchValue={busqueda}

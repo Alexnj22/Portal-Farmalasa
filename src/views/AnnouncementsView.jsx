@@ -3,6 +3,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import {
@@ -24,6 +25,15 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
 import { shortEmployeeName } from '../utils/nameUtils';
+
+// Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
+// necesita la lista para validar el `?tab=` que llegue por la dirección. El
+// contador de programados se le pega al vuelo — es un rótulo, no otra pestaña.
+const ANNOUNCEMENT_TABS = [
+  { key: 'ACTIVE',    label: 'Activos'     },
+  { key: 'SCHEDULED', label: 'Programados', icon: CalendarClock },
+  { key: 'ARCHIVED',  label: 'Archivo'     },
+];
 
 
 // ============================================================================
@@ -189,7 +199,7 @@ const AnnouncementsView = ({ openModal }) => {
   const [publishImmediately, setPublishImmediately] = useState(true);
   const [scheduledDate, setScheduledDate] = useState('');
 
-  const [listTab, setListTab] = useState('ACTIVE'); 
+  const [listTab, setListTab] = usePestanaEnUrl(ANNOUNCEMENT_TABS, 'ACTIVE'); 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -211,7 +221,7 @@ const AnnouncementsView = ({ openModal }) => {
     };
     window.addEventListener('force-history-refresh', handleSalyRefresh);
     return () => window.removeEventListener('force-history-refresh', handleSalyRefresh);
-  }, [fetchInitialData]);
+  }, [fetchInitialData, setListTab]);
 
   useEffect(() => {
     const timerId = setTimeout(() => { setDebouncedSearchTerm(announcementSearch); }, 300);
@@ -311,7 +321,7 @@ const AnnouncementsView = ({ openModal }) => {
 
     setListTab(ann.scheduledFor && new Date(ann.scheduledFor) > new Date() ? 'SCHEDULED' : 'ACTIVE');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [setListTab]);
 
   const handlePublish = async (e) => {
     e.preventDefault();
@@ -537,11 +547,9 @@ const AnnouncementsView = ({ openModal }) => {
   // programados viaja en el label del tab, que es donde el canónico lo espera.
   const renderFiltersContent = () => (
     <ViewTabBar
-      tabs={[
-        { key: 'ACTIVE',    label: 'Activos' },
-        { key: 'SCHEDULED', label: scheduledCount > 0 ? `Programados · ${scheduledCount}` : 'Programados', icon: CalendarClock },
-        { key: 'ARCHIVED',  label: 'Archivo' },
-      ]}
+      tabs={ANNOUNCEMENT_TABS.map(t => t.key === 'SCHEDULED' && scheduledCount > 0
+        ? { ...t, label: `Programados · ${scheduledCount}` }
+        : t)}
       activeTab={listTab}
       onTabChange={setListTab}
       searchValue={announcementSearch}

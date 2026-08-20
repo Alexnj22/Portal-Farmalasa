@@ -10,6 +10,7 @@ import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
@@ -141,7 +142,7 @@ export default function LibroComprasCompletoView({ openModal }) {
     const canVerMontos = hasPermission('libro_compras_completo_ver_montos');
     const branches = useStaffStore((s) => s.branches);
 
-    const [activeTab, setActiveTab]   = useState('todos');
+    const [activeTab, setActiveTab]   = usePestanaEnUrl(TABS, 'todos');
     const [mes, setMes]               = useState(mesActual());
     const [filterBranch, setFB]       = useState('');
     const [filas, setFilas]           = useState([]);
@@ -563,7 +564,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                     a la hoja, donde entra completo y con su rótulo. */}
                 {esDecl ? (
                 <DataTable columns={COLS_DECL} dense loading={loading} empty={vacio}
-                    movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'] }}>
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'], usarAccionDeFila: true }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`d-${r.documento_completo}-${i}`}
                             onClick={r.json_path ? () => abrirDocumento(r) : undefined}>
@@ -617,7 +618,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                 </DataTable>
                 ) : (
                 <DataTable columns={COLS} dense loading={loading} empty={vacio}
-                    movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'] }}>
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'], usarAccionDeFila: true }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}
                             onClick={r.json_path ? () => abrirDocumento(r) : undefined}>

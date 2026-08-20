@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import TabPorRevisar from './clientes/TabPorRevisar';
 import FilterBar from '../components/common/FilterBar';
 import CarrilCards from '../components/common/CarrilCards';
@@ -148,7 +149,7 @@ const TABS = [
 ];
 
 export default function ClientesView({ openModal }) {
-    const [tab, setTab] = useState('lista');
+    const [tab, setTab] = usePestanaEnUrl(TABS, 'lista');
     // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta: abrir
     // la lista traía además las ~150 fichas de «Por revisar»
     // (`get_clientes_por_revisar`), que son 108 kB — el payload más grande de la

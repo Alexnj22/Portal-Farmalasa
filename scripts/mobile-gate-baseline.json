@@ -1,10 +1,11 @@
 {
   "_comment": "Ratchet de gate:movil. Falla si una categoría SUBE. Regenerar SOLO al bajar deuda: npm run gate:movil -- --update-baseline. Nunca para tapar un hallazgo nuevo: si subió, es código nuevo que hay que arreglar.",
-  "updated": "2026-08-09",
+  "updated": "2026-08-20",
   "categories": {
     "tabla-a-mano": 0,
     "modal-sin-cuerpo-canonico": 0,
     "buscador-a-mano": 0,
+    "toque-de-ficha-sin-destino": 0,
     "movil-false-sin-motivo": 0
   }
 }

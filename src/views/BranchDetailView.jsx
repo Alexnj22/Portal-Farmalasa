@@ -16,6 +16,7 @@ import TabStaff from './branch-tabs/TabStaff';
 
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useAuth } from '../context/AuthContext';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -29,7 +30,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const branches = useStaff(s => s.branches);
     const getBranchHistory = useStaff(s => s.getBranchHistory);
     
-    const [activeTab, setActiveTab] = useState('history');
     const [, setKioskCount] = useState(0);
 
     const [history, setHistory] = useState([]);
@@ -215,6 +215,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         { id: 'dossier',  label: 'Expediente',   icon: FolderOpen, show: hasLegal },
         { id: 'expenses', label: 'Gastos',        icon: Briefcase,  show: isFarmacia || isBodega },
     ].filter(t => t.show);
+
+    // La pestaña va DESPUÉS de `TABS` y no arriba con el resto del estado:
+    // `usePestanaEnUrl` valida el `?tab=` contra las que esta sucursal
+    // realmente muestra —Expediente y Gastos dependen del tipo de sala—, así
+    // que necesita la lista ya armada.
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'history');
 
     const tabsRef = useRef(null);
     const tabBtnRefs = useRef(new Map());

@@ -675,7 +675,9 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                 columna DTE quedaba fuera del visor a 1280 y 1536—. El borde
                 propio de la tabla sigue marcando dónde empieza. */}
             <div className="-mx-4 md:-mx-5">
-            <DataTable columns={COLS_RET_VENTAS} loading={loading} empty={empty}>
+            {/* El toque abre el documento emitido. Sin `usarAccionDeFila` gana
+                la hoja genérica, que sólo repite las columnas de la ficha. */}
+            <DataTable columns={COLS_RET_VENTAS} loading={loading} movil={{ usarAccionDeFila: true }} empty={empty}>
                 {filas.map((r, i) => (
                     <DataRow key={r.codigo_generacion || `${r.erp_invoice_id}-${i}`} index={i}
                         onClick={() => onAbrir(r)}>

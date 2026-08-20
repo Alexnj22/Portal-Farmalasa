@@ -22,6 +22,8 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import ExpedienteMovil from '../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
@@ -664,6 +666,158 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         fetchPricesForIds(erpIds);
     }, [expandedId, itemsCache, fetchPricesForIds]);
 
+    // ── El detalle de la venta: sus productos ────────────────────────────
+    // El MISMO cuerpo en las dos formas. En escritorio va dentro del
+    // `<tr colSpan>` hermano de la fila; en el teléfono ese `<tr>` no se pinta
+    // —`DataTable` ahí dibuja fichas— y el mismo cuerpo se monta en
+    // `ExpedienteMovil`. Escrito una vez para que no puedan divergir: los
+    // productos de una venta eran invisibles desde el teléfono.
+    //
+    // Función local y no componente aparte: cierra sobre siete piezas de estado
+    // de esta pestaña (el caché de renglones, el de precios, los antibióticos)
+    // y pasarlas como props sería copiar la lista de dependencias a mano.
+    // El detalle de la venta vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
+    const { enTelefono, abierto: ventaAbierta } = useExpedienteMovil(rows, expandedId);
+
+    const detalleDeVenta = (r) => {
+        const cachedItems = itemsCache[r.id];
+        const noData      = cachedItems && cachedItems.length === 0;
+        return (
+            <>
+                {loadingItems && !cachedItems ? (
+                    <div className="flex items-center gap-2 text-label py-1 text-content-3 w-full"><SkeletonText lines={2} /></div>
+                ) : noData ? (
+                    <div className="flex items-center gap-2 text-label py-1 text-content-3">
+                        <Info size={12} className="shrink-0 text-content-3" />
+                        Esta sucursal todavía no tiene el detalle de productos.
+                    </div>
+                ) : (
+                    (() => {
+                        const seen = new Set();
+                        const deduped = (cachedItems || []).filter(it => {
+                            const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
+                            if (seen.has(sig)) return false;
+                            seen.add(sig);
+                            return true;
+                        });
+                        const discountItems = deduped.filter(it => it.erp_product_id === -999);
+                        const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
+                        const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
+                        const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
+                        const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
+                        const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
+                        const nameTxt = 'text-content-2';
+                        const numTxt = 'text-content-3';
+                        return (
+                            /* `DataTable` y no una tabla a mano: en el teléfono cada
+                               línea cae a ficha con el producto arriba y su total a la
+                               derecha. El descuento por puntos deja de ser un `<tr>`
+                               con `colSpan` —que en modo ficha no significa nada— y
+                               pasa a `footer`, que es donde el canónico pone los
+                               totales y se dibuja igual en las dos formas. */
+                            <DataTable
+                                columns={[
+                                    { key: 'producto', label: 'Producto' },
+                                    { key: 'cant',     label: 'Cant.',    align: 'right' },
+                                    { key: 'unit',     label: 'P. Unit.', align: 'right', hideBelow: 'sm' },
+                                    { key: 'tipo',     label: 'Tipo',     align: 'right' },
+                                    { key: 'total',    label: 'Total',    align: 'right' },
+                                ]}
+                                movil={{ identidad: 'producto', ancla: 'total', chips: ['cant', 'tipo'] }}
+                                footer={finalDiscount > 0 ? (
+                                    <>
+                                        <div className="flex items-center gap-1.5">
+                                            <Badge variant="warning" size="sm">PUNTOS</Badge>
+                                            <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
+                                        </div>
+                                        <span className="text-label font-black text-warning-text">-{fmt(finalDiscount)}</span>
+                                    </>
+                                ) : null}
+                            >
+                                    {regularItems.map((it, idx) => {
+                                        // undefined = not yet fetched; [] = fetched, no catalog entry
+                                        const cachedEntry = pricesCache[it.erp_product_id];
+                                        const productPriceRows = cachedEntry || [];
+                                        const pricesFetched = Array.isArray(cachedEntry);
+                                        // Try every price row for this product; pick the tier whose
+                                        // price is closest to the actual sale price (lowest diff).
+                                        // We don't match by id_presentacion because ERP sales and
+                                        // catalog use different ID namespaces.
+                                        const salePrice = parseFloat(it.precio_unitario);
+                                        const tierCandidates = productPriceRows
+                                            .map(row => detectTier(salePrice, row))
+                                            .filter(Boolean);
+                                        const tier = tierCandidates.length === 0 ? null :
+                                            tierCandidates.reduce((best, t) =>
+                                                (t.diff ?? Infinity) < (best.diff ?? Infinity) ? t : best
+                                            );
+                                        const noPrice = pricesFetched && productPriceRows.length === 0;
+                                        return (
+                                            <DataRow key={idx} index={idx}>
+                                                <DataCell>
+                                                    <div className={`text-label font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
+                                                    {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
+                                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                                            {antibioticIds.has(it.erp_product_id) && <Badge variant="danger" size="sm">Receta Médica</Badge>}
+                                                            {it.presentacion && <Badge size="sm" uppercase={false}>{it.presentacion}</Badge>}
+                                                            {it.lote && <Badge variant="chart-3" size="sm" uppercase={false}>L:{it.lote}</Badge>}
+                                                            {it.fecha_vencimiento && <Badge size="sm" uppercase={false}>Vence {it.fecha_vencimiento}</Badge>}
+                                                        </div>
+                                                    )}
+                                                </DataCell>
+                                                <DataCell align="right" className={`text-caption font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</DataCell>
+                                                <DataCell align="right" hideBelow="sm" className="text-caption whitespace-nowrap text-content-3">{fmt(it.precio_unitario)}</DataCell>
+                                                <DataCell align="right" className="whitespace-nowrap">
+                                                    {tier ? (
+                                                        <Badge variant={tier.variante} size="sm">
+                                                            {tier.label}
+                                                            {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
+                                                        </Badge>
+                                                    ) : noPrice ? (
+                                                        <span className="text-micro text-content-3">—</span>
+                                                    ) : null}
+                                                </DataCell>
+                                                <DataCell align="right" className={`text-label font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</DataCell>
+                                            </DataRow>
+                                        );
+                                    })}
+                            </DataTable>
+                        );
+                    })()
+                )}
+                {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
+                    <div className="mt-3 pt-3 border-t flex justify-end border-divider">
+                        <div className="flex flex-col gap-0.5 min-w-[180px]">
+                            <div className="flex justify-between gap-6 text-label text-content-3">
+                                <span>Subtotal (sin IVA)</span>
+                                <span className="font-semibold text-content-2">{fmt(r.subtotal)}</span>
+                            </div>
+                            <div className="flex justify-between gap-6 text-label text-content-3">
+                                <span>IVA (13%)</span>
+                                <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
+                            </div>
+                            {/* Sin esta línea el bloque no cierra: en un documento con
+                                retención el cliente descuenta ese 1% de lo que paga, así
+                                que subtotal + IVA da MÁS que el total y se lee como un
+                                error de suma. Se muestra solo cuando existe. */}
+                            {Number(r.retencion) > 0 && (
+                                <div className="flex justify-between gap-6 text-label text-content-3">
+                                    <span>Retención de IVA</span>
+                                    <span className="font-semibold text-content-2">-{fmt(r.retencion)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between gap-6 text-body-sm font-black border-t pt-1 mt-0.5 text-content border-divider">
+                                <span>Total</span>
+                                <span>{fmt(r.total)}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
     const totalPages = isSearching ? 1 : Math.ceil((filterPuntos ? puntosCount : totalCount) / pageSize);
     // Divide por las que SUMAN, no por las de la lista: el monto ya no incluye
     // las anuladas, así que dividirlo entre el conteo con anuladas daría un
@@ -757,7 +911,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                    entra buscando a quién se le vendió. El ancla ya la acertaba
                    sola —Total es la única alineada a la derecha— pero se declara
                    junto a la identidad para que se lea el par completo. */
-                movil={{ identidad: 'cliente', ancla: 'total', chips: ['fecha', 'sucursal'] }}
+                /* `usarAccionDeFila`: el toque abre el MISMO detalle que la fila
+                   expande en escritorio —los productos de la venta—. Sin
+                   declararlo gana la hoja genérica de `DataTable`, que sólo
+                   repite las columnas que ya se leen en la tarjeta. */
+                movil={{ identidad: 'cliente', ancla: 'total', chips: ['fecha', 'sucursal'], usarAccionDeFila: true }}
                 sortKey={sortCol}
                 sortDir={sortDir}
                 onSort={handleSort}
@@ -868,139 +1026,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     </div>
                                 </DataCell>
                             </DataRow>
-                            {isExpanded && (
+                            {/* Sólo en escritorio: en el teléfono `DataTable` pinta
+                                fichas y esta fila hermana no se dibuja. Ahí el mismo
+                                detalle va al expediente, después de la tabla. */}
+                            {isExpanded && !enTelefono && (
                                 <tr className="border-t border-chart-1/30">
                                     <td colSpan={8}
                                         className="px-5 py-4 bg-gradient-to-br from-chart-1/10 via-surface-card to-surface-card-hover">
-                                        {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-label py-1 text-content-3 w-full"><SkeletonText lines={2} /></div>
-                                        ) : noData ? (
-                                            <div className="flex items-center gap-2 text-label py-1 text-content-3">
-                                                <Info size={12} className="shrink-0 text-content-3" />
-                                                Esta sucursal todavía no tiene el detalle de productos.
-                                            </div>
-                                        ) : (
-                                            (() => {
-                                                const seen = new Set();
-                                                const deduped = (cachedItems || []).filter(it => {
-                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
-                                                    if (seen.has(sig)) return false;
-                                                    seen.add(sig);
-                                                    return true;
-                                                });
-                                                const discountItems = deduped.filter(it => it.erp_product_id === -999);
-                                                const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
-                                                const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
-                                                const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-                                                const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
-                                                const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                const nameTxt = 'text-content-2';
-                                                const numTxt = 'text-content-3';
-                                                return (
-                                                    /* `DataTable` y no una tabla a mano: en el teléfono cada
-                                                       línea cae a ficha con el producto arriba y su total a la
-                                                       derecha. El descuento por puntos deja de ser un `<tr>`
-                                                       con `colSpan` —que en modo ficha no significa nada— y
-                                                       pasa a `footer`, que es donde el canónico pone los
-                                                       totales y se dibuja igual en las dos formas. */
-                                                    <DataTable
-                                                        columns={[
-                                                            { key: 'producto', label: 'Producto' },
-                                                            { key: 'cant',     label: 'Cant.',    align: 'right' },
-                                                            { key: 'unit',     label: 'P. Unit.', align: 'right', hideBelow: 'sm' },
-                                                            { key: 'tipo',     label: 'Tipo',     align: 'right' },
-                                                            { key: 'total',    label: 'Total',    align: 'right' },
-                                                        ]}
-                                                        movil={{ identidad: 'producto', ancla: 'total', chips: ['cant', 'tipo'] }}
-                                                        footer={finalDiscount > 0 ? (
-                                                            <>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Badge variant="warning" size="sm">PUNTOS</Badge>
-                                                                    <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
-                                                                </div>
-                                                                <span className="text-label font-black text-warning-text">-{fmt(finalDiscount)}</span>
-                                                            </>
-                                                        ) : null}
-                                                    >
-                                                            {regularItems.map((it, idx) => {
-                                                                // undefined = not yet fetched; [] = fetched, no catalog entry
-                                                                const cachedEntry = pricesCache[it.erp_product_id];
-                                                                const productPriceRows = cachedEntry || [];
-                                                                const pricesFetched = Array.isArray(cachedEntry);
-                                                                // Try every price row for this product; pick the tier whose
-                                                                // price is closest to the actual sale price (lowest diff).
-                                                                // We don't match by id_presentacion because ERP sales and
-                                                                // catalog use different ID namespaces.
-                                                                const salePrice = parseFloat(it.precio_unitario);
-                                                                const tierCandidates = productPriceRows
-                                                                    .map(row => detectTier(salePrice, row))
-                                                                    .filter(Boolean);
-                                                                const tier = tierCandidates.length === 0 ? null :
-                                                                    tierCandidates.reduce((best, t) =>
-                                                                        (t.diff ?? Infinity) < (best.diff ?? Infinity) ? t : best
-                                                                    );
-                                                                const noPrice = pricesFetched && productPriceRows.length === 0;
-                                                                return (
-                                                                    <DataRow key={idx} index={idx}>
-                                                                        <DataCell>
-                                                                            <div className={`text-label font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
-                                                                            {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
-                                                                                <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                    {antibioticIds.has(it.erp_product_id) && <Badge variant="danger" size="sm">Receta Médica</Badge>}
-                                                                                    {it.presentacion && <Badge size="sm" uppercase={false}>{it.presentacion}</Badge>}
-                                                                                    {it.lote && <Badge variant="chart-3" size="sm" uppercase={false}>L:{it.lote}</Badge>}
-                                                                                    {it.fecha_vencimiento && <Badge size="sm" uppercase={false}>Vence {it.fecha_vencimiento}</Badge>}
-                                                                                </div>
-                                                                            )}
-                                                                        </DataCell>
-                                                                        <DataCell align="right" className={`text-caption font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</DataCell>
-                                                                        <DataCell align="right" hideBelow="sm" className="text-caption whitespace-nowrap text-content-3">{fmt(it.precio_unitario)}</DataCell>
-                                                                        <DataCell align="right" className="whitespace-nowrap">
-                                                                            {tier ? (
-                                                                                <Badge variant={tier.variante} size="sm">
-                                                                                    {tier.label}
-                                                                                    {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
-                                                                                </Badge>
-                                                                            ) : noPrice ? (
-                                                                                <span className="text-micro text-content-3">—</span>
-                                                                            ) : null}
-                                                                        </DataCell>
-                                                                        <DataCell align="right" className={`text-label font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</DataCell>
-                                                                    </DataRow>
-                                                                );
-                                                            })}
-                                                    </DataTable>
-                                                );
-                                            })()
-                                        )}
-                                        {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
-                                            <div className="mt-3 pt-3 border-t flex justify-end border-divider">
-                                                <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                    <div className="flex justify-between gap-6 text-label text-content-3">
-                                                        <span>Subtotal (sin IVA)</span>
-                                                        <span className="font-semibold text-content-2">{fmt(r.subtotal)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-6 text-label text-content-3">
-                                                        <span>IVA (13%)</span>
-                                                        <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
-                                                    </div>
-                                                    {/* Sin esta línea el bloque no cierra: en un documento con
-                                                        retención el cliente descuenta ese 1% de lo que paga, así
-                                                        que subtotal + IVA da MÁS que el total y se lee como un
-                                                        error de suma. Se muestra solo cuando existe. */}
-                                                    {Number(r.retencion) > 0 && (
-                                                        <div className="flex justify-between gap-6 text-label text-content-3">
-                                                            <span>Retención de IVA</span>
-                                                            <span className="font-semibold text-content-2">-{fmt(r.retencion)}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex justify-between gap-6 text-body-sm font-black border-t pt-1 mt-0.5 text-content border-divider">
-                                                        <span>Total</span>
-                                                        <span>{fmt(r.total)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
+                                        {detalleDeVenta(r)}
                                     </td>
                                 </tr>
                             )}
@@ -1008,6 +1041,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     );
                 })}
             </DataTable>
+
+            {/* Los productos de la venta, en el teléfono. */}
+            <ExpedienteMovil
+                abierto={ventaAbierta}
+                onClose={() => setExpandedId(null)}
+                titulo={ventaAbierta?.cliente || 'Venta'}
+                subtitulo={ventaAbierta ? `${ventaAbierta.fecha}${ventaAbierta.correlativo ? ` · ${ventaAbierta.correlativo}` : ''}` : undefined}
+            >
+                {(r) => detalleDeVenta(r)}
+            </ExpedienteMovil>
 
             {!loadingRows && rows.length > 0 && (
                 <TablePagination
@@ -1165,6 +1208,41 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     const totalVentas   = knownRows.reduce((s, r) => s + r.total, 0) + unknownTotals.total;
     const totalFacturas = knownRows.reduce((s, r) => s + r.count, 0) + unknownTotals.count;
 
+    // El detalle del vendedor vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
+    const { enTelefono, abierto: vendAbierto } =
+        useExpedienteMovil(knownRows, expanded, 'cod_vendedor');
+
+    // ── El detalle del vendedor: sus ventas día por día ──────────────────
+    // El MISMO cuerpo en las dos formas: el `<tr colSpan>` de escritorio y el
+    // expediente del teléfono, donde esa fila hermana no se pinta. Escrito una
+    // vez para que no puedan divergir.
+    const ventasDiarias = (baseBranchId) => {
+        const cardNormal = 'bg-surface-card border-border-card';
+        const cardCross  = 'bg-warning/10 border-warning/30';
+        if (loadingExpand) return <div className="flex justify-center py-4"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
+        return (
+            <div>
+                <p className="text-caption font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>
+                <div className="flex flex-wrap gap-2">
+                    {expandedData.map(d => {
+                        const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
+                        return (
+                            <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
+                                <p className="mb-0.5 text-content-3">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                <p className="font-black text-content">{fmt(d.total)}</p>
+                                <p className="text-content-3">{d.count} fact.</p>
+                                {cross.map(b => (
+                                    <p key={b.branch_id} className="text-warning-text font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     const TrendBadge = ({ cod, currentRank }) => {
         const prev = prevRankMap.get(cod);
         if (prev == null) return null;
@@ -1235,6 +1313,10 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 skeletonRows={6}
                 empty={{ icon: Users, message: 'Sin datos de vendedores para este período' }}
                 minWidth="520px"
+                /* `usarAccionDeFila`: el toque abre las MISMAS ventas diarias que
+                   la fila expande en escritorio. Sin declararlo gana la hoja
+                   genérica de `DataTable`, que sólo repite las columnas. */
+                movil={{ identidad: 'vendedor', ancla: 'total', chips: ['sucursal', 'facturas'], usarAccionDeFila: true }}
             >
                 {knownRows.map((r, i) => {
                     const isOpen       = expanded === r.cod_vendedor;
@@ -1244,8 +1326,6 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const displayName  = r.specialName || (r.emp ? shortEmployeeName(r.emp) : r.cod_vendedor);
                     const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider';
                     const expandBorder = 'border-chart-1/30';
-                    const cardNormal   = 'bg-surface-card border-border-card';
-                    const cardCross    = 'bg-warning/10 border-warning/30';
 
                     return (
                         <React.Fragment key={r.cod_vendedor}>
@@ -1296,32 +1376,14 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                     <ChevronDown size={14} className={`transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                 </DataCell>
                             </DataRow>
-                            {isOpen && !privacyMode && (
+                            {/* Sólo en escritorio: en el teléfono `DataTable` pinta
+                                fichas y esta fila hermana no se dibuja. Ahí el mismo
+                                detalle va al expediente, después de la tabla. */}
+                            {isOpen && !privacyMode && !enTelefono && (
                                 <tr className={`border-t ${expandBorder}`}>
                                     <td colSpan={7}
                                         className={`px-4 py-3 ${expandBg}`}>
-                                        {loadingExpand ? (
-                                            <div className="flex justify-center py-4"><SkeletonText lines={4} className="w-full max-w-md" /></div>
-                                        ) : (
-                                            <div>
-                                                <p className="text-caption font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {expandedData.map(d => {
-                                                        const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
-                                                        return (
-                                                            <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
-                                                                <p className="mb-0.5 text-content-3">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                <p className="font-black text-content">{fmt(d.total)}</p>
-                                                                <p className="text-content-3">{d.count} fact.</p>
-                                                                {cross.map(b => (
-                                                                    <p key={b.branch_id} className="text-warning-text font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
+                                        {ventasDiarias(baseBranchId)}
                                     </td>
                                 </tr>
                             )}
@@ -1347,6 +1409,16 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     </DataRow>
                 ))}
             </DataTable>
+
+            {/* Las ventas diarias del vendedor, en el teléfono. */}
+            <ExpedienteMovil
+                abierto={privacyMode ? null : vendAbierto}
+                onClose={() => setExpanded(null)}
+                titulo={vendAbierto ? (vendAbierto.specialName || (vendAbierto.emp ? shortEmployeeName(vendAbierto.emp) : vendAbierto.cod_vendedor)) : 'Vendedor'}
+                subtitulo={vendAbierto ? `${fmtNum(vendAbierto.count)} factura${vendAbierto.count !== 1 ? 's' : ''} · ${fmt(vendAbierto.total)}` : undefined}
+            >
+                {(r) => ventasDiarias(r.emp?.branch_id ?? r.branchIds[0])}
+            </ExpedienteMovil>
 
         </div>
     );
@@ -1982,6 +2054,351 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
 
+    // El detalle del producto vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente. La
+    // clave no es una columna —es el id del producto o su descripción cuando no
+    // lo tiene—, así que se resuelve con la misma función que arma `rowKey`.
+    const { enTelefono, abierto: prodAbierto } = useExpedienteMovil(
+        paginated, expandedKey,
+        (r) => (r.erp_product_id != null ? String(r.erp_product_id) : `desc::${r.descripcion}`));
+
+    // ── El detalle del producto: su reparto y sus ventas ─────────────────
+    // El MISMO cuerpo en las dos formas: el `<tr colSpan>` de escritorio y el
+    // expediente del teléfono, donde esa fila hermana no se pinta. Escrito una
+    // vez para que no puedan divergir — es la pantalla donde vive el análisis
+    // del producto y desde el teléfono no se alcanzaba.
+    //
+    // Función local y no componente aparte: cierra sobre el caché del drill,
+    // sus filtros, su orden y su paginación; pasarlos como props sería copiar
+    // esa lista a mano.
+    const detalleDeProducto = (r) => (
+        <>
+                {drillLoading ? (
+                    <div className="flex items-center gap-2 text-body-sm text-content-3 py-3 w-full"><SkeletonText lines={2} /></div>
+                ) : (
+                    <div className="space-y-4">
+                        {/* Presentaciones breakdown */}
+                        {r.presentaciones?.length > 1 && (
+                            <div>
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {r.presentaciones.map(p => (
+                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card border border-divider shadow-sm">
+                                            <span className="text-label font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
+                                            <span className="text-label font-black text-content">{fmtQty(p.cantidad)} u</span>
+                                            {p.factor > 1 && (
+                                                <span className="text-caption font-semibold text-chart-1-text">= {fmtQty(p.cantidad * p.factor)} base</span>
+                                            )}
+                                            <span className="text-caption text-content-3">{fmt(p.neto)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Charts: branch rotation + 3-month trend */}
+                        {(() => {
+                            const showBranch = !filterBranch && drillData.length > 0;
+                            const showTrend  = drillMonthly.length > 0;
+                            if (!showBranch && !showTrend) return null;
+
+                            // Reparto por sucursal con los totales EXACTOS del período
+                            // (drillData carga solo las últimas 300 ventas: sumarlas acá
+                            // sesgaba el gráfico hacia lo reciente en productos con más
+                            // movimiento). Si el resumen no llegó, se cae a lo cargado.
+                            const branchAgg = showBranch ? (() => {
+                                if (drillSummary?.por_sucursal?.length) {
+                                    const entries = drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.neto || 0)]);
+                                    const total   = entries.reduce((s, [, v]) => s + v, 0);
+                                    const cantMap = Object.fromEntries(drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.cantidad_base || 0)]));
+                                    return { entries, total, cantMap };
+                                }
+                                const netoMap = {}, cantMap = {};
+                                const factorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
+                                for (const l of drillData) {
+                                    const f = factorMap[l.presentacion] || 1;
+                                    netoMap[l.branch_id] = (netoMap[l.branch_id] || 0) + l.neto;
+                                    cantMap[l.branch_id] = (cantMap[l.branch_id] || 0) + parseFloat(l.cantidad || 0) * f;
+                                }
+                                const entries = Object.entries(netoMap).sort((a, b) => b[1] - a[1]);
+                                const total   = entries.reduce((s, [, v]) => s + v, 0);
+                                return { entries, total, cantMap };
+                            })() : null;
+
+                            // Trend bar heights
+                            const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
+
+                            const BRANCH_COLORS = ['bg-chart-1','bg-success','bg-chart-3','bg-chart-4','bg-chart-9','bg-chart-6'];
+                            return (
+                                <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                    {/* Branch rotation */}
+                                    {showBranch && (
+                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
+                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
+                                            <div className="space-y-2.5">
+                                                {branchAgg.entries.map(([bid, neto], ci) => {
+                                                    const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
+                                                    const name  = branches.find(b => b.id === Number(bid))?.name || `Suc. ${bid}`;
+                                                    const color = BRANCH_COLORS[ci % BRANCH_COLORS.length];
+                                                    const cant  = branchAgg.cantMap[bid] || 0;
+                                                    return (
+                                                        <div key={bid}>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <span className="text-caption text-content-2 font-semibold truncate max-w-[150px]">{name}</span>
+                                                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                    <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
+                                                                    <span className="text-caption font-black text-content-2">{fmt(neto)}</span>
+                                                                    <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{pct.toFixed(0)}%</Badge>
+                                                                </div>
+                                                            </div>
+                                                            <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
+                                                                <div className={`h-2 rounded-full ${color} transition-all duration-[var(--dur-lento)]`} style={{ width: `${pct}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Trend */}
+                                    {showTrend && (
+                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
+                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
+                                            <div className="flex items-end gap-1.5" style={{ height: 80 }}>
+                                                {drillMonthly.map((m, i) => {
+                                                    const barPct = (m.neto / maxTrend) * 100;
+                                                    const prev   = drillMonthly[i - 1];
+                                                    const change = prev && prev.neto > 0 ? ((m.neto - prev.neto) / prev.neto) * 100 : null;
+                                                    const monthLabel = new Date(m.month + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short' });
+                                                    const isLatest = i === drillMonthly.length - 1;
+                                                    const isUp = change !== null && change >= 0;
+                                                    return (
+                                                        <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
+                                                            <div className="text-micro font-black h-3.5 flex items-center">
+                                                                {change !== null
+                                                                    ? <span className={isUp ? 'text-success-text' : 'text-danger-text'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
+                                                                    : <span />}
+                                                            </div>
+                                                            <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
+                                                                <div
+                                                                    className={`w-full transition-all duration-[var(--dur-lento)] rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-chart-1 to-chart-1/70' : 'bg-gradient-to-t from-chart-1/30 to-chart-1/20'}`}
+                                                                    style={{ height: `${Math.max(barPct, 5)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-micro text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
+                                                            <span className="text-micro font-black text-content-2 leading-none">{fmt(m.neto)}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Individual sales table */}
+                        {drillData.length > 0 && (() => {
+                            const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
+                            const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
+                            // Sin chips activos, los totales salen del resumen EXACTO del
+                            // servidor (la tabla solo carga las últimas 300 ventas y en
+                            // productos con más movimiento sumarlas quedaba corto contra
+                            // la fila del producto). Con chips, se suma lo cargado y el
+                            // pie ya dice "(filtrado)".
+                            const sinFiltrosDrill = !drillFilters.tipodoc && !drillFilters.changed;
+                            const usarSummary = sinFiltrosDrill && drillSummary != null;
+                            const totCant  = usarSummary
+                                ? parseFloat(drillSummary.total_cantidad_base || 0)
+                                : filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
+                            const totNeto  = usarSummary
+                                ? parseFloat(drillSummary.total_display || 0)
+                                : filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
+                            const nVentas  = usarSummary ? drillSummary.total_count : filteredDrill.length;
+                            const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
+                            const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
+                            // El encabezado ordenable local (`DH`) se fue en v2.531.4.
+                            // Existía porque `DataTable` no tenía teclado ni `aria-sort`
+                            // hasta v2.119.0 —y el arreglo del canónico no alcanzó a
+                            // esta tercera tabla de la vista, que ya estaba escrita a
+                            // mano—. Hoy el canónico trae el contrato completo, así que
+                            // mantener una copia era quedarse con la versión que hay
+                            // que acordarse de arreglar dos veces.
+                            const pill = (val, field, label) => {
+                                const active = drillFilters[field] === val;
+                                return (
+                                    <FilterBar.Chip key={val} tone="brand" active={active}
+                                        onToggle={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}>
+                                        {label ?? val}
+                                    </FilterBar.Chip>
+                                );
+                            };
+                            return (
+                                <div>
+                                    {/* Filter chips */}
+                                    {(() => {
+                                        const changedCount = drillData.filter(l => l.tierChanged).length;
+                                        const hasAnyFilter = drillFilters.tipodoc || drillFilters.changed;
+                                        return (docOpts.length > 1 || changedCount > 0) && (
+                                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                                {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
+                                                {changedCount > 0 && (
+                                                    <>
+                                                        {docOpts.length > 1 && <span className="text-content-3">|</span>}
+                                                        <FilterBar.Chip tone="warning" active={drillFilters.changed}
+                                                            onToggle={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}>
+                                                            ⚠ precio cambió ({changedCount})
+                                                        </FilterBar.Chip>
+                                                    </>
+                                                )}
+                                                {hasAnyFilter && (
+                                                    <Button variant="destructive" onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}>✕ limpiar</Button>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Totals summary */}
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-2">
+                                            {nVentas} venta{nVentas !== 1 ? 's' : ''}{!usarSummary && drillData.length >= 300 ? '+' : ''}
+                                        </p>
+                                        <span className="text-content-3">·</span>
+                                        <p className="text-caption font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
+                                        <span className="text-content-3">·</span>
+                                        <p className="text-label font-black text-success-text">{fmt(totNeto)} <span className="text-micro font-medium text-content-3">total</span></p>
+                                        {drillData.length >= 300 && nVentas > 300 && (
+                                            <>
+                                                <span className="text-content-3">·</span>
+                                                <p className="text-caption font-semibold text-content-3">la tabla muestra las últimas 300</p>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Table */}
+                                    {/* Trece columnas y encabezados ordenables. `DataTable` ya
+                                        trae el contrato completo —`<button>`, `aria-sort` y
+                                        teclado— así que el `DH` local, que existía porque el
+                                        canónico no lo tenía, deja de hacer falta. El total va
+                                        en `footer`: como `<tfoot>` con `colSpan` no significa
+                                        nada en modo ficha, y acá el número que cierra la
+                                        pantalla no se puede perder. */}
+                                    <DataTable
+                                        columns={COLS_DRILL(!filterBranch)}
+                                        sortKey={drillSortCol} sortDir={drillSortDir} onSort={handleDrillSort}
+                                        dense minWidth="1180px"
+                                        movil={{ identidad: 'correlativo', ancla: 'neto_display', chips: ['fecha', 'cliente'] }}
+                                        footer={
+                                            <>
+                                                <span className="text-caption font-black text-content-3 uppercase tracking-wide">
+                                                    Total {filteredDrill.length < drillData.length ? '(filtrado)' : ''}
+                                                </span>
+                                                <span className="flex items-center gap-4">
+                                                    <span className="font-black text-content-2 tabular-nums">{fmtQty(totCant)}</span>
+                                                    <span className="font-black text-success-text tabular-nums">{fmt(totNeto)}</span>
+                                                </span>
+                                            </>
+                                        }
+                                    >
+                                                {paginatedDrill.map((line, li) => {
+                                                    const emp        = employees?.find(e => e.code === line.cod_vendedor);
+                                                    const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
+                                                    const empShort   = emp ? shortEmployeeName(emp) : empName;
+                                                    const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
+                                                    const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
+                                                    const docVariante = VARIANTE_DOC[line.tipo_documento] || 'neutral';
+                                                    return (
+                                                        <DataRow key={li} index={li}>
+                                                            <DataCell className="font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</DataCell>
+                                                            <DataCell className="whitespace-nowrap">
+                                                                <div className="flex flex-col leading-tight">
+                                                                    <span className="font-mono text-content-2 text-label">{line.correlativo || '—'}</span>
+                                                                    {line.erp_invoice_id && (
+                                                                        <span className="font-mono text-micro text-content-3">#{line.erp_invoice_id}</span>
+                                                                    )}
+                                                                </div>
+                                                            </DataCell>
+                                                            <DataCell className="whitespace-nowrap">
+                                                                {line.tipo_documento && <Badge variant={docVariante} size="sm">{line.tipo_documento}</Badge>}
+                                                            </DataCell>
+                                                            <DataCell className="whitespace-nowrap">
+                                                                {line.tipo_pago && <span className={`text-micro font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
+                                                            </DataCell>
+                                                            <DataCell className="whitespace-nowrap">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
+                                                                    <span className="text-content-2 text-label">{empShort}</span>
+                                                                </div>
+                                                            </DataCell>
+                                                            <DataCell className="text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</DataCell>
+                                                            {!filterBranch && <DataCell className="text-content-3 whitespace-nowrap">{branchName}</DataCell>}
+                                                            <DataCell className="text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</DataCell>
+                                                            <DataCell className="whitespace-nowrap">
+                                                                {line.lote
+                                                                    ? <Badge variant="chart-3" size="sm" uppercase={false}>{line.lote}</Badge>
+                                                                    : <span className="text-content-3">—</span>}
+                                                            </DataCell>
+                                                            <DataCell className="whitespace-nowrap hidden lg:table-cell">
+                                                                {line.fecha_vencimiento
+                                                                    ? <Badge variant="chart-9" size="sm" uppercase={false}>{line.fecha_vencimiento}</Badge>
+                                                                    : <span className="text-content-3">—</span>}
+                                                            </DataCell>
+                                                            <DataCell align="right" className="whitespace-nowrap">
+                                                                <div className="flex flex-col items-end gap-0.5">
+                                                                    <span className="text-label font-semibold text-content-2">{fmt(line.precio_display)}</span>
+                                                                    {line.tier && (
+                                                                        <div className="relative group/tier inline-flex items-center gap-1">
+                                                                            <Badge variant={line.tier.variante} size="sm">
+                                                                                {line.tier.label}
+                                                                                {line.tier.num != null && <span className="opacity-50 font-bold">{line.tier.num}</span>}
+                                                                            </Badge>
+                                                                            {line.tierChanged && (
+                                                                                <>
+                                                                                    <span className="text-warning-text text-label cursor-help leading-none">⚠</span>
+                                                                                    <div data-surface="tooltip" className="absolute bottom-full right-0 mb-1.5 z-sidebar hidden group-hover/tier:block w-max max-w-[220px] text-caption leading-relaxed px-3 py-2 pointer-events-none">
+                                                                                        <p className="font-black text-warning-text mb-0.5">Precio cambió</p>
+                                                                                        {line.tierChangedAt && (
+                                                                                            <p className="text-content-tooltip-2">
+                                                                                                {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                                            </p>
+                                                                                        )}
+                                                                                        <p className="mt-1">Al vender: <strong className="text-content-tooltip">{line.tier.label}</strong></p>
+                                                                                        <p>Hoy: <strong className="text-content-tooltip">{line.currentTier?.label ?? '—'}</strong></p>
+                                                                                    </div>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </DataCell>
+                                                            <DataCell align="right" className="font-semibold text-content-2 whitespace-nowrap">{fmtQty(line.cantidad)}</DataCell>
+                                                            <DataCell align="right" className="font-black text-content whitespace-nowrap">{fmt(line.neto_display)}</DataCell>
+                                                        </DataRow>
+                                                    );
+                                                })}
+                                    </DataTable>
+                                    {drillTotalPages > 1 && (
+                                        <div className="px-2 pt-2">
+                                            <TablePagination
+                                                pageSize={drillPageSize}
+                                                onPageSizeChange={s => { setDrillPageSize(s); setDrillPage(1); }}
+                                                page={drillPage}
+                                                totalPages={drillTotalPages}
+                                                onPageChange={setDrillPage}
+                                                total={filteredDrill.length}
+                                                unit="ventas"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                )}
+        </>
+    );
+
     return (
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats + inline filters */}
@@ -2061,6 +2478,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 skeletonRows={10}
                 empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : showHidden ? 'No hay productos ocultos' : 'Sin datos para este período' }}
                 minWidth="640px"
+                /* `usarAccionDeFila`: el toque abre el MISMO detalle que la fila
+                   expande en escritorio. Sin declararlo gana la hoja genérica de
+                   `DataTable`, que sólo repite las columnas de la tarjeta. */
+                movil={{ identidad: 'descripcion', ancla: 'neto', chips: ['laboratorio_nombre', 'cantidad'], usarAccionDeFila: true }}
             >
                 {paginated.map((r, i) => {
                                 const globalIdx  = (page - 1) * pageSize + i;
@@ -2205,333 +2626,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             </LiquidTooltip>
                                         </DataCell>
                                     </DataRow>
-                                    {isExpanded && !privacyMode && (
+                                    {/* Sólo en escritorio: en el teléfono `DataTable`
+                                        pinta fichas y esta fila hermana no se dibuja.
+                                        Ahí el mismo detalle va al expediente, abajo. */}
+                                    {isExpanded && !privacyMode && !enTelefono && (
                                         <tr className="bg-gradient-to-b from-chart-1/10 to-divider">
                                             <td colSpan={10}
                                                 className="px-4 py-4">
-                                                {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-body-sm text-content-3 py-3 w-full"><SkeletonText lines={2} /></div>
-                                                ) : (
-                                                    <div className="space-y-4">
-                                                        {/* Presentaciones breakdown */}
-                                                        {r.presentaciones?.length > 1 && (
-                                                            <div>
-                                                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {r.presentaciones.map(p => (
-                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card border border-divider shadow-sm">
-                                                                            <span className="text-label font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
-                                                                            <span className="text-label font-black text-content">{fmtQty(p.cantidad)} u</span>
-                                                                            {p.factor > 1 && (
-                                                                                <span className="text-caption font-semibold text-chart-1-text">= {fmtQty(p.cantidad * p.factor)} base</span>
-                                                                            )}
-                                                                            <span className="text-caption text-content-3">{fmt(p.neto)}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Charts: branch rotation + 3-month trend */}
-                                                        {(() => {
-                                                            const showBranch = !filterBranch && drillData.length > 0;
-                                                            const showTrend  = drillMonthly.length > 0;
-                                                            if (!showBranch && !showTrend) return null;
-
-                                                            // Reparto por sucursal con los totales EXACTOS del período
-                                                            // (drillData carga solo las últimas 300 ventas: sumarlas acá
-                                                            // sesgaba el gráfico hacia lo reciente en productos con más
-                                                            // movimiento). Si el resumen no llegó, se cae a lo cargado.
-                                                            const branchAgg = showBranch ? (() => {
-                                                                if (drillSummary?.por_sucursal?.length) {
-                                                                    const entries = drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.neto || 0)]);
-                                                                    const total   = entries.reduce((s, [, v]) => s + v, 0);
-                                                                    const cantMap = Object.fromEntries(drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.cantidad_base || 0)]));
-                                                                    return { entries, total, cantMap };
-                                                                }
-                                                                const netoMap = {}, cantMap = {};
-                                                                const factorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
-                                                                for (const l of drillData) {
-                                                                    const f = factorMap[l.presentacion] || 1;
-                                                                    netoMap[l.branch_id] = (netoMap[l.branch_id] || 0) + l.neto;
-                                                                    cantMap[l.branch_id] = (cantMap[l.branch_id] || 0) + parseFloat(l.cantidad || 0) * f;
-                                                                }
-                                                                const entries = Object.entries(netoMap).sort((a, b) => b[1] - a[1]);
-                                                                const total   = entries.reduce((s, [, v]) => s + v, 0);
-                                                                return { entries, total, cantMap };
-                                                            })() : null;
-
-                                                            // Trend bar heights
-                                                            const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
-
-                                                            const BRANCH_COLORS = ['bg-chart-1','bg-success','bg-chart-3','bg-chart-4','bg-chart-9','bg-chart-6'];
-                                                            return (
-                                                                <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-                                                                    {/* Branch rotation */}
-                                                                    {showBranch && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
-                                                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
-                                                                            <div className="space-y-2.5">
-                                                                                {branchAgg.entries.map(([bid, neto], ci) => {
-                                                                                    const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
-                                                                                    const name  = branches.find(b => b.id === Number(bid))?.name || `Suc. ${bid}`;
-                                                                                    const color = BRANCH_COLORS[ci % BRANCH_COLORS.length];
-                                                                                    const cant  = branchAgg.cantMap[bid] || 0;
-                                                                                    return (
-                                                                                        <div key={bid}>
-                                                                                            <div className="flex justify-between items-center mb-1">
-                                                                                                <span className="text-caption text-content-2 font-semibold truncate max-w-[150px]">{name}</span>
-                                                                                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                    <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
-                                                                                                    <span className="text-caption font-black text-content-2">{fmt(neto)}</span>
-                                                                                                    <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{pct.toFixed(0)}%</Badge>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
-                                                                                                <div className={`h-2 rounded-full ${color} transition-all duration-[var(--dur-lento)]`} style={{ width: `${pct}%` }} />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {/* Trend */}
-                                                                    {showTrend && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
-                                                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
-                                                                            <div className="flex items-end gap-1.5" style={{ height: 80 }}>
-                                                                                {drillMonthly.map((m, i) => {
-                                                                                    const barPct = (m.neto / maxTrend) * 100;
-                                                                                    const prev   = drillMonthly[i - 1];
-                                                                                    const change = prev && prev.neto > 0 ? ((m.neto - prev.neto) / prev.neto) * 100 : null;
-                                                                                    const monthLabel = new Date(m.month + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short' });
-                                                                                    const isLatest = i === drillMonthly.length - 1;
-                                                                                    const isUp = change !== null && change >= 0;
-                                                                                    return (
-                                                                                        <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
-                                                                                            <div className="text-micro font-black h-3.5 flex items-center">
-                                                                                                {change !== null
-                                                                                                    ? <span className={isUp ? 'text-success-text' : 'text-danger-text'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
-                                                                                                    : <span />}
-                                                                                            </div>
-                                                                                            <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
-                                                                                                <div
-                                                                                                    className={`w-full transition-all duration-[var(--dur-lento)] rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-chart-1 to-chart-1/70' : 'bg-gradient-to-t from-chart-1/30 to-chart-1/20'}`}
-                                                                                                    style={{ height: `${Math.max(barPct, 5)}%` }}
-                                                                                                />
-                                                                                            </div>
-                                                                                            <span className="text-micro text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
-                                                                                            <span className="text-micro font-black text-content-2 leading-none">{fmt(m.neto)}</span>
-                                                                                        </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })()}
-
-                                                        {/* Individual sales table */}
-                                                        {drillData.length > 0 && (() => {
-                                                            const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
-                                                            const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
-                                                            // Sin chips activos, los totales salen del resumen EXACTO del
-                                                            // servidor (la tabla solo carga las últimas 300 ventas y en
-                                                            // productos con más movimiento sumarlas quedaba corto contra
-                                                            // la fila del producto). Con chips, se suma lo cargado y el
-                                                            // pie ya dice "(filtrado)".
-                                                            const sinFiltrosDrill = !drillFilters.tipodoc && !drillFilters.changed;
-                                                            const usarSummary = sinFiltrosDrill && drillSummary != null;
-                                                            const totCant  = usarSummary
-                                                                ? parseFloat(drillSummary.total_cantidad_base || 0)
-                                                                : filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
-                                                            const totNeto  = usarSummary
-                                                                ? parseFloat(drillSummary.total_display || 0)
-                                                                : filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
-                                                            const nVentas  = usarSummary ? drillSummary.total_count : filteredDrill.length;
-                                                            const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
-                                                            const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
-                                                            // El encabezado ordenable local (`DH`) se fue en v2.531.4.
-                                                            // Existía porque `DataTable` no tenía teclado ni `aria-sort`
-                                                            // hasta v2.119.0 —y el arreglo del canónico no alcanzó a
-                                                            // esta tercera tabla de la vista, que ya estaba escrita a
-                                                            // mano—. Hoy el canónico trae el contrato completo, así que
-                                                            // mantener una copia era quedarse con la versión que hay
-                                                            // que acordarse de arreglar dos veces.
-                                                            const pill = (val, field, label) => {
-                                                                const active = drillFilters[field] === val;
-                                                                return (
-                                                                    <FilterBar.Chip key={val} tone="brand" active={active}
-                                                                        onToggle={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}>
-                                                                        {label ?? val}
-                                                                    </FilterBar.Chip>
-                                                                );
-                                                            };
-                                                            return (
-                                                                <div>
-                                                                    {/* Filter chips */}
-                                                                    {(() => {
-                                                                        const changedCount = drillData.filter(l => l.tierChanged).length;
-                                                                        const hasAnyFilter = drillFilters.tipodoc || drillFilters.changed;
-                                                                        return (docOpts.length > 1 || changedCount > 0) && (
-                                                                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                                                                                {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
-                                                                                {changedCount > 0 && (
-                                                                                    <>
-                                                                                        {docOpts.length > 1 && <span className="text-content-3">|</span>}
-                                                                                        <FilterBar.Chip tone="warning" active={drillFilters.changed}
-                                                                                            onToggle={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}>
-                                                                                            ⚠ precio cambió ({changedCount})
-                                                                                        </FilterBar.Chip>
-                                                                                    </>
-                                                                                )}
-                                                                                {hasAnyFilter && (
-                                                                                    <Button variant="destructive" onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}>✕ limpiar</Button>
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })()}
-
-                                                                    {/* Totals summary */}
-                                                                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                                        <p className="text-caption font-black uppercase tracking-widest text-content-2">
-                                                                            {nVentas} venta{nVentas !== 1 ? 's' : ''}{!usarSummary && drillData.length >= 300 ? '+' : ''}
-                                                                        </p>
-                                                                        <span className="text-content-3">·</span>
-                                                                        <p className="text-caption font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
-                                                                        <span className="text-content-3">·</span>
-                                                                        <p className="text-label font-black text-success-text">{fmt(totNeto)} <span className="text-micro font-medium text-content-3">total</span></p>
-                                                                        {drillData.length >= 300 && nVentas > 300 && (
-                                                                            <>
-                                                                                <span className="text-content-3">·</span>
-                                                                                <p className="text-caption font-semibold text-content-3">la tabla muestra las últimas 300</p>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Table */}
-                                                                    {/* Trece columnas y encabezados ordenables. `DataTable` ya
-                                                                        trae el contrato completo —`<button>`, `aria-sort` y
-                                                                        teclado— así que el `DH` local, que existía porque el
-                                                                        canónico no lo tenía, deja de hacer falta. El total va
-                                                                        en `footer`: como `<tfoot>` con `colSpan` no significa
-                                                                        nada en modo ficha, y acá el número que cierra la
-                                                                        pantalla no se puede perder. */}
-                                                                    <DataTable
-                                                                        columns={COLS_DRILL(!filterBranch)}
-                                                                        sortKey={drillSortCol} sortDir={drillSortDir} onSort={handleDrillSort}
-                                                                        dense minWidth="1180px"
-                                                                        movil={{ identidad: 'correlativo', ancla: 'neto_display', chips: ['fecha', 'cliente'] }}
-                                                                        footer={
-                                                                            <>
-                                                                                <span className="text-caption font-black text-content-3 uppercase tracking-wide">
-                                                                                    Total {filteredDrill.length < drillData.length ? '(filtrado)' : ''}
-                                                                                </span>
-                                                                                <span className="flex items-center gap-4">
-                                                                                    <span className="font-black text-content-2 tabular-nums">{fmtQty(totCant)}</span>
-                                                                                    <span className="font-black text-success-text tabular-nums">{fmt(totNeto)}</span>
-                                                                                </span>
-                                                                            </>
-                                                                        }
-                                                                    >
-                                                                                {paginatedDrill.map((line, li) => {
-                                                                                    const emp        = employees?.find(e => e.code === line.cod_vendedor);
-                                                                                    const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
-                                                                                    const empShort   = emp ? shortEmployeeName(emp) : empName;
-                                                                                    const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
-                                                                                    const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
-                                                                                    const docVariante = VARIANTE_DOC[line.tipo_documento] || 'neutral';
-                                                                                    return (
-                                                                                        <DataRow key={li} index={li}>
-                                                                                            <DataCell className="font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</DataCell>
-                                                                                            <DataCell className="whitespace-nowrap">
-                                                                                                <div className="flex flex-col leading-tight">
-                                                                                                    <span className="font-mono text-content-2 text-label">{line.correlativo || '—'}</span>
-                                                                                                    {line.erp_invoice_id && (
-                                                                                                        <span className="font-mono text-micro text-content-3">#{line.erp_invoice_id}</span>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </DataCell>
-                                                                                            <DataCell className="whitespace-nowrap">
-                                                                                                {line.tipo_documento && <Badge variant={docVariante} size="sm">{line.tipo_documento}</Badge>}
-                                                                                            </DataCell>
-                                                                                            <DataCell className="whitespace-nowrap">
-                                                                                                {line.tipo_pago && <span className={`text-micro font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
-                                                                                            </DataCell>
-                                                                                            <DataCell className="whitespace-nowrap">
-                                                                                                <div className="flex items-center gap-1.5">
-                                                                                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
-                                                                                                    <span className="text-content-2 text-label">{empShort}</span>
-                                                                                                </div>
-                                                                                            </DataCell>
-                                                                                            <DataCell className="text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</DataCell>
-                                                                                            {!filterBranch && <DataCell className="text-content-3 whitespace-nowrap">{branchName}</DataCell>}
-                                                                                            <DataCell className="text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</DataCell>
-                                                                                            <DataCell className="whitespace-nowrap">
-                                                                                                {line.lote
-                                                                                                    ? <Badge variant="chart-3" size="sm" uppercase={false}>{line.lote}</Badge>
-                                                                                                    : <span className="text-content-3">—</span>}
-                                                                                            </DataCell>
-                                                                                            <DataCell className="whitespace-nowrap hidden lg:table-cell">
-                                                                                                {line.fecha_vencimiento
-                                                                                                    ? <Badge variant="chart-9" size="sm" uppercase={false}>{line.fecha_vencimiento}</Badge>
-                                                                                                    : <span className="text-content-3">—</span>}
-                                                                                            </DataCell>
-                                                                                            <DataCell align="right" className="whitespace-nowrap">
-                                                                                                <div className="flex flex-col items-end gap-0.5">
-                                                                                                    <span className="text-label font-semibold text-content-2">{fmt(line.precio_display)}</span>
-                                                                                                    {line.tier && (
-                                                                                                        <div className="relative group/tier inline-flex items-center gap-1">
-                                                                                                            <Badge variant={line.tier.variante} size="sm">
-                                                                                                                {line.tier.label}
-                                                                                                                {line.tier.num != null && <span className="opacity-50 font-bold">{line.tier.num}</span>}
-                                                                                                            </Badge>
-                                                                                                            {line.tierChanged && (
-                                                                                                                <>
-                                                                                                                    <span className="text-warning-text text-label cursor-help leading-none">⚠</span>
-                                                                                                                    <div data-surface="tooltip" className="absolute bottom-full right-0 mb-1.5 z-sidebar hidden group-hover/tier:block w-max max-w-[220px] text-caption leading-relaxed px-3 py-2 pointer-events-none">
-                                                                                                                        <p className="font-black text-warning-text mb-0.5">Precio cambió</p>
-                                                                                                                        {line.tierChangedAt && (
-                                                                                                                            <p className="text-content-tooltip-2">
-                                                                                                                                {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                                                                                            </p>
-                                                                                                                        )}
-                                                                                                                        <p className="mt-1">Al vender: <strong className="text-content-tooltip">{line.tier.label}</strong></p>
-                                                                                                                        <p>Hoy: <strong className="text-content-tooltip">{line.currentTier?.label ?? '—'}</strong></p>
-                                                                                                                    </div>
-                                                                                                                </>
-                                                                                                            )}
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </DataCell>
-                                                                                            <DataCell align="right" className="font-semibold text-content-2 whitespace-nowrap">{fmtQty(line.cantidad)}</DataCell>
-                                                                                            <DataCell align="right" className="font-black text-content whitespace-nowrap">{fmt(line.neto_display)}</DataCell>
-                                                                                        </DataRow>
-                                                                                    );
-                                                                                })}
-                                                                    </DataTable>
-                                                                    {drillTotalPages > 1 && (
-                                                                        <div className="px-2 pt-2">
-                                                                            <TablePagination
-                                                                                pageSize={drillPageSize}
-                                                                                onPageSizeChange={s => { setDrillPageSize(s); setDrillPage(1); }}
-                                                                                page={drillPage}
-                                                                                totalPages={drillTotalPages}
-                                                                                onPageChange={setDrillPage}
-                                                                                total={filteredDrill.length}
-                                                                                unit="ventas"
-                                                                            />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                )}
+                                                {detalleDeProducto(r)}
                                             </td>
                                         </tr>
                                     )}
@@ -2540,6 +2642,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             })}
             </DataTable>
             )}
+
+            {/* El detalle del producto, a pantalla completa en el teléfono.
+                `pantalla` y no la hoja: son gráficos y una tabla de ventas, o
+                sea que ESTO es una pantalla y no un detalle corto. */}
+            <ExpedienteMovil
+                abierto={privacyMode ? null : prodAbierto}
+                onClose={() => setExpandedKey(null)}
+                variante="pantalla"
+                titulo={prodAbierto?.descripcion || 'Producto'}
+                subtitulo={prodAbierto?.laboratorio_nombre || undefined}
+            >
+                {(r) => detalleDeProducto(r)}
+            </ExpedienteMovil>
 
             {!error && !loading && rows.length > 0 && (
                 <TablePagination

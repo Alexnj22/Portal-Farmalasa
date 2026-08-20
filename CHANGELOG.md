@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.693.0 — Cortes de caja con menú propio y la pestaña activa en la dirección
+
+**Cortes de caja sale de Comercial y queda como su propio menú** (pedido del
+usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al cerrar
+el turno, y quien lo abre —la sala que cierra, quien confirma la diferencia—
+entra por eso y no por otra cosa. Con un solo módulo el grupo se pinta plano, o
+sea que queda a un clic desde cualquier pantalla en vez de detrás del acordeón.
+Comercial baja a cuatro ítems: Ventas, Facturación, Cotizaciones y Clientes.
+
+**Y la pestaña abierta de una vista pasa a vivir en la DIRECCIÓN.** El usuario
+lo pidió al revés —«verificá que en todas las vistas con pestañas se pueda
+actualizar estando en una pestaña, normalmente no se puede»—, y medido: de las
+**29 vistas con pestañas, 9 lo hacían bien y 20 no**. En esas 20, apretar F5 —o
+volver por el historial, o abrir el enlace que alguien pasó— devolvía a la
+primera pestaña sin decir nada. Como no falla nada y no hay error, no se
+reportaba como bug: se reportaba como que la pantalla se movió sola.
+
+Las 20 quedan en el mismo patrón `?tab=` que ya usaban las otras nueve, a través
+de un hook nuevo —`usePestanaEnUrl`— que hace las tres partes que se olvidan al
+copiar el bloque a mano:
+
+- **valida contra las pestañas que la vista muestra AHORA**, ya filtradas por
+  permiso, así que un `?tab=` inventado —o una pestaña que este cargo no tiene—
+  cae a la primera visible en vez de dejar la vista pintando el vacío;
+- **empuja al historial** en el clic, para que «atrás» deshaga el cambio de
+  pestaña, y **reemplaza** en las correcciones automáticas: empujar ahí dejaba a
+  «atrás» rebotando contra la misma corrección, sin salida por ese botón;
+- acepta `key` o `id`, que son las dos formas que ya convivían en el repo.
+
+Dos arreglos que aparecieron al hacerlo, y que no se ven desde la pantalla:
+
+- **Solicitudes** abría una solicitud por enlace y acto seguido pisaba la
+  dirección con una copia vieja de los parámetros. Con la pestaña adentro, ese
+  orden borraba el cambio de pestaña; ahora las dos escrituras son una sola.
+- **La ficha del empleado** guardaba su sección en un `useState` de la RAÍZ de la
+  app, aunque su único consumidor sea esa ruta: cambiar de sección repintaba el
+  árbol entero. Ahora vive en la dirección, dentro de la ruta.
+
+Nota de convivencia: cinco `DataTable` de este commit llevan además el
+`usarAccionDeFila: true` de §32.8, escrito por otra sesión sobre archivos que
+esta ya tenía preparados. Es el mismo arreglo repartido en dos commits, no un
+cambio de esta tanda.
+
+**Queda como regla, no como barrido**: la categoría `pestana-fuera-de-la-url` de
+`npm run gate:design` nace **bloqueante en cero** —verificada contra una
+regresión fabricada— y la escribe DESIGN.md §14 · ViewTabBar y CLAUDE.md. Una
+vista nueva que guarde su pestaña en `useState` ya no pasa el gate.
+
 ## v2.692.2 — el ítem indentado del sidebar deja de desbordar su hueco
 
 Segunda captura del usuario sobre el mismo síntoma: un anillo claro abierto por

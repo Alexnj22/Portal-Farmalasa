@@ -604,6 +604,59 @@ function classNameDeTag(tag) {
 }
 
 /**
+ * El valor de UN prop del tag, leído al nivel 0 y con las llaves balanceadas.
+ *
+ * Generaliza lo que `classNameDeTag` hace con `className`. El «nivel 0» es la
+ * parte que no se puede saltear: `action={<Button tabs={…}/>}` mete props de
+ * OTRO componente dentro del mismo texto, y contarlos ahí acusa al inocente —
+ * la trampa que costó una vuelta en `prop-inexistente`.
+ *
+ * Devuelve `null` si el prop no está; la CADENA VACÍA es un valor posible
+ * (`tabs={}`), así que hay que distinguirlos con `== null` y no con `!valor`.
+ */
+function propDeTag(tag, nombre) {
+  let i = 0, llaves = 0, comilla = null;
+  while (i < tag.length) {
+    const c = tag[i];
+    if (comilla) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === comilla) comilla = null;
+      i++; continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { comilla = c; i++; continue; }
+    if (c === '{') { llaves++; i++; continue; }
+    if (c === '}') { llaves--; i++; continue; }
+    if (llaves === 0 && tag.startsWith(nombre, i)
+        && /[\s=]/.test(tag[i + nombre.length] ?? '')
+        && !/[\w$]/.test(tag[i - 1] ?? ' ')) {
+      const eq = tag.indexOf('=', i);
+      if (eq < 0) return null;
+      let j = eq + 1;
+      while (/\s/.test(tag[j] ?? '')) j++;
+      if (tag[j] === '"' || tag[j] === "'") {
+        const fin = tag.indexOf(tag[j], j + 1);
+        return fin < 0 ? null : tag.slice(j + 1, fin);
+      }
+      if (tag[j] === '{') {
+        let k = j + 1, prof = 1, q = null;
+        while (k < tag.length && prof > 0) {
+          const ch = tag[k];
+          if (q) { if (ch === '\\') { k += 2; continue; } if (ch === q) q = null; }
+          else if (ch === '"' || ch === "'" || ch === '`') q = ch;
+          else if (ch === '{') prof++;
+          else if (ch === '}') prof--;
+          k++;
+        }
+        return tag.slice(j + 1, k - 1);
+      }
+      return null;
+    }
+    i++;
+  }
+  return null;
+}
+
+/**
  * Todos los `<Nombre …>` de un archivo, como pares [inicio, fin).
  *
  * Hermano de `tagQueContiene`, que resuelve UNO desde una posición conocida;
@@ -2705,6 +2758,48 @@ function scanFile(path) {
         });
         break;
       }
+    }
+  }
+
+  // ── `pestana-fuera-de-la-url`: la pestaña activa en `useState` ────────────
+  //
+  // Una pestaña guardada en `useState` se pierde con cualquier recarga: F5 —o
+  // volver por el historial, o abrir el enlace que alguien pasó— devuelve a la
+  // PRIMERA pestaña sin decir nada. No falla nada, no hay error, así que sólo
+  // se nota como «la pantalla se movió sola». Pedido del usuario el 2026-08-20,
+  // después de llevar las 20 vistas que faltaban al patrón: «que eso sea
+  // canónico / regla siempre ante nuevas vistas».
+  //
+  // El canónico es `usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`), que
+  // además valida el `?tab=` contra las pestañas REALMENTE visibles — la parte
+  // que se olvida al copiar el bloque a mano, y sin la cual un `?tab=loquesea`
+  // deja la vista pintando el vacío.
+  //
+  // Una barra sin pestañas (`tabs={[]}`, `tabs={EMPTY_ARRAY}`) o con UNA sola
+  // no tiene qué recordar: esas vistas usan `ViewTabBar` sólo por su buscador.
+  if (!hasException(path, 'pestana-fuera-de-la-url')) {
+    const limpio = sinComentarios(text);
+    for (const [ini, fin] of tagsJsx(limpio, 'ViewTabBar')) {
+      const tag    = limpio.slice(ini, fin);
+      const tabs   = propDeTag(tag, 'tabs');
+      const activa = propDeTag(tag, 'activeTab');
+      if (tabs == null || activa == null) continue;
+      // Si la lista está escrita ahí mismo se pueden contar; si viene de una
+      // variable no se sabe, y se asume que son varias.
+      const esLiteral = /^\[[\s\S]*\]$/.test(tabs.trim());
+      const cuantas   = esLiteral ? (tabs.match(/\bkey\s*:/g) || []).length : 2;
+      if (cuantas < 2) continue;
+      const nombre = activa.trim();
+      // `activeTab={algo.complejo}` no es un estado que se pueda rastrear.
+      if (!/^[A-Za-z_$][\w$]*$/.test(nombre)) continue;
+      const decl = new RegExp(`\\[\\s*${nombre}\\s*,[^\\]]*\\]\\s*=\\s*useState\\b`);
+      if (!decl.test(limpio)) continue;
+      findings.push({
+        line: limpio.slice(0, ini).split('\n').length,
+        label: `pestaña \`${nombre}\` en \`useState\` — se pierde al recargar; usar \`usePestanaEnUrl\` (DESIGN.md §14 · ViewTabBar)`,
+        category: 'pestana-fuera-de-la-url',
+        text: tag.replace(/\s+/g, ' ').slice(0, 120),
+      });
     }
   }
 

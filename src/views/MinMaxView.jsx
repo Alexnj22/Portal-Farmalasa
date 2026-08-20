@@ -4,6 +4,7 @@ import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
 import { useAuth }       from '../context/AuthContext';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
 
 // La pestaña «Red» se retiró el 2026-08-09 a pedido del usuario: «no se me es de
@@ -46,7 +47,7 @@ export default function MinMaxView() {
     // (dos copias, una con 10 tipos y otra con 2).
     const TABS = ALL_MINMAX_TABS.filter(t => hasPermission(`minmax_tab_${t.key}`));
 
-    const [activeTab,       setActiveTab]       = useState(TABS[0]?.key ?? 'sucursal');
+    const [activeTab,       setActiveTab]       = usePestanaEnUrl(TABS, 'sucursal');
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);

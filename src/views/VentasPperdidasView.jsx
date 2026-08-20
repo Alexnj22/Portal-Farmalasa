@@ -9,6 +9,7 @@ import { signPhotosDeep } from '../utils/storageFiles';
 import { exportCsv } from '../utils/csvExport';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';
@@ -27,7 +28,7 @@ const TAB_HELP = {
 export default function VentasPperdidasView() {
     const { hasPermission } = useAuth();
     const canDownload = hasPermission('ventas_perdidas_descargar');
-    const [activeTab,  setActiveTab]  = useState('pendiente');
+    const [activeTab,  setActiveTab]  = usePestanaEnUrl(TABS, 'pendiente');
     const [rows,       setRows]       = useState([]);
     const [loading,    setLoading]    = useState(false);
     const [branchMap,  setBranchMap]  = useState({});

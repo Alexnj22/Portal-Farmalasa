@@ -7,6 +7,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { fetchSuppliersBasic } from '../../data/compras';
@@ -228,7 +229,7 @@ export default function ProveedoresView({ openModal }) {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('proveedores', 'can_edit');
 
-    const [activeTab, setActiveTab] = useState('listado');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'listado');
     const [search, setSearch] = useState('');
     const [categoriaId, setCategoriaId] = useState('');
     const [claseFilter, setClaseFilter] = useState('');
@@ -577,7 +578,7 @@ export default function ProveedoresView({ openModal }) {
                     </FilterBar>
                 </div>
 
-                <DataTable columns={COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores' }}>
+                <DataTable columns={COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} movil={{ usarAccionDeFila: true }} empty={{ icon: Truck, message: 'Sin proveedores' }}>
                     {pageRows.map((row, i) => (
                         <DataRow key={row.id} index={i} onClick={() => openDetail(row)}>
                             {/* stopPropagation: la fila entera abre el detalle,

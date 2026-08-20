@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
 import Badge from '../components/common/Badge';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 
 const STATUS_LABELS = {
     candidate: 'Candidato',
@@ -39,7 +40,7 @@ const OrphanObjectsView = () => {
     const canEdit = hasPermission('orphan_objects', 'can_edit');
     const appendAuditLog = useStaff(state => state.appendAuditLog);
 
-    const [activeTab, setActiveTab] = useState('todos');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'todos');
     const [rows, setRows] = useState(EMPTY_ARRAY);
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState(null);

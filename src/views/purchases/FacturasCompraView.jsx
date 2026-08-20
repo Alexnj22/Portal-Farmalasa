@@ -1047,7 +1047,13 @@ function TabDocumentos({
                 </div>
             )}
 
-            <DataTable dense columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
+            {/* `usarAccionDeFila`: el toque de la ficha tiene que ir al MISMO
+                destino que el clic de la fila —el detalle completo del documento,
+                con sus productos y su archivo—. Sin declararlo, `DataTable` gana
+                con su hoja genérica, que sólo repite las columnas: se reportó
+                como «me da información, pero muy reducida, no puedo ver los
+                productos, no puedo ver el PDF». */}
+            <DataTable dense columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} movil={{ usarAccionDeFila: true }} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={canOpen ? () => viewDetail(row) : undefined}>
                         <DataCell>
@@ -1274,7 +1280,8 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             </div>
             {rowError && <div className="text-caption text-danger-text px-1">{rowError}</div>}
 
-            <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Sin pendientes de revisión' }}>
+            {/* El toque abre el archivo. Mismo motivo que la tabla de arriba. */}
+            <DataTable columns={REVIEW_COLS} loading={loading} movil={{ usarAccionDeFila: true }} empty={{ icon: CheckCircle2, message: 'Sin pendientes de revisión' }}>
                 {filtered.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={canOpen ? () => openFile(row) : undefined}>
                         <DataCell>

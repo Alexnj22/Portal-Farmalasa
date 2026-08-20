@@ -660,6 +660,17 @@ emergencia real, no para silenciar un hallazgo.
   **con su motivo escrito** (el único que hay hoy: el conteo cíclico, que guarda
   renglón por renglón). El baseline es la deuda del día que se escribió el gate
   y **sólo baja**: no se regenera para tapar un hallazgo nuevo.
+- **La pestaña activa de una vista vive en la DIRECCIÓN, nunca en `useState`.**
+  El hook canónico es `usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`) y vale
+  también para las vistas nuevas. Una pestaña en memoria se pierde con cualquier
+  recarga: F5 —o volver por el historial, o abrir el enlace que alguien pasó—
+  devuelve a la primera sin decir nada, y como no falla nada nadie lo reporta
+  como bug sino como «la pantalla se movió sola». Medido el 2026-08-20: de las
+  29 vistas con pestañas, **9 lo hacían bien y 20 no**. Lo vigila la categoría
+  `pestana-fuera-de-la-url` de `npm run gate:design`, bloqueante en cero. El
+  detalle —por qué valida contra las pestañas visibles y no contra la lista
+  entera, y cuándo se REEMPLAZA en vez de empujar al historial— en DESIGN.md
+  §14 · ViewTabBar.
 - **Antes de cerrar trabajo que toque consultas, índices o pantallas de
   consulta: `npm run gate:perf`.** Mide contra producción. Nació el 2026-08-18,
   después de que un reporte de sala («al buscar se traba») destapara **siete**

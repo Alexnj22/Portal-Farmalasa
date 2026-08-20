@@ -35,6 +35,8 @@ import DraftCostCard from './tabminmax/DraftCostCard';
 import AbcXyzMatrix from './tabminmax/AbcXyzMatrix';
 import RowActions from './tabminmax/RowActions';
 import ExpandedPanel from './tabminmax/ExpandedPanel';
+import ExpedienteMovil from '../../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
@@ -348,6 +350,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         openBodegaTooltip,
         closeBodegaTooltip,
     } = useMinMaxData({ searchTerm, lockedErpId });
+
+    // El panel del producto vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
+    // `pageRows` y no `sorted`: el expediente muestra la fila que se tocó, y la
+    // que se tocó está en la página que se está viendo.
+    const { enTelefono, abierto: abiertoMovil } =
+        useExpedienteMovil(pageRows, expandedId, 'erp_product_id');
 
     // ─── Render ───────────────────────────────────────────────────────────────
     // Los filtros de estado, como UN control. Todos contestan la misma pregunta
@@ -712,7 +721,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     // que la inferencia tomaba la última como ancla. El número
                     // que motiva la pantalla es MIN·MAX, y además es el control
                     // que se toca para editarlo.
-                    movil={{ ancla: 'effective_min' }}
+                    // `usarAccionDeFila`: el toque abre el MISMO panel que la
+                    // fila expande en escritorio. Sin declararlo gana la hoja
+                    // genérica de `DataTable`, que sólo repite las columnas —y
+                    // el panel, que es donde vive el análisis del producto, no
+                    // se alcanzaba desde el teléfono.
+                    movil={{ ancla: 'effective_min', usarAccionDeFila: true }}
                     sortKey={sortBy}
                     sortDir={sortDir}
                     onSort={handleSort}
@@ -1237,6 +1251,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     </DataCell>
                                 </DataRow>
 
+                                {/* El `<tr>` es SOLO de escritorio: en el teléfono
+                                    `DataTable` pinta fichas y esta fila hermana no
+                                    se dibuja. Ahí el panel va al expediente, abajo. */}
+                                {!enTelefono && (
                                 <tr data-expand-row={row.erp_product_id}>
                                     <td colSpan={COLS.length} className="p-0">
                                         <AnimatePresence initial={false}>
@@ -1255,11 +1273,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         </AnimatePresence>
                                     </td>
                                 </tr>
+                                )}
                             </React.Fragment>
                         );
                     })}
                 </DataTable>
                 </motion.div>
+
+                {/* El panel del producto, a pantalla completa en el teléfono.
+                    `pantalla` y no la hoja: son siete bloques con gráficos, o sea
+                    que ESTO es una pantalla y no un detalle corto. */}
+                <ExpedienteMovil
+                    abierto={abiertoMovil}
+                    onClose={() => setExpandedId(null)}
+                    variante="pantalla"
+                    titulo={abiertoMovil?.product_name || 'Producto'}
+                >
+                    {(row) => <ExpandedPanel row={row} cycleDays={cycleDays} />}
+                </ExpedienteMovil>
 
                 {!loading && sorted.length > 0 && (
                     <TablePagination

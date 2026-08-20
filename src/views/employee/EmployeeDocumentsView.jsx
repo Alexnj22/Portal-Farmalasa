@@ -3,6 +3,7 @@ import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import FilterBar from '../../components/common/FilterBar';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
@@ -174,7 +175,7 @@ const EmployeeDocumentsView = () => {
 
     const [allDocs, setAllDocs]       = useState([]);
     const [loading, setLoading]       = useState(true);
-    const [tab, setTab]               = useState('ALL');
+    const [tab, setTab]               = usePestanaEnUrl(TABS, 'ALL');
     const [search, setSearch]         = useState('');
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');

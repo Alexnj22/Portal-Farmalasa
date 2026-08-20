@@ -18,9 +18,17 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { smartFilter } from '../utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
+
+// Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
+// necesita la lista para validar el `?tab=` que llegue por la dirección.
+const ROLE_TABS = [
+    { key: 'list',  label: 'Listado', icon: ShieldCheck },
+    { key: 'chart', label: 'Visual',  icon: LayoutTemplate },
+];
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por sucursal' },
@@ -49,7 +57,7 @@ const RolesView = ({ openModal }) => {
 
     const [searchQuery, setSearchQuery] = useState('');
 
-    const [activeTab, setActiveTab] = useState('list');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(ROLE_TABS, 'list');
 
     const [error, setError] = useState('');
 
@@ -450,10 +458,7 @@ const RolesView = ({ openModal }) => {
         // que ya existía en ViewTabBar. Antes se resolvía con un `inert` + un
         // `tabIndex={-1}` a mano sobre el botón.
         <ViewTabBar
-            tabs={[
-                { key: 'list',  label: 'Listado', icon: ShieldCheck },
-                { key: 'chart', label: 'Visual',  icon: LayoutTemplate },
-            ]}
+            tabs={ROLE_TABS}
             activeTab={activeTab}
             onTabChange={(key) => { setActiveTab(key); if (key === 'chart') resetZoomAndPan(); }}
             showSearch={activeTab === 'list'}

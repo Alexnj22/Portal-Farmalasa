@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
@@ -34,6 +35,16 @@ const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
+
+// Las pestañas viven acá arriba y no dentro del componente: `usePestanaEnUrl`
+// necesita la lista para validar el `?tab=` que llegue por la dirección. El
+// contador de pendientes se le pega al vuelo — es un rótulo, no otra pestaña.
+const STATUS_TABS = [
+    { key: 'PENDING',  label: 'Pendientes' },
+    { key: 'APPROVED', label: 'Aprobadas'  },
+    { key: 'REJECTED', label: 'Rechazadas' },
+    { key: 'ALL',      label: 'Todas'       },
+];
 
 // El mapa vivía acá y se mudó a `constants/tipoIconos` (2026-08-01): la campana
 // de notificaciones necesita los mismos íconos para los mismos tipos, y tener
@@ -255,7 +266,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         return esSucursal ? [...propias, ...minmax] : propias;
     }, [requests, minmax, esSucursal]);
 
-    const [statusFilter,      setStatusFilter]      = useState('PENDING');
+    const [statusFilter,      setStatusFilter]      = usePestanaEnUrl(STATUS_TABS, 'PENDING');
     const [rawSearch,         setRawSearch]         = useState('');
     const [collapsedSections, setCollapsedSections] = useState(new Set());
     // Una sola ventana: la que muestra la solicitud. La decisión se despliega
@@ -345,12 +356,15 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             req,
             accionInicial: accion === 'rechazar' ? 'reject' : null,
         });
-        // Sin esto la solicitud podría quedar escondida tras el filtro activo.
-        if (req.status !== statusFilter) setStatusFilter(req.status);
-
         const limpio = new URLSearchParams(searchParams);
         limpio.delete('solicitud');
         limpio.delete('accion');
+        // Sin esto la solicitud podría quedar escondida tras el filtro activo.
+        // Va DENTRO de la misma escritura que la limpieza y no en un
+        // `setStatusFilter` aparte: ahora la pestaña vive en la dirección, y
+        // dos escrituras seguidas se pisan —la segunda parte de la copia vieja
+        // de los parámetros—, así que el cambio de pestaña se perdería.
+        if (req.status !== statusFilter) limpio.set('tab', req.status);
         setSearchParams(limpio, { replace: true });
     }, [searchParams, setSearchParams, delAmbito, statusFilter]);
 
@@ -590,13 +604,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     }, [user?.email]);
 
     const { decidir: handleDecidir, ocupado: isActioning } = useDecidirSolicitud({ onAplicado: alAplicar });
-
-    const STATUS_TABS = [
-        { key: 'PENDING',  label: 'Pendientes' },
-        { key: 'APPROVED', label: 'Aprobadas'  },
-        { key: 'REJECTED', label: 'Rechazadas' },
-        { key: 'ALL',      label: 'Todas'       },
-    ];
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico. El botón de crear
     // pasa a TabBarAction (variante primaria) y pierde el gradiente + halo que

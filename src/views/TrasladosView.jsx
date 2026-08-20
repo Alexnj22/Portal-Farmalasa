@@ -7,6 +7,7 @@ import Badge from '../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../store/staffStore';
 import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';
@@ -127,7 +128,7 @@ export default function TrasladosView() {
     const alcanceTodas = getScope('traslados') === 'ALL';
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
 
-    const [activeTab, setActiveTab] = useState('recibir');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'recibir');
     const [busqueda,  setBusqueda]  = useState('');
     // Con alcance de una sola sala el filtro de sucursal no se ofrece: las
     // consultas ya salen recortadas a la sala propia, y un desplegable de siete

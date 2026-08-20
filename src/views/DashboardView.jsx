@@ -66,6 +66,7 @@ import { SALAS_VENTA } from './metas/metasUtils';
 import { MODULE_MAP } from '../constants/moduleMap';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
@@ -924,7 +925,7 @@ const DashboardView = ({ openModal }) => {
   // mirar una cosa puntual, que es una decisión del momento, no una
   // preferencia. La clave vieja queda huérfana a propósito: borrarla obligaría
   // a leerla, y no vale un `try` en el arranque de la vista.
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'general');
   // `configTab` ya no existe: el panel configura SIEMPRE la pestaña abierta.
   // Tenía su propia barra de pestañas adentro —una segunda, debajo de la de la
   // vista— y cambiarla no cambiaba el tablero de atrás, así que se podía estar
@@ -2000,8 +2001,8 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     if (!TABS_VISIBLES.length) return;
     if (TABS_VISIBLES.some(t => t.id === activeTab)) return;
-    setActiveTab(TABS_VISIBLES[0].id);
-  }, [TABS_VISIBLES, activeTab]);
+    setActiveTab(TABS_VISIBLES[0].id, { reemplazar: true });
+  }, [TABS_VISIBLES, activeTab, setActiveTab]);
 
   const toggleWidget = id => {
     const next = widgetConfig.map(w=>w.id===id?{...w,enabled:!w.enabled}:w);

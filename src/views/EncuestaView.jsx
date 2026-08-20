@@ -15,6 +15,7 @@ import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
@@ -355,7 +356,7 @@ export default function EncuestaView() {
     const [loadingAi, setLoadingAi] = useState({});
     const [collapsedSummaries, setCollapsedSummaries] = useState({});
     const [savedSummariesLoading, setSavedSummariesLoading] = useState(false);
-    const [tab, setTab] = useState('resumen');
+    const [tab, setTab] = usePestanaEnUrl(TABS, 'resumen');
     const [expandedQ, setExpandedQ] = useState(null);
     const [expandedBloque, setExpandedBloque] = useState(null);
     const [filterSucursal, setFilterSucursal] = useState('');

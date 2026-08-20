@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
+import { usePestanaEnUrl } from './hooks/usePestanaEnUrl';
 import { Loader2 } from "lucide-react";
 import { IMPORTADORES } from "./constants/routeImporters";
 
@@ -122,10 +123,21 @@ const BranchProfileWrapper = ({ openModal }) => {
     );
 };
 
+// Las secciones de la ficha del empleado, para que `usePestanaEnUrl` pueda
+// validar el `?tab=` que llegue por la dirección. El rótulo y el ícono de cada
+// una siguen viviendo en `EmployeeDetailView` — acá sólo hacen falta las claves.
+const EMPLEADO_TABS = ['history', 'documents', 'permissions', 'payroll', 'requests'];
+
 // 🚨 ENVOLTORIO INTELIGENTE PARA EL PERFIL DEL EMPLEADO (Arquitectura Segura de Hooks)
-const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, setActiveEmployeeGlobal }) => {
+const EmployeeProfileWrapper = ({ openModal, setView, setActiveEmployeeGlobal }) => {
     // Aquí es SEGURO usar useParams porque es el Top-Level del componente
     const { id } = useParams(); 
+    // La sección abierta vive en la DIRECCIÓN y no en un `useState` de la raíz
+    // de la app. Eran dos problemas en el mismo estado: recargar la ficha
+    // devolvía a «Historial» sin decir nada, y el estado colgaba del componente
+    // que envuelve TODAS las rutas aunque su único consumidor sea ésta —o sea
+    // que cambiar de sección repintaba el árbol entero.
+    const [activeTab, setActiveTab] = usePestanaEnUrl(EMPLEADO_TABS, 'history');
     const navigate = useNavigate();
     const employees = useStaff((state) => state.employees);
 
@@ -293,7 +305,6 @@ function MainApp() {
     // Estado global de Empleado (Para modales)
     const [activeEmployee, setActiveEmployee] = useState(null);
 
-    const [activeTab, setActiveTab] = useState("history");
     const [formData, setFormData] = useState({});
     const [targetEventId, setTargetEventId] = useState(null);
     const [isAuditOverlayActive, setIsAuditOverlayActive] = useState(false);
@@ -664,8 +675,6 @@ function MainApp() {
                                         <Route path="empleado/:id" element={
                                             <PermissionGuard moduleKey="staff_detail">
                                                 <EmployeeProfileWrapper
-                                                    activeTab={activeTab}
-                                                    setActiveTab={setActiveTab}
                                                     setView={setView}
                                                     openModal={openModal}
                                                     setActiveEmployeeGlobal={setActiveEmployee}

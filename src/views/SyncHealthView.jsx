@@ -8,6 +8,7 @@ import TablePagination from '../components/common/TablePagination';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '../data/syncHealth';
 import { ERP_NAMES } from '../constants/erp';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 
 const DOMAIN_LABELS = {
     products: 'Productos',
@@ -38,7 +39,7 @@ const SyncHealthView = () => {
         return m;
     }, [branches]);
 
-    const [activeTab, setActiveTab] = useState('todos');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'todos');
     const [rows, setRows] = useState(EMPTY_ARRAY);
     const [loading, setLoading] = useState(true);
 

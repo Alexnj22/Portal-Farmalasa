@@ -19,6 +19,7 @@ import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 
@@ -258,7 +259,7 @@ const SchedulesView = ({ openModal, setView }) => {
         title: '', message: '', confirmText: '', bulkUpdates: null,
     });
 
-    const [viewMode, setViewMode] = useState('calendar');
+    const [viewMode, setViewMode] = usePestanaEnUrl(SCHED_TABS.length ? SCHED_TABS : ALL_SCHED_TABS, 'calendar');
     const viewOrderMap = { calendar: 0, shifts: 1, holidays: 2 };
     const viewDirRef = useRef(0);
     const goToView = useCallback((next) => {

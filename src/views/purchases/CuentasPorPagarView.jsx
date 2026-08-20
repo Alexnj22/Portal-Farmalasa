@@ -22,6 +22,7 @@ import {
 import { formatMoney } from '../../utils/formatNumber';
 import { normalizeText } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 
 // Vista «Cuentas por pagar».
@@ -295,7 +296,7 @@ export default function CuentasPorPagarView() {
     const puedeEditar  = hasPermission('cuentas_por_pagar', 'can_edit');
     const puedeAprobar = hasPermission('cuentas_por_pagar', 'can_approve');
 
-    const [tab, setTab]         = useState('proveedores');
+    const [tab, setTab]         = usePestanaEnUrl(TABS, 'proveedores');
     const [filas, setFilas]     = useState(null);
     const [pagos, setPagos]     = useState(null);
     const [error, setError]     = useState('');
@@ -458,7 +459,7 @@ export default function CuentasPorPagarView() {
                 ) : (
                     <DataTable columns={COLS} dense loading={cargando}
                         empty={{ icon: CheckCircle2, message: 'No le debemos nada a nadie en este período' }}
-                        movil={{ identidad: 'proveedor', ancla: 'saldo' }}>
+                        movil={{ identidad: 'proveedor', ancla: 'saldo', usarAccionDeFila: true }}>
                         {enPantalla.map((f, i) => (
                             <DataRow key={f.emisor_nit} index={i} onClick={() => setSel(f)}>
                                 <DataCell>

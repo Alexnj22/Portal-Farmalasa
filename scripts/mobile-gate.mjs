@@ -140,6 +140,84 @@ function* archivosJsx(dir) {
 
 const lineaDe = (texto, indice) => texto.slice(0, indice).split('\n').length;
 
+
+// ── Leer las tablas de un archivo ────────────────────────────────────────────
+//
+// Un `<DataTable>` se lee entero —etiqueta de apertura, prop `movil` y cuerpo
+// hasta su `</DataTable>` PROPIO— porque hay tablas anidadas: el detalle de una
+// venta es otra `DataTable` dentro de la fila expandida de la primera. Cortar
+// en el primer `</DataTable>` le daba a la de afuera el cuerpo de la de adentro.
+//
+// El valor de `movil` puede ser un objeto literal o el nombre de una constante
+// del mismo archivo (`movil={MOVIL}`). Se resuelve la constante: sin eso el
+// detector acusa a una vista que declaró bien lo suyo, que es exactamente cómo
+// un gate se termina desactivando.
+function leerEtiqueta(texto, inicio) {
+    let llaves = 0, cadena = null;
+    for (let i = inicio; i < texto.length; i++) {
+        const c = texto[i];
+        if (cadena) { if (c === cadena && texto[i - 1] !== '\\') cadena = null; continue; }
+        if (c === '"' || c === "'" || c === '`') { cadena = c; continue; }
+        if (c === '{') llaves++;
+        else if (c === '}') llaves--;
+        else if (c === '>' && llaves === 0) return { etiqueta: texto.slice(inicio, i + 1), fin: i + 1 };
+    }
+    return { etiqueta: texto.slice(inicio), fin: texto.length };
+}
+
+// El `{...}` balanceado que sigue a `movil=`.
+function valorDeMovil(etiqueta) {
+    const i = etiqueta.indexOf('movil=');
+    if (i === -1) return null;
+    const j = etiqueta.indexOf('{', i);
+    if (j === -1) return null;
+    let llaves = 0;
+    for (let k = j; k < etiqueta.length; k++) {
+        if (etiqueta[k] === '{') llaves++;
+        else if (etiqueta[k] === '}' && --llaves === 0) return etiqueta.slice(j + 1, k).trim();
+    }
+    return null;
+}
+
+function tablasDeDataTable(texto) {
+    const out = [];
+    for (const m of texto.matchAll(/<DataTable\b/g)) {
+        const { etiqueta, fin } = leerEtiqueta(texto, m.index);
+        if (etiqueta.endsWith('/>')) continue;                 // tabla sin cuerpo
+
+        // El `</DataTable>` propio: contar aperturas anidadas.
+        let profundidad = 1, cursor = fin, cierre = texto.length;
+        while (profundidad > 0) {
+            const abre  = texto.indexOf('<DataTable', cursor);
+            const baja  = texto.indexOf('</DataTable>', cursor);
+            if (baja === -1) break;
+            if (abre !== -1 && abre < baja) { profundidad++; cursor = abre + 10; continue; }
+            profundidad--; cursor = baja + 12;
+            if (profundidad === 0) cierre = baja;
+        }
+        const cuerpo = texto.slice(fin, cierre);
+
+        let movilTexto = valorDeMovil(etiqueta) ?? '';
+        // `movil={NOMBRE}` — resolver la constante del mismo archivo.
+        if (/^[A-Za-z_$][\w$]*$/.test(movilTexto)) {
+            const def = texto.match(new RegExp(`\\bconst\\s+${movilTexto}\\s*=\\s*\\{([^]*?)\\};`));
+            if (def) movilTexto = def[1];
+            else if (movilTexto !== 'false') movilTexto = '';   // no se pudo leer: no acusar
+        }
+        const movil = /^\s*false\s*$/.test(movilTexto) ? false : movilTexto;
+
+        // ¿Alguna `<DataRow …>` del cuerpo lleva `onClick`? Se lee la etiqueta
+        // completa: un `onClick` suelto puede ser de un botón dentro de una celda.
+        let filasConOnClick = false;
+        for (const r of cuerpo.matchAll(/<DataRow\b/g)) {
+            if (/\bonClick\s*=/.test(leerEtiqueta(cuerpo, r.index).etiqueta)) { filasConOnClick = true; break; }
+        }
+
+        out.push({ linea: lineaDe(texto, m.index), movil, movilTexto, cuerpo, filasConOnClick });
+    }
+    return out;
+}
+
 // ── Las reglas ───────────────────────────────────────────────────────────────
 // Cada una devuelve hallazgos { categoria, linea, detalle }.
 const REGLAS = [
@@ -210,6 +288,53 @@ const REGLAS = [
                 out.push({
                     linea: lineaDe(texto, m.index),
                     detalle: 'Buscador propio en vez del canónico — usar `ViewTabBar` o `SearchInput`. Cada copia se lleva los bugs que el canónico ya arregló (§32).',
+                });
+            }
+            return out;
+        },
+    },
+    {
+        // ── El toque de la ficha que no lleva a ningún lado ──────────────────
+        //
+        // `DataTable` no puede saber si el `onClick` de una fila NAVEGA o
+        // EXPANDE: desde afuera un manejador es una caja cerrada. Así que el
+        // default es lo que siempre existe —su hoja genérica, que lista las
+        // columnas restantes— y la vista cuyo toque va a un destino de verdad lo
+        // declara con `movil={{ usarAccionDeFila: true }}`.
+        //
+        // Es un opt-in, o sea una prop que se olvida. Medido el 2026-08-20 sobre
+        // las 59 tablas del portal: **16 estaban mal**, o sea el 27%. Entre
+        // ellas Facturas de compra y Ventas, donde el toque abre el documento
+        // con sus productos y su archivo — y en el teléfono abría una hoja que
+        // sólo repetía las columnas de la tarjeta. Lo reportó el usuario:
+        // «cuando abro una card me da información, pero muy reducida, no puedo
+        // ver los productos, no puedo ver el PDF».
+        //
+        // El defecto es SILENCIOSO por los dos lados: no hay error, no hay fila
+        // de menos, y en escritorio todo funciona. La misma trampa que
+        // `inferirPapeles` ya tiene escrita en `DataTable` —«una prop opt-in es
+        // una prop olvidada»—, sólo que ahí la inferencia la tapa y acá no hay
+        // nada que inferir. Por eso la vigila un gate y no un comentario.
+        //
+        // ── Lo que este detector NO ve ───────────────────────────────────────
+        // Filas envueltas en un componente propio (`memo(EmployeeRow)`): desde
+        // el fuente no se puede saber si adentro hay un `onClick`. Es el mismo
+        // límite que ya tiene `limpiarFilas` en el canónico, y por eso vale
+        // decirlo: un verde acá no prueba que las 59 tablas estén bien, prueba
+        // que ninguna de las que se pueden leer quedó sin declarar.
+        categoria: 'toque-de-ficha-sin-destino',
+        aplica: (rel) => !rel.endsWith('common/DataTable.jsx'),
+        buscar(texto) {
+            const out = [];
+            for (const t of tablasDeDataTable(texto)) {
+                if (t.movil === false) continue;              // no hay fichas: no hay toque que redirigir
+                if (/usarAccionDeFila\s*:\s*true/.test(t.movilTexto)) continue;
+                if (!/<DataRow\b[^]*?\bonClick\s*=/.test(t.cuerpo)) continue;
+                // `onClick` dentro de un `<DataRow>`, no en un botón de la celda.
+                if (!t.filasConOnClick) continue;
+                out.push({
+                    linea: t.linea,
+                    detalle: 'La fila tiene `onClick` y la tabla no declara `movil={{ usarAccionDeFila: true }}`: en el teléfono el toque abre la hoja genérica —que sólo repite las columnas— en vez del destino real. Si el `onClick` expande un `<tr colSpan>`, el destino en el teléfono es `ExpedienteMovil` (§32).',
                 });
             }
             return out;

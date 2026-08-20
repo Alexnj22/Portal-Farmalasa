@@ -1908,8 +1908,10 @@ así que lo dibuja el canónico y emite `aria-pressed` (2026-07-30).
 
 **Usage:**
 ```jsx
+const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'todos');
+
 <ViewTabBar
-  tabs={[{ key: 'todos', label: 'Todos' }, ...]}
+  tabs={TABS}
   activeTab={activeTab}
   onTabChange={setActiveTab}
   searchTerm={searchTerm}
@@ -1919,6 +1921,42 @@ así que lo dibuja el canónico y emite `aria-pressed` (2026-07-30).
 />
 ```
 Pass `searchTerm` down as prop to tab components. Never duplicate local search state.
+
+#### La pestaña activa vive en la DIRECCIÓN — `usePestanaEnUrl` (2026-08-20)
+
+**Nunca `useState` para la pestaña activa.** El hook canónico es
+`usePestanaEnUrl` (`src/hooks/usePestanaEnUrl.js`) y **vale para toda vista con
+pestañas, incluidas las nuevas**. Lo vigila la categoría `pestana-fuera-de-la-url`
+de `npm run gate:design`, bloqueante en cero.
+
+Una pestaña en `useState` se pierde con cualquier recarga: F5 —o volver por el
+historial, o abrir el enlace que alguien pasó— devuelve a la primera pestaña.
+No falla nada y no hay error, así que no se reporta como bug: se reporta como
+«la pantalla se movió sola». Medido el 2026-08-20: de las 29 vistas con
+pestañas, **9 lo hacían bien y 20 no**, cada una con el mismo bloque de cinco
+líneas copiado o ausente.
+
+El hook resuelve las tres partes que se olvidan al escribirlo a mano:
+
+1. **Valida contra las pestañas que la vista muestra AHORA** —ya filtradas por
+   permiso—, así que un `?tab=loquesea`, o una pestaña que este cargo no tiene,
+   cae a la primera visible en vez de pintar el vacío.
+2. **Empuja al historial** en el clic, para que «atrás» deshaga el cambio de
+   pestaña; y **reemplaza** (`setActiva(clave, { reemplazar: true })`) en las
+   CORRECCIONES —cuando la vista se cae sola a otra pestaña—, porque empujar ahí
+   deja a «atrás» rebotando contra la misma corrección y la pantalla queda sin
+   salida por ese botón.
+3. Acepta `key` o `id` en la lista: las dos formas conviven en el repo y el hook
+   no es motivo para reescribir ninguna.
+
+**Consecuencia de forma:** la lista de pestañas tiene que existir ANTES de la
+llamada al hook. Si estaba escrita en línea dentro del JSX —`tabs={[…]}`— se iza
+a una constante de módulo; si se arma con permisos, la declaración del estado
+baja hasta después del `useMemo` que la construye.
+
+Y si la lista depende de DATOS que llegan después (contadores, filtros por
+cantidad), se valida contra la lista **estática** y no contra la visible: si no,
+mientras carga se cae a la primera pestaña y ya no vuelve.
 
 ### DataTable
 
@@ -5732,6 +5770,70 @@ texto flotando («no parece card, sólo es texto»). Va por la prop y nunca por
 `bg-surface-card` a mano: esas clases copian el relleno y dejan afuera el
 `backdrop-filter`, la sombra y el lente del filo (§5, y la nota del tablero del
 2026-08-07).
+
+### §32.8 · El toque de la ficha tiene que ir al MISMO sitio que el clic de la fila (2026-08-20)
+
+En el teléfono `DataTable` no pinta una tabla: pinta fichas. La fila deja de ser
+un pedazo de rejilla y el toque tiene que llevar a algún lado, así que el
+canónico ofrece una **hoja genérica** que lista las columnas que no entraron en
+la tarjeta. Está bien cuando no hay nada más que mostrar, y está mal cuando la
+fila SÍ tiene un destino propio: ahí la hoja lo tapa y la vista queda diciendo
+menos de lo que sabe.
+
+`DataTable` no puede distinguir un caso del otro. Desde afuera un `onClick` es
+una caja cerrada —no se puede saber si navega, si abre un modal o si expande un
+`<tr>` hermano—, así que el default es lo que siempre existe y **la vista lo
+declara**:
+
+```jsx
+movil={{ usarAccionDeFila: true }}
+```
+
+**Medido el 2026-08-20 sobre las 59 tablas del portal: 16 estaban mal, el 27%.**
+Entre ellas Facturas de compra —donde el toque abre el documento con sus
+productos y su archivo— y las tres tablas de Ventas. Lo reportó el usuario:
+
+> «cuando abro una card me da información, pero muy reducida, no puedo ver los
+> productos, no puedo ver el pdf, no me deja ver nada de eso, lo mismo pasa en
+> otros tipos de tablas, como la de productos mismo caso.»
+
+El defecto es silencioso por los dos lados: no hay error, no falta ninguna fila,
+y en escritorio todo funciona. Es la trampa que `DataTable` ya tiene escrita para
+`inferirPapeles` —«una prop opt-in es una prop olvidada»—, sólo que ahí la
+inferencia la tapa y acá no hay nada que inferir. Por eso hoy la vigila la
+categoría **`toque-de-ficha-sin-destino`** de `npm run gate:movil`, bloqueante en
+cero.
+
+#### Los dos casos, y qué hace falta en cada uno
+
+| el `onClick` de la fila… | qué hace falta |
+|---|---|
+| abre un modal, un panel o navega | `movil={{ usarAccionDeFila: true }}` y nada más |
+| expande un `<tr colSpan>` hermano | además, `ExpedienteMovil` — ese `<tr>` no se pinta en el teléfono |
+
+La segunda es la que cuesta, porque el detalle está escrito **dentro** del
+`<td>`. La receta, que ya siguen ocho vistas:
+
+1. `const { enTelefono, abierto } = useExpedienteMovil(filas, expandedId)` — el
+   corte del teléfono sale de ahí y NO de un `useMediaQuery` propio, para que no
+   pueda divergir del que usa `DataTable` para elegir ficha o tabla. `campoId`
+   acepta una **función** cuando la clave no es una columna (Inventario expande
+   por sucursal + producto).
+2. El cuerpo del detalle se escribe **una vez** — componente con prop
+   `comoPanel`, o función local si cierra sobre mucho estado de la vista.
+3. La expansión de escritorio se apaga en el teléfono:
+   `{isExpanded && !enTelefono && <tr>…</tr>}`. Sin esto el panel se monta dos
+   veces.
+4. El expediente va **fuera** de la tabla, montado siempre (devuelve `null` sin
+   fila abierta). `variante="pantalla"` cuando el detalle ES una pantalla —siete
+   bloques, gráficos—; la hoja `auto` por defecto, que crece con lo que tiene.
+
+#### Lo que el gate NO ve
+
+Filas envueltas en un componente propio (`memo(EmployeeRow)`): desde el fuente
+no se puede saber si adentro hay un `onClick`. Es el mismo límite que ya tiene
+`limpiarFilas` en el canónico. Un verde no prueba que las 59 tablas estén bien
+— prueba que ninguna de las que se pueden leer quedó sin declarar.
 
 ### Viewport meta
 

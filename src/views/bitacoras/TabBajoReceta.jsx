@@ -37,7 +37,10 @@ const fmtFecha = (f) => (f
 // número por el que se entra a este libro es el folio. Sin declararlo, la
 // inferencia elegiría la primera columna útil y el orden de la ficha quedaría
 // al azar.
-const MOVIL = { ancla: 'folio_txt', identidad: 'producto_nombre', chips: ['cantidad', 'lote'] };
+// `usarAccionDeFila`: el toque abre el renglón completo —los campos que faltan,
+// el lote, la anulación—, que es un `LiquidModal` de verdad. Sin declararlo gana
+// la hoja genérica de `DataTable`, que sólo repite las columnas de la ficha.
+const MOVIL = { ancla: 'folio_txt', identidad: 'producto_nombre', chips: ['cantidad', 'lote'], usarAccionDeFila: true };
 
 // El folio manda pero no necesita ser grande: son 10 caracteres fijos y
 // tabulares, y se reconocen por la forma. Lo que sí necesita aire es el

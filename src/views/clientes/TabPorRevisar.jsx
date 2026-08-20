@@ -129,6 +129,10 @@ export default function TabPorRevisar({ openModal }) {
             </Notice>
 
             <DataTable columns={COLS} loading={loading} minWidth="320px"
+                /* El toque abre la ficha del cliente. Sin `usarAccionDeFila`
+                   gana la hoja genérica de `DataTable`, que sólo repite las
+                   columnas que ya se leen en la tarjeta. */
+                movil={{ usarAccionDeFila: true }}
                 /* El contrato de `empty` es { icon, message, subtext } — NO
                    lleva `title`. Un `title` de más no rompe nada: simplemente
                    no se pinta, y el texto se pierde sin que nadie se entere. */

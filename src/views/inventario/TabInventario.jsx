@@ -12,6 +12,8 @@ import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import ExpedienteMovil from '../../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import { normSearch } from '../../utils/searchUtils';
 import {
     fetchInventorySyncLog, fetchProductCategories, fetchAllVencidosInventory,
@@ -78,9 +80,15 @@ function ExpiryCell({ fecha }) {
 // título. Cambiar una columna obligaba a acordarse de la otra.
 //
 // `plano` porque la expansión ya trae su propio fondo: la tarjeta de `DataTable`
-// encima habría sumado dos capas del mismo material. `movil={false}` porque esta
-// rama **no existe en el teléfono** — la expansión se dibuja como hermana del
-// `<tr>`, y en modo ficha `DataTable` no la monta.
+// encima habría sumado dos capas del mismo material.
+//
+// Llevaba además `movil={false}` con el motivo «esta rama no existe en el
+// teléfono». Era cierto mientras la expansión fuera SÓLO el `<tr>` hermano —que
+// en modo ficha no se monta—, y dejó de serlo el día que el detalle pasó al
+// expediente: ahí sí se ve en el teléfono, y con el carril de 520px había que
+// deslizar una tabla de cinco columnas dentro de una hoja de 390. Una fila de
+// ésta ES un registro —una ubicación con su lote, su vencimiento y sus
+// unidades—, así que le corresponde el modo ficha como a cualquier otra.
 const COLS_UBICACION = [
     { key: 'presentacion', label: 'Presentación' },
     { key: 'lote',         label: 'Lote' },
@@ -88,6 +96,51 @@ const COLS_UBICACION = [
     { key: 'cant',         label: 'Cant.',     align: 'right' },
     { key: 'unidades',     label: 'Unidades',  align: 'right' },
 ];
+
+// ── El detalle de un producto: sus ubicaciones ──────────────────────────────
+//
+// El MISMO cuerpo en las dos formas. En escritorio va dentro del `<tr colSpan>`
+// hermano de la fila; en el teléfono ese `<tr>` no se pinta —`DataTable` ahí
+// dibuja fichas— y el mismo componente se monta en `ExpedienteMovil`. Escrito
+// una vez para que no puedan divergir: era la única forma de ver en qué
+// ubicación está cada lote, y desde el teléfono no se alcanzaba.
+function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false }) {
+    const hayRegulares = (regulares || []).length > 0;
+    const hayVencidos  = (vencidos  || []).length > 0;
+
+    const cuerpo = cargando ? (
+        <div className="flex items-center gap-2 text-content-3 py-2">
+            <Loader2 size={14} className="animate-spin" />
+            <span className="text-xs">Cargando...</span>
+        </div>
+    ) : !hayRegulares && !hayVencidos ? (
+        <p className="text-xs text-content-3 py-2">Sin datos</p>
+    ) : (
+        <>
+            {/* Las dos listas —regular y vencidos— salen del MISMO
+                componente: eran dos tablas a mano casi idénticas, que
+                sólo se diferenciaban en el color del texto y en el
+                título, y había que mantener sus cinco encabezados en
+                sincronía a ojo. */}
+            {hayRegulares && (
+                <TablaUbicaciones filas={regulares} titulo={hayVencidos ? 'Inventario regular' : null} />
+            )}
+            {hayVencidos && (
+                <TablaUbicaciones filas={vencidos} titulo="Ubicación vencidos" vencidos />
+            )}
+        </>
+    );
+
+    // En el expediente no va el degradado de la fila expandida: ahí no hay fila
+    // de la que colgar, y el material de la hoja ya es el fondo.
+    if (comoPanel) return <div className="px-1 pb-2">{cuerpo}</div>;
+
+    return (
+        <div className="bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider px-10 py-3">
+            {cuerpo}
+        </div>
+    );
+}
 
 function TablaUbicaciones({ filas, titulo, vencidos = false }) {
     const txt = vencidos ? 'text-danger-text' : 'text-content-2';
@@ -98,10 +151,8 @@ function TablaUbicaciones({ filas, titulo, vencidos = false }) {
                     {titulo}
                 </p>
             )}
-            {/* `movil={false}`: esta rama no existe en el teléfono. La expansión
-                se dibuja como hermana del `<tr>` y en modo ficha no se monta, así
-                que no hay ficha que ofrecer — el carril es el único modo posible. */}
-            <DataTable columns={COLS_UBICACION} plano dense movil={false} minWidth="520px">
+            <DataTable columns={COLS_UBICACION} plano dense minWidth="520px"
+                movil={{ identidad: 'presentacion', ancla: 'unidades', chips: ['lote', 'vence'] }}>
                 {filas.map((row, j) => {
                     const factor   = parseFactor(row.detalle);
                     const rowUnits = (row.cantidad || 0) * factor;
@@ -283,6 +334,13 @@ export default function TabInventario({ searchTerm = '' }) {
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const colCount   = selectedErp === null ? 7 : 6;
+
+    // Las ubicaciones viven en un `<tr colSpan>` hermano, que en el teléfono no
+    // se pinta: `DataTable` ahí dibuja fichas. Van al expediente. La clave es
+    // sucursal + producto —el mismo `key` que arma la fila—, así que se resuelve
+    // con una función y no con el nombre de una columna.
+    const { enTelefono, abierto: abiertoMovil } = useExpedienteMovil(
+        groups, expandedKey, (g) => `${g.erp_sucursal_id}_${g.erp_product_id}`);
     const tableColumns = [
         ...(selectedErp === null ? [{ key: 'sucursal',     label: 'Sucursal',    sortable: true }] : []),
         { key: 'laboratorio',  label: 'Laboratorio',       sortable: true, hideBelow: 'lg' },
@@ -421,6 +479,10 @@ export default function TabInventario({ searchTerm = '' }) {
                     skeletonRows={Math.min(pageSize, 8)}
                     empty={{ icon: Package, message: 'Sin productos' }}
                     minWidth="700px"
+                    /* `usarAccionDeFila`: el toque abre las MISMAS ubicaciones que
+                       la fila expande en escritorio. Sin declararlo gana la hoja
+                       genérica de `DataTable`, que sólo repite las columnas. */
+                    movil={{ usarAccionDeFila: true }}
                 >
                     {groups.map((group, i) => {
                         const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
@@ -524,40 +586,17 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </DataCell>
                                 </DataRow>
 
-                                {isExpanded && (
+                                {/* Sólo en escritorio: en el teléfono `DataTable`
+                                    pinta fichas y esta fila hermana no se dibuja.
+                                    Ahí el mismo panel va al expediente, abajo. */}
+                                {isExpanded && !enTelefono && (
                                     <tr>
                                         <td colSpan={colCount} className="p-0 border-b border-chart-1/30">
-                                            <div className="bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider px-10 py-3">
-                                                {expandLoading.has(key) ? (
-                                                    <div className="flex items-center gap-2 text-content-3 py-2">
-                                                        <Loader2 size={14} className="animate-spin" />
-                                                        <span className="text-xs">Cargando...</span>
-                                                    </div>
-                                                ) : (expandedData[key] || []).length === 0 && (expandedVencidos[key] || []).length === 0 ? (
-                                                    <p className="text-xs text-content-3 py-2">Sin datos</p>
-                                                ) : (
-                                                    <>
-                                                        {/* Las dos listas —regular y vencidos— salen del MISMO
-                                                            componente: eran dos tablas a mano casi idénticas, que
-                                                            sólo se diferenciaban en el color del texto y en el
-                                                            título, y había que mantener sus cinco encabezados en
-                                                            sincronía a ojo. */}
-                                                        {(expandedData[key] || []).length > 0 && (
-                                                            <TablaUbicaciones
-                                                                filas={expandedData[key]}
-                                                                titulo={(expandedVencidos[key] || []).length > 0 ? 'Inventario regular' : null}
-                                                            />
-                                                        )}
-                                                        {(expandedVencidos[key] || []).length > 0 && (
-                                                            <TablaUbicaciones
-                                                                filas={expandedVencidos[key]}
-                                                                titulo="Ubicación vencidos"
-                                                                vencidos
-                                                            />
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
+                                            <PanelUbicaciones
+                                                cargando={expandLoading.has(key)}
+                                                regulares={expandedData[key]}
+                                                vencidos={expandedVencidos[key]}
+                                            />
                                         </td>
                                     </tr>
                                 )}
@@ -566,6 +605,25 @@ export default function TabInventario({ searchTerm = '' }) {
                     })}
                 </DataTable>
             )}
+
+            {/* Las ubicaciones del producto, en el teléfono. */}
+            <ExpedienteMovil
+                abierto={abiertoMovil}
+                onClose={() => setExpandedKey(null)}
+                titulo={abiertoMovil?.descripcion || 'Producto'}
+                subtitulo={abiertoMovil ? (ERP_NAMES[abiertoMovil.erp_sucursal_id] ?? `S${abiertoMovil.erp_sucursal_id}`) : undefined}
+            >
+                {(g) => {
+                    const k = `${g.erp_sucursal_id}_${g.erp_product_id}`;
+                    return (
+                        <PanelUbicaciones comoPanel
+                            cargando={expandLoading.has(k)}
+                            regulares={expandedData[k]}
+                            vencidos={expandedVencidos[k]}
+                        />
+                    );
+                }}
+            </ExpedienteMovil>
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, CalendarCheck, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import CarrilCards from '../components/common/CarrilCards';
@@ -78,7 +79,14 @@ export default function BitacorasView() {
     const miSala = user?.branchId ?? user?.branch_id ?? null;
     const [sala, setSala] = useState(() => (alcanceTodas ? (miSala ?? '') : miSala));
     const [fecha, setFecha] = useState(hoySV);
-    const [tab, setTab] = useState('hoy');
+    const tabs = useMemo(() => ([
+        { key: 'hoy', label: 'Registro diario', icon: Thermometer },
+        ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
+        ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
+        ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
+    ]), [verLibro, verCierre, puedeConfigurar]);
+
+    const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
     const [busqueda, setBusqueda] = useState('');
 
     const enLibro = tab === 'libro';
@@ -169,13 +177,6 @@ export default function BitacorasView() {
             r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc,
         ].some(v => String(v ?? '').toLowerCase().includes(q)));
     }, [libro, busqueda]);
-
-    const tabs = useMemo(() => ([
-        { key: 'hoy', label: 'Registro diario', icon: Thermometer },
-        ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
-        ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
-        ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
-    ]), [verLibro, verCierre, puedeConfigurar]);
 
     const filtersContent = (
         <ViewTabBar

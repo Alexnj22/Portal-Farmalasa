@@ -23,6 +23,7 @@ import {
 import { formatMoney } from '../../utils/formatNumber';
 import { normalizeText } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
 
 // Vista «Cargar compra».
@@ -627,7 +628,7 @@ export default function CargarCompraView() {
     const puedeEditar = hasPermission('compras', 'can_edit')
         || hasPermission('facturas_compra', 'can_edit');
 
-    const [tab, setTab]     = useState('facturas');
+    const [tab, setTab]     = usePestanaEnUrl(TABS, 'facturas');
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState('');
     const [busca, setBusca] = useState('');
@@ -727,7 +728,7 @@ export default function CargarCompraView() {
 
                 <DataTable columns={COLS} dense loading={filas === null}
                     empty={{ icon: CheckCircle2, message: 'Sin facturas esperando carga en este período' }}
-                    movil={{ identidad: 'proveedor', ancla: 'total' }}>
+                    movil={{ identidad: 'proveedor', ancla: 'total', usarAccionDeFila: true }}>
                     {enPantalla.map((f, i) => (
                         <DataRow key={f.document_id} index={i} onClick={() => setSel(f)}>
                             <DataCell><span className="tabular-nums text-content-2 text-label">{fmtFecha(f.fecha_emision)}</span></DataCell>

@@ -10,7 +10,7 @@ import {
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen,
-    Thermometer
+    Thermometer, Wallet
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -68,7 +68,14 @@ const MENU_GROUPS = [
     // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
     // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
     // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'cortes_caja', 'facturacion', 'cotizaciones', 'clientes'] },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes'] },
+    // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
+    // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
+    // cerrar el turno, y quien lo abre —la sala que cierra, quien confirma la
+    // diferencia— entra por eso y no por otra cosa. Con un solo módulo el grupo
+    // se pinta plano (renderGroup -> renderNavItem), así que queda a un clic
+    // desde cualquier pantalla en vez de detrás del acordeón.
+    { key: 'cortes',       label: 'Cortes de caja', icon: Wallet,       modules: ['cortes_caja'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

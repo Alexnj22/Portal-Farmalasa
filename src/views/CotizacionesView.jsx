@@ -1041,6 +1041,10 @@ export default function CotizacionesView() {
                 ]}
                 loading={loadingList}
                 skeletonRows={6}
+                /* El toque abre la cotización completa —sus renglones y sus
+                   totales—, que es un destino de verdad. Sin declararlo gana la
+                   hoja genérica de `DataTable`, que sólo repite las columnas. */
+                movil={{ usarAccionDeFila: true }}
                 empty={{ icon: Receipt, message: 'Sin cotizaciones' }}
                 minWidth="600px"
             >

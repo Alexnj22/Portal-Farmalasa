@@ -1,19 +1,32 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import { AlertTriangle, Check, RotateCw, Sparkles, ZoomIn } from 'lucide-react';
-import Button from '../common/Button';
-import LiquidModal from '../common/LiquidModal';
-import Notice from '../common/Notice';
-import SegmentedControl from '../common/SegmentedControl';
-import { avisosDeFoto, medirDocumento } from '../../utils/fotoDocumento';
+import Button from './Button';
+import LiquidModal from './LiquidModal';
+import Notice from './Notice';
+import SegmentedControl from './SegmentedControl';
+import { DOCS, avisosDeFoto, medirDocumento } from '../../utils/fotoDocumento';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// El editor de la foto de una receta.
+// El editor de la foto de un DOCUMENTO DE PAPEL.
+//
+// Nació para la receta de las bitácoras (`EditorDeReceta`) y se generalizó el
+// 2026-08-20, cuando el usuario preguntó cómo mejorar la foto del comprobante de
+// una salida de dinero: «no puedes detectar que sea una boleta válida / que sólo
+// se guarde la boleta / mostrar vista previa y ajustar». Las tres cosas que
+// pedía ya existían acá, y la salida de dinero se había quedado con un
+// `FileField` pelado — o sea que el problema no era construirlo, era que este
+// canónico no se conocía fuera de bitácoras.
+//
+// Lo específico de cada documento viaja en props (`doc`): cómo se llama, qué
+// tan chico puede quedar el recorte y por qué lado se mide. Todo lo demás —el
+// recorte, el enderezado, «Aclarada», el tamaño único, la revisión— es igual
+// para una receta y para una boleta térmica.
 //
 // ── Por qué NO se reusa `PhotoEditorModal` ─────────────────────────────────
 // Es el editor de fotos de PRODUCTO, y sus dos herramientas grandes —quitar el
 // fondo con un modelo de IA y el pincel para repasarlo— están hechas para
-// recortar un objeto de su entorno. Una receta es una HOJA: no hay objeto que
+// recortar un objeto de su entorno. Un documento es una HOJA: no hay objeto que
 // recortar, hay papel que enderezar y tinta que hacer legible. Ofrecer «quitar
 // fondo» sobre un documento invita a borrarle la mitad, y arrastra 8 MB de
 // modelo a una pantalla que se abre en el teléfono de una sala.
@@ -36,7 +49,13 @@ import { avisosDeFoto, medirDocumento } from '../../utils/fotoDocumento';
 // No busca solo los bordes del papel. Se puede —hay bibliotecas de visión que
 // lo hacen— pero pesan varios megabytes y aciertan a medias con una foto
 // movida sobre un mostrador. Un recorte automático equivocado es peor que uno
-// manual: recorta media receta y nadie lo mira antes de guardar.
+// manual: recorta medio documento y nadie lo mira antes de guardar.
+//
+// Se reevaluó el 2026-08-20 con el pedido de «que detectes y recortes el papel»
+// y la conclusión no cambió por sí sola — pero sí cambia el día que la foto YA
+// viaje a un modelo por otro motivo (la lectura de la boleta): ahí el recuadro
+// del papel sale de una llamada que igual se hace, y entra como SUGERENCIA que
+// la persona confirma en este mismo editor, no como recorte a ciegas.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Un solo tamaño para todas. 1600px de lado largo alcanza para leer un sello y
@@ -55,6 +74,7 @@ const MODOS = [
     { value: 'original', label: 'Como está' },
     { value: 'aclarada', label: 'Aclarada' },
 ];
+
 
 /**
  * Sube el contraste hasta dejar papel blanco y tinta negra.
@@ -152,12 +172,12 @@ async function dibujar(src, cropPx, rotacion, ladoLargo) {
 }
 
 /** Recorta, endereza, normaliza el tamaño y devuelve el archivo final. */
-async function componer(src, cropPx, rotacion, modo, nombre) {
+async function componer(src, cropPx, rotacion, modo, nombre, porDefecto) {
     const { canvas, ctx } = await dibujar(src, cropPx, rotacion, LADO_LARGO);
     if (modo === 'aclarada') aclarar(ctx, canvas.width, canvas.height);
 
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', CALIDAD));
-    const base = String(nombre || 'receta').replace(/\.[^.]+$/, '');
+    const base = String(nombre || porDefecto || 'documento').replace(/\.[^.]+$/, '');
     return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
 }
 
@@ -182,7 +202,13 @@ async function revisar(src, cropPx, rotacion) {
     };
 }
 
-export default function EditorDeReceta({ file, onConfirm, onCancel }) {
+/**
+ * @param {File}   file      la foto elegida
+ * @param {string} tipo      clave de `DOCS` — hoy `receta` o `boleta`
+ * @param {func}   onConfirm recibe el `File` ya recortado y normalizado
+ */
+export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, onConfirm, onCancel }) {
+    const doc = DOCS[tipo] || DOCS.receta;
     const [src, setSrc] = useState(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -204,6 +230,36 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
 
     const alRecortar = useCallback((_a, px) => setCropPx(px), []);
 
+    /**
+     * El recorte SUGERIDO, puesto una sola vez al abrir.
+     *
+     * Llega en fracciones de 0 a 1 (el recuadro del papel que devolvió la
+     * lectura de la boleta) y se convierte a la caja inicial del canónico: su
+     * `initialCroppedAreaPercentages` habla en porcentaje, que es la misma idea
+     * ×100. Va como sugerencia y no como recorte hecho — el editor sigue abierto
+     * y la persona lo confirma o lo corrige. Un recorte automático que nadie
+     * mira es peor que uno manual, y eso no cambia porque lo proponga un modelo.
+     *
+     * `key` sobre el `Cropper` para que un recuadro nuevo lo remonte: el
+     * canónico lee su caja inicial UNA vez, al montarse.
+     */
+    const cajaInicial = useMemo(() => {
+        if (!recuadro) return undefined;
+        const { x, y, w, h } = recuadro;
+        if (![x, y, w, h].every((n) => Number.isFinite(n))) return undefined;
+        if (w <= 0 || h <= 0) return undefined;
+        // Un poco de aire: el recuadro suele venir pegado al filo del papel y
+        // recortar exactamente ahí come el borde impreso.
+        const aire = 0.02;
+        const x0 = Math.max(0, x - aire), y0 = Math.max(0, y - aire);
+        return {
+            x: x0 * 100,
+            y: y0 * 100,
+            width:  Math.min(1 - x0, w + aire * 2) * 100,
+            height: Math.min(1 - y0, h + aire * 2) * 100,
+        };
+    }, [recuadro]);
+
     // Se revisa con retardo y no en cada arrastre: mover el recorte dispara
     // decenas de eventos por segundo y medir en cada uno traba la mano de quien
     // está encuadrando. Medio segundo después de soltar es cuando la persona
@@ -221,24 +277,22 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
         return () => { vivo = false; clearTimeout(t); };
     }, [src, cropPx, rotacion]);
 
-    const avisos = avisosDeFoto(medidas, modo);
+    const avisos = avisosDeFoto(medidas, modo, doc);
 
     const confirmar = useCallback(async () => {
         setGuardando(true);
-        const listo = await componer(src, cropPx, rotacion, modo, file?.name);
+        const listo = await componer(src, cropPx, rotacion, modo, file?.name, doc.archivo);
         setGuardando(false);
         onConfirm(listo);
-    }, [src, cropPx, rotacion, modo, file, onConfirm]);
+    }, [src, cropPx, rotacion, modo, file, onConfirm, doc.archivo]);
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onCancel}
-            maxWidth="max-w-2xl" ariaLabel="Preparar la foto de la receta">
+            maxWidth="max-w-2xl" ariaLabel={doc.titulo}>
             <LiquidModal.Header>
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Preparar la foto</h3>
-                    <p className="text-caption text-content-3">
-                        Deja sólo la receta y enderézala. Todas salen del mismo tamaño.
-                    </p>
+                    <h3 className="text-body font-bold text-content">{doc.titulo}</h3>
+                    <p className="text-caption text-content-3">{doc.bajada}</p>
                 </div>
             </LiquidModal.Header>
 
@@ -246,15 +300,18 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
                 <div className="relative w-full h-[46vh] min-h-64 rounded-card overflow-hidden bg-surface-card-hover">
                     {src && (
                         <Cropper
+                            key={cajaInicial ? 'sugerido' : 'libre'}
                             image={src}
                             crop={crop}
                             zoom={zoom}
                             rotation={rotacion}
+                            initialCroppedAreaPercentages={cajaInicial}
                             onCropChange={setCrop}
                             onZoomChange={setZoom}
                             onCropComplete={alRecortar}
-                            // Libre y no un formato fijo: una receta puede ser
-                            // media hoja, un talonario angosto o una carta.
+                            // Libre y no un formato fijo: puede ser media hoja,
+                            // un talonario angosto, una carta o la tira de una
+                            // boleta térmica.
                             objectFit="contain"
                             restrictPosition={false}
                         />
@@ -292,10 +349,7 @@ export default function EditorDeReceta({ file, onConfirm, onCancel }) {
                         ))}
                     </div>
                 ) : (
-                    <Notice variant="info" compact icon={Sparkles}>
-                        «Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra.
-                        Si la receta trae sello a color y se pierde, guárdala «como está».
-                    </Notice>
+                    <Notice variant="info" compact icon={Sparkles}>{doc.pista}</Notice>
                 )}
             </LiquidModal.Body>
 

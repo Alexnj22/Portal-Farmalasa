@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
 import IdentidadDeQuienRetira from './IdentidadDeQuienRetira';
@@ -9,13 +9,19 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import {
-    fetchEntidadesDeSalida, fetchTiposDeSalida, registrarSalida, subirComprobante,
+    fetchEntidadesDeSalida, fetchTiposDeSalida, guardarLecturaDeBoleta, leerBoleta,
+    registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
+
+/* El editor de la foto se baja al elegir el archivo, no al abrir el formulario:
+ * arrastra el canónico de recorte, y la mayoría de las salidas del día no piden
+ * foto (`bolsas_tipos_salida.foto = 'NO'`). */
+const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
 
 /**
  * Sacar dinero de una bolsa — el «Entrega de remesas» que pidió el usuario.
@@ -85,6 +91,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     const [boleta, setBoleta] = useState('');
     const [nota, setNota] = useState('');
     const [foto, setFoto] = useState(null);
+    // La foto recién elegida, en camino al editor. Ver la nota del `FileField`.
+    const [porEditar, setPorEditar] = useState(null);
+    // Qué dijo el lector de la foto: `{ leido, coincide, veredicto }` cuando
+    // contestó, `{ error }` cuando no se pudo preguntar, `null` mientras lee.
+    const [lectura, setLectura] = useState(null);
+    const [leyendo, setLeyendo] = useState(false);
     // 'FORMULARIO' → 'IDENTIDAD'. El segundo paso sólo existe para los motivos
     // que piden receptor.
     const [paso, setPaso] = useState('FORMULARIO');
@@ -153,6 +165,73 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         [lista, n],
     );
 
+    /**
+     * Al elegir la foto: primero se LEE, después se abre el editor.
+     *
+     * En ese orden porque la misma lectura devuelve el recuadro del papel, y el
+     * editor abre con ese recorte ya puesto — la persona lo confirma en vez de
+     * encuadrar a mano. Si la lectura falla, el editor abre igual y sin recorte
+     * sugerido: no poder leer no puede impedir preparar la foto.
+     *
+     * Se lee la foto CRUDA, antes de recortar: es la que tiene el recuadro que
+     * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
+     */
+    const alElegirFoto = useCallback(async (f) => {
+        if (!f) { setFoto(null); setLectura(null); return; }
+        setLeyendo(true);
+        setLectura(null);
+        const r = await leerBoleta(f, {
+            entidad: entidad.trim() || null,
+            numeroBoleta: boleta.trim() || null,
+            monto: Number.isFinite(n) ? n : null,
+        });
+        setLeyendo(false);
+        setLectura(r);
+        setPorEditar(f);
+    }, [entidad, boleta, n]);
+
+    /**
+     * Qué pasa con lo que dijo el lector, dicho en una frase.
+     *
+     * Devuelve `null` cuando no hay nada que decir. Los tres casos son
+     * distintos y la pantalla los separa: la boleta no cuadra (se arregla
+     * sacando otra foto o corrigiendo el dato), no se pudo leer (se arregla
+     * reintentando), o todo bien.
+     */
+    const problemaDeLaFoto = useMemo(() => {
+        if (!foto || !lectura) return null;
+        if (lectura.error) {
+            return {
+                tono: 'warning', bloquea: true, reintentable: true,
+                texto: 'No se pudo revisar la foto. Vuelve a elegirla para intentar de nuevo.',
+            };
+        }
+        const l = lectura.leido || {};
+        switch (lectura.veredicto) {
+            case 'OK': return null;
+            case 'NO_ES_BOLETA':
+                return { tono: 'danger', bloquea: true,
+                    texto: `La foto no parece la boleta${l.motivo ? `: ${l.motivo}` : '.'}` };
+            case 'ILEGIBLE':
+                return { tono: 'danger', bloquea: true,
+                    texto: 'La boleta no se lee en la foto. Acércate, sostén el papel plano y evita el reflejo.' };
+            case 'MONTO_NO_COINCIDE':
+                return { tono: 'danger', bloquea: true,
+                    texto: `La boleta dice ${l.monto != null ? formatMoney(l.monto) : 'otro monto'} y la salida es de ${formatMoney(n)}.` };
+            case 'BOLETA_NO_COINCIDE':
+                return { tono: 'danger', bloquea: true,
+                    texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y acá dice ${boleta.trim()}.` };
+            case 'ENTIDAD_NO_COINCIDE':
+                return { tono: 'danger', bloquea: true,
+                    texto: `La boleta es de ${l.entidad || 'otro comercio'} y acá dice ${entidad.trim()}.` };
+            default:
+                return null;
+        }
+    }, [foto, lectura, n, boleta, entidad]);
+
+    // Lo que el bloqueo le dice a la lista de «qué falta».
+    const bloqueoDeLaFoto = problemaDeLaFoto?.bloquea ? problemaDeLaFoto.texto : null;
+
     /** Lo que falta ANTES de identificar a nadie. */
     const faltaEnElFormulario = useMemo(() => {
         if (!t) return 'Falta el motivo.';
@@ -163,8 +242,13 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         if (t.etiqueta_entidad && !entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
         if (t.pide_boleta && !boleta.trim()) return 'Falta el número de boleta.';
         if (t.foto === 'OBLIGATORIA' && !foto) return 'Falta la foto del comprobante.';
+        // Decisión del usuario (2026-08-20): sin una boleta que cuadre, no se
+        // registra. Va acá y no en un aviso aparte para que sea la MISMA lista
+        // que ya frena el botón — un segundo camino para frenar se olvida de
+        // frenar el día que alguien agrega un paso.
+        if (bloqueoDeLaFoto) return bloqueoDeLaFoto;
         return null;
-    }, [t, n, eleccion, lista, entidad, boleta, foto]);
+    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -223,6 +307,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 return;
             }
 
+            // El rastro de la revisión, para que administración pueda ver POR
+            // QUÉ el portal dio por buena esa boleta. Falla en silencio a
+            // propósito: es auditoría, y la salida ya ocurrió en la realidad.
+            if (lectura && !lectura.error) guardarLecturaDeBoleta(data.id, lectura);
+
             showToast?.('Salida registrada', `${data.folio} · ${formatMoney(n)}`, 'success');
             onHecho?.(data, eleccion.repartos);
             onClose?.();
@@ -233,7 +322,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             setGuardando(false);
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
-        persona, vale, olvidarLaIdentidad, showToast, onHecho, onClose]);
+        persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose]);
 
     const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
 
@@ -397,6 +486,21 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             Cuando es opcional se dice EN el rótulo y la caja va en
                             neutro: la caja ámbar de «pendiente» sobre algo que no
                             frena se lee como un error que no lo es. */}
+                        {/* La foto pasa por el EDITOR antes de guardarse
+                            (2026-08-20). Hasta ese día entraba tal cual salía del
+                            teléfono: el mostrador, la caja registradora y media
+                            estantería alrededor de una boleta que ocupaba un
+                            tercio del cuadro, y sin ninguna vista previa para
+                            darse cuenta. El usuario lo pidió mirando una:
+                            «que sólo se guarde la boleta, que detectes y
+                            recortes el papel», «mostrar vista previa y ajustar».
+
+                            El editor es el mismo canónico de las recetas de
+                            bitácoras, con el perfil `boleta`: recorte, enderezado,
+                            «Aclarada» —que es lo que hace legible una boleta
+                            térmica— y un tamaño único de salida. Si alguien
+                            cancela el editor, no queda foto: no se guarda a
+                            medias lo que se pidió preparar. */}
                         {t?.foto !== 'NO' && !!t && (
                             <FileField
                                 label={t.foto === 'OPCIONAL'
@@ -405,12 +509,44 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                 accept="image/*"
                                 maxSizeMB={10}
                                 file={foto}
-                                onChange={setFoto}
+                                onChange={alElegirFoto}
                                 emptyState={t.foto === 'OPCIONAL' ? 'neutral' : 'pending'}
                                 hint={t.foto === 'OPCIONAL'
-                                    ? 'Si te dieron comprobante, adjuntalo.'
-                                    : 'La boleta que imprimió el POS.'}
+                                    ? 'Si te dieron comprobante, adjuntalo. Antes de guardarlo vas a poder recortarlo.'
+                                    : 'La boleta que imprimió el POS. Antes de guardarla vas a poder recortarla.'}
                             />
+                        )}
+
+                        {/* Qué dijo el lector. Va pegado al campo de la foto y
+                            no arriba con el error general: habla de ESTA foto, y
+                            un aviso lejos del control que lo causa se lee como
+                            un problema de otra cosa. */}
+                        {leyendo && (
+                            <Notice variant="info" compact icon={ScanLine}>
+                                Revisando la boleta…
+                            </Notice>
+                        )}
+                        {!leyendo && problemaDeLaFoto && (
+                            <Notice variant={problemaDeLaFoto.tono} compact icon={AlertTriangle}>
+                                {problemaDeLaFoto.texto}
+                            </Notice>
+                        )}
+                        {!leyendo && foto && lectura?.veredicto === 'OK' && (
+                            <Notice variant="success" compact icon={ScanLine}>
+                                La boleta coincide con lo que escribiste.
+                            </Notice>
+                        )}
+
+                        {porEditar && (
+                            <Suspense fallback={null}>
+                                <EditorDeDocumento
+                                    tipo="boleta"
+                                    file={porEditar}
+                                    recuadro={lectura?.leido?.recuadro || null}
+                                    onCancel={() => setPorEditar(null)}
+                                    onConfirm={(lista) => { setFoto(lista); setPorEditar(null); }}
+                                />
+                            </Suspense>
                         )}
 
                         <PortalTextarea

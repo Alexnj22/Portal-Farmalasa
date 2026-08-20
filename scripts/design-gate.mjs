@@ -108,14 +108,16 @@ const EXCEPTIONS = {
   // dentro de un comentario. Ahí no hay contenedor que pueda llevar `lg:flex-row`
   // porque no hay vista, hay documentación.
   'src/components/common/CarrilCards.jsx': ['hex', 'inline-color', 'carril-pildora'],
-  // El `#ffffff` de `EditorDeReceta` es el relleno del CANVAS que exporta el
-  // JPEG de la receta, no una superficie de la interfaz: el papel de un
+  // El `#ffffff` de `EditorDeDocumento` es el relleno del CANVAS que exporta el
+  // JPEG del documento, no una superficie de la interfaz: el papel de un
   // documento que se guarda por un año y se imprime para un inspector es
   // blanco, y seguiría siendo blanco con el portal en tema oscuro. Es el mismo
   // criterio que la regla del ticket —«el papel no tiene tema»—, y un token
   // acá haría que el archivo exportado cambiara de color según cómo tenga
   // configurada la pantalla quien lo subió.
-  'src/components/bitacoras/EditorDeReceta.jsx': ['hex'],
+  // (Se llamaba `bitacoras/EditorDeReceta.jsx` hasta el 2026-08-20, cuando la
+  // salida de dinero necesitó el mismo editor y pasó a `common/`.)
+  'src/components/common/EditorDeDocumento.jsx': ['hex'],
   // `carril-pildora` en ClientesView es la EXCEPCIÓN MEDIDA, no deuda — y estaba
   // contando como ratchet, que es al revés de lo que hay que decir. El motivo
   // está escrito en la propia vista: a 1440px el área de contenido son ~1110px,

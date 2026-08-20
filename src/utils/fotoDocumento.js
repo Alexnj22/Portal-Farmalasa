@@ -111,9 +111,48 @@ const PAPEL_OSCURO = 120;
 // así que 0.1% distingue de sobra sin acercarse al ruido.
 const COLOR_VISIBLE = 0.001;
 
-// Debajo de esto el texto de una receta no sobrevive al JPEG. 1600 es el lado
-// largo con el que sale todo; 900 es el piso a partir del cual conviene avisar.
+// Debajo de esto el texto no sobrevive al JPEG. 1600 es el lado largo con el que
+// sale todo; 900 es el piso de una HOJA, medido sobre su lado corto.
+//
+// El lado que se mide depende del documento y lo dice quien llama (2026-08-20).
+// Una boleta térmica bien recortada mide algo como 600 × 1500: mirarle el lado
+// corto haría saltar el aviso en TODAS las boletas bien tomadas, y un aviso que
+// aparece siempre deja de leerse y se lleva puestos a los que sí importan.
 const LADO_CORTO_MINIMO = 900;
+
+/**
+ * Lo único que cambia entre un documento y otro.
+ *
+ * `ladoMinimo` se mide por el lado LARGO en una boleta y por el CORTO en una
+ * receta, y no es un detalle: una boleta térmica bien recortada mide algo como
+ * 600 × 1500, o sea que el aviso de «el recorte quedó chico» —pensado sobre el
+ * lado corto de una hoja— saltaría en TODAS las boletas bien tomadas. Un aviso
+ * que aparece siempre deja de leerse, y se lleva puestos a los que sí importan.
+ */
+export const DOCS = {
+    receta: {
+        nombre: 'la receta',
+        titulo: 'Preparar la foto',
+        bajada: 'Deja sólo la receta y enderézala. Todas salen del mismo tamaño.',
+        archivo: 'receta',
+        ladoMinimo: 900,
+        medirLado: 'corto',
+        pista: '«Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra. '
+             + 'Si la receta trae sello a color y se pierde, guárdala «como está».',
+    },
+    boleta: {
+        nombre: 'la boleta',
+        titulo: 'Preparar la foto de la boleta',
+        bajada: 'Deja sólo el papel de la boleta y enderézalo. Todas salen del mismo tamaño.',
+        archivo: 'boleta',
+        // El lado largo: la boleta es una tira angosta (ver arriba).
+        ladoMinimo: 1000,
+        medirLado: 'largo',
+        pista: 'Recorta hasta el borde del papel: lo que quede del mostrador alrededor '
+             + 'no dice nada y hace la letra más chica. «Aclarada» deja el papel blanco '
+             + 'y la impresión negra, que es lo que hace legible una boleta térmica.',
+    },
+};
 
 /**
  * Traduce las medidas a lo que hay que decirle a quien está por guardar.
@@ -121,14 +160,15 @@ const LADO_CORTO_MINIMO = 900;
  * Cada aviso dice QUÉ pasa y QUÉ hacer: uno que sólo describe el problema se
  * lee como un reproche y se ignora.
  */
-export function avisosDeFoto(d, modo = 'aclarada') {
+export function avisosDeFoto(d, modo = 'aclarada', doc = {}) {
     if (!d) return [];
+    const nombre = doc.nombre || 'la receta';
     const avisos = [];
 
     if (d.tinta < TINTA_MINIMA) {
         avisos.push({
             tono: 'warning',
-            texto: 'Casi no se ve tinta en la hoja. Comprueba que la foto sea de la receta y que entre completa.',
+            texto: `Casi no se ve tinta en la hoja. Comprueba que la foto sea de ${nombre} y que entre completa.`,
         });
     }
 
@@ -139,10 +179,13 @@ export function avisosDeFoto(d, modo = 'aclarada') {
         });
     }
 
-    if (d.ancho && d.alto && Math.min(d.ancho, d.alto) < LADO_CORTO_MINIMO) {
+    const lado = doc.medirLado === 'largo'
+        ? Math.max(d.ancho || 0, d.alto || 0)
+        : Math.min(d.ancho || 0, d.alto || 0);
+    if (d.ancho && d.alto && lado < (doc.ladoMinimo ?? LADO_CORTO_MINIMO)) {
         avisos.push({
             tono: 'info',
-            texto: 'El recorte quedó chico y la letra puede no leerse. Si la receta ocupa poco de la foto, acércate al tomarla en vez de recortar tanto.',
+            texto: `El recorte quedó chico y la letra puede no leerse. Si ${nombre} ocupa poco de la foto, acércate al tomarla en vez de recortar tanto.`,
         });
     }
 
@@ -150,7 +193,7 @@ export function avisosDeFoto(d, modo = 'aclarada') {
     if (d.color > COLOR_VISIBLE && modo === 'aclarada') {
         avisos.push({
             tono: 'info',
-            texto: 'La receta trae tinta de color, probablemente el sello. «Aclarada» la pasa a gris; si el sello se pierde, guárdala «como está».',
+            texto: `${nombre[0].toUpperCase()}${nombre.slice(1)} trae tinta de color, probablemente un sello. «Aclarada» la pasa a gris; si se pierde, guárdala «como está».`,
         });
     }
 

@@ -265,6 +265,53 @@ export async function fetchEntidadesDeSalida() {
  * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
  * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
  */
+/**
+ * Lee la foto del comprobante y la cuadra contra lo que se escribió.
+ *
+ * Se llama ANTES de guardar y ANTES de subir nada: la imagen viaja en base64 a
+ * `leer-boleta`, así el bucket no se llena con los intentos que se descartan.
+ *
+ * Devuelve `{ leido, coincide, veredicto }` o `{ error }`. Los dos casos son
+ * distintos y la pantalla los tiene que decir distinto: un veredicto que no es
+ * `OK` significa «la foto no es la boleta que dice el formulario»; un `error`
+ * significa «no se pudo preguntar» y se arregla reintentando.
+ */
+export async function leerBoleta(archivo, esperado) {
+    try {
+        const base64 = await new Promise((res, rej) => {
+            const fr = new FileReader();
+            // `readAsDataURL` da `data:image/jpeg;base64,XXXX` — sólo viaja la cola.
+            fr.onload = () => res(String(fr.result).split(',')[1] || '');
+            fr.onerror = rej;
+            fr.readAsDataURL(archivo);
+        });
+        const { data, error } = await supabase.functions.invoke('leer-boleta', {
+            body: { imagenBase64: base64, mimeType: archivo.type || 'image/jpeg', esperado },
+        });
+        if (error) return { error };
+        if (!data || data.error) return { error: new Error(data?.error || 'NO_SE_PUDO_LEER') };
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}
+
+/**
+ * El rastro de esa lectura, pegado a la operación ya registrada.
+ *
+ * Falla en silencio a propósito: es auditoría, y una salida de dinero que YA
+ * ocurrió en la realidad no se deshace porque no se pudo anotar quién la
+ * revisó. Ver el comentario de la migración.
+ */
+export async function guardarLecturaDeBoleta(operacionId, lectura) {
+    if (!operacionId || !lectura) return;
+    const { error } = await supabase.rpc('guardar_lectura_de_boleta', {
+        p_operacion_id: operacionId,
+        p_lectura: lectura,
+    });
+    if (error) console.error('bolsas: no se pudo guardar la lectura de la boleta:', error.message);
+}
+
 export async function subirComprobante(archivo, { salaId, userId }) {
     const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;

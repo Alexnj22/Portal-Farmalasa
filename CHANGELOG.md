@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.695.0 — La boleta se recorta, se revisa y tiene que cuadrar
+
+Tres cosas que pidió el usuario mirando una salida de dinero real: *«no puedes
+detectar 1. que sea una boleta válida (que no tomen foto de otra cosa), 2. que
+sólo se guarde la boleta, que detectes y recortes el papel, 3. mostrar vista
+previa y ajustar»*.
+
+**Vista previa, recorte y enderezado — el editor ya existía y esta pantalla no
+lo tenía.** La foto del comprobante entraba tal cual salía del teléfono: el
+mostrador, la caja y media estantería alrededor de una boleta que ocupaba un
+tercio del cuadro, sin ninguna vista previa para notarlo. El editor de las
+recetas de bitácoras hace exactamente esto —recorte, giro, «Aclarada» (que es lo
+que vuelve legible una boleta térmica) y un tamaño único de salida—, así que se
+generalizó a `EditorDeDocumento` y la salida de dinero lo usa con el perfil
+`boleta`. O sea que el problema no era construirlo: era que el canónico no se
+conocía fuera de bitácoras.
+
+Un detalle que no es cosmético: el aviso de «el recorte quedó chico» se medía
+sobre el lado CORTO. Una boleta térmica bien recortada mide algo como 600 × 1500,
+así que ese aviso habría saltado en todas las boletas bien tomadas — y un aviso
+que aparece siempre deja de leerse y se lleva puestos a los que sí importan. En
+la boleta se mide el lado largo.
+
+**El recorte del papel llega sugerido, no automático.** Bajar un modelo de visión
+al teléfono se evaluó y se descartó hace tiempo: pesa megabytes y se equivoca con
+una foto movida sobre un mostrador. Pero como la foto ahora YA viaja para
+leerla, el recuadro del papel sale de esa misma llamada sin costar nada extra. El
+editor abre con ese recorte puesto y la persona lo confirma o lo corrige — un
+recorte automático que nadie mira sigue siendo peor que uno manual.
+
+**Y la boleta tiene que cuadrar con lo que se escribió.** «Que sea una boleta
+válida» no se puede contestar con un heurístico de «esto parece un documento»:
+eso caza la foto de una pared, no la de OTRA boleta ni la de una boleta de $50
+para una salida de $200. Se contesta LEYENDO la boleta y cruzándola contra los
+tres datos que el formulario ya pide: entidad, número y monto. La función nueva
+`leer-boleta` hace la lectura; **el veredicto lo arma código, no el modelo** —
+comparar montos y números es aritmética, y si la regla dependiera de que el
+modelo diga «no coincide», bastaría con que un día conteste distinto para que la
+regla cambie sola.
+
+**Decisión del usuario: bloquea.** Sin una boleta que cuadre, la salida no se
+registra. Le señalé que una lectura equivocada puede trabar a una sala con el
+cliente enfrente —el efectivo ya salió en la realidad, el portal sólo lo
+registra— y aun así eligió bloquear; queda dicho acá para que se sepa de dónde
+viene la regla el día que estorbe. La pantalla distingue los dos casos, que se
+arreglan distinto: **«la foto no es la boleta»** (se corrige con otra foto o
+corrigiendo el dato) y **«no se pudo revisar»** (se corrige reintentando).
+
+Cada lectura queda guardada en `bolsas_operaciones.foto_lectura`, para que
+administración pueda ver al contar POR QUÉ el portal dio por buena esa boleta.
+Un control automático sin rastro de su decisión no se puede auditar.
+
+**Sobre quién lee:** hoy Gemini, que ya está configurado y ya lo usan otras seis
+funciones del portal. El usuario preguntó si convenía usar Claude; se dejó
+`_shared/claude.ts` escrito y el cambio reducido a **una constante** (`LECTOR` en
+`leer-boleta`). Va como constante y no como «si hay key usá Claude, si no
+Gemini»: un camino que se elige solo hace que nadie sepa cuál corrió, y el día
+que la lectura falle no se puede saber quién falló.
+
 ## v2.694.3 — El aviso de las bolsas fuera de rango deja de ocupar media pantalla
 
 Reportado con una captura: *«si filtra bien, pero ese aviso nada que ver, se ve

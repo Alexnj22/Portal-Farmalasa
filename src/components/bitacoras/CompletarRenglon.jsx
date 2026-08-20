@@ -15,7 +15,7 @@ import { clearDraft, loadDraft, saveDraft } from '../../utils/draftUtils';
 
 /* El editor se baja al ELEGIR el archivo, no al abrir el formulario: arrastra
  * el canónico de recorte y no hace falta hasta que hay una foto. */
-const EditorDeReceta = lazy(() => import('./EditorDeReceta'));
+const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
 import {
     CLASE_CLIENTE, JUNTAS_QUE_PRESCRIBEN, avisarFallaDelConsejo, buscarMedicoLocal,
     buscarMedicosLocalPorNombre, completarRenglon, consultarConsejo, fetchRecetasRecientes,
@@ -617,7 +617,8 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
 
                 {porEditar && (
                     <Suspense fallback={null}>
-                        <EditorDeReceta
+                        <EditorDeDocumento
+                            tipo="receta"
                             file={porEditar}
                             onCancel={() => setPorEditar(null)}
                             onConfirm={(lista) => { setArchivo(lista); setPorEditar(null); }}

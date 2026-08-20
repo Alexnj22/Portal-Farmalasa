@@ -53,7 +53,9 @@ Ahora:
 hacia ABAJO desde el contenedor. Donde no exista (Chrome <105, Safari <15.4,
 Firefox <121) la regla se ignora y vuelve el lift acumulado — degrada, no rompe.
 
-Queda escrito en `DESIGN.md` §5, reemplazando la regla vieja.
+Queda escrito en `DESIGN.md` §5, reemplazando la regla vieja. Las dos reglas
+viven juntas en `src/index.css`, dentro del `@media (hover: hover)` de la
+tarjeta: en táctil no hay puntero y este comportamiento no existe.
 
 ## v2.690.2 — «Agregar» devuelve a la consulta en vez de abrir otro buscador
 

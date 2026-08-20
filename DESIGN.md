@@ -555,7 +555,38 @@ Card hover (solo escritorio, `@media (hover: hover)`):
   transform: translateY(var(--lift-card));
   box-shadow: var(--card-shadow-hover);
 }
+/* Se levanta la que APUNTÁS, no la que la contiene */
+[data-surface="card"]:has([data-surface="card"]:hover) { transform: none; box-shadow: var(--card-shadow); }
+/* Y el cuerpo de vista no se apunta nunca */
+[data-surface="card"][data-cuerpo="vista"]:hover     { transform: none; box-shadow: var(--card-shadow); }
 ```
+
+**Se levanta la tarjeta APUNTADA, y sus contenedores se quedan quietos
+(2026-08-20).** `:hover` matchea al elemento *y a todos sus ancestros*, así que
+sin las dos reglas de abajo los lifts se suman — medido el 2026-08-02: 4px en
+/staff, /schedules y /announcements contra los 2px de una tarjeta suelta.
+
+Eso ya estaba resuelto, **pero al revés**: la regla vieja era
+`[card] [card]:hover { transform: none }`, que calla a la tarjeta **apuntada** y
+deja levantarse al contenedor. Y el contenedor casi siempre es el **cuerpo de
+vista** (`GlassViewLayout` lo emite con `data-surface="card"`), así que apuntar
+una tarjeta levantaba la vista entera mientras la tarjeta se quedaba quieta.
+
+> «No tiene sentido que si entro a la card lo que se active sea el body; el body
+> se debe activar sólo al cargar la vista y luego las cards.» — el usuario,
+> 2026-08-20, con captura.
+
+El síntoma medido era cierto y la causa estaba bien identificada; lo que estaba
+mal era **a quién se callaba**. Dos consecuencias para quien escriba una vista:
+
+- **El cuerpo de vista no responde al puntero**, y por eso lleva
+  `data-cuerpo="vista"`. Va por atributo propio y no quitándole
+  `data-surface="card"`: el material —fondo, borde, radio, escalón de las
+  anidadas— es el que tiene que seguir siendo; lo único que sobra es el lift.
+- **`:has()` es el selector correcto y no hay alternativa**: hace falta mirar
+  hacia ABAJO desde el contenedor. Donde no exista (Chrome <105, Safari <15.4,
+  Firefox <121) la regla se ignora y vuelve el lift acumulado — degrada, no
+  rompe.
 
 **El lift se queda — es la sensación Liquid Glass, y es el canónico para toda
 superficie** (decisión del usuario, 2026-08-01, tras comparar tres opciones en

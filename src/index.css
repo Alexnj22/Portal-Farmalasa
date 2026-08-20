@@ -2975,15 +2975,45 @@ thead.sticky,
     box-shadow: var(--card-sombra-activa);
     transform: translateY(var(--card-lift-activo));
   }
-  /* Una tarjeta DENTRO de otra no agrega su propio lift. `:hover` matchea al
-     elemento y a todos sus ancestros, así que al apuntar la interna se
-     levantaban las dos y el desplazamiento se acumulaba: medido el 2026-08-02,
-     4px en /staff, /schedules y /announcements contra los 2px de una tarjeta
-     suelta. §5.1 ya dice que no se anidan tarjetas —una franja interna va con
-     `bg-surface-card-hover` + borde— pero mientras existan, que no se sumen.
-     La externa sigue levantándose y se lleva a la interna con ella. */
-  [data-surface="card"] [data-surface="card"]:hover {
+  /* ── Se levanta la que APUNTÁS, no la que la contiene (2026-08-20) ────
+     `:hover` matchea al elemento y a todos sus ancestros, así que al apuntar
+     una tarjeta el navegador considera hovereadas también a las tarjetas que
+     la envuelven, y los lifts se sumaban: medido el 2026-08-02, 4px en /staff,
+     /schedules y /announcements contra los 2px de una tarjeta suelta.
+
+     Hasta hoy eso se resolvía al revés — `[card] [card]:hover { transform:
+     none }` callaba a la tarjeta APUNTADA y dejaba levantarse al contenedor.
+     Como el contenedor casi siempre es el CUERPO DE VISTA (`GlassViewLayout`
+     lo emite con `data-surface="card"`), el resultado era que apuntar una
+     tarjeta levantaba la vista entera y la tarjeta se quedaba quieta. Lo
+     reportó el usuario el 2026-08-20 con una captura: «no tiene sentido que si
+     entro a la card lo que se active sea el body; el body se debe activar sólo
+     al cargar la vista y luego las cards».
+
+     El síntoma medido era cierto y la causa estaba bien identificada; lo que
+     estaba mal era a QUIÉN se callaba. Ahora se calla al contenedor:
+
+       · una tarjeta que CONTIENE a la apuntada no se levanta (`:has()`), y
+       · el cuerpo de vista no responde al puntero en absoluto — no es una
+         tarjeta que se apunte, es el marco de trabajo (ver `data-cuerpo`).
+
+     `:has()` es el selector correcto para esto y no hay alternativa en CSS:
+     hace falta mirar hacia ABAJO desde el contenedor. Donde no exista (Chrome
+     <105, Safari <15.4, Firefox <121) la regla se ignora y vuelve el
+     comportamiento acumulado de antes — degrada, no rompe. */
+  [data-surface="card"]:has([data-surface="card"]:hover) {
     transform: none;
+    box-shadow: var(--card-shadow);
+  }
+
+  /* El CUERPO DE VISTA no se apunta. Se presenta al cargar y de ahí en más lo
+     que responde son las tarjetas que viven adentro. Va por atributo propio y
+     no quitándole `data-surface="card"`: el material —fondo, borde, radio,
+     escalón de las anidadas— es el que tiene que seguir siendo, y lo único que
+     sobra es la respuesta al puntero. */
+  [data-surface="card"][data-cuerpo="vista"]:hover {
+    transform: none;
+    box-shadow: var(--card-shadow);
   }
 }
 

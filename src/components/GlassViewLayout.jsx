@@ -309,6 +309,15 @@ const GlassViewLayout = ({
                 {/* Content body */}
                 <div className="px-0 md:px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
                     <div data-surface={cuerpoConCard ? 'card' : undefined}
+                        // El cuerpo de vista NO responde al puntero. `:hover`
+                        // matchea al elemento y a todos sus ancestros, así que
+                        // sin esto apuntar cualquier tarjeta de adentro
+                        // levantaba la vista entera —y la tarjeta se quedaba
+                        // quieta, porque la regla vieja callaba justo a la
+                        // apuntada—. Lo reportó el usuario el 2026-08-20. El
+                        // material sigue siendo el de tarjeta: lo único que se
+                        // apaga es el lift (ver `data-cuerpo` en index.css).
+                        data-cuerpo="vista"
                         // ── Esta card NO difumina ─────────────────────────
                         // No es una decisión estética: es que no tiene nada que
                         // difuminar. Detrás suyo está el fondo de la página, que

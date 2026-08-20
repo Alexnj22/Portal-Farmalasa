@@ -123,8 +123,14 @@ sale de esa medición en vez de un número inventado. Arranca conservador.
    agrupada por sala y la división al enviar en un solo `insert`.
 5. ✅ **Agrupado** (v2.678.0) — las hermanas juntas en «En camino», con el
    estado del grupo y el botón de recibirlas todas.
-6. ⬜ **Avisos** — uno por sala que contesta, con la sugerencia de dónde está lo
-   que faltó.
+6. ✅ **Avisos** (v2.680.0) — uno por sala que contesta; el parcial dice qué
+   faltó y qué sala lo tiene.
+
+**Los seis pasos están cerrados y en producción.** Lo que queda es lo que sólo
+puede decir una sala usándolo: ver la primera composición real, el primer
+despacho de menos y la primera recepción de un grupo. Y el tope de productos por
+solicitud, que sale de `erp_traslado.ms_por_renglon` en cuanto haya solicitudes
+de más de un renglón.
 
 ### Lo que falta probar en sala
 

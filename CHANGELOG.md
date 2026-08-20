@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.680.0 — El aviso dice qué faltó y dónde está
+
+Último paso del plan de traslados. El aviso de que una sala contestó ya existía
+y ya llegaba **uno por sala** —cada solicitud de la composición es una fila y el
+disparador corre por fila—, pero se había quedado atrás de tres cosas:
+
+**Nombraba sólo el primer producto.** Con una solicitud de seis renglones decía
+el nombre de uno y callaba los otros cinco. Ahora, con varios, dice cuántos son:
+la lista entera no entra en un aviso y el nombre del primero hace creer que es
+el único.
+
+**No decía nada cuando salía de menos.** Desde v2.673.0 una sala puede mandar 2
+de 3, y quien pidió se enteraba abriendo la caja — que es exactamente lo que un
+aviso existe para evitar. Ahora llega así:
+
+> **📦 Te envían parte** — Salud 2 no tenía todo: EUTIROX 100: 2 de 3;
+> AMOXICILINA 500: 0 de 1. Se vendió una hace un rato. Lo que faltó: EUTIROX 100
+> lo tiene Bodega (100) · AMOXICILINA 500 lo tiene Salud 4 (21). Avisa cuando
+> llegue para recibirlo.
+
+**Y lo que faltó se dice con DÓNDE ESTÁ.** Es el mismo criterio que ya tenía el
+rechazo —sin la sugerencia, quien pidió vuelve a empezar de cero: abrir la
+consulta, buscar el producto, mirar qué sala lo tiene— y ahora vale igual para
+media caja que para ninguna. Sólo se ofrece una sala que cubra **todo** lo que
+faltó: media sugerencia haría que alguien se mueva para nada.
+
+El cálculo vive en la base y no en la función que despacha, a propósito: ésa ya
+gastó su tiempo hablando con el sistema de origen, y pedirle una vuelta más
+sería pagar dos veces por un dato que Postgres tiene al lado. El factor de cada
+renglón —que hace falta para comparar lo que faltó, que va en paquetes, contra
+la existencia de las otras salas, que va en unidades— se saca de `items` por la
+**posición**, que es como todo el circuito nombra un renglón.
+
+De paso, un **voseo**: «Avisá cuando llegue» → «Avisa cuando llegue». Misma
+corrección que `bolsas_avisos_sin_voseo` y `cortes_caja_mensajes_sin_voseo`.
+
+Probado contra producción sin dejar una fila: los tres avisos —sale todo, sale
+de menos, y el rechazo— se armaron dentro de una transacción que se deshace
+sola, y se leyeron. Quedaron 217 traslados antes y después, cero avisos y cero
+envíos encolados. (Antes de eso se comprobó que `pg_net` es transaccional, para
+que la prueba no le mandara una notificación falsa a nadie.)
+
+Las dos junturas del texto salieron de leerlo: «EUTIROX 100 2 de 3» son tres
+números pegados, y «EUTIROX 100: Bodega (100)» mete dos puntos en una frase que
+ya los usó.
+
 ## v2.679.0 — imprimir un carné es sólo de Administración, y un carné se puede anular
 
 Dos correcciones del usuario sobre v2.677.0, mirando la pantalla.

@@ -257,7 +257,7 @@ function funcionesQueTocanElSistema() {
  * TODO era mayor que `null`, o sea rojo permanente por un chequeo que estaba
  * bien. Un tope que no existe todavía tiene que dejar pasar y anotarse, no
  * bloquear. */
-const TOPES = ['peticionesDia', 'fetchSinPlazo', 'cronsSinMedir', 'sondeosNavegador'];
+const TOPES = ['peticionesDia', 'fetchSinPlazo', 'cronsSinMedir', 'sondeosNavegador', 'escriturasInutilesHora'];
 const guardado = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, 'utf8')) : {};
 const baseline = Object.fromEntries(TOPES.map(k =>
   [k, Number.isFinite(guardado[k]) ? guardado[k] : Infinity]));
@@ -402,6 +402,63 @@ if (!SOLO_LOCAL) {
                   + 'El silencio no es éxito.');
     }
 
+    /* ── B0 · Amplificación de escritura ────────────────────────────────
+     *
+     * La sección que no necesita manifiesto: la base misma dice cuántas veces
+     * se reescribió cada fila. `n_tup_upd` contra `n_tup_ins` y el porcentaje
+     * HOT son suficientes para ver una tabla que se está reescribiendo sola.
+     *
+     * Se escribió el 2026-08-20 y encontró tres cosas en su primera corrida:
+     * `impresion_dispositivos` con **101.984 escrituras sobre 6 filas** (el
+     * latido de las cajas, ~1,1 por segundo), `purchase_receipt_items` con
+     * 4.911 para 121 inserciones y **0% HOT**, y `purchase_receipts` con 1.384
+     * para 10. Las tres llevaban meses así y ninguna dio nunca un error.
+     *
+     * El 0% HOT es la parte que más duele y la que menos se ve: una escritura
+     * no-HOT rehace también las entradas de índice, así que cuesta varias veces
+     * lo que parece.
+     *
+     * El tope es el total de escrituras inútiles —las que no vinieron con una
+     * inserción— y sólo baja. Las tablas de sesión y de latido quedan fuera de
+     * la lista negra pero DENTRO del total: son legítimas escribiendo seguido,
+     * pero no por eso pueden crecer sin que nadie mire. */
+    /* Se mide una TASA, no un total.
+     *
+     * `n_tup_upd` es acumulativo desde que arrancó el servidor, así que un tope
+     * absoluto fallaría en la corrida siguiente por el solo paso del tiempo —el
+     * error clásico de vigilar un contador—. La ventana sale de la base:
+     * `pg_postmaster_start_time()`. Comprobado el 2026-08-20: 102.766
+     * escrituras sobre 21,8 h dan 1,31 por segundo, y la medición directa
+     * contra el reloj había dado ~1,1. Sirve.
+     *
+     * Efecto secundario que conviene saber: como el contador arrastra lo de
+     * antes, después de un arreglo la tasa BAJA de a poco en vez de saltar. Lo
+     * que se ve enseguida es la medición directa (dos lecturas separadas por un
+     * minuto); esto es la vista larga. */
+    const churn = canal.consultar(`
+      SELECT relname AS tabla, n_tup_ins AS ins, n_tup_upd AS upd,
+             coalesce(round(100.0 * n_tup_hot_upd / nullif(n_tup_upd,0)), 100) AS pct_hot,
+             n_live_tup AS filas,
+             round(extract(epoch FROM (now() - pg_postmaster_start_time()))/3600) AS horas
+        FROM pg_stat_user_tables
+       WHERE n_tup_upd > 500 AND n_tup_upd > n_tup_ins * 3
+       ORDER BY n_tup_upd DESC LIMIT 20`);
+    const horas = Math.max(Number(churn[0]?.horas ?? 1), 1);
+    const inutilesHora = Math.round(
+      churn.reduce((n, t) => n + Math.max(0, Number(t.upd) - Number(t.ins)), 0) / horas);
+    medido.escriturasInutilesHora = inutilesHora;
+    console.log(`\n  escrituras sin inserción por hora: ${inutilesHora.toLocaleString('es')} `
+              + `(tope ${Number(baseline.escriturasInutilesHora).toLocaleString('es')}) `
+              + gris(`· ventana de ${horas} h`));
+    for (const t of churn.slice(0, 6))
+      console.log(gris(`      ${String(Math.round(t.upd / horas)).padStart(6)}/h sobre ${String(t.filas).padStart(6)} filas `
+                + `· ${String(t.ins).padStart(5)} inserciones · ${String(t.pct_hot).padStart(3)}% HOT  ${t.tabla}`));
+    if (inutilesHora > baseline.escriturasInutilesHora)
+      fallos.push(`las escrituras sin inserción subieron a ${inutilesHora}/h contra ${baseline.escriturasInutilesHora}/h. `
+                + 'Una tabla que se reescribe sola no da error nunca: gasta WAL, ensucia los índices y '
+                + 'hace trabajar al autovacuum por nada. Y el 0% HOT es la parte cara: esa escritura '
+                + 'rehace también las entradas de índice.');
+
     // B3 · Las llamadas salientes
     const s = salientes[0] ?? {};
     console.log(`  llamadas salientes en la ventana que guarda la base: ${Number(s.total ?? 0).toLocaleString('es')} `
@@ -436,7 +493,10 @@ if (!SOLO_LOCAL) {
 // ══ Cierre ═══════════════════════════════════════════════════════════════════
 if (REGENERAR) {
   const nuevo = {
-    ...Object.fromEntries(TOPES.map(k => [k, Math.min(medido[k], baseline[k])])),
+    // Una clave que esta corrida no midió (p. ej. `--hook`, que no sale a la
+    // red) conserva su tope: regenerar no puede ser una forma de borrarlo.
+    ...Object.fromEntries(TOPES.map(k => [k,
+      Number.isFinite(medido[k]) ? Math.min(medido[k], baseline[k]) : baseline[k]])),
     nota: 'Sólo BAJA. Un número que sube es una decisión, y una decisión se escribe en el manifiesto '
         + 'con su motivo — no se absorbe regenerando este archivo.',
     actualizado: new Date().toISOString().slice(0, 10),

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.681.0 — Tres tablas dejan de reescribirse solas
+
+El detector de amplificación de escritura que se le agregó a `gate:eficiencia`
+encontró tres cosas en su primera corrida. Ninguna daba error, ninguna aparecía
+en un log, y todas llevaban meses.
+
+| tabla | antes | después |
+|---|---|---|
+| `impresion_dispositivos` (6 filas) | **~66 escrituras/min** | **11/min** |
+| `purchase_receipts` | 14 por corrida, 144 veces al día | **0** |
+| `purchase_receipt_items` | ~101 por corrida, **0% HOT** | **0** |
+
+**El latido de las cajas de impresión.** Una tabla de **seis filas** con
+**101.984 escrituras en 21 horas**: cada vez que el agente pregunta si hay algo
+para imprimir —una vez por segundo— se le escribía la hora. Lo que NO se tocó es
+cada cuánto pregunta: eso haría que un ticket tarde más en salir, que es
+justamente lo que no se puede empeorar. Ahora la fila se escribe cuando el dato
+ya tiene 30 segundos, o en el acto si el agente cambió de versión. La pantalla
+pinta «ahora mismo» con un margen de 2 minutos, así que quedan cuatro veces de
+aire. Medido después del cambio: **18 escrituras en 97 segundos**.
+
+**Las cabeceras de compra** se reescribían enteras cada 10 minutos porque el
+`updated_at` viajaba en el payload, así que toda fila «cambiaba» siempre. Es el
+patrón que ya costó caro en inventario, y que los proveedores y los productos
+del mismo archivo ya tenían resuelto: la cabecera se había quedado atrás.
+
+**Los renglones de compra son la historia larga, y tiene dos capas.** Ya tenían
+una guarda «sólo escribe si cambió» —puesta justamente para esto— y **no estaba
+funcionando**:
+
+1. El precio unitario sale de una división: 17.94 ÷ 240 = 0,07475, y la columna
+   guarda 4 decimales, o sea 0,0748. La guarda comparaba 0,07475 contra 0,0748,
+   veía que diferían, reescribía… y al escribir redondeaba otra vez. **38,5% de
+   las filas** tienen una división así. Arreglado comparando a la escala de la
+   columna, lo que no cambia un solo dato guardado.
+2. Y con eso desplegado **seguían reescribiéndose 68 de 160**. La causa de fondo
+   estaba afuera: el sistema devuelve los renglones de una compra **en distinto
+   orden en cada lectura** —leído dos veces seguidas, **13 de 15 compras
+   cambiaron**; la compra 5619 devolvió `4356, 4959` y después `4959, 4356`— y
+   el número de renglón era la posición en esa lista. Ahora el orden lo pone el
+   portal, por producto, lote, vencimiento y cantidad. El orden que se pierde no
+   era información: era el azar de esa lectura.
+
+**Verificado con contadores, no con confianza:** primera corrida después del
+cambio, 153 renglones renumerados —el costo único—; segunda corrida, **0 y 0**.
+
+**Lo que esto NO es.** En tiempo son ~7 segundos de base por día sobre 5.218, y
+en WAL ~26 MB sobre 2.090: nada se va a sentir más rápido. El valor es dejar de
+acumular, y sobre todo que ahora hay una máquina mirando — el mismo detector que
+encontró esto queda en el gate, midiendo escrituras por hora contra la ventana
+que da la base (`pg_postmaster_start_time`), porque un contador acumulativo con
+tope fijo falla solo con el paso del tiempo.
+
 ## v2.680.1 — «admin» son cuatro cargos, no uno
 
 Aclaración del usuario: *«el permiso lo debe tener admin (recuerda a admin como

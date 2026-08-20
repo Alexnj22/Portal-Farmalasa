@@ -206,7 +206,10 @@ async function syncBranch(
       documento_numero: (c.documento?.numero ?? '').trim() || null,
       percepcion_iva:   c.totales?.percepcion_iva ?? null,
       retencion_iva:    c.totales?.retencion_iva  ?? null,
-      updated_at:      new Date().toISOString(),
+      // `updated_at` NO viaja en el payload: lo pone la RPC, y sólo cuando
+      // escribe de verdad. Mandarlo desde acá era lo que hacía que TODA fila
+      // «cambiara» en cada corrida — 14 reescrituras por corrida, 144 veces al
+      // día, para no cambiar un dato (medido el 2026-08-20).
     };
 
     receiptsToUpsert.push(row);
@@ -249,15 +252,29 @@ async function syncBranch(
 
   // 4. Upsert cabeceras
   let totalItems = 0;
+  // Vía RPC, igual que proveedores, productos y renglones: sólo escribe la
+  // cabecera cuyo dato real cambió.
+  //
+  // ⚠️ Y por eso el mapa de ids YA NO puede salir del `RETURNING`: una escritura
+  // condicional no devuelve lo que no escribió, así que las cabeceras sin cambios
+  // faltarían y sus renglones se quedarían sin `receipt_id` — se saltearían en
+  // silencio, que es el peor desenlace posible acá. Las que ya existían vinieron
+  // en la consulta del principio; sólo hay que ir a buscar las que ACABAN de
+  // nacer, y eso pasa 12 veces al día en vez de 500.
   if (receiptsToUpsert.length > 0) {
     const CHUNK = 200;
     for (let i = 0; i < receiptsToUpsert.length; i += CHUNK) {
-      const { data: upserted, error } = await supabase
-        .from('purchase_receipts')
-        .upsert(receiptsToUpsert.slice(i, i + CHUNK), { onConflict: 'erp_purchase_id,erp_sucursal_id' })
-        .select('id, erp_purchase_id');
+      const { error } = await supabase
+        .rpc('sync_purchase_receipts_batch', { p_rows: receiptsToUpsert.slice(i, i + CHUNK) });
       if (error) throw new Error(`receipts upsert chunk ${i}: ${error.message}`);
-      for (const r of (upserted ?? [])) existingMap.set(r.erp_purchase_id, r.id);
+    }
+    if (newErpIds.size > 0) {
+      const nacidas = await selectAllByIn<any>(
+        supabase, 'purchase_receipts', 'id, erp_purchase_id',
+        'erp_purchase_id', [...newErpIds],
+        (q) => q.eq('erp_sucursal_id', erpId),
+      );
+      for (const r of (nacidas ?? [])) existingMap.set(r.erp_purchase_id, r.id);
     }
   }
 
@@ -268,7 +285,29 @@ async function syncBranch(
     const receiptId = existingMap.get(erpPurchaseId);
     if (!receiptId) continue;
 
-    const lines = c.items ?? c.productos ?? c.detalle ?? [];
+    /* ── El orden de los renglones lo pone el portal, no el sistema ─────────
+     *
+     * `linea_num` es la posición en la lista, y **la lista viene barajada**:
+     * medido el 2026-08-20 leyendo el mismo rango dos veces seguidas, **13 de
+     * 15 compras volvieron con sus renglones en otro orden**. La compra 5619
+     * devolvió `4356, 4959` y después `4959, 4356`.
+     *
+     * Con la posición como número, el renglón 0 es otro producto en cada
+     * lectura, así que TODAS las filas «cambian» y se reescriben — 68 de 160
+     * cada 10 minutos, con 0% HOT, o sea rehaciendo también los índices. Ningún
+     * arreglo de la comparación puede con eso: los datos de verdad son otros.
+     *
+     * Se ordena por lo que identifica al renglón y no por cómo vino. El orden
+     * que se pierde no era información: era el azar de esa lectura. */
+    const claveDeOrden = (p: any) => [
+      String(p.producto_id ?? p.id ?? p.id_producto ?? '').padStart(10, '0'),
+      String((p.trazabilidad?.lote ?? p.lote) ?? ''),
+      String(p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? ''),
+      String(p.cantidad ?? ''),
+      String(p.precios?.subtotal_linea ?? p.total_linea ?? p.total ?? ''),
+    ].join('\u0000');
+    const lines = [...(c.items ?? c.productos ?? c.detalle ?? [])]
+      .sort((a: any, b: any) => claveDeOrden(a).localeCompare(claveDeOrden(b)));
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
       const p = lines[lineIdx];
       const rawFecha = p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? null;

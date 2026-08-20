@@ -19,13 +19,15 @@ import { useStaffStore } from '../store/staffStore';
  * @param {string} [p.nombre]      si no viene, se usa el que devuelve el servidor
  * @param {string} [p.cargo]
  * @param {string} [p.sala]        el nombre de la sucursal, para el papel
- * @param {number|null} [p.salaId] la sucursal de QUIEN IMPRIME: por ahí sale el papel
+ * @param {number|null} [p.salaId] la sucursal por cuya ticketera sale el papel
+ * @param {boolean} [p.salaElegida] true si esa sucursal la eligió una persona
  * @param {string} [p.emitidoPor]
  * @param {string|null} [p.motivo]
  * @returns {Promise<{ok: boolean}>}
  */
 export async function entregarCarneDePapel({
-    employeeId, nombre = '', cargo = '', sala = '', salaId = null, emitidoPor = '', motivo = null,
+    employeeId, nombre = '', cargo = '', sala = '', salaId = null, salaElegida = false,
+    emitidoPor = '', motivo = null,
 }) {
     const { showToast } = useToastStore.getState();
 
@@ -40,9 +42,9 @@ export async function entregarCarneDePapel({
         secreto: emitido.secreto,
         venceEl: emitido.vence_el,
         cargo, sala, emitidoPor,
-    // La sala de quien imprime, no la del empleado: el papel se entrega en
-    // mano, así que tiene que salir donde está parada esa persona.
-    }, { sala: salaId });
+    // Cuando la sala la ELIGIÓ alguien, un rechazo de la cola no puede caer al
+    // papel de esta computadora: quien lo está esperando está en la otra punta.
+    }, { sala: salaId, soloCola: salaElegida });
 
     useStaffStore.getState().appendAuditLog?.('CARNE_TEMPORAL_EMITIDO', employeeId, {
         vence_el: emitido.vence_el, via: r.via,
@@ -52,7 +54,7 @@ export async function entregarCarneDePapel({
         showToast(
             'Carné del día impreso',
             r.via === 'cola'
-                ? 'Sale en la caja de tu sala en unos segundos. Vale hasta medianoche.'
+                ? `Sale en la caja de ${sala || 'la sala'} en unos segundos. Vale hasta medianoche.`
                 : 'Vale hasta medianoche de hoy.',
             'success',
         );

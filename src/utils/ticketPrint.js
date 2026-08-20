@@ -1213,6 +1213,12 @@ export function guardarAjustesDeImpresion(ajustes) {
  * diálogo no sirve y estorba — quien confirma desde el teléfono se encontraría
  * con una ventana de impresión que no pidió.
  *
+ * `soloCola` es para cuando alguien ELIGIÓ la sala. Ahí la cascada deja de ser
+ * una ayuda y pasa a ser una traición: si la cola rechaza y el papel sale en la
+ * computadora de quien apretó el botón, esa persona se queda esperando en la
+ * otra punta un papel que nunca va a llegar, y el aviso dijo que salió. Con
+ * esto, un rechazo se REPORTA en vez de imprimirse en otro lado.
+ *
  * ── El orden: la caja de la sala PRIMERO ───────────────────────────────────
  *
  * Hasta el 2026-08-19 se intentaba primero el camino directo de esta
@@ -1257,7 +1263,7 @@ export function guardarAjustesDeImpresion(ajustes) {
  * @returns {Promise<{via: 'directa'|'cola'|'dialogo', ok: boolean, detalle: string}>}
  */
 export async function imprimirDocumento(
-    ticket, { forzarDialogo = false, soloDirecta = false, sala = null } = {},
+    ticket, { forzarDialogo = false, soloDirecta = false, soloCola = false, sala = null } = {},
 ) {
     const { ancho, sistema } = leerAjustesDeImpresion();
     // Las barras del camino del navegador se dibujan ANTES de elegir camino: si
@@ -1284,7 +1290,14 @@ export async function imprimirDocumento(
             }
             // Sin una caja registrada la función rechaza a propósito: una
             // cola que nadie lee es papel que nunca sale. Se sigue a los otros
-            // dos caminos.
+            // dos caminos — salvo que la sala la haya elegido una persona.
+            if (soloCola) {
+                return {
+                    via: 'cola', ok: false,
+                    detalle: 'Esa sala no tiene una caja que reciba el documento. '
+                        + 'Elige otra o imprímelo en esta computadora.',
+                };
+            }
         }
 
         const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });

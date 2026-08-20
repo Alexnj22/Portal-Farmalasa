@@ -58,9 +58,9 @@ export function construirCarneDePapel({
         ],
         codigos: [{ valor, simbologia: SIMBOLOGIA_DEL_CARNE }],
         pie: [
-            'Pasalo por el lector igual que un carne.',
+            'Pasa este papel por el lector, igual que un carne.',
             'Deja de servir a la medianoche de hoy.',
-            'Si se pierde, pedi que lo anulen.',
+            'Si se pierde, pide que lo anulen.',
         ],
     };
 }

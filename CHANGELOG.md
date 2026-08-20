@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.682.0 — el carné del día pregunta en qué sala sale
+
+Pedido del usuario: *«al darle imprimir carné del día, que me pregunte a qué
+sucursal mandarlo, así se imprime en esa ticketera»*.
+
+Hasta ahora el papel salía siempre por la ticketera de la sucursal de **quien
+apretaba el botón**. Eso sirve cuando la persona está enfrente, y no sirve justo
+en el caso que motivó todo esto: administración emitiendo un carné para alguien
+que está en una sala. Ahora el botón abre un diálogo con las salas y una opción
+«Esta computadora».
+
+**Sólo se ofrecen las salas que pueden recibirlo.** La lista sale de las cajas
+registradas, no del catálogo de sucursales: ofrecer una sala sin caja sería
+ofrecer un destino que va a rechazar el documento, y el rechazo se vería recién
+**después** de emitir el carné — o sea con el anterior ya muerto. Se dice además
+si la caja está despierta: una registrada pero apagada acepta el papel y lo deja
+esperando, que es un estado legítimo pero no es «sale en unos segundos».
+
+**Y elegir la sala apaga la cascada.** Si la cola rechaza, el documento ya NO
+cae al papel de esta computadora: se avisa. Imprimirlo acá cuando alguien pidió
+que saliera en otra sala deja a esa persona esperando en la otra punta un papel
+que nunca va a llegar, con un aviso que dijo que salió.
+
+Dos detalles que se resolvieron en el camino:
+
+- **La lista se lee en el CLIC, no al abrir la pantalla.** Una caja se apaga en
+  cualquier momento, y ofrecer una que dejó de latir hace media hora es mandar a
+  alguien a buscar un papel que no salió.
+- **La sala propia viene elegida sólo si puede recibir el papel.** Un destino
+  puesto por defecto que además está mal es peor que ninguno: nadie relee lo que
+  ya venía puesto.
+
+La lista la contesta `salas_con_caja_de_impresion`, que devuelve **sólo** qué
+sucursales tienen caja activa y si late. La tabla completa —equipo, cola de
+CUPS, canal— sigue detrás del permiso `impresion`: ampliarlo para que
+Administración pudiera imprimir habría sido darle una pantalla de mantenimiento
+por una lista de cinco filas.
+
+**Sigue como estaba:** al dar de alta a alguien marcado como que todavía no
+tiene carné, el papel sale sin preguntar por la ticketera de quien lo está dando
+de alta — ahí las dos personas están juntas.
+
 ## v2.681.0 — Tres tablas dejan de reescribirse solas
 
 El detector de amplificación de escritura que se le agregó a `gate:eficiencia`

@@ -62,6 +62,30 @@ export async function fetchCajasDeImpresion() {
 }
 
 /**
+ * Qué sucursales pueden recibir un papel, y si su caja está despierta.
+ *
+ * NO es `fetchCajasDeImpresion` con menos columnas: aquélla lee la tabla y por
+ * lo tanto exige el permiso `impresion` —donde se ve el equipo, la cola de CUPS
+ * y el canal de cada caja, que es información de instalación—. Esto contesta lo
+ * único que hace falta para ELEGIR dónde imprimir, y lo puede preguntar
+ * cualquiera con sesión.
+ *
+ * El error viaja, por lo mismo que en `fetchCajasDeImpresion`: una lista vacía
+ * es un estado legítimo («ninguna sala tiene caja») y confundirlo con un fallo
+ * de permisos manda a buscar el problema al lugar equivocado.
+ *
+ * @returns {Promise<{salas: Array<{branch_id:number, latiendo:boolean, ultimo_latido:string}>, error:*}>}
+ */
+export async function fetchSalasConCaja() {
+    const { data, error } = await supabase.rpc('salas_con_caja_de_impresion');
+    if (error) {
+        console.error('impresion: fetchSalasConCaja failed:', error.message);
+        return { salas: [], error };
+    }
+    return { salas: data || [], error: null };
+}
+
+/**
  * El hash del agente **publicado**, para saber qué cajas quedaron atrás.
  *
  * Sale del mismo archivo que se bajan las cajas (`/agente-impresion/`), no de

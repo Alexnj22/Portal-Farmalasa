@@ -121,8 +121,8 @@ sale de esa medición en vez de un número inventado. Arranca conservador.
    renglón con lo máximo puesto, motivo obligatorio al recortar.
 4. ✅ **Composición** (v2.676.0) — «Agregar y seguir» en el modal, lista
    agrupada por sala y la división al enviar en un solo `insert`.
-5. ⬜ **Agrupado** — la vista de quien pidió: las hermanas juntas, recibir por
-   sala y confirmar todo.
+5. ✅ **Agrupado** (v2.678.0) — las hermanas juntas en «En camino», con el
+   estado del grupo y el botón de recibirlas todas.
 6. ⬜ **Avisos** — uno por sala que contesta, con la sugerencia de dónde está lo
    que faltó.
 

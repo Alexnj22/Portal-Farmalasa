@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.678.0 — Las solicitudes hermanas se ven juntas y se reciben de una vez
+
+La otra mitad de v2.676.0. Pedir en una sola vez a tres salas produce tres
+solicitudes —cada sala ve y contesta sólo lo suyo— y del lado de quien pidió eso
+se veía como tres cosas sin relación. Pedido del usuario: *«para la sala de
+origen de la solicitud, si lo puede ver de alguna manera conectado, para
+entender que fue una sola solicitud»*.
+
+En «En camino» las hermanas aparecen juntas, bajo un encabezado que dice **«Lo
+pediste a 3 salas · 2 de 3 respondieron · 1 sin responder»**.
+
+**Ese número no se puede contar en la lista**, y ahí está el detalle: las salas
+que todavía no contestaron no están ahí —la lista es de lo que ya salió—. Sale
+de su propia consulta, que trae el grupo entero. Y no se resume en un estado
+único a propósito: Salud 1 te mandó, Salud 2 te rechazó y Salud 3 no ha abierto;
+un solo estado tendría que mentir sobre dos de las tres. Un rechazo se nombra
+aparte —«1 no pudo mandarlo»— porque «respondieron» a secas se leería como que
+viene en camino.
+
+**Y un botón para recibirlas todas**, con las tres condiciones que se acordaron:
+
+- **Sólo cuando ya contestaron todas.** Con una sala sin responder sería recibir
+  un todo que aún no está.
+- **Lo que confirma está a la vista.** El botón va DEBAJO de las tarjetas, no
+  arriba: recibir es decir «esto llegó y lo conté», así que lo que se confirma
+  tiene que haberse podido leer antes de apretar. Un botón que acepta tres cajas
+  sin haber visto ninguna es el problema del motivo de rechazo que venía elegido
+  de fábrica.
+- **Va de una en una por dentro**, y se ve el avance («Recibiendo Salud 2… 1 de
+  3»). Cada recepción es un viaje al sistema de origen con su propia sesión de
+  esa sucursal, y las tres juntas no entran en el tiempo que tiene una llamada.
+  Si una falla, **las anteriores ya quedaron recibidas** y se reintenta sólo esa
+  desde su tarjeta: darlas todas por perdidas haría cargar dos veces el producto
+  que sí entró.
+
+Detalles que se decidieron mirando el caso raro: una composición cuyas otras
+salas todavía no despacharon deja **una** tarjeta en la lista, y esa vuelve a
+las sueltas — un encabezado de grupo sobre una tarjeta sola la hace ver como un
+conjunto de uno. Los grupos van arriba y las sueltas debajo en vez de respetar
+el orden por fecha, porque las hermanas se despachan en momentos distintos y por
+fecha quedarían repartidas por toda la lista, que es justo lo que se vino a
+resolver.
+
+Anclado en 9 pruebas (`tests/unit/grupoDeTraslados.test.jsx`).
+
+**Falta el último paso:** los avisos — uno por sala que contesta, con la
+sugerencia de dónde está lo que faltó.
+
 ## v2.677.0 — un carné de papel que sale de la ticketera y sólo vale hoy
 
 Pedido del usuario: *«necesito que me permitas imprimir en la ticketera el

@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // Datos del traslado entre salas.
 //
@@ -150,6 +151,56 @@ export async function fetchSalasQueCubro(branchId) {
  * `branchId` en `null` significa ver todo, que es lo correcto para alcance ALL:
  * gerencia mira las siete salas y recorta con el filtro de la pantalla.
  */
+/**
+ * En qué va cada composición: cuántas salas contestaron y cuántas no.
+ *
+ * Una solicitud a tres salas son TRES filas hermanadas por `grupo_id`, y cada
+ * sala contesta por su cuenta. La lista de «en camino» sólo muestra las que ya
+ * salieron, así que por sí sola no puede decir «2 de 3 respondieron»: le faltan
+ * justamente las que no. Esto trae el grupo entero.
+ *
+ * ⚠️ `metadata->>grupo_id` se REPITE —es una fila por sala—, así que acotar la
+ * entrada no acota la salida y `.in()` a secas puede truncar en 1000 sin avisar
+ * (regla del tope de PostgREST). Por eso va con `fetchAllRows` aunque hoy los
+ * grupos sean de dos o tres.
+ *
+ * No filtra por sala: el RLS ya decide qué se puede ver, y filtrar de nuevo acá
+ * con un criterio parecido pero no idéntico es cómo las dos se separan.
+ */
+export async function fetchEstadoDeGrupos(grupoIds) {
+    const ids = [...new Set((grupoIds ?? []).filter(Boolean).map(String))];
+    if (ids.length === 0) return { grupos: {}, error: null };
+
+    const filas = await fetchAllRows(() => supabase
+        .from('approval_requests')
+        .select('id, status, metadata')
+        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+        .in('metadata->>grupo_id', ids));
+
+    if (filas === null) return { grupos: {}, error: new Error('No se pudo leer el grupo.') };
+
+    const grupos = {};
+    for (const f of filas) {
+        const g = f.metadata?.grupo_id;
+        if (!g) continue;
+        (grupos[g] ||= {
+            total: 0, sinResponder: 0, rechazadas: 0, enCamino: 0, recibidas: 0,
+            salas: [], porRecibir: [],
+        });
+        const grupo = grupos[g];
+        grupo.total += 1;
+        if (f.metadata?.origen_branch_name) grupo.salas.push(f.metadata.origen_branch_name);
+
+        // El orden importa: una rechazada nunca tuvo despacho, y una recibida ya
+        // no está en camino. Preguntar al revés las contaría dos veces.
+        if (f.status === 'REJECTED') grupo.rechazadas += 1;
+        else if (f.metadata?.erp_recibido) grupo.recibidas += 1;
+        else if (f.metadata?.erp_traslado) { grupo.enCamino += 1; grupo.porRecibir.push(f.id); }
+        else grupo.sinResponder += 1;
+    }
+    return { grupos, error: null };
+}
+
 export async function fetchTrasladosPorRecibir({ branchId = null } = {}) {
     let q = supabase
         .from('approval_requests')

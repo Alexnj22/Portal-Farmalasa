@@ -14,7 +14,8 @@ import { FilaPorRecibir } from './traslados/FilasTraslado';
 import { ChipPersona } from './solicitudes/PersonasSolicitud';
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
-import { fetchTrasladosPorRecibir, fetchTrasladosHistorial } from '../data/traslados';
+import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
+import GrupoPorRecibir from './traslados/GrupoPorRecibir';
 
 // Vista «Traslados entre Salas».
 //
@@ -138,6 +139,10 @@ export default function TrasladosView() {
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
     const [error,        setError]        = useState('');
+    /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
+     * contestaron no están en `porRecibir` —esa lista es de lo que ya salió—,
+     * así que el número no se puede contar acá y sale de su propia consulta. */
+    const [grupos,       setGrupos]       = useState({});
 
     /* Un solo reloj para toda la lista: cada tarjeta dice cuánto lleva el
      * traslado en camino, y un `setInterval` por tarjeta serían N relojes
@@ -178,6 +183,15 @@ export default function TrasladosView() {
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
         setHistorial(c.filas);
+
+        /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
+         * es un dato de adorno para las que no tienen hermanas, y pedirlo
+         * siempre sería una consulta más en cada carga para nada. Si falla, las
+         * tarjetas se ven igual —sin el encabezado del grupo— en vez de dejar la
+         * pestaña vacía por un dato que no es el que se viene a mirar. */
+        const ids = (b.filas ?? []).map(f => f.metadata?.grupo_id).filter(Boolean);
+        const { grupos: g } = await fetchEstadoDeGrupos(ids);
+        setGrupos(g);
     }, [salaQueRecorta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
@@ -212,6 +226,32 @@ export default function TrasladosView() {
         // los dos desenlaces.
         historial: filtrar(historial).filter(f => !tipo || f.status === tipo),
     }), [filtrar, porRecibir, historial, tipo]);
+
+    /* «En camino», partido en lo que se pidió junto y lo que no.
+     *
+     * Sólo se agrupa lo que TIENE hermanas de verdad: un `grupo_id` que aparece
+     * una sola vez en la lista es una composición cuyas otras salas todavía no
+     * despacharon, y ponerle encabezado de grupo a una tarjeta sola la hace ver
+     * como un conjunto de uno. Ese caso vuelve a las sueltas —y el estado del
+     * grupo se sigue viendo en su tarjeta cuando la haya. */
+    const bloques = useMemo(() => {
+        const porGrupo = new Map();
+        const sueltas = [];
+        // De `vistas.recibir` y no de `lista`: agrupar es cosa de esta pestaña,
+        // y el historial es una tabla donde un encabezado de grupo no entra.
+        for (const f of vistas.recibir) {
+            const g = f.metadata?.grupo_id;
+            if (!g) { sueltas.push(f); continue; }
+            if (!porGrupo.has(g)) porGrupo.set(g, []);
+            porGrupo.get(g).push(f);
+        }
+        const grupos = [];
+        for (const [grupoId, filas] of porGrupo) {
+            if (filas.length > 1) grupos.push({ grupoId, filas });
+            else sueltas.push(...filas);
+        }
+        return { grupos, sueltas };
+    }, [vistas.recibir]);
 
     const cargando = porRecibir === null || historial === null;
 
@@ -422,9 +462,27 @@ export default function TrasladosView() {
                         `h-full` de la tarjeta y el `mt-auto` de su pie son la
                         otra mitad: sin ellos la tarjeta no llena la celda que
                         esto le da. */}
-                    {!cargando && lista.length > 0 && (
+                    {/* ── Primero las que se pidieron juntas ────────────────
+                        Los grupos van arriba y las sueltas debajo, en vez de
+                        respetar el orden por fecha. El motivo: las hermanas de
+                        una composición se despachan en momentos distintos, así
+                        que por fecha quedan repartidas por toda la lista — y
+                        entonces el encabezado que dice «lo pediste a 3 salas» no
+                        tendría debajo las tres. Agruparlas es justamente lo que
+                        se vino a hacer acá. */}
+                    {!cargando && bloques.grupos.map(({ grupoId, filas }) => (
+                        <GrupoPorRecibir key={grupoId} grupo={grupos[grupoId]} filas={filas} onHecho={cargar}>
+                            <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
+                                {filas.map(f => (
+                                    <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
+                                ))}
+                            </div>
+                        </GrupoPorRecibir>
+                    ))}
+
+                    {!cargando && bloques.sueltas.length > 0 && (
                         <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
-                            {lista.map(f => (
+                            {bloques.sueltas.map(f => (
                                 <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                             ))}
                         </div>

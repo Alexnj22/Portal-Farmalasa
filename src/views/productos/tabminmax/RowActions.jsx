@@ -7,10 +7,20 @@ import {
     XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal,
 } from 'lucide-react';
 import useCapaFlotante from '../../../utils/capaFlotante';
+import { useEnHojaDeAcciones } from '../../../components/common/DataTable';
 
 export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
     isBodegaRow,
     onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish, onZeroAllBranches }) {
+
+    // ── En la hoja del teléfono esta celda cambia de forma ───────────────
+    // Acá arriba es una columna de 80px: tres botones de 13px y un «Más» que se
+    // abre al pasar el mouse. En la hoja de la mantenida hay ancho de sobra y
+    // no hay mouse — así que las acciones se listan TODAS, sin desplegable, con
+    // el objetivo de dedo completo. Lo pregunta al contexto en vez de recibir
+    // una prop: si no, la vista tendría que rendir esta celda dos veces, una
+    // por forma, y mantener las dos en sincronía a ojo.
+    const enHoja = useEnHojaDeAcciones();
 
     const [open, setOpen]   = useState(false);
     const [menuPos, setMenuPos] = useState(null);
@@ -102,6 +112,26 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     const allBtns      = [...pool, ...extraBtns];
     const visibleBtns  = allBtns.length <= 3 ? allBtns : allBtns.slice(0, 2);
     const dropdownBtns = allBtns.length <= 3 ? []      : allBtns.slice(2);
+
+    if (enHoja) {
+        return (
+            <div className="flex flex-col">
+                {allBtns.map(btn => (
+                    <button key={btn.key} type="button"
+                        disabled={btn.disabled}
+                        onClick={e => { e.stopPropagation(); if (!btn.disabled) btn.onClick(); }}
+                        className={`flex items-center gap-3 px-2 py-3 min-h-[var(--tap-min)]
+                            rounded-xl text-left border-b border-divider last:border-b-0
+                            transition-colors duration-[var(--dur-fast)]
+                            active:bg-surface-card-hover disabled:opacity-40
+                            disabled:pointer-events-none ${btn.dropCls ?? ''}`}>
+                        <span className="shrink-0 flex items-center justify-center w-5">{btn.icon}</span>
+                        <span className="text-body font-bold">{btn.label}</span>
+                    </button>
+                ))}
+            </div>
+        );
+    }
 
     return (
         /* Single group wrapper: onMouseLeave fires only when cursor exits ALL 3 buttons */

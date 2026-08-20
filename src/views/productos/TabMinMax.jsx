@@ -726,7 +726,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     // genérica de `DataTable`, que sólo repite las columnas —y
                     // el panel, que es donde vive el análisis del producto, no
                     // se alcanzaba desde el teléfono.
-                    movil={{ ancla: 'effective_min', usarAccionDeFila: true }}
+                    //
+                    // `apilada`: la celda del producto no es un nombre, es un
+                    // bloque —foto, insignias, existencias, velocidad y última
+                    // venta— escrito para una columna del 30%. En la mitad
+                    // izquierda de 390px se recortaban 105px por ficha: el
+                    // nombre a la mitad y la línea de velocidad a media palabra.
+                    //
+                    // `acciones: 'mantener'`: son cinco por fila y la lista trae
+                    // 25 — una tira visible en cada tarjeta convierte la pantalla
+                    // en una grilla de botones donde el producto es lo que menos
+                    // se ve. Detrás de la mantenida (§32.7), que es el gesto que
+                    // este proyecto ya usa para lo mismo en la lista de conteos.
+                    movil={{
+                        ancla: 'effective_min',
+                        usarAccionDeFila: true,
+                        apilada: true,
+                        acciones: 'mantener',
+                    }}
                     sortKey={sortBy}
                     sortDir={sortDir}
                     onSort={handleSort}

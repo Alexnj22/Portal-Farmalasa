@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.696.0 — las acciones de la fila, al mantener presionada la tarjeta
+
+Reportado sobre Mín·Máx: *«¿cómo obtengo acceso a los botones de acción? los
+textos se cortan en la card así que no se entiende, mejora eso, estructura mejor
+la card en móvil para ver todos los detalles. con los botones de acción se me
+ocurre mantener presionado la card»*. Las dos mitades tenían la misma causa: la
+ficha del teléfono estaba recibiendo una celda escrita para una columna de tabla.
+
+**La tarjeta se apila cuando su primera celda es un bloque.** El reparto de la
+ficha —identidad a la izquierda, ancla a la derecha— da por sentado que la
+identidad es un texto corto, y vale para casi todas. La celda de producto de
+Mín·Máx no lo es: trae foto, nombre, insignias, existencias, velocidad y última
+venta, y en la mitad izquierda de 390px le quedan ~210. Medido: **105px de
+contenido recortado por ficha** — el nombre cortado («SIMILAC 3 (PROSE…») y la
+línea de velocidad a media palabra. Con `movil={ apilada: true }` la identidad
+usa el ancho completo y el MIN·MAX baja a su propio renglón; ahora se leen el
+nombre entero y `0.17/día · 5/mes · 30 vend. · 19 ago 26`.
+
+Es opt-in y no inferido a propósito: desde afuera no se puede medir si una celda
+es «un nombre» o «un bloque» —las dos son elementos de React—, y olvidarlo
+devuelve el reparto de siempre, que es el correcto para las otras 58 tablas.
+
+**Y las acciones van detrás de la mantenida**, que es lo que pidió el usuario y
+lo que este proyecto ya usa para lo mismo en la lista de conteos (§32.7).
+`acciones: true` dibuja la tira visible al pie de la tarjeta y sirve con una o
+dos; Mín·Máx tiene **cinco por fila y la lista trae 25**, o sea que la tira
+convierte la pantalla en una grilla de botones donde el producto es lo que menos
+se ve. Con `acciones: 'mantener'` la tarjeta sigue siendo un botón —el toque
+abre el panel del producto— y sostenerla abre una hoja con **Poner 0,
+Restaurar, Historial, Ocultar** y las demás.
+
+Las tres razones de §32.7 valen igual acá: las acciones llevan confirmación
+—poner en 0 reescribe el MIN·MAX del producto—, no toda fila las tiene todas, y
+la lista scrollea en vertical. El toque y la mantenida salen del **mismo**
+`usePulsacionLarga`, y eso no es comodidad: al soltar, el navegador dispara
+`click` igual, así que separarlos dejaría la ficha abriendo su detalle *además*
+de la hoja. La lista lleva una línea al pie que anuncia el gesto, porque un
+gesto que no se ve no existe.
+
+**La celda de acciones cambia de forma sola.** En la tabla es una columna de
+80px: botones de 13px y un «Más» que se abre al pasar el mouse — en una hoja del
+teléfono eso queda diminuto y su desplegable depende de un `hover` que en táctil
+no existe. `DataTable` ahora exporta `useEnHojaDeAcciones()` y la celda pregunta
+dónde está: en la hoja, `RowActions` lista las acciones completas, sin
+desplegable y con el objetivo de dedo entero. Se resolvió con contexto y no con
+una prop porque una prop obligaría a la vista a rendir la celda **dos veces**,
+una por forma, y a mantener las dos en sincronía a ojo.
+
+Medido en WebKit iPhone 13 contra producción: el recorte de la ficha de Mín·Máx
+baja de 105px a **0**, la mantenida abre la hoja con sus cuatro acciones, el
+toque simple sigue abriendo el panel del producto, y las siete vistas con
+detalle en el teléfono —Mín·Máx, Ventas, Inventario, Facturas de compra,
+Proveedores, Libros de IVA y Clientes— siguen abriendo el suyo. Escrito en
+DESIGN.md §32.9.
+
 ## v2.695.1 — La foto viaja reducida al lector
 
 La revisión de la boleta mandaba la foto **cruda del teléfono**: 4000 px y 3–4 MB.

@@ -31,6 +31,7 @@ import useMediaQuery from '../../hooks/useMediaQuery';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
 import OjoDeTarjeta from './OjoDeTarjeta';
+import usePulsacionLarga from '../../hooks/usePulsacionLarga';
 
 // `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind
 // escanea el FUENTE, así que esa clase nunca existió por sí misma — funcionaba
@@ -556,6 +557,23 @@ function limpiarFilas(children) {
   return { hijos: limpiar(children).filter(Boolean), descartadas };
 }
 
+// ── ¿Estamos dentro de la hoja de acciones? ─────────────────────────────────
+// La celda de acciones está escrita para una TABLA: tres botones de 13px en una
+// columna de 80, con un desplegable «Más» que se abre al pasar el mouse. Metida
+// tal cual en una hoja del teléfono queda diminuta arriba a la izquierda, y su
+// «Más» depende de un `hover` que en táctil no existe.
+//
+// En vez de pasarle una prop —que obligaría a la vista a rendir DOS veces la
+// misma celda, una por forma—, la celda pregunta dónde está. Es el mismo
+// contrato que `FichaCtx`: la presencia del contexto ES la señal. Una celda que
+// no lo consulta se dibuja igual que siempre.
+const HojaAccionesCtx = React.createContext(false);
+
+// eslint-disable-next-line react-refresh/only-export-components -- hook chico y acoplado a la hoja de acciones de este archivo
+export function useEnHojaDeAcciones() {
+  return React.useContext(HojaAccionesCtx);
+}
+
 // El contexto es el que convierte a `DataRow` en ficha. Va aparte de `TableCtx`
 // —que lleva los tokens y lo consumen también `DataCell` y el encabezado—
 // porque su presencia ES la señal: si hay `FichaCtx`, la fila no se pinta como
@@ -589,6 +607,13 @@ function FichasMovil({ columns, movil, toolbar, footer, descartadas, children })
 
       {children}
 
+      {/* Un gesto que no se ve no existe (§32.7). La línea va al pie y no como
+          burbuja: se lee una vez, no tapa nada y no hay que descartarla. */}
+      {movil?.acciones === 'mantener' && (
+        <p className="px-2 pt-1 text-caption text-content-3">
+          Mantené presionada una tarjeta para ver sus opciones.
+        </p>
+      )}
       {footer && <div className="px-1 pt-1">{footer}</div>}
 
       {/* La hoja: el resto de las columnas, con su rótulo. `HojaMovil` es el
@@ -653,6 +678,32 @@ function Ficha({ celdas, onClick }) {
     }
   }, [alineada, celdas.length, columns.length]);
 
+  // ── Los hooks, TODOS antes del `return` de la fila desalineada ───────────
+  // Es la regla de React y acá se paga en serio: `alineada` depende de cuántas
+  // celdas rindió la vista, o sea que puede cambiar de un render al otro sobre
+  // la misma fila —una columna que aparece con un permiso, un grupo de celdas
+  // bajo condición—. Con los hooks abajo, ese cambio los monta y desmonta a
+  // mitad de la lista.
+  const deCol = (col) => (col ? celdas[columns.indexOf(col)]?.props?.children : null);
+  const hayHoja = papeles.hoja.length > 0;
+  const alTocar = alineada
+    ? ((movil?.usarAccionDeFila && onClick) || (hayHoja ? () => abrir({ celdas }) : undefined))
+    : undefined;
+  const conMantener = movil?.acciones === 'mantener';
+  const celdasDeAccion = (alineada && movil?.acciones)
+    ? papeles.acciones.map(col => deCol(col)).filter(v => v != null && v !== '')
+    : [];
+
+  const [hojaAcciones, setHojaAcciones] = React.useState(false);
+  // El toque y la mantenida salen del MISMO hook: al soltar, el navegador
+  // dispara `click` igual, así que separarlos deja la ficha abriendo su detalle
+  // ADEMÁS de la hoja de acciones.
+  const gestos = usePulsacionLarga({
+    activo: conMantener && celdasDeAccion.length > 0,
+    alMantener: () => setHojaAcciones(true),
+    alTocar,
+  });
+
   if (!alineada) {
     return (
       <div data-surface="card" className="w-full px-3.5 py-3 rounded-card flex flex-col gap-1">
@@ -660,8 +711,6 @@ function Ficha({ celdas, onClick }) {
       </div>
     );
   }
-
-  const deCol = (col) => (col ? celdas[columns.indexOf(col)]?.props?.children : null);
 
   // ── El toque abre LA HOJA, salvo que la vista diga lo contrario ─────
   // La primera versión dejaba ganar al `onClick` de la fila «porque el modal de
@@ -677,8 +726,7 @@ function Ficha({ celdas, onClick }) {
   // reales, las cuatro entran en la ficha y el `hoja` queda vacío. Abrir una
   // hoja que repite lo que ya se está leyendo es un control que responde y no
   // sirve — «solo abre prácticamente la misma info de la card».
-  const hayHoja = papeles.hoja.length > 0;
-  const alTocar = (movil?.usarAccionDeFila && onClick) || (hayHoja ? () => abrir({ celdas }) : undefined);
+  // (`hayHoja` y `alTocar` se resuelven arriba, junto al resto de los hooks.)
   const chipsVisibles = papeles.chips
     .map(col => ({ col, v: deCol(col) }))
     .filter(({ v }) => v != null && v !== '' && v !== '—');
@@ -694,9 +742,20 @@ function Ficha({ celdas, onClick }) {
   // Con acciones, la tarjeta deja de SER el botón y pasa a CONTENER uno: un
   // `<button>` adentro de otro `<button>` no es HTML válido y el toque queda
   // ambiguo.
-  const acciones = movil?.acciones
-    ? papeles.acciones.map(col => deCol(col)).filter(v => v != null && v !== '')
-    : [];
+  //
+  // ── `acciones: 'mantener'` — detrás de la mantenida (§32.7) ─────────────
+  // La tira visible sirve cuando son una o dos acciones. Mín·Máx tiene cinco
+  // por fila y la lista trae 25: dibujarlas todas convierte la pantalla en una
+  // grilla de botones donde el producto es lo que menos se ve. Ahí la respuesta
+  // que ya tiene este proyecto es **mantener presionado** —el gesto de §32.7,
+  // el mismo que la lista de conteos—, y es el que pidió el usuario: *«con los
+  // botones de acción se me ocurre mantener presionado la card»*.
+  //
+  // Las tres razones de §32.7 valen igual acá: las acciones llevan
+  // confirmación (poner en 0 reescribe el MIN·MAX del producto), no toda fila
+  // las tiene todas, y la lista scrollea en vertical.
+  const acciones = conMantener ? [] : celdasDeAccion;
+
 
   // ── La ficha fuera de pantalla no se pinta (2026-08-08) ──────────────────
   // El reporte de jetsam del iPhone del usuario cerró el diagnóstico que costó
@@ -737,7 +796,8 @@ function Ficha({ celdas, onClick }) {
             transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
             active:scale-[0.985]"
         >
-          <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} tocable={!!alTocar} />
+          <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles}
+            tocable={!!alTocar} apilada={!!movil?.apilada} />
         </Elem>
         <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2.5 border-t border-divider">
           {acciones.map((v, i) => <React.Fragment key={i}>{v}</React.Fragment>)}
@@ -747,15 +807,38 @@ function Ficha({ celdas, onClick }) {
   }
 
   return (
-    <Elem
-      {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
-      data-surface="card"
-      className={`group w-full text-left px-3.5 py-3 rounded-card
-        transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
-        active:scale-[0.985] ${fueraDePantalla}`}
-    >
-      <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} tocable={!!alTocar} />
-    </Elem>
+    <>
+      <Elem
+        {...(alTocar ? { type: 'button' } : {})}
+        {...(conMantener ? gestos : (alTocar ? { onClick: alTocar } : {}))}
+        data-surface="card"
+        className={`group w-full text-left px-3.5 py-3 rounded-card
+          transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
+          active:scale-[0.985] ${fueraDePantalla}
+          ${conMantener ? 'select-none [-webkit-touch-callout:none]' : ''}`}
+      >
+        <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles}
+          tocable={!!alTocar} apilada={!!movil?.apilada} />
+      </Elem>
+
+      {/* Las opciones de la fila, detrás de la mantenida. `HojaMovil` es el
+          cuerpo canónico —título, asa, área segura— así que acá no se dibuja
+          ninguna hoja nueva; y `HojaAccionesCtx` le avisa a la celda que ya no
+          está en una columna de 80px. */}
+      {conMantener && hojaAcciones && (
+        <ModalShell open onClose={() => setHojaAcciones(false)} surface={null}
+          ariaLabel="Opciones de la fila">
+          <HojaMovil titulo={deCol(papeles.identidad)} subtitulo="Opciones">
+            <HojaAccionesCtx.Provider value={true}>
+              <div className="flex flex-col gap-1"
+                onClick={() => setHojaAcciones(false)}>
+                {celdasDeAccion.map((v, i) => <React.Fragment key={i}>{v}</React.Fragment>)}
+              </div>
+            </HojaAccionesCtx.Provider>
+          </HojaMovil>
+        </ModalShell>
+      )}
+    </>
   );
 }
 
@@ -773,7 +856,79 @@ function Ficha({ celdas, onClick }) {
 // lado de una papelera, un ícono suelto se lee como un segundo botón — es
 // exactamente por eso que ConteoInventario esconde su chevron por debajo de
 // `lg`. Acá el ojo está pegado al dato, en la parte que ES el botón.
-function Cuerpo({ deCol, papeles, chipsVisibles, tocable = false }) {
+// La línea de contexto: los chips de la ficha, como LÍNEA y no como píldoras.
+//
+// Cada chip va en su PROPIA caja encogible. El envoltorio era
+// `display: contents`, que no genera caja: sus hijos quedaban de items flex
+// directos con `min-width: auto`, o sea que un valor largo no encogía y se
+// salía. Medido en el libro de compras: 49 números de documento cortados a la
+// mitad por el `truncate` del contenedor, uno por fila. Un `truncate` en el
+// padre no alcanza si el hijo no puede encoger — es la propiedad que hace falta
+// escribir, no el recorte.
+//
+// El separador se calcula sobre los chips que SÍ se pintan, no sobre el índice
+// del arreglo: con el primero vacío salía una línea que empezaba con «·».
+//
+// `flex-wrap`: una celda no es un valor, y a veces es una insignia ancha
+// —«Crédito Fiscal (CCF)» en Facturas de compra— que no entra en la línea.
+// Cortarla por la mitad esconde información que existe; dejarla pasar al
+// renglón de abajo no cuesta nada. El recorte por chip sigue vivo para el caso
+// contrario: un texto largo se acorta con puntos suspensivos en vez de empujar
+// a los demás.
+//
+// Vive aparte porque lo comparten las DOS formas del cuerpo: la de siempre y la
+// apilada.
+function LineaDeContexto({ chips }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-caption text-content-3
+      [&_*]:text-caption min-w-0 overflow-hidden">
+      {chips.map(({ col, v }, i) => (
+        <React.Fragment key={col.key}>
+          {i > 0 && <span aria-hidden="true" className="opacity-40 shrink-0">·</span>}
+          <span className="min-w-0 truncate">{v}</span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function Cuerpo({ deCol, papeles, chipsVisibles, tocable = false, apilada = false }) {
+  // ── `apilada`: cuando la identidad NO es un nombre, es un bloque ─────────
+  // El reparto de arriba —identidad a la izquierda, ancla a la derecha— da por
+  // sentado que la identidad es un texto corto. Vale para casi todas: un
+  // cliente, un proveedor, un folio.
+  //
+  // No vale cuando la celda de identidad es un BLOQUE escrito para una columna
+  // de tabla. La de Mín·Máx trae foto, nombre, insignias, existencias y
+  // velocidad; en la mitad izquierda de 390px le quedan ~210, y lo medido fue
+  // **105px de contenido recortado por ficha**: el nombre cortado a la mitad
+  // («SIMILAC 3 (PROSE…») y la línea de velocidad cortada a media palabra. El
+  // usuario lo reportó así: *«los textos se cortan en la card así que no se
+  // entiende»*.
+  //
+  // Apilada, la identidad usa el ancho COMPLETO y el ancla baja a su propio
+  // renglón. Cuesta una línea más de alto y no recorta nada — que es el canje
+  // correcto en una pantalla que sobra hacia abajo y falta hacia los lados.
+  //
+  // Es opt-in y no inferido a propósito: desde afuera no se puede medir si una
+  // celda es «un nombre» o «un bloque» —las dos son elementos de React—, y
+  // olvidarlo devuelve el reparto de siempre, que es el correcto para las otras
+  // 58 tablas. Ver DESIGN.md §32.9.
+  if (apilada) {
+    return (
+      <>
+        <div className="min-w-0">{deCol(papeles.identidad)}</div>
+        {chipsVisibles.length > 0 && <LineaDeContexto chips={chipsVisibles} />}
+        <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-divider">
+          <span className="min-w-0 font-black text-body-xl tabular-nums text-content">
+            {deCol(papeles.ancla)}
+          </span>
+          {tocable && <OjoDeTarjeta size={13} className="shrink-0 self-center" />}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="flex items-baseline justify-between gap-3">
@@ -787,34 +942,7 @@ function Cuerpo({ deCol, papeles, chipsVisibles, tocable = false }) {
           {tocable && <OjoDeTarjeta size={13} className="self-center" />}
         </span>
       </div>
-      {chipsVisibles.length > 0 && (
-        // Cada chip va en su PROPIA caja encogible. El envoltorio era
-        // `display: contents`, que no genera caja: sus hijos quedaban de items
-        // flex directos con `min-width: auto`, o sea que un valor largo no
-        // encogía y se salía. Medido en el libro de compras: 49 números de
-        // documento cortados a la mitad por el `truncate` del contenedor, uno
-        // por fila. Un `truncate` en el padre no alcanza si el hijo no puede
-        // encoger — es la propiedad que hace falta escribir, no el recorte.
-        //
-        // El separador se calcula sobre los chips que SÍ se pintan, no sobre el
-        // índice del arreglo: con el primero vacío salía una línea que empezaba
-        // con «·».
-        // `flex-wrap`: una celda no es un valor, y a veces es una insignia
-        // ancha —«Crédito Fiscal (CCF)» en Facturas de compra— que no entra en
-        // la línea. Cortarla por la mitad esconde información que existe;
-        // dejarla pasar al renglón de abajo no cuesta nada. El recorte por chip
-        // sigue vivo para el caso contrario: un texto largo se acorta con
-        // puntos suspensivos en vez de empujar a los demás.
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-caption text-content-3
-          [&_*]:text-caption min-w-0 overflow-hidden">
-          {chipsVisibles.map(({ col, v }, i) => (
-            <React.Fragment key={col.key}>
-              {i > 0 && <span aria-hidden="true" className="opacity-40 shrink-0">·</span>}
-              <span className="min-w-0 truncate">{v}</span>
-            </React.Fragment>
-          ))}
-        </div>
-      )}
+      {chipsVisibles.length > 0 && <LineaDeContexto chips={chipsVisibles} />}
     </>
   );
 }

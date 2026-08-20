@@ -5835,6 +5835,72 @@ no se puede saber si adentro hay un `onClick`. Es el mismo límite que ya tiene
 `limpiarFilas` en el canónico. Un verde no prueba que las 59 tablas estén bien
 — prueba que ninguna de las que se pueden leer quedó sin declarar.
 
+### §32.9 · La ficha con celda rica: apilarla, y las acciones detrás de la mantenida (2026-08-20)
+
+Dos opciones de `movil` que nacieron del mismo reporte sobre Mín·Máx: *«¿cómo
+obtengo acceso a los botones de acción? los textos se cortan en la card así que
+no se entiende»*.
+
+#### `apilada` — cuando la identidad no es un nombre, es un bloque
+
+El reparto de §32.8 —identidad a la izquierda, ancla a la derecha— da por
+sentado que la identidad es un texto corto. Vale para casi todas: un cliente, un
+proveedor, un folio.
+
+No vale cuando la celda de identidad es un **bloque escrito para una columna de
+tabla**. La de Mín·Máx trae foto, nombre, insignias, existencias, velocidad y
+última venta; en la mitad izquierda de 390px le quedan ~210, y lo medido fueron
+**105px de contenido recortado por ficha** — el nombre a la mitad («SIMILAC 3
+(PROSE…») y la línea de velocidad cortada a media palabra.
+
+```jsx
+movil={{ apilada: true }}
+```
+
+La identidad usa el ancho completo y el ancla baja a su propio renglón, separada
+por un filete. Cuesta una línea más de alto y no recorta nada: el canje correcto
+en una pantalla que sobra hacia abajo y falta hacia los lados.
+
+**Es opt-in y no inferido a propósito.** Desde afuera no se puede medir si una
+celda es «un nombre» o «un bloque» — las dos son elementos de React. Olvidarlo
+devuelve el reparto de siempre, que es el correcto para las otras 58 tablas: el
+default seguro es el que gana cuando nadie declara nada.
+
+#### `acciones: 'mantener'` — el gesto de §32.7, en la ficha canónica
+
+`acciones: true` dibuja la tira visible al pie de la tarjeta. Sirve con una o
+dos acciones. Mín·Máx tiene **cinco por fila y la lista trae 25**: la tira
+convierte la pantalla en una grilla de botones donde el producto es lo que menos
+se ve.
+
+```jsx
+movil={{ acciones: 'mantener' }}
+```
+
+La tarjeta sigue siendo un botón —el toque abre su detalle— y **mantenerla
+presionada** abre una `HojaMovil` con las acciones. Las tres razones de §32.7
+valen igual: las acciones llevan confirmación (poner en 0 reescribe el MIN·MAX
+del producto), no toda fila las tiene todas, y la lista scrollea en vertical.
+
+El toque y la mantenida salen del **mismo** `usePulsacionLarga`, y eso no es
+comodidad: al soltar, el navegador dispara `click` igual, así que separarlos deja
+la ficha abriendo su detalle *además* de la hoja.
+
+La lista lleva una línea al pie —«Mantené presionada una tarjeta para ver sus
+opciones»— porque un gesto que no se ve no existe.
+
+#### La celda de acciones cambia de forma sola
+
+En la tabla es una columna de 80px: botones de 13px y un «Más» que se abre al
+pasar el mouse. En la hoja hay ancho de sobra y no hay mouse.
+
+`DataTable` exporta **`useEnHojaDeAcciones()`**: la celda pregunta dónde está y
+se dibuja en consecuencia (`RowActions` lista las cinco acciones completas, sin
+desplegable, con el objetivo de dedo entero). Es el mismo contrato que
+`FichaCtx` — la presencia del contexto ES la señal. Se resolvió así y no con una
+prop porque una prop obligaría a la vista a rendir la celda **dos veces**, una
+por forma, y a mantener las dos en sincronía a ojo.
+
 ### Viewport meta
 
 **Update 2026-07-15 (Bloque 5.7b):** the static `maximum-scale=1.0, user-scalable=no` in `index.html`'s `<meta name="viewport">` blocked pinch-zoom unconditionally — a real WCAG 1.4.4 (Resize Text) violation for anyone using the portal as a normal website. Resolved by making it conditional instead of choosing one side: a small inline script in `index.html` (runs synchronously before React mounts, so there's no flash of different zoom behavior) checks — native Capacitor build (`Capacitor.isNativePlatform()`), installed/standalone PWA (`display-mode: standalone` / `navigator.standalone`), or the `/kiosk` route — and only in those cases keeps `user-scalable=no`. Everywhere else (a regular browser tab, including on mobile) the meta tag is rewritten to drop `maximum-scale`/`user-scalable`, restoring full pinch-zoom. `viewport-fit=cover` is unaffected either way, and is correctly set up for safe-area CSS to work, once/if that's implemented (see above).

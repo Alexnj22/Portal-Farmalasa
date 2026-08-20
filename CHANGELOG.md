@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.693.1 — el detalle del documento de compra entra entero en el teléfono
+
+Cierre de lo reportado como *«en facturas de compra cuando abro una card me da
+información, pero muy reducida, no puedo ver los productos, no puedo ver el pdf,
+no me deja ver nada de eso»*.
+
+**La causa era del canónico y afectaba a 16 tablas, no a una.** En el teléfono
+`DataTable` no pinta una tabla: pinta fichas, y el toque de una ficha tiene que
+llevar a algún lado. Como desde afuera no se puede saber si el `onClick` de una
+fila navega o expande, el default es la **hoja genérica** —una lista de rótulo y
+valor con las columnas que no entraron en la tarjeta— y la vista cuyo toque va a
+un destino de verdad lo declara con `movil={{ usarAccionDeFila: true }}`.
+
+Es un opt-in, o sea una prop que se olvida. Medido sobre las **59 tablas del
+portal: 16 estaban mal, el 27%**. En esas 16 el toque abría la hoja genérica
+encima del destino real, sin error y sin que faltara una fila — y en escritorio
+todo seguía funcionando, que es por qué sobrevivió.
+
+**Las once que se arreglaron declarando el destino** (el `onClick` ya abría un
+modal o un panel; sólo faltaba decirlo): Facturas de compra ×2 —la lista de
+documentos y la de pendientes de revisión—, Cargar compra, Cuentas por pagar,
+Proveedores, Cotizaciones, Libros de IVA, Libro de compras completo ×2, Clientes
+por revisar y el libro de Bajo receta.
+
+**Las cinco que además necesitaban casa nueva.** Su detalle vive en un
+`<tr colSpan>` hermano de la fila, y en modo ficha esa fila no se pinta: el toque
+no tenía adónde ir. Van al `ExpedienteMovil` que ya usaban Compras, Catálogo y
+Reglas de despacho, con el cuerpo del detalle escrito **una sola vez** para las
+dos formas:
+
+- **Ventas** — los productos de la venta, con lote, vencimiento y el bloque de
+  subtotal / IVA / retención / total.
+- **Ventas · Vendedores** — sus ventas día por día.
+- **Ventas · Productos** — el reparto por sucursal y la tabla de ventas del
+  producto, a pantalla completa porque *es* una pantalla.
+- **Productos · Mín·Máx** — el panel del producto: existencias en la red,
+  cobertura, MIN·MAX y últimas compras.
+- **Inventario** — las ubicaciones del producto. Su tabla de lotes llevaba
+  `movil={false}` con el motivo «esta rama no existe en el teléfono»: era cierto
+  mientras el detalle fuera sólo el `<tr>`, y dejó de serlo al llegar al
+  expediente. Ahora cae a fichas como cualquier otra lista de registros.
+
+`useExpedienteMovil` acepta además una **función** para la clave, porque no toda
+vista expande por una columna: Inventario agrupa por sucursal + producto. Sin
+eso, esas vistas se escribían su propio `useMediaQuery` al lado y el corte del
+teléfono volvía a estar en dos lugares.
+
+**Y el documento en sí no entraba en 390px.** Una vez alcanzable, el visor del
+DTE mostraba dos defectos que nadie había podido ver: la fila de controles no
+quebraba, así que el botón de descargar el **JSON** quedaba cortado contra el
+filo de la pantalla, y la tabla de renglones se aplastaba hasta dejar **Total**
+fuera del marco — el número por el que se abre una factura. Con `flex-wrap` en
+los controles y un piso de `440px` en la tabla, los cuatro botones entran y la
+columna existe entera dentro de su carril.
+
+**Queda como regla, no como barrido**: la categoría `toque-de-ficha-sin-destino`
+de `npm run gate:movil` nace **bloqueante en cero**, verificada contra una
+regresión fabricada en dos formas distintas (la prop suelta y la constante
+`movil={MOVIL}`). Resuelve la constante del archivo, cuenta el `</DataTable>`
+propio para no confundirse con las tablas anidadas, y dice también lo que **no**
+puede ver: una fila envuelta en su propio componente (`memo(EmployeeRow)`) no se
+puede leer desde el fuente. Escrito en DESIGN.md §32.8.
+
+Verificado en WebKit iPhone 13 contra producción, abriendo la ficha de cada
+vista: Facturas de compra, Ventas, Inventario, Mín·Máx, Proveedores, Libros de
+IVA y Libro de compras completo abren su detalle real, y ninguna desborda a lo
+ancho.
+
+**Nota de historial**: el código de todo esto —las 16 tablas, el gate y §32.8—
+quedó dentro del commit `88c6fbd7` (v2.693.0) de otra sesión, que barrió el
+índice compartido. Está descrito acá y no allá; v2.693.1 lleva sólo el arreglo
+del visor del DTE.
+
 ## v2.693.0 — Cortes de caja con menú propio y la pestaña activa en la dirección
 
 **Cortes de caja sale de Comercial y queda como su propio menú** (pedido del

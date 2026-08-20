@@ -116,9 +116,14 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-surface-card-hover/50">
-            <div className="p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 min-w-0">
+            <div className="p-4 md:p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
+                {/* `flex-wrap` y `gap`: en el teléfono la identidad del documento y
+                    sus cuatro controles no entran en una línea de 390px — el último
+                    botón quedaba CORTADO contra el filo de la pantalla, o sea que
+                    descargar el PDF era inalcanzable justo donde más se usa. Con el
+                    quiebre, los controles bajan a su propio renglón. */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
                         <div className="w-12 h-12 rounded-2xl bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
                             <Receipt size={24} strokeWidth={1.5} />
                         </div>
@@ -131,7 +136,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2">
                         {document?.pdf_path && (
                             <SegmentedControl
                                 label="Vista del documento"
@@ -201,7 +206,16 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
                         {items.length > 0 ? (
                             <div className="overflow-x-auto mb-4">
-                                <table className="w-full text-label">
+                                {/* `min-w-[440px]`: la tabla es `w-full` y sin un piso
+                                    se aplastaba hasta que **Total** quedaba fuera del
+                                    marco — y el total es el número por el que se abre
+                                    una factura. Con el piso, la columna existe entera y
+                                    el carril de este contenedor la alcanza. La tabla se
+                                    queda escrita a mano a propósito: reproduce el
+                                    documento fiscal del proveedor, no una lista de
+                                    registros del portal (§32, excepción declarada en
+                                    `mobile-gate`). */}
+                                <table className="w-full min-w-[440px] text-label">
                                     <thead>
                                         <tr className="border-b border-divider text-content-3 font-semibold">
                                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">#</th>

@@ -520,6 +520,20 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * que llevar a mirarla, que es lo que hace «Agregar». */
     const soloUno = pestana === 'agregar' && lineaLista && renglones.length === 0;
 
+    /* Por qué el botón de mandar está apagado.
+     *
+     * Reportado el 2026-08-20: «no me dice el porqué no puedo solicitar; yo sé
+     * que es el motivo, pero no me dice en ningún lado». Y era cierto: las otras
+     * cuatro razones ya tenían su aviso en pantalla —el renglón a medias, el
+     * repetido, el que se pasa de la existencia, el que no llega ni a una
+     * presentación— y la más común, que falta el «para qué», no tenía ninguna.
+     * Un botón apagado sin explicación obliga a adivinar cuál de las cinco es.
+     *
+     * Sólo se dice la que falta AHORA: enumerar las cinco cuando falta una es
+     * la otra forma de no decir nada. */
+    const faltaElParaQue = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
+        && conProblema.length === 0 && causa.trim().length === 0;
+
     /* Agregar y volver a la consulta.
      *
      * Pedido del usuario, 2026-08-20: «al dar en agregar más productos debe
@@ -690,8 +704,12 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         }
     };
 
+    /* `max-w-lg` y no `max-w-md`: desde el atajo del producto suelto el pie lleva
+     * TRES botones —cancelar, agregar otro y solicitar— y en 28rem se tocaban
+     * entre sí. Reportado el 2026-08-20: «los botones están muy juntos abajo,
+     * dale más espacio al modal». */
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Solicitar a otra sala">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Solicitar a otra sala">
             {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
                 título a mano, sin botón de cerrar y con la acción al final del
                 cuerpo que scrollea. */}
@@ -1137,6 +1155,13 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     />
                 )}
 
+                {!listo && !soloUno && pestana === 'lista' && faltaElParaQue && (
+                    <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                        Falta decir para qué se pide: es lo único que queda escrito en el
+                        movimiento de las dos salas.
+                    </p>
+                )}
+
                 {!listo && (
                     <>
                         {/* Un producto a medias no se pierde en silencio: se
@@ -1181,6 +1206,13 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             />
                         )}
 
+                        {faltaElParaQue && (
+                            <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
+                                Falta decir para qué se pide: es lo único que queda escrito en el
+                                movimiento de las dos salas.
+                            </p>
+                        )}
+
                         {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                     </>
                 )}
@@ -1219,7 +1251,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                     {/* Agregar otro es la salida al compositor:
                                         guarda éste y devuelve a la consulta. */}
                                     <Button variant="secondary" disabled={enviando} onClick={agregar}>
-                                        Agregar otro producto
+                                        Agregar otro
                                     </Button>
                                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
                                         {enviando && <Loader2 size={14} className="animate-spin" />}

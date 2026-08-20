@@ -102,11 +102,11 @@ const cantidad = () => screen.getByPlaceholderText('Cant.');
 const ponerCantidad = async (n) => {
     await act(async () => { fireEvent.change(cantidad(), { target: { value: String(n) } }); });
 };
-// Con la lista vacía el botón se llama «Agregar otro producto» —al lado del de
+// Con la lista vacía el botón se llama «Agregar otro» —al lado del de
 // solicitar—; con algo ya agregado, «Agregar» a secas.
 const agregar = async () => {
     await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /^Agregar( otro producto)?$/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Agregar( otro)?$/ }));
     });
 };
 // Ir a «En la solicitud» AGREGA el renglón terminado que esté a la vista: es lo
@@ -437,10 +437,19 @@ describe('pedir un solo producto', () => {
         expect(filas[0].metadata.items[0]).toMatchObject({ erp_product_id: 101, cantidad: 3 });
     });
 
-    it('y sin el «para qué» no deja mandarlo', async () => {
+    // «No me dice el porqué no puedo solicitar; yo sé que es el motivo, pero no
+    // me dice en ningún lado» (2026-08-20). Las otras cuatro razones ya tenían
+    // su aviso; la más común no tenía ninguna, y un botón apagado sin
+    // explicación obliga a adivinar cuál de las cinco es.
+    it('y sin el «para qué» no deja mandarlo — y lo DICE', async () => {
         await abrir();
         await ponerCantidad(3);
         expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
+        expect(screen.getByText(/Falta decir para qué se pide/)).toBeTruthy();
+
+        await ponerCausa('Se acabaron en sala');
+        expect(screen.queryByText(/Falta decir para qué se pide/)).toBeNull();
+        expect(screen.getByRole('button', { name: /^Solicitar/ })).not.toBeDisabled();
     });
 
     // Con algo ya agregado, mandar desde acá mandaría también lo de la lista sin

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.691.1 — El modal respira y dice por qué no puedes solicitar
+
+Dos cosas de la pantalla de pedir a otra sala, reportadas con captura.
+
+**«Los botones están muy juntos abajo, dale más espacio al modal».** Desde el
+atajo del producto suelto (v2.691.0) el pie pasó a llevar **tres** botones
+—cancelar, agregar otro y solicitar— y en 28 rem se tocaban entre sí. El modal
+pasa a `max-w-lg`, y «Agregar otro producto» se acorta a **«Agregar otro»**: el
+«producto» lo dice el título de la pantalla dos líneas más arriba.
+
+**«No me dice el porqué no puedo solicitar; yo sé que es el motivo, pero no me
+dice en ningún lado».** Y era cierto. Las otras cuatro razones por las que ese
+botón se apaga ya tenían su aviso en pantalla —el renglón a medias, el repetido,
+el que se pasa de la existencia, el que no llega ni a una presentación— y la más
+común de todas, que falta el «para qué», no tenía ninguna. Un botón apagado sin
+explicación obliga a adivinar cuál de las cinco es.
+
+Ahora lo dice, y sólo cuando ES la que falta: enumerar las cinco cuando falta
+una es la otra forma de no decir nada. Se va sola al escribirlo.
+
 ## v2.691.0 — Un solo producto se solicita desde su misma pantalla
 
 Reportado: *«si solo quiero pedir un producto, en el primero que me salga

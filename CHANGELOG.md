@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.690.1 — La pregunta por la sesión deja de frenar al portal
+
+Al arrancar, el portal le pregunta al servidor si la sesión sigue viva —el
+arreglo del 2026-08-09, cuando «cerrar todas» no sacaba a nadie—. La pregunta se
+seguía haciendo con `supabase.auth.getUser()`, que es una operación de auth-js, y
+auth-js **serializa**: hasta que termina, el cliente no se da por inicializado,
+no emite `INITIAL_SESSION` y no sale un solo dato del portal.
+
+Medido en producción: la avalancha de datos arrancaba **en el mismo milisegundo**
+en que contestaba `/auth/v1/user`.
+
+Ahora la misma pregunta se hace con `fetch` pelado, al mismo endpoint y con el
+mismo token, así que no entra en esa fila. A/B de tres corridas por lado sobre el
+mismo build:
+
+| | hoy | ahora |
+|---|---|---|
+| arranque de datos | 275 / 349 / 938 ms | **70 / 112 / 121 ms** |
+| último dato | 715 / 899 / 1406 ms | **566 / 586 / 632 ms** |
+
+Medianas: **349 → 112 ms** para el primer dato y **899 → 586 ms** para el último.
+
+**Lo que más se va a notar no es la mediana: es que desaparece el temblor.** La
+espera de auth-js dependía de si el token estaba por vencer, así que la misma
+pantalla tardaba 275 ms o casi un segundo sin motivo visible. Ahora va de 70 a
+121 ms, siempre.
+
+### La seguridad no cambia, y hay una prueba que lo dice
+
+Es el mismo GET a `/auth/v1/user` con el mismo token: un **401/403 sigue
+significando sesión revocada** y sigue cerrando la puerta. Verificado con
+`sesion-revocada-movil.spec.js`, que revoca la sesión de verdad por fuera del
+portal y exige que la persona termine en el login **y que el token no quede en el
+disco**.
+
+**Esa prueba falló la primera vez, y por algo que la pantalla no mostraba.**
+`doLogout` borra el token dentro del `.finally()` de un `signOut()` al que le da
+hasta 3 segundos. Hasta hoy eso no importaba porque auth-js, al recibir el 403 de
+su propio `getUser()`, soltaba la sesión él mismo de inmediato. Preguntando por
+`fetch`, auth-js nunca se entera: quedaba una ventana de hasta tres segundos con
+la persona ya en el login y su token todavía guardado. Se borra explícitamente en
+esa rama.
+
+### Un cambio de conducta, en la dirección segura
+
+Antes, cualquier `error` que no pareciera de red cerraba la sesión. Ahora el
+veredicto se lee del ESTADO: 401/403 cierran; **500, 502 o 504 no**. Un problema
+del servidor de sesiones no es lo mismo que el servidor diciendo que no, y hasta
+hoy sacaba del portal a todo el que estuviera adentro. Un fallo de red sigue sin
+echar a nadie —ahora lanza y cae al `catch`, que es una distinción más nítida que
+la de antes— y el plazo de 5 segundos se conserva.
+
 ## v2.690.0 — La solicitud sigue viva al volver a la consulta de inventario
 
 Lo que faltaba de v2.688.0. Ahí la pestaña «Agregar» **imitaba** la consulta de

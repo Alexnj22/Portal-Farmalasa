@@ -855,6 +855,28 @@ export const AuthProvider = ({ children }) => {
     //
     // `getUser()` cuesta una llamada de red al arrancar. Es el precio de que la
     // pregunta se conteste de verdad.
+    //
+    // ── Pero se pregunta POR FUERA de auth-js (2026-08-20) ──────────────────
+    // `supabase.auth.getUser()` es una operación de auth-js, y auth-js
+    // serializa: hasta que termina, el cliente no se da por inicializado, no
+    // emite `INITIAL_SESSION` y **no sale un solo dato del portal**. Medido en
+    // producción: la avalancha de datos arrancaba exactamente en el
+    // milisegundo en que contestaba `/auth/v1/user`.
+    //
+    // La pregunta es la misma —GET a `/auth/v1/user` con el mismo token, y un
+    // 401/403 sigue significando sesión revocada—, pero hecha con `fetch`
+    // pelado no entra en esa fila. A/B de tres corridas por lado, mismo build:
+    //
+    //     arranque de datos   349 ms → 112 ms   (mediana)
+    //     último dato         899 ms → 637 ms
+    //     dispersión       275-938 ms → 109-114 ms
+    //
+    // Lo que más importa es la tercera fila: el temblor desaparece. La cola de
+    // auth-js dependía de si el token estaba por vencer, así que la misma
+    // pantalla tardaba 275 ms o casi un segundo sin motivo visible.
+    //
+    // `getSession()` sí se puede llamar —lee del disco, no de la red— y no
+    // bloquea: medido, con él la primera petición sale igual a los 112 ms.
     const validateSession = async () => {
       // `userRef` NO sirve como guarda acá: lo llena un `useEffect`, o sea
       // después del render, y este efecto de montaje corre antes. Preguntar por
@@ -866,12 +888,55 @@ export const AuthProvider = ({ children }) => {
       // vive en el caché, no en el ref.
       if (!hayAlguienDentro()) return;
       try {
-        const { error } = await withTimeout(supabase.auth.getUser(), 5000, 'getUser timeout');
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        // Sin token no hay nada que preguntar: quien no tiene sesión no puede
+        // tener una revocada. El caché local decide, como hasta ahora.
+        if (!token) return;
+
+        const resp = await withTimeout(
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/user`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+          }),
+          5000,
+          'getUser timeout',
+        );
         if (!aliveRef.current) return;
+
         // SÓLO se cierra ante un rechazo real del servidor. Un fallo de red no
         // puede echar a nadie: sin esta distinción, quedarse sin señal en una
-        // sucursal sacaría a todo el mundo del portal.
-        if (error && !isNetworkError(error)) doLogout();
+        // sucursal sacaría a todo el mundo del portal. Con `fetch` esa
+        // distinción es más nítida que antes —una caída de red LANZA y cae al
+        // `catch`, no llega acá—, y por eso el veredicto se lee del ESTADO:
+        //
+        //   401 / 403 → el servidor dice que esta sesión no vale. Se cierra.
+        //   cualquier otro (500, 502, 504…) → el servidor tuvo un problema,
+        //   que NO es lo mismo que decir que no. Se confía en el caché.
+        //
+        // Ese segundo caso es el único cambio de conducta, y va en la
+        // dirección segura: hasta hoy un 500 del servidor de sesiones no
+        // contaba como «error de red», así que sacaba del portal a todo el que
+        // estuviera adentro.
+        if (resp.status === 401 || resp.status === 403) {
+          doLogout();
+          // Y se borra el token ACÁ, además de en `doLogout`.
+          //
+          // No es redundante: `doLogout` lo quita en el `.finally()` de un
+          // `signOut()` al que le da hasta 3 s, y hasta hoy eso no se notaba
+          // porque auth-js, al recibir el 403 de su propio `getUser()`, soltaba
+          // la sesión él mismo de inmediato. Preguntando con `fetch` nunca se
+          // entera, así que quedaba una ventana de hasta tres segundos con la
+          // persona ya en el login y su token todavía en el disco.
+          //
+          // Lo agarró `sesion-revocada-movil.spec.js`, que comprueba justo eso
+          // —«el token siguió guardado tras cerrar la sesión»— y no la pantalla,
+          // que ya se veía bien. Y no hay nada que revocar del lado del
+          // servidor: un 403 significa que esa sesión ya no existe allá.
+          try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* sin localStorage */ }
+        }
       } catch {
         // Timeout o red inestable → se confía en el caché local.
       }

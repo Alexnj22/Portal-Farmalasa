@@ -113,15 +113,40 @@ sale de esa medición en vez de un número inventado. Arranca conservador.
 
 ## 5 · Orden de trabajo
 
-1. **Base** — disponibilidad por renglón (hoy `items->0`) y el freno de
-   duplicados por renglón. *(La base antes que la pantalla.)*
-2. **Despachador** — aceptar cantidades ajustadas (bajar, nunca subir), anotar
-   `enviado` por renglón y el tiempo de cada uno.
-3. **Decisión** — la tarjeta de quien despacha: renglones, bajar cantidad,
-   motivo obligatorio.
-4. **Composición** — el modal multi-renglón y multi-sala, y la división al
+1. ✅ **Base** (v2.672.0) — disponibilidad por renglón (era `items->0`) y el
+   freno de duplicados por renglón. *(La base antes que la pantalla.)*
+2. ✅ **Despachador** (v2.673.0) — acepta cantidades ajustadas (bajar, nunca
+   subir), anota lo que salió y el tiempo de cada renglón. Desplegado, v31.
+3. ✅ **Decisión** (v2.674.0) — la tarjeta de quien despacha: casilla por
+   renglón con lo máximo puesto, motivo obligatorio al recortar.
+4. ⬜ **Composición** — el modal multi-renglón y multi-sala, y la división al
    enviar.
-5. **Agrupado** — la vista de quien pidió: las hermanas juntas, recibir por sala
-   y confirmar todo.
-6. **Avisos** — uno por sala que contesta, con la sugerencia de dónde está lo
+5. ⬜ **Agrupado** — la vista de quien pidió: las hermanas juntas, recibir por
+   sala y confirmar todo.
+6. ⬜ **Avisos** — uno por sala que contesta, con la sugerencia de dónde está lo
    que faltó.
+
+### Lo que falta probar en sala
+
+Los tres pasos cerrados están en producción y **ninguno se probó con una sala
+real**: compilar y pasar los gates no prueba nada sobre lo que se ve. Lo que hay
+que mirar la primera vez que alguien despache de menos:
+
+- Que la casilla venga con el número correcto y que el renglón se lea bien en la
+  tarjeta angosta del tablero, no sólo en la vista ancha.
+- Que el motivo quede guardado y se pueda leer después.
+- **`erp_traslado.ms_por_renglon`**, que es de donde va a salir el tope de
+  productos por solicitud del paso 4.
+
+### Cómo se va a construir el paso 4
+
+Sin rehacer el modal. Hoy `PedirTrasladoModal` resuelve producto → sala →
+cantidad → lotes → motivo, y eso queda igual: lo que se agrega al lado del botón
+de enviar es **«Agregar y seguir»**, que empuja ese renglón a una lista y deja
+el formulario listo para el siguiente. Es la misma forma que el ajuste de
+inventario, que el usuario ya conoce —*«busco producto, agrego cantidad y lote,
+y lo agrego, luego el siguiente»*— y evita reescribir el camino por el que
+entraron las 215 solicitudes que existen.
+
+Al enviar, la lista se agrupa por **(sala, estante)** y sale una solicitud por
+grupo, todas con el mismo `grupo_id`.

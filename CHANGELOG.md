@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.685.0 — Sistema → Carnés del día, y el código nunca se imprime
+
+Dos pedidos del usuario después de probarlo en vivo («funciona»).
+
+### «JAMÁS lo debes mostrar»
+
+*«No agregues el código abajo del código de barras, JAMÁS lo debes mostrar.»*
+
+Tenía razón y era un defecto de diseño mío: lo que va adentro de esas barras es
+una credencial —el carné de papel abre el portal, marca en el kiosco y firma la
+entrega del efectivo— y escribirla en claro debajo la deja legible desde el otro
+lado del mostrador. Basta una foto.
+
+Se apaga con el comando explícito (`GS H 0`) y no confiando en el valor por
+defecto de la impresora: una que lo traiga encendido lo imprimiría sin que nadie
+se entere hasta ver el papel. Y también sale de la vista previa, que es
+literalmente lo que se imprime.
+
+**La consecuencia se acepta a sabiendas:** si el lector de una sala no lee la
+simbología, ese papel no sirve para nada y hay que anularlo e imprimir otro. Es
+la falla segura — la alternativa era dejar la credencial escrita para poder
+teclearla. Un test nuevo verifica además que el valor aparezca **una sola vez**
+en todo el ticket, adentro de las barras y en ningún rótulo.
+
+### Sistema → Carnés del día
+
+*«Dame una vista en sistema donde pueda generarlo, y donde vea los activos para
+anularlos de ser necesario.»*
+
+Desde el perfil se atiende a una persona y hay que saber a quién buscar. La
+pregunta de esta pantalla es la otra: **cuántos papeles andan sueltos ahora
+mismo**. Tiene dos partes:
+
+- **Imprimir un carné**: se busca a la persona por nombre y se imprime, con la
+  misma pregunta de en qué sala sale.
+- **Vigentes ahora**: todos los carnés vivos del personal, con quién lo entregó y
+  en qué sala, y un botón para anular cada uno. Anular apaga las tres puertas de
+  una vez: deja de escanear, se cierra la sesión abierta con ese papel y su
+  cuenta queda sin contraseña conocida.
+
+Vive en **Sistema**, con el permiso `carne_temporal` que ya existía — no hay
+permiso nuevo.
+
+Lo que la pantalla **no** puede hacer es mostrar el código: en la base sólo queda
+su huella. Un carné traspapelado no se «vuelve a ver», se anula y se imprime
+otro — que es exactamente lo que ofrecen sus dos botones.
+
+Y un detalle de peso: el bloque del carné en el expediente pasó a bajarse **bajo
+demanda**. Esa vista la abre todo el personal para mirar su propio expediente, y
+el selector de sala con su diálogo no tiene por qué viajar para quien no puede
+imprimir nada.
+
 ## v2.684.0 — El Inicio deja de bajarse 397 kB para mirar veinte filas
 
 Tres cambios de eficiencia en la carga del Inicio, cada uno verificado contra el

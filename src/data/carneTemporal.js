@@ -46,6 +46,30 @@ export function fetchCarnesTemporales(employeeId, limite = 10) {
         .limit(limite);
 }
 
+/**
+ * Todos los carnés de papel que están vivos ahora mismo, de todo el personal.
+ *
+ * Es la lista de la pantalla de Sistema: lo que se puede anular. No se pagina y
+ * no hace falta — un carné vivo por persona como mucho, y el personal activo son
+ * decenas. El tope explícito es un freno por si algún día eso deja de ser
+ * cierto: **50 filas es un número deliberado**, no el cap de 1000 de PostgREST,
+ * que trunca en silencio (regla de CLAUDE.md).
+ *
+ * La condición de «vivo» se escribe acá IGUAL que en el servidor
+ * (`resolver_carne_temporal`). Si las dos se separan, esta pantalla mostraría
+ * como anulable algo que ya no lo es, o —peor— escondería un papel que sigue
+ * abriendo el portal.
+ */
+export function fetchCarnesVigentes(limite = 50) {
+    return supabase
+        .from('carnes_temporales')
+        .select('id, created_at, vence_el, anulado_el, motivo, employee_id, emitido_por, branch_id')
+        .is('anulado_el', null)
+        .gt('vence_el', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(limite);
+}
+
 /** Mata un carné antes de su vencimiento (el papel se perdió, por ejemplo). */
 export async function anularCarneTemporal(id) {
     const { data, error } = await supabase.rpc('anular_carne_temporal', { p_id: id });

@@ -247,13 +247,12 @@ export function construirTicketHtml(ticket) {
         ${(b.filas ?? []).map(filaPar).join('')}
       </div>`;
 
-    // El valor va SIEMPRE escrito debajo de las barras: si el lector de esa
-    // sala no lee la simbología, todavía se puede teclear. Un carné mudo no
-    // sirve para nada y no hay forma de saber que lo es sin pasarlo.
+    // **El valor NO se escribe.** Ni acá ni en el rollo (ver `HRI_APAGADO`): es
+    // una credencial, y la vista previa es lo que se imprime. La leyenda sí va
+    // — dice qué simbología es, no qué dice adentro.
     const codigoHtml = (c) => `
       <div class="barras">
         ${c.svg || ''}
-        <div class="valor">${esc(c.texto ?? c.valor)}</div>
         ${c.leyenda ? `<div class="leyenda">${esc(c.leyenda)}</div>` : ''}
       </div>`;
 
@@ -343,7 +342,6 @@ export function construirTicketHtml(ticket) {
      angostos y el lector deja de reconocerlo. Si no entra, se ve que no entra. */
   .barras { margin: 2.5mm 0; text-align: center; }
   .barras svg { max-width: 100%; height: auto; }
-  .barras .valor { font-size: 9.5pt; font-weight: 700; letter-spacing: .18em; margin-top: .8mm; }
   .barras .leyenda { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .4px; }
   .barra { margin: 2mm 0; }
   .barra .solida { height: 4mm; background: #000; }
@@ -609,7 +607,28 @@ export const SIMBOLOGIAS = ['CODE128', 'CODE39'];
 // partido, lo que baja es este número, no el alto.
 const BARRAS_ALTO   = '\x50';   // 80 puntos
 const BARRAS_MODULO = '\x02';   // 2 puntos por módulo
-const HRI_DEBAJO    = '\x02';   // el valor legible, impreso debajo de las barras
+
+/**
+ * **El valor NO se imprime debajo de las barras. Nunca.**
+ *
+ * Instrucción del usuario, el 2026-08-20 y en mayúsculas: «no agregues el
+ * código abajo del código de barras, JAMÁS lo debes mostrar». Y tiene razón: lo
+ * que va adentro de esas barras es una credencial —el carné de papel abre el
+ * portal— y escribirla en claro convierte el papel en una contraseña legible
+ * desde el otro lado del mostrador. Basta una foto.
+ *
+ * `GS H 0` lo apaga explícitamente en vez de confiar en el valor por defecto de
+ * la impresora: «casi todas arrancan sin el renglón» no es una garantía, y la
+ * que lo traiga encendido lo imprimiría sin que nadie se entere hasta ver el
+ * papel. El NUL de este comando va en MEDIO del ticket, que es la posición que
+ * sobrevive el camino de HTTP + PHP (el que se pierde es el del final — ver
+ * `CORTAR_PAPEL`).
+ *
+ * Consecuencia aceptada: si el lector de una sala no lee la simbología, ese
+ * papel no sirve para nada y hay que anularlo e imprimir otro. Es la falla
+ * segura — la alternativa era dejar la credencial escrita para poder teclearla.
+ */
+const HRI_APAGADO   = '\x00';
 
 /**
  * Un código de barras en los bytes que entiende la impresora.
@@ -622,7 +641,7 @@ const HRI_DEBAJO    = '\x02';   // el valor legible, impreso debajo de las barra
 function codigoDeBarrasParaElRollo({ valor, simbologia = 'CODE128' }) {
     const limpio = limpiarValorDeBarras(valor);
     if (!limpio) return '';
-    const ajustes = `${GS}h${BARRAS_ALTO}${GS}w${BARRAS_MODULO}${GS}H${HRI_DEBAJO}`;
+    const ajustes = `${GS}h${BARRAS_ALTO}${GS}w${BARRAS_MODULO}${GS}H${HRI_APAGADO}`;
     const comando = simbologia === 'CODE39'
         ? `${GS}k\x04${limpio}\x00`
         : `${GS}k\x49${String.fromCharCode(limpio.length + 2)}{B${limpio}`;

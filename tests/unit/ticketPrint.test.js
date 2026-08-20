@@ -235,10 +235,23 @@ describe('ticketPrint · código de barras', () => {
         expect(bytes).toContain('\x1dk\x04ARY3AM5GFP\x00');
     });
 
-    it('pide el valor legible DEBAJO de las barras', () => {
-        // Sin ese renglón, un lector que no lea la simbología deja el papel
-        // mudo: no hay forma de teclear lo que dice.
-        expect(textoParaElRollo(conCodigo('CODE128'))).toContain('\x1dH\x02');
+    it('APAGA el valor legible: la credencial no se escribe nunca', () => {
+        // Instrucción del usuario el 2026-08-20: «JAMÁS lo debes mostrar». Lo
+        // que va adentro de esas barras abre el portal, y en claro basta una
+        // foto. Se apaga con el comando explícito y no confiando en el valor por
+        // defecto de la impresora: una que lo traiga encendido lo imprimiría sin
+        // que nadie se entere hasta ver el papel.
+        const bytes = textoParaElRollo(conCodigo('CODE128'));
+        expect(bytes).toContain('\x1dH\x00');
+        expect(bytes).not.toContain('\x1dH\x02');
+    });
+
+    it('el valor aparece UNA sola vez: dentro de las barras y en ningún otro lado', () => {
+        // El ticket lo arma un objeto con datos, bloques y pie. Si alguna vez
+        // alguien mete el código en un rótulo «para que se pueda teclear», este
+        // test lo ve — y es exactamente lo que no debe pasar.
+        const bytes = textoParaElRollo(conCodigo('CODE39'));
+        expect(bytes.split('ARY3AM5GFP').length - 1).toBe(1);
     });
 
     it('un ticket sin códigos no manda ni un byte de barras', () => {

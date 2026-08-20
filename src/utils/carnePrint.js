@@ -1,10 +1,13 @@
 // El carné de papel: el ticket que sale del rollo y se pasa por el lector.
 //
 // ── Qué lleva y por qué ─────────────────────────────────────────────────────
-// El código de barras, el nombre de quien lo va a usar y hasta cuándo vale. Y
-// el valor ESCRITO debajo de las barras, que lo imprime la propia ticketera
-// (`GS H 2`): el día que un lector no lea la simbología, ese renglón es lo
-// único que salva el papel — se teclea y listo.
+// El código de barras, el nombre de quien lo va a usar y hasta cuándo vale.
+//
+// **Lo que NO lleva es el código escrito.** Instrucción del usuario el
+// 2026-08-20: «JAMÁS lo debes mostrar». Es una credencial —este papel abre el
+// portal— y en claro basta una foto desde el otro lado del mostrador. Lo apaga
+// `HRI_APAGADO` en `ticketPrint.js`, con el comando explícito y no confiando en
+// el valor por defecto de la impresora.
 //
 // No lleva foto ni sello: es un papel térmico que se borra en semanas y que
 // vale hasta medianoche. Confundirlo con el carné de plástico sería el peor

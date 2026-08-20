@@ -40,6 +40,7 @@ const LoginView = lazy(IMPORTADORES.LoginView);
 const AuditView = lazy(IMPORTADORES.AuditView);
 const IOSTestView = lazy(IMPORTADORES.IOSTestView);
 const ImpresionView = lazy(IMPORTADORES.ImpresionView);
+const CarnesDelDiaView = lazy(IMPORTADORES.CarnesDelDiaView);
 const SyncHealthView = lazy(IMPORTADORES.SyncHealthView);
 const SesionesView = lazy(IMPORTADORES.SesionesView);
 const OrphanObjectsView = lazy(IMPORTADORES.OrphanObjectsView);
@@ -738,6 +739,7 @@ function MainApp() {
                                     <Route path="auditview" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="ios-test" element={<PermissionGuard moduleKey="ios_test"><IOSTestView /></PermissionGuard>} />
                                     <Route path="impresion" element={<PermissionGuard moduleKey="impresion"><ImpresionView /></PermissionGuard>} />
+                                    <Route path="carnes-del-dia" element={<PermissionGuard moduleKey="carne_temporal"><CarnesDelDiaView /></PermissionGuard>} />
                                     <Route path="sync-health" element={<PermissionGuard moduleKey="sync_health"><SyncHealthView /></PermissionGuard>} />
                                     <Route path="sesiones" element={<PermissionGuard moduleKey="sesiones"><SesionesView /></PermissionGuard>} />
                                     <Route path="orphan-objects" element={<PermissionGuard moduleKey="orphan_objects"><OrphanObjectsView /></PermissionGuard>} />

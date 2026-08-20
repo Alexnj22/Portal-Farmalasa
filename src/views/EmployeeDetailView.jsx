@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
@@ -25,7 +25,10 @@ import { useToastStore } from '../store/toastStore';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
-import CarneDelDia from '../components/personal/CarneDelDia';
+// `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
+// vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
+// quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
+const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -534,12 +537,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         )}
                                         {puedeImprimirCarne && (
                                             <div className="mt-1 animate-in fade-in duration-[var(--dur-slow)]">
-                                                <CarneDelDia
-                                                    employeeId={emp.id}
-                                                    nombre={emp.name}
-                                                    cargo={emp.role || ''}
-                                                    sala={branch?.name || ''}
-                                                />
+                                                <Suspense fallback={null}>
+                                                    <CarneDelDia
+                                                        employeeId={emp.id}
+                                                        nombre={emp.name}
+                                                        cargo={emp.role || ''}
+                                                        sala={branch?.name || ''}
+                                                    />
+                                                </Suspense>
                                                 <div className="flex justify-center mt-2">
                                                     <Button variant="secondary" size="sm" icon={Printer} onClick={reimprimirCarne}>
                                                         Reimprimir el carné de plástico

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.695.1 — La foto viaja reducida al lector
+
+La revisión de la boleta mandaba la foto **cruda del teléfono**: 4000 px y 3–4 MB.
+Tres problemas en uno — la subida se arrastra en la conexión de una sala, la
+respuesta tarda más, y un lector cobra la imagen por PÍXELES, así que la foto
+cruda cuesta unas **cinco veces** más que hace falta.
+
+Ahora viaja a 1400 px de lado largo, que alcanza de sobra para leer el número y
+el monto de una boleta térmica. **El archivo que se GUARDA no cambia**: sigue
+saliendo del editor a su tamaño de siempre — lo que se reduce es sólo la copia
+que se manda a revisar.
+
 ## v2.695.0 — La boleta se recorta, se revisa y tiene que cuadrar
 
 Tres cosas que pidió el usuario mirando una salida de dinero real: *«no puedes

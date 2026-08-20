@@ -265,6 +265,37 @@ export async function fetchEntidadesDeSalida() {
  * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
  * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
  */
+// La foto viaja REDUCIDA, no como salió del teléfono.
+//
+// Un teléfono actual saca 4000 px y 3–4 MB. Eso son tres problemas a la vez: la
+// subida se arrastra en la conexión de una sala, y un lector cobra la imagen por
+// PÍXELES —así que la foto cruda cuesta unas cinco veces más que ésta y tarda
+// más en contestar—. 1400 px de lado largo alcanza de sobra para leer el número
+// y el monto de una boleta térmica; el archivo que se GUARDA no pasa por acá,
+// sale del editor a su tamaño de siempre.
+const LADO_PARA_LEER = 1400;
+
+function aBase64Reducido(archivo) {
+    return new Promise((res, rej) => {
+        const url = URL.createObjectURL(archivo);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            // Nunca se AGRANDA: estirar una foto chica no agrega información.
+            const escala = Math.min(1, LADO_PARA_LEER / Math.max(img.width, img.height));
+            const c = document.createElement('canvas');
+            c.width  = Math.max(1, Math.round(img.width * escala));
+            c.height = Math.max(1, Math.round(img.height * escala));
+            const ctx = c.getContext('2d');
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            res(c.toDataURL('image/jpeg', 0.8).split(',')[1] || '');
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la foto.')); };
+        img.src = url;
+    });
+}
+
 /**
  * Lee la foto del comprobante y la cuadra contra lo que se escribió.
  *
@@ -278,13 +309,7 @@ export async function fetchEntidadesDeSalida() {
  */
 export async function leerBoleta(archivo, esperado) {
     try {
-        const base64 = await new Promise((res, rej) => {
-            const fr = new FileReader();
-            // `readAsDataURL` da `data:image/jpeg;base64,XXXX` — sólo viaja la cola.
-            fr.onload = () => res(String(fr.result).split(',')[1] || '');
-            fr.onerror = rej;
-            fr.readAsDataURL(archivo);
-        });
+        const base64 = await aBase64Reducido(archivo);
         const { data, error } = await supabase.functions.invoke('leer-boleta', {
             body: { imagenBase64: base64, mimeType: archivo.type || 'image/jpeg', esperado },
         });

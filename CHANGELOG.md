@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.670.0 — El teléfono y la computadora guardan su tema aparte
+
+Lo pidió el usuario: *«unos les gusta en su teléfono negro liquid glass, y en el
+trabajo solid por el tema de eficiencia»*. Hasta hoy no se podía, y por una razón
+concreta que no estaba a la vista: el tema era **una** preferencia por usuario y
+`useThemeSync` la traía de la base al iniciar sesión, encima del valor local. O
+sea que la sincronización —hecha para que el tema viajara entre dispositivos— era
+justo lo que impedía tener uno por aparato: ganaba siempre el último que se tocó.
+
+Ahora son dos preferencias. `user_dashboard_prefs.theme` es la de escritorio y la
+nueva `mobile_theme` la del teléfono, con el mismo prefijo y el mismo criterio
+que `mobile_layout`/`mobile_sizes`, que ya partían las preferencias del tablero
+por esta misma razón. Cada una **sigue viajando entre dispositivos de su
+formato**: un teléfono nuevo hereda el tema de teléfono, no el default.
+
+**Decide el puntero, no el ancho** (`(hover: none)`, en
+`src/utils/temaPorDispositivo.js`). Es la regla que ya estaba escrita en
+`useCoarsePointer` y `useLayoutCompacto` —*«lo que decide no es cuánto mide la
+ventana sino con qué se apunta»*—, y acá pesa todavía más: el ancho cambia al
+girar el teléfono o al arrastrar el borde de una ventana, y un tema que cambia
+solo al redimensionar sería un parpadeo, no una preferencia. Se resuelve **una
+vez** por carga: enchufar un mouse a una tablet a mitad de sesión no salta el
+tema.
+
+Tres detalles que hacían falta para que no se notara el cambio:
+
+- **El script inline de `index.html` está espejado.** Es el que estampa
+  `data-theme` antes del primer pintado; si hubiera seguido leyendo la clave
+  única, el teléfono cargaría con el tema del escritorio y se vería el salto al
+  montar React.
+- **Respaldo a la clave vieja.** En el teléfono, si todavía no hay
+  `portal-theme-movil` se lee `portal-theme` —la única que existía—, así que a
+  nadie se le borra el tema que ya tenía elegido. Sin eso, la primera carga
+  después de actualizar parecería que el portal «se reseteó solo».
+- **El selector dice a qué aparato le está cambiando el tema.** Si no, uno lo
+  cambia en el teléfono y no entiende por qué la computadora no lo siguió.
+
+Sólo la columna de este aparato viaja en el `upsert`: PostgREST actualiza
+únicamente las columnas que recibe, así que guardar el tema del teléfono no puede
+pisar el del escritorio ni el resto de las preferencias del tablero, que viven en
+la misma fila.
+
+Salvedad conocida y deliberada: son **dos** baldes, no tres — una tablet táctil
+comparte preferencia con el teléfono. Separarla agregaría un tercer estado para
+un caso que hoy no existe (el kiosco corre en iPad, pero sin sesión: su tema
+nunca sale de ese navegador).
+
+Migración `20260820142638_add_mobile_theme_to_user_dashboard_prefs`.
+
 ## v2.669.0 — El portal apaga solo la tarjeta de un traslado que ya entró
 
 Lo levantó el usuario mirando las dos pantallas: el portal decía que Salud 2

@@ -2,14 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { fetchUserTheme, upsertUserTheme } from '../data/dashboard';
+import { COLUMNA_TEMA } from '../utils/temaPorDispositivo';
 
 // Mounted once in AppLayout.
-// Sincroniza ThemeContext con user_dashboard_prefs.theme: al iniciar sesión
-// trae el tema guardado del usuario (si existe) y lo aplica, sobreescribiendo
-// el valor local que venía de localStorage/prefers-color-scheme; al cambiar
-// de tema con sesión activa, lo guarda (debounced 800ms) para que viaje entre
-// dispositivos. Antes de login (LoginView) y en el kiosco (TimeClockView)
-// no hay user — ahí el tema sigue siendo puramente local, como antes.
+// Sincroniza ThemeContext con user_dashboard_prefs: al iniciar sesión trae el
+// tema guardado del usuario (si existe) y lo aplica, sobreescribiendo el valor
+// local que venía de localStorage/prefers-color-scheme; al cambiar de tema con
+// sesión activa, lo guarda (debounced 800ms) para que viaje entre dispositivos.
+// Antes de login (LoginView) y en el kiosco (TimeClockView) no hay user — ahí
+// el tema sigue siendo puramente local, como antes.
+//
+// **Guarda y lee la columna de ESTE formato de aparato** (`COLUMNA_TEMA`:
+// `theme` en escritorio, `mobile_theme` en teléfono). Con una sola columna,
+// este mismo efecto era lo que IMPEDÍA tener un tema por aparato: el teléfono
+// leía el tema del escritorio al iniciar sesión y lo pisaba encima del local,
+// así que la preferencia del último aparato usado ganaba siempre. Sigue
+// viajando entre dispositivos — un teléfono nuevo hereda el tema de teléfono,
+// no el default.
 export function useThemeSync() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -36,13 +45,14 @@ export function useThemeSync() {
     if (!user?.id) return;
     let cancelado = false;
     persistidoRef.current = undefined;
-    fetchUserTheme(user.id).then(({ data, error }) => {
+    fetchUserTheme(user.id, COLUMNA_TEMA).then(({ data, error }) => {
       if (cancelado) return;
       if (error) console.error('[theme sync] load', error);
-      // `null` cuando el usuario todavía no tiene fila: ahí el primer guardado
-      // sí corresponde, porque crea el registro.
-      persistidoRef.current = data?.theme ?? null;
-      if (data?.theme) setTheme(data.theme);
+      // `null` cuando el usuario todavía no tiene fila —o nunca eligió tema en
+      // este formato de aparato—: ahí el primer guardado sí corresponde.
+      const guardado = data?.[COLUMNA_TEMA] ?? null;
+      persistidoRef.current = guardado;
+      if (guardado) setTheme(guardado);
       setCargadoPara(user.id);
     });
     return () => { cancelado = true; };
@@ -54,7 +64,7 @@ export function useThemeSync() {
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       const enVuelo = theme;
-      upsertUserTheme(user.id, enVuelo).then(({ error }) => {
+      upsertUserTheme(user.id, enVuelo, COLUMNA_TEMA).then(({ error }) => {
         if (error) { console.error('[theme sync] save', error); return; }
         persistidoRef.current = enVuelo;
       });

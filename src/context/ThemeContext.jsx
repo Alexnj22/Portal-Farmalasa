@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { CLAVE_TEMA, ES_MOVIL } from '../utils/temaPorDispositivo';
 
 const ThemeContext = createContext(null);
 
@@ -31,8 +32,16 @@ const THEME_COLOR_MAP = {
 // lados — si divergen se ve un parpadeo al montar React.
 function resolveInitialTheme() {
   try {
-    const saved = localStorage.getItem('portal-theme');
+    const saved = localStorage.getItem(CLAVE_TEMA);
     if (saved && THEMES.includes(saved)) return saved;
+    // Respaldo a la clave vieja (2026-08-20): hasta hoy había UNA sola para
+    // todos los aparatos. Sin esto, la primera carga después de partir la
+    // preferencia le borraría el tema al teléfono de todo el que ya lo tenía
+    // elegido — pareciendo que el portal «se reseteó solo».
+    if (ES_MOVIL) {
+      const heredado = localStorage.getItem('portal-theme');
+      if (heredado && THEMES.includes(heredado)) return heredado;
+    }
   } catch { /* localStorage no disponible (privado/cuota) */ }
   // Sin preferencia guardada (usuario nuevo, o nunca tocó el ThemeToggle
   // antes de T6): default es Solid Modern (decisión §0.3), pero claro/
@@ -52,7 +61,7 @@ export function ThemeProvider({ children }) {
     const attr = DATA_ATTR_MAP[theme];
     if (attr) document.documentElement.setAttribute('data-theme', attr);
     else       document.documentElement.removeAttribute('data-theme');
-    try { localStorage.setItem('portal-theme', theme); } catch { /* localStorage no disponible (privado/cuota) */ }
+    try { localStorage.setItem(CLAVE_TEMA, theme); } catch { /* localStorage no disponible (privado/cuota) */ }
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR_MAP[theme]);
   }, [theme]);
 
@@ -65,6 +74,10 @@ export function ThemeProvider({ children }) {
 
   const value = {
     theme,
+    // Para que el selector pueda decir a QUÉ aparato le está cambiando el tema:
+    // sin eso, uno lo cambia en el teléfono y no entiende por qué la
+    // computadora del trabajo no lo siguió.
+    esMovil: ES_MOVIL,
     setTheme,
     cycleTheme,
     isDark:   theme === 'dark' || theme === 'solid-dark',

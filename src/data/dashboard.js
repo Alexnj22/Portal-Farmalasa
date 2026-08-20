@@ -31,15 +31,23 @@ export function upsertDashboardCanon({ tabId, orden, medidas }) {
         .upsert({ tab_id: tabId, orden, medidas }, { onConflict: 'tab_id' });
 }
 
-export function fetchUserTheme(userId) {
+// El tema se guarda por FORMATO de aparato, no por usuario: `theme` es el de
+// escritorio y `mobile_theme` el del teléfono (migración 20260820142638).
+// `columna` sale de `temaPorDispositivo.js` — quien llama no elige.
+export function fetchUserTheme(userId, columna) {
     return supabase.from('user_dashboard_prefs')
-        .select('theme')
+        .select(columna)
         .eq('user_id', userId)
         .maybeSingle();
 }
 
-export function upsertUserTheme(userId, theme) {
-    return supabase.from('user_dashboard_prefs').upsert({ user_id: userId, theme }, { onConflict: 'user_id' });
+export function upsertUserTheme(userId, theme, columna) {
+    // Sólo la columna de ESTE aparato viaja en el payload: PostgREST actualiza
+    // únicamente las columnas que recibe, así que guardar el tema del teléfono
+    // no puede pisar el del escritorio ni el resto de las preferencias del
+    // tablero que viven en la misma fila.
+    return supabase.from('user_dashboard_prefs')
+        .upsert({ user_id: userId, [columna]: theme }, { onConflict: 'user_id' });
 }
 
 export function fetchSalesBranchIdsSince(sinceDateStr) {

@@ -69,7 +69,7 @@ function SegmentedRow({ label, options, activeKey, onPick, dark }) {
 // `dark`: usar la paleta bespoke siempre-oscura en vez de tokens reactivos
 // al tema (ver SegmentedRow arriba).
 export function ThemeAxisPicker({ dark = false }) {
-  const { isSolid, isDark, setTheme } = useTheme();
+  const { isSolid, isDark, setTheme, esMovil } = useTheme();
   const style = isSolid ? 'solid' : 'liquid';
   const mode = isDark ? 'dark' : 'light';
   return (
@@ -78,6 +78,13 @@ export function ThemeAxisPicker({ dark = false }) {
         onPick={(key) => setTheme(combine(key, mode))} />
       <SegmentedRow label="Modo" options={MODE_META} activeKey={mode} dark={dark}
         onPick={(key) => setTheme(combine(style, key))} />
+      {/* Sin esta línea, uno cambia el tema en el teléfono y no entiende por
+          qué la computadora no lo siguió — parece que no se guardó. */}
+      <p className={`text-caption leading-snug px-0.5 ${dark ? 'text-[rgb(var(--sidebar-ink)/0.4)]' : 'text-content-3'}`}>
+        {esMovil
+          ? 'Se guarda para el teléfono. En la computadora puedes tener otro tema.'
+          : 'Se guarda para la computadora. En el teléfono puedes tener otro tema.'}
+      </p>
     </>
   );
 }
@@ -106,7 +113,10 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
   const updateCoords = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const POPOVER_HEIGHT = 176;
+    // Alto a mano: 2 filas segmentadas + la línea que dice a qué aparato se
+    // aplica (§ThemeAxisPicker). Sirve para decidir si el popover abre hacia
+    // arriba cuando no hay sitio abajo; si crece el contenido, crece acá.
+    const POPOVER_HEIGHT = 220;
     const MARGIN = 12;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUp = spaceBelow < POPOVER_HEIGHT + MARGIN && rect.top > spaceBelow;

@@ -145,9 +145,18 @@
       (function () {
         var THEMES = ['liquid', 'dark', 'solid', 'solid-dark'];
         var t;
+        // El teléfono y la computadora guardan su tema aparte (2026-08-20).
+        // Espeja src/utils/temaPorDispositivo.js: misma consulta, mismas claves.
+        var esMovil = false;
+        try { esMovil = !!(window.matchMedia && window.matchMedia('(hover: none)').matches); } catch (e) { /* sin matchMedia: escritorio */ }
         try {
-          var saved = localStorage.getItem('portal-theme');
+          var saved = localStorage.getItem(esMovil ? 'portal-theme-movil' : 'portal-theme');
           if (saved && THEMES.indexOf(saved) !== -1) t = saved;
+          // Respaldo a la clave vieja, la única que existía antes de partirla.
+          if (!t && esMovil) {
+            var heredado = localStorage.getItem('portal-theme');
+            if (heredado && THEMES.indexOf(heredado) !== -1) t = heredado;
+          }
         } catch (e) { /* localStorage no disponible (privado/cuota) */ }
         if (!t) {
           try {

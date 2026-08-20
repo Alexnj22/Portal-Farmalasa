@@ -57,6 +57,25 @@ escribir el bucle de `.range()` a mano. Y **`.limit(1000)` está prohibido**: es
 el cap exacto, así que el día que la tabla lo cruza trunca en silencio sin
 error. Si querés un tope, que sea un número menor y deliberado.
 
+**Y un tope se aplica ANTES del filtro, no después.** Si la consulta trae N
+filas y el navegador recorta con un `.filter()`, lo que se recortó en el
+servidor ya no existe para ese filtro — así que el resultado no es «los que
+cumplen», es «los que cumplen entre los primeros N», y nadie lo puede notar
+porque no hay error ni fila de menos visible.
+
+Medido el 2026-08-20 en `fetchTrasladosPorRecibir`: `.range(0, 200)` sobre 205
+solicitudes aprobadas, filtro en JavaScript después. **Cumplían 19 y el tablero
+mostraba 16.** Tres cajas despachadas y sin recibir no salían en ninguna
+pantalla, y como el corte es por antigüedad el número sólo iba a crecer.
+
+Cuando el criterio no se puede escribir en PostgREST —el caso típico son dos
+claves dentro del mismo `jsonb`— la salida es una **función**, no bajar la tabla
+y filtrar acá. `get_traslados_por_recibir` es el modelo: INVOKER para que el RLS
+siga decidiendo, `RETURNS json` para no volver a caer bajo el techo de las 1000,
+y el predicado escrito en la verdad de **JavaScript** (ausente, `null`, `false`,
+`0` y cadena vacía son todos falsos) y no en la de SQL, que es lo que hace que
+el resultado sea idéntico y no sólo parecido.
+
 ---
 
 ## REGLA CRÍTICA: el tipo de la columna manda, no el nombre

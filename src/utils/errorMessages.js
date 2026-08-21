@@ -129,6 +129,11 @@ const REGLAS = [
     // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
     // `identificar_por_carne` y `get_kiosk_auth_code`.
     [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    // `ACCION_INVALIDA` lo lanza `set_traslado_interruptor` cuando la llave del
+    // freno no existe. Salía CRUDO a la pantalla: los dos frenos del sobrante
+    // se veían en Mantenimiento y morían así al accionarlos, del 18 al 21-ago.
+    // La causa ya está cerrada, pero el código nunca debe llegar al usuario.
+    [/ACCION_INVALIDA/i, 'Ese interruptor ya no existe. Recarga la pantalla.'],
 
     // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
     [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,

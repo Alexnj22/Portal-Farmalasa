@@ -69,7 +69,39 @@ const INTERRUPTOR = {
         pausa:   'Lo devuelto no va a poder entrar a bodega: queda en el camino.',
         reanuda: 'Bodega ya puede confirmar lo devuelto.',
     },
+    // El sobrante: la sala recibió de más y se acordó que bodega le mande esa
+    // unidad. Nacieron en pausa el 2026-08-18 con el motivo «Sin estrenar»
+    // porque ese brazo todavía no está construido, y hasta hoy salían a
+    // pantalla con su llave de base de datos —`sobrante_enviar`— por no estar
+    // en este mapa.
+    sobrante_enviar: {
+        titulo:  'Mandar el sobrante a la sala',
+        detalle: 'Cuando se acuerda un sobrante, bodega manda la unidad.',
+        pausa:   'Los sobrantes acordados no van a salir de bodega.',
+        reanuda: 'Bodega vuelve a mandar los sobrantes acordados.',
+    },
+    sobrante_recibir: {
+        titulo:  'Recibir el sobrante en la sala',
+        detalle: 'La sala confirma la entrada de la unidad que le mandaron.',
+        pausa:   'El sobrante no va a poder entrar a la sala: queda en el camino.',
+        reanuda: 'Las salas ya pueden recibir el sobrante.',
+    },
 };
+
+// Un interruptor que no está en el mapa es un olvido de quien lo agregó, no un
+// caso a soportar: el CHECK de `traslado_interruptor` enumera las acciones, así
+// que sumar una y no nombrarla acá deja su LLAVE en pantalla. Pasó con los dos
+// del sobrante, que estuvieron tres días diciendo `sobrante_enviar` a quien
+// abriera Mantenimiento. La red es un rótulo neutro —nunca la llave cruda, que
+// no le dice nada a quien lee— y un aviso que igual se entiende.
+const SIN_NOMBRE = {
+    titulo:  'Movimiento sin nombre',
+    detalle: 'Este freno todavía no tiene nombre en esta pantalla.',
+    pausa:   'Quedó en pausa.',
+    reanuda: 'Volvió a andar.',
+};
+
+const rotulo = (accion) => INTERRUPTOR[accion] ?? SIN_NOMBRE;
 
 const hora = (iso) => {
     try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: false }); }
@@ -139,7 +171,7 @@ export default function MaintenanceView() {
         else {
             useToastStore.getState().showToast(
                 pausar ? 'Movimiento en pausa' : 'Movimiento reanudado',
-                (pausar ? INTERRUPTOR[accion]?.pausa : INTERRUPTOR[accion]?.reanuda) ?? '',
+                pausar ? rotulo(accion).pausa : rotulo(accion).reanuda,
                 pausar ? 'warning' : 'success',
             );
             await recargarTraslado();
@@ -259,10 +291,10 @@ export default function MaintenanceView() {
                             className="flex items-start justify-between gap-3 px-4 py-3">
                             <div className="min-w-0">
                                 <span className="text-label font-medium text-content-1 block">
-                                    {INTERRUPTOR[t.accion]?.titulo ?? t.accion}
+                                    {rotulo(t.accion).titulo}
                                 </span>
                                 <span className="text-micro text-content-3 block mt-0.5">
-                                    {INTERRUPTOR[t.accion]?.detalle ?? ''}
+                                    {rotulo(t.accion).detalle}
                                 </span>
                                 {t.pausado && (
                                     <Badge variant="warning" size="sm" uppercase={false} className="mt-1.5">
@@ -274,7 +306,7 @@ export default function MaintenanceView() {
                                 checked={t.pausado}
                                 disabled={trasladoBusy === t.accion}
                                 onChange={v => alternarTraslado(t.accion, v)}
-                                aria-label={`Pausar: ${INTERRUPTOR[t.accion]?.titulo ?? t.accion}`}
+                                aria-label={`Pausar: ${rotulo(t.accion).titulo}`}
                             />
                         </div>
                     ))}

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.4 — Los frenos del sobrante ya tienen nombre y se pueden accionar
+
+Reportado mirando la pantalla: en Sistema → Mantenimiento, dos de los frenos de
+«Movimiento de mercadería» decían **`sobrante_enviar`** y **`sobrante_recibir`**.
+No es un nombre: es la llave interna de la base saliendo cruda. Tampoco tenían
+la línea que explica qué frenan, y al accionarlos el aviso salía en blanco.
+
+Ahora se llaman **Mandar el sobrante a la sala** y **Recibir el sobrante en la
+sala**, con su explicación y su aviso, como los otros cuatro.
+
+**Y al mirarlo en pantalla apareció algo peor: no se podían accionar.** Al
+tocarlos salía un aviso rojo con el código `ACCION_INVALIDA` y no pasaba nada
+— o sea que estaban frenados y **sin manera de soltarlos**, desde el 18 de
+agosto. La lista de frenos válidos estaba escrita **dos veces**, en la tabla y
+adentro de la función que los acciona, y ese día se agregaron a una y no a la
+otra.
+
+El arreglo **borra** la lista duplicada en vez de corregirla: la verdad pasa a
+ser la tabla, una fila por freno. Una lista que no existe no se puede volver a
+desincronizar. Y `ACCION_INVALIDA` ya no llega crudo a la pantalla.
+
+Para que el olvido no vuelva a llegar a pantalla, un freno que no esté nombrado
+ya **no muestra su llave**: sale con un rótulo neutro y un aviso que igual se
+entiende.
+
+Lo que estos dos frenan sigue **sin construirse** (el movimiento de bodega a
+sala por una unidad suelta), así que quedan en pausa. Nada más cambia: los
+cuatro frenos que sí están en uso siguen abiertos y funcionando.
+
 ## v2.703.3 — La anulación mira en qué estado quedó la factura y cierra lo que falte
 
 Aprobar una anulación son dos pasos —anular la venta y avisarle a Hacienda— y

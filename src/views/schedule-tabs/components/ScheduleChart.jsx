@@ -61,7 +61,10 @@ const ScheduleChart = ({
             </div>
 
             {/* Bars — flex-1, labels inside each bar */}
-            <div className="flex items-end gap-[3px] flex-1 w-full relative overflow-visible">
+            {/* A sangre en el teléfono: mismo motivo que el gráfico del tablero.
+                Siete días en 311px dan 42px por barra y el mínimo son 44, y acá
+                la barra se toca para ver las horas de ese día. */}
+            <div className="flex items-end gap-[3px] flex-1 -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full relative overflow-visible">
                 <div className="absolute inset-0 flex flex-col justify-between opacity-15 pointer-events-none z-0">
                     <div className="border-t border-dashed border-divider w-full" />
                     <div className="border-t border-dashed border-divider w-full" />

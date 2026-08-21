@@ -21,6 +21,80 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.4 — el barrido móvil llega al final, y el portal mide cero de pie
+
+Primeras tres fases de `docs/PLAN-MOVIL-2026-08-20.md`. Las tres empezaron
+igual: **el instrumento mentía, y su número tapaba al hallazgo real.**
+
+### El barrido no terminaba, y su informe no lo decía
+
+La corrida del 20-ago murió a los **18.5 minutos con 7 de 38 rutas** —WebKit se
+lleva la página— y dejó un `informe-liquid.json` idéntico en forma a uno
+completo. Quien lo abría leía «cero hallazgos» sin ninguna señal de que faltaban
+31 vistas. **Un barrido que no termina no dice «está todo bien»: dice que no se
+midió.**
+
+Ahora hace **38 de 38 en 3.3 minutos**. Tres cambios:
+
+- **Reciclar el CONTEXTO, no sólo la página.** El spec ya cerraba y reabría la
+  página cada 8 rutas y aun así murió en la **7**, o sea antes del primer
+  reciclado — la pista de que el parche viejo no atacaba la causa. WebKit
+  reparte varias páginas del mismo contexto en un solo proceso de contenido, y
+  ese proceso es el que se pasa de su techo: cerrar una página adentro no lo
+  suelta. Un contexto nuevo **es** un proceso nuevo. El precio es volver a
+  entrar —la sesión vive en el contexto—, ~5 segundos cada 6 rutas contra perder
+  el barrido entero.
+- **El informe vive en `.parcial.json` mientras corre** y sólo se renombra al
+  nombre final cuando se midieron todas las rutas. La incompletitud viaja en el
+  NOMBRE, que es donde este archivo ya pone lo que distingue una corrida de
+  otra, y no en un campo que alguien tiene que acordarse de mirar.
+- **Una corrida incompleta falla**, y dice cuántas rutas faltaron y cuáles.
+
+Verificado en las dos direcciones: la completa renombra al nombre limpio, y una
+regresión fabricada —cortar el recorrido a la tercera ruta— deja el parcial y
+falla con «faltan 2 de 5: compras, productos».
+
+### El detector de acuse acusaba al que hizo bien el trabajo
+
+El barrido marcaba **36 toques sin acuse en Cortes**. Medidos uno por uno: **36
+de 37 llevaban `data-interactive`**, o sea que ya reciben el gel al presionar,
+por la regla de `index.css` §1.6. El detector leía sólo el atributo `class`
+buscando `active:`, así que no veía el acuse declarado en la hoja de estilo.
+
+**El 97% del número era ruido**, y el número grande escondía el hallazgo real:
+**un solo botón mudo**, que aparecía en TODAS las rutas porque vive en el marco
+—el disparador de Ajustes y su gemelo del tema—. Los dos tenían `hover:` y
+ningún `active:`. Ahora lo tienen, y el detector cuenta `data-interactive` como
+lo que es.
+
+### Los 14 «inalcanzables» eran dos gráficos y un error de cuenta
+
+Los 7 del tablero y los 7 de Horarios son lo mismo: **las barras de un gráfico
+semanal**, que se tocan para abrir ese día. El alto sobraba —50 y 158px—; el
+ancho no llegaba a los 44 del blanco de dedo. Dos causas, las dos reales:
+
+- **De cuenta**: la regla contaba los hijos **posicionados** como hermanos del
+  flex. La rejilla de líneas punteadas de Horarios es un `absolute inset-0`
+  adentro de la fila de barras, así que dividía por 8 para 7 días y reportaba
+  36px donde había 42. Un hijo fuera del flujo no reparte ancho.
+- **De ancho**: siete días en los ~316px que deja el relleno de la tarjeta dan
+  40px por barra. Van a sangre en el teléfono —`-mx-3`, el mismo patrón que ya
+  usa el libro de IVA— y el hueco baja a 4px: quedan ~45.
+
+### Dónde queda el portal, de pie
+
+Las 38 rutas en WebKit iPhone 13: **desborde de elemento 0, desborde de página
+0, blancos de dedo por debajo de 44pt 0, inputs que disparan el zoom de iOS 0,
+encadenamiento de scroll 0, toques sin acuse 0, inalcanzables 0**. La única `X`
+es `schedules` con una tabla, y es `ScheduleCalendar` — excepción declarada en
+`mobile-gate` con su motivo: la fila no es un registro, es un empleado cruzado
+con siete días.
+
+**Lo que sigue está escrito en el plan y no se midió todavía**: los 41 archivos
+de vista con diálogos y los 40 formularios —nunca abiertos en 390px en una
+medición—, las vistas sin tabla, el modo acostado y el aparato real. Que el
+barrido dé cero significa cero **en lo que sabe contar**, y de pie.
+
 ## v2.698.3 — Las dos funciones que mueven producto dejan de fallar en silencio
 
 Se pagaron los **42 sitios** de `trasladar-pedido-erp` (24) y

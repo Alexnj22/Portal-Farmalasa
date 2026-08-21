@@ -167,7 +167,17 @@ export const MEDIR = () => {
         const cs = getComputedStyle(p);
         if (!cs.display.includes('flex') || cs.flexDirection.startsWith('column')) return false;
         if (getComputedStyle(el).flexGrow === '0') return false;
-        const hermanos = [...p.children].filter(h => h.getBoundingClientRect().width > 0);
+        // Los hijos POSICIONADOS no reparten el ancho del flex: viven fuera del
+        // flujo. Contarlos divide por un número más grande que el real y reporta
+        // un blanco más chico de lo que es. Medido el 2026-08-20 en el gráfico
+        // de Horarios: la rejilla de líneas punteadas es un `absolute inset-0`
+        // adentro de la fila de barras, así que la cuenta daba 8 hermanos para
+        // 7 días y 36px por barra donde había 42.
+        const hermanos = [...p.children].filter(h => {
+            if (h.getBoundingClientRect().width === 0) return false;
+            const pos = getComputedStyle(h).position;
+            return pos !== 'absolute' && pos !== 'fixed';
+        });
         if (hermanos.length < 5) return false;
         // El HUECO entre columnas también se descuenta: sin eso, el gráfico del
         // tablero daba 322/7 = 46 y la regla lo dejaba pasar, cuando sus
@@ -271,6 +281,27 @@ export const MEDIR = () => {
         if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') return;
         const clases = el.className?.toString?.() || '';
         if (/active:/.test(clases)) return;
+        // ── `data-interactive` TAMBIÉN es acuse (2026-08-20) ─────────────────
+        // El detector miraba sólo el atributo `class` buscando `active:`, y por
+        // eso acusaba a las superficies que reciben el gel por CSS: `index.css`
+        // §1.6 les da `[data-interactive]:active { transform: scale(.994) }`, o
+        // sea exactamente lo que se está midiendo, sólo que declarado en una
+        // hoja de estilo en vez de en una clase de Tailwind.
+        //
+        // Medido el 2026-08-20 en Cortes: de los **37** que marcaba, **36
+        // llevaban `data-interactive`** — o sea que el 97% del número era el
+        // detector acusando al código que hizo bien el trabajo. El mudo de
+        // verdad era uno solo, y estaba en TODAS las rutas porque vive en el
+        // marco (el disparador de Ajustes y su gemelo del tema).
+        //
+        // Es el modo de falla que este proyecto ya conoce —«acusar al que hizo
+        // bien el trabajo es cómo un gate se termina desactivando»— y acá tenía
+        // el agravante de que el número grande tapaba al hallazgo real.
+        //
+        // El atributo lo pone `clickable()` y no una lista escrita a mano, así
+        // que preguntar por él es preguntar exactamente por «esta superficie se
+        // apunta y acusa».
+        if (el.hasAttribute('data-interactive')) return;
         sinAcuse.push({ sel: sel(el),
                         destello: getComputedStyle(el).webkitTapHighlightColor || '(no expuesto)',
                         cadena: cadena(el),

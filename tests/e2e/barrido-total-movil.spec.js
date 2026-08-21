@@ -1,4 +1,4 @@
-import { test, devices } from '@playwright/test';
+import { test, expect, devices } from '@playwright/test';
 import fs from 'node:fs';
 import { MEDIR } from './medicion-movil.js';
 
@@ -32,7 +32,29 @@ const ETIQUETA = process.env.ETIQUETA
 // desapareció al lanzar `liquid`. Las capturas sí se quedan ahí (son pesadas y
 // efímeras); el informe es el dato.
 const SALIDA_INFORMES = 'barridos';
+
+// ── Un barrido incompleto NO puede parecer completo (2026-08-20) ────────────
+//
+// El informe se escribe pantalla por pantalla —bien, porque una corrida cortada
+// no pierde 25 minutos de medición—, pero se escribía SIEMPRE con el nombre
+// final. O sea que una corrida que murió a las 7 rutas de 38 dejaba un
+// `informe-liquid.json` idéntico en forma a uno de 38, y quien lo abría leía
+// «cero hallazgos» sin ninguna señal de que faltaban 31 vistas.
+//
+// Pasó de verdad el 2026-08-20: 18.5 minutos, 7 rutas, WebKit se llevó la
+// página, y el archivo resultante era indistinguible de un barrido limpio.
+//
+// **Un barrido que no termina no dice «está todo bien»: dice que no se midió.**
+// Es la misma regla que este archivo ya aplica al login —«sin sesión, el
+// barrido mide el login 37 veces y sale todo en cero», y por eso corta con
+// ruido— sólo que aplicada al final del recorrido en vez de al principio.
+//
+// Mientras corre, el informe vive en `.parcial.json`. Sólo al medir TODAS las
+// pantallas previstas se renombra al nombre final. Así la incompletitud viaja
+// en el nombre —que es donde este archivo ya pone lo que distingue una corrida
+// de otra— y no hace falta que nadie se acuerde de mirar un campo adentro.
 const INFORME = `${SALIDA_INFORMES}/informe-${ETIQUETA}.json`;
+const INFORME_PARCIAL = `${SALIDA_INFORMES}/informe-${ETIQUETA}.parcial.json`;
 
 // `RUTAS=productos,pedidos` acota el barrido. No es para uso normal —el barrido
 // es «todas»— sino para poder probar el propio instrumento en treinta segundos
@@ -117,6 +139,21 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // `pg` y no `page`: el barrido RECICLA la página cada pocas rutas (ver
         // `reciclar`), así que la referencia tiene que poder cambiar.
         let pg = page;
+
+        // El ingreso, como FUNCIÓN: se vuelve a usar cada vez que se recicla el
+        // contexto (ver `reciclar`), porque un contexto nuevo nace sin sesión.
+        const ingresar = async (p) => {
+            await p.goto('/login');
+            await p.locator('#username').fill(E2E_USER);
+            await p.locator('#password').fill(E2E_PASSWORD);
+            await p.locator('button[type="submit"]').first().click();
+            await p.waitForFunction(
+                () => !location.pathname.startsWith('/login'), null, { timeout: 60_000 },
+            ).catch(() => {});
+            await p.waitForTimeout(3000);
+            return !/\/login/.test(p.url());
+        };
+
         await pg.goto('/login');
         await pg.locator('#username').fill(E2E_USER);
         await pg.locator('#password').fill(E2E_PASSWORD);
@@ -192,13 +229,52 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // conserva la sesión, que vive en el contexto (cookies y localStorage).
         // Lo único que hay que rearmar es el escucha de errores, que sí es por
         // página.
+        //
+        // ── Y cerrar la página NO alcanzó (2026-08-20) ───────────────────────
+        // La corrida de ese día murió en la ruta **7**, o sea ANTES del primer
+        // reciclado. Reciclar la página libera su DOM, pero WebKit reparte
+        // varias páginas del MISMO contexto en un solo proceso de contenido, y
+        // ese proceso es el que se pasa de su techo (`per-process-limit`, 2,227
+        // MB medidos en el iPhone del usuario). Cerrar una página adentro no lo
+        // suelta.
+        //
+        // Un CONTEXTO nuevo sí: es un proceso nuevo. El precio es que nace sin
+        // sesión —las cookies y el `localStorage` viven en el contexto—, así que
+        // hay que volver a entrar. Son ~5 segundos cada `RECICLAR_CTX` rutas
+        // contra perder el barrido entero a mitad de camino, que es lo que
+        // venía pasando.
+        //
+        // El tema también se reinyecta: `addInitScript` es por contexto.
+        const nuevaPagina = (p) => {
+            p.on('pageerror', e => errores.push(e.message.slice(0, 200)));
+            return p;
+        };
         const reciclar = async () => {
             const nueva = await pg.context().newPage();
             await pg.close().catch(() => {});
-            pg = nueva;
-            pg.on('pageerror', e => errores.push(e.message.slice(0, 200)));
+            pg = nuevaPagina(nueva);
+        };
+        const reciclarContexto = async () => {
+            const navegador = pg.context().browser();
+            if (!navegador) return reciclar();          // sin browser: lo de siempre
+            const viejo = pg.context();
+            const ctx = await navegador.newContext({ ...devices['iPhone 13'] });
+            if (TEMA) {
+                await ctx.addInitScript(({ tema, attr }) => {
+                    try { localStorage.setItem('portal-theme', tema); } catch { /* sin localStorage */ }
+                    if (attr) document.documentElement.setAttribute('data-theme', attr);
+                    else document.documentElement.removeAttribute('data-theme');
+                }, { tema: TEMA, attr: ATRIBUTO_TEMA[TEMA] ?? null });
+            }
+            pg = nuevaPagina(await ctx.newPage());
+            await viejo.close().catch(() => {});
+            const entro = await ingresar(pg);
+            // Si el reingreso falla, el resto del barrido mediría la pantalla de
+            // login. Es el mismo agujero del arranque y se corta igual.
+            if (!entro) throw new Error('Tras reciclar el contexto no se pudo volver a entrar: el barrido habría medido el login.');
         };
         const CADA = Number(process.env.RECICLAR || 8);
+        const CADA_CTX = Number(process.env.RECICLAR_CTX || 6);
 
         const informe = [];
 
@@ -257,12 +333,13 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // corridas se cortaron por timeout con todo medido y el archivo sin
             // escribir: 25 minutos de medición perdidos porque el resultado
             // vivía en memoria hasta la última línea.
-            fs.writeFileSync(INFORME, JSON.stringify(informe, null, 1));
+            fs.writeFileSync(INFORME_PARCIAL, JSON.stringify(informe, null, 1));
         };
 
         for (const [indice, ruta] of RUTAS.entries()) {
             errores.length = 0;
-            if (indice > 0 && indice % CADA === 0) await reciclar();
+            if (indice > 0 && indice % CADA_CTX === 0) await reciclarContexto();
+            else if (indice > 0 && indice % CADA === 0) await reciclar();
             // Pasar por `about:blank` DESCARTA el DOM anterior. Sin esto el
             // proceso de WebKit acumula las 37 vistas —varias con 200 fichas— y
             // se muere a mitad de camino: tres corridas se cortaron en la
@@ -376,7 +453,16 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 }
             }
         }
-        fs.writeFileSync(INFORME, JSON.stringify(informe, null, 1));
+        // ── El informe final sólo existe si el barrido LLEGÓ AL FINAL ────────
+        // `medidas` cuenta las RUTAS, no las pantallas: con `PESTANAS`/`MODALES`
+        // una ruta aporta varias filas (`ruta#pestaña`, `ruta»ficha`) y compararlas
+        // contra `RUTAS.length` daría siempre «de más».
+        const medidas = new Set(informe.map(v => String(v.ruta).split(/[#»]/)[0]));
+        const faltan = RUTAS.filter(r => !medidas.has(r));
+        fs.writeFileSync(INFORME_PARCIAL, JSON.stringify(informe, null, 1));
+        if (!faltan.length) {
+            fs.renameSync(INFORME_PARCIAL, INFORME);
+        }
 
         const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0 || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0);
         console.log(`\n╔══ ${informe.length} vistas · con algo que corregir: ${malas.length} ══╗`);
@@ -396,5 +482,16 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         console.log(`  con desborde de página:   ${informe.filter(v => v.desbordePagina > 0).map(v => v.ruta).join(', ') || 'ninguna'}`);
         console.log(`  con inputs <16px:         ${informe.filter(v => v.zoomIOS > 0).map(v => v.ruta).join(', ') || 'ninguna'}`);
         console.log(`╚════════════════════════════════════════════╝`);
+
+        // Corta con ruido, no reporta. Un informe de 7 rutas se lee igual que
+        // uno de 38 si nadie mira cuántas filas tiene, y «cero hallazgos sobre
+        // 7 vistas» no es una respuesta sobre las 38.
+        if (faltan.length) {
+            console.log(`\n  ⚠️  BARRIDO INCOMPLETO — faltan ${faltan.length} de ${RUTAS.length}: ${faltan.join(', ')}`);
+            console.log(`      El informe queda en ${INFORME_PARCIAL} (parcial, a propósito).`);
+        }
+        expect(faltan,
+            `barrido incompleto: ${faltan.length} de ${RUTAS.length} rutas sin medir`)
+            .toEqual([]);
     });
 });

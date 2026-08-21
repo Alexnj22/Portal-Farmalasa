@@ -58,62 +58,90 @@ con motivo escrito). `gate:movil` en **0/0** en sus cinco categorías.
 por debajo de 44pt, inputs que disparan el zoom de iOS, elementos inalcanzables,
 toques sin acuse y encadenamiento de scroll.
 
-**Hoy no termina.** La corrida del 2026-08-20 murió a los **18.5 minutos con 7
-de 38 rutas medidas**: el proceso de contenido de WebKit se lleva la página
-(`Target page, context or browser has been closed`). El propio spec ya lo
-documenta y da la salida —partirlo en dos mitades— pero eso está escrito como
-nota, no como el modo de correrlo.
+**No terminaba.** La corrida del 2026-08-20 murió a los **18.5 minutos con 7 de
+38 rutas medidas**: el proceso de contenido de WebKit se lleva la página
+(`Target page, context or browser has been closed`), y el informe parcial se
+escribía con el mismo nombre que uno completo.
 
 > **Un barrido que no termina no dice «está todo bien»: dice que no se midió.**
 > Es el mismo agujero que el spec ya conoce en otra forma —«sin sesión, el
-> barrido mide el login 37 veces y sale todo en cero»—, y la respuesta tiene que
-> ser la misma: **cortar con ruido, no reportar**.
+> barrido mide el login 37 veces y sale todo en cero»—, y la respuesta es la
+> misma: **cortar con ruido, no reportar**.
 
-**F0 es bloqueante para el resto de este plan**, porque todas las fases que
-siguen se priorizan con números que hoy no existen.
+### F0 · CERRADO — el barrido llega al final
 
-### F0 · Que el barrido llegue al final
+**38 de 38 rutas en 3.3 minutos**, contra 7 en 18.5 y muerte. Tres cambios:
 
-- Partirlo en dos mitades como su propio encabezado indica, y que el partido sea
-  el modo **normal** de correrlo, no una nota al pie.
-- Que una corrida incompleta **falle**, en vez de escribir un informe parcial
-  que se lee igual que uno completo. Hoy el informe de 7 rutas y el de 38 se
-  llaman igual.
-- Reciclar el contexto entre mitades.
+1. **Reciclar el CONTEXTO, no sólo la página.** El spec ya cerraba y reabría la
+   página cada 8 rutas, y aun así murió en la **7** — o sea antes del primer
+   reciclado. La causa: WebKit reparte varias páginas del mismo contexto en un
+   solo proceso de contenido, y ese proceso es el que se pasa de su techo;
+   cerrar una página adentro no lo suelta. Un contexto nuevo **es** un proceso
+   nuevo. El precio es volver a entrar —la sesión vive en el contexto— y son ~5
+   segundos cada 6 rutas contra perder el barrido entero.
+2. **El informe vive en `.parcial.json` mientras corre** y sólo se renombra al
+   nombre final cuando se midieron todas las rutas previstas. La incompletitud
+   viaja en el NOMBRE, que es donde este archivo ya pone lo que distingue una
+   corrida de otra, y no en un campo que alguien tiene que acordarse de mirar.
+3. **Una corrida incompleta FALLA**, y dice cuántas rutas faltaron y cuáles.
 
-**Criterio de aceptación**: un informe con las 38 rutas, y una corrida cortada
-que se distingue de una completa sin abrir el JSON.
+Verificado en las dos direcciones: la corrida completa renombra al nombre limpio,
+y una regresión fabricada —cortar el recorrido a la tercera ruta— deja el
+`.parcial.json` y falla con «faltan 2 de 5: compras, productos».
 
----
+## 3. Lo medido — las 38 rutas
 
-## 3. Lo medido y abierto
+Con el barrido terminando, la foto completa del portal de pie en WebKit iPhone
+13:
 
-Sale de las 7 rutas que sí se alcanzaron. **No es la foto completa** — es lo que
-hay, y hay que decir cuál es cuál.
+| dimensión | total en 38 rutas |
+|---|---|
+| desborde de elemento | **0** |
+| desborde de página | **0** |
+| blanco de dedo < 44pt | **0** |
+| inputs que disparan el zoom de iOS | **0** |
+| encadenamiento de scroll | **0** |
+| tablas en el teléfono | **1** (excepción declarada) |
+| toques sin acuse | 36 → **0** |
+| blancos inalcanzables | 14 → **0** |
 
-| ruta | desborde | dedo <44pt | zoom iOS | inalcanzables | sin acuse |
-|---|---|---|---|---|---|
-| overview | 0 | 0 | 0 | **7** | 2 |
-| cortes | 0 | 0 | 0 | 0 | **30** |
-| ventas · compras · productos · pedidos · minmax | 0 | 0 | 0 | 0 | 0 |
+### F1 · CERRADO — el acuse del toque, y un detector que acusaba al inocente
 
-### F1 · El acuse del toque (30 en Cortes, 2 en el tablero)
+El barrido marcaba **36 en Cortes**. Medido uno por uno: **36 de 37 llevaban
+`data-interactive`**, o sea que ya reciben el gel al presionar —`index.css` §1.6
+les da `[data-interactive]:active { transform: scale(.994) }`—. El detector
+miraba sólo el atributo `class` buscando `active:`, así que no veía el acuse
+declarado en la hoja de estilo.
 
-Una tarjeta que se toca y no acusa recibo se lee como que la pantalla se colgó.
-En el teléfono no hay cursor ni realce de hover: el acuse **es** la única señal
-de que el toque entró.
+**El 97% del número era el detector acusando al código que hizo bien el
+trabajo**, y el número grande tapaba al hallazgo real: **un solo botón mudo**,
+que salía en TODAS las rutas porque vive en el marco —el disparador de Ajustes y
+su gemelo del tema—. Los dos tienen `hover:` y no tenían `active:`.
 
-Las 30 de Cortes son la misma tarjeta repetida, o sea **un arreglo, no treinta**.
-Va en el canónico —`data-interactive` y el gel de §1.6— y no tarjeta por
-tarjeta.
+Es el modo de falla que este proyecto ya tiene escrito —«acusar al que hizo bien
+el trabajo es cómo un gate se termina desactivando»— con el agravante de que
+esconde lo que sí hay que arreglar.
 
-### F2 · Los 7 inalcanzables del tablero
+### F2 · CERRADO — los 14 inalcanzables eran dos gráficos y un error de cuenta
 
-Elementos que el barrido marca como imposibles de alcanzar. Hay que abrirlos uno
-por uno: la categoría mezcla «tapado por otra capa» con «fuera del marco», y son
-arreglos distintos.
+Los 7 del tablero y los 7 de Horarios son lo mismo: **las barras de un gráfico
+semanal**, que se tocan para abrir ese día. El alto sobraba (50 y 158px); el
+ancho no llegaba a 44.
 
----
+Dos causas distintas y las dos reales:
+
+- **De cuenta**: `noCabe` contaba los hijos **posicionados** como hermanos del
+  flex. La rejilla de líneas punteadas del gráfico de Horarios es un
+  `absolute inset-0` adentro de la fila de barras, así que dividía por 8 días
+  para 7 y reportaba 36px donde había 42. Un hijo fuera del flujo no reparte
+  ancho.
+- **De ancho**: siete días en los ~316px que deja el relleno de la tarjeta dan
+  40px por barra. Van a sangre en el teléfono —`-mx-3`, el mismo patrón que ya
+  usa el libro de IVA— y el hueco baja a 4px: quedan ~45.
+
+**Y queda una sola `✗` en el barrido**: `schedules` con una tabla en el teléfono.
+Es `ScheduleCalendar`, **excepción declarada** en `mobile-gate` con su motivo —
+la fila no es un registro, es un empleado cruzado con siete días.
 
 ## 4. Lo NO medido — y por qué importa que esté escrito
 
@@ -169,13 +197,24 @@ diferencia se cubre midiendo (F0), no leyendo.
 
 ## 5. Orden sugerido
 
-1. **F0** — que el barrido termine. Sin esto, lo demás se prioriza a ciegas.
-2. **F1** — el acuse del toque. Un arreglo canónico, 32 síntomas.
-3. **F4** — las vistas sin tabla, empezando por Cortes, que ya tiene hallazgos.
-4. **F3** — diálogos y formularios, empezando por los que guardan borrador.
-5. **F2** — los inalcanzables del tablero.
-6. **F5** — una corrida acostado.
-7. **F6** — el aparato real. Es el único que no depende de nosotros.
+~~F0~~ · ~~F1~~ · ~~F2~~ — **cerradas** (v2.698.4). El barrido termina, y de pie
+el portal mide **cero** en las seis dimensiones que sabe contar.
+
+Lo que sigue, en orden:
+
+1. **F3** — diálogos y formularios, empezando por los que ya guardan borrador
+   (`gate:borradores` los identificó como largos). Es la superficie más grande
+   sin mirar.
+2. **F4** — las vistas sin tabla. Cortes ya salió limpia; quedan el reloj, el
+   kiosco, las bitácoras y la encuesta.
+3. **F5** — una corrida acostado. Todo lo de este plan se midió de pie.
+4. **F6** — el aparato real. Es el único que no depende de nosotros.
+5. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
+
+Y uno que no es de este plan pero está rojo: **`gate:borradores`** acusa a
+`PedirTrasladoModal.jsx` —7 campos de captura sin borrador—, de v2.691. Con la
+sesión cerrándose sola a los 5 minutos en los cargos de sala, ahí se pierde lo
+escrito sin dejar rastro.
 
 ---
 
@@ -209,4 +248,5 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.694.2 | el panel de Mín·Máx se lee |
 | v2.696.0 | `apilada` y `acciones: 'mantener'` · §32.9 |
 | v2.697.0 | el mismo canon en las otras nueve tablas |
-| v2.697.1 | confirmar un pago desde el teléfono |
+| v2.698.0 | confirmar un pago desde el teléfono · este plan |
+| v2.698.4 | F0/F1/F2 — el barrido termina, y el portal mide cero de pie |

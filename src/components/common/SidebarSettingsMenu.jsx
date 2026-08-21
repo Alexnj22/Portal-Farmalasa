@@ -170,6 +170,7 @@ export default function SidebarSettingsMenu({
           aria-expanded={isOpen}
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-[var(--dur-fast)] ${className}
+            active:scale-[0.97]
             ${isOpen
               ? 'bg-[rgb(var(--sidebar-realce)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
               : 'bg-[rgb(var(--sidebar-realce)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-realce)/0.1)]'}`}

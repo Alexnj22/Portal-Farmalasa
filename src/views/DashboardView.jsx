@@ -2577,7 +2577,13 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="relative flex-1 min-h-0">
               <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider w-full"/><div className="border-t border-dashed border-divider w-full"/></div>
-              <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
+              {/* A sangre y con menos hueco EN EL TELÉFONO. Siete días en los
+                  316px que deja el relleno de la tarjeta dan 40px por barra, y
+                  el blanco de dedo mínimo son 44 (§32): la barra se toca para
+                  abrir el día, así que 4px de menos es un día que a veces no
+                  abre. Recuperando el relleno lateral y bajando el hueco a 4px
+                  quedan ~45. De `sm` para arriba, lo de siempre. */}
+              <div className="flex items-end gap-1 sm:gap-1.5 -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full h-full relative overflow-visible">
                 {!effectiveSalesBranch?(
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-micro font-black text-content-2/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
                 ):salesLoading?(

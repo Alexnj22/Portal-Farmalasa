@@ -1349,13 +1349,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 </DataTable>
                 </motion.div>
 
-                {/* El panel del producto, a pantalla completa en el teléfono.
-                    `pantalla` y no la hoja: son siete bloques con gráficos, o sea
-                    que ESTO es una pantalla y no un detalle corto. */}
+                {/* El panel del producto, en la hoja canónica.
+                    Estuvo con `variante="pantalla"` desde v2.693.0 con el
+                    argumento de que «son siete bloques con gráficos, o sea que
+                    ESTO es una pantalla». El usuario lo corrigió probándolo en
+                    el teléfono: *«no abre como los demás modales, se abre
+                    completo y no se puede deslizar para abajo, así que al tener
+                    2 tipos siento que rompe el diseño»*. Tenía razón — la
+                    coherencia de CÓMO se abre y se cierra pesa más que lo largo
+                    del contenido, y la hoja ya crece con lo que tiene y
+                    scrollea por dentro a partir de 88dvh. */}
                 <ExpedienteMovil
                     abierto={abiertoMovil}
                     onClose={() => setExpandedId(null)}
-                    variante="pantalla"
                     titulo={abiertoMovil?.product_name || 'Producto'}
                 >
                     {(row) => <ExpandedPanel row={row} cycleDays={cycleDays} />}

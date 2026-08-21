@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.704.1 — el encabezado ya no se esconde bajo el banner, y un solo tipo de hoja
+
+Tres defectos que **ningún barrido había levantado**, y salieron en cinco minutos
+con el teléfono en la mano. Los tres son de la misma familia: cosas que sólo
+existen al DESPLAZAR, al GIRAR o al comparar dos pantallas entre sí — y un
+barrido mide una pantalla quieta a la vez.
+
+### El encabezado desaparecía detrás de la franja de aviso
+
+Reportado así: *«queda bien, pero al hacer scroll se oculta bajo el banner si
+está activo»*.
+
+El encabezado móvil es `sticky top-0`: al desplazar se pega en el 0 del
+viewport, que es exactamente donde vive `BannerPortal` en `fixed`. Y como la
+franja lleva `z-ribbon` (45) contra los `z-tabs` (30) del encabezado, gana la
+franja. El *spacer* que la franja ya tenía resuelve el flujo —empuja el
+contenido al tope del scroll— pero **no puede resolver a un `sticky`**.
+
+Ahora la franja publica su alto medido en `--banner-h` y el encabezado se pega
+**debajo** (`top: var(--banner-h, 0px)`). Sin franja la variable es 0 y todo
+queda como antes.
+
+Y de paso cierra el doble relleno: la franja ya se comió su parte del notch, así
+que el encabezado sólo rellena lo que sobre —
+`max(0px, calc(var(--sa-top) - var(--banner-h, 0px)))`—. Medido: franja 31px +
+encabezado 16px = los 47 del inset, una sola vez. Verificado desplazando 600px:
+`headerTop` 31, `bannerBottom` 31, sin solape.
+
+El alto pasa a una variable de CSS en vez de un `useState`, así que volver a
+medir ya no re-renderiza.
+
+### Un solo tipo de hoja
+
+Reportado probando Mín·Máx: *«no abre como los demás modales, se abre completo y
+no se puede deslizar para abajo, así que al tener 2 tipos siento que rompe el
+diseño»*.
+
+Tenía razón, y corrige una decisión de v2.693.0. El argumento de entonces fue
+que «son siete bloques con gráficos, o sea que ESTO es una pantalla y no un
+detalle corto» — pero **la coherencia de cómo se abre y se cierra pesa más que
+lo largo del contenido**, y la hoja canónica ya crece con lo que tiene y
+scrollea por dentro a partir de 88dvh. `variante="pantalla"` sale de Mín·Máx y
+de Ventas · Productos.
+
+### La sala activa se veía rectangular
+
+En «Stock en red», la tarjeta de la sala propia llevaba `data-surface` en
+`undefined` mientras las otras seis lo tenían en `card`. Eso le sacaba el radio
+del material: quedaba con `rounded-xl` al lado de seis con `rounded-card`, o sea
+**una esquina distinta a la de sus hermanas**. El realce de «ésta es la tuya» lo
+dan el borde, el tinte y el aro — no un radio distinto.
+
 ## v2.704.0 — Ventas > Productos: abrir un producto deja de depender de la caché, y aparece quién lo vendió
 
 Reporte del usuario sobre `ventas?tab=productos`: *«está muy lento»*, más tres

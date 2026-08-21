@@ -173,7 +173,17 @@ export default function ExpandedPanel({ row, cycleDays }) {
 
                             return (
                                 <div key={erpId}
-                                    data-surface={isCurrent ? undefined : 'card'} className={`rounded-xl px-2 py-2 border transition-colors ${isCurrent ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30' : ''} ${!hasData ? 'opacity-35' : ''}`}>
+                                    /* `data-surface="card"` va en TODAS, también en
+                                       la activa. Quitárselo le sacaba el radio del
+                                       material —el resto queda con `rounded-card` y
+                                       ella con `rounded-xl`—, así que la sala activa
+                                       se veía RECTANGULAR al lado de seis redondas.
+                                       Reportado probando en el teléfono. El realce
+                                       de «ésta es la tuya» lo dan el borde, el tinte
+                                       y el aro, que es lo que tiene que distinguirla
+                                       — no una esquina distinta. */
+                                    data-surface="card"
+                                    className={`rounded-xl px-2 py-2 border transition-colors ${isCurrent ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30' : ''} ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                                         <span className="text-micro font-black text-content-3 truncate leading-tight">
                                             {/* `Pop.` es la abreviatura que ya usa el resto

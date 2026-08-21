@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Construction, AlertTriangle, XCircle, Info, CheckCircle2 } from 'lucide-react';
 import { useBannerPortal } from '../../hooks/useBannerPortal';
 
@@ -71,10 +71,30 @@ export function FranjaBanner({ variante = 'obra', texto = '', textoCorto = '', c
     );
 }
 
+// El alto medido va a una VARIABLE de CSS y no a un `useState`, y son dos cosas
+// distintas resueltas de una:
+//
+//  · **Lo lee el encabezado.** El spacer resuelve el flujo —empuja el contenido
+//    al tope del scroll— pero no al encabezado móvil, que es `sticky top-0`: al
+//    desplazar se pega en el 0 del viewport, que es donde vive esta franja
+//    `fixed`, y como ella lleva `z-ribbon` (45) contra los `z-tabs` (30) del
+//    encabezado, **el encabezado desaparece detrás**. Reportado probando en el
+//    teléfono: «al hacer scroll se oculta bajo el banner si está activo». No se
+//    ve nunca en escritorio, donde el encabezado móvil no existe.
+//  · **Y le sirve al área segura.** La franja ya se comió su parte del notch,
+//    así que el encabezado sólo tiene que rellenar lo que sobre — si no, el
+//    inset se aplica dos veces.
+//
+// Con la variable, además, medir de nuevo NO re-renderiza: el spacer la lee
+// desde el estilo. El `useState` era un re-render por cada cambio de tamaño.
+const poner = (h) => {
+    try { document.documentElement.style.setProperty('--banner-h', `${h}px`); }
+    catch { /* sin DOM (SSR/prueba): la variable cae al 0px de su fallback */ }
+};
+
 export default function BannerPortal() {
     const { banner } = useBannerPortal();
     const ref = useRef(null);
-    const [alto, setAlto] = useState(0);
 
     const visible = !!banner?.activo && !!(banner.texto || '').trim();
 
@@ -84,13 +104,32 @@ export default function BannerPortal() {
     // es el título de la vista.
     useLayoutEffect(() => {
         const el = ref.current;
-        if (!el) { setAlto(0); return undefined; }
-        const medir = () => setAlto(el.getBoundingClientRect().height);
+        if (!el) { poner(0); return undefined; }
+        const medir = () => {
+            const h = el.getBoundingClientRect().height;
+            poner(h);
+            // ── Y se PUBLICA, porque el spacer no alcanza ────────────────────
+            // El spacer resuelve el flujo: empuja el contenido hacia abajo al
+            // tope del scroll. No resuelve al encabezado móvil, que es
+            // `sticky top-0`: al desplazar, se pega en el 0 del viewport, que es
+            // exactamente donde vive esta franja `fixed`. Y como ella lleva
+            // `z-ribbon` (45) contra los `z-tabs` (30) del encabezado, gana la
+            // franja y el encabezado **desaparece debajo**.
+            //
+            // Reportado probando en el teléfono: «al hacer scroll se oculta bajo
+            // el banner si está activo». No se ve nunca en escritorio, donde el
+            // encabezado móvil no existe.
+            //
+            // Con el alto en una variable, el encabezado puede pegarse DEBAJO en
+            // vez de detrás, y descontar de su propio relleno la parte del área
+            // segura que esta franja ya se comió — que si no, se aplica dos
+            // veces.
+        };
         medir();
         if (typeof ResizeObserver === 'undefined') return undefined;
         const ro = new ResizeObserver(medir);
         ro.observe(el);
-        return () => ro.disconnect();
+        return () => { ro.disconnect(); poner(0); };
     }, [visible, banner?.texto, banner?.textoCorto, banner?.variante]);
 
     if (!visible) return null;
@@ -112,7 +151,7 @@ export default function BannerPortal() {
             {/* Reserva en el flujo normal el espacio que la franja fixed ocupa
                 visualmente — ella misma no puede empujar nada por estar fuera
                 del flujo. */}
-            <div className="w-full shrink-0" style={{ height: alto }} aria-hidden="true" />
+            <div className="w-full shrink-0" style={{ height: 'var(--banner-h, 0px)' }} aria-hidden="true" />
         </>
     );
 }

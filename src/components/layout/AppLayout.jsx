@@ -1270,9 +1270,20 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         sombra y texto salen de --header-mobile*. */}
                     <div
                         data-shell="header-movil"
-                        className="lg:hidden shrink-0 w-full sticky top-0 z-tabs border-b"
+                        className="lg:hidden shrink-0 w-full sticky z-tabs border-b"
                         style={{
-                            paddingTop: 'var(--sa-top)',
+                            // Se pega DEBAJO de la franja de aviso, no en el 0
+                            // del viewport: ahí vive `BannerPortal` en `fixed`
+                            // con `z-ribbon` (45) contra los `z-tabs` (30) de
+                            // acá, así que al desplazar el encabezado se metía
+                            // detrás y desaparecía. Sin franja, `--banner-h` es
+                            // 0 y esto es `top: 0` como siempre.
+                            top: 'var(--banner-h, 0px)',
+                            // El área segura, SIN aplicarla dos veces: la franja
+                            // ya se comió su parte del notch, así que acá sólo
+                            // queda lo que sobre. Sin franja, `--banner-h` es 0
+                            // y esto vale `--sa-top` entero.
+                            paddingTop: 'max(0px, calc(var(--sa-top) - var(--banner-h, 0px)))',
                             background: 'var(--header-mobile)',
                             borderColor: 'var(--header-mobile-border)',
                             boxShadow: 'var(--header-mobile-shadow)',

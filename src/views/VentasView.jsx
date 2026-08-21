@@ -2775,13 +2775,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             </DataTable>
             )}
 
-            {/* El detalle del producto, a pantalla completa en el teléfono.
-                `pantalla` y no la hoja: son gráficos y una tabla de ventas, o
-                sea que ESTO es una pantalla y no un detalle corto. */}
+            {/* El detalle del producto, en la hoja canónica. Estuvo con
+                `variante="pantalla"` y se corrigió con el mismo motivo que el
+                panel de Mín·Máx: dos formas de abrir un detalle rompen el
+                diseño, y la coherencia pesa más que lo largo del contenido. */}
             <ExpedienteMovil
                 abierto={privacyMode ? null : prodAbierto}
                 onClose={() => setExpandedKey(null)}
-                variante="pantalla"
                 titulo={prodAbierto?.descripcion || 'Producto'}
                 subtitulo={prodAbierto?.laboratorio_nombre || undefined}
             >

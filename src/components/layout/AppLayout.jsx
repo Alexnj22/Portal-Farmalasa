@@ -29,7 +29,7 @@ import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
-import ThemeMigrationRibbon, { RIBBON_HEIGHT } from '../common/ThemeMigrationRibbon';
+import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
@@ -928,11 +928,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-            <ThemeMigrationRibbon />
-            {/* Spacer: reserva en el flujo normal el espacio que la franja fixed
-                ocupa visualmente — ella misma no puede empujar nada por estar
-                fuera del flujo (ver comentario de RIBBON_HEIGHT). */}
-            <div className="w-full shrink-0" style={{ height: RIBBON_HEIGHT }} aria-hidden="true" />
+            {/* Renderiza la franja fija Y el spacer que le reserva el espacio
+                en el flujo — el spacer copia el alto MEDIDO de la franja, así
+                que el texto lo puede escribir una persona sin romper el
+                layout. Si el aviso está apagado no pinta ninguno de los dos. */}
+            <BannerPortal />
             <div className="flex w-full flex-1 lg:h-full font-sans relative lg:overflow-hidden">
 
                 {/* ── Global ambient orbs — colores reales del logo (verde arco superior,

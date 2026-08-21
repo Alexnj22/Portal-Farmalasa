@@ -290,9 +290,10 @@ const EXCEPTIONS = {
   'src/App.jsx': ['color', 'hex'], // fondo splash bespoke (comparte gradiente con LoginView)
   // Vistas de diagnóstico/QA, no UI real de negocio
   'src/views/IOSTestView.jsx': ['color'],
-  // Banner bespoke fijo (franja rayada ámbar/naranja con texto oscuro fijo,
-  // no reactivo al tema — ver src/version.js v2.57.1)
-  'src/components/common/ThemeMigrationRibbon.jsx': ['color', 'hex', 'inline-color'],
+  // Franja de aviso del tope del portal. Sólo su variante `obra` es bespoke
+  // (rayado ámbar/naranja con texto oscuro fijo, no reactivo al tema — ver
+  // src/version.js v2.57.1); las otras cuatro variantes usan tokens.
+  'src/components/common/BannerPortal.jsx': ['color', 'hex', 'inline-color'],
   // Los componentes canónicos SON la implementación del select/date-picker/
   // modal — su interior legítimamente toca lo nativo que envuelven.
   'src/components/common/LiquidSelect.jsx': ['native'],

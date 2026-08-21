@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.701.0 — El aviso del tope se enciende y se apaga desde Mantenimiento
+
+La franja naranja del tope de todas las pantallas —«Portal en construcción
+visual…»— **ya no se ve**. Y no porque se haya borrado: ahora es un interruptor
+en **Sistema → Mantenimiento**, con su texto y su apariencia, listo para
+encenderse el día que haga falta avisar algo a todo el mundo a la vez.
+
+El problema no era el texto, era que estaba escrito adentro del código y marcado
+como permanente. Para quitarlo o cambiarlo había que editar, compilar y publicar
+una versión nueva; o sea que un aviso que se pone «cuando hace falta» llegaba
+siempre tarde. Hoy se prende con un switch y aparece **en el instante** en las
+pantallas que ya están abiertas, sin que nadie recargue nada.
+
+Qué se puede decidir al encenderlo:
+
+- **El texto**, hasta 220 caracteres, y una **versión corta** opcional para el
+  teléfono. Si no se escribe la corta, la larga se acomoda en dos líneas en vez
+  de cortarse a media palabra como pasaba antes en 390px.
+- **La apariencia**, entre cinco: rayado de obra (la de siempre), ámbar de
+  aviso, rojo de problema, verde de marca para información y verde de «todo
+  bien». Las cuatro últimas se leen bien en los cuatro temas.
+- Hay **vista previa** en la misma pantalla, y es el mismo componente que pinta
+  la franja de verdad — no una imitación que pueda mentir.
+
+Detalles que importan aunque no se vean:
+
+- **Apagar no borra el texto.** Se guarda por separado del switch, así que
+  apagar la franja en un apuro no espera a que nadie termine de redactar, y lo
+  escrito queda listo para la próxima.
+- **No se puede encender vacía**: una franja de color sin explicación asusta más
+  que el problema que anuncia. Lo impide la pantalla y también la base.
+- **La franja ya no puede quedar tapada.** Su capa (`z-ribbon`) estaba escrita
+  desde el día uno y la regla que le daba altura **nunca existió** — cualquier
+  elemento posicionado la pintaba encima. Ahora existe.
+- El espacio que reserva arriba se **mide**, ya no es un número fijo de una
+  línea: el texto lo escribe una persona y puede ocupar dos.
+- Sólo lo puede tocar quien edita Mantenimiento, y cada encendido y apagado
+  queda en la bitácora con nombre.
+
 ## v2.700.3 — El menú largo deja de verse partido en dos
 
 Reportado con una captura: el filtro de estado de MIN·MAX se veía cortado a la

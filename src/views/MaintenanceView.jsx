@@ -17,6 +17,7 @@ import { MODULE_INFO } from '../constants/permissionModules';
 import { smartFilter } from '../utils/searchUtils';
 import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLocks';
 import { fetchTrasladoSwitch, setTrasladoSwitch } from '../data/trasladoSwitch';
+import AvisoDelPortal from '../components/mantenimiento/AvisoDelPortal';
 import { mensajeAmigable } from '../utils/errorMessages';
 
 /**
@@ -241,6 +242,10 @@ export default function MaintenanceView() {
                 su job de cron aparte. La única excepción es el recálculo mensual de MIN·MAX, que sí
                 lo respeta.
             </Notice>
+
+            {/* La franja de aviso del portal. Va primera porque es lo que se
+                enciende ANTES de tocar nada más: avisar y después trabajar. */}
+            <AvisoDelPortal />
 
             {/* Pausa del traslado de pedidos. Es lo único de esta pantalla que
                 detiene un proceso, así que va arriba y aparte del candado. */}

@@ -6,6 +6,7 @@
   "tablas": {
     "announcements": ["is_archived"],
     "backup_sync_log": ["success"],
+    "banner_portal": ["activo"],
     "bitacora_areas": ["activa", "mide_humedad"],
     "bitacora_lecturas": ["fuera_de_rango", "tarde"],
     "bitacora_limpiezas": ["tarde"],

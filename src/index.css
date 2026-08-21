@@ -2549,6 +2549,12 @@ thead.sticky,
 @utility z-content         { z-index: 20;    }
 @utility z-tabs            { z-index: 30;    }
 @utility z-header          { z-index: 40;    }
+/* La franja de aviso del tope (BannerPortal). Estaba escrita como `z-ribbon`
+   desde v2.57.1 y la utilidad NUNCA existió: sin regla, el `fixed` se quedaba
+   en `z-index: auto` y cualquier hermano posicionado lo pintaba encima. Va
+   arriba del encabezado y DEBAJO del panel lateral, para que el cajón de móvil
+   siga tapándola como hasta hoy. */
+@utility z-ribbon          { z-index: 45;    }
 @utility z-sidebar         { z-index: 50;    }
 @utility z-sidebar-desktop { z-index: 60;    }
 @utility z-dropdown        { z-index: 70;    }

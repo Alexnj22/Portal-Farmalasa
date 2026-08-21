@@ -102,3 +102,27 @@ export function textoBuscable(fila, nombrePor) {
         nombrePor?.(fila?.employee_id) ?? '',
     ].join(' ');
 }
+
+/**
+ * Lo que trae la caja, PRODUCTO por producto y con sus lotes adentro.
+ *
+ * `lotesPedidos` aplana: saca los lotes de todos los renglones y los junta en
+ * una sola lista. Con UN producto eso alcanza —el nombre está en el título—,
+ * pero con varios la lista queda sin dueño: cinco lotes seguidos no dicen cuál
+ * es de cuál. En el traslado que lo destapó (5 productos, Bodega → Salud 5, el
+ * 20-ago) dos de los cinco eran «BRONCODINE FLUX», uno jarabe y otro gotas —o
+ * sea que el lote suelto no sólo no ayudaba: se podía cotejar contra el
+ * producto equivocado y darlo por bueno.
+ *
+ * Quien recibe tiene la caja en la mano y es el único que puede comprobar que
+ * llegó lo que se pidió. Esta es la lista contra la que lo hace.
+ */
+export function renglonesDe(meta) {
+    return (Array.isArray(meta?.items) ? meta.items : []).map((i, idx) => ({
+        idx,
+        nombre: i.descripcion ?? `#${i.erp_product_id ?? '?'}`,
+        cantidad: Number(i.cantidad) || 0,
+        presentacion: i.presentacion_tipo ?? '',
+        lotes: (Array.isArray(i.lotes) ? i.lotes : []).filter(l => l && (l.lote || l.vence)),
+    }));
+}

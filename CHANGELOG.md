@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.702.3 — Traslado de varios productos: la caja se coteja por producto, no por lotes sueltos
+
+Reportado sobre el traslado de 5 productos que salió de Bodega a Salud 5 el
+20-ago: «sólo dice la cantidad de productos y los lotes, pero no veo el listado
+de productos para confirmar que todo está bien».
+
+Los lotes se pintaban **aplanados** —`lotesPedidos` los sacaba de todos los
+renglones y los juntaba en una lista— y con un solo producto eso alcanza,
+porque el nombre está en el título. Con varios, la lista queda sin dueño.
+
+Y en ese traslado no era sólo un dato que faltaba: dos de los cinco eran
+**BRONCODINE FLUX**, uno jarabe de 120 ml y otro gotas de 30 ml. O sea que la
+lista sin nombres se podía cotejar contra el producto equivocado y darla por
+buena — un lote sin su producto no es una verificación, es una coincidencia.
+
+Ahora, cuando el traslado trae más de un producto, la lista va **por producto**
+—nombre, cuánto y en qué presentación— con sus lotes sangrados debajo. En las
+tres pantallas donde estaba el mismo defecto:
+
+- el **detalle** de un traslado en camino (el de la captura), con todos;
+- la **tarjeta** de «en camino», topada en 2 como siempre —la rejilla iguala
+  alturas y un traslado largo empuja el botón fuera de la pantalla—;
+- la tarjeta de **por confirmar**, que es la que mira quien va al estante a
+  buscarlo: las casillas de la decisión traen el nombre para decidir cuánto
+  sale, y ahora el lote a buscar está junto al suyo.
+
+Con un solo producto no cambia nada: el nombre ya está arriba y los lotes van a
+secas, como siempre. Un pedido viejo sin lotes tampoco pinta un hueco.
+
 ## v2.702.2 — lo que el gate no puede ver, lo cuenta el barrido
 
 F7 de `docs/PLAN-MOVIL-2026-08-20.md`, y el último hueco declarado del canon

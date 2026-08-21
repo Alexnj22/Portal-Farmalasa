@@ -9,7 +9,7 @@ import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, piezasDe } from './trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, piezasDe, renglonesDe } from './trasladoTexto';
 import { desdeHace, cuantoTardo } from '../solicitudes/movimientoTexto';
 import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
 import ModalShell from '../../components/common/ModalShell';
@@ -37,6 +37,63 @@ export function Recorrido({ meta, className = '' }) {
         <span className={`truncate ${className}`}>
             {meta?.origen_branch_name ?? 'La otra sala'} → {meta?.branch_name ?? 'destino'}
         </span>
+    );
+}
+
+/* ─── Qué trae la caja, renglón por renglón ───────────────────────────────────
+ *
+ * Los lotes se mostraban APLANADOS —`lotesPedidos` los saca de todos los
+ * renglones y los junta— y con un solo producto eso alcanza: el nombre está
+ * arriba. Con varios, no. Reportado sobre el traslado de 5 productos del 20-ago:
+ * «sólo dice la cantidad de productos y los lotes, pero no veo el listado de
+ * productos para confirmar que todo está bien».
+ *
+ * Y no era sólo un dato que faltaba: dos de esos cinco eran «BRONCODINE FLUX»
+ * —uno jarabe de 120 ml y otro gotas de 30 ml—, así que la lista sin nombres se
+ * podía cotejar contra el producto equivocado y darla por buena. Un lote sin su
+ * producto no es una verificación, es una coincidencia.
+ *
+ * @param tope Cuántos productos caben antes de resumir el resto. `null` = todos,
+ *             que es el detalle. La TARJETA sí lo topa: la rejilla iguala
+ *             alturas, y un traslado largo estira a todas las demás y empuja el
+ *             botón fuera de la pantalla.
+ */
+function ListaRenglones({ renglones, tope = null }) {
+    const visibles = tope == null ? renglones : renglones.slice(0, tope);
+    const deMas    = renglones.length - visibles.length;
+    return (
+        <div className="flex flex-col gap-1.5">
+            {visibles.map(r => (
+                <div key={r.idx} className="min-w-0">
+                    {/* El nombre a la izquierda y la cuenta a la derecha: es la
+                        línea que se lee contra lo que hay en la caja. */}
+                    <p className="flex items-baseline justify-between gap-2 text-label font-semibold text-content">
+                        <span className="min-w-0 truncate" title={r.nombre}>{r.nombre}</span>
+                        <span className="shrink-0 tabular-nums text-content-2">
+                            {r.cantidad} {r.presentacion}
+                        </span>
+                    </p>
+                    {/* Sus lotes, SANGRADOS: así se leen como parte del producto
+                        de arriba y no como un renglón más de la lista. */}
+                    {r.lotes.map((l, i) => (
+                        <p key={i} className="pl-3 flex items-baseline justify-between gap-2 text-micro font-semibold text-content-3">
+                            <span className="min-w-0 truncate">
+                                <span className="font-mono">{l.lote || 'sin lote'}</span>
+                                {l.vence && <span> · vence {fmtFechaLarga(l.vence)}</span>}
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                                {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                            </span>
+                        </p>
+                    ))}
+                </div>
+            ))}
+            {deMas > 0 && (
+                <p className="text-micro font-bold text-brand-text">
+                    +{deMas} {deMas === 1 ? 'producto más' : 'productos más'}
+                </p>
+            )}
+        </div>
     );
 }
 
@@ -409,6 +466,7 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) 
      * `TarjetaSolicitud`: nueve tintes compitiendo ya la habían roto una vez. */
     const origenId = Number(meta.origen_branch_id ?? 0);
     const deOtraSala = Boolean(miBranch) && origenId > 0 && origenId !== Number(miBranch);
+    const renglones = renglonesDe(meta);
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
@@ -425,10 +483,21 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) 
                             </Badge>
                         </div>
                     )}
-                    {/* Los lotes que pidieron, cuando el pedido los trae. Van
-                        ACÁ —bajo lo que se pide y antes de quién lo pide—
-                        porque son parte de qué se pide, no del contexto. */}
-                    {lotesPedidos(meta).length > 0 && (
+                    {/* Lo que pidieron, con sus lotes. Va ACÁ —bajo lo que se
+                        pide y antes de quién lo pide— porque es parte de qué se
+                        pide, no del contexto.
+
+                        Con VARIOS productos, por producto: el renglón de arriba
+                        dice «3 productos · 3 unidades», y tres lotes sueltos
+                        debajo no dicen de cuál es cada uno — que es justo lo que
+                        el despachador tiene que ir a buscar al estante. Las
+                        casillas de la decisión traen el nombre para decidir
+                        cuánto sale; el lote a buscar está acá, junto al suyo. */}
+                    {renglones.length > 1 ? (
+                        <div className="mt-1">
+                            <ListaRenglones renglones={renglones} />
+                        </div>
+                    ) : lotesPedidos(meta).length > 0 && (
                         <div className="mt-1 flex flex-col gap-0.5">
                             {lotesPedidos(meta).map((l, i) => (
                                 <p key={i} className="text-micro text-content-2 font-semibold">
@@ -495,6 +564,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
     const meta   = fila.metadata ?? {};
     const piezas = piezasDe(meta);
     const lotes  = lotesPedidos(meta);
+    const renglones = renglonesDe(meta);
     const lotesDeMas = Math.max(0, lotes.length - LOTES_EN_TARJETA);
 
     // Salió cuando se despachó, que es lo que `updated_at` guarda en esta etapa.
@@ -574,13 +644,22 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         <Recorrido meta={meta} className="text-label font-semibold text-content-2 min-w-0" />
                     </div>
 
-                    {/* Los lotes que se pidieron. Quien recibe tiene la caja en
-                        la mano y es el único que puede comprobarlos — pero en
-                        la tarjeta van TOPADOS: un traslado de doce lotes
-                        empujaba el botón fuera de la pantalla y estiraba a
-                        todas las demás, porque la rejilla iguala alturas. El
-                        resto se lee entero en el detalle. */}
-                    {lotes.length > 0 && (
+                    {/* Qué trae la caja. Quien recibe es el único que puede
+                        comprobarlo — pero en la tarjeta va TOPADO: un traslado
+                        de doce renglones empujaba el botón fuera de la pantalla
+                        y estiraba a todas las demás, porque la rejilla iguala
+                        alturas. El resto se lee entero en el detalle.
+
+                        Con VARIOS productos, el ancla es el producto y los
+                        lotes cuelgan de él: arriba la tarjeta dice «5
+                        productos», y cinco lotes sueltos debajo no dicen cuál
+                        es de cuál. Con uno solo el nombre ya está arriba y van
+                        los lotes a secas, como siempre. */}
+                    {renglones.length > 1 ? (
+                        <div className="mt-1.5">
+                            <ListaRenglones renglones={renglones} tope={LOTES_EN_TARJETA} />
+                        </div>
+                    ) : lotes.length > 0 && (
                         <div className="mt-1.5 flex flex-col gap-0.5">
                             {lotes.slice(0, LOTES_EN_TARJETA).map((l, i) => (
                                 <p key={i} className="text-micro text-content-2 font-semibold">
@@ -678,6 +757,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
 function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, ahora,
                          ocupado, error, onRecibir, onCerrar }) {
     const meta = fila.metadata ?? {};
+    const renglones = renglonesDe(meta);
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-lg"
             zClass="z-toast" closeOnEsc={!ocupado} surface={null}
@@ -699,9 +779,23 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                         <Recorrido meta={meta} />
                     </div>
 
-                    {/* Los lotes, TODOS y en su propia superficie: es la lista
-                        que se coteja renglón por renglón contra lo que llegó. */}
-                    {lotes.length > 0 && (
+                    {/* Lo que trae la caja, en su propia superficie: es la lista
+                        que se coteja renglón por renglón contra lo que llegó.
+
+                        Con VARIOS productos va por producto, con sus lotes
+                        adentro — antes iban los lotes sueltos y no se sabía cuál
+                        era de cuál (ver `ListaRenglones`). Con uno solo el
+                        nombre ya está en el título del modal, así que repetirlo
+                        sería decir dos veces lo mismo: ahí van los lotes a
+                        secas, como siempre. */}
+                    {renglones.length > 1 ? (
+                        <div data-surface="card" className="px-3 py-2.5">
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">
+                                Los {renglones.length} productos que se pidieron
+                            </p>
+                            <ListaRenglones renglones={renglones} />
+                        </div>
+                    ) : lotes.length > 0 && (
                         <div data-surface="card" className="px-3 py-2.5">
                             <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">
                                 {lotes.length === 1 ? 'El lote que se pidió' : `Los ${lotes.length} lotes que se pidieron`}

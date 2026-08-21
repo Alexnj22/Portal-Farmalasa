@@ -132,7 +132,10 @@ export default function TabPorRevisar({ openModal }) {
                 /* El toque abre la ficha del cliente. Sin `usarAccionDeFila`
                    gana la hoja genérica de `DataTable`, que sólo repite las
                    columnas que ya se leen en la tarjeta. */
-                movil={{ usarAccionDeFila: true }}
+                /* `acciones: 'mantener'`: «Ya lo revisé» es la única acción de
+                   esta pantalla y vivía en una columna que el teléfono no pinta,
+                   así que la lista no se podía despachar desde el teléfono. */
+                movil={{ usarAccionDeFila: true, acciones: 'mantener' }}
                 /* El contrato de `empty` es { icon, message, subtext } — NO
                    lleva `title`. Un `title` de más no rompe nada: simplemente
                    no se pinta, y el texto se pierde sin que nadie se entere. */

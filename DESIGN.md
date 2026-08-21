@@ -5889,17 +5889,65 @@ la ficha abriendo su detalle *además* de la hoja.
 La lista lleva una línea al pie —«Mantené presionada una tarjeta para ver sus
 opciones»— porque un gesto que no se ve no existe.
 
+#### Dónde está aplicado (2026-08-20)
+
+`apilada` se decidió **midiendo**, no leyendo: se barrieron las listas en WebKit
+iPhone 13 contando los píxeles recortados dentro de cada ficha —descontando lo
+que vive en un carril con `overflow-x` y lo que se corta con `ellipsis`, que
+desborda por diseño—.
+
+| vista | recortaba | qué se aplicó |
+|---|---|---|
+| Libro de compras completo ×2 | 161px en 15 de 54 | `apilada` |
+| Compras | 77px en 9 de 51 | `apilada` |
+| Personal | 42px en 2 de 31 | `apilada` + `acciones: 'mantener'` |
+| Productos · Mín·Máx | 105px | `apilada` + `acciones: 'mantener'` |
+| Cotizaciones | — | `acciones: 'mantener'` (editar · imprimir · anular) |
+| Facturas de compra | — | `acciones: 'mantener'` (ver · las tres descargas) |
+| Clientes · Por revisar | — | `acciones: 'mantener'` («Ya lo revisé») |
+| Ventas · Productos | — | `acciones: 'mantener'` (ocultar · mostrar) |
+| Planilla | — | `acciones: 'mantener'` (imprimir boleta · editar) |
+
+**Lo que NO se surfacea**: una celda de acciones cuyo botón despliega un
+`<tr colSpan>` hermano. Catálogo, Ventas · Vendedores y Facturación tienen ahí
+un chevron o un formulario que en modo ficha no se pinta — una acción cuyo
+destino no existe es un control que responde y no sirve. El destino de esas es
+`ExpedienteMovil` (§32.8), no la hoja de acciones.
+
 #### La celda de acciones cambia de forma sola
 
 En la tabla es una columna de 80px: botones de 13px y un «Más» que se abre al
 pasar el mouse. En la hoja hay ancho de sobra y no hay mouse.
 
-`DataTable` exporta **`useEnHojaDeAcciones()`**: la celda pregunta dónde está y
-se dibuja en consecuencia (`RowActions` lista las cinco acciones completas, sin
-desplegable, con el objetivo de dedo entero). Es el mismo contrato que
-`FichaCtx` — la presencia del contexto ES la señal. Se resolvió así y no con una
-prop porque una prop obligaría a la vista a rendir la celda **dos veces**, una
-por forma, y a mantener las dos en sincronía a ojo.
+`src/components/common/hojaDeAcciones.js` exporta
+**`useEnHojaDeAcciones()`**: la celda pregunta dónde está y se dibuja en
+consecuencia. Es el mismo contrato que `FichaCtx` — la presencia del contexto ES
+la señal. Se resolvió así y no con una prop porque una prop obligaría a la vista
+a rendir la celda **dos veces**, una por forma, y a mantener las dos en
+sincronía a ojo. Vive en su propio módulo y no en `DataTable` porque `DataTable`
+importa `Button`, y un ciclo de ESM no falla al compilar: deja un `undefined` en
+tiempo de ejecución, lejos de su causa.
+
+Lo consultan dos:
+
+- **`Button`** — un `iconOnly` recupera su rótulo y se dibuja como renglón de
+  ancho completo. El rótulo **no se inventa**: ya viaja en `title`/`aria-label`,
+  que es donde este proyecto lo escribe siempre. Con esto, las seis vistas con
+  acciones de icono quedaron resueltas sin tocar ninguna — un ojo suelto en una
+  hoja no dice si anula o si borra.
+- **`RowActions`** de Mín·Máx — lista las cinco acciones completas, sin el
+  desplegable «Más», que depende de un `hover` que en táctil no existe.
+
+Y la hoja arregla dos cosas más que vienen de la tabla: fuerza visibles las
+acciones envueltas en `opacity-0 group-hover:opacity-100` —cinco vistas las
+revelan al pasar el mouse, y sin fila que sobrevolar la hoja se abría vacía— y
+apila el contenedor de la celda, que en la tabla es una hilera alineada a la
+derecha.
+
+**Un `<button>` escrito a mano no participa.** Ventas · Productos tenía su ojo
+de ocultar a mano y en la hoja salía sin nombre; se migró a `Button`. Es la
+misma razón de siempre para preferir el canónico: la mejora llega sola a quien
+ya lo usaba.
 
 ### Viewport meta
 

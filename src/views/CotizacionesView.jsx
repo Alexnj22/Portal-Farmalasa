@@ -1044,7 +1044,10 @@ export default function CotizacionesView() {
                 /* El toque abre la cotización completa —sus renglones y sus
                    totales—, que es un destino de verdad. Sin declararlo gana la
                    hoja genérica de `DataTable`, que sólo repite las columnas. */
-                movil={{ usarAccionDeFila: true }}
+                /* `acciones: 'mantener'`: editar, imprimir y anular vivían en
+                   una columna que el teléfono no pinta — o sea que desde el
+                   teléfono una cotización se podía ver y nada más (§32.9). */
+                movil={{ usarAccionDeFila: true, acciones: 'mantener' }}
                 empty={{ icon: Receipt, message: 'Sin cotizaciones' }}
                 minWidth="600px"
             >

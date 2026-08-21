@@ -290,7 +290,11 @@ function TabFacturas({
             <DataTable columns={cols} loading={loading} /* La inferencia toma la primera columna como identidad, y acá esa
                    es la fecha: la ficha decía «05/08/2026 · $2.00 · JOSE…». A una
                    lista de compras se entra buscando a QUIÉN se le compró. */
-                movil={{ usarAccionDeFila: true, identidad: 'proveedor', ancla: 'total' }}
+                /* `apilada`: la celda del proveedor es una fila horizontal
+                   —aviso de «sin vincular», nombre y número— sin nada que pueda
+                   encoger, así que en la mitad izquierda se recortaba: medido,
+                   77px en 9 de 51 tarjetas. Ver §32.9. */
+                movil={{ usarAccionDeFila: true, identidad: 'proveedor', ancla: 'total', apilada: true }}
                 empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>

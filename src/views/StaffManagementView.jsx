@@ -989,7 +989,12 @@ const StaffManagementView = ({
             action: hasActiveFilters ? { label: 'Limpiar filtros', onClick: clearFilters } : undefined,
           }}
           minWidth="800px"
-          movil={{ usarAccionDeFila: true }}
+          /* `apilada`: la celda del empleado es un bloque —foto, nombre,
+             insignias de cumpleaños/aniversario/vencimiento y los enlaces de
+             teléfono—, y en la mitad izquierda se recortaba (medido: 42px).
+             `acciones: 'mantener'`: recontratar y la edición rápida vivían en
+             una columna que el teléfono no pinta. Ver §32.9. */
+          movil={{ usarAccionDeFila: true, apilada: true, acciones: 'mantener' }}
         >
           {isPracticantesView
             ? paginatedPracticantes.map((p, i) => (

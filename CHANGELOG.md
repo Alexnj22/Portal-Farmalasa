@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.697.0 — el mismo canon móvil en las otras nueve tablas
+
+Extiende v2.696.0 al resto del portal: dónde se aplicó salió de **medir**, no de
+leer. Se barrieron las listas en WebKit iPhone 13 contando los píxeles
+recortados dentro de cada ficha —descontando lo que vive en un carril con
+`overflow-x` y lo que se corta con `ellipsis`, que desborda por diseño—.
+
+**`apilada` donde la primera celda es un bloque**, con el recorte medido antes y
+después:
+
+| vista | recortaba | ahora |
+|---|---|---|
+| Libro de compras completo ×2 | 161px en 15 de 54 fichas | **0** |
+| Compras | 77px en 9 de 51 | **0** |
+| Personal | 42px en 2 de 31 | el nombre y las insignias entran |
+
+**`acciones: 'mantener'` en seis vistas** cuyas acciones vivían en una columna
+que el teléfono no pinta — o sea que desde el teléfono esas pantallas eran de
+sólo lectura sin que nada lo dijera:
+
+- **Cotizaciones** — editar, imprimir/PDF y anular.
+- **Facturas de compra** — ver el detalle y las tres descargas (JSON, PDF y el
+  paquete).
+- **Clientes · Por revisar** — «Ya lo revisé», que es la única acción de esa
+  pantalla.
+- **Ventas · Productos** — ocultar un producto de la lista y volver a mostrarlo.
+- **Personal** — recontratar y la edición rápida.
+- **Planilla** — imprimir la boleta y editar el renglón.
+
+**Tres cosas que la hoja tuvo que resolver**, y las tres se descubrieron
+abriéndola de verdad:
+
+1. **Un `iconOnly` recupera su rótulo.** En una tabla un botón de icono se
+   entiende: está en su columna, al lado de sus hermanos, y su `title` sale al
+   pasar el mouse. En la hoja eran tres íconos sueltos — el rojo no dice si
+   anula o si borra. Ahora `Button` pregunta dónde está y se dibuja como renglón
+   de ancho completo con su rótulo. El rótulo **no se inventa**: ya viajaba en
+   `title`/`aria-label`. Con eso las seis vistas quedaron resueltas sin tocar
+   ninguna.
+2. **Las acciones ocultas tras `hover` se muestran.** Cinco vistas las envuelven
+   en `opacity-0 group-hover:opacity-100`: en la tabla aparecen al pasar el
+   mouse por la fila. En la hoja no hay fila que sobrevolar ni mouse que la
+   sobrevuele, así que la hoja se abría **vacía**.
+3. **El contenedor de la celda se apila.** En la tabla es una hilera alineada a
+   la derecha; en la hoja, una columna.
+
+**Un `<button>` a mano no participa.** El ojo de ocultar de Ventas · Productos
+estaba escrito a mano y en la hoja salía sin nombre; se migró a `Button`. Es la
+razón de siempre para preferir el canónico: la mejora llega sola a quien ya lo
+usaba.
+
+**Y lo que NO se surfacea**, que es la mitad de la decisión: una celda de
+acciones cuyo botón despliega un `<tr colSpan>` hermano. Catálogo, Ventas ·
+Vendedores y Facturación tienen ahí un chevron o un formulario de confirmación
+que en modo ficha no se pinta — una acción cuyo destino no existe es un control
+que responde y no sirve. El destino de esas es `ExpedienteMovil` (§32.8), no la
+hoja de acciones, y queda pendiente para Facturación.
+
+`useEnHojaDeAcciones()` se mudó a `src/components/common/hojaDeAcciones.js`:
+`DataTable` importa `Button`, así que dejarlo en `DataTable` cerraba un ciclo de
+ESM — que no falla al compilar, deja un `undefined` en tiempo de ejecución lejos
+de su causa.
+
+Verificado abriendo la hoja de cada una en WebKit iPhone 13 contra producción:
+Cotizaciones («Editar · Imprimir / PDF · Anular»), Facturas de compra («Ver
+detalle · Descargar JSON · Descargar PDF · Descargar paquete»), Personal
+(«Edición rápida · Ver perfil completo»), Clientes · Por revisar («Ya lo
+revisé»), Ventas · Productos («Ocultar producto») y Mín·Máx («Poner 0 ·
+Restaurar · Historial · Ocultar»). **La Planilla no se pudo verificar en vivo**:
+su tabla sólo existe con una planilla generada y el período abierto no tiene
+ninguna. DESIGN.md §32.9.
+
 ## v2.696.1 — Documentada la lectura de boletas y la prueba sobre recetas
 
 `docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md`: qué se construyó para el

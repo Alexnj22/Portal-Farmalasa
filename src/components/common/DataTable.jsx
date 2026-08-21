@@ -32,6 +32,7 @@ import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
 import OjoDeTarjeta from './OjoDeTarjeta';
 import usePulsacionLarga from '../../hooks/usePulsacionLarga';
+import { HojaAccionesCtx } from './hojaDeAcciones';
 
 // `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind
 // escanea el FUENTE, así que esa clase nunca existió por sí misma — funcionaba
@@ -557,23 +558,6 @@ function limpiarFilas(children) {
   return { hijos: limpiar(children).filter(Boolean), descartadas };
 }
 
-// ── ¿Estamos dentro de la hoja de acciones? ─────────────────────────────────
-// La celda de acciones está escrita para una TABLA: tres botones de 13px en una
-// columna de 80, con un desplegable «Más» que se abre al pasar el mouse. Metida
-// tal cual en una hoja del teléfono queda diminuta arriba a la izquierda, y su
-// «Más» depende de un `hover` que en táctil no existe.
-//
-// En vez de pasarle una prop —que obligaría a la vista a rendir DOS veces la
-// misma celda, una por forma—, la celda pregunta dónde está. Es el mismo
-// contrato que `FichaCtx`: la presencia del contexto ES la señal. Una celda que
-// no lo consulta se dibuja igual que siempre.
-const HojaAccionesCtx = React.createContext(false);
-
-// eslint-disable-next-line react-refresh/only-export-components -- hook chico y acoplado a la hoja de acciones de este archivo
-export function useEnHojaDeAcciones() {
-  return React.useContext(HojaAccionesCtx);
-}
-
 // El contexto es el que convierte a `DataRow` en ficha. Va aparte de `TableCtx`
 // —que lleva los tokens y lo consumen también `DataCell` y el encabezado—
 // porque su presencia ES la señal: si hay `FichaCtx`, la fila no se pinta como
@@ -830,7 +814,15 @@ function Ficha({ celdas, onClick }) {
           ariaLabel="Opciones de la fila">
           <HojaMovil titulo={deCol(papeles.identidad)} subtitulo="Opciones">
             <HojaAccionesCtx.Provider value={true}>
-              <div className="flex flex-col gap-1"
+              {/* ── El acuse de mouse no existe en el teléfono ──────────────
+                  Cinco vistas envuelven sus acciones en
+                  `opacity-0 group-hover:opacity-100`: en la tabla los botones
+                  aparecen al pasar el mouse por la fila. Dentro de la hoja no
+                  hay fila que sobrevolar ni mouse que la sobrevuele, así que se
+                  quedaban en 0 — o sea, una hoja que se abre vacía.
+                  El override es local a la hoja y no toca la tabla. */}
+              <div className="flex flex-col gap-1 [&_.opacity-0]:opacity-100
+                  [&>div]:!flex-col [&>div]:!items-stretch [&>div]:!gap-1"
                 onClick={() => setHojaAcciones(false)}>
                 {celdasDeAccion.map((v, i) => <React.Fragment key={i}>{v}</React.Fragment>)}
               </div>

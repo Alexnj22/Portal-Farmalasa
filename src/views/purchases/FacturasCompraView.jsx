@@ -1053,7 +1053,7 @@ function TabDocumentos({
                 con su hoja genérica, que sólo repite las columnas: se reportó
                 como «me da información, pero muy reducida, no puedo ver los
                 productos, no puedo ver el PDF». */}
-            <DataTable dense columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} movil={{ usarAccionDeFila: true }} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
+            <DataTable dense columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} movil={{ usarAccionDeFila: true, acciones: 'mantener' }} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={canOpen ? () => viewDetail(row) : undefined}>
                         <DataCell>

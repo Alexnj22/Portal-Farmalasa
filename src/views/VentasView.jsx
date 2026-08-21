@@ -2481,7 +2481,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 /* `usarAccionDeFila`: el toque abre el MISMO detalle que la fila
                    expande en escritorio. Sin declararlo gana la hoja genérica de
                    `DataTable`, que sólo repite las columnas de la tarjeta. */
-                movil={{ identidad: 'descripcion', ancla: 'neto', chips: ['laboratorio_nombre', 'cantidad'], usarAccionDeFila: true }}
+                /* `acciones: 'mantener'`: ocultar un producto de la lista —y
+                   volver a mostrarlo— vivía en una columna que el teléfono no
+                   pinta. Ver §32.9. */
+                movil={{ identidad: 'descripcion', ancla: 'neto', chips: ['laboratorio_nombre', 'cantidad'], usarAccionDeFila: true, acciones: 'mantener' }}
             >
                 {paginated.map((r, i) => {
                                 const globalIdx  = (page - 1) * pageSize + i;
@@ -2610,19 +2613,26 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     del modo de la tabla —`showHidden` filtra la lista
                                                     entera, así que todas las filas dirían lo mismo—.
                                                     El `aria-label` ya dice qué va a pasar. */}
-                                                <button
+                                                {/* `Button` y no un `<button>` a mano: en la hoja
+                                                    que abre la mantenida (§32.9) un `iconOnly`
+                                                    canónico recupera su rótulo desde `title`, y a
+                                                    mano era un ojo suelto sin nombre. El
+                                                    `aria-label` largo se queda —dice de QUÉ
+                                                    producto— y el `title` corto es el que se
+                                                    dibuja como renglón. */}
+                                                <Button
+                                                    variant="ghost"
+                                                    iconOnly
+                                                    icon={showHidden ? EyeOff : Eye}
+                                                    title={showHidden ? 'Volver a mostrar' : 'Ocultar producto'}
                                                     aria-label={showHidden
                                                         ? `Volver a mostrar ${r.descripcion || 'el producto'}`
                                                         : `Ocultar ${r.descripcion || 'el producto'} para todos`}
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
-                                                    className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
-                                                        showHidden
-                                                            ? 'text-content-3 hover:text-success-text hover:bg-success/10'
-                                                            : 'text-content-3 hover:text-danger-text hover:bg-danger/10'
-                                                    }`}
-                                                >
-                                                    {showHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                                                </button>
+                                                    className={showHidden
+                                                        ? 'text-content-3 hover:text-success-text hover:bg-success/10'
+                                                        : 'text-content-3 hover:text-danger-text hover:bg-danger/10'}
+                                                />
                                             </LiquidTooltip>
                                         </DataCell>
                                     </DataRow>

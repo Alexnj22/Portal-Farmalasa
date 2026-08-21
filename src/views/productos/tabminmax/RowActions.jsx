@@ -7,7 +7,7 @@ import {
     XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal,
 } from 'lucide-react';
 import useCapaFlotante from '../../../utils/capaFlotante';
-import { useEnHojaDeAcciones } from '../../../components/common/DataTable';
+import { useEnHojaDeAcciones } from '../../../components/common/hojaDeAcciones';
 
 export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
     isBodegaRow,

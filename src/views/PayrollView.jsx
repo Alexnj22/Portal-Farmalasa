@@ -327,7 +327,13 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         </div>
 
                         {/* Table */}
-                        <DataTable columns={COLS_PLANILLA} minWidth="720px">
+                        {/* `acciones: 'mantener'`: imprimir la boleta y editar el
+                            renglón vivían en una columna que el teléfono no pinta,
+                            y encima detrás de un `hover` que en táctil no ocurre —
+                            o sea que desde el teléfono la planilla era de sólo
+                            lectura sin que nada lo dijera. Ver §32.9. */}
+                        <DataTable columns={COLS_PLANILLA} minWidth="720px"
+                            movil={{ acciones: 'mantener' }}>
                             {grp.map((e, ei) => {
                                 const emp    = e.employee || {};
                                 const edited = e.status === 'EDITED';

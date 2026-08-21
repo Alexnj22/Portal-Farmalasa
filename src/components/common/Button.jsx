@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO, VARIANTES_RELLENAS } from './iconNames';
+import { useEnHojaDeAcciones } from './hojaDeAcciones';
 
 // Botón compartido — Fase T3 (AUDITORIA-TEMA-2026-07.md, aprobado en la
 // lámina de componentes T2.3: normal-case en vez de mayúsculas con tracking,
@@ -189,6 +190,18 @@ const Button = memo(({
     // Solo cuando NO hay texto y nadie dio nombre. Si el llamador pasó
     // `aria-label` o `title`, el suyo manda — este es el piso.
     const nombreIcono = Icon?.displayName ?? Icon?.name;
+    // ── En la hoja de acciones, un `iconOnly` recupera su rótulo ─────────
+    // Un botón de icono se entiende en una tabla: está en la columna de
+    // acciones, al lado de sus hermanos, y su `title` sale al pasar el mouse.
+    // En la hoja que abre la mantenida (§32.9) no hay ni columna ni mouse — tres
+    // íconos sueltos no dicen si el rojo anula o borra.
+    //
+    // El rótulo NO se inventa: ya viaja en `title`/`aria-label`, que es donde
+    // este proyecto lo escribe siempre. Acá sólo se dibuja.
+    const enHojaDeAcciones = useEnHojaDeAcciones();
+    const rotuloDeIcono = rest.title || rest['aria-label'];
+    const comoRenglon = enHojaDeAcciones && iconOnly && !!rotuloDeIcono;
+
     const nombreAuto = iconOnly && !rest['aria-label'] && !rest.title
         ? NOMBRE_POR_ICONO[nombreIcono]
         : undefined;
@@ -262,7 +275,9 @@ const Button = memo(({
                             : (TONE_CLASSES[tone] || VARIANT_CLASSES.primary))
                     : (VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary)}
                 ${tone && !soft ? 'hover:translate-y-[var(--lift-hover)]' : ''}
-                ${iconOnly ? (ICON_ONLY_SIZE[size] || ICON_ONLY_SIZE.md) : (SIZE_CLASSES[size] || SIZE_CLASSES.md)}
+                ${comoRenglon
+                    ? 'w-full justify-start gap-3 px-3 py-3 text-body font-bold'
+                    : iconOnly ? (ICON_ONLY_SIZE[size] || ICON_ONLY_SIZE.md) : (SIZE_CLASSES[size] || SIZE_CLASSES.md)}
                 ${className}`}
             {...rest}
         >
@@ -287,6 +302,7 @@ const Button = memo(({
                 El camino de la prop `icon` nunca tuvo el defecto — ahí el icono
                 es hermano de este span y el `inline-flex` del botón lo alinea. */}
             {!iconOnly && <span className="relative inline-flex items-center gap-1">{children}</span>}
+            {comoRenglon && <span className="relative">{rotuloDeIcono}</span>}
         </button>
     );
 });

@@ -564,7 +564,11 @@ export default function LibroComprasCompletoView({ openModal }) {
                     a la hoja, donde entra completo y con su rótulo. */}
                 {esDecl ? (
                 <DataTable columns={COLS_DECL} dense loading={loading} empty={vacio}
-                    movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'], usarAccionDeFila: true }}>
+                    /* `apilada`: el nombre del proveedor es un `line-clamp-2` y
+                       en la mitad izquierda de la ficha se recortaba — medido,
+                       161px en 15 de 54 tarjetas, que es el peor del portal.
+                       A ancho completo las dos líneas entran. Ver §32.9. */
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'], usarAccionDeFila: true, apilada: true }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`d-${r.documento_completo}-${i}`}
                             onClick={r.json_path ? () => abrirDocumento(r) : undefined}>
@@ -618,7 +622,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                 </DataTable>
                 ) : (
                 <DataTable columns={COLS} dense loading={loading} empty={vacio}
-                    movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'], usarAccionDeFila: true }}>
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'], usarAccionDeFila: true, apilada: true }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}
                             onClick={r.json_path ? () => abrirDocumento(r) : undefined}>

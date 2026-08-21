@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.1 — La bitácora de una bolsa sabe decir «se regularizó»
+
+Las 62 bolsas del 14 al 20 de agosto —seis salas, $39,490.43 guardados,
+$37,610.46 de saldo— seguían en «ABIERTA»: el dinero hacía días que no estaba en
+la sala, pero el circuito del portal (entregar, recibir, contar) nunca se
+registró. Se cerraron de una vez, cuadradas por el saldo de la etiqueta, a
+pedido del usuario.
+
+**Sin firma, y a propósito.** `entregada_por`, `recibida_por` y `contado_por`
+quedan en NULL: nadie entregó, recibió ni contó esas bolsas dentro del portal, y
+poner un nombre ahí habría convertido una regularización en un conteo firmado
+que nadie hizo. Cada bolsa lleva su evento `REGULARIZAR` con la nota que lo dice
+completo, incluido que **la diferencia $0.00 no significa que se haya contado el
+dinero**.
+
+Lo único que cambia en el código es el rótulo: la bitácora traducía las acciones
+con un mapa y una acción nueva salía cruda en pantalla. No se reusó `CONTAR`
+—que ya existía y habría entrado sin tocar nada— porque «Se contó» sería la
+única línea de esa bitácora que miente.
+
+Las 6 bolsas de hoy quedaron intactas.
+
+
 ## v2.703.0 — El alcance deja de fallar abierto y los selectores de sucursal responden al permiso
 
 Dos huecos de la MISMA forma que el de los traslados de Salud 3, encontrados

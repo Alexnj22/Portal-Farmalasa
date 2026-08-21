@@ -70,6 +70,10 @@ const ACCION = {
     ABRIR: 'Se abrió', ANULAR_SALIDA: 'Se anuló una salida',
     ENTREGAR: 'Se entregó', RECIBIR: 'Se recibió', CONTAR: 'Se contó',
     RESOLVER: 'Se resolvió la diferencia', ANULAR: 'Se anuló la bolsa',
+    // El circuito no se registró en su momento y se cerró de una sola vez: la
+    // nota del evento dice qué NO se hizo, así que el rótulo no puede decir
+    // «Se contó» — sería la única línea de la bitácora que miente.
+    REGULARIZAR: 'Se regularizó',
 };
 
 export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {

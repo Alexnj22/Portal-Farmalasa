@@ -194,8 +194,8 @@ apretar «Sincronizar» en producción es un incidente.
 
 Y hay que decirlo, porque su verde no cubre esto:
 
-- **Un tope de 4 disparadores por ruta**, y lo que queda afuera se **anota** en
-  la corrida: 7 en Sucursales y 11 en el tablero. Un tope silencioso se lee como
+- **Un tope de 8 disparadores por ruta**, y lo que queda afuera se **anota** en
+  la corrida: 3 en Sucursales y 7 en el tablero. Un tope silencioso se lee como
   «se midió todo».
 - ~~«Nuevo empleado» no llegó a abrirse~~ — **destrabado (v2.703.5)**, y la causa
   era del instrumento por partida doble. Primero, `el.click()` **sólo dispara
@@ -388,3 +388,4 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.702.1 | F5 — acostado, y un resumen que tapaba hallazgos |
 | v2.702.2 | F7 — `data-destino`: lo que el gate no ve, lo cuenta el barrido |
 | v2.703.5 | «Nuevo empleado» destrabado · la composición de un traslado no se pierde |
+| v2.703.10 | los 19 diálogos medidos · el ancho que ES el dato · el borde visible |

@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.10 — los diálogos, medidos por tandas hasta el final
+
+Se corrió el barrido de diálogos completo, en tres tandas: **17 rutas, 19
+diálogos, cero hallazgos**. Y como siempre en este plan, lo que valió no fue el
+cero: fueron los tres arreglos que hicieron falta para llegar a él — dos del
+portal y uno del instrumento.
+
+### El ancho que ES el dato
+
+El filtro de Mín·Máx marcaba **12 blancos de dedo chicos**. Es la matriz ABC/XYZ:
+una **barra apilada** donde el ancho de cada tramo codifica la proporción. Un
+tramo más ancho es «hay más productos así» — estirarlo a los 44px del mínimo no
+sería acomodarlo, sería **mentir sobre el reparto**. Es la misma familia que la
+excepción de `ScheduleCalendar`: siete días no entran en 390px de ninguna manera.
+
+Pero eso vale para el ancho, **no para el alto**: 22px eran menos de la mitad del
+mínimo y no dicen nada. Sube al mínimo del dedo. Y las letras A/B/C son
+**rótulos**, no datos: también crecen, y le comen 24px a la barra sin deformarla,
+porque lo que codifica es el reparto *relativo*.
+
+Lo que no se puede arreglar se **declara**: `data-medida="dato"` le dice al
+barrido que ahí el tamaño es el número. Lo pone quien sabe, igual que
+`data-interactive` para el acuse — desde afuera no hay forma de distinguir «chico
+por descuido» de «chico porque ése es el número». **12 → 0.**
+
+### El borde que se mide es el VISIBLE, no el de la caja
+
+Los dos diálogos de Metas salían con desborde. El elemento pasaba el filo de la
+pantalla, sí — pero su padre lo recorta con `truncate`, o sea que **en pantalla
+no se escapa nada**: se ve con sus puntos suspensivos, entero dentro de su caja.
+
+El detector miraba el rectángulo propio del elemento. Ahora recorta el borde
+contra cada ancestro que recorta, y sólo cuenta lo que de verdad se sale. **Sexta
+vez que este archivo mide la referencia en vez del cuerpo**, y está anotado como
+tal. **2 → 0** en los dos.
+
+### Y reciclar por DIÁLOGOS, no por rutas
+
+La primera tanda murió con «Target page, context or browser has been closed» —el
+mismo techo que F0 levantó en el otro barrido—. La causa: reciclaba el contexto
+cada 5 **rutas**, copiando al barrido de vistas. Pero acá el costo no lo pone la
+ruta: lo ponen los **diálogos** que se abren adentro, y no vienen repartidos
+parejo — Sucursales abre tres formularios pesados y otra ruta ninguno.
+
+Contando diálogos, el reciclado cae donde está el gasto y la tanda termina en 2
+minutos.
+
+### Lo medido
+
+Los 19 incluyen los formularios largos que nunca se habían abierto en 390px:
+**Nuevo empleado**, los tres de Sucursales (Ajustes generales, Configurar
+horarios, Ver listado de personal), Agregar meta, Nueva solicitud y el detalle de
+un comunicado. Todos en cero.
+
+Sigue en pie el límite declarado: **tope de 8 disparadores por ruta**, con lo que
+sobra anotado en la corrida (3 en Sucursales, 7 en el tablero), y los formularios
+que exigen datos previos —el editor de una boleta necesita una planilla
+generada— quedan fuera por falta de datos, no por diseño.
+
 ## v2.703.9 — En una remesa, lo que trae la boleta se muestra; y el monto vacío ya no la traba
 
 Dos cosas de la misma pantalla, las dos reportadas el 2026-08-21 registrando una

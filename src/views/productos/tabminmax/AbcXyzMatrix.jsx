@@ -105,12 +105,31 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                             onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
                             aria-pressed={filterAbc === abc}
                             aria-label={`Clase ${abc}: ${total} producto${total === 1 ? '' : 's'}`}
-                            className={`w-5 text-caption font-black shrink-0 transition-colors duration-[var(--dur-fast)]
+                            /* La letra es un RÓTULO, no el dato: puede crecer al
+                               mínimo del dedo sin deformar nada. Le come 24px a la
+                               barra de al lado, que conserva sus proporciones
+                               porque lo que codifica es el reparto RELATIVO. */
+                            className={`w-5 min-w-[var(--tap-min)] text-caption font-black shrink-0 min-h-[var(--tap-min)] transition-colors duration-[var(--dur-fast)]
                                 ${filterAbc === abc ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                             {abc}
                         </button>
 
-                        <div className="flex-1 flex h-[22px] rounded-btn overflow-hidden bg-surface-card-hover">
+                        {/* ── El ANCHO de cada tramo es el dato; el alto no ──
+                            Esta barra codifica la proporción: un tramo más ancho
+                            es «hay más productos así». Estirarlo a los 44px del
+                            blanco de dedo (§32) no sería acomodarlo, sería
+                            MENTIR sobre el reparto — es la misma familia que
+                            `ScheduleCalendar`, donde siete días no entran en
+                            390px de ninguna manera.
+                            El ALTO, en cambio, es arbitrario: 22px eran menos de
+                            la mitad del mínimo y no dicen nada. En el teléfono
+                            sube al mínimo del dedo, que es la mitad del problema
+                            que sí se puede arreglar sin deformar el dato.
+                            `data-medida="dato"` se lo dice al barrido móvil, que
+                            si no cuenta estos tramos como blancos chicos: lo
+                            declara quien sabe, igual que `data-interactive`. */}
+                        <div data-medida="dato"
+                            className="flex-1 flex h-[22px] min-h-[var(--tap-min)] rounded-btn overflow-hidden bg-surface-card-hover">
                             {XYZ_KEYS.map(xyz => {
                                 const n = matrix[`${abc}${xyz}`];
                                 if (!n) return null;

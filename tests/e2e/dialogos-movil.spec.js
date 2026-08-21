@@ -62,6 +62,9 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 // Cuántos disparadores por ruta. Acota el tiempo, y lo que quede afuera se
 // ANOTA: un tope silencioso se lee como «se midió todo».
 const TOPE = Number(process.env.TOPE_DIALOGOS || 8);
+// Cada diálogo medido deja su DOM detrás. Seis es lo que aguantó una corrida
+// entera sin que WebKit se llevara la página; ver la nota del bucle.
+const RECICLAR_CADA = Number(process.env.RECICLAR_DIALOGOS || 6);
 
 // ── De pie o acostado (F5, 2026-08-21) ──────────────────────────────────────
 // Todo lo medido hasta hoy fue DE PIE, y acostado no es la misma pantalla: el
@@ -120,8 +123,22 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
         const informe = [];
         const guardar = () => fs.writeFileSync(INFORME_PARCIAL, JSON.stringify(informe, null, 1));
 
-        for (const [indice, ruta] of RUTAS.entries()) {
-            if (indice > 0 && indice % 5 === 0) await reciclarContexto();
+        // ── Reciclar por DIÁLOGOS, no por rutas ──────────────────────────────
+        // La primera versión reciclaba el contexto cada 5 rutas, copiando al
+        // barrido de vistas. Pero acá el costo no lo pone la ruta: lo ponen los
+        // DIÁLOGOS que se abren adentro, y no vienen repartidos parejo —
+        // Sucursales abre tres formularios pesados y otra ruta ninguno. Con el
+        // contador por rutas, `staff,branches,...` murió en la segunda con
+        // «Target page, context or browser has been closed», que es exactamente
+        // el techo que F0 ya había levantado en el otro barrido.
+        //
+        // Contando diálogos, el reciclado cae donde está el gasto.
+        let abiertosDesdeElReciclado = 0;
+        for (const ruta of RUTAS) {
+            if (abiertosDesdeElReciclado >= RECICLAR_CADA) {
+                await reciclarContexto();
+                abiertosDesdeElReciclado = 0;
+            }
             await pg.goto('about:blank').catch(() => {});
             await pg.goto('/' + ruta).catch(() => {});
             await pg.waitForTimeout(1500);
@@ -303,6 +320,7 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
                     });
                     guardar();
                 }
+                abiertosDesdeElReciclado++;
                 await pg.keyboard.press('Escape').catch(() => {});
                 await pg.waitForTimeout(900);
                 // Un diálogo que no cierra con Escape —o un MODO de vista, que

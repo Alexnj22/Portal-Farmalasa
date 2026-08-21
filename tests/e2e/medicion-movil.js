@@ -115,16 +115,35 @@ export const MEDIR = () => {
         if (csEl.pointerEvents === 'none' && !textoPropio) return;
         const r = el.getBoundingClientRect();
         if (r.right > vw + 1 && r.width <= vw * 3) {
-            let enCarril = false, recorte = null;
+            // ── Lo que se mide es el borde VISIBLE, no el de la caja ─────────
+            // Un ancestro con `overflow-x: hidden` recorta a su hijo: la caja
+            // del hijo puede pasarse de la pantalla y en pantalla no se pasa
+            // nada, porque el padre lo cortó antes. Es exactamente lo que hace
+            // `truncate` —`overflow:hidden` + puntos suspensivos—, que es una
+            // decisión de diseño y no una pérdida.
+            //
+            // Sin esto, un rótulo recortado a propósito **dentro de un diálogo
+            // pegado al filo** se contaba como desborde: pasó con la lista de
+            // cobros del aviso de Metas, y el hallazgo describía un texto que en
+            // pantalla se ve con sus puntos suspensivos, entero dentro de su
+            // caja. Sexta vez que este archivo mide la referencia en vez del
+            // cuerpo — por eso el borde se recorta contra cada ancestro que
+            // recorta, en vez de mirar sólo el rectángulo propio.
+            let enCarril = false, recorte = null, derechaVisible = r.right;
             for (let p = el; p; p = p.parentElement) {
                 const s = getComputedStyle(p);
-                if (p !== el && !recorte && (s.overflowX === 'hidden' || s.overflowX === 'clip')) recorte = sel(p);
+                if (p !== el && (s.overflowX === 'hidden' || s.overflowX === 'clip')) {
+                    if (!recorte) recorte = sel(p);
+                    derechaVisible = Math.min(derechaVisible, p.getBoundingClientRect().right);
+                }
                 if (s.overflowX === 'auto' || s.overflowX === 'scroll') { enCarril = true; break; }
             }
-            if (!enCarril) desbordan.push({ sel: sel(el), sobra: Math.round(r.right - vw),
-                                            recorte: recorte || '(nada lo recorta)',
-                                            cadena: cadena(el),
-                                            texto: (el.textContent || '').trim().slice(0, 40) });
+            if (!enCarril && derechaVisible > vw + 1) {
+                desbordan.push({ sel: sel(el), sobra: Math.round(derechaVisible - vw),
+                                 recorte: recorte || '(nada lo recorta)',
+                                 cadena: cadena(el),
+                                 texto: (el.textContent || '').trim().slice(0, 40) });
+            }
         }
     });
 
@@ -211,6 +230,18 @@ export const MEDIR = () => {
             // primera versión sólo descartaba cuando el label ya cumplía, así que
             // los que no cumplían seguían saliendo como «input de 1×1» — un
             // tamaño que no se puede arreglar porque no es el del control.
+            // ── Cuando el TAMAÑO es el dato ──────────────────────────────
+            // Una barra apilada codifica la proporción en el ancho de cada
+            // tramo: estirarlo al mínimo del dedo no sería acomodarlo, sería
+            // mentir sobre el reparto. Es la misma familia que la excepción de
+            // `ScheduleCalendar` en `mobile-gate` —la fila no es un registro—,
+            // sólo que acá se declara en el DOM porque desde afuera no hay forma
+            // de distinguir «chico por descuido» de «chico porque ése es el
+            // número». Lo pone quien sabe, igual que `data-interactive`.
+            //
+            // No exime del ALTO: eso sí se puede arreglar sin deformar nada, y
+            // por eso la matriz de Mín·Máx creció a `min-h-[var(--tap-min)]`.
+            if (el.closest('[data-medida="dato"]')) return;
             let blanco = el;
             if (el.tagName === 'INPUT') {
                 const lab = el.closest('label');

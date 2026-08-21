@@ -46,7 +46,7 @@ import { inputHoverClass } from '../../utils/inputStyles';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE_INICIAL = 25;
 
 // Devuelve el valor recién cuando dejó de cambiar por `ms`. Es lo que separa
 // "lo que se teclea" de "lo que se consulta": un buscador atado directo al
@@ -1335,6 +1335,11 @@ export default function ConteoDetailView() {
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
+    // Cuántos PRODUCTOS trae una página. Era una constante y el selector de
+    // `TablePagination` recibía un `onPageSizeChange` vacío: se podía elegir 100,
+    // el control se pintaba en 100 y la tabla seguía trayendo 25 — sin error y
+    // sin fila de menos visible, que es por qué sobrevivió.
+    const [tamPagina, setTamPagina] = useState(PAGE_SIZE_INICIAL);
     // `search` es lo que se ve en la caja y `searchDiferido` lo que sale a
     // consultar. Sin ese rezago cada TECLA disparaba una vuelta entera de
     // consultas contra un conteo de 3,473 renglones: escribir "acetaminofen"
@@ -1415,7 +1420,7 @@ export default function ConteoDetailView() {
         setLoading(true);
         try {
             const productsPage = await fetchConteoProductsPage(id, {
-                page, pageSize: PAGE_SIZE, search: searchDiferido, filtro,
+                page, pageSize: tamPagina, search: searchDiferido, filtro,
                 laboratorioId,
                 orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
                 orderDir: orden.dir,
@@ -1436,7 +1441,7 @@ export default function ConteoDetailView() {
         } finally {
             setLoading(false);
         }
-    }, [id, page, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
+    }, [id, page, tamPagina, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
         fetchConteoItemsForProducts, showToast]);
 
     // Lo que corre cuando cambió el conteo entero y no sólo qué se está mirando.
@@ -1461,6 +1466,9 @@ export default function ConteoDetailView() {
     const cambiarFiltro = useCallback((v) => { setPage(1); setFiltro(v); }, []);
     const cambiarLaboratorio = useCallback((v) => { setPage(1); setLaboratorioId(v); }, []);
     const cambiarBusqueda = useCallback((v) => { setPage(1); setSearch(v); }, []);
+    // Volver a la página 1: en 2,800 productos, pasar de 25 a 100 deja a la
+    // página 40 fuera de rango y la tabla saldría vacía sin decir por qué.
+    const cambiarTamPagina = useCallback((v) => { setPage(1); setTamPagina(Number(v)); }, []);
 
     // Los laboratorios del conteo no cambian mientras se cuenta (el alcance se
     // fijó al crearlo), así que se piden una vez por conteo y no en cada `load`.
@@ -1686,7 +1694,7 @@ export default function ConteoDetailView() {
         }
     };
 
-    const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+    const totalPages = Math.ceil(total / tamPagina) || 1;
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
 
     // Qué documentos existen para este conteo AHORA. Mientras se cuenta hay uno
@@ -2045,7 +2053,7 @@ export default function ConteoDetailView() {
                 </div>
 
                 {total > 0 && (
-                    <TablePagination pageSize={PAGE_SIZE} onPageSizeChange={() => {}} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
+                    <TablePagination pageSize={tamPagina} onPageSizeChange={cambiarTamPagina} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
                 )}
             </div>
 

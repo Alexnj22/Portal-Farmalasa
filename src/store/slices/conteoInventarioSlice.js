@@ -220,21 +220,41 @@ export const createConteoInventarioSlice = (set, get) => ({
     // Las líneas de TODOS los productos de la página, en un solo viaje. Al no
     // contraer nada (contar exige teclear seguido, no abrir acordeones) hacía
     // falta esto: antes era una llamada por producto, disparada por un click.
-    // El array va acotado a los ~25 ids de la página, así que la respuesta son
-    // decenas de filas y nunca se acerca al techo de 1000 de PostgREST.
+    //
+    // **Se pide por tandas de 25 productos, y eso NO es cosmético.**
+    // `get_conteo_items_search` es `RETURNS TABLE`, o sea que PostgREST le
+    // recorta la respuesta a 1000 filas sin error ni aviso — el `p_limit: 2000`
+    // que tenía antes era un número inalcanzable. Mientras la página fue de 25
+    // productos fijos nunca se llegó al techo; desde que el selector de filas
+    // funciona se pueden pedir 100, y un producto puede traer hasta 28 líneas
+    // (medido en `inventory`: máximo 28, p99.9 = 12). O sea 100 × 12 = 1,200
+    // renglones para una página: se habrían perdido en silencio, que es el modo
+    // de falla exacto de la regla del `.in()` sobre una columna que se repite.
+    // Con tandas de 25, el peor caso real son 700 filas por llamada.
     fetchConteoItemsForProducts: async (conteoId, erpProductIds, { search = '', filtro = 'TODOS' } = {}) => {
         if (!erpProductIds?.length) return [];
-        const { data, error } = await supabase.rpc('get_conteo_items_search', {
+        const TANDA = 25;
+        const tandas = [];
+        for (let i = 0; i < erpProductIds.length; i += TANDA) {
+            tandas.push(erpProductIds.slice(i, i + TANDA));
+        }
+        const respuestas = await Promise.all(tandas.map((ids) => supabase.rpc('get_conteo_items_search', {
             p_conteo_id: conteoId,
             p_search: search || null,
             p_filtro: filtro,
-            p_limit: 2000,
+            // Debajo del techo de 1000 de PostgREST a propósito: si alguna vez se
+            // toca, que corte un límite que existe y no uno invisible.
+            p_limit: 900,
             p_offset: 0,
             p_erp_product_id: null,
-            p_erp_product_ids: erpProductIds,
-        });
-        if (error) throw error;
-        return await signPhotosDeep(data || []);
+            p_erp_product_ids: ids,
+        })));
+        const filas = [];
+        for (const { data, error } of respuestas) {
+            if (error) throw error;
+            if (data) filas.push(...data);
+        }
+        return await signPhotosDeep(filas);
     },
 
     // Cuántos renglones siguen sin cantidad física. Se pide antes de finalizar:

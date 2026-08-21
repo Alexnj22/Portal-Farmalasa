@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.705.1 — el selector de filas del conteo ya cambia la lista
+
+Reportado desde sala: *«en conteo de inventario, al estar en un conteo, no puedo
+cambiar el número de filas a mostrar, al poner 100 no se cambia»*. El control
+existía, se pintaba, aceptaba el clic y **quedaba marcado en 100** — y la tabla
+seguía trayendo 25. El `onPageSizeChange` que recibía era una función vacía, así
+que el número de filas por página era una constante disfrazada de ajuste. Sin
+error y sin fila de menos visible: el control mentía en silencio.
+
+Ahora el tamaño de página es estado real (25/50/100) y elegirlo vuelve a la
+página 1 — en un conteo de 2,800 productos, pasar de 25 a 100 dejaba la página
+40 fuera de rango y la tabla habría salido vacía sin decir por qué.
+
+**Y arreglar el selector destapó un techo que hasta hoy nadie podía cruzar.**
+Las líneas de todos los productos de la página se pedían en un solo viaje a
+`get_conteo_items_search`, que es `RETURNS TABLE` — o sea que PostgREST le
+recorta la respuesta a 1000 filas sin error ni aviso (el `p_limit: 2000` que
+tenía escrito era un número inalcanzable). Con 25 productos fijos nunca se
+llegaba; con 100 sí: medido en `inventory`, un producto trae hasta **28** líneas
+y el percentil 99.9 son 12, o sea ~1,200 renglones para una sola página. Se
+habrían perdido lotes en silencio, que es exactamente el modo de falla de la
+regla del `.in()` sobre una columna que se repite. Hoy se pide por tandas de 25
+productos: el peor caso real por llamada son 700 filas.
+
 ## v2.705.0 — El vale y la etiqueta salen aunque justo se haya publicado una versión
 
 Reportado desde sala: *«al hacer el vale de remesa, no me está imprimiendo el
@@ -51,30 +75,6 @@ sala, no sólo para las bolsas.
 Y el vale dejó de fallar callado: era el único de los dos papeles cuyo fallo
 sólo iba a la consola. Si no sale, ahora lo dice y remite al detalle de la bolsa
 para reimprimirlo.
-
-## v2.704.2 — el selector de filas del conteo ya cambia la lista
-
-Reportado desde sala: *«en conteo de inventario, al estar en un conteo, no puedo
-cambiar el número de filas a mostrar, al poner 100 no se cambia»*. El control
-existía, se pintaba, aceptaba el clic y **quedaba marcado en 100** — y la tabla
-seguía trayendo 25. El `onPageSizeChange` que recibía era una función vacía, así
-que el número de filas por página era una constante disfrazada de ajuste. Sin
-error y sin fila de menos visible: el control mentía en silencio.
-
-Ahora el tamaño de página es estado real (25/50/100) y elegirlo vuelve a la
-página 1 — en un conteo de 2,800 productos, pasar de 25 a 100 dejaba la página
-40 fuera de rango y la tabla habría salido vacía sin decir por qué.
-
-**Y arreglar el selector destapó un techo que hasta hoy nadie podía cruzar.**
-Las líneas de todos los productos de la página se pedían en un solo viaje a
-`get_conteo_items_search`, que es `RETURNS TABLE` — o sea que PostgREST le
-recorta la respuesta a 1000 filas sin error ni aviso (el `p_limit: 2000` que
-tenía escrito era un número inalcanzable). Con 25 productos fijos nunca se
-llegaba; con 100 sí: medido en `inventory`, un producto trae hasta **28** líneas
-y el percentil 99.9 son 12, o sea ~1,200 renglones para una sola página. Se
-habrían perdido lotes en silencio, que es exactamente el modo de falla de la
-regla del `.in()` sobre una columna que se repite. Hoy se pide por tandas de 25
-productos: el peor caso real por llamada son 700 filas.
 
 ## v2.704.1 — el encabezado ya no se esconde bajo el banner, y un solo tipo de hoja
 

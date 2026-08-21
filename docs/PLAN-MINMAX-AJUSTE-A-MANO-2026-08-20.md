@@ -1,9 +1,13 @@
 # Que el recálculo mensual no pise el ajuste a mano — hallazgo y plan (2026-08-20)
 
-**Estado: nada aplicado.** Todo lo de abajo son lecturas contra producción. No se
-escribió una sola fila, no se aplicó ninguna migración y no se tocó ninguna
-función. El plan existe para leerse y corregirse **antes** de que exista una sola
-columna nueva.
+**Estado: fase 1 APLICADA** (2026-08-21, migración `20260821041336`). El resto
+sigue sin tocarse. Las mediciones de §2 son lecturas contra producción anteriores
+a cualquier cambio.
+
+**Prueba de salida de la fase 1, cumplida:** las 19,041 filas conservan
+`min_units`/`max_units` **byte por byte** — huella `6c5bd0fe6b7f323dfdf3d41a6532da5e`
+idéntica antes y después, suma MIN 246,533 y suma MAX 379,537 sin variar, y 0
+filas con motivo. No cambió un solo número, que era la condición.
 
 El MIN·MAX es el inventario y el capital de la empresa. El criterio de este plan
 no es «agregar una función»: es que **ninguna fase pueda cambiar un número que
@@ -196,7 +200,7 @@ ajuste de hace un año no puede seguir tapando un producto que resucitó.
 El orden está elegido por **riesgo**, no por comodidad: primero todo lo que no
 puede alterar un número, y al final lo único que sí.
 
-### Fase 1 · Las columnas — *no puede cambiar ningún MIN ni ningún MAX*
+### Fase 1 · Las columnas — *no puede cambiar ningún MIN ni ningún MAX* — **APLICADA**
 
 Una migración: `ADD COLUMN` de las siete columnas de §4.1, todas **nullable y sin
 default**, más un `CHECK` sobre `manual_motivo`.
@@ -212,6 +216,16 @@ byte. Foto antes y después, comparación exacta.
 
 **Reglas obligatorias:** `SET lock_timeout = '5s'` al inicio (CLAUDE.md), archivo
 local en el mismo commit con la versión de 14 dígitos que devuelva el servidor.
+
+**Lo que encontró la prueba en staging, y que la vuelve a justificar.** El freno
+`psp_cliente_fijo_completo` escrito de la forma obvia —`CASE WHEN motivo =
+'cliente_fijo' THEN unidades > 0 AND dias > 0 …`— **no frenaba**: con las
+columnas en `NULL` la expresión da `NULL`, y un `CHECK` sólo rechaza con `FALSE`,
+nunca con `NULL`. O sea que un «cliente fijo» sin su ritmo habría entrado sin
+error, y el cálculo de la fase 5 se habría quedado sin el número que necesita
+para funcionar. Se corrigió con `(… ) IS TRUE`, que convierte el `NULL` en
+`FALSE`. Los diez casos de borde se probaron en staging antes de tocar
+producción; nueve pasaron a la primera y éste no.
 
 ### Fase 2 · Pedir el motivo al editar — *no cambia ninguna fórmula*
 
@@ -306,14 +320,29 @@ nunca se haga.
 
 ---
 
-## 9. Decisiones abiertas
+## 9. Decisiones tomadas (2026-08-21)
 
-1. **¿«En conflicto» frena la publicación o sólo avisa?** Hoy publicar es un
-   barrido. La fase 3 aparta las filas ajustadas; falta decidir si aparecen como
-   una lista aparte que se aprueba una por una, o si basta con marcarlas.
-2. **¿Qué pasa con los 143 casos ya rebotados?** Están hoy con el valor del
-   cálculo, no con el que alguien puso. La bitácora tiene el valor original: se
-   pueden restaurar, o dejarlos y que se vuelvan a ajustar con motivo. **No se
-   toca ninguno sin decidir esto explícitamente.**
-3. **¿Quién puede poner un motivo «ya no rota»?** Es el que borra historial de
-   demanda. Puede quedar restringido a quien ya aprueba solicitudes de MIN·MAX.
+Las tres se resolvieron por el lado conservador, que es el que pidió el dueño:
+«que no se arruine nada; los MIN y MAX son el inventario y el capital de toda la
+empresa».
+
+1. **«En conflicto» FRENA la publicación, no sólo avisa.** Las filas con ajuste
+   vigente salen del barrido de publicar y se revisan aparte. Publicar deja de
+   poder sobrescribir una decisión humana sin que alguien la vea.
+2. **Los 143 casos ya rebotados NO se restauran a granel.** Se listan en «En
+   conflicto» con el valor original a la vista y un botón para devolverlo uno por
+   uno. El motivo es medido: **108 de los 143 tienen venta reciente**, así que
+   devolver el número bajo a ciegas dejaría sin existencia productos que sí rotan
+   — se cambiaría un error automático por otro. Un ajuste de junio no es
+   necesariamente cierto en agosto, y la única forma de saberlo es mirarlo.
+3. **«Ya no rota» queda restringido** a quien ya aprueba solicitudes de MIN·MAX.
+   Es el único motivo que borra historial de demanda: no puede quedar a un clic
+   de distancia para cualquiera que edite una celda.
+
+### Lo que sigue abierto
+
+- **Un quinto motivo, `otro`, entró en la fase 1** y no estaba en el diseño
+  original. Hacía falta un cajón: sin él, quien baja un MAX por tope de sala
+  elegiría mal alguno de los tres motivos que **sí** cambian el cálculo, que es
+  peor que no declarar nada. `otro` exige nota escrita, no toca el cálculo y deja
+  la fila «En conflicto».

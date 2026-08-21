@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.697.3 — confirmar un pago desde el teléfono
+## v2.698.0 — confirmar un pago desde el teléfono, y el plan de lo que falta
 
 Cierra el único hueco que quedó abierto en v2.697.0. En Facturación, «Confirmar»
 no es un botón que hace algo: es un botón que **abre un formulario** —la nota
@@ -45,6 +45,29 @@ Verificado en WebKit iPhone 13 contra producción, en la pestaña **No Efectivo*
 sale con su nota, el campo de comprobante con «Tomar foto» y los dos botones a
 ancho completo. Las tres tablas de la pestaña —una por forma de pago— llevan su
 propia línea de aviso del gesto.
+
+**Y queda el plan de lo que falta**: `docs/PLAN-MOVIL-2026-08-20.md`. Lo primero
+que dice es incómodo y es el punto: **el barrido móvil no termina**. La corrida
+de hoy murió a los 18.5 minutos con **7 de 38 rutas medidas** —WebKit se lleva
+la página—, y su informe parcial se llama igual que uno completo. Un barrido que
+no termina no dice «está todo bien»: dice que no se midió, y arreglarlo es la
+fase bloqueante porque todo lo demás se prioriza con números que hoy no existen.
+
+De las 7 rutas que sí se alcanzaron salen dos hallazgos: **30 tarjetas de Cortes
+y 2 del tablero se tocan sin acusar recibo** —que en el teléfono es la única
+señal de que el toque entró, y son un arreglo canónico y no 32— y **7 elementos
+inalcanzables** en el tablero.
+
+Y escribe lo que **ningún gate ni el barrido cubren hoy**, que es la mitad del
+plan: los 41 archivos de vista con diálogos y los 40 componentes de formulario
+(nunca se abrieron en 390px en una medición), las **177 de 212 vistas que no
+usan `DataTable`** y por lo tanto nunca pasaron por este canon, el modo
+acostado, y el aparato real —`env(safe-area-inset-*)` vale 0 en todo emulador,
+así que la emulación no puede distinguir «resuelto» de «sin resolver»—.
+
+Nota de convivencia: esta versión salta de `2.697.1` a `2.698.0` porque el
+commit de `v2.697.2` no movió `src/version.js`. La entrada de esa versión existe
+y su código está en `main`; lo que quedó atrás es la constante.
 
 ## v2.697.2 — El vigilante deja de reclamar por una sucursal que nadie calcula
 

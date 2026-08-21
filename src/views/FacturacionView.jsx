@@ -22,6 +22,8 @@ import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import ListRow from '../components/common/ListRow';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
+import ExpedienteMovil from '../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../components/common/usarExpediente';
 import TablePagination from '../components/common/TablePagination';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
@@ -324,25 +326,45 @@ function useSortable(defaultKey, defaultDir = 'asc') {
 // `DataTable`: es el hook que el canónico exporta justo para las filas
 // expandidas de `<tr>` crudo, y hasta ahora no lo usaba nadie. Antes el tinte
 // salía de `TIPO_PAGO_THEME.expand`, o sea fuera del sistema de tokens.
-function FilaConfirmar({ colSpan, notas, setNotas, archivo, setArchivo, guardando, onConfirmar, onCancelar, textoNotas, textoArchivo }) {
+// El formulario de confirmación: la nota, el comprobante y los dos botones.
+//
+// `comoPanel` devuelve el MISMO cuerpo sin el envoltorio `<tr><td colSpan>`.
+// En escritorio vive en la fila hermana; en el teléfono `DataTable` pinta fichas
+// y esa fila no se dibuja, así que el mismo cuerpo se monta en
+// `ExpedienteMovil`. Escrito una vez para que no puedan divergir: confirmar un
+// pago era imposible desde el teléfono, y el botón que lo abría respondía sin
+// llevar a ningún lado.
+//
+// El eje también cambia: en escritorio los dos botones van a la DERECHA del
+// formulario porque ahí sobra ancho; en 390px van DEBAJO, que es el único lugar
+// donde caben sin encogerse por debajo del objetivo de dedo.
+function FilaConfirmar({ colSpan, notas, setNotas, archivo, setArchivo, guardando, onConfirmar, onCancelar, textoNotas, textoArchivo, comoPanel = false }) {
     const tk = useExpandStyle();
+    const cuerpo = (
+        <div className={comoPanel ? 'flex flex-col gap-3' : 'flex items-start gap-3 max-w-3xl'}>
+            <div className="flex-1 space-y-2 min-w-0">
+                <PortalTextarea rows={2} autoFocus={!comoPanel} placeholder={textoNotas}
+                    value={notas} onChange={e => setNotas(e.target.value)} />
+                <FileField accept="image/*,application/pdf" density="sm"
+                    file={archivo} onChange={setArchivo} hint={textoArchivo} />
+            </div>
+            <div className={comoPanel ? 'flex flex-col gap-2' : 'flex flex-col gap-2 shrink-0'}>
+                <Button tone="success" disabled={guardando} onClick={onConfirmar}
+                    className={comoPanel ? 'w-full justify-center' : ''}>
+                    {guardando ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                </Button>
+                <Button variant="secondary" icon={X} onClick={onCancelar}
+                    className={comoPanel ? 'w-full justify-center' : ''}>Cancelar</Button>
+            </div>
+        </div>
+    );
+
+    if (comoPanel) return cuerpo;
+
     return (
         <tr>
             <td colSpan={colSpan} className={`px-5 py-4 border-t ${tk.expandBg} ${tk.expandBorderColor}`}>
-                <div className="flex items-start gap-3 max-w-3xl">
-                    <div className="flex-1 space-y-2">
-                        <PortalTextarea rows={2} autoFocus placeholder={textoNotas}
-                            value={notas} onChange={e => setNotas(e.target.value)} />
-                        <FileField accept="image/*,application/pdf" density="sm"
-                            file={archivo} onChange={setArchivo} hint={textoArchivo} />
-                    </div>
-                    <div className="flex flex-col gap-2 shrink-0">
-                        <Button tone="success" disabled={guardando} onClick={onConfirmar}>
-                            {guardando ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                        </Button>
-                        <Button variant="secondary" icon={X} onClick={onCancelar}>Cancelar</Button>
-                    </div>
-                </div>
+                {cuerpo}
             </td>
         </tr>
     );
@@ -361,6 +383,9 @@ function BloqueFormaPago({
     const t = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
     const totalPaginas = Math.max(1, Math.ceil(filas.length / tamano));
     const visibles = filas.slice((pagina - 1) * tamano, pagina * tamano);
+    // El formulario de confirmación vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
+    const { enTelefono, abierto: aConfirmar } = useExpedienteMovil(visibles, confirmandoId);
     return (
         <div data-surface="card" className="rounded-2xl border border-border-card overflow-hidden shadow-[var(--shadow-glass-sm)]">
             {/* Cabecera sobria: el color vive en el ícono y en el monto, no en un
@@ -391,6 +416,11 @@ function BloqueFormaPago({
                 sortKey={sortKey} sortDir={sortDir} onSort={onSort}
                 empty={{ message: 'Sin transacciones' }}
                 minWidth="560px"
+                /* `acciones: 'mantener'`: «Confirmar» es la única acción de esta
+                   pantalla y vivía en una columna que el teléfono no pinta —o
+                   sea que una transacción no se podía confirmar desde el
+                   teléfono—. El formulario que abre va al expediente, abajo. */
+                movil={{ identidad: 'correlativo', ancla: 'total', chips: ['fecha', 'cliente'], acciones: 'mantener' }}
                 footer={
                     <div className="px-5 py-3 flex justify-end">
                         <TablePagination
@@ -423,7 +453,10 @@ function BloqueFormaPago({
                                     )}
                                 </DataCell>
                             </DataRow>
-                            {confirmando && (
+                            {/* Sólo en escritorio: en el teléfono esta fila
+                                hermana no se dibuja y el formulario va al
+                                expediente, después de la tabla. */}
+                            {confirmando && !enTelefono && (
                                 <FilaConfirmar
                                     colSpan={6} notas={notas} setNotas={setNotas}
                                     archivo={archivo} setArchivo={setArchivo}
@@ -437,6 +470,25 @@ function BloqueFormaPago({
                     );
                 })}
             </DataTable>
+
+            {/* El formulario de confirmación, en el teléfono. */}
+            <ExpedienteMovil
+                abierto={aConfirmar}
+                onClose={() => setConfirmandoId(null)}
+                titulo={aConfirmar ? `Confirmar ${aConfirmar.correlativo}` : 'Confirmar'}
+                subtitulo={aConfirmar ? `${aConfirmar.fecha} · ${nombreSucursal(aConfirmar.branch_id)}` : undefined}
+            >
+                {(r) => (
+                    <FilaConfirmar comoPanel
+                        notas={notas} setNotas={setNotas}
+                        archivo={archivo} setArchivo={setArchivo}
+                        guardando={guardando}
+                        onConfirmar={() => onConfirmar(r.id)}
+                        onCancelar={() => setConfirmandoId(null)}
+                        textoNotas={textoNotas} textoArchivo={textoArchivo}
+                    />
+                )}
+            </ExpedienteMovil>
         </div>
     );
 }

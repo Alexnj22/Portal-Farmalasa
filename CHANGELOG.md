@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.5 — la composición de un traslado sobrevive al cierre de sesión
+
+Dos cierres de `docs/PLAN-MOVIL-2026-08-20.md`, y el primero es una pérdida de
+trabajo real que nadie había reportado porque **no se ve como un error**.
+
+### Componer un pedido a tres salas y perderlo
+
+`gate:borradores` acusaba a `PedirTrasladoModal.jsx` desde v2.691. Al abrirlo, lo
+que se puede perder ahí **no vive en el modal**: los renglones ya agregados y la
+causa viven en `store/composicionTraslado.js`, porque agregar un producto
+**cierra** el formulario para volver a la consulta de inventario a elegir el
+siguiente.
+
+Ese store resolvía la mitad del problema —cerrar el formulario no se lleva la
+lista— y no la otra: era un `create()` **en memoria**. El portal cierra la sesión
+sola cuando nadie usa la pantalla, y en los cargos de sala ese plazo son **5
+minutos**; al volver, la aplicación se recarga y el store nace vacío. O sea que
+componer un pedido a tres salas, atender a un cliente y volver **borraba todo sin
+decir nada**. El aviso de «¿Sigues ahí?» evita la sorpresa, no la pérdida.
+
+Ahora el store persiste con `saveDraft`/`loadDraft` —con su caducidad de 24h, que
+acá es justo lo que se quiere: una composición de ayer no se retoma hoy— y se
+limpia **al enviar**, que es cuando deja de ser borrador.
+
+Cubierto por `tests/unit/composicionPersiste.test.js`, que **simula la recarga**
+—vuelve a importar el módulo— en vez de dar por buena la escritura en
+`localStorage`. Cuatro casos: vuelve entera, al enviar se limpia y la recarga no
+la resucita, quitar un renglón también se guarda, y sin `localStorage` no
+revienta. Esto no se puede comprobar mirando la pantalla: hay que esperar cinco
+minutos sin tocar nada, y el defecto se ve como «se me borró».
+
+La entrada del gate queda como **excepción con motivo**, no en el baseline: lo
+que quedó en el modal es el renglón a medio escribir —tres campos que se vuelven
+a elegir desde la misma lista que los ofreció—.
+
+### Y «Nuevo empleado» se deja abrir
+
+El barrido de diálogos lo reportaba como «no abrió nada», o sea que el hueco
+parecía del portal cuando era del instrumento — **tercera vez en este plan**.
+Dos causas, las dos reales:
+
+- **`el.click()` sólo dispara `click`.** Un control que responde a eventos de
+  PUNTERO no se entera, y ése es el caso de los botones del clúster flotante,
+  que es donde vive «Nuevo empleado». Ahora se intenta el clic real de
+  Playwright primero —que dispara la secuencia completa— y sólo se cae al
+  `el.click()` cuando lo rechaza por accionabilidad, que era el motivo original
+  del atajo.
+- **Los índices envejecen.** Los candidatos se enumeran una vez por ruta y el DOM
+  se mueve con cada apertura: el carrusel avanza, una lista se re-filtra. Con el
+  índice viejo, `nth(i)` apunta a otro elemento — y si ese otro está tapado, el
+  barrido reporta «no abrió» sobre un botón que **nunca apretó**. El candidato se
+  re-resuelve **por nombre** justo antes de apretarlo.
+
+El formulario más largo del portal ahora abre y **mide limpio**.
+
 ## v2.703.4 — Los frenos del sobrante ya tienen nombre y se pueden accionar
 
 Reportado mirando la pantalla: en Sistema → Mantenimiento, dos de los frenos de

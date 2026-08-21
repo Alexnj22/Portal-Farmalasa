@@ -69,6 +69,16 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*draftUtils['"]|\b(saveDraft|loadDraft)\s
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+  'src/views/dashboard/PedirTrasladoModal.jsx':
+    'Lo que se puede perder acá NO vive en el modal: los renglones ya agregados ' +
+    'y la causa viven en `store/composicionTraslado.js`, porque agregar un ' +
+    'producto CIERRA este formulario para volver a la consulta de inventario a ' +
+    'elegir el siguiente. Ese store persiste con `saveDraft`/`loadDraft` desde ' +
+    'v2.702.4, así que una composición de tres salas sobrevive al cierre de ' +
+    'sesión por inactividad —5 minutos en los cargos de sala—. Lo único que ' +
+    'queda en el modal es el renglón A MEDIO ESCRIBIR (origen, presentación, ' +
+    'cantidad), que son tres campos y se vuelven a elegir desde la misma lista ' +
+    'que los ofreció.',
   'src/views/inventario/ConteoDetailView.jsx':
     'Guarda renglón por renglón con `guardar_conteo_item` apenas se cuenta cada ' +
     'producto. Lo que hay en pantalla en cualquier momento es un solo renglón; ' +

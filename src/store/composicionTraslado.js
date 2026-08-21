@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { repartirPedido } from '../utils/unidadesInventario';
+import { saveDraft, loadDraft, clearDraft } from '../utils/draftUtils';
 
 // La solicitud que se está armando, viva por fuera del modal que la arma.
 //
@@ -70,24 +71,52 @@ function recalcular(r, cambios) {
     };
 }
 
+/**
+ * ── La composición sobrevive al CIERRE DE SESIÓN, no sólo al del modal ──────
+ *
+ * El store ya resolvía que agregar un producto cierre el formulario sin
+ * llevarse la lista. Lo que no resolvía es la otra mitad: **el portal cierra la
+ * sesión sola cuando nadie usa la pantalla, y en los cargos de sala ese plazo
+ * son 5 minutos**. Al volver, la aplicación se recarga y un `create()` en
+ * memoria nace vacío — o sea que componer un pedido a tres salas, atender a un
+ * cliente y volver, borraba todo sin decir nada.
+ *
+ * El aviso de «¿Sigues ahí?» evita la SORPRESA, no la PÉRDIDA: nadie vuelve a
+ * tiempo si se fue diez minutos.
+ *
+ * `draftUtils` ya trae lo que hace falta —incluida la caducidad a 24h, que acá
+ * es justo lo que se quiere: una composición de ayer no se retoma hoy—. Se
+ * guarda en cada cambio y se limpia al enviar, que es cuando deja de ser
+ * borrador.
+ */
+const CLAVE = 'composicion_traslado';
+
+const guardar = (s) => {
+    saveDraft(CLAVE, { renglones: s.renglones, causa: s.causa });
+    return s;
+};
+
+const inicial = loadDraft(CLAVE) || {};
+
 export const useComposicionTraslado = create((set, get) => ({
     /** Los renglones agregados, en el orden en que entraron. */
-    renglones: [],
+    renglones: Array.isArray(inicial.renglones) ? inicial.renglones : [],
     /** El «para qué», uno para toda la solicitud. */
-    causa: '',
+    causa: typeof inicial.causa === 'string' ? inicial.causa : '',
 
-    agregar: (renglon) => set(s => ({ renglones: [...s.renglones, renglon] })),
+    agregar: (renglon) => set(s => guardar({ ...s, renglones: [...s.renglones, renglon] })),
 
-    quitar: (i) => set(s => ({ renglones: s.renglones.filter((_, j) => j !== i) })),
+    quitar: (i) => set(s => guardar({ ...s, renglones: s.renglones.filter((_, j) => j !== i) })),
 
-    editar: (i, cambios) => set(s => ({
+    editar: (i, cambios) => set(s => guardar({
+        ...s,
         renglones: s.renglones.map((r, j) => (j === i ? recalcular(r, cambios) : r)),
     })),
 
-    setCausa: (causa) => set({ causa }),
+    setCausa: (causa) => set(s => guardar({ ...s, causa })),
 
     /** Al mandar, y al cancelar a propósito. Nunca al cerrar el formulario. */
-    limpiar: () => set({ renglones: [], causa: '' }),
+    limpiar: () => { clearDraft(CLAVE); return set({ renglones: [], causa: '' }); },
 
     /**
      * Si ese producto ya está pedido a ese mismo estante.

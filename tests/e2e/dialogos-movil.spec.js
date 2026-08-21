@@ -61,7 +61,7 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 
 // Cuántos disparadores por ruta. Acota el tiempo, y lo que quede afuera se
 // ANOTA: un tope silencioso se lee como «se midió todo».
-const TOPE = Number(process.env.TOPE_DIALOGOS || 4);
+const TOPE = Number(process.env.TOPE_DIALOGOS || 8);
 
 // ── De pie o acostado (F5, 2026-08-21) ──────────────────────────────────────
 // Todo lo medido hasta hoy fue DE PIE, y acostado no es la misma pantalla: el
@@ -198,23 +198,58 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
             const camposAntes = await pg.locator('input, textarea, select').count();
             for (const c of usar) {
                 errores.length = 0;
-                // Se aprieta con `el.click()` en el navegador y no con el clic
-                // de Playwright, y no es un atajo: Playwright espera a que el
-                // elemento sea ACCIONABLE —visible, estable y sin nada encima—,
-                // y en el teléfono el clúster flotante y el aviso de «agregar a
-                // inicio» tapan media pantalla. Eso hacía fallar por tiempo a
-                // «Nueva Cotización», que existe y se puede apretar.
+                // ── Primero el clic de VERDAD, y `el.click()` sólo de respaldo
                 //
-                // Acá no se está probando si el botón se deja apretar —eso lo
-                // mide `chicos`/`imposibles` del barrido de vistas—: se está
-                // ABRIENDO un diálogo para medirlo. El elemento se eligió por
-                // identidad, así que no hay riesgo de apretar el de al lado.
-                const apreto = await pg.evaluate((i) => {
-                    const el = [...document.querySelectorAll('button, [role="button"]')][i];
-                    if (!el) return false;
-                    el.click();
-                    return true;
-                }, c.i).catch(() => false);
+                // La primera versión usaba `el.click()` en el navegador para
+                // esquivar la espera de accionabilidad de Playwright: en el
+                // teléfono el clúster flotante y el aviso de «agregar a inicio»
+                // tapan media pantalla, y «Nueva Cotización» fallaba por tiempo
+                // aunque exista y se pueda apretar.
+                //
+                // **Pero `el.click()` sólo dispara `click`.** Un control que
+                // responde a eventos de PUNTERO no se entera — y así se perdía
+                // «Nuevo empleado», que es un botón del clúster flotante y es el
+                // formulario más largo del portal. El barrido lo reportaba como
+                // «no abrió nada», o sea que el hueco parecía del portal cuando
+                // era del instrumento. Tercera vez en este plan que pasa eso.
+                //
+                // Ahora se intenta el clic real —que dispara la secuencia
+                // completa de punteros— y sólo si Playwright lo rechaza por
+                // accionabilidad se cae al `el.click()`. Acá no se está probando
+                // si el botón se deja apretar —eso lo mide `chicos`/`imposibles`
+                // del barrido de vistas—: se está ABRIENDO un diálogo para
+                // medirlo, y el elemento se eligió por identidad.
+                // ── El índice se REVUELVE por nombre, justo antes de apretar
+                // Los candidatos se enumeran una vez por ruta, pero el DOM se
+                // mueve con cada apertura y con cada cierre: el carrusel de
+                // tarjetas avanza, una lista se re-filtra. Con el índice viejo,
+                // `nth(i)` termina apuntando a OTRO elemento — y si ese otro
+                // está tapado, el barrido reporta «no abrió» sobre un botón que
+                // nunca apretó. Así se perdía «Nuevo empleado» después de tocar
+                // el carrusel de arriba.
+                const idx = await pg.evaluate((nombre) => {
+                    const els = [...document.querySelectorAll('button, [role="button"]')];
+                    return els.findIndex(el =>
+                        (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '')
+                            .trim().slice(0, 40) === nombre);
+                }, c.nombre).catch(() => -1);
+                if (idx < 0) {
+                    console.log(`   – «${c.nombre}» ya no está en el DOM`);
+                    continue;
+                }
+
+                let apreto = true;
+                try {
+                    await pg.locator('button, [role="button"]').nth(idx).click({ timeout: 4000 });
+                } catch {
+                    apreto = await pg.evaluate((i) => {
+                        const el = [...document.querySelectorAll('button, [role="button"]')][i];
+                        if (!el) return false;
+                        el.click();
+                        return true;
+                    }, idx).catch(() => false);
+                    if (apreto) console.log(`   · «${c.nombre}» tapado: se apretó desde la página`);
+                }
                 if (!apreto) {
                     console.log(`   – «${c.nombre}» ya no está en el DOM`);
                     continue;

@@ -197,9 +197,15 @@ Y hay que decirlo, porque su verde no cubre esto:
 - **Un tope de 4 disparadores por ruta**, y lo que queda afuera se **anota** en
   la corrida: 7 en Sucursales y 11 en el tablero. Un tope silencioso se lee como
   «se midió todo».
-- **«Nuevo empleado» no llegó a abrirse** —el disparador responde y no aparece
-  ni diálogo ni campos—, así que el formulario más largo del portal sigue sin
-  medir. Es lo primero que hay que destrabar.
+- ~~«Nuevo empleado» no llegó a abrirse~~ — **destrabado (v2.703.5)**, y la causa
+  era del instrumento por partida doble. Primero, `el.click()` **sólo dispara
+  `click`**: un control que responde a eventos de PUNTERO no se entera, y ése es
+  el caso de los botones del clúster flotante. Segundo, los candidatos se
+  enumeraban una vez por ruta y el DOM se mueve con cada apertura, así que
+  `nth(i)` terminaba apuntando a otro elemento — y si ese otro estaba tapado, el
+  barrido reportaba «no abrió» sobre un botón que nunca apretó. Ahora se intenta
+  el clic real primero y el candidato se re-resuelve **por nombre** justo antes
+  de apretarlo. El formulario más largo del portal abre y **mide limpio**.
 - **Los formularios que exigen datos previos** —el editor de una boleta necesita
   una planilla generada— quedan fuera por falta de datos, no por diseño.
 
@@ -324,15 +330,24 @@ todo lo que saben contar.
 
 Lo que sigue, en orden:
 
-1. **Destrabar «Nuevo empleado»** en el barrido de diálogos y subir el tope, para
-   que F3 cubra lo que hoy anota como pendiente — el formulario más largo del
-   portal sigue sin medir.
-2. **F6** — el aparato real. Es el único que no depende de nosotros.
+1. **F6** — el aparato real. Es el único que no depende de nosotros:
+   `env(safe-area-inset-*)` vale 0 en todo emulador, así que el notch y la barra
+   de gestos necesitan un teléfono con el shell de Capacitor.
+2. **Terminar la corrida completa del barrido de diálogos.** El instrumento ya
+   abre lo que faltaba, pero las corridas largas contra producción se estancan
+   de a ratos (ver la nota de F4) y la última llegó a 10 de 17 rutas. Conviene
+   correrlo por tandas, como ya se hace con el de vistas.
 
-Y uno que no es de este plan pero está rojo: **`gate:borradores`** acusa a
-`PedirTrasladoModal.jsx` —7 campos de captura sin borrador—, de v2.691. Con la
-sesión cerrándose sola a los 5 minutos en los cargos de sala, ahí se pierde lo
-escrito sin dejar rastro.
+~~Y uno que no es de este plan pero está rojo: `gate:borradores` acusa a
+`PedirTrasladoModal.jsx`.~~ **Cerrado (v2.703.5)** — y era una pérdida real. Lo
+que se puede perder ahí no vive en el modal: los renglones ya agregados viven en
+`store/composicionTraslado.js`, porque agregar un producto CIERRA el formulario
+para volver a la consulta de inventario. Ese store era un `create()` en memoria,
+o sea que **componer un pedido a tres salas, atender a un cliente y volver
+borraba todo sin decir nada**. Ahora persiste con `saveDraft`/`loadDraft`, con
+su caducidad de 24h, y se limpia al enviar. Cubierto por
+`tests/unit/composicionPersiste.test.js`, que simula la recarga en vez de dar
+por buena la escritura.
 
 ---
 
@@ -372,3 +387,4 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.700.2 | F4 — el barrido visitaba 38 rutas de 65; ahora 54 |
 | v2.702.1 | F5 — acostado, y un resumen que tapaba hallazgos |
 | v2.702.2 | F7 — `data-destino`: lo que el gate no ve, lo cuenta el barrido |
+| v2.703.5 | «Nuevo empleado» destrabado · la composición de un traslado no se pierde |

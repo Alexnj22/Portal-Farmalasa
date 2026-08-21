@@ -99,12 +99,17 @@ const FormAnnouncements = ({ data }) => {
             SECCIÓN: YA LEYERON (Éxito / Verde)
             ========================================================= */}
         <div>
-          {/* BOTÓN DE ACORDEÓN */}
+          {/* BOTÓN DE ACORDEÓN
+              `min-h-[var(--tap-min)]`: medían **332×31** — el ancho sobra, el
+              alto no llega a los 44 del blanco de dedo (§32), y son los dos
+              controles que abren las listas de este diálogo. Lo encontró el
+              barrido de diálogos, que abre cada uno en 390px y lo mide. En
+              escritorio `--tap-min` vale 0 y no cambia nada. */}
           <button 
             type="button"
             aria-expanded={isConfirmedOpen}
             onClick={() => setIsConfirmedOpen(!isConfirmedOpen)}
-            className="w-full flex items-center justify-between text-caption md:text-label font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-caption md:text-label font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 min-h-[var(--tap-min)] transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} strokeWidth={2.5}/> 
@@ -158,7 +163,7 @@ const FormAnnouncements = ({ data }) => {
             type="button"
             aria-expanded={isPendingOpen}
             onClick={() => setIsPendingOpen(!isPendingOpen)}
-            className="w-full flex items-center justify-between text-caption md:text-label font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-caption md:text-label font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 min-h-[var(--tap-min)] transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <AlertCircle size={16} strokeWidth={2.5}/> 

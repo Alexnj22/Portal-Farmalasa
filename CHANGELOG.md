@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.699.2 — los diálogos se miden en 390px
+
+F3 de `docs/PLAN-MOVIL-2026-08-20.md`. **41 archivos de vista declaran diálogos
+y hay 40 componentes de formulario, y ninguno se había abierto nunca en 390px en
+una medición.** Era la superficie más grande sin mirar, y donde el defecto duele
+más: un formulario que no entra no es incómodo, es **trabajo perdido** — el
+portal cierra la sesión sola a los 5 minutos en los cargos de sala.
+
+Ahora hay un barrido propio que **abre los diálogos apretando botones de
+verdad**: `tests/e2e/dialogos-movil.spec.js`. **14 diálogos en 4.3 minutos**, y
+**un solo hallazgo**: los dos acordeones del detalle de un comunicado
+—«Confirmados» y su gemelo— medían **332×31**. El ancho sobra; el alto no llega
+a los 44 del blanco de dedo, y son los dos controles que abren las listas de ese
+diálogo. Corregidos con `min-h-[var(--tap-min)]`, que en escritorio vale 0.
+
+### El freno es la parte importante
+
+Corre contra producción, así que **abrir no puede escribir**: sólo se aprieta lo
+que coincide con una lista de verbos que ABREN; nunca lo que coincide con la
+lista de freno, que **gana** sobre la primera (anular, eliminar, enviar,
+sincronizar, imprimir, recalcular, confirmar…); adentro del diálogo **no se toca
+nada**, se mide y se cierra; y un botón **sin nombre accesible no se aprieta**,
+porque si no se puede leer qué hace no se puede saber que es seguro. La lista
+está escrita hacia el lado seguro a propósito: perder una medición es un hueco,
+apretar «Sincronizar» en producción es un incidente.
+
+### Cuatro cosas que salieron de correrlo y no de pensarlo
+
+- **El clúster flotante SÍ entra.** La primera versión excluía todo el marco y
+  tiraba las acciones junto con la navegación — «Nuevo empleado» vive ahí.
+- **«Abrió» no siempre es `role="dialog"`.** Varias pantallas cambian de MODO
+  dentro de la misma vista —«Nueva Cotización» es eso— y son justamente
+  formularios largos. El segundo signo es que aparecieron controles de captura
+  que antes no estaban, la misma cuenta que usa `gate:borradores`.
+- **Se espera a la condición, no al reloj.** Los formularios pesados llegan por
+  `await import()`. Con espera fija, «Nuevo empleado» daba «no abrió nada» y el
+  hueco parecía del portal.
+- **Un nombre, una medición.** Sucursales daba **32 candidatos que son 4
+  diálogos**: la misma tarjeta repetida por sucursal. Sin deduplicar, el tope se
+  gastaba midiendo el mismo cinco veces y la corrida no llegaba al final.
+
+### Lo que este barrido todavía NO alcanza
+
+Su verde no cubre esto, y por eso queda escrito:
+
+- **Tope de 4 disparadores por ruta**, y lo que queda afuera se **anota** en la
+  corrida —7 en Sucursales, 11 en el tablero—. Un tope silencioso se lee como
+  «se midió todo».
+- **«Nuevo empleado» no llegó a abrirse**: el disparador responde y no aparece
+  ni diálogo ni campos, así que el formulario más largo del portal sigue sin
+  medir. Es lo primero de la lista que sigue.
+- **Los formularios que exigen datos previos** —el editor de una boleta necesita
+  una planilla generada— quedan fuera por falta de datos, no por diseño.
+
+Hereda de v2.698.4 lo que hace confiable a un barrido: informe en `.parcial.json`
+hasta terminar, reciclado de contexto, y **cero diálogos abiertos FALLA** en vez
+de reportar «todo bien».
+
 ## v2.699.1 — El porqué del ajuste, escrito donde se ve
 
 Cierra el circuito que abrieron v2.698.5 y v2.698.7: la marca del ajuste ya

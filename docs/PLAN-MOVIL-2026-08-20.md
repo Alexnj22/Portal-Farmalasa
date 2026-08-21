@@ -148,20 +148,60 @@ la fila no es un registro, es un empleado cruzado con siete días.
 Esto es la mitad del plan. Las cuatro cosas de abajo **no las cubre ningún gate
 ni el barrido de hoy**, así que su ausencia de hallazgos no significa nada.
 
-### F3 · Los diálogos y los formularios largos
+### F3 · CERRADO — los diálogos, medidos por primera vez en 390px
 
-**41 archivos de vista declaran diálogos y hay 40 componentes de formulario.**
-El barrido con `MODALES=1` abre exactamente dos cosas por ruta —la hoja de la
-primera ficha y la acción principal— y mide lo que aparece. Un formulario de
-empleado, uno de sucursal o el editor de una boleta **nunca se abrieron en 390px
-en una medición**.
+**41 archivos de vista declaran diálogos y hay 40 componentes de formulario**, y
+ninguno se había abierto nunca en 390px en una medición. `barrido-total-movil`
+con `MODALES=1` abre exactamente dos cosas por ruta: la hoja de la primera ficha
+y el primer botón del clúster flotante.
 
-Es donde más superficie hay sin mirar, y es la superficie donde el defecto
-duele más: un formulario que no entra no es incómodo, es **trabajo perdido** —y
-el portal cierra la sesión sola a los 5 minutos en los cargos de sala.
+Ahora hay un barrido propio —`tests/e2e/dialogos-movil.spec.js`— que **abre los
+diálogos apretando botones de verdad** y mide lo que aparece. **14 diálogos en
+4.3 minutos**, y **un solo hallazgo**: los dos acordeones del detalle de un
+comunicado medían **332×31** — el ancho sobra, el alto no llega a los 44 del
+blanco de dedo. Corregido con `min-h-[var(--tap-min)]`, que en escritorio vale 0
+y no cambia nada.
 
-Empezar por los que ya tienen borrador (`gate:borradores`), que son los que el
-proyecto ya identificó como largos.
+#### El freno, que es la parte importante
+
+Corre contra producción, así que **abrir no puede escribir**:
+
+1. Sólo se aprieta lo que coincide con `ABRE` — verbos que abren un panel.
+2. Nunca lo que coincide con `NO_TOCAR`, y esa lista **gana** sobre la primera:
+   anular, eliminar, enviar, sincronizar, imprimir, recalcular, confirmar…
+3. Adentro del diálogo **no se toca nada**: se mide y se cierra.
+4. Un botón **sin nombre accesible no se aprieta**: si no se puede leer qué
+   hace, no se puede saber que es seguro.
+
+Escrita hacia el lado seguro a propósito — perder una medición es un hueco,
+apretar «Sincronizar» en producción es un incidente.
+
+#### Cuatro cosas que salieron de correrlo, no de pensarlo
+
+- **El clúster flotante SÍ entra.** La primera versión excluía todo el marco y
+  tiraba las acciones junto con la navegación: «Nuevo empleado» vive ahí.
+- **«Abrió» no siempre es `role="dialog"`.** Varias pantallas cambian de MODO
+  dentro de la misma vista —«Nueva Cotización» es eso—, y son justamente
+  formularios largos. El segundo signo es que aparecieron controles de captura
+  que antes no estaban, que es la misma cuenta que usa `gate:borradores`.
+- **Se espera a la condición, no al reloj.** Los formularios pesados llegan por
+  `await import()`, así que aparecen cuando bajó su chunk. Con espera fija,
+  «Nuevo empleado» daba «no abrió nada» y el hueco parecía del portal.
+- **Un nombre, una medición.** Sucursales daba **32 candidatos que son 4
+  diálogos** — la misma tarjeta repetida por sucursal.
+
+#### Lo que este barrido todavía no alcanza
+
+Y hay que decirlo, porque su verde no cubre esto:
+
+- **Un tope de 4 disparadores por ruta**, y lo que queda afuera se **anota** en
+  la corrida: 7 en Sucursales y 11 en el tablero. Un tope silencioso se lee como
+  «se midió todo».
+- **«Nuevo empleado» no llegó a abrirse** —el disparador responde y no aparece
+  ni diálogo ni campos—, así que el formulario más largo del portal sigue sin
+  medir. Es lo primero que hay que destrabar.
+- **Los formularios que exigen datos previos** —el editor de una boleta necesita
+  una planilla generada— quedan fuera por falta de datos, no por diseño.
 
 ### F4 · Las vistas sin tabla
 
@@ -197,14 +237,15 @@ diferencia se cubre midiendo (F0), no leyendo.
 
 ## 5. Orden sugerido
 
-~~F0~~ · ~~F1~~ · ~~F2~~ — **cerradas** (v2.698.4). El barrido termina, y de pie
-el portal mide **cero** en las seis dimensiones que sabe contar.
+~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) — **cerradas**. El
+barrido de vistas y el de diálogos terminan, y de pie el portal mide **cero** en
+todo lo que saben contar.
 
 Lo que sigue, en orden:
 
-1. **F3** — diálogos y formularios, empezando por los que ya guardan borrador
-   (`gate:borradores` los identificó como largos). Es la superficie más grande
-   sin mirar.
+1. **Destrabar «Nuevo empleado»** en el barrido de diálogos y subir el tope, para
+   que F3 cubra lo que hoy anota como pendiente — el formulario más largo del
+   portal sigue sin medir.
 2. **F4** — las vistas sin tabla. Cortes ya salió limpia; quedan el reloj, el
    kiosco, las bitácoras y la encuesta.
 3. **F5** — una corrida acostado. Todo lo de este plan se midió de pie.
@@ -250,3 +291,4 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.697.0 | el mismo canon en las otras nueve tablas |
 | v2.698.0 | confirmar un pago desde el teléfono · este plan |
 | v2.698.4 | F0/F1/F2 — el barrido termina, y el portal mide cero de pie |
+| v2.699.2 | F3 — los diálogos, medidos por primera vez en 390px |

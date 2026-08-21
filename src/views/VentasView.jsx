@@ -1351,7 +1351,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? shortEmployeeName(r.emp) : r.cod_vendedor);
-                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider';
+                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)]';
                     const expandBorder = 'border-chart-1/30';
 
                     return (
@@ -1588,6 +1588,19 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
 // un producto de rotación alta lo vendieron 34 personas—, así que arranca
 // mostrando las seis primeras y el resto se despliega.
 //
+// **El color es el de la SALA, no el del puesto en la lista.** La primera
+// versión pintaba un color por posición: quedaba un arcoíris donde ningún color
+// quería decir nada. Ahora cada barra usa el color que «Ventas por sucursal» le
+// dio a esa sala en esta misma pantalla, así que las dos tarjetas se leen
+// juntas — y con el filtro puesto en una sala, todas quedan del mismo color,
+// que es exactamente lo que corresponde.
+//
+// Al lado del nombre va la sala. Medido en agosto sobre 13,821 pares
+// (producto, vendedor): **el 99.6% vendió ese producto en UNA sola sala**, así
+// que una sola etiqueta dice la verdad casi siempre; los 53 pares que tocaron
+// dos llevan «+1». Con el filtro en una sala no se repite en cada renglón —
+// ya lo dice el filtro—.
+//
 // El nombre sale de `employees` por `code`, igual que la tabla de ventas de
 // abajo. Los dos códigos que NO son una persona (`1000` Administración, `125`
 // Domicilio) tienen su rótulo en `SPECIAL_CODES` y se muestran con él: son
@@ -1595,7 +1608,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
 // leyeran como alguien a quien no se encontró.
 const VENDEDORES_VISIBLES = 6;
 
-function VentasPorVendedor({ porVendedor, employees }) {
+function VentasPorVendedor({ porVendedor, porSucursal, branches, employees, filterBranch }) {
     const [verTodos, setVerTodos] = useState(false);
     const lista = porVendedor || [];
     // El resumen llega después que el detalle: sin filas todavía no hay nada
@@ -1606,6 +1619,16 @@ function VentasPorVendedor({ porVendedor, employees }) {
     const total    = lista.reduce((s, v) => s + parseFloat(v.neto || 0), 0);
     const visibles = verTodos ? lista : lista.slice(0, VENDEDORES_VISIBLES);
     const ocultos  = lista.length - visibles.length;
+
+    // El color de cada sala es su POSICIÓN en «Ventas por sucursal», que viene
+    // ordenada por venta. Así la barra de un vendedor de Salud 1 es del mismo
+    // color que la barra de Salud 1 de arriba. Una sala que no esté en ese
+    // reparto —no puede pasar, salen del mismo cálculo— cae al último color en
+    // vez de quedar sin ninguno.
+    const colorDeSala = new Map(
+        (porSucursal || []).map((s, i) => [String(s.branch_id), COLORES_DE_REPARTO[i % COLORES_DE_REPARTO.length]])
+    );
+    const nombreDeSala = (id) => branches?.find(b => b.id === Number(id))?.name || `Suc. ${id}`;
 
     return (
         <div data-surface="card" className="p-4">
@@ -1623,7 +1646,8 @@ function VentasPorVendedor({ porVendedor, employees }) {
                     const neto  = parseFloat(v.neto || 0);
                     const cant  = parseFloat(v.cantidad_base || 0);
                     const pct   = total > 0 ? (neto / total) * 100 : 0;
-                    const color = COLORES_DE_REPARTO[ci % COLORES_DE_REPARTO.length];
+                    const color = colorDeSala.get(String(v.branch_id))
+                        ?? COLORES_DE_REPARTO[COLORES_DE_REPARTO.length - 1];
                     return (
                         <div key={v.cod_vendedor ?? `sin-codigo-${ci}`}>
                             <div className="flex justify-between items-center mb-1 gap-2">
@@ -1631,6 +1655,12 @@ function VentasPorVendedor({ porVendedor, employees }) {
                                     <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names}
                                         className="w-5 h-5 rounded-full shrink-0" />
                                     <span className="text-caption text-content-2 font-semibold truncate">{rotulo}</span>
+                                    {!filterBranch && v.branch_id != null && (
+                                        <span className="text-micro text-content-3 shrink-0 whitespace-nowrap">
+                                            {nombreDeSala(v.branch_id)}
+                                            {v.sucursales > 1 && <span className="opacity-60"> +{v.sucursales - 1}</span>}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
@@ -1780,12 +1810,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         drillCache.current.clear();
     }, [fini, ffin, filterBranch]);
 
-    // Reset drill sort/filter/page when a new product is expanded
+    // Al abrir otro producto vuelven el orden, los chips y la página al inicio.
+    //
+    // ⚠ Acá NO se limpian `drillMonthly` ni `drillSummary`, y ese detalle es el
+    // que hacía desaparecer la tendencia y el reparto por vendedor al RE-abrir
+    // una fila. `toggleExpand` hace `setExpandedKey(key)` y enseguida
+    // `fetchDrillDown(...)`: cuando el producto ya está en la caché del drill,
+    // esa función asigna los dos estados en el MISMO tick, y este efecto —que
+    // corre después del render— los borraba. La primera vez no pasaba porque
+    // ahí la respuesta llega asíncrona, ya pasado el efecto: o sea que fallaba
+    // sólo al reabrir, que es justo el caso que nadie prueba.
+    // Los dos ya se limpian donde corresponde, dentro de `fetchDrillDown`,
+    // antes de salir a buscar.
     useEffect(() => {
         setDrillSortCol('fecha'); setDrillSortDir('desc');
         setDrillFilters({ tipodoc: '', changed: false });
-        setDrillMonthly([]);
-        setDrillSummary(null);
         setDrillPage(1);
     }, [expandedKey]);
 
@@ -1963,6 +2002,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         }
         setDrillLoading(true);
         setDrillData([]);
+        setDrillMonthly([]);
+        setDrillSummary(null);
         try {
             const [{ data, error: e }, { data: precios }, { data: history }, { data: monthly }, { data: summary }] = await Promise.all([
                 supabase.rpc('get_product_drill_lines', {
@@ -2311,7 +2352,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             agosto) y a media pantalla no entra. */}
                         <VentasPorVendedor
                             porVendedor={drillSummary?.por_vendedor}
+                            porSucursal={drillSummary?.por_sucursal}
+                            branches={branches}
                             employees={employees}
+                            filterBranch={filterBranch}
                         />
 
                         {/* Individual sales table */}
@@ -2762,7 +2806,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         pinta fichas y esta fila hermana no se dibuja.
                                         Ahí el mismo detalle va al expediente, abajo. */}
                                     {isExpanded && !privacyMode && !enTelefono && (
-                                        <tr className="bg-gradient-to-b from-chart-1/10 to-divider">
+                                        <tr className="bg-gradient-to-b from-chart-1/10 to-[var(--fila-expandida-fin)]">
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {detalleDeProducto(r)}

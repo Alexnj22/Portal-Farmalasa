@@ -136,7 +136,7 @@ function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false }) 
     if (comoPanel) return <div className="px-1 pb-2">{cuerpo}</div>;
 
     return (
-        <div className="bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider px-10 py-3">
+        <div className="bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)] px-10 py-3">
             {cuerpo}
         </div>
     );

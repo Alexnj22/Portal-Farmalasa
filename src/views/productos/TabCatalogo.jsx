@@ -900,8 +900,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         // `via-white` (blanco puro, sin alpha) y el hex crudo #EEF4FF eran los
         // dos únicos stops de esta familia que no pasaban por tokens — se
         // alinean con las otras 4 copias de la fila expandida (v2.62.4).
-        container: 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider border-t border-brand/[0.12]',
-        loadingRow: 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider border-t border-chart-1/30',
+        container: 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)] border-t border-brand/[0.12]',
+        loadingRow: 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)] border-t border-chart-1/30',
         loadingText: 'text-content-3',
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',

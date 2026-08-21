@@ -89,7 +89,7 @@ function useTokens() {
     emptyIcon:         'text-content-3',
     // El stop medio era `via-white/50` fijo — el único de los tres que no
     // reaccionaba al tema (v2.62.4).
-    expandBg:          'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider',
+    expandBg:          'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)]',
     expandBorderColor: 'border-chart-1/30',
     expandText:        'text-content-3',
     expandTextStrong:  'text-content',

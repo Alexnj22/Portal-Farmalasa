@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.705.3 — Ventas > Productos: el color del vendedor es el de su sala, y el detalle no se vacía al reabrirlo
+
+Cinco cosas del repaso del usuario sobre el detalle de producto.
+
+**El detalle se vaciaba al REABRIR una fila.** La tendencia mensual y el reparto
+por vendedor desaparecían —y el reparto por sucursal se caía a su cálculo de
+respaldo— la segunda vez que se abría el mismo producto. El efecto que
+devuelve el orden y los chips al inicio también limpiaba `drillMonthly` y
+`drillSummary`; con el producto ya en la caché del detalle, `fetchDrillDown`
+los asigna en el MISMO tick que `setExpandedKey`, y el efecto —que corre
+después del render— los borraba. La primera vez no pasaba porque ahí la
+respuesta llega asíncrona, ya pasado el efecto: **fallaba sólo al reabrir**,
+que es justo el caso que nadie prueba. Los dos se limpian ahora donde
+corresponde, dentro de `fetchDrillDown`, antes de salir a buscar.
+
+**El color de cada vendedor es el de su sala.** Era un color por POSICIÓN en la
+lista: un arcoíris donde ningún color quería decir nada. Ahora cada barra usa
+el que «Ventas por sucursal» le dio a esa sala en la misma pantalla, así que
+las dos tarjetas se leen juntas; con el filtro puesto en una sala, todas quedan
+del mismo color. Y al lado del nombre va la sala — medido en agosto sobre
+13,821 pares (producto, vendedor), **el 99.6% vendió ese producto en una sola
+sala**, así que una etiqueta dice la verdad casi siempre y los 53 pares que
+tocaron dos llevan «+1». Con el filtro en una sala no se repite en cada
+renglón: ya lo dice el filtro.
+
+**El fondo de una fila desplegada se veía blanco en el tema oscuro.** Es la
+misma causa que las tarjetas de la versión anterior: terminaba en
+`to-divider`, y `--divider` se declara UNA sola vez, en `:root`, con un gris
+claro para los cuatro temas. Como línea está bien; como parada de un degradado
+no sigue al tema. Se nota sobre todo mientras carga, que es cuando no hay
+contenido que lo tape — que es exactamente cuando lo vio el usuario. Nace
+`--fila-expandida-fin`, con su valor por tema, y los temas claros conservan
+byte a byte lo que ya tenían. Estaba copiado en **cinco** lugares: el canónico
+de `DataTable`, las dos tablas de Ventas, Inventario y Catálogo.
+
+**El agregado deja de mandar `precio_unitario_avg`**, un flotante de 18 dígitos
+por presentación que el portal no lee en ningún lado (cero referencias en
+`src/`), y acota el neto a 6 decimales — error acumulado bajo un milésimo de
+centavo sobre 2,376 productos. El payload de la pestaña baja de 1,734 a
+1,653 kB.
+
+**Y lo que de verdad hace lenta la pestaña no es la consulta.** Medido contra
+los registros de producción de las últimas 24 h: la consulta tarda **322 ms**,
+pero la mediana de lo que espera el navegador fue **6,192 ms** — la más alta de
+toda la base. La diferencia no es RLS (medido con las policies activas: +60 ms)
+ni el plan genérico (ocho ejecuciones preparadas seguidas: 331-348 ms). Es la
+**cola por una conexión**: PostgREST tiene 20 para todo el portal, y los
+registros traen 77 `PGRST003 "Timed out acquiring connection from connection
+pool"` más 504 en la vista de conteo, que en el mismo período hizo 2,259
+llamadas con medianas de 3,013 y 1,187 ms. Esa vista se atendió en v2.703.15;
+el pico de conexiones agotadas pasó de 51 en la hora de las 21:00 a 9 en la de
+las 22:00.
+
 ## v2.705.2 — el documento se puede deslizar, la sombra no se corta y el aviso deja de ocupar seis líneas
 
 Segunda tanda de lo que apareció probando en el teléfono. Los tres son visibles

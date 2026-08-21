@@ -343,6 +343,17 @@
      pintaba blanco puro sobre la fila oscura). */
   --row-expand-sheen: rgba(255,255,255,0.50);
 
+  /* Cierre del fondo de fila expandida. Era `to-divider` a secas, y ahí está
+     el error: `--divider` se declara UNA sola vez, en este mismo `:root`, y
+     vale un gris claro en los CUATRO temas. Como línea está bien —un gris al
+     50% se lee sobre claro y sobre oscuro—, pero como parada de un degradado
+     no sigue al tema: en oscuro el fondo iba de la superficie del tema a ese
+     gris, o sea de oscuro a BLANCO. Se veía al desplegar cualquier fila, y
+     sobre todo mientras carga, que es cuando no hay contenido que lo tape.
+     El valor de los temas claros es exactamente el que había, para no mover
+     nada de lo que ya estaba bien. */
+  --fila-expandida-fin: rgba(203,213,225,0.5);
+
   /* Barrido de shimmer sobre superficie neutra (skeleton de LiquidAvatar,
      hairline animado de la pill de filtros de SchedulesView). Distinto de
      los barridos sobre botones brand, que se quedan en white/[0.08-0.25]
@@ -1194,6 +1205,7 @@ thead.sticky,
   --card-tint-base:      rgba(13,20,48,0.80);
   --card-tint-base-soft: rgba(13,20,48,0.55);
   --row-expand-sheen:    rgba(255,255,255,0.05);
+  --fila-expandida-fin:  rgba(148,163,184,0.10);   /* oscuro: se HUNDE, no se aclara */
   --focus-ring-color: var(--brand-text);
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);
@@ -1346,6 +1358,7 @@ thead.sticky,
   --card-tint-base:      rgba(255,255,255,1.00);
   --card-tint-base-soft: rgba(255,255,255,1.00);
   --row-expand-sheen:    rgba(255,255,255,1.00);
+  --fila-expandida-fin:  rgba(226,232,240,1.00);   /* solid claro: opaco, como el resto del tema */
   --shimmer-sweep:        rgba(255,255,255,0.60);
   --shimmer-sweep-strong: rgba(255,255,255,1.00);
 
@@ -1528,6 +1541,7 @@ thead.sticky,
   --card-tint-base:      rgba(30,41,59,1.00);
   --card-tint-base-soft: rgba(30,41,59,1.00);
   --row-expand-sheen:    rgba(30,41,59,1.00);
+  --fila-expandida-fin:  rgba(51,65,85,1.00);      /* solid oscuro: el mismo escalón, en su base */
   --focus-ring-color: var(--brand-text);
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);

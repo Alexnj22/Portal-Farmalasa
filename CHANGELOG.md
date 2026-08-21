@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.6 — Un solo lugar decide si tenés permiso
+
+Sigue la cola que dejó la auditoría. Al mirar los 75 sitios que quedaban
+apareció que **no eran 75 problemas distintos**: catorce, en siete funciones,
+eran exactamente el mismo — leer `employees` para el rol y `role_permissions`
+para el módulo, con el error descartado en las dos consultas.
+
+Y las catorce terminaban igual:
+
+```
+const { data: perm } = await admin.from("role_permissions")…
+if (perm?.can_edit !== true) return 403 "No tienes permiso"
+```
+
+O sea que **una consulta que falla le dice a alguien que sí puede que no
+puede**. Y eso no es un mensaje aproximado: un 403 se lee como una decisión
+—pedir el permiso, avisarle al jefe, esperar— y no como una falla que se
+reintenta. El mensaje equivocado manda a la persona por el camino equivocado y
+el problema real no se reporta nunca.
+
+Ahora hay un solo `permisoDeModulo()` en `_shared/security.ts`. Devuelve
+`puede`, `alcanceTodo`, la ficha, y —lo que faltaba— **`roto` aparte**: quien
+llama contesta 503 cuando no se pudo averiguar y 403 sólo cuando de verdad no
+puede. Cubre las seis variantes que había sueltas: una acción o la otra, con o
+sin rol secundario, con o sin `SUPERADMIN`, con o sin `scope = 'ALL'`.
+
+**Es también un cambio de comportamiento, y conviene saberlo.** Seis de esas
+funciones —`wfm-ai-scheduler`, `export-purchase-dte-zip`, los dos `backfill`,
+`regularizar-dte` y `sincronizar-fichas-clientes`— miraban **sólo el rol
+principal**. El canon no es una opinión: `auth_has_module_permission`, la
+función que usan todas las policies de RLS, concede por SUPERADMIN, por rol
+principal, por rol **secundario** y por herencia de ausencia. Esas seis eran más
+estrictas que la base, así que a quien cubría otro puesto le negaban lo que el
+resto del portal ya le concedía. Alinearlas corrige la excepción; no amplía
+nada.
+
+Lo que el helper todavía NO replica del canon es la cuarta rama,
+`auth_hereda_por_ausencia`. Sigue siendo más estricto que la base —el lado
+seguro para equivocarse— pero queda anotado en el código, porque alguien lo va a
+encontrar.
+
+**Y dos bugs del propio detector**, que eran lo que hacía cara la cola:
+
+`soloCodigo` blanqueaba los comentarios de bloque con `' '.repeat(m.length)`, y
+eso conserva el largo pero **se come los saltos de línea**. Como `lineaDe`
+cuenta `\n`, todo número de línea posterior a un comentario de bloque salía
+corrido hacia arriba. Medido en `aplicar-movimiento-inventario`: el gate
+reportaba la línea 690 y la escritura real estaba en la **716**. En este repo,
+donde casi todos los archivos tienen comentarios largos, el desfase era de
+decenas de líneas — ir a un hallazgo y no encontrar nada es exactamente lo que
+hace que una cola de 75 no se pague nunca. Ahora se blanquea carácter por
+carácter dejando pasar el `\n`.
+
+Con eso corregido, **74 de las 75 anclas caen sobre el `await` o el `const` de
+verdad**; antes fallaban casi todas.
+
+Baseline: `error-ignorado` 40 → 26. Quedan 61 sitios, y ya se sabe qué son: 19
+de bitácora, 4 que anotan algo que ya pasó afuera, 3 falsos positivos del gate
+—usan `.then(({ error }) => …)`, que el detector no reconoce— y 35 sueltos.
+
 ## v2.698.5 — Publicar deja de pisar lo que puso una persona
 
 Fases 2 y 3 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`. Hasta hoy,

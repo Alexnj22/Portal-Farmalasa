@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, checkCronSecret, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { extractProveedorFromDte, TIPOS_DTE_CON_PROVEEDOR } from "../_shared/proveedorFromDte.ts";
 
 // Backfill del Maestro de Proveedores (PLAN-PROVEEDORES-2026-07.md Fase 2):
@@ -33,10 +33,16 @@ Deno.serve(async (req) => {
   if (!authorized) {
     const employee = await requireActiveEmployeeUser(req, admin);
     if (employee) {
-      const { data: empRole } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
-      const { data: perm } = await admin.from("role_permissions").select("can_edit")
-        .eq("role_id", empRole?.role_id ?? -1).eq("module_key", "proveedores").single();
-      authorized = perm?.can_edit === true;
+      // Si la consulta falla, `authorized` se queda en false y esto contesta
+      // 401 — indistinguible de «no tenés permiso» para quien lo lee. Se
+      // separan: 503 cuando no se pudo averiguar.
+      const permiso = await permisoDeModulo(admin, employee.id, "proveedores", "can_edit");
+      if (permiso.roto) {
+        return new Response(JSON.stringify({ error: permiso.roto }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      authorized = permiso.puede;
     }
   }
   if (!authorized) {

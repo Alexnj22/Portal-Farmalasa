@@ -163,3 +163,103 @@ export function getErpCredsByBranch(branchId: number): ErpBranchEntry | null {
   const map = getErpBranchMap();
   return map.find((e) => e.branchId === branchId) ?? null;
 }
+
+// ── El permiso de un módulo, leído UNA vez y bien ────────────────────────────
+//
+// Catorce edge functions repetían la misma pareja de consultas —`employees` para
+// el rol, `role_permissions` para el módulo— y las veintidós descartaban el
+// error. Todas terminaban igual:
+//
+//     const { data: perm } = await admin.from("role_permissions")…
+//     if (perm?.can_edit !== true) return 403 "No tienes permiso"
+//
+// O sea que **una consulta que falla contesta «no tenés permiso»** a alguien que
+// sí lo tiene. Y eso no es un mensaje aproximado: un permiso denegado se lee
+// como una decisión —pedirlo, avisarle al jefe, esperar— y no como una falla que
+// se reintenta, así que el mensaje equivocado manda a la persona por el camino
+// equivocado y el problema real no se reporta nunca.
+//
+// Acá se lee una sola vez, y `roto` separa los dos casos. Quien llama contesta
+// 503 si está roto y 403 sólo cuando de verdad no puede.
+//
+// Cubre las seis variantes que había: una acción o la otra, con o sin
+// `secondary_role_id`, con o sin `system_role === "SUPERADMIN"`, y con o sin
+// `scope === "ALL"`. Ninguna function necesita ya escribir la pareja a mano.
+export interface PermisoModulo {
+  /** Si puede hacer la acción pedida. `false` cuando de verdad no puede. */
+  puede: boolean;
+  /** Si su alcance es TODAS las sucursales (SUPERADMIN o `scope = 'ALL'`). */
+  alcanceTodo: boolean;
+  /** La ficha, para el nombre del concepto y la sucursal propia. */
+  emp: {
+    role_id: number | null;
+    secondary_role_id: number | null;
+    system_role: string | null;
+    branch_id: number | null;
+    first_names?: string | null;
+    last_names?: string | null;
+  } | null;
+  /**
+   * Por qué no se pudo AVERIGUAR. Distinto de `puede: false`, que es una
+   * respuesta. Si viene con texto, la function tiene que contestar 503 y no 403.
+   */
+  roto: string | null;
+}
+
+export async function permisoDeModulo(
+  admin: { from: (t: string) => any },
+  employeeId: string,
+  modulo: string,
+  accion: "can_view" | "can_edit" | "can_approve",
+): Promise<PermisoModulo> {
+  const vacio = { puede: false, alcanceTodo: false, emp: null };
+
+  const { data: emp, error: empErr } = await admin
+    .from("employees")
+    .select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
+    .eq("id", employeeId).maybeSingle();
+  if (empErr) {
+    console.error(`[permisoDeModulo] employees (${modulo}/${accion}): ${empErr.message}`);
+    return { ...vacio, roto: "No se pudo leer tu ficha de empleado." };
+  }
+
+  /* Los DOS roles: el principal y el secundario.
+   *
+   * ⚠️ CAMBIO DE COMPORTAMIENTO, y deliberado. Seis de las funciones que ahora
+   * usan este helper miraban SÓLO `role_id`: wfm-ai-scheduler,
+   * export-purchase-dte-zip, los dos backfill, regularizar-dte y
+   * sincronizar-fichas-clientes. O sea que a quien cubría otro puesto le
+   * negaban lo que el resto del portal ya le concedía.
+   *
+   * El canon no es una opinión: `auth_has_module_permission` —la función que
+   * usan TODAS las policies de RLS— concede por SUPERADMIN, por rol principal,
+   * por rol secundario y por herencia de ausencia. Esas seis eran más estrictas
+   * que la base, así que alinearlas es corregir la excepción, no ampliar el
+   * permiso.
+   *
+   * Lo que este helper NO replica del canon es la cuarta rama,
+   * `auth_hereda_por_ausencia`: quien cubre a alguien de vacaciones hereda su
+   * permiso en la base y acá todavía no. Sigue siendo más estricto que el
+   * canon, que es el lado seguro para equivocarse — pero está anotado porque es
+   * una diferencia real y alguien la va a encontrar.
+   */
+  const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+  const { data: permisos, error: permErr } = await admin
+    .from("role_permissions")
+    .select("can_view, can_edit, can_approve, scope")
+    .in("role_id", roles.length ? roles : [-1])
+    .eq("module_key", modulo);
+  if (permErr) {
+    console.error(`[permisoDeModulo] role_permissions (${modulo}/${accion}): ${permErr.message}`);
+    return { ...vacio, emp: emp ?? null, roto: "No se pudieron leer tus permisos." };
+  }
+
+  const filas = (permisos ?? []) as Record<string, unknown>[];
+  const su = emp?.system_role === "SUPERADMIN";
+  return {
+    puede: su || filas.some((p) => p[accion] === true),
+    alcanceTodo: su || filas.some((p) => p[accion] === true && p.scope === "ALL"),
+    emp: (emp ?? null) as PermisoModulo["emp"],
+    roto: null,
+  };
+}

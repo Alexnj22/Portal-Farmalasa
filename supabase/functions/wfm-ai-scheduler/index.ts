@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts";
 
 Deno.serve(async (req) => {
@@ -24,20 +24,17 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { data: empRole } = await admin
-    .from('employees')
-    .select('role_id')
-    .eq('id', employee.id)
-    .single();
+  // `roto` NO es «no tenés permiso»: es «no se pudo averiguar». Con el error
+  // descartado las dos cosas contestaban 403, y un 403 se lee como una decisión
+  // —pedir el permiso, avisar al jefe— y no como una falla que se reintenta.
+  const permiso = await permisoDeModulo(admin, employee.id, 'schedules', 'can_edit');
+  if (permiso.roto) {
+    return new Response(JSON.stringify({ error: permiso.roto }), {
+      status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
-  const { data: perm } = await admin
-    .from('role_permissions')
-    .select('can_edit')
-    .eq('role_id', empRole?.role_id ?? -1)
-    .eq('module_key', 'schedules')
-    .single();
-
-  if (perm?.can_edit !== true) {
+  if (!permiso.puede) {
     return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
       status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 // Descarga masiva de facturas de compra (JSON+PDF) — arma el ZIP en memoria y
 // lo devuelve directo en la respuesta, sin persistir un archivo temporal en
@@ -54,10 +54,15 @@ Deno.serve(async (req) => {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  const { data: empRole } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
-  const { data: perm } = await admin.from("role_permissions").select("can_view")
-    .eq("role_id", empRole?.role_id ?? -1).eq("module_key", "facturas_compra").single();
-  if (perm?.can_view !== true) {
+  // 503 si no se pudo averiguar, 403 sólo si de verdad no puede: con el error
+  // descartado, una consulta caída negaba la descarga como si fuera un permiso.
+  const permiso = await permisoDeModulo(admin, employee.id, "facturas_compra", "can_view");
+  if (permiso.roto) {
+    return new Response(JSON.stringify({ error: permiso.roto }), {
+      status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (!permiso.puede) {
     return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

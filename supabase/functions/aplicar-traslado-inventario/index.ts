@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 
 // Aplica el traslado entre salas que la sala de ORIGEN confirmó. Quinta pieza de
@@ -170,20 +170,18 @@ Deno.serve(async (req) => {
     // ── El permiso es `traslados`, no `requests` ──────────────────────────
     // Módulos distintos a propósito: `requests` es permisos, vacaciones e
     // incapacidades, y confirmar un traslado no debe arrastrar eso.
-    const { data: emp } = await admin
-      .from("employees").select("role_id, secondary_role_id, branch_id, system_role, first_names, last_names")
-      .eq("id", quien.id).maybeSingle();
-    const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
-    const { data: permisos } = await admin
-      .from("role_permissions").select("can_approve, scope")
-      .in("role_id", roles.length ? roles : [-1])
-      .eq("module_key", "traslados");
-    const puede = emp?.system_role === "SUPERADMIN"
-      || (permisos ?? []).some((p) => p.can_approve);
-    if (!puede)
+    // `permisoDeModulo` resuelve las dos consultas, los DOS roles (principal y
+    // secundario), el SUPERADMIN y el `scope = 'ALL'` — que es lo que acá se
+    // escribía a mano. Y devuelve `roto` aparte: con el error descartado, una
+    // consulta caída contestaba «No tienes permiso para confirmar traslados» a
+    // quien sí puede, y esa persona se queda esperando un permiso en vez de
+    // reintentar.
+    const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_approve");
+    if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+    if (!permiso.puede)
       return json({ ok: false, error: "No tienes permiso para confirmar traslados." }, 403);
-    const alcanceTodo = emp?.system_role === "SUPERADMIN"
-      || (permisos ?? []).some((p) => p.can_approve && p.scope === "ALL");
+    const emp = permiso.emp;
+    const alcanceTodo = permiso.alcanceTodo;
 
     // ── La solicitud se relee de la BD, no se recibe ──────────────────────
     const { data: sol, error: solErr } = await admin

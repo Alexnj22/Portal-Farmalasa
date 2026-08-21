@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import {
   login, leerFicha, idClienteDeFactura, escribirCampo, escribirCampos,
   ponerUbicacion, duiValido, telefonoValido, TELEFONO_DEFECTO, filaPortal,
@@ -173,11 +173,9 @@ Deno.serve(async (req) => {
     if (!esCron) {
       const emp = await requireActiveEmployeeUser(req, admin);
       if (!emp) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-      const { data: e } = await admin.from("employees").select("role_id").eq("id", emp.id).maybeSingle();
-      const { data: permiso } = await admin.from("role_permissions")
-        .select("can_edit").eq("role_id", e?.role_id ?? -1)
-        .eq("module_key", "clientes").maybeSingle();
-      if (!permiso?.can_edit)
+      const permiso = await permisoDeModulo(admin, emp.id, "clientes", "can_edit");
+      if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+      if (!permiso.puede)
         return json({ ok: false, error: "No tenés permiso para editar clientes." }, 403);
       actor = emp.name;
     }

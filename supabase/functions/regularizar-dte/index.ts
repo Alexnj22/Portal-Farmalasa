@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 // `anular_factura.php` NO se usa acá a propósito: estas facturas ya están
 // anuladas en el ERP —eso es lo que las puso en la bolsa— y lo único que
 // falta es el trámite ante Hacienda.
@@ -159,11 +159,12 @@ Deno.serve(async (req) => {
     if (!esCron) {
       const emp = await requireActiveEmployeeUser(req, admin);
       if (!emp) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-      const { data: e } = await admin.from("employees").select("role_id").eq("id", emp.id).maybeSingle();
-      const { data: permiso } = await admin.from("role_permissions")
-        .select("can_edit").eq("role_id", e?.role_id ?? -1)
-        .eq("module_key", "facturacion").maybeSingle();
-      if (!permiso?.can_edit)
+      // Una consulta que falla NO es «no tenés permiso». Acá esa confusión
+      // pesaba doble: la pantalla dice que no podés regularizar facturas, y lo
+      // que pasó fue que la base no contestó.
+      const permiso = await permisoDeModulo(admin, emp.id, "facturacion", "can_edit");
+      if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+      if (!permiso.puede)
         return json({ ok: false, error: "No tenés permiso para regularizar facturas." }, 403);
       actorId = emp.id;
       actorNombre = emp.name;

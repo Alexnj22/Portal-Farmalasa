@@ -272,11 +272,32 @@ const lineaDe = (src, idx) => src.slice(0, idx).split('\n').length;
  * citado dentro de un comentario explicativo ya no se cuenta como código.
  * Este archivo tiene comentarios largos que citan queries — sin esto, el gate
  * se delata a sí mismo con falsos positivos y deja de mirarse.
+ *
+ * ── Los saltos de línea del comentario de bloque se CONSERVAN ──
+ *
+ * `' '.repeat(m.length)` mantiene el largo en caracteres, que es lo que hace
+ * falta para que `m.index` siga apuntando al mismo lugar. Pero un comentario
+ * `/* … *\/` de veinte líneas tiene veinte `\n` adentro, y reemplazarlo por
+ * espacios los borra: `lineaDe` cuenta `\n` en el prefijo, así que **todo
+ * número de línea posterior a un comentario de bloque salía corrido hacia
+ * arriba**, tantas líneas como saltos se hubieran comido.
+ *
+ * Medido el 2026-08-21 en `aplicar-movimiento-inventario`: el gate reportaba la
+ * línea 690 —donde hay un comentario— y la escritura real estaba en la **716**.
+ * Un archivo con muchos comentarios de bloque, que en este repo son casi todos,
+ * daba un desfase de decenas de líneas.
+ *
+ * No es cosmético: un hallazgo cuya línea no lleva a ninguna parte obliga a
+ * buscar a mano el sitio de verdad, y esa fricción es exactamente lo que hace
+ * que una cola de 75 no se pague nunca. Se blanquea carácter por carácter
+ * dejando pasar el `\n`, que cuesta lo mismo y no miente.
  */
+const blanquear = (m) => m.replace(/[^\n]/g, ' ');
+
 function soloCodigo(src) {
   return src
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length))
-    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
+    .replace(/\/\*[\s\S]*?\*\//g, blanquear)
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + blanquear(m.slice(p1.length)));
 }
 
 /**

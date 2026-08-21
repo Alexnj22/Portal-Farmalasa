@@ -13,6 +13,34 @@ export function fetchAntibioticProductIds() {
 }
 
 /*
+ * Lo que se facturó en un período y NO es venta de productos.
+ *
+ * Bajo los códigos administrativos 100/1000 hay cobros que no son venta de
+ * mostrador —la comisión del corresponsal bancario, el apoyo promocional de un
+ * laboratorio, las dietas de reunión—. Para la meta ya no cuentan (v2.699.0);
+ * para las pantallas de hora y de día SÍ se siguen mostrando, porque la factura
+ * existió y el corte de caja tiene que cuadrar contra ella. Lo que hace falta es
+ * DECIRLO: un cobro de $428 a las 10:17 inventa una hora pico que nadie trabajó.
+ *
+ * El permiso lo decide el servidor, no esta función: sin `ventas_no_producto`
+ * devuelve `null` y la pantalla no pinta nada. Se resuelve así —y no trayendo
+ * los montos para esconderlos— porque un monto que llega al navegador ya salió,
+ * lo pinte la pantalla o no.
+ *
+ * `branchId` null = todas las salas, y el servidor lo ignora si el alcance de
+ * quien pregunta es de una sola.
+ */
+export async function fetchVentasSinProducto({ fini, ffin, branchId = null }) {
+    const { data, error } = await supabase.rpc('get_ventas_sin_producto', {
+        p_fini: fini,
+        p_ffin: ffin,
+        p_branch_id: branchId != null ? Number(branchId) : null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+/*
  * La lista de Ventas y sus totales viven en la BASE, no acá. Las dos.
  *
  * Nacieron para el filtro «Receta Médica» y desde el 2026-08-21 sirven también

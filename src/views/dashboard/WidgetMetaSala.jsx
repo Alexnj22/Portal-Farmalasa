@@ -5,6 +5,8 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchMetaSala } from '../../data/metas';
+import { fetchVentasSinProducto } from '../../data/ventas';
+import AvisoSinProducto from '../../components/common/AvisoSinProducto';
 import { useAuth } from '../../context/AuthContext';
 import BarraAvance from '../metas/BarraAvance';
 import { TRAMO_CFG, tramoLabel, ymLabel } from '../metas/metasUtils';
@@ -34,6 +36,11 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
     const { hasPermission } = useAuth();
     const vistaCompleta = hasPermission('dash_meta_sala_vista_completa');
     const [row, setRow] = useState(null);
+    // Lo que este mes no es venta de productos, para la nota al pie. Se pide
+    // aparte y no se agregó a `get_meta_sala` porque ese RPC lo consume también
+    // el tablero del módulo: la nota es de ESTA tarjeta y el permiso que la
+    // gatea (`ventas_no_producto`) no es el que abre el widget.
+    const [sinProducto, setSinProducto] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -44,6 +51,26 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
             .catch((err) => { if (vivo) { setError(mensajeAmigable(err, 'No se pudo cargar la meta')); setLoading(false); } });
         return () => { vivo = false; };
     }, [selectedBranchId]);
+
+    // El mes de la nota sale de `row.year_month`, que lo calcula el servidor en
+    // hora de El Salvador. Sacarlo de la fecha del navegador haría que un turno
+    // de noche —o una computadora con la zona mal puesta— pidiera otro mes que
+    // el que la tarjeta está mostrando, y las dos cifras hablarían de períodos
+    // distintos sin que nada avise.
+    useEffect(() => {
+        const ym = row?.year_month;
+        if (!ym) { setSinProducto(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpiar la nota al cambiar de sala
+        let vivo = true;
+        // Hasta fin de mes: el RPC sólo tiene facturas hasta hoy, así que pedir
+        // el mes entero no trae nada de más y evita otra cuenta de fechas acá.
+        const fin = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0))
+            .toISOString().slice(0, 10);
+        fetchVentasSinProducto({ fini: `${ym}-01`, ffin: fin, branchId: selectedBranchId })
+            .then((d) => { if (vivo) setSinProducto(d); })
+            // La nota al pie no puede tumbar el widget: se pierde la nota, no la meta.
+            .catch((e) => { console.error('AvisoSinProducto (meta de sala):', e.message); if (vivo) setSinProducto(null); });
+        return () => { vivo = false; };
+    }, [row?.year_month, selectedBranchId]);
 
     useEffect(() => {
         const cancelar = cargar();
@@ -197,6 +224,12 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                             la aclaración de que no aplica. Además era la línea
                             que se salía de la tarjeta y quedaba cortada. */}
                     </div>
+
+                    {/* Sólo con la vista completa: la nota nombra un monto, y sin
+                        ese permiso este widget habla en porcentajes a propósito. */}
+                    {vistaCompleta && (
+                        <AvisoSinProducto datos={sinProducto} contexto="Este mes" compact className="mt-3" />
+                    )}
                 </>
             )}
         </div>

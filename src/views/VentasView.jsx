@@ -6,6 +6,7 @@ import { SkeletonText } from '../components/common/StateViews';
 import { useSearchParams } from 'react-router-dom';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import CarrilCards from '../components/common/CarrilCards';
+import AvisoSinProducto from '../components/common/AvisoSinProducto';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
@@ -33,7 +34,7 @@ import {
     fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats,
     fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
     fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
-    fetchProductPreciosDetail, fetchProductPreciosHistory,
+    fetchProductPreciosDetail, fetchProductPreciosHistory, fetchVentasSinProducto,
 } from '../data/ventas';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
@@ -356,6 +357,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [totalCountValido, setTotalCountValido] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
     const [totalPuntos, setTotalPuntos] = useState(0);
+    // Lo que en este período NO es venta de productos. Se pide aparte de
+    // `fetchStats` y NO con los filtros de la lista: el aviso habla del PERÍODO
+    // y de la sala, no del subconjunto que quedó filtrado. Atarlo a los filtros
+    // haría que buscando «maria» el aviso desapareciera, y el total de arriba
+    // seguiría teniendo la comisión adentro.
+    const [sinProducto, setSinProducto] = useState(null);
     const [filterPuntos, setFilterPuntos] = useState(false);
     const [puntosCount, setPuntosCount] = useState(0);
     // `count` = las de la lista (con anuladas); `countValido` = las que suman.
@@ -618,6 +625,20 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
+
+    // El aviso de «esto no es venta de productos», por período y sala. Depende
+    // sólo de esos dos —no de la búsqueda ni de las píldoras— por lo dicho en
+    // `sinProducto`. Sin el permiso el servidor devuelve `null` y el componente
+    // no pinta nada, así que no hay que gatearlo otra vez acá.
+    useEffect(() => {
+        let vivo = true;
+        fetchVentasSinProducto({ fini, ffin, branchId: filterBranch || null })
+            .then((d) => { if (vivo) setSinProducto(d); })
+            // Un aviso que no cargó no puede romper la vista de Ventas: se
+            // pierde el aviso, no la pantalla. Queda en consola para el que mire.
+            .catch((e) => { console.error('AvisoSinProducto:', e.message); if (vivo) setSinProducto(null); });
+        return () => { vivo = false; };
+    }, [fini, ffin, filterBranch]);
     useEffect(() => { fetchRows(); }, [fetchRows]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
@@ -872,6 +893,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 />
                 </div>
             </div>
+
+            {/* Va DENTRO de `verCards` a propósito: habla de la cifra de «Total
+                ventas», así que a quien no ve esa tarjeta el aviso le estaría
+                soplando un monto que la pantalla le esconde. El permiso propio
+                (`ventas_no_producto`) lo resuelve el servidor; esto es la otra
+                mitad de la misma regla. */}
+            {verCards && <AvisoSinProducto datos={sinProducto} contexto="El período que se muestra" />}
 
             <DataTable
                 columns={[

@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useMemo } from 'react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Skeleton } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
+import AvisoSinProducto from '../../components/common/AvisoSinProducto';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { TRAMO_CFG } from './metasUtils';
 
@@ -165,6 +166,17 @@ export default function GraficaMes({ data, vista, onVista }) {
                     )}
                 </div>
             )}
+
+            {/* Va al pie de la tarjeta y no dentro de una de las dos vistas: el
+                dato es el mismo mire uno el día por día o el termómetro, y la
+                barra de un día con un cobro adentro engaña igual que el
+                acumulado. `AvisoSinProducto` no pinta nada si no hay ninguno o
+                si quien mira no tiene el permiso — el servidor manda cero. */}
+            <AvisoSinProducto
+                datos={data}
+                contexto={vistaReal === 'dias' ? 'El mes que se dibuja acá' : 'Este acumulado'}
+                className="mt-3"
+            />
         </div>
     );
 }

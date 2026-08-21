@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.700.0 — El aviso de lo que no es venta de productos
+
+La otra mitad de v2.699.0. La meta ya no cuenta esos cobros, pero las pantallas
+de **hora y de día siguen mostrando la venta entera** — y con razón: la factura
+existió, entró plata y el corte de caja tiene que cuadrar contra ella. Lo que
+faltaba era **decirlo**. Medido en agosto/2026 en Salud 3: la hora **10:00**
+lleva $210.12 y la hora **12:00** lleva $388.02 que no son venta de productos.
+Dos horas que se leen activas y en las que nadie despachó nada.
+
+El aviso aparece en **cuatro pantallas** —Ventas (totales del período), Metas
+(día por día y termómetro), el widget de meta del Inicio, y la analítica de
+tráfico por hora de Horarios— y es **un solo componente**
+(`AvisoSinProducto`), no el texto escrito cuatro veces: escrito en cada una, el
+día que cambie la redacción quedan dos versiones y nadie sabe cuál es la buena.
+Dice cuánto, en cuántos cobros y a quién, y se abre para ver cuáles.
+
+**El permiso lo decide el servidor, no la pantalla.** `get_ventas_sin_producto`
+chequea `ventas_no_producto` **antes de leer un monto**: sin él devuelve `null`.
+Traer las cifras al navegador para que la pantalla las esconda no es esconderlas.
+Por eso el permiso está declarado en `GATEADAS_EN_LA_BASE` del gate — no es una
+llave muerta, es una que no se puede ver desde `src/`.
+
+Encendido para Administración, Gerencia, Talento Humano, Supervisión de Ventas y
+jefatura/subjefatura de sala. **Apagado para Dependiente de Farmacia y Regente de
+Enfermería**, en `false` explícito y no ausente: un permiso negado y uno que no
+existe se leen distinto en la pantalla de Permisos.
+
+Y hay una segunda red además del permiso: **el aviso vive siempre dentro del
+bloque que ya muestra la cifra de la que habla** — bajo `ventas_ver_cards` en
+Ventas, bajo `dash_meta_sala_vista_completa` en el Inicio. Puesto afuera, le
+soplaría un monto a quien la pantalla se lo está escondiendo.
+
+**Cortes de caja quedó fuera, y es una decisión medida.** Las 25 facturas son
+CCF pagadas con tarjeta (11), transferencia (8) y crédito (6) — **ninguna en
+efectivo** — y el corte sale del reporte de la propia caja registradora, no de
+la tabla de facturas del portal. Un aviso ahí diría que el conteo de efectivo
+está distorsionado cuando no lo está.
+
+El mes que consulta el widget del Inicio sale de `year_month`, que **lo calcula
+el servidor en hora de El Salvador**: con la fecha del navegador, un turno de
+noche pediría un mes distinto del que la tarjeta está mostrando y las dos cifras
+hablarían de períodos distintos sin que nada avise.
+
 ## v2.699.2 — los diálogos se miden en 390px
 
 F3 de `docs/PLAN-MOVIL-2026-08-20.md`. **41 archivos de vista declaran diálogos

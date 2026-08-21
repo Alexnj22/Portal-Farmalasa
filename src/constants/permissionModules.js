@@ -142,6 +142,14 @@ const GRUPOS_CRUDOS = [
                 { key: 'ventas_tab_vendedores', label: 'Vendedores', tipo: 'tab' },
                 { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
                 { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
+                // El aviso de «esto no es venta de productos». Va como permiso
+                // propio y no montado en `ventas_ver_cards` porque el aviso
+                // aparece en CUATRO pantallas —Ventas, Metas, Horarios y Cortes—
+                // y sólo una de ellas es Ventas; atarlo a las tarjetas de acá
+                // habría dejado a la jefatura de sala sin el aviso en su propia
+                // meta. Apagado, la pantalla muestra la venta entera sin nota,
+                // que es exactamente lo que ve hoy quien atiende el mostrador.
+                { key: 'ventas_no_producto',    label: 'Ver el aviso de cobros que no son venta de productos', tipo: 'cap' },
             ]},
             // Cortes de caja va pegado a Ventas: es el dinero de esas mismas
             // ventas. `hasScope` porque la sala mira la suya y la supervisión

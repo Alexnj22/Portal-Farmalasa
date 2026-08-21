@@ -1,6 +1,8 @@
 import React, { lazy, Suspense, useState, useEffect, useMemo, memo } from 'react';
 import SegmentedControl from '../common/SegmentedControl';
 import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
+import { fetchVentasSinProducto } from '../../data/ventas';
+import AvisoSinProducto from '../common/AvisoSinProducto';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -29,6 +31,12 @@ const FormWfmAnalytics = ({ branches }) => {
     const [branchName, setBranchName] = useState('');
     const [selectedBranch, setSelectedBranch] = useState(branches?.[0]?.id ? String(branches[0].id) : '');
     const [timeRange, setTimeRange] = useState('30'); // '0' significa "Hoy"
+    // Lo que en esta ventana NO es venta de productos. La gráfica de horas se
+    // dibuja por CANTIDAD de transacciones, así que un cobro suelto no le mueve
+    // el color a ninguna barra — pero el tooltip y la lectura de la sala sí
+    // hablan de dinero, y una comisión de $428 a las 10:17 hace parecer que esa
+    // hora vendió. Por eso el aviso va acá aunque el heatmap no se mueva.
+    const [sinProducto, setSinProducto] = useState(null);
 
     // ESTADO DE LA VISTA: 'DAYS', 'GENERAL_HOURS', o número de día (0-6)
     const [activeView, setActiveView] = useState('DAYS');
@@ -76,6 +84,19 @@ const FormWfmAnalytics = ({ branches }) => {
 
                 if (error) throw error;
                 setSalesData(data || []);
+
+                // Misma ventana exacta que la gráfica —de `queryStr` a hoy— para
+                // que el aviso hable de lo que se está viendo y no de otro rango.
+                // Va en su propio `try`: si el aviso falla, la analítica se pinta
+                // igual. Sin el permiso el servidor devuelve `null` y no se pinta.
+                try {
+                    setSinProducto(await fetchVentasSinProducto({
+                        fini: queryStr, ffin: todayStr, branchId: selectedBranch,
+                    }));
+                } catch (e) {
+                    console.error('AvisoSinProducto (analítica):', e.message);
+                    setSinProducto(null);
+                }
             } catch (err) {
                 console.error("Error cargando analítica WFM:", err);
             } finally {
@@ -384,6 +405,10 @@ const FormWfmAnalytics = ({ branches }) => {
                     <Sparkles size={100} strokeWidth={0.5} />
                 </div>
             </div>
+
+            {/* Debajo del dibujo y encima de la leyenda: se lee después de ver las
+                barras, que es cuando uno se pregunta por qué esa hora saltó. */}
+            <AvisoSinProducto datos={sinProducto} contexto="Lo que se dibuja acá" className="mt-2" />
 
             {/* LEYENDA DEL HEATMAP · §20.2 · misma caja redondeada que los controles
                 de arriba, así que el mismo CARRIL — que además los empareja: eran dos

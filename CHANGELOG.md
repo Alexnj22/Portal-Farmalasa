@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.12 — la cañería del notch, medida
+
+F6 de `docs/PLAN-MOVIL-2026-08-20.md`, la mitad que **no** necesita un aparato.
+
+`env(safe-area-inset-*)` vale **0 en todo emulador**, así que ninguna captura ni
+ningún `getComputedStyle` distingue el shell que respeta el notch del que lo
+ignora. Por eso este punto llevaba un año sin verificarse — y por eso quedó
+escrito como «depende de un teléfono».
+
+**Pero eso vale para los VALORES, no para la cañería.** Desde que los cuatro
+insets pasan por un token —`--sa-*` en `index.css`— una prueba puede pisarlos
+con los de un iPhone 13 y medir si el marco se corrió. Lo que no responde, no
+respeta el notch. La prueba ya existía; lo que faltaba era correrla y leerla.
+
+**Con insets de 47/47/34/47, responden todas:** encabezado (`paddingTop` 0→47),
+su fila (16→47 a los dos lados), el contenido (8→47 y 16→50 abajo) y el menú
+lateral (`left` 8→47, márgenes 8→47/34). Y la página **no gana scroll
+horizontal**, que es el efecto secundario clásico de empujar los bordes.
+
+Tres verificaciones más que tampoco necesitan aparato:
+
+- **`viewport-fit=cover` está en las DOS ramas** del meta condicional de
+  `index.html`. Sin él, `env()` vale 0 incluso en un teléfono con notch — o sea
+  que todo lo demás sería decorativo.
+- Los cuatro tokens traen su `0px` de respaldo.
+- **Los 8 usos «pelados»** —sin `max()`— se revisaron uno por uno y **los ocho
+  están bien**: en todos el hijo ya trae su propio relleno y el inset se SUMA.
+  El `max()` hace falta cuando el inset es el único relleno, y ahí están los
+  otros 11.
+
+### La sonda que falta dice POR QUÉ
+
+La **barra inferior** —justamente la del área de gestos— no se pudo medir: sólo
+se pinta con una cuenta de **sala** (`hasSelfOnly`), y la de pruebas es
+administrativa. Antes eso salía como «(no está en esta vista)», que al lado de
+nueve ✓ se lee como un ✓ más; ahora sale como **⚠ SIN MEDIR** con su motivo.
+
+Es la misma regla que ya se aplicó al informe parcial que se llamaba igual que
+uno completo: **una medición que no se pudo hacer no es una medición en verde.**
+
+### Y la lista para el aparato
+
+Queda corta porque la cañería ya está probada: los valores reales, la barra
+inferior con cuenta de sala, acostado con el notch de cada lado, y la hoja
+inferior con el panel lateral. Si algo falla ahí, el arreglo va **en el token o
+en su consumidor**, no en la vista — que es para lo que existe el token.
+
 ## v2.703.11 — La boleta se muestra y el editor de fotos entiende que es una tira
 
 Dos pedidos del usuario sobre la misma pantalla, el 2026-08-21.

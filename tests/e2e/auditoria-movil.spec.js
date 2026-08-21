@@ -57,6 +57,17 @@ const entrar = async (page) => {
 // y se mide si el chrome se corrió. Lo que no responde, no respeta el notch.
 const INSETS = { top: 47, right: 47, bottom: 34, left: 47 };
 
+// Por qué una sonda puede no existir. Sin esto, «no está en esta vista» se lee
+// como si la vista fuera la equivocada, cuando lo que falta es una CUENTA
+// distinta — y eso no se arregla eligiendo otra ruta.
+const MOTIVO_AUSENTE = {
+    'tabs inferiores':
+        'la barra inferior sólo se pinta con una cuenta de SALA (`hasSelfOnly` '
+        + 'en AppLayout): la de pruebas es administrativa y ve el menú lateral. '
+        + 'Es la sonda del borde de abajo, o sea la del área de gestos — hay que '
+        + 'medirla con una cuenta de sala o en el aparato.',
+};
+
 const SONDAS = [
     { id: 'header · barra',    sel: '[data-shell="header-movil"]',      props: ['paddingTop'] },
     { id: 'header · fila',     sel: '[data-shell="header-movil-fila"]', props: ['paddingLeft', 'paddingRight'] },
@@ -158,7 +169,14 @@ test.describe('Auditoría móvil · WebKit iPhone 13', () => {
         console.log(`\n╔══ ÁREAS SEGURAS — insets simulados ${JSON.stringify(INSETS)} ══╗`);
         antes.forEach((a, i) => {
             const d = despues[i];
-            if (a.ausente) { console.log(`  ${a.id.padEnd(18)} (no está en esta vista)`); return; }
+            if (a.ausente) {
+                // Una sonda ausente NO es una sonda en verde. Se dice POR QUÉ no
+                // se pudo medir, porque «(no está)» al lado de nueve ✓ se lee
+                // como «todo bien» — el mismo agujero que el informe parcial que
+                // se llamaba igual que uno completo (v2.698.4).
+                console.log(`  ${a.id.padEnd(18)} ⚠ SIN MEDIR — ${MOTIVO_AUSENTE[a.id] || 'no está en esta vista'}`);
+                return;
+            }
             const partes = Object.keys(a.v).map(p => {
                 const responde = a.v[p] !== d.v[p];
                 return `${p}: ${a.v[p]} → ${d.v[p]} ${responde ? '✓' : '← NO RESPONDE'}`;

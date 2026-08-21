@@ -282,12 +282,64 @@ medido y el resumen lo tapaba.
 
 Corregido, y la tabla del resumen ahora tiene una columna por dimensión.
 
-### F6 · El aparato de verdad
+### F6 · La mitad medible, CERRADA — y la otra mitad, con su lista
 
-DESIGN.md §32.6 ya lo dice y sigue siendo cierto: **`env(safe-area-inset-*)`
-vale 0 en todo emulador**, así que la emulación no puede distinguir «está bien
-resuelto» de «no está resuelto». El notch y la barra de gestos necesitan un
-teléfono real con el shell de Capacitor.
+`env(safe-area-inset-*)` vale **0 en todo emulador**, así que ninguna captura ni
+ningún `getComputedStyle` distingue el shell que respeta el notch del que lo
+ignora. Por eso este punto llevaba un año sin poder verificarse.
+
+**Pero eso vale para los VALORES, no para la cañería.** Desde que los cuatro
+insets pasan por un token —`--sa-top/right/bottom/left` en `index.css`— una
+prueba puede pisarlos con los insets reales de un iPhone 13 y medir si el marco
+se corrió. Lo que no responde, no respeta el notch.
+
+**Medido** (`tests/e2e/auditoria-movil.spec.js`, con insets de 47/47/34/47):
+
+| sonda | responde |
+|---|---|
+| encabezado · barra | `paddingTop` 0 → 47 ✓ |
+| encabezado · fila | `paddingLeft/Right` 16 → 47 ✓ |
+| contenido | `paddingLeft/Right` 8 → 47, `paddingBottom` 16 → 50 ✓ |
+| menú lateral | `left` 8 → 47, márgenes 8 → 47/34 ✓ |
+| **barra inferior** | **⚠ sin medir** |
+| scroll horizontal de la página | 0 → 0, no aparece ✓ |
+
+Y tres verificaciones más que sí se pueden hacer sin aparato:
+
+- **`viewport-fit=cover` está en las DOS ramas** del meta condicional de
+  `index.html`. Sin él, `env()` vale 0 incluso en un teléfono con notch — o sea
+  que todo lo demás sería decorativo.
+- **Los 4 tokens declaran su `0px` de respaldo**, así que un llamador puede
+  escribir `var(--sa-left)` pelado sin repetir el fallback.
+- **Los 8 usos «pelados»** —sin `max()`— se revisaron uno por uno y **los ocho
+  son correctos**: en todos, el hijo ya trae su propio relleno y el inset se
+  SUMA. El `max()` hace falta cuando el inset es el único relleno, y ahí están
+  los otros 11. No hay ninguno mal.
+
+#### La sonda que falta, y por qué no es «elegir otra ruta»
+
+La **barra inferior** sólo se pinta con una cuenta de **sala** (`hasSelfOnly` en
+`AppLayout`); la de pruebas es administrativa y ve el menú lateral. Es
+justamente la sonda del borde de abajo, o sea la del **área de gestos**. La
+corrida ahora lo dice con su motivo en vez de un «(no está en esta vista)» que
+se lee como un ✓ más.
+
+#### Lo que sólo puede decir el aparato
+
+Con un teléfono con notch y el shell de Capacitor (§21), la lista es corta
+porque la cañería ya está probada:
+
+1. **Los valores.** Que `env()` devuelva algo distinto de 0 — es lo único que la
+   emulación no puede producir.
+2. **La barra inferior contra el área de gestos**, con una cuenta de sala: que
+   los botones no queden debajo de la raya del gesto.
+3. **Acostado con el notch a la izquierda y a la derecha.** El aparato decide de
+   qué lado queda, y `--sa-left`/`--sa-right` no son simétricos en el uso.
+4. **La hoja inferior y el panel lateral** (`HojaMovil`, `usePanelLateral`), que
+   son los que llegan al filo a propósito.
+
+Si algo de eso falla, **el arreglo va en el token o en su consumidor**, no en la
+vista — que es la razón por la que existe el token.
 
 ### F7 · CERRADO — lo que el gate no puede ver, lo cierra la medición
 
@@ -324,15 +376,15 @@ medido, no leído.
 
 ## 5. Orden sugerido
 
-~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ · ~~F5~~ · ~~F7~~ — **cerradas**. El
+~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ · ~~F5~~ · ~~F7~~ — **cerradas**, y F6 con su mitad medible cerrada. El
 barrido de vistas y el de diálogos terminan, y de pie el portal mide **cero** en
 todo lo que saben contar.
 
 Lo que sigue, en orden:
 
-1. **F6** — el aparato real. Es el único que no depende de nosotros:
-   `env(safe-area-inset-*)` vale 0 en todo emulador, así que el notch y la barra
-   de gestos necesitan un teléfono con el shell de Capacitor.
+1. **F6, la mitad de aparato.** La cañería ya está medida y responde; lo que
+   falta son los VALORES y la barra inferior con una cuenta de sala. La lista de
+   cuatro puntos está en F6 y se hace en minutos con el teléfono en la mano.
 2. **Terminar la corrida completa del barrido de diálogos.** El instrumento ya
    abre lo que faltaba, pero las corridas largas contra producción se estancan
    de a ratos (ver la nota de F4) y la última llegó a 10 de 17 rutas. Conviene
@@ -389,3 +441,4 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.702.2 | F7 — `data-destino`: lo que el gate no ve, lo cuenta el barrido |
 | v2.703.5 | «Nuevo empleado» destrabado · la composición de un traslado no se pierde |
 | v2.703.10 | los 19 diálogos medidos · el ancho que ES el dato · el borde visible |
+| v2.703.12 | F6 — la cañería del notch, medida; y la lista para el aparato |

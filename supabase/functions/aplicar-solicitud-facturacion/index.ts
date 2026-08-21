@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import {
   BASE, ANULAR, login, pedir, leerRespuesta, formatearDui, estaAnulada, enviarDteAlMH,
+  RechazoMH,
 } from "../_shared/erp-dte.ts";
 
 // Aplica en el ERP la solicitud que el supervisor acaba de aprobar.
@@ -38,6 +39,28 @@ import {
 
 const REIMPRIMIR = `${BASE}/reimprimir_factura.php`;
 const SESION     = `${BASE}/cambio_sesion.php`;
+
+// El sello de recepción de Hacienda son exactamente 40 caracteres. La columna es
+// `text` y llegó a guardar la cadena "undefined", así que `!!valor` da por buena
+// cualquier basura — mismo criterio que `selloValido` en sync-dte-sales.
+const selloValido = (v: unknown) => typeof v === "string" && v.length === 40;
+
+/* No se puede invalidar ante Hacienda un documento que Hacienda nunca recibió, y
+   el sistema lo dice de dos maneras: no entrega el token de la pantalla de
+   anulación, o rechaza el armado con "Esta factura no ha sido validada por MH no
+   se puede validar la anulacion".
+
+   Ninguna de las dos es una falla: son la respuesta correcta para una venta que
+   se anuló antes de transmitirse. Un rechazo de Hacienda SÍ es una falla —ahí
+   contestó y dijo que no—, así que `RechazoMH` queda afuera a propósito. */
+const esFaltaDeTramite = (e: unknown) => {
+  if (e instanceof RechazoMH) return false;
+  const m = (e instanceof Error ? e.message : String(e))
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return m.includes("no entrego el token")
+      || m.includes("no ha sido validada")
+      || m.includes("no se puede validar la anulacion");
+};
 
 const TIPOS_SOPORTADOS = new Set([
   "PAYMENT_CHANGE_REQUEST",
@@ -253,8 +276,24 @@ Deno.serve(async (req) => {
         }, 500);
       const resp = { name: respCfg.nombre };
 
-      // El endpoint destructivo solo se llama si hace falta. Si la factura ya
-      // está anulada en el ERP, lo que falta es el paso ante Hacienda.
+      // ── El estado de la factura decide qué falta hacer ─────────────────
+      //
+      // Una anulación son DOS pasos —anular en el sistema, invalidar ante
+      // Hacienda— y la solicitud puede llegar acá con cualquiera de los dos ya
+      // hecho. Aprobar no es "ejecutar los dos pasos": es dejar la factura en su
+      // estado final, sea cual sea el trecho que falte.
+      //
+      // Lo destapó 0000061286_COF (La Popular, 21-ago-2026). Se aprobó 87
+      // segundos después de facturarse: el sistema la anuló y el paso ante
+      // Hacienda reventó, porque ese documento NUNCA llegó a transmitirse. La
+      // excepción se llevaba por delante la marca de APPROVED, así que la
+      // factura quedaba anulada y la solicitud PENDIENTE — y cada reintento
+      // volvía a romperse en el mismo punto. Tres 500 seguidos por algo que ya
+      // estaba terminado.
+      const avisos: string[] = [];
+      const yaInvalidada = String(factura.estado ?? "").toUpperCase() === "DTE INVALIDADO EN MH";
+
+      // 1 · Anular en el sistema, sólo si sigue viva.
       let anuladaAhora = false;
       if (!estaAnulada(factura.estado)) {
         const r = leerRespuesta(await pedir(cookie, ANULAR, new URLSearchParams({
@@ -264,9 +303,44 @@ Deno.serve(async (req) => {
         anuladaAhora = true;
       }
 
-      const mh = await enviarDteAlMH(cookie, erpId, String(factura.tipo_documento ?? ""), {
-        anula: true, nombreResp: resp.name, duiResp: dui,
-      });
+      // 2 · Lo de Hacienda, sólo si falta y si hay algo que invalidar.
+      //
+      // La factura se RELEE antes de decidir: el espejo del portal lo escribe el
+      // sync de cada minuto, así que el `factura` de más arriba puede tener un
+      // minuto de atraso justo en las dos columnas que mandan acá. Sin
+      // `codigo_generacion` no hubo documento; sin sello de 40, no hubo
+      // recepción.
+      //
+      // El error del select NO se descarta: sin esta relectura no se puede
+      // afirmar que no haya nada que invalidar, y dar por bueno un `null` que
+      // en realidad es un fallo de lectura cerraría la solicitud sobre una
+      // factura que sí necesitaba el trámite.
+      const { data: fresca, error: frescaErr } = await admin
+        .from("sales_invoices")
+        .select("codigo_generacion, recibido_mh")
+        .eq("id", factura.id)
+        .maybeSingle();
+      if (frescaErr) throw frescaErr;
+      const llegoAHacienda = Boolean(fresca?.codigo_generacion) || selloValido(fresca?.recibido_mh);
+
+      let mh: Awaited<ReturnType<typeof enviarDteAlMH>> | null = null;
+      if (yaInvalidada) {
+        avisos.push("Ya estaba invalidada ante Hacienda: no se volvió a enviar.");
+      } else {
+        // Se INTENTA siempre, aunque el espejo diga que nunca se transmitió: el
+        // que sabe es el sistema de origen, y saltarse una invalidación que sí
+        // hacía falta deja una venta anulada acá y vigente ante Hacienda. Sólo
+        // se cierra sin trámite cuando los DOS coinciden en que no hay nada que
+        // invalidar.
+        try {
+          mh = await enviarDteAlMH(cookie, erpId, String(factura.tipo_documento ?? ""), {
+            anula: true, nombreResp: resp.name, duiResp: dui,
+          });
+        } catch (e) {
+          if (llegoAHacienda || !esFaltaDeTramite(e)) throw e;
+          avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
+        }
+      }
 
       const aplicadoAnu = {
         at: new Date().toISOString(),
@@ -274,8 +348,10 @@ Deno.serve(async (req) => {
         erp_invoice_id: erpId, correlativo: factura.correlativo,
         campo: "anulacion",
         anulada_en_erp_ahora: anuladaAhora,
-        hacienda: { sello: mh.sello, descripcion: mh.descripcion, codigo: mh.codigo, fh: mh.fh },
-        responsable: { nombre: resp.name, dui },
+        hacienda: mh ? { sello: mh.sello, descripcion: mh.descripcion, codigo: mh.codigo, fh: mh.fh } : null,
+        sin_tramite_mh: !mh && !yaInvalidada,
+        responsable: mh ? { nombre: resp.name, dui } : undefined,
+        avisos: avisos.length ? avisos : undefined,
       };
 
       const { error: updAnuErr } = await admin

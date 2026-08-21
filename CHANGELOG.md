@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.3 — La anulación mira en qué estado quedó la factura y cierra lo que falte
+
+Aprobar una anulación son dos pasos —anular la venta y avisarle a Hacienda— y
+hasta hoy se ejecutaban los dos siempre, en ese orden, sin preguntar en qué
+estado estaba la factura. Si el segundo no se podía dar, la excepción se llevaba
+por delante la marca de aprobada: la venta quedaba anulada y la solicitud
+pendiente para siempre, y cada reintento se rompía en el mismo punto.
+
+Lo destapó `0000061286_COF` de La Popular, el 21-ago: se facturó a las 10:57 al
+precio equivocado, se aprobó la anulación a las 10:58:52 y la venta se anuló
+bien. El aviso a Hacienda falló porque **ese documento nunca llegó a
+transmitirse** —87 segundos de vida—, así que no había nada que invalidar. La
+solicitud quedó pendiente con tres errores encima y la pantalla avisando «esta
+venta ya figura como anulada», que era su propio trabajo a medio terminar.
+
+Ahora el estado de la factura decide qué falta hacer:
+
+- **Viva** → se anula y se manda a Hacienda, como siempre.
+- **Anulada y sin avisar** → se saltea la anulación y se completa el aviso, que
+  es justo lo que faltaba.
+- **Nunca transmitida** → se cierra sin trámite, porque no se puede invalidar
+  ante Hacienda un documento que Hacienda nunca recibió.
+- **Ya invalidada** → se cierra sin volver a mandar nada.
+
+El intento ante Hacienda se hace **siempre**, aunque el portal crea que la venta
+nunca se transmitió: el que sabe es el sistema de origen, y saltarse un aviso
+que sí hacía falta dejaría una venta anulada acá y vigente ante Hacienda. Sólo
+se cierra sin trámite cuando las dos fuentes coinciden. Un rechazo de Hacienda
+—que contestó y dijo que no— sigue siendo una falla y deja la solicitud
+pendiente, como corresponde.
+
 ## v2.703.2 — La boleta de una remesa dice el banco del POS, y no se registra dos veces
 
 Tres cosas, y la primera es la que trabó una remesa real hoy.

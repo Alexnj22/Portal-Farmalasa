@@ -6,6 +6,7 @@ import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import SegmentedControl from './SegmentedControl';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento } from '../../utils/fotoDocumento';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El editor de la foto de un DOCUMENTO DE PAPEL.
@@ -229,6 +230,12 @@ async function revisar(src, cropPx, rotacion, doc) {
  */
 export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, onConfirm, onCancel }) {
     const doc = DOCS[tipo] || DOCS.receta;
+    /* Con el dedo se arrastra la foto y se pellizca para acercar —el canónico de
+     * recorte lo trae y está medido: 60 cuadros por segundo con el procesador
+     * frenado 6×—, pero eso hay que DECIRLO: el recuadro es un marco fijo y lo
+     * que se mueve es la foto, así que quien lo intenta al revés concluye que la
+     * vista previa no se toca. */
+    const conElDedo = useCoarsePointer();
     const [src, setSrc] = useState(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -251,6 +258,14 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * devolvió la lectura viene en fracciones de la imagen, así que su
      * proporción en píxeles es la de ESTA boleta y no una estimación. */
     const [aspectoBase, setAspectoBase] = useState(doc.aspecto || 4 / 3);
+    /* Si la forma salió del PAPEL o de un valor por defecto. Decide si hace
+     * falta ofrecer las formas a mano: cuando la lectura midió el recuadro, la
+     * proporción es la de esta boleta y elegir otra es empeorarla. El camino de
+     * vuelta, si alguien la cambió, es «Recorte sugerido». */
+    const [papelMedido, setPapelMedido] = useState(false);
+    /* Si ya tocaron la vista previa. Sólo apaga el cartel del gesto — una vez
+     * que la persona arrastró, decirle cómo arrastrar es tapar la foto. */
+    const [tocado, setTocado] = useState(false);
     const [cropPx, setCropPx] = useState(null);
     const [modo, setModo] = useState('aclarada');
     const [guardando, setGuardando] = useState(false);
@@ -290,6 +305,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
         // acota a proporciones que un papel puede tener de verdad.
         if (!(a > 0.1) || !(a < 10)) return;
         aspectoDelPapel.current = a;
+        setPapelMedido(true);
         if (aspectoAplicado.current) return;
         aspectoAplicado.current = true;
         setAspectoBase(a);
@@ -405,7 +421,9 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                 </div>
             </LiquidModal.Header>
 
-            <LiquidModal.Body className="space-y-3 flex flex-col">
+            {/* `space-y-2` y no 3: cinco huecos de 12 px son medio renglón de
+                controles, y en un teléfono eso sale del recorte. */}
+            <LiquidModal.Body className="space-y-2 flex flex-col">
                 {/* El marco tiene la forma del PAPEL, no la del diálogo.
                     Una boleta térmica es una tira de 58 mm fotografiada con el
                     teléfono parado: en el marco ancho y bajo de una hoja se
@@ -414,7 +432,8 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                     todo el mostrador alrededor, que es justo lo que hay que
                     sacar. Con el marco alto la tira ocupa casi toda la altura y
                     el recorte se hace con el dedo, no con la uña. */}
-                <div className="relative w-full flex-1 min-h-[200px] rounded-card overflow-hidden bg-surface-card-hover">
+                <div onPointerDown={() => setTocado(true)}
+                    className="relative w-full flex-1 min-h-32 rounded-card overflow-hidden bg-surface-card-hover">
                     {src && (
                         <Cropper
                             // La proporción entra en la `key` porque la caja
@@ -446,6 +465,21 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             objectFit="contain"
                             restrictPosition={false}
                         />
+                    )}
+                    {/* El gesto se explica DENTRO del marco, sobre la zona
+                        oscurecida: ahí no le saca alto a los controles, que en
+                        un teléfono es lo que escasea. Y hay que explicarlo: el
+                        recuadro es un marco FIJO y lo que se mueve es la foto,
+                        así que quien lo intenta al revés concluye que la vista
+                        previa no se toca. `pointer-events-none` para no comerse
+                        el primer arrastre justo donde dice cómo arrastrar. */}
+                    {conElDedo && src && !tocado && (
+                        <span data-surface="tooltip"
+                            className="absolute inset-x-0 bottom-2 mx-auto w-fit max-w-[92%]
+                                px-3 py-1 text-micro font-bold text-content text-center
+                                pointer-events-none select-none">
+                            Arrastra el papel y pellizca para acercar
+                        </span>
                     )}
                 </div>
 
@@ -486,9 +520,15 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                     varía de verdad —una boleta térmica mide lo que el POS haya
                     impreso—; en los demás sería un control para elegir mal. */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {/* Con el dedo, «Girar» va sin rótulo: los tres controles de
+                        esta fila con rótulo no entran en el ancho de un teléfono
+                        y la fila se parte en tres, que son dos renglones que
+                        salen del recorte. El giro de un cuarto de vuelta es la
+                        flecha de siempre y además lleva su nombre en `title`. */}
                     <Button variant="secondary" size="sm" icon={RotateCw}
+                        iconOnly={conElDedo} title="Girar un cuarto de vuelta"
                         onClick={() => setRotacion(r => (r + 90) % 360)}>
-                        Girar
+                        {conElDedo ? null : 'Girar'}
                     </Button>
                     {/* Sólo cuando hay sugerencia que recuperar: un botón que no
                         puede hacer nada se aprieta igual y no pasa nada, que es
@@ -498,7 +538,11 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             title="Volver al recorte sugerido"
                             onClick={volverAlaSugerencia} />
                     )}
-                    {doc.formas && (
+                    {/* Sólo cuando la forma NO salió del papel: con el recuadro
+                        medido, la proporción es la de ESTA boleta y elegir otra
+                        es empeorarla. Además libera el renglón que en un
+                        teléfono se lleva la vista previa. */}
+                    {doc.formas && !papelMedido && (
                         <SegmentedControl
                             size="sm"
                             value={(doc.formas.find((f) => f.aspecto === aspectoBase) || {}).value || ''}
@@ -523,6 +567,12 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             </Notice>
                         ))}
                     </div>
+                ) : conElDedo ? (
+                    // Con el dedo el consejo del gesto ya está dentro del marco y
+                    // el resto de la pista es de escritorio: un cartel más acá
+                    // abajo empujaría los controles fuera de la vista, que fue
+                    // exactamente el defecto que se vino a arreglar.
+                    null
                 ) : (
                     <div className="shrink-0">
                         <Notice variant="info" compact icon={Sparkles}>{doc.pista}</Notice>

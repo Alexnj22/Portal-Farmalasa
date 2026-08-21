@@ -160,6 +160,10 @@ export const DOCS = {
         aspecto: 4 / 3,
         pista: '«Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra. '
              + 'Si la receta trae sello a color y se pierde, guárdala «como está».',
+        // Con el dedo, la instrucción va primero y el resto se acorta: el aviso
+        // ocupa el mismo lugar que el recorte (ver `pistaTactil` de la boleta).
+        pistaTactil: 'Arrastra la receta y pellizca para acercar. «Aclarada» sube el '
+                   + 'contraste; si tiene sello a color y se pierde, usa «Como está».',
     },
     boleta: {
         nombre: 'la boleta',
@@ -206,6 +210,15 @@ export const DOCS = {
         // al recorte, que es donde se hace el trabajo.
         pista: 'Recorta hasta el borde del papel. «Aclarada» deja el papel blanco y la '
              + 'impresión negra, que es lo que hace legible una boleta térmica.',
+        /* La misma pista, con el dedo.
+         *
+         * Va primero el GESTO porque en un teléfono el recuadro es un marco fijo
+         * y lo que se mueve es la foto: quien no lo sabe intenta arrastrar el
+         * recuadro, no pasa nada, y da por sentado que la vista previa no se
+         * toca. Y es MÁS CORTA que la de escritorio a propósito: cada renglón
+         * del aviso se lo saca al recorte. */
+        pistaTactil: 'Arrastra el papel y pellizca para acercar. «Aclarada» lo deja '
+                   + 'blanco con la letra negra.',
     },
 };
 

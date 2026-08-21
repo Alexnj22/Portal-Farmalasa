@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.14 — La vista previa de la foto se ajusta con los dedos, y lo dice
+
+Pregunta del usuario: *«esa vista previa, ¿se puede ajustar con los dedos? Debe
+sentirse bien fluido, y eficiente»*. Se **midió** en vez de suponerlo, en un
+teléfono emulado (iPhone 13) y con el procesador frenado **6×**, que es lo que
+se parece a un teléfono de sala y no a esta computadora:
+
+| gesto | resultado |
+|---|---|
+| arrastrar con un dedo | la foto sigue al dedo 1:1 · **60 cuadros por segundo** |
+| pellizcar con dos | acerca de 1.1× a 3.5× · **60 cuadros por segundo** |
+| la página o el diálogo detrás | **no se mueven** (`touch-action: none`) |
+| tareas que traban el dedo | **una**, de 66 ms — la revisión de la foto, y cae medio segundo DESPUÉS de soltar |
+
+Así que sí se podía, y va fluido. Lo que faltaba era **decirlo**: el recuadro es
+un marco fijo y lo que se mueve es la foto, así que quien lo intenta al revés
+concluye que la vista previa no se toca. Ahora, en pantalla táctil, un cartelito
+dentro del marco dice «Arrastra el papel y pellizca para acercar» y **se apaga en
+cuanto la tocan** — una vez que la persona arrastró, explicarle cómo arrastrar es
+taparle la foto. Va DENTRO del marco a propósito: ahí no le quita alto a nada.
+
+Y de eficiente le faltaba bastante. Medido en el mismo teléfono, el cuerpo del
+diálogo mide **352 px** y el contenido pedía **415**: sobraban 63 px que se
+comían el «Aclarada» —lo que hace legible una boleta térmica, y viene puesto— y
+el aviso. Tres cambios y **no sobra nada**, con la vista previa quedándose con lo
+que gane:
+
+- **La forma del papel sólo aparece si no se midió.** Cuando la lectura devuelve
+  el recuadro, la proporción es la de ESA boleta y elegir otra es empeorarla; el
+  camino de vuelta, si alguien la cambió, es «Recorte sugerido». Eso libera el
+  renglón que en un teléfono se llevaba la mitad de la vista previa.
+- **«Girar» va sin rótulo con el dedo.** Tres controles con rótulo no entran en
+  el ancho de un teléfono y la fila se partía en tres renglones.
+- **El consejo de escritorio no se dibuja en el teléfono**: ya está dentro del
+  marco.
+
+Resultado en el mismo aparato: la vista previa pasó de **147 a 205 px** y **0 px
+recortados** (antes 63). En escritorio, 461 px de vista previa.
+
 ## v2.703.13 — el canon móvil, en CLAUDE.md
 
 `CLAUDE.md` es lo único que se lee SIEMPRE, en toda sesión y antes de tocar nada,

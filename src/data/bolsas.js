@@ -348,6 +348,36 @@ export async function subirComprobante(archivo, { salaId, userId }) {
 }
 
 /**
+ * Con qué operación de la misma sala choca un número de boleta.
+ *
+ * La numeración de las boletas es POR SUCURSAL (usuario, 2026-08-21), así que
+ * la pregunta es siempre «¿esta sala ya registró este número?» — y la responde
+ * la base, no el navegador: la función es INVOKER y el RLS ya acota a la sala
+ * de quien pregunta.
+ *
+ * Devuelve la lista, no un booleano, porque las coincidencias no son todas
+ * iguales: la misma entidad es la MISMA boleta y frena; otra entidad es otro
+ * correlativo que dio el mismo número y sólo se avisa. Un booleano borraría esa
+ * diferencia justo donde importa.
+ *
+ * Ante un fallo devuelve lista vacía: esto es una ayuda para avisar temprano y
+ * con nombre. La garantía real es el índice único `bolsas_oper_boleta_unica`,
+ * que no depende de que esta consulta salga bien.
+ */
+export async function boletaYaRegistrada(branchId, numeroBoleta) {
+    if (!branchId || !String(numeroBoleta || '').trim()) return [];
+    const { data, error } = await supabase.rpc('boleta_ya_registrada', {
+        p_branch_id: branchId,
+        p_numero_boleta: String(numeroBoleta).trim(),
+    });
+    if (error) {
+        console.error('bolsas: no se pudo comprobar la boleta:', error.message);
+        return [];
+    }
+    return Array.isArray(data) ? data : [];
+}
+
+/**
  * Registrar una salida (o un reintegro) de una o más bolsas.
  *
  * `repartos` es `[{ bolsa_id, monto }]` — de qué bolsas sale. La regla es **la

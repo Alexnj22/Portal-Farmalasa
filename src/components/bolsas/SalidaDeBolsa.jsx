@@ -9,8 +9,8 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import {
-    fetchEntidadesDeSalida, fetchTiposDeSalida, guardarLecturaDeBoleta, leerBoleta,
-    registrarSalida, subirComprobante,
+    boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
+    guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
@@ -79,6 +79,52 @@ const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es
     day: 'numeric', month: 'short', timeZone: 'UTC',
 }) : '');
 
+/**
+ * «el monto», «el monto y el número», «el monto, el número y la remesadora».
+ *
+ * Existe para el aviso de lo que llenó la foto. Con `join(', ')` la lista de
+ * tres se lee como una enumeración de máquina; la coma final antes del último
+ * es lo que la vuelve una frase.
+ */
+const juntarConY = (partes) => (
+    partes.length <= 1 ? (partes[0] || '')
+        : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
+);
+
+/**
+ * Un nombre de comercio comparable: sin tildes, sin puntuación, en mayúsculas.
+ *
+ * Es la MISMA `norm` que usa la edge function `leer-boleta` para decidir si la
+ * boleta nombra a la entidad. Escrita dos veces porque viven en dos runtimes
+ * —y no hay un módulo compartido entre `src/` y `supabase/functions/`— pero es
+ * una sola regla: si una se cambia, la otra queda diciendo algo distinto sobre
+ * el mismo papel.
+ */
+const normalizarNombre = (v) => String(v ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+
+/**
+ * Cómo se cuenta que la boleta no nombra a la entidad que se eligió.
+ *
+ * En un solo lugar porque lo dicen dos caminos —el aviso nuevo del servidor y
+ * el veredicto viejo que puede venir de una respuesta en vuelo— y dos textos
+ * para el mismo hecho se separan el día que alguien mejora uno.
+ *
+ * `warning` y no `danger`: no es un error de quien lo registra. La boleta de
+ * una remesa la imprime el POS y arriba lleva el banco que procesa el cobro
+ * —«BANCO PROMERICA»—, así que muchas no nombran a la remesadora en absoluto.
+ * Lo que prueba que la foto es de ESTA operación son el monto y el número, y
+ * ésos sí frenan.
+ */
+function avisoDeEntidad(leido, entidad) {
+    return {
+        tono: 'warning', bloquea: false,
+        texto: `La boleta dice ${leido.entidad || 'otro nombre'} y no nombra a ${entidad.trim()}. `
+             + 'Si es la boleta correcta, puedes guardarla: el monto y el número sí coinciden.',
+    };
+}
+
 export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHecho }) {
     const { user } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
@@ -97,6 +143,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     // contestó, `{ error }` cuando no se pudo preguntar, `null` mientras lee.
     const [lectura, setLectura] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
+    /* Qué campos puso la FOTO y no la persona. Sirve para dos cosas: decirlo en
+     * pantalla —nadie confía en un campo que se llenó solo si no sabe de dónde
+     * salió— y para no volver a pisarlos si se elige otra foto. */
+    const [deLaFoto, setDeLaFoto] = useState([]);
+    /* Con qué operación choca el número de boleta, si choca con alguna. */
+    const [repetida, setRepetida] = useState([]);
     // 'FORMULARIO' → 'IDENTIDAD'. El segundo paso sólo existe para los motivos
     // que piden receptor.
     const [paso, setPaso] = useState('FORMULARIO');
@@ -136,6 +188,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     useEffect(() => {
         if (abierto) return;
         setTipo(''); setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
+        setDeLaFoto([]); setRepetida([]);
         setPaso('FORMULARIO'); setPersona(null); setVale(null); setError(null);
     }, [abierto]);
 
@@ -159,6 +212,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     }, []);
 
     const lista = useMemo(() => disponibles(bolsas, saldos), [bolsas, saldos]);
+
+    /* De qué sala es esta salida. La numeración de las boletas es por sucursal,
+     * así que sin esto no hay contra qué comparar. Sale de las bolsas que se
+     * están mirando —todas las de este diálogo son de la misma sala— y no de la
+     * elección, que todavía no existe cuando alguien está escribiendo. */
+    const salaId = bolsas?.[0]?.branch_id ?? null;
     const n = Number(String(monto).replace(',', '.'));
     const eleccion = useMemo(
         () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
@@ -177,7 +236,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
      */
     const alElegirFoto = useCallback(async (f) => {
-        if (!f) { setFoto(null); setLectura(null); return; }
+        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); return; }
         setLeyendo(true);
         setLectura(null);
         const r = await leerBoleta(f, {
@@ -187,8 +246,58 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         });
         setLeyendo(false);
         setLectura(r);
+
+        /* ── Lo que la boleta dice, escrito en el formulario ────────────────
+         *
+         * Pedido del usuario (2026-08-21): «que se autoguarde esos datos, que
+         * no necesite digitar por el usuario a no ser que no se distinga
+         * bien». La foto ya viaja para verificarse, así que los datos ya están
+         * leídos: hacerlos escribir a mano es pedir dos veces lo mismo.
+         *
+         * Sólo se llena lo que está VACÍO. Un campo que la persona escribió no
+         * se pisa nunca — si difiere de la boleta, eso es justamente lo que el
+         * veredicto tiene que decir, y pisarlo haría que coincidieran siempre
+         * y la verificación dejaría de verificar nada.
+         *
+         * Y lo que no se pudo leer se queda vacío: ahí sí hay que digitarlo,
+         * que es la mitad «a no ser que no se distinga bien» del pedido. */
+        const l = r?.leido || {};
+        const puestos = [];
+        if (l.es_boleta) {
+            if (!monto.trim() && Number.isFinite(Number(l.monto)) && Number(l.monto) > 0) {
+                setMonto(String(l.monto));
+                puestos.push('el monto');
+            }
+            if (!boleta.trim() && l.numero_boleta) {
+                setBoleta(String(l.numero_boleta));
+                puestos.push('el número de boleta');
+            }
+            /* La entidad SÓLO si lo leído es una de las de la lista.
+             *
+             * Es el único campo que no se puede copiar tal cual: arriba de la
+             * boleta suele ir el banco del POS —«BANCO PROMERICA»—, que no es
+             * la remesadora, así que escribirlo pondría en el vale una entidad
+             * que no atendió la operación. Se busca la remesadora entre TODOS
+             * los nombres que el lector encontró en el papel, y si ninguno
+             * está en la lista, el campo se queda vacío. */
+            if (!entidad.trim() && opciones.length) {
+                const impresos = [l.entidad, ...(Array.isArray(l.nombres) ? l.nombres : [])];
+                const acierto = opciones.find((o) =>
+                    impresos.some((nom) => normalizarNombre(nom) && (
+                        normalizarNombre(nom) === normalizarNombre(o.value)
+                        || normalizarNombre(nom).includes(normalizarNombre(o.value))
+                        || normalizarNombre(o.value).includes(normalizarNombre(nom))
+                    )));
+                if (acierto) {
+                    setEntidad(acierto.value);
+                    puestos.push(t?.etiqueta_entidad?.toLowerCase() || 'la entidad');
+                }
+            }
+        }
+        setDeLaFoto(puestos);
+
         setPorEditar(f);
-    }, [entidad, boleta, n]);
+    }, [entidad, boleta, monto, n, opciones, t]);
 
     /**
      * Qué pasa con lo que dijo el lector, dicho en una frase.
@@ -221,16 +330,106 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             case 'BOLETA_NO_COINCIDE':
                 return { tono: 'danger', bloquea: true,
                     texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y acá dice ${boleta.trim()}.` };
+            // Se dice, pero NO frena. La boleta de una remesa la imprime el
+            // POS y arriba lleva el banco que procesa el cobro —«BANCO
+            // PROMERICA»—, no la remesadora: reportado el 2026-08-21, una
+            // remesa real quedó trabada por eso. Desde entonces el servidor lo
+            // manda en `avisos` y el veredicto ya no lo usa; este caso queda
+            // por las respuestas viejas que puedan estar en vuelo, para que
+            // tampoco frenen.
             case 'ENTIDAD_NO_COINCIDE':
-                return { tono: 'danger', bloquea: true,
-                    texto: `La boleta es de ${l.entidad || 'otro comercio'} y acá dice ${entidad.trim()}.` };
+                return avisoDeEntidad(l, entidad);
             default:
                 return null;
         }
     }, [foto, lectura, n, boleta, entidad]);
 
+    /* Si el servidor llegó a comparar ALGO contra lo escrito.
+     *
+     * `coincide.X` viene en `null` cuando el campo iba vacío: no es «no
+     * coincide», es «no había contra qué». Sin esto, un formulario en blanco
+     * más una foto daba veredicto OK y el cartel verde afirmaba una
+     * verificación que nunca ocurrió. */
+    const seComparoAlgo = useMemo(
+        () => Object.values(lectura?.coincide || {}).some((v) => v === true),
+        [lectura],
+    );
+
     // Lo que el bloqueo le dice a la lista de «qué falta».
     const bloqueoDeLaFoto = problemaDeLaFoto?.bloquea ? problemaDeLaFoto.texto : null;
+
+    /* El aviso que NO frena: la boleta no nombra a la entidad elegida.
+     *
+     * Va en su propia variable y no dentro de `problemaDeLaFoto` a propósito:
+     * los dos se pintan igual —un aviso bajo el campo de la foto— pero uno
+     * detiene el guardado y el otro no, y mezclarlos es exactamente cómo se
+     * pierde esa diferencia la próxima vez que alguien toque este bloque. */
+    const avisoDeLaFoto = useMemo(() => {
+        if (!foto || !lectura || lectura.error || problemaDeLaFoto) return null;
+        const hay = (lectura.avisos || []).some((a) => a.campo === 'entidad');
+        return hay ? avisoDeEntidad(lectura.leido || {}, entidad) : null;
+    }, [foto, lectura, problemaDeLaFoto, entidad]);
+
+    /* ── ¿Esta boleta ya se registró en esta sala? ───────────────────────────
+     *
+     * Pedido del usuario (2026-08-21): «se debe validar que sea correcta, que
+     * no se repita (lleva numeracion por sucursal)».
+     *
+     * Se pregunta mientras se escribe y no al guardar, porque el número puede
+     * venir de la foto: enterarse al apretar el botón obligaría a rehacer el
+     * formulario entero. La garantía dura NO es esto —es el índice único
+     * `bolsas_oper_boleta_unica`, que también gana la carrera de dos personas
+     * registrando a la vez—; esto es lo que permite DECIRLO con folio y monto,
+     * que un error de restricción no puede.
+     *
+     * El pequeño retardo evita preguntar por cada tecla de un número que se
+     * está escribiendo: `0`, `00`, `000`… son seis consultas para una boleta.
+     */
+    useEffect(() => {
+        const num = boleta.trim();
+        if (!num || !salaId) { setRepetida([]); return; }
+        let vivo = true;
+        const id = setTimeout(() => {
+            boletaYaRegistrada(salaId, num).then((filas) => {
+                if (vivo) setRepetida(filas);
+            });
+        }, 400);
+        return () => { vivo = false; clearTimeout(id); };
+    }, [boleta, salaId]);
+
+    /**
+     * Qué pasa si el número ya está usado. Dos desenlaces, y no son el mismo.
+     *
+     * Mismo tipo y misma entidad es **la misma boleta**: registrarla otra vez
+     * sacaría el dinero dos veces por una sola operación, así que frena. Y
+     * frena acá además de en la base porque un error de índice único no se le
+     * puede mostrar a nadie: no dice cuál era ni de cuánto.
+     *
+     * Otra entidad es otra cosa: cada red de remesas lleva su propio
+     * correlativo y dos pueden dar el mismo número el mismo día sin que nadie
+     * se equivoque. Eso se avisa y quien registra decide — frenarlo sería
+     * repetir el bug de la entidad que se arregló hoy, esta vez desde el otro
+     * lado.
+     */
+    const problemaDeLaBoleta = useMemo(() => {
+        if (!repetida.length) return null;
+        const mismaEnt = repetida.find((o) => o.tipo === tipo
+            && normalizarNombre(o.entidad) === normalizarNombre(entidad));
+        const o = mismaEnt || repetida[0];
+        const cuando = fechaCorta(String(o.registrado_at || '').slice(0, 10));
+        if (mismaEnt) {
+            return {
+                tono: 'danger', bloquea: true,
+                texto: `La boleta ${o.numero_boleta} de ${o.entidad} ya se registró en esta sala `
+                     + `el ${cuando} por ${formatMoney(o.monto)} (${o.folio}).`,
+            };
+        }
+        return {
+            tono: 'warning', bloquea: false,
+            texto: `Ese número ya lo usó una boleta de ${o.entidad || 'otra entidad'} el ${cuando} `
+                 + `(${o.folio}). Si son dos boletas distintas, puedes seguir.`,
+        };
+    }, [repetida, tipo, entidad]);
 
     /** Lo que falta ANTES de identificar a nadie. */
     const faltaEnElFormulario = useMemo(() => {
@@ -247,8 +446,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         // que ya frena el botón — un segundo camino para frenar se olvida de
         // frenar el día que alguien agrega un paso.
         if (bloqueoDeLaFoto) return bloqueoDeLaFoto;
+        // Y una boleta que ya se registró no se registra de nuevo: sacaría el
+        // dinero dos veces por una sola operación.
+        if (problemaDeLaBoleta?.bloquea) return problemaDeLaBoleta.texto;
         return null;
-    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto]);
+    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -470,11 +672,22 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             />
                         ))}
                         {t?.pide_boleta && (
-                            <PortalInput
-                                label="Número de boleta" name="boleta"
-                                value={boleta} onChange={(e) => setBoleta(e.target.value)}
-                                placeholder="El de la boleta del POS"
-                            />
+                            <>
+                                <PortalInput
+                                    label="Número de boleta" name="boleta"
+                                    value={boleta} onChange={(e) => setBoleta(e.target.value)}
+                                    placeholder="El de la boleta del POS"
+                                />
+                                {/* Va pegado al campo del número y no arriba con
+                                    el error general: habla de ESTE campo, y un
+                                    aviso lejos del control que lo causa se lee
+                                    como un problema de otra cosa. */}
+                                {problemaDeLaBoleta && (
+                                    <Notice variant={problemaDeLaBoleta.tono} compact icon={AlertTriangle}>
+                                        {problemaDeLaBoleta.texto}
+                                    </Notice>
+                                )}
+                            </>
                         )}
                         {/* `FileField` y no un `<input type="file">` suelto: el canónico
                             de §15.9. Las dos excepciones vivas son selectores de foto
@@ -531,7 +744,31 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                 {problemaDeLaFoto.texto}
                             </Notice>
                         )}
-                        {!leyendo && foto && lectura?.veredicto === 'OK' && (
+                        {!leyendo && avisoDeLaFoto && (
+                            <Notice variant={avisoDeLaFoto.tono} compact icon={AlertTriangle}>
+                                {avisoDeLaFoto.texto}
+                            </Notice>
+                        )}
+                        {/* Qué campos llenó la foto. Un campo que se llena solo
+                            y no dice de dónde salió no se revisa: o se cree sin
+                            mirar, o se desconfía y se vuelve a escribir. */}
+                        {!leyendo && deLaFoto.length > 0 && (
+                            <Notice variant="info" compact icon={ScanLine}>
+                                {`Se tomaron de la boleta ${juntarConY(deLaFoto)}. Revísalos antes de guardar.`}
+                            </Notice>
+                        )}
+                        {/* El «todo bien» sólo cuando de verdad se comparó y
+                            de verdad coincidió.
+                              · con el aviso de la entidad puesto, este cartel
+                                diría lo contrario del que está justo encima;
+                              · y con campos llenados por la foto no hubo nada
+                                que comparar — el servidor no compara contra un
+                                campo vacío—, así que decir «coincide con lo que
+                                escribiste» sería afirmar una verificación que
+                                no ocurrió. Ese caso ya tiene su propio aviso,
+                                el que pide revisarlos. */}
+                        {!leyendo && foto && lectura?.veredicto === 'OK' && !avisoDeLaFoto
+                            && deLaFoto.length === 0 && seComparoAlgo && (
                             <Notice variant="success" compact icon={ScanLine}>
                                 La boleta coincide con lo que escribiste.
                             </Notice>

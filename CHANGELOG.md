@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.2 — La boleta de una remesa dice el banco del POS, y no se registra dos veces
+
+Tres cosas, y la primera es la que trabó una remesa real hoy.
+
+### La entidad dejó de frenar
+
+Reportado el 2026-08-21: no dejaba registrar una remesa — «dice banco promerica,
+y banco promerica es el banco del POS».
+
+El lector comparaba la entidad contra el nombre impreso **arriba** del papel, y
+arriba de la boleta de una remesa va el banco que procesa el cobro, no la
+remesadora. Elegir «RIA» y fotografiar la boleta correcta daba
+`ENTIDAD_NO_COINCIDE` y frenaba el guardado.
+
+Y no fallaba siempre, que es lo que lo hacía difícil de ver: la boleta de
+REM-1010 sí decía `TRANSNETWORK WS` en la cabecera y pasó sin ruido. Un campo
+que dice la remesadora en unas boletas y el banco del POS en otras no puede ser
+la prueba de nada.
+
+Ahora el lector devuelve **todos** los nombres impresos —una boleta de remesa
+suele llevar dos: el banco arriba y la red en el detalle— y alcanza con que uno
+sea el que se eligió. Y si aun así no la nombra, se avisa en amarillo y se
+guarda igual: lo que sigue frenando son el monto y el número de boleta, que son
+los que prueban que la foto es de ESTA operación. Decisión del usuario: «avisar,
+pero dejar guardar». Un dato que la boleta a veces no trae no puede ser la
+condición para registrar una salida de dinero que ya ocurrió.
+
+### La foto llena el formulario
+
+«Que se autoguarde esos datos, que no necesite digitar por el usuario a no ser
+que no se distinga bien». La foto ya viajaba para verificarse, así que los datos
+ya estaban leídos: hacerlos escribir a mano era pedir dos veces lo mismo.
+
+Al elegir la foto se llenan el monto, el número de boleta y la entidad. Con tres
+límites que no son detalles:
+
+- **Sólo lo que está vacío.** Un campo que la persona escribió no se pisa: si
+  difiere de la boleta, eso es justo lo que el veredicto tiene que decir, y
+  pisarlo haría que coincidieran siempre y la verificación dejaría de verificar.
+- **La entidad, sólo si es una de la lista.** Copiar el nombre de la cabecera
+  pondría «BANCO PROMERICA» como remesadora en el vale. Se busca la red entre
+  todos los nombres del papel; si ninguno está en la lista, el campo se queda
+  vacío.
+- **Lo que no se pudo leer se queda vacío** y hay que digitarlo, que es la otra
+  mitad del pedido.
+
+Y el cartel verde «la boleta coincide con lo que escribiste» dejó de salir
+cuando los campos los llenó la foto: ahí no hubo nada que comparar —el servidor
+no compara contra un campo vacío— y afirmarlo sería declarar una verificación
+que no ocurrió. En su lugar sale cuáles se tomaron de la boleta, con el pedido
+de revisarlos.
+
+### Y una boleta no se registra dos veces
+
+«Se debe validar que sea correcta, que no se repita (lleva numeración por
+sucursal)». Dos piezas, y hacen falta las dos:
+
+- El **índice único** `bolsas_oper_boleta_unica` es la garantía. Una
+  comprobación que sólo vive en el navegador es una carrera: dos personas
+  registrando la misma boleta a la vez pasan las dos, porque cada una consultó
+  antes de que la otra escribiera.
+- La **función** `boleta_ya_registrada` es para poder avisar. Un error de
+  restricción no dice qué boleta era, ni de cuánto, ni quién la registró.
+
+`000292` y `292` son la misma boleta. Las anuladas liberan su número. Y la
+entidad entra en la clave a propósito: cada red emite su propio correlativo, así
+que dos pueden dar el mismo número el mismo día sin que nadie se equivoque —
+ese caso se avisa y quien registra decide. Frenarlo sería repetir el bug de
+arriba desde el otro lado.
+
 ## v2.703.1 — La bitácora de una bolsa sabe decir «se regularizó»
 
 Las 62 bolsas del 14 al 20 de agosto —seis salas, $39,490.43 guardados,

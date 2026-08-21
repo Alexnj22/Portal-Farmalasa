@@ -14,6 +14,13 @@ import { callClaude, parseClaudeJson } from "../_shared/claude.ts"
 // heurístico de «esto parece un documento» caza la foto de una pared, no la
 // foto de OTRA boleta ni la de la boleta de $50 para una salida de $200.
 //
+// ── Pero sólo DOS de esos tres frenan (2026-08-21) ──────────────────────────
+// El monto y el número de boleta identifican la operación: son datos del
+// papel, y si no cuadran, la foto es de otra cosa. La entidad resultó no ser
+// un dato del papel sino del PROCESADOR — arriba de la boleta de una remesa va
+// el banco del POS, no la remesadora—, así que quedó como aviso. El detalle,
+// en `mismaEntidad`.
+//
 // ── La imagen viaja INLINE, no por el bucket ────────────────────────────────
 // `analyze-document` recibe un `filePath` y se lo descarga a Storage. Acá no
 // sirve: la verificación pasa ANTES de guardar, y subir para verificar dejaría
@@ -75,10 +82,35 @@ const norm = (v: unknown) => String(v ?? '')
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
 
-const mismaEntidad = (a: unknown, b: unknown) => {
+const parecido = (a: unknown, b: unknown) => {
   const x = norm(a), y = norm(b)
   if (!x || !y) return false
   return x === y || x.includes(y) || y.includes(x)
+}
+
+/**
+ * Si la remesadora aparece en el papel, EN CUALQUIER PARTE.
+ *
+ * Antes se comparaba sólo contra el nombre de la cabecera, y eso resultó no ser
+ * la remesadora: la boleta de una remesa la imprime el POS, y arriba va el
+ * **banco que procesa el cobro** — «BANCO PROMERICA», que es el banco del POS
+ * de la farmacia—. Reportado el 2026-08-21: no dejaba registrar una remesa
+ * porque «dice banco promerica, y banco promerica es el banco del POS».
+ *
+ * Y no fallaba siempre, que es lo que lo hacía difícil de ver: la boleta de
+ * REM-1010 sí decía `TRANSNETWORK WS` arriba y pasó sin ruido. O sea que ese
+ * campo dice la remesadora en unas boletas y el banco del POS en otras — un
+ * dato que cambia de significado según el papel no puede ser la prueba.
+ *
+ * Por eso se pregunta por TODOS los nombres impresos y alcanza con que uno
+ * coincida. Y por eso, además, no coincidir ya no frena: ver el veredicto.
+ */
+const mismaEntidad = (leido: Record<string, unknown>, esperado: unknown) => {
+  const nombres = [
+    leido.entidad,
+    ...(Array.isArray(leido.nombres) ? leido.nombres : []),
+  ]
+  return nombres.some((n) => parecido(n, esperado))
 }
 
 const PROMPT = `Estás mirando la foto de un comprobante de pago impreso (una "boleta" o
@@ -89,6 +121,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
 {
   "es_boleta": true | false,
   "entidad": "el nombre del comercio, banco o red de remesas impreso arriba, o null",
+  "nombres": ["TODOS los nombres de empresa, banco, marca o red impresos en el papel"],
   "numero_boleta": "el número rotulado BOLETA / VOUCHER / RECIBO / No., sólo dígitos, o null",
   "monto": 0.00,
   "moneda": "USD" | null,
@@ -103,6 +136,11 @@ Reglas:
   producto, una pantalla, una persona, una hoja en blanco, un documento de otro tipo).
 - "monto" es el TOTAL cobrado o entregado, como número, sin símbolo de moneda ni
   separadores de miles. Si hay varios importes, el que está rotulado MONTO o TOTAL.
+- "nombres" lista TODO nombre propio de empresa, banco, marca o red de remesas que
+  aparezca en el papel, esté donde esté: la cabecera, el cuerpo, el pie, el logo.
+  Una boleta de remesa suele llevar DOS —el banco que procesa el cobro arriba y la
+  red de remesas en el detalle— y hacen falta los dos. No inventes ni completes: si
+  sólo hay uno, la lista tiene uno. Sin ninguno, [].
 - "numero_boleta" es el correlativo del comprobante. NO uses la referencia, la
   autorización, el terminal ni el DUI.
 - "recuadro" es la caja que encierra SÓLO el papel dentro de la foto, en fracciones
@@ -158,19 +196,40 @@ Deno.serve(async (req) => {
     // ── La regla, en código ────────────────────────────────────────────────
     const esperaBoleta = !!(esperado?.numeroBoleta)
     const coincide = {
-      entidad: esperado?.entidad ? mismaEntidad(leido.entidad, esperado.entidad) : null,
+      entidad: esperado?.entidad ? mismaEntidad(leido, esperado.entidad) : null,
       numeroBoleta: esperaBoleta ? mismaBoleta(leido.numero_boleta, esperado.numeroBoleta) : null,
       monto: esperado?.monto != null ? mismoMonto(leido.monto, esperado.monto) : null,
     }
 
+    // El VEREDICTO es lo que frena. Son los cuatro que prueban que esta foto es
+    // de ESTA operación y no de otra: que sea una boleta, que se lea, y que el
+    // monto y el número sean los que se escribieron.
     let veredicto = 'OK'
     if (!leido.es_boleta) veredicto = 'NO_ES_BOLETA'
     else if (leido.legible === false) veredicto = 'ILEGIBLE'
     else if (coincide.monto === false) veredicto = 'MONTO_NO_COINCIDE'
     else if (coincide.numeroBoleta === false) veredicto = 'BOLETA_NO_COINCIDE'
-    else if (coincide.entidad === false) veredicto = 'ENTIDAD_NO_COINCIDE'
 
-    return new Response(JSON.stringify({ leido, coincide, veredicto }), {
+    // Los AVISOS se dicen y no frenan. Hoy hay uno solo, y la entidad está acá
+    // por una razón que costó una remesa trabada (2026-08-21): el nombre que la
+    // boleta trae impreso es el del banco del POS —«BANCO PROMERICA»— y no
+    // siempre nombra a la remesadora. Un dato que la boleta a veces no trae no
+    // puede ser la condición para registrar una salida de dinero que YA ocurrió.
+    //
+    // Que no frene no significa que se pierda: viaja en la respuesta, la
+    // pantalla lo muestra en amarillo y queda guardado en `foto_lectura` junto a
+    // la operación. Decisión del usuario, 2026-08-21: «avisar, pero dejar
+    // guardar».
+    const avisos = coincide.entidad === false
+      ? [{
+        campo: 'entidad',
+        leido: leido.entidad ?? null,
+        nombres: Array.isArray(leido.nombres) ? leido.nombres : [],
+        esperado: esperado.entidad,
+      }]
+      : []
+
+    return new Response(JSON.stringify({ leido, coincide, veredicto, avisos }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {

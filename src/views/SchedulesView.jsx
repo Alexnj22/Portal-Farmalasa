@@ -23,7 +23,8 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 
-import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
+import { formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
+import { getLocalMonday, formatWeekRange } from '../utils/semana';
 
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
 import ScheduleChart from './schedule-tabs/components/ScheduleChart';
@@ -46,18 +47,8 @@ const ALL_SCHED_TABS = [
     { key: 'holidays', label: 'Feriados', icon: Star         },
 ];
 
-const formatWeekRange = (dateStr) => {
-    if (!dateStr) return '';
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const start = new Date(y, m - 1, d);
-    const end   = new Date(y, m - 1, d + 6);
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const d1 = String(start.getDate()).padStart(2,'0'), m1 = months[start.getMonth()], y1 = String(start.getFullYear()).slice(-2);
-    const d2 = String(end.getDate()).padStart(2,'0'),   m2 = months[end.getMonth()],   y2 = String(end.getFullYear()).slice(-2);
-    if (y1 !== y2) return `${d1} ${m1} '${y1} - ${d2} ${m2} '${y2}`;
-    if (m1 !== m2) return `${d1} ${m1} - ${d2} ${m2} '${y2}`;
-    return `${d1} - ${d2} ${m1} '${y2}`;
-};
+// `formatWeekRange` vive en `scheduleHelpers` desde que Solicitudes y Traslados
+// estrenaron su propio filtro de semana: una sola definición para las tres.
 
 // ── HOLIDAYS PANEL ─────────────────────────────────────────────────────────────
 const HolidaysPanel = ({

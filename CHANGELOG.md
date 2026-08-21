@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.702.0 — Solicitudes y Traslados se miran por semana; la sala de respaldo deja de heredar el historial
+
+Reportado así: «hay un problema de alcance en las solicitudes, todos pueden ver
+todas las aprobadas y demás, no solo las de su sucursal. por ejemplo los de
+salud 3 ve todas (será por lo de bodega?)».
+
+Era lo de Bodega, y de las siete salas le pasaba **a una sola**. Medido en
+producción con la sesión del jefe de sala de Salud 3: veía 142 solicitudes, 53
+de otras salas. De esas 53, **24 eran legítimas** —Salud 3 era la sala de
+origen, o sea que le estaban pidiendo producto a ella, y quien despacha tiene
+que ver la petición—. Las otras **29 no**: traslados Bodega→Salud 1 (19),
+Bodega→Salud 5 (7), Bodega→Salud 4 (2) y Bodega→La Popular (1), todos ya
+resueltos, en los que Salud 3 no pidió ni puso nada. Las demás salas dieron
+cero de más: La Popular 7 de 7 legítimas, Salud 1 38 de 38, Salud 2 29 de 29,
+Salud 4 12 de 12, Salud 5 14 de 14, Bodega 161 de 161.
+
+**La lista de destinatarios avisaba, y además autorizaba.** Salud 3 es la sala
+de respaldo de Bodega desde v2.657.0 —el único par configurado—, así que cuando
+alguien le pide producto a Bodega estando cerrada, la cascada de avisos escribe
+a la gente de Salud 3 en `metadata.destinatarios` para que pueda despachar. Esa
+lista se graba al crear la solicitud y **no caduca**: seguía dando acceso meses
+después, con Bodega abierta y sobre traslados ya cerrados. Sólo iba a crecer.
+
+Ahora el respaldo es lo que su nombre dice: **lo que falta contestar, mientras
+la sala cubierta está cerrada**. Las dos condiciones juntas — con una sola,
+`destinatarios` sin horario dejaba despachar a las 10 de la mañana, y el
+horario sin «pendiente» dejaba mirar el historial cada tarde a partir de las
+17:00. Quitar la lista no le sacó acceso a nadie más: sobre las 285 filas de la
+historia, **cero** destinatarios pertenecen a una sala que no sea la de origen,
+la de destino o la de respaldo, y esas dos primeras ya entran por su propia
+puerta. Verificado fila por fila antes de tocar nada: Salud 3 pierde 29,
+las otras seis salas pierden y ganan **0**.
+
+La misma regla quedó escrita en los dos lados —la policy y el despacho—, y en
+el mismo orden. Separadas, la pantalla ofrecería un botón que el servidor
+rebota, o peor: el servidor dejaría pasar lo que la pantalla ya no muestra.
+
+**Todo se mira por semana.** La bandeja no tenía techo de tiempo: mostraba todo
+lo que el permiso dejara ver desde el día uno, y eso sólo crece —142 tarjetas
+en una sala, 171 en Bodega—, una pared donde lo de esta semana no se distingue
+de lo de hace tres meses. Solicitudes (sucursal y personales) y el historial de
+Traslados llevan ahora un selector de semana, con «‹ 17 - 23 Ago '26 ›» y el
+rótulo como atajo de vuelta a la semana en curso.
+
+**Lo PENDIENTE nunca se esconde.** Una bandeja de aprobación es una cola, no un
+muro de novedades: lo que falta contestar tiene que estar a la vista aunque se
+haya pedido hace tres semanas, porque nadie va a retroceder semana por semana
+buscando lo que no sabe que existe. La semana recorta el historial —aprobadas,
+rechazadas, canceladas— y deja pasar lo pendiente; el contador de la pestaña
+sigue siendo cuántas faltan de verdad. En Traslados, por lo mismo, «En camino»
+no lleva filtro: esconder por fecha ahí es perder una caja que alguien tiene
+que recibir.
+
+En Traslados la semana viaja a la **consulta** y no se aplica en el navegador:
+esa lista pide `.range(0, 200)`, y un tope se aplica antes del filtro — cortar
+acá afuera devolvería «las de esa semana entre las 201 más nuevas», que para
+una semana vieja es la lista vacía, sin error y sin nada que lo explique. Corta
+por cuándo se resolvió, que es la fecha que la tabla muestra.
+
+**El selector de sucursal es del alcance, no de los datos.** Se ofrecía cuando
+la lista visible tocaba más de una sala, y ese es un criterio distinto del
+permiso: con alcance «mi sucursal» la bandeja igual ve traslados de otras salas
+—los que le piden a la propia—, así que la ranura aparecía y le ofrecía a una
+sala filtrar por las demás. Ahora lo decide el mismo alcance con el que se pidió
+la lista.
+
+La semana del portal se mudó a `src/utils/semana.js`, sin dependencias, con sus
+17 pruebas: tres pantallas cortan por ella y el error clásico —leer una fecha
+sin hora como UTC, que en El Salvador retrocede un día— no falla ruidosamente,
+devuelve un día de menos y nadie lo nota.
+
 ## v2.701.0 — El aviso del tope se enciende y se apaga desde Mantenimiento
 
 La franja naranja del tope de todas las pantallas —«Portal en construcción

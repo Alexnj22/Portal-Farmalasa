@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { rangoDeSemana } from '../utils/semana';
 
 // Datos del traslado entre salas.
 //
@@ -48,11 +49,10 @@ export function crearSolicitudTraslado(payload) {
  * Los traslados que esta sala tiene que confirmar.
  *
  * No filtra por sala: **el RLS ya lo hace**, y con una regla que el navegador no
- * podría reproducir —estar entre los destinatarios que dejó la cascada, ser la
- * sala de origen, o **cubrirla mientras está cerrada** (`salas_que_cubre_ahora`,
- * la sala de respaldo)—. Filtrar de nuevo acá con un criterio parecido pero no
- * idéntico es la forma de que las dos se separen y una esconda lo que la otra
- * muestra.
+ * podría reproducir —ser la sala de origen, ser la de destino, o **cubrir a la
+ * de origen mientras está cerrada** (`salas_que_cubre_ahora`, la sala de
+ * respaldo)—. Filtrar de nuevo acá con un criterio parecido pero no idéntico es
+ * la forma de que las dos se separen y una esconda lo que la otra muestra.
  *
  * ── El recorte que sí se puede hacer, y de dónde sale (2026-08-17) ─────────
  * Medido: La Popular veía 3 traslados bajo «Te piden de tu sala» y **los 3 los
@@ -66,10 +66,11 @@ export function crearSolicitudTraslado(payload) {
  * `fetchSalasQueCubro`, que llama a **la misma función que llama la policy**
  * (`salas_que_cubre_ahora`). Una fuente, dos lectores.
  *
- * Queda un caso fuera del recorte: quien esté en `destinatarios` sin ser de la
- * sala de origen ni cubrirla. Hoy no existe —la cascada nombra gente de la sala
- * de origen, verificado sobre las 10 filas de la historia— y si apareciera, la
- * solicitud se contesta igual desde Solicitudes, que no lleva este filtro.
+ * Ya no queda ningún caso fuera del recorte: `metadata.destinatarios` dejó de
+ * dar acceso el 2026-08-21 (esa lista se graba al crear la solicitud y no
+ * caduca, así que le regalaba a la sala de respaldo el historial entero de
+ * Bodega). Hoy el criterio de la policy y el de `fetchSalasQueCubro` son el
+ * mismo, y por eso este filtro no puede esconder nada que aquélla muestre.
  *
  * El servidor, mientras tanto, nunca dejó pasar la acción: `aplicar-traslado-
  * inventario` corta con 403 «lo confirma la sala que tiene el producto». Lo que
@@ -326,7 +327,7 @@ export async function fetchDisponibilidadTraslado(requestId) {
  * que le pidieron—: un traslado le pertenece igual siendo origen que destino.
  * Sin sala, se devuelve lo que el RLS deje ver, que para alcance ALL es todo.
  */
-export async function fetchTrasladosHistorial({ branchId = null, limite = 200 } = {}) {
+export async function fetchTrasladosHistorial({ branchId = null, limite = 200, semana = null } = {}) {
     let q = supabase
         .from('approval_requests')
         // `approver_id`: quién lo despachó o quién lo rechazó. El historial
@@ -345,6 +346,21 @@ export async function fetchTrasladosHistorial({ branchId = null, limite = 200 } 
         // contra un número no matchea nada.
         const id = String(branchId);
         q = q.or(`metadata->>branch_id.eq.${id},metadata->>origen_branch_id.eq.${id}`);
+    }
+
+    /* La semana va en la CONSULTA y no en el navegador, y no es una
+     * preferencia: arriba hay un `.range(0, limite)`, y **un tope se aplica
+     * antes del filtro**. Recortando acá afuera, pedir una semana de hace dos
+     * meses no devolvería «las de esa semana» sino «las de esa semana entre las
+     * 201 más nuevas» — o sea, ninguna, sin error y sin nada que lo explique.
+     *
+     * Corta por `updated_at` porque es CUÁNDO SE RESOLVIÓ, que es la fecha que
+     * el historial muestra en su columna y la que ordena la consulta. Cortar
+     * por `created_at` haría que un traslado pedido el domingo y despachado el
+     * lunes cayera en una semana distinta de la que lo muestra. */
+    if (semana) {
+        const { desde, hasta } = rangoDeSemana(semana);
+        q = q.gte('updated_at', desde).lt('updated_at', hasta);
     }
 
     const { data, error } = await q;

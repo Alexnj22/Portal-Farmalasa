@@ -190,9 +190,15 @@ export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId
          * angosto que el del servidor— por la puerta de al lado.
          *
          * Quién ve cuál lo decide la policy, y para este tipo mira tres cosas
-         * que este filtro no puede reproducir: estar entre los
-         * `metadata.destinatarios`, ser jefatura de la sala de ORIGEN, o ser
-         * jefatura/estar en turno en la de DESTINO. */
+         * que este filtro no puede reproducir: ser la sala de ORIGEN (la que
+         * tiene el producto), ser la de DESTINO, o **cubrir a la de origen
+         * mientras está cerrada y la solicitud sigue pendiente** — la sala de
+         * respaldo.
+         *
+         * `metadata.destinatarios` era una cuarta, y se quitó el 2026-08-21: la
+         * lista se graba al crear la solicitud y no caduca, así que le dejaba a
+         * la sala de respaldo el historial entero de Bodega para siempre. Sirve
+         * para avisar, no para autorizar. */
         if (branchEmpIds && branchEmpIds.length > 0) {
             q = q.or(`employee_id.in.(${branchEmpIds.join(',')}),type.eq.INVENTORY_TRANSFER_REQUEST`);
         }

@@ -202,7 +202,6 @@ Deno.serve(async (req) => {
     const erpOrigen  = Number(meta.origen_erp_sucursal_id);
     const erpDestino = Number(meta.erp_sucursal_id);
     const origenBranch = Number(meta.origen_branch_id);
-    const destinatarios: string[] = Array.isArray(meta.destinatarios) ? meta.destinatarios : [];
 
     if (!erpOrigen || !erpDestino)
       return json({ ok: false, error: "La solicitud no trae la sala de origen o la de destino." }, 422);
@@ -547,7 +546,24 @@ Deno.serve(async (req) => {
       cubreAlOrigen = Array.isArray(cubiertas) && cubiertas.includes(origenBranch);
     }
 
-    if (!alcanceTodo && !destinatarios.includes(quien.id) && !esDeLaSalaDeOrigen && !cubreAlOrigen)
+    /* `destinatarios` salió de esta guarda el 2026-08-21, junto con la policy.
+     *
+     * Era la lista que la cascada de avisos dejó grabada al CREAR la solicitud,
+     * y daba permiso para siempre: quien estuviera ahí podía despachar meses
+     * después y en cualquier horario. Para la sala de respaldo eso significaba
+     * poder resolver un traslado de Bodega a las 10 de la mañana, con Bodega
+     * abierta y su propia gente adentro — que es justo lo que el respaldo NO
+     * es. La lista sirve para avisar; no para autorizar.
+     *
+     * Los tres criterios que quedan son los mismos tres de la policy, escritos
+     * en el mismo orden: alcance sobre todas, ser la sala de origen, o cubrirla
+     * AHORA. El `sol.status !== 'PENDING'` de más arriba es la cuarta
+     * condición, la que impide volver sobre lo ya resuelto.
+     *
+     * Que las dos coincidan importa: separadas, la pantalla ofrecería un botón
+     * que el servidor rebota con 403, o peor, el servidor dejaría pasar lo que
+     * la pantalla ya no muestra. */
+    if (!alcanceTodo && !esDeLaSalaDeOrigen && !cubreAlOrigen)
       return json({
         ok: false,
         error: "Este traslado lo confirma la sala que tiene el producto.",

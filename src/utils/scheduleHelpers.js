@@ -1,5 +1,12 @@
 import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-react';
 
+/* La semana se mudó a `utils/semana.js` (2026-08-21) para que Solicitudes y
+ * Traslados puedan pedirla sin arrastrar este archivo entero —que trae íconos y
+ * la matemática de la planilla— a su cierre estático. Se re-exporta acá porque
+ * es donde la vista de Horarios ya la buscaba: una sola definición, dos
+ * puertas. */
+export { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe, rangoDeSemana } from './semana';
+
 // Clave del día dentro de `employee_rosters.schedule_data` y de
 // `schedule_coverage.day_of_week`.
 //
@@ -19,22 +26,6 @@ import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-r
 // de nuevo. Está anclada en `tests/unit/kioscoHorario.test.js`.
 export const claveDeDia = (date) => String(new Date(date).getDay());
 
-export const getLocalMonday = (dateStr) => {
-    let y, m, day;
-    if (!dateStr) {
-        const today = new Date();
-        y = today.getFullYear(); m = today.getMonth(); day = today.getDate();
-    } else {
-        const parts = dateStr.split('-');
-        y = Number(parts[0]); m = Number(parts[1]) - 1; day = Number(parts[2]);
-    }
-    const d = new Date(y, m, day);
-    const dayOfWeek = d.getDay();
-    const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    d.setDate(diff);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
 export const formatDateLocal = (dateStr) => {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
@@ -46,8 +37,6 @@ export const timeToMins = (timeStr) => {
     const [h, m] = timeStr.split(':').map(Number);
     return h * 60 + m;
 };
-
-
 
 export const minsToTimeStr = (mins) => {
     let h = Math.floor(mins / 60);

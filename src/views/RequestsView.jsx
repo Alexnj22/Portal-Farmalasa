@@ -3,6 +3,7 @@ import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import FilterBar from '../components/common/FilterBar';
+import PeriodStepper from '../components/common/PeriodStepper';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -15,6 +16,7 @@ import { smartFilter } from '../utils/searchUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '../utils/semana';
 import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
@@ -310,6 +312,22 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * el `branch_id` del portal, que es lo que devuelve `salaDe`. */
     const [sala, setSala] = useState('');
 
+    /* ── El filtro de semana ───────────────────────────────────────────────
+     * La bandeja no tenía techo de tiempo: mostraba TODO lo que el permiso
+     * dejara ver desde el día uno, y eso sólo crece. Medido el 2026-08-21, la
+     * sesión de una sala llegaba a 142 tarjetas y la de Bodega a 171 — una
+     * pared donde lo de esta semana no se distingue de lo de hace tres meses.
+     * Pedido por el usuario: «para todos debe tener filtro por fecha, y debe
+     * filtrar por semana».
+     *
+     * Guarda el LUNES, que es donde `getLocalMonday` hace empezar la semana en
+     * todo el portal. Arranca en la semana en curso.
+     *
+     * **Lo PENDIENTE no lo recorta** — ver `enFiltro`. */
+    const [semana, setSemana] = useState(() => getLocalMonday());
+    const semanaActual   = getLocalMonday();
+    const enSemanaActual = semana === semanaActual;
+
     // ── Crear ────────────────────────────────────────────────────────────────
     const [nuevaAbierta, setNuevaAbierta] = useState(false);
     const [prefillEmpleado, setPrefillEmpleado] = useState('');
@@ -461,12 +479,11 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         // cualquier filtro de bandeja que se le aplique la esconde: una
         // solicitud mía tiene a otro de aprobador por definición.
         if (deQuienEs(r) === miId) return true;
-        /* El traslado no se reparte por `approver_id`: la cascada deja una
-         * LISTA en `metadata.destinatarios` y cualquiera de ellos puede
-         * confirmarlo, más la jefatura de la sala de origen. El filtro genérico
-         * de abajo se queda con `approver_id` a secas, así que sin esta rama el
-         * traslado desaparecía de la bandeja de todos los destinatarios menos
-         * uno — justo ahora que es acá donde se contesta.
+        /* El traslado no se reparte por `approver_id`: lo confirma la SALA que
+         * tiene el producto —cualquiera de ella— y no una persona nombrada. El
+         * filtro genérico de abajo se queda con `approver_id` a secas, así que
+         * sin esta rama el traslado desaparecía de la bandeja de toda esa sala
+         * menos de una persona — justo ahora que es acá donde se contesta.
          *
          * No hace falta preguntar nada más: la policy de `approval_requests`
          * exige `traslados.can_approve` para siquiera VER una fila de este
@@ -498,12 +515,31 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         return paraQuien(r) === miId;
     };
 
+    /* La semana que se está mirando — y por qué lo PENDIENTE se salva.
+     *
+     * Una bandeja de aprobación es una COLA, no un muro de novedades: lo que
+     * falta contestar tiene que estar a la vista aunque se haya pedido hace
+     * tres semanas, porque nadie va a retroceder semana por semana buscando lo
+     * que no sabe que existe. Recortar también lo pendiente convertiría el
+     * filtro en una forma silenciosa de perder solicitudes — el mismo fallo
+     * mudo de siempre: sin error, sin fila de menos visible, y la persona que
+     * espera respuesta es la única que se entera.
+     *
+     * Así que la semana recorta el HISTORIAL (aprobadas, rechazadas,
+     * canceladas) y deja pasar lo pendiente. Es también lo que hace que el
+     * contador de la pestaña «Pendientes» siga siendo el número real de cosas
+     * que faltan, y no «las que faltan de esta semana».
+     *
+     * `CANCELLED` entra en el recorte: ya está resuelta, es historial. */
+    const enLaSemana = (r) => r.status === 'PENDING' || enLaSemanaDe(semana, r.created_at);
+
     /* Un solo predicado desde que se quitó el corte de traslados. Eran dos
      * —`enFiltroBase` y `enFiltro`— y la separación existía sólo para poder
      * contar lo que el corte tapaba; sin corte no hay nada que contar aparte. */
     const enFiltro = (r) => visible(r)
         && (!filtrandoMias || deQuienEs(r) === miId)
-        && (!sala || salaDe(r) === sala);
+        && (!sala || salaDe(r) === sala)
+        && enLaSemana(r);
 
     /* Las salas que OFRECE el selector son las que de verdad tienen algo, y se
      * miden sobre todo lo que la persona puede ver —sin el filtro de sala ni el
@@ -627,18 +663,30 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * se dibuja: una puerta que abre a un menú vacío es peor que no estar. */
     const puedeCrear = canCreate && (!esSucursal || familiasDisponibles(hasPermission).length > 0);
 
-    const hayFiltroDeSala = salaOptions.length > 1;
-    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0);
-    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); };
+    /* ── El selector de sucursal es del ALCANCE, no de los datos ───────────
+     * Se ofrecía cuando la lista visible tocaba más de una sala, y eso es un
+     * criterio distinto del permiso: con alcance «mi sucursal» la bandeja igual
+     * ve traslados de otras salas —los que le PIDEN a la propia, donde la sala
+     * de quien pide es ajena por definición—, así que la ranura aparecía y le
+     * ofrecía a una sala filtrar por las demás. Decisión del usuario
+     * (2026-08-21): «ni tampoco deben tener selectores de sucursal».
+     *
+     * Ahora lo decide el mismo alcance con el que se pidió la lista. Sigue
+     * exigiendo más de una opción: un menú de una sola es un clic que no
+     * informa. */
+    const hayFiltroDeSala = alcance === 'ALL' && salaOptions.length > 1;
+    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0) + (enSemanaActual ? 0 : 1);
+    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); setSemana(semanaActual); };
 
     /* §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
      * fusión la barra lleva además el filtro de a quién pertenece lo que se
      * está mirando, que es el control que convierte la bandeja en «lo mío».
      *
-     * `esSucursal` salió de esta condición al quitarse el corte de traslados:
-     * era lo único que ese ámbito aportaba a la barra, así que dejarlo dibujaba
-     * una píldora vacía en una sala sin filtro de sala ni permiso de crear. */
-    const filtrosCuerpo = (puedeCrear || !soloMio || hayFiltroDeSala) ? (
+     * La píldora se dibujaba condicionada a que hubiera algo adentro —sin eso,
+     * una sala sin filtro de sala ni permiso de crear veía una píldora hueca—.
+     * La condición se fue el 2026-08-21: el filtro de semana lo tiene TODO el
+     * mundo, así que ya nunca queda vacía. */
+    const filtrosCuerpo = (
         <FilterBar
             activeCount={filtrosPuestos}
             onClear={filtrosPuestos > 0 ? limpiarTodo : undefined}
@@ -677,8 +725,26 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     />
                 </FilterBar.Section>
             )}
+
+            {/* 3 · tiempo — §17 lo pone al final: recorta, pero no cambia el
+                significado de las otras ranuras. El rótulo es el atajo de vuelta
+                a la semana en curso (`onReset`), que es a donde uno quiere
+                volver después de mirar atrás. */}
+            <FilterBar.Section label="semana" active={!enSemanaActual}
+                onClear={() => setSemana(semanaActual)}>
+                <PeriodStepper
+                    unit="semana"
+                    label={formatWeekRange(semana)}
+                    isCurrent={enSemanaActual}
+                    resetLabel="Ir a esta semana"
+                    onPrev={() => setSemana(v => shiftWeek(v, -1))}
+                    onNext={() => setSemana(v => shiftWeek(v, +1))}
+                    onReset={() => setSemana(semanaActual)}
+                    nextDisabled={enSemanaActual}
+                />
+            </FilterBar.Section>
         </FilterBar>
-    ) : null;
+    );
 
     return (
         <GlassViewLayout icon={esSucursal ? Inbox : Palmtree}

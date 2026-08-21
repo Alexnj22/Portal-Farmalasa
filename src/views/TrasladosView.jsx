@@ -3,6 +3,7 @@ import { ArrowLeftRight, Ban, History, PackageCheck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
+import PeriodStepper from '../components/common/PeriodStepper';
 import Badge from '../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
@@ -11,6 +12,7 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../store/staffStore';
 import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';
+import { getLocalMonday, formatWeekRange, shiftWeek } from '../utils/semana';
 import { FilaPorRecibir } from './traslados/FilasTraslado';
 import { ChipPersona } from './solicitudes/PersonasSolicitud';
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
@@ -137,6 +139,20 @@ export default function TrasladosView() {
     const [sala, setSala] = useState('');
     const [tipo, setTipo] = useState('');
 
+    /* La semana del HISTORIAL — y sólo del historial.
+     *
+     * «En camino» es una cola que alguien vacía: lo que está por llegar tiene
+     * que verse aunque se haya despachado hace tres semanas, así que ahí un
+     * corte por fecha sería una forma silenciosa de perder cajas. El historial
+     * en cambio es un archivo que sólo crece, y era la lista sin techo de esta
+     * pantalla. Mismo criterio que la bandeja de Solicitudes.
+     *
+     * Viaja a la CONSULTA (`fetchTrasladosHistorial`) y no se aplica acá:
+     * aquella pide `.range(0, 200)` y un tope se aplica antes del filtro. */
+    const [semana, setSemana] = useState(() => getLocalMonday());
+    const semanaActual   = getLocalMonday();
+    const enSemanaActual = semana === semanaActual;
+
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
     const [error,        setError]        = useState('');
@@ -178,7 +194,7 @@ export default function TrasladosView() {
     const cargar = useCallback(async () => {
         const [b, c] = await Promise.all([
             fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
-            fetchTrasladosHistorial({ branchId: salaQueRecorta }),
+            fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
         ]);
         const fallo = b.error ?? c.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
@@ -193,7 +209,7 @@ export default function TrasladosView() {
         const ids = (b.filas ?? []).map(f => f.metadata?.grupo_id).filter(Boolean);
         const { grupos: g } = await fetchEstadoDeGrupos(ids);
         setGrupos(g);
-    }, [salaQueRecorta]);
+    }, [salaQueRecorta, semana]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
@@ -286,8 +302,9 @@ export default function TrasladosView() {
     const lista = vistas[activeTab] ?? [];
 
     const enHistorial = activeTab === 'historial';
-    const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0);
-    const limpiarTodo = () => { setSala(''); setTipo(''); };
+    const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0)
+        + (enHistorial && !enSemanaActual ? 1 : 0);
+    const limpiarTodo = () => { setSala(''); setTipo(''); setSemana(semanaActual); };
 
     return (
         <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre salas" filtersContent={filtersContent}>
@@ -320,6 +337,25 @@ export default function TrasladosView() {
                             <FilterBar.Opciones
                                 label="Tipo" icon={History} umbral={2}
                                 value={tipo} onChange={setTipo} options={TIPOS}
+                            />
+                        </FilterBar.Section>
+                    )}
+                    {/* El tiempo va al final (§17): recorta, pero no cambia el
+                        significado de las otras ranuras. Sólo en Historial — en
+                        «En camino» esconder por fecha es perder una caja que
+                        alguien tiene que recibir. */}
+                    {enHistorial && (
+                        <FilterBar.Section label="semana" active={!enSemanaActual}
+                            onClear={() => setSemana(semanaActual)}>
+                            <PeriodStepper
+                                unit="semana"
+                                label={formatWeekRange(semana)}
+                                isCurrent={enSemanaActual}
+                                resetLabel="Ir a esta semana"
+                                onPrev={() => setSemana(v => shiftWeek(v, -1))}
+                                onNext={() => setSemana(v => shiftWeek(v, +1))}
+                                onReset={() => setSemana(semanaActual)}
+                                nextDisabled={enSemanaActual}
                             />
                         </FilterBar.Section>
                     )}

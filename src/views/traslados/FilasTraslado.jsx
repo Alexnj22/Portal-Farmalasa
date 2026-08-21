@@ -536,9 +536,14 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 4px por debajo de los 44 del blanco de dedo (§32)—, y es lo que
                 abre el detalle del traslado. Lo encontró el barrido móvil al
                 cubrir esta ruta por primera vez. En escritorio `--tap-min` vale
-                0 y no cambia nada. */}
+                0 y no cambia nada.
+
+                `active:scale-[0.99]`: y no acusaba el toque. En el teléfono no
+                hay cursor ni realce de hover, así que el acuse ES la única señal
+                de que el toque entró — y son **23 tarjetas** en esta lista, o
+                sea la lista entera. Lo levantó la corrida ACOSTADO. */}
             <button type="button" data-filo="ceder" onClick={() => setAbierto(true)}
-                className="text-left flex items-start gap-3 w-full min-h-[var(--tap-min)]"
+                className="text-left flex items-start gap-3 w-full min-h-[var(--tap-min)] active:scale-[0.99]"
                 aria-label={`Ver el detalle de ${piezas?.nombre ?? 'este traslado'}`}>
                 {/* El ícono en su disco: a 13px suelto no se leía como estado,
                     y el estado es justo lo que esta lista viene a decir. */}

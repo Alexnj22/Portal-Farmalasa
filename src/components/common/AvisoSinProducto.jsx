@@ -69,8 +69,17 @@ const AvisoSinProducto = memo(({ datos, contexto = 'Este período', compact = fa
                         type="button"
                         onClick={() => setAbierto((v) => !v)}
                         aria-expanded={abierto}
+                        /* Medía **85×15**: menos de la mitad del blanco de dedo
+                           por los dos lados (§32), y es lo único que despliega
+                           el detalle de este aviso. Y no tenía `active:`, así
+                           que en el teléfono el toque no acusaba recibo — donde
+                           no hay cursor, ése es el único signo de que entró.
+                           Lo encontró el barrido ACOSTADO, que es la primera
+                           orientación distinta que se mide. `--tap-min` vale 0
+                           en escritorio y no cambia nada ahí. */
                         className="flex items-center gap-1 font-extrabold uppercase tracking-wide
-                                   text-micro opacity-80 hover:opacity-100 transition-opacity">
+                                   text-micro opacity-80 hover:opacity-100 transition-opacity
+                                   min-h-[var(--tap-min)] active:scale-[0.97]">
                         {abierto ? 'Ocultar' : 'Ver cuáles'}
                         <ChevronDown size={12} strokeWidth={3}
                             className={`transition-transform ${abierto ? 'rotate-180' : ''}`} />

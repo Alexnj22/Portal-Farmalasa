@@ -237,12 +237,44 @@ antes tomaban segundos. El patrón apunta a **producción lenta en ese momento**
 la vista. Queda anotado en vez de convertido en un hallazgo: no se pudo
 reproducir, así que afirmar que Gestión de stock cuelga sería inventar una causa.
 
-### F5 · Acostado
+### F5 · CERRADO — acostado, 54 rutas, y un resumen que tapaba hallazgos
 
-`usePanelLateral` existe y el corte está escrito y medido —un iPhone 13 acostado
-es 844×390, y ahí una hoja inferior gasta el 63% del alto para mostrar dos
-controles—. Lo que no hay es **una corrida del barrido en horizontal**. Todo lo
-de este plan se midió de pie.
+Todo lo medido hasta hoy fue **de pie**, y acostado no es la misma pantalla: el
+alto pasa a ser el recurso escaso. El proyecto ya lo tenía escrito y medido
+—`useLayoutCompacto` distingue el teléfono acostado por el ALTO y no por el
+ancho, y `usePanelLateral` existe justamente porque una hoja inferior gasta el
+63% del alto para mostrar dos controles— pero **nunca se había corrido una
+medición en horizontal**.
+
+Ahora se corre con `ORIENTACION=acostado`, y el descriptor sale de la base de
+Playwright y no de números escritos a mano: emular el aparato es más defendible
+que inventarle un viewport. La etiqueta del informe lo lleva, así que las dos
+orientaciones no se pisan.
+
+**54 rutas acostado**: desborde 0, desborde de página 0, blancos de dedo 0, zoom
+de iOS 0, inalcanzables 0, encadenamiento 0. La única tabla es
+`ScheduleCalendar`, excepción ya declarada.
+
+#### Dos hallazgos que sólo aparecieron acostado
+
+- **El aviso de «no son venta de productos»** tenía su único control —«Ver
+  cuáles», lo que despliega el detalle— en **85×15**: menos de la mitad del
+  blanco de dedo por los dos lados, y sin `active:`, o sea sin acuse del toque.
+- **Traslados**: las **23 tarjetas** de la lista —o sea la lista entera— no
+  acusaban el toque. En el teléfono no hay cursor ni realce de hover: el acuse
+  **es** la única señal de que el toque entró.
+
+#### Y el hallazgo sobre el instrumento, que es el más importante
+
+El resumen que imprime el barrido —el que lee una persona— **no contaba
+`sinAcuse`, `chicos` ni `imposibles` como «algo que corregir»**. Decía «con algo
+que corregir: 0» mientras el JSON tenía los 23 de Traslados. El número estaba
+medido y el resumen lo tapaba.
+
+> **Un resumen que no cuenta una dimensión que el instrumento SÍ mide es peor
+> que no medirla: promete que se miró.**
+
+Corregido, y la tabla del resumen ahora tiene una columna por dimensión.
 
 ### F6 · El aparato de verdad
 
@@ -263,7 +295,7 @@ diferencia se cubre midiendo (F0), no leyendo.
 
 ## 5. Orden sugerido
 
-~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ — **cerradas**. El
+~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ · ~~F5~~ — **cerradas**. El
 barrido de vistas y el de diálogos terminan, y de pie el portal mide **cero** en
 todo lo que saben contar.
 
@@ -272,9 +304,8 @@ Lo que sigue, en orden:
 1. **Destrabar «Nuevo empleado»** en el barrido de diálogos y subir el tope, para
    que F3 cubra lo que hoy anota como pendiente — el formulario más largo del
    portal sigue sin medir.
-2. **F5** — una corrida acostado. Todo lo de este plan se midió de pie.
-3. **F6** — el aparato real. Es el único que no depende de nosotros.
-4. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
+2. **F6** — el aparato real. Es el único que no depende de nosotros.
+3. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
 
 Y uno que no es de este plan pero está rojo: **`gate:borradores`** acusa a
 `PedirTrasladoModal.jsx` —7 campos de captura sin borrador—, de v2.691. Con la
@@ -316,4 +347,5 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.698.0 | confirmar un pago desde el teléfono · este plan |
 | v2.698.4 | F0/F1/F2 — el barrido termina, y el portal mide cero de pie |
 | v2.699.2 | F3 — los diálogos, medidos por primera vez en 390px |
-| v2.699.3 | F4 — el barrido visitaba 38 rutas de 65; ahora 54 |
+| v2.700.2 | F4 — el barrido visitaba 38 rutas de 65; ahora 54 |
+| v2.700.3 | F5 — acostado, y un resumen que tapaba hallazgos |

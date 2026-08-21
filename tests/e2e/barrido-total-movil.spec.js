@@ -22,6 +22,7 @@ const SALIDA = 'test-results/barrido-total';
 // que se pidió; `ETIQUETA=lo-que-sea` lo fuerza para las dos mitades.
 const ETIQUETA = process.env.ETIQUETA
     || [process.env.TEMA || 'liquid',
+        process.env.ORIENTACION === 'acostado' ? 'acostado' : null,
         process.env.PESTANAS ? 'pest' : null,
         process.env.MODALES ? 'mod' : null].filter(Boolean).join('-');
 // ⚠️ Y el informe NO puede vivir bajo `test-results/`: ése es el `outputDir` de
@@ -128,7 +129,19 @@ const MODALES = Boolean(process.env.MODALES);
 const TEMA = process.env.TEMA || '';
 const ATRIBUTO_TEMA = { liquid: null, dark: 'dark', solid: 'solid', 'solid-dark': 'solid-dark' };
 
-test.use({ ...devices['iPhone 13'] });
+// ── De pie o acostado (F5, 2026-08-21) ──────────────────────────────────────
+// Todo lo medido hasta hoy fue DE PIE, y acostado no es la misma pantalla: el
+// alto pasa a ser el recurso escaso. `useLayoutCompacto` ya lo tiene escrito y
+// medido —un iPhone 13 acostado es 844×390, y ahí una hoja inferior gasta el
+// 63% del alto para mostrar dos controles—, y por eso existe `usePanelLateral`.
+// Lo que faltaba era una corrida que lo comprobara.
+//
+// El descriptor sale de la base de Playwright y no de números escritos a mano:
+// emular el aparato es más defendible que inventarle un viewport.
+const ACOSTADO = process.env.ORIENTACION === 'acostado';
+const APARATO = ACOSTADO ? devices['iPhone 13 landscape'] : devices['iPhone 13'];
+
+test.use({ ...APARATO });
 
 test.describe('Barrido total · WebKit iPhone 13', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
@@ -277,7 +290,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             const navegador = pg.context().browser();
             if (!navegador) return reciclar();          // sin browser: lo de siempre
             const viejo = pg.context();
-            const ctx = await navegador.newContext({ ...devices['iPhone 13'] });
+            const ctx = await navegador.newContext({ ...APARATO });
             if (TEMA) {
                 await ctx.addInitScript(({ tema, attr }) => {
                     try { localStorage.setItem('portal-theme', tema); } catch { /* sin localStorage */ }
@@ -483,16 +496,28 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             fs.renameSync(INFORME_PARCIAL, INFORME);
         }
 
-        const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0 || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0);
+        // ── `sinAcuse` y `chicos` CUENTAN como algo que corregir ─────────────
+        // No estaban en esta lista, así que el encabezado decía «con algo que
+        // corregir: 0» mientras la corrida acostado traía **23 toques sin
+        // acuse** en Traslados — la lista entera. El número vivía en el JSON y
+        // el resumen que lee una persona lo tapaba.
+        //
+        // Un resumen que no cuenta una dimensión que el instrumento SÍ mide es
+        // peor que no medirla: promete que se miró.
+        const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0
+            || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0
+            || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0);
         console.log(`\n╔══ ${informe.length} vistas · con algo que corregir: ${malas.length} ══╗`);
-        console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen táctil zoom');
+        console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen dedo zoom acuse imposib');
         informe.forEach(v => {
             if (v.error) { console.log(`  ${v.ruta.padEnd(24)} (no cargó)`); return; }
-            const mal = v.tablas > 0 || v.desbordePagina > 0 || v.desbordan > 0 || v.zoomIOS > 0;
+            const mal = v.tablas > 0 || v.desbordePagina > 0 || v.desbordan > 0 || v.zoomIOS > 0
+                || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0;
             console.log(`  ${mal ? '✗' : '·'} ${v.ruta.padEnd(22)}`
                 + String(v.tablas).padStart(6) + String(v.fichas).padStart(7)
                 + String(v.desbordePagina).padStart(6) + String(v.desbordan).padStart(6)
-                + String(v.chicos).padStart(7) + String(v.zoomIOS).padStart(5));
+                + String(v.chicos).padStart(5) + String(v.zoomIOS).padStart(5)
+                + String(v.sinAcuse).padStart(6) + String(v.imposibles).padStart(8));
         });
         const rotas = informe.filter(v => v.reventó);
         console.log(`\n  REVENTADAS:               ${rotas.map(v => v.ruta).join(', ') || 'ninguna'}`);

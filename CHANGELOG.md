@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.702.1 — acostado: 54 rutas, y un resumen que tapaba hallazgos
+
+F5 de `docs/PLAN-MOVIL-2026-08-20.md`. **Todo lo medido hasta hoy fue de pie**, y
+acostado no es la misma pantalla: el alto pasa a ser el recurso escaso. El
+proyecto ya lo tenía escrito y medido —`useLayoutCompacto` distingue el teléfono
+acostado por el ALTO y no por el ancho, y `usePanelLateral` existe justamente
+porque una hoja inferior gasta el 63% del alto para mostrar dos controles— pero
+**nunca se había corrido una medición en horizontal**.
+
+Ahora se corre con `ORIENTACION=acostado`, en los dos barridos. El descriptor
+sale de la base de Playwright y no de números escritos a mano: emular el aparato
+es más defendible que inventarle un viewport. La etiqueta del informe lo lleva,
+así que las dos orientaciones no se pisan.
+
+**54 rutas acostado**: desborde 0, desborde de página 0, blancos de dedo 0, zoom
+de iOS 0, inalcanzables 0, encadenamiento de scroll 0. La única tabla es
+`ScheduleCalendar`, excepción ya declarada.
+
+### Dos hallazgos que sólo aparecieron acostado
+
+- **El aviso de «no son venta de productos»** tenía su único control —«Ver
+  cuáles», que despliega el detalle— en **85×15**: menos de la mitad del blanco
+  de dedo por los dos lados, y sin `active:`, o sea sin acuse del toque.
+- **Traslados**: las **23 tarjetas** de la lista —la lista entera— no acusaban el
+  toque. En el teléfono no hay cursor ni realce de hover, así que el acuse **es**
+  la única señal de que el toque entró.
+
+### Y el hallazgo sobre el instrumento, que es el más importante
+
+El resumen que imprime el barrido —el que lee una persona— **no contaba
+`sinAcuse`, `chicos` ni `imposibles` como «algo que corregir»**. Decía «con algo
+que corregir: 0» mientras el JSON tenía los 23 de Traslados. El número estaba
+medido, y el resumen lo tapaba.
+
+**Un resumen que no cuenta una dimensión que el instrumento SÍ mide es peor que
+no medirla: promete que se miró.** Es la misma familia que el informe parcial de
+v2.698.4 —que se llamaba igual que uno completo— y que el detector de acuse que
+acusaba al inocente: tres veces en esta tanda el problema no estuvo en el portal
+sino en cómo se leía la medición.
+
+Corregido, y la tabla del resumen ahora tiene una columna por dimensión.
+
 ## v2.702.0 — Solicitudes y Traslados se miran por semana; la sala de respaldo deja de heredar el historial
 
 Reportado así: «hay un problema de alcance en las solicitudes, todos pueden ver

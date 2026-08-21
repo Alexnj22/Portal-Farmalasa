@@ -63,7 +63,19 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 // ANOTA: un tope silencioso se lee como «se midió todo».
 const TOPE = Number(process.env.TOPE_DIALOGOS || 4);
 
-test.use({ ...devices['iPhone 13'] });
+// ── De pie o acostado (F5, 2026-08-21) ──────────────────────────────────────
+// Todo lo medido hasta hoy fue DE PIE, y acostado no es la misma pantalla: el
+// alto pasa a ser el recurso escaso. `useLayoutCompacto` ya lo tiene escrito y
+// medido —un iPhone 13 acostado es 844×390, y ahí una hoja inferior gasta el
+// 63% del alto para mostrar dos controles—, y por eso existe `usePanelLateral`.
+// Lo que faltaba era una corrida que lo comprobara.
+//
+// El descriptor sale de la base de Playwright y no de números escritos a mano:
+// emular el aparato es más defendible que inventarle un viewport.
+const ACOSTADO = process.env.ORIENTACION === 'acostado';
+const APARATO = ACOSTADO ? devices['iPhone 13 landscape'] : devices['iPhone 13'];
+
+test.use({ ...APARATO });
 
 test.describe('Diálogos · WebKit iPhone 13', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
@@ -98,7 +110,7 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
             const navegador = pg.context().browser();
             if (!navegador) return;
             const viejo = pg.context();
-            const ctx = await navegador.newContext({ ...devices['iPhone 13'] });
+            const ctx = await navegador.newContext({ ...APARATO });
             pg = await ctx.newPage();
             pg.on('pageerror', e => errores.push(e.message.slice(0, 200)));
             await viejo.close().catch(() => {});

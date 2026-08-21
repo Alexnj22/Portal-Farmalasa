@@ -961,3 +961,70 @@ export async function identificarTrasladoNuevo(
 
   return { id: nuevos.length === 1 ? nuevos[0] : null, candidatos: nuevos };
 }
+
+/* ── Escrituras que NO pueden quedar en silencio ─────────────────────────────
+ *
+ * Estas funciones mueven producto en el sistema de origen y después ANOTAN lo
+ * que hicieron. Entre esas dos cosas no hay transacción: si el movimiento entra
+ * y la anotación no, el sistema y el portal quedan diciendo cosas distintas, y
+ * el que decide qué hacer después —la tarjeta del pedido, el cron que reintenta,
+ * la persona que mira la pantalla— lee el portal.
+ *
+ * Con el error descartado esa divergencia no deja rastro en ninguna parte. Y
+ * `trasladar-pedido-erp` corre en background por diseño, donde —como dice su
+ * propio encabezado— «no hay a quién contarle un error, así que si no queda
+ * escrito no pasó».
+ *
+ * Medido el 2026-08-21: 42 escrituras y lecturas así entre las dos funciones,
+ * invisibles para `data-gate` porque su detector sólo reconocía clientes
+ * llamados `supabase` y acá se llaman `admin`.
+ *
+ * ── Por qué no lanza ──
+ * Una línea que no se pudo anotar no debe abortar el lote: las otras 400 del
+ * pedido siguen siendo despachables, y cortar ahí deja MÁS producto en tránsito,
+ * no menos. Lo que sí hace es dejar el rastro en los tres lugares donde alguien
+ * puede verlo: el log de la función, la lista de fallos de la respuesta, y —
+ * cuando el llamador lo pasa— el `aviso` de la propia fila.
+ */
+export async function anotar(
+  consulta: PromiseLike<{ error: { message: string } | null }>,
+  que: string,
+  registrar?: (aviso: string) => void,
+): Promise<boolean> {
+  const { error } = await consulta;
+  if (!error) return true;
+  const aviso = `No se pudo anotar ${que}: ${error.message}. `
+    + `El movimiento en el sistema NO se deshace por esto — hay que mirarlo a mano.`;
+  console.error(`[erp-traslado] ${aviso}`);
+  registrar?.(aviso);
+  return false;
+}
+
+/**
+ * Una LECTURA cuyo fallo no se puede confundir con una respuesta del negocio.
+ *
+ * El caso que la motiva: `const { data: emp } = await admin.from("employees")…`
+ * y después `if (!puede) return 403 "No tienes permiso"`. Si la consulta falla,
+ * `emp` es null, `puede` es false y la pantalla dice **«no tenés permiso»** a
+ * alguien que sí lo tiene. Lo mismo con «no hay quien contó la caja» y con «esa
+ * corrida no está en curso»: las tres son respuestas de negocio que en realidad
+ * significaban «no se pudo preguntar».
+ *
+ * Devuelve `{ dato, roto }` para que el llamador distinga los dos casos sin
+ * tener que acordarse de mirar `error`.
+ */
+export async function leerBien<T = Record<string, unknown>>(
+  // `data: unknown` y no `T | null` a propósito: el constructor de consultas de
+  // supabase-js trae un tipo genérico que, sin `Database`, infiere `never` y
+  // rompe TODO acceso a propiedad en el llamador. El tipo lo pone quien llama,
+  // que es el único que sabe qué columnas pidió.
+  consulta: PromiseLike<{ data: unknown; error: { message: string } | null }>,
+  que: string,
+): Promise<{ dato: T | null; roto: string | null }> {
+  const { data, error } = await consulta;
+  if (error) {
+    console.error(`[erp-traslado] No se pudo leer ${que}: ${error.message}`);
+    return { dato: null, roto: `No se pudo leer ${que}.` };
+  }
+  return { dato: (data ?? null) as T | null, roto: null };
+}

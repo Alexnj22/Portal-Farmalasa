@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
+  anotar,
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
@@ -10,6 +11,7 @@ import {
   hoySV,
   identificarTrasladoNuevo,
   lectorDeRecepcion,
+  leerBien,
   nombreCorto,
   pendientesDeOrigen,
   repartirEnLotes,
@@ -257,16 +259,27 @@ Deno.serve(async (req) => {
       // despacho, que se retoma firmando con quien finalizó el pedido. Si no
       // hay nadie anotado no se sigue: un ingreso sin responsable no es un
       // asiento, y que no lo haya significa que algo más está mal.
-      const { data: conto } = await admin
-        .from("pedido_items").select("received_by")
-        .in("id", soloContados.slice(0, 200))
-        .not("received_by", "is", null)
-        .limit(1).maybeSingle();
+      // `roto` NO es lo mismo que «no hay nadie anotado», y hasta el 2026-08-21
+      // las dos cosas salían por la misma puerta: con el error descartado, una
+      // consulta que fallaba devolvía `SIN_QUIEN_CONTO` y el cron daba por
+      // resuelto que la sala no había contado la caja. Se dejaba de reintentar
+      // un ingreso que sí correspondía, y no quedaba rastro de por qué.
+      const { dato: conto, roto: rotoConto } = await leerBien<{ received_by: string | null }>(
+        admin.from("pedido_items").select("received_by")
+          .in("id", soloContados.slice(0, 200))
+          .not("received_by", "is", null)
+          .limit(1).maybeSingle(),
+        "quién contó la caja",
+      );
+      if (rotoConto) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoConto }, 503);
       if (!conto?.received_by)
         return json({ ok: true, codigo: "SIN_QUIEN_CONTO", recibidas: 0 });
-      const { data: autor } = await admin
-        .from("employees").select("id, name, first_names, last_names")
-        .eq("id", conto.received_by).maybeSingle();
+      const { dato: autor, roto: rotoAutor } = await leerBien<{ id: string; name: string; first_names?: string; last_names?: string }>(
+        admin.from("employees").select("id, name, first_names, last_names")
+          .eq("id", conto.received_by).maybeSingle(),
+        "el empleado que contó",
+      );
+      if (rotoAutor) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoAutor }, 503);
       if (!autor) return json({ ok: true, codigo: "SIN_QUIEN_CONTO", recibidas: 0 });
       quien = { id: autor.id as string, name: autor.name as string };
       yo = nombreCorto(autor);
@@ -278,10 +291,17 @@ Deno.serve(async (req) => {
     } else if (interno) {
       const runId = String(cuerpo.run_id ?? "");
       if (!runId) return json({ ok: false, error: "Falta run_id." }, 400);
-      const { data: run } = await admin
-        .from("pedido_traslado_erp")
-        .select("id, pedido_id, erp_sucursal_id, estado, modo, paso, creado_por")
-        .eq("id", runId).maybeSingle();
+      // Igual que arriba: «esa corrida no está en curso» es una respuesta, y
+      // «no se pudo preguntar» es otra. Confundirlas hacía que el cron
+      // abandonara para siempre un despacho a medias —producto fuera del
+      // estante y sin llegar— por una lectura que falló una vez.
+      const { dato: run, roto: rotoRun } = await leerBien<{ id: string; pedido_id: string; erp_sucursal_id: number; estado: string; modo: string; paso: string; creado_por: string }>(
+        admin.from("pedido_traslado_erp")
+          .select("id, pedido_id, erp_sucursal_id, estado, modo, paso, creado_por")
+          .eq("id", runId).maybeSingle(),
+        "la corrida que se retoma",
+      );
+      if (rotoRun) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoRun }, 503);
       if (!run || run.estado !== "en_curso" || run.modo !== "real" || run.paso !== "enviar")
         return json({
           ok: false, codigo: "NADA_QUE_CONTINUAR",
@@ -289,9 +309,16 @@ Deno.serve(async (req) => {
         }, 409);
       pedidoId = String(run.pedido_id);
       sucId = Number(run.erp_sucursal_id);
-      const { data: autor } = await admin
-        .from("employees").select("id, name, first_names, last_names")
-        .eq("id", run.creado_por).maybeSingle();
+      // Acá el fallo SÍ puede seguir: quedarse sin el nombre de quien finalizó
+      // el pedido no justifica abandonar el despacho. Pero se anota, porque ese
+      // nombre es lo único que identifica a la persona real en el concepto del
+      // sistema, y «Continuacion automatica» es indistinguible de un empleado
+      // que de verdad ya no existe.
+      const { dato: autor } = await leerBien<{ id: string; name: string; first_names?: string; last_names?: string }>(
+        admin.from("employees").select("id, name, first_names, last_names")
+          .eq("id", run.creado_por).maybeSingle(),
+        "quién finalizó el pedido (el concepto va a decir «Continuacion automatica»)",
+      );
       quien = autor ?? { id: String(run.creado_por ?? ""), name: "Continuacion automatica" };
       // La corrida que retoma el cron sigue firmando con quien FINALIZÓ el
       // pedido, no con la máquina: el asiento es de esa persona.
@@ -345,15 +372,27 @@ Deno.serve(async (req) => {
       // ── El permiso es el del módulo Pedidos ─────────────────────────────
       // Se repite acá porque esta función usa la llave de servicio y el RLS no
       // la frena. Es el mismo que exige `confirm_pedido`.
-      const { data: emp } = await admin
-        .from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
-        .eq("id", usuario.id).maybeSingle();
-      yo = nombreCorto({ ...emp, name: usuario.name });
+      // Si estas dos lecturas fallan, `emp` y `permisos` quedan vacíos y el
+      // camino de abajo contesta **403 «No tienes permiso de edición en
+      // Pedidos»** — a alguien que sí lo tiene. Un permiso denegado se
+      // interpreta como una decisión (pedir el permiso, avisar al jefe), no
+      // como una falla que se reintenta, así que el mensaje equivocado manda a
+      // la persona por el camino equivocado. Se distinguen.
+      const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; system_role: string | null; branch_id: number | null; first_names?: string; last_names?: string }>(
+        admin.from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
+          .eq("id", usuario.id).maybeSingle(),
+        "tu ficha de empleado",
+      );
+      if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
+      yo = nombreCorto({ ...(emp ?? {}), name: usuario.name });
       const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
-      const { data: permisos } = await admin
-        .from("role_permissions").select("can_edit, scope")
-        .in("role_id", roles.length ? roles : [-1])
-        .eq("module_key", "pedidos");
+      const { dato: permisos, roto: rotoPerm } = await leerBien<{ can_edit: boolean; scope: string }[]>(
+        admin.from("role_permissions").select("can_edit, scope")
+          .in("role_id", roles.length ? roles : [-1])
+          .eq("module_key", "pedidos"),
+        "tus permisos de Pedidos",
+      );
+      if (rotoPerm) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoPerm }, 503);
       const puede = emp?.system_role === "SUPERADMIN" || (permisos ?? []).some((p) => p.can_edit);
       if (!puede)
         return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
@@ -429,16 +468,24 @@ Deno.serve(async (req) => {
       // (dos pedidos con 45 s de espera cada uno), así que 15 minutos no puede
       // pisar una corrida en curso.
       const corteTomada = new Date(Date.now() - RESCATE_TOMADA_MS).toISOString();
-      await admin.from("pedido_traslado_linea")
-        .update({
-          estado: "enviada",
-          aviso: "Una corrida anterior se cortó con esta línea tomada. Se vuelve a la cola: "
-            + "antes de recibirla se comprueba en el sistema si ya había entrado.",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
-        .eq("estado", "recibiendo")
-        .lt("updated_at", corteTomada);
+      // Si este rescate falla en silencio, las líneas tomadas siguen tomadas y
+      // la tarjeta queda en «sin ingresar» sin forma de arreglarlo desde el
+      // portal — que es exactamente el problema que este bloque vino a
+      // resolver. No lanza: lo que sigue igual puede recibir las que no están
+      // trabadas.
+      await anotar(
+        admin.from("pedido_traslado_linea")
+          .update({
+            estado: "enviada",
+            aviso: "Una corrida anterior se cortó con esta línea tomada. Se vuelve a la cola: "
+              + "antes de recibirla se comprueba en el sistema si ya había entrado.",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+          .eq("estado", "recibiendo")
+          .lt("updated_at", corteTomada),
+        "el rescate de las líneas que quedaron tomadas",
+      );
 
       const traerLineas = async () => {
         let q = admin.from("pedido_traslado_linea")
@@ -497,11 +544,21 @@ Deno.serve(async (req) => {
           // confirmando la misma hoja a la vez pasarían las dos la lectura de
           // arriba; acá la segunda no entra. Recibir dos veces duplicaría la
           // existencia, y eso no se deshace solo.
-          const { data: tomadaRec } = await admin.from("pedido_traslado_linea")
+          // Con el error descartado, «no la pude tomar» y «se la llevó otra
+          // corrida» eran indistinguibles: las dos hacían `continue` y la línea
+          // se quedaba sin recibir sin que nadie supiera por qué. Fallar cerrado
+          // acá está bien —tomar el candado es lo que impide recibir dos veces—,
+          // pero tiene que dejar rastro.
+          const { data: tomadaRec, error: tomarErr } = await admin.from("pedido_traslado_linea")
             .update({ estado: "recibiendo", updated_at: new Date().toISOString() })
             .eq("id", ln.id).eq("estado", "enviada")
             .select("id").maybeSingle();
-          if (!tomadaRec) continue;
+          if (tomarErr) {
+            console.error(`[trasladar] no se pudo tomar la línea ${ln.clave}: ${tomarErr.message}`);
+            fallos.push({ clave: String(ln.clave), error: `No se pudo tomar la línea: ${tomarErr.message}` });
+            continue;
+          }
+          if (!tomadaRec) continue;   // otra corrida se la llevó
 
           // ── Se le pregunta al listado ANTES de cargar ─────────────────────
           // Hasta el 2026-08-19 la única defensa contra cargar dos veces era el
@@ -525,25 +582,37 @@ Deno.serve(async (req) => {
             // Anulado es lo contrario de recibido: el producto NO entró y ya no
             // va a entrar por este traslado. Se cierra en error para que no se
             // reintente para siempre y alguien lo vuelva a pedir.
-            await admin.from("pedido_traslado_linea").update({
-              estado: "error",
-              error_msg: `El traslado ${ln.id_traslado} está anulado en el sistema: el producto no entró `
-                + `a la sala. Hay que volver a pedirlo.`,
-              updated_at: new Date().toISOString(),
-            }).eq("id", ln.id);
+            await anotar(
+              admin.from("pedido_traslado_linea").update({
+                estado: "error",
+                error_msg: `El traslado ${ln.id_traslado} está anulado en el sistema: el producto no entró `
+                  + `a la sala. Hay que volver a pedirlo.`,
+                updated_at: new Date().toISOString(),
+              }).eq("id", ln.id),
+              `que ${ln.clave} está anulado en el sistema`,
+              (m) => fallos.push({ clave: String(ln.clave), error: m }),
+            );
             fallos.push({ clave: String(ln.clave), error: "El traslado está anulado en el sistema." });
             continue;
           }
 
           if (antesDeRecibir === "recibido") {
-            await admin.from("pedido_traslado_linea").update({
-              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              // Quién lo recibió no lo dice el sistema, así que no se inventa.
-              // Lo que sí hay que poder leer después es que la carga NO la hizo
-              // esta llamada: acá no se escribió inventario.
-              aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
-              updated_at: new Date().toISOString(),
-            }).eq("id", ln.id);
+            await anotar(
+              admin.from("pedido_traslado_linea").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                // Quién lo recibió no lo dice el sistema, así que no se inventa.
+                // Lo que sí hay que poder leer después es que la carga NO la hizo
+                // esta llamada: acá no se escribió inventario.
+                aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
+                updated_at: new Date().toISOString(),
+              }).eq("id", ln.id),
+              `que ${ln.clave} ya estaba recibido en el sistema`,
+              (m) => fallos.push({ clave: String(ln.clave), error: m }),
+            );
+            // Se cuenta igual: en el sistema el producto ESTÁ recibido, y eso es
+            // lo cierto. Si la anotación falló, el `fallo` de arriba hace que la
+            // respuesta salga con `ok:false` — el número y la tabla dejan de
+            // coincidir y hay que verlo, no taparlo bajando el conteo.
             recibidas++;
             continue;
           }
@@ -559,11 +628,15 @@ Deno.serve(async (req) => {
             // prueba que ya entró —lo prueba el listado, que ya se consultó
             // arriba—, pero tampoco hay nada que enviar. Se anota para que el
             // pedido no quede colgado esperándolo.
-            await admin.from("pedido_traslado_linea").update({
-              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
-              updated_at: new Date().toISOString(),
-            }).eq("id", ln.id);
+            await anotar(
+              admin.from("pedido_traslado_linea").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
+                updated_at: new Date().toISOString(),
+              }).eq("id", ln.id),
+              `que ${ln.clave} no mostraba líneas que recibir`,
+              (m) => fallos.push({ clave: String(ln.clave), error: m }),
+            );
             recibidas++;
             continue;
           }
@@ -590,9 +663,17 @@ Deno.serve(async (req) => {
           }
 
           if (partes.length === 0) {
-            await admin.from("pedido_traslado_linea")
-              .update({ estado: "enviada", updated_at: new Date().toISOString() })
-              .eq("id", ln.id);
+            // Devolverla a 'enviada' es lo que permite reintentarla. Si esta
+            // escritura falla, la línea se queda en 'recibiendo' y NADIE la
+            // vuelve a tomar: el rescate de arriba tarda 15 minutos y el bucle
+            // sólo levanta las 'enviada'.
+            await anotar(
+              admin.from("pedido_traslado_linea")
+                .update({ estado: "enviada", updated_at: new Date().toISOString() })
+                .eq("id", ln.id),
+              `la devuelta a la cola de ${ln.clave}`,
+              (m) => fallos.push({ clave: String(ln.clave), error: m }),
+            );
             fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
             continue;
           }
@@ -616,30 +697,51 @@ Deno.serve(async (req) => {
             // Volver a 'enviada' sin preguntar es dejar la línea lista para un
             // reintento sobre producto ya cargado — la otra mitad del hueco.
             if (await estadoDeRecepcion(cookie, String(ln.id_traslado)) === "recibido") {
-              await admin.from("pedido_traslado_linea").update({
-                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-                aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
-                updated_at: new Date().toISOString(),
-              }).eq("id", ln.id);
+              // Éste es el peor de todos para dejarlo en silencio: el producto
+              // ENTRÓ a la sala y esta línea es la única prueba. Si no se anota,
+              // la tarjeta dice «sin ingresar» sobre existencia que ya está
+              // adentro.
+              await anotar(
+                admin.from("pedido_traslado_linea").update({
+                  estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                  aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+                  updated_at: new Date().toISOString(),
+                }).eq("id", ln.id),
+                `que ${ln.clave} entró pese al fallo del sistema`,
+                (m) => fallos.push({ clave: String(ln.clave), error: m }),
+              );
               recibidas++;
               continue;
             }
             // Vuelve a 'enviada': el traslado sigue vivo y se puede reintentar.
-            await admin.from("pedido_traslado_linea")
-              .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
-                        updated_at: new Date().toISOString() })
-              .eq("id", ln.id);
+            await anotar(
+              admin.from("pedido_traslado_linea")
+                .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
+                          updated_at: new Date().toISOString() })
+                .eq("id", ln.id),
+              `la devuelta a la cola de ${ln.clave} tras el fallo del sistema`,
+              (m) => fallos.push({ clave: String(ln.clave), error: m }),
+            );
             fallos.push({ clave: String(ln.clave), error: resp.msg || "sin detalle" });
             continue;
           }
 
           recibidas++;
-          await admin.from("pedido_traslado_linea").update({
-            estado: "recibida",
-            recibido_at: new Date().toISOString(),
-            recibido_por: quien.id,
-            updated_at: new Date().toISOString(),
-          }).eq("id", ln.id);
+          // El camino de éxito, y el que más caro sale callado: el producto ya
+          // está adentro de la sala. Sin esta anotación la línea sigue
+          // 'recibiendo', ninguna corrida la vuelve a tomar hasta que el rescate
+          // de 15 minutos la libere, y la tarjeta la cuenta como «sin ingresar»
+          // sobre existencia que ya entró.
+          await anotar(
+            admin.from("pedido_traslado_linea").update({
+              estado: "recibida",
+              recibido_at: new Date().toISOString(),
+              recibido_por: quien.id,
+              updated_at: new Date().toISOString(),
+            }).eq("id", ln.id),
+            `la recepción de ${ln.clave} (el producto YA entró a la sala)`,
+            (m) => fallos.push({ clave: String(ln.clave), error: m }),
+          );
         }
       };
 
@@ -677,9 +779,14 @@ Deno.serve(async (req) => {
 
       await correrTodo();
 
-      const { data: resumen } = await admin.rpc("resumen_traslado_pedido", {
-        p_pedido_id: pedidoId, p_sucursal_id: sucId,
-      });
+      // Acá el resumen sí es informativo —viaja en la respuesta y nada depende
+      // de él—, pero se lee igual: que la pantalla muestre el resumen vacío
+      // porque la consulta falló no puede ser indistinguible de un pedido sin
+      // nada pendiente.
+      const { dato: resumen } = await leerBien<Record<string, unknown>>(
+        admin.rpc("resumen_traslado_pedido", { p_pedido_id: pedidoId, p_sucursal_id: sucId }),
+        "el resumen de la recepción",
+      );
 
       return json({
         ok: fallos.length === 0,
@@ -741,13 +848,19 @@ Deno.serve(async (req) => {
       // despacho se hace en varias corridas y cada una adopta la anterior.
       // Solo una ya DESPACHADA por completo se rechaza.
       if (String((filaErr as { code?: string }).code) === "23505") {
-        const { data: viva } = await admin
-          .from("pedido_traslado_erp")
-          .select("id, estado")
-          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
-          .eq("modo", "real").eq("paso", "enviar")
-          .neq("estado", "error")
-          .maybeSingle();
+        // «Ya se despachó» es una respuesta que CIERRA el pedido para siempre
+        // desde el punto de vista de quien la lee. Si sale de una consulta que
+        // falló, se está declarando despachado algo que quizá quedó a medias.
+        const { dato: viva, roto: rotoViva } = await leerBien<{ id: string; estado: string }>(
+          admin.from("pedido_traslado_erp")
+            .select("id, estado")
+            .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+            .eq("modo", "real").eq("paso", "enviar")
+            .neq("estado", "error")
+            .maybeSingle(),
+          "la corrida que ya estaba abierta",
+        );
+        if (rotoViva) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoViva }, 503);
         if (!viva || viva.estado !== "en_curso")
           return json({
             ok: false,
@@ -755,17 +868,31 @@ Deno.serve(async (req) => {
             error: "Este pedido ya se despachó para esa sucursal.",
           }, 409);
         filaId = viva.id as string;
-        await admin.rpc("incrementar_reanudacion_traslado", { p_run_id: filaId });
+        // El contador de reanudaciones es lo que deja ver que un pedido se está
+        // retomando en círculos. Que no suba no frena nada, pero callarlo
+        // esconde justo la señal de que algo no avanza.
+        await anotar(
+          admin.rpc("incrementar_reanudacion_traslado", { p_run_id: filaId }),
+          "la reanudación de la corrida",
+        );
       } else {
         throw filaErr;
       }
     }
     if (!filaId) throw new Error("No se pudo abrir ni adoptar la corrida.");
 
+    // Cerrar la corrida NO puede quedar en silencio: el estado de esta fila es
+    // lo que mira el cron de cada minuto para decidir si retomar. Si el cierre
+    // falla, una corrida terminada se queda en 'en_curso' y el cron la reintenta
+    // para siempre; o una que falló se queda 'en_curso' y nadie se entera de que
+    // el pedido no salió.
     const cerrar = async (patch: Record<string, unknown>) => {
-      await admin.from("pedido_traslado_erp")
-        .update({ ...patch, ms_total: Date.now() - arranque, updated_at: new Date().toISOString() })
-        .eq("id", filaId);
+      await anotar(
+        admin.from("pedido_traslado_erp")
+          .update({ ...patch, ms_total: Date.now() - arranque, updated_at: new Date().toISOString() })
+          .eq("id", filaId),
+        `el cierre de la corrida (${JSON.stringify(patch.estado ?? "sin estado")})`,
+      );
     };
 
     // ══════════════════════════════════════════════════════════════════════
@@ -811,15 +938,21 @@ Deno.serve(async (req) => {
       // reintenta a ciegas: reintentar movería el inventario dos veces y eso no
       // se deshace solo. Se marca para que alguien la mire con la clave en la
       // mano, que es lo que permite encontrarla en el sistema.
-      await admin.from("pedido_traslado_linea")
-        .update({
-          estado: "error",
-          error_msg: "La corrida anterior se cortó mientras se despachaba este producto. "
-            + "Hay que verificar en el sistema si el traslado entró (buscar la clave en el concepto) "
-            + "antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando");
+      // Si esta marca no se escribe, las líneas siguen en 'enviando' y la
+      // próxima corrida las ve como tomadas por otra: nadie las mira nunca, y el
+      // producto que quizá salió del estante no aparece en ninguna lista.
+      await anotar(
+        admin.from("pedido_traslado_linea")
+          .update({
+            estado: "error",
+            error_msg: "La corrida anterior se cortó mientras se despachaba este producto. "
+              + "Hay que verificar en el sistema si el traslado entró (buscar la clave en el concepto) "
+              + "antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando"),
+        "las líneas que quedaron a medio despachar en la corrida anterior",
+      );
 
       const porItem = new Map(items.map((i) => [i.id, i]));
       // El número del pedido ya no se lee: viaja DENTRO de la clave (`P102-…`),
@@ -855,11 +988,18 @@ Deno.serve(async (req) => {
         for (const ln of tanda) {
           if (Date.now() - arranque > presupuesto) { sinTiempo = true; break; }
 
+          // `fallar` es lo ÚNICO que le cuenta a alguien por qué un producto no
+          // salió: en background no hay respuesta que leer. Si la anotación del
+          // fallo falla a su vez, el renglón queda en 'enviando' y desaparece de
+          // toda pantalla — el fallo del fallo es el que no puede ser mudo.
           const fallar = async (msg: string) => {
             fallidas++;
-            await admin.from("pedido_traslado_linea")
-              .update({ estado: "error", error_msg: msg, updated_at: new Date().toISOString() })
-              .eq("id", ln.id);
+            await anotar(
+              admin.from("pedido_traslado_linea")
+                .update({ estado: "error", error_msg: msg, updated_at: new Date().toISOString() })
+                .eq("id", ln.id),
+              `por qué no salió ${ln.clave} («${msg}»)`,
+            );
           };
 
           const it = porItem.get(ln.pedido_item_id as number);
@@ -867,10 +1007,18 @@ Deno.serve(async (req) => {
 
           // Se toma la línea ANTES de tocar el sistema: si esto no escribe,
           // nadie más la agarra, y si el worker muere después queda la marca.
-          const { data: tomada } = await admin.from("pedido_traslado_linea")
+          const { data: tomada, error: tomarErr } = await admin.from("pedido_traslado_linea")
             .update({ estado: "enviando", updated_at: new Date().toISOString() })
             .eq("id", ln.id).eq("estado", "planificada")
             .select("id").maybeSingle();
+          if (tomarErr) {
+            // Fallar cerrado está bien —sin el candado, dos corridas despachan
+            // el mismo producto—, pero «no la pude tomar» y «se la llevó otra»
+            // no pueden salir por la misma puerta muda: la primera significa que
+            // la base está mal y el pedido no va a avanzar nunca.
+            console.error(`[trasladar] no se pudo tomar la línea ${ln.clave}: ${tomarErr.message}`);
+            continue;
+          }
           if (!tomada) continue;   // otra corrida se la llevó
 
           const f = await traerFila(cookie, ln.erp_product_id as number, ubicOrigen);
@@ -1021,7 +1169,14 @@ Deno.serve(async (req) => {
           }
 
           hechas++;
-          await admin.from("pedido_traslado_linea").update({
+          // El producto YA SALIÓ del estante de Bodega. Esta fila es la única
+          // prueba de que salió y del número con el que se puede recibir: si no
+          // se escribe, el traslado existe en el sistema y no existe para el
+          // portal — ni la sala puede recibirlo, ni nadie sabe que hay que ir a
+          // buscarlo. Es la escritura más cara de todo el archivo para dejarla
+          // muda, y era una de las 42.
+          await anotar(
+            admin.from("pedido_traslado_linea").update({
             estado: "enviada",
             id_traslado: idTraslado,
             numero_vale: vale,
@@ -1044,14 +1199,27 @@ Deno.serve(async (req) => {
             error_msg: idTraslado ? null
               : `Entró, pero no se pudo distinguir cuál es entre ${candidatos.length} candidatos `
                 + `(${candidatos.join(", ") || "ninguno"}). Buscar «${ln.clave}» en el concepto.`,
-          }).eq("id", ln.id);
+            }).eq("id", ln.id),
+            `el despacho de ${ln.clave} (el producto YA salió de Bodega, traslado ${idTraslado ?? "sin identificar"})`,
+          );
         }
       }
 
-      const { data: resumen } = await admin.rpc("resumen_traslado_pedido", {
-        p_pedido_id: pedidoId, p_sucursal_id: sucId,
-      });
-      const quedan = Number((resumen as Record<string, unknown>)?.por_despachar ?? 0);
+      // Este resumen NO es decorativo: de él sale `quedan`, y `quedan` decide si
+      // la corrida se cierra como «despachado» o se queda «en_curso» para que el
+      // cron la retome. Con el error descartado, `resumen` venía null, `quedan`
+      // caía a 0 por el `?? 0` y **la corrida se declaraba despachada con
+      // producto sin salir** — el pedido quedaba a medias y nadie lo retomaba
+      // nunca, porque ya figuraba terminado.
+      //
+      // Si no se puede leer, se deja 'en_curso': un pedido que se retoma de más
+      // no rompe nada (el bucle sólo levanta líneas 'planificada'), y uno que se
+      // da por terminado de menos deja producto en el estante que la sala espera.
+      const { dato: resumen, roto: rotoResumen } = await leerBien<Record<string, unknown>>(
+        admin.rpc("resumen_traslado_pedido", { p_pedido_id: pedidoId, p_sucursal_id: sucId }),
+        "el resumen del despacho",
+      );
+      const quedan = rotoResumen ? 1 : Number((resumen as Record<string, unknown>)?.por_despachar ?? 0);
 
       await cerrar({
         estado: quedan > 0 ? "en_curso" : "despachado",

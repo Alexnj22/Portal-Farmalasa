@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.3 — Las dos funciones que mueven producto dejan de fallar en silencio
+
+Se pagaron los **42 sitios** de `trasladar-pedido-erp` (24) y
+`devolver-pedido-erp` (18) que el detector ensanchado destapó en v2.697.1. Eran
+los que importaban: son las dos funciones que mueven producto de verdad en el
+sistema de origen.
+
+**Por qué justo ahí duele.** Entre mover el producto y anotar que se movió no
+hay transacción. Si el movimiento entra y la anotación no, el sistema y el
+portal quedan diciendo cosas distintas — y todo lo que decide qué hacer después
+lee el portal: la tarjeta del pedido, el cron que reintenta, la persona que mira
+la pantalla. Con el error descartado esa divergencia no dejaba rastro en ningún
+lado. Y `trasladar-pedido-erp` corre en segundo plano por diseño, donde —como
+dice su propio encabezado— *«no hay a quién contarle un error, así que si no
+queda escrito no pasó»*.
+
+**Dos herramientas, en `_shared/erp-traslado.ts`:**
+
+`anotar()` para las escrituras. **No lanza**, y es deliberado: una línea que no
+se pudo anotar no debe abortar el lote — las otras 400 del pedido siguen siendo
+despachables, y cortar ahí deja MÁS producto en tránsito, no menos. Lo que hace
+es dejar el rastro en los tres lugares donde alguien puede verlo: el log de la
+función, la lista de fallos de la respuesta, y el `aviso` de la propia fila.
+
+`leerBien()` para las lecturas, que separa **«no se pudo preguntar» de una
+respuesta del negocio**. Eran tres confusiones con consecuencias distintas:
+
+| Antes contestaba | Cuando en realidad pasaba | Qué provocaba |
+|---|---|---|
+| «No tienes permiso de edición en Pedidos» | falló el select de `employees` | la persona va a pedir un permiso que ya tiene |
+| «No hay quien contó la caja» | falló el select de `pedido_items` | el cron deja de reintentar un ingreso que sí correspondía |
+| «Este pedido ya se despachó» | falló el select de `pedido_traslado_erp` | se da por cerrado un despacho que quizá quedó a medias |
+
+**Y una que era un bug con nombre propio.** Al cerrar el despacho,
+`resumen_traslado_pedido` alimenta `quedan`, y `quedan` decide si la corrida se
+cierra como «despachado» o se queda «en_curso» para que el cron la retome. Con
+el error descartado, un resumen que fallaba volvía `null`, el `?? 0` lo
+convertía en cero y **la corrida se declaraba despachada con producto sin
+salir** — el pedido quedaba a medias y nadie lo retomaba nunca, porque ya
+figuraba terminado. Ahora una lectura rota deja `en_curso`: retomar de más no
+rompe nada (el bucle sólo levanta líneas `planificada`), y darlo por terminado
+de menos deja producto en el estante que la sala está esperando.
+
+**Las tres escrituras más caras de dejar mudas**, ahora las tres con su motivo
+escrito en el código: la que anota que el traslado SALIÓ de Bodega (es la única
+prueba del número con el que la sala puede recibirlo), la que anota que ENTRÓ a
+la sala, y `fallar()` — que es lo único que le cuenta a alguien por qué un
+producto no salió. El fallo del fallo era el que no podía ser mudo.
+
+Detalle de implementación que vale anotar: `devolver-pedido-erp` ya tenía una
+función local llamada `anotar` que reparte cantidades entre lotes, así que la
+importación va con alias (`anotar as noCallar`). Son dos cosas distintas y no
+pueden compartir nombre.
+
+El baseline baja: `error-ignorado` 55 → 40 y `escritura-a-ciegas` 62 → 35. Las
+dos funciones quedan en **cero**. Lo que queda son 75 sitios repartidos en otras
+23 funciones, ninguna de las cuales mueve inventario.
+
 ## v2.698.2 — Los gates miden el artefacto correcto
 
 Cierre de la auditoría del 2026-08-21, en lo que se puede cerrar sin decidir por

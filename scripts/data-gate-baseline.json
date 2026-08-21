@@ -6,8 +6,9 @@
   "tipo-booleano": 0,
   "cap-1000": 2,
   "sin-paginar": 6,
-  "in-columna-repetida": 5,
-  "error-ignorado": 55,
-  "escritura-a-ciegas": 62,
-  "tipo-sin-rotulo": 0
+  "in-columna-repetida": 4,
+  "error-ignorado": 40,
+  "escritura-a-ciegas": 35,
+  "tipo-sin-rotulo": 0,
+  "_2026_08_21_pago_traslado_y_devolucion": "error-ignorado 55→40 y escritura-a-ciegas 62→35: se pagaron los 42 sitios de trasladar-pedido-erp y devolver-pedido-erp, que eran los que importaban — las dos funciones que MUEVEN PRODUCTO en el sistema de origen. Entre mover y anotar no hay transacción, así que un error descartado ahí deja al sistema y al portal diciendo cosas distintas, y quien decide después (la tarjeta, el cron, la persona) lee el portal. Las escrituras van por `anotar()` de _shared/erp-traslado.ts (no lanza: una línea sin anotar no debe abortar las otras 400; deja rastro en el log, en los fallos de la respuesta y en el aviso de la fila). Las lecturas van por `leerBien()`, que separa «no se pudo preguntar» de una respuesta del negocio — antes un select fallado contestaba «no tenés permiso», «no hay quien contó la caja» o «ya se despachó»."
 }

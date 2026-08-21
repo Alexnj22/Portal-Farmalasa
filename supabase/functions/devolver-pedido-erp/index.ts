@@ -2,6 +2,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
+  // Con alias: más abajo hay una función local `anotar` que reparte cantidades
+  // entre lotes. Son dos cosas distintas y no pueden compartir nombre.
+  anotar as noCallar,
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
@@ -10,6 +13,7 @@ import {
   hoySV,
   identificarTrasladoNuevo,
   lectorDeRecepcion,
+  leerBien,
   nombreCorto,
   norm,
   pendientesDeOrigen,
@@ -138,17 +142,28 @@ Deno.serve(async (req) => {
     // ── El permiso es el del módulo Pedidos ───────────────────────────────
     // Se repite acá porque esta función usa la llave de servicio y el RLS no la
     // frena. Es el mismo que exige la recepción del pedido.
-    const { data: emp } = await admin
-      .from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
-      .eq("id", quien.id).maybeSingle();
+    // Si estas dos lecturas fallan, `emp` y `permisos` quedan vacíos y el camino
+    // de abajo contesta 403 «No tienes permiso de edición en Pedidos» a alguien
+    // que sí lo tiene. Un permiso denegado se lee como una decisión —pedirlo,
+    // avisar al jefe—, no como una falla que se reintenta: el mensaje equivocado
+    // manda a la persona por el camino equivocado.
+    const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; system_role: string | null; branch_id: number | null; first_names?: string; last_names?: string }>(
+      admin.from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
+        .eq("id", quien.id).maybeSingle(),
+      "tu ficha de empleado",
+    );
+    if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
     // El concepto es el único lugar del sistema donde aparece la persona real:
     // su columna «usuario» muestra siempre la cuenta del portal.
-    const yo = nombreCorto({ ...emp, name: quien.name });
+    const yo = nombreCorto({ ...(emp ?? {}), name: quien.name });
     const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
-    const { data: permisos } = await admin
-      .from("role_permissions").select("can_edit, scope")
-      .in("role_id", roles.length ? roles : [-1])
-      .eq("module_key", "pedidos");
+    const { dato: permisos, roto: rotoPerm } = await leerBien<{ can_edit: boolean; scope: string }[]>(
+      admin.from("role_permissions").select("can_edit, scope")
+        .in("role_id", roles.length ? roles : [-1])
+        .eq("module_key", "pedidos"),
+      "tus permisos de Pedidos",
+    );
+    if (rotoPerm) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoPerm }, 503);
     if (!(emp?.system_role === "SUPERADMIN" || (permisos ?? []).some((p) => p.can_edit)))
       return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
     const alcanceTodo = emp?.system_role === "SUPERADMIN"
@@ -220,7 +235,11 @@ Deno.serve(async (req) => {
     // no se deshace solo. Se marca para que alguien la mire con la clave en la
     // mano, que es lo que permite encontrarla en el sistema.
     const corte = new Date(Date.now() - CORTADA_MS).toISOString();
-    await admin.from("pedido_devolucion")
+    // Si esta marca no se escribe, las filas siguen en 'enviando'/'recibiendo' y
+    // nadie las vuelve a mirar: el producto que quizá se movió no aparece en
+    // ninguna lista y la devolución queda trabada para siempre.
+    await noCallar(
+      admin.from("pedido_devolucion")
       .update({
         estado: "error",
         detalle: { revisar_a_mano: true },
@@ -231,7 +250,9 @@ Deno.serve(async (req) => {
       })
       .in("id", devs.map((d) => d.id))
       .in("estado", ["enviando", "recibiendo"])
-      .lt("updated_at", corte);
+      .lt("updated_at", corte),
+      "las devoluciones que quedaron a medio mover en la corrida anterior",
+    );
 
     const hechas: Record<string, unknown>[] = [];
     const fallos: { clave: string; error: string }[] = [];
@@ -265,11 +286,19 @@ Deno.serve(async (req) => {
         // confirmando a la vez pasarían las dos la lectura de arriba; acá la
         // segunda no entra. Recibir dos veces duplicaría la existencia.
         if (!simulacro) {
-          const { data: tomada } = await admin.from("pedido_devolucion")
+          const { data: tomada, error: tomarErr } = await admin.from("pedido_devolucion")
             .update({ estado: "recibiendo", updated_at: new Date().toISOString() })
             .eq("id", d.id).eq("estado", "enviada")
             .select("id").maybeSingle();
-          if (!tomada) continue;
+          if (tomarErr) {
+            // Fallar cerrado está bien —el candado es lo que impide recibir dos
+            // veces— pero «no la pude tomar» y «se la llevó otro» no pueden salir
+            // por la misma puerta muda.
+            console.error(`[devolver] no se pudo tomar ${d.clave}: ${tomarErr.message}`);
+            fallos.push({ clave: d.clave, error: `No se pudo tomar la devolución: ${tomarErr.message}` });
+            continue;
+          }
+          if (!tomada) continue;   // otra persona se la llevó
         }
 
         // ── Se le pregunta al listado ANTES de cargar ────────────────────────
@@ -285,12 +314,16 @@ Deno.serve(async (req) => {
 
         if (antesDeRecibir === "anulado") {
           if (!simulacro) {
-            await admin.from("pedido_devolucion").update({
-              estado: "error",
-              error_msg: `El movimiento ${d.id_traslado} está anulado en el sistema: el producto no entró `
-                + `a Bodega. Hay que volver a sacarlo de la sala.`,
-              updated_at: new Date().toISOString(),
-            }).eq("id", d.id);
+            await noCallar(
+              admin.from("pedido_devolucion").update({
+                estado: "error",
+                error_msg: `El movimiento ${d.id_traslado} está anulado en el sistema: el producto no entró `
+                  + `a Bodega. Hay que volver a sacarlo de la sala.`,
+                updated_at: new Date().toISOString(),
+              }).eq("id", d.id),
+              `que ${d.clave} está anulado en el sistema`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
           }
           fallos.push({ clave: d.clave, error: "El movimiento está anulado en el sistema." });
           continue;
@@ -298,12 +331,20 @@ Deno.serve(async (req) => {
 
         if (antesDeRecibir === "recibido") {
           if (!simulacro) {
-            await admin.from("pedido_devolucion").update({
-              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
-              updated_at: new Date().toISOString(),
-            }).eq("id", d.id);
-            await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
+            await noCallar(
+              admin.from("pedido_devolucion").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
+                updated_at: new Date().toISOString(),
+              }).eq("id", d.id),
+              `que ${d.clave} ya estaba recibido en Bodega`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
+            await noCallar(
+              admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
+              `el cierre del renglón de ${d.clave}`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
           }
           hechas.push({ clave: d.clave, ya_estaba: true });
           continue;
@@ -320,12 +361,20 @@ Deno.serve(async (req) => {
           // no lo daba por recibido, pero tampoco hay nada que enviar. Se anota
           // para que la devolución no quede colgada esperándolo.
           if (!simulacro) {
-            await admin.from("pedido_devolucion").update({
-              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
-              updated_at: new Date().toISOString(),
-            }).eq("id", d.id);
-            await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
+            await noCallar(
+              admin.from("pedido_devolucion").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
+                updated_at: new Date().toISOString(),
+              }).eq("id", d.id),
+              `que ${d.clave} no mostraba líneas que recibir`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
+            await noCallar(
+              admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
+              `el cierre del renglón de ${d.clave}`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
           }
           hechas.push({ clave: d.clave, ya_estaba: true });
           continue;
@@ -354,8 +403,14 @@ Deno.serve(async (req) => {
 
         if (partes.length === 0) {
           if (!simulacro) {
-            await admin.from("pedido_devolucion")
-              .update({ estado: "enviada", updated_at: new Date().toISOString() }).eq("id", d.id);
+            // Devolverla a 'enviada' es lo que permite reintentarla. Si falla, se
+            // queda en 'recibiendo' y nadie la vuelve a tomar hasta el rescate.
+            await noCallar(
+              admin.from("pedido_devolucion")
+                .update({ estado: "enviada", updated_at: new Date().toISOString() }).eq("id", d.id),
+              `la devuelta a la cola de ${d.clave}`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
           }
           fallos.push({ clave: d.clave, error: "No se pudo leer ni una línea del movimiento." });
           continue;
@@ -384,31 +439,52 @@ Deno.serve(async (req) => {
           // 'enviada' sin preguntar deja la fila lista para un reintento sobre
           // producto ya cargado — la otra mitad del hueco.
           if (await estadoDeRecepcion(cookie, String(d.id_traslado)) === "recibido") {
-            await admin.from("pedido_devolucion").update({
-              estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-              aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
-              updated_at: new Date().toISOString(),
-            }).eq("id", d.id);
-            await admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id });
+            // El producto YA entró a Bodega y esta fila es la única prueba.
+            await noCallar(
+              admin.from("pedido_devolucion").update({
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+                updated_at: new Date().toISOString(),
+              }).eq("id", d.id),
+              `que ${d.clave} entró a Bodega pese al fallo del sistema`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
+            await noCallar(
+              admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
+              `el cierre del renglón de ${d.clave}`,
+              (m) => fallos.push({ clave: d.clave, error: m }),
+            );
             hechas.push({ clave: d.clave, ya_estaba: true });
             continue;
           }
           // Vuelve a 'enviada': el movimiento sigue vivo y se puede reintentar.
-          await admin.from("pedido_devolucion")
-            .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la entrada.",
-                      updated_at: new Date().toISOString() })
-            .eq("id", d.id);
+          await noCallar(
+            admin.from("pedido_devolucion")
+              .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la entrada.",
+                        updated_at: new Date().toISOString() })
+              .eq("id", d.id),
+            `la devuelta a la cola de ${d.clave} tras el fallo del sistema`,
+            (m) => fallos.push({ clave: d.clave, error: m }),
+          );
           fallos.push({ clave: d.clave, error: resp.msg || "sin detalle" });
           continue;
         }
 
-        await admin.from("pedido_devolucion").update({
-          estado: "recibida",
-          recibido_at: new Date().toISOString(),
-          recibido_por: quien.id,
-          error_msg: null,
-          updated_at: new Date().toISOString(),
-        }).eq("id", d.id);
+        // Camino de éxito: el producto está adentro de Bodega. Sin esta
+        // anotación la fila sigue 'recibiendo', ninguna corrida la vuelve a
+        // tomar hasta el rescate, y la devolución figura como en tránsito sobre
+        // existencia que ya entró.
+        await noCallar(
+          admin.from("pedido_devolucion").update({
+            estado: "recibida",
+            recibido_at: new Date().toISOString(),
+            recibido_por: quien.id,
+            error_msg: null,
+            updated_at: new Date().toISOString(),
+          }).eq("id", d.id),
+          `la entrada de ${d.clave} a Bodega (el producto YA entró)`,
+          (m) => fallos.push({ clave: d.clave, error: m }),
+        );
 
         // El renglón del pedido se cierra recién ACÁ: cuando el producto entró
         // del otro lado, no cuando la sala lo pidió ni cuando Bodega aceptó.
@@ -417,10 +493,14 @@ Deno.serve(async (req) => {
         if (cerrarErr) {
           // El producto YA entró: esto no se puede deshacer ni callar. Queda el
           // aviso en la fila para que se vea que el renglón no cerró solo.
-          await admin.from("pedido_devolucion")
-            .update({ aviso: `Entró en Bodega, pero el renglón del pedido no cerró: ${cerrarErr.message}`,
-                      updated_at: new Date().toISOString() })
-            .eq("id", d.id);
+          await noCallar(
+            admin.from("pedido_devolucion")
+              .update({ aviso: `Entró en Bodega, pero el renglón del pedido no cerró: ${cerrarErr.message}`,
+                        updated_at: new Date().toISOString() })
+              .eq("id", d.id),
+            `el aviso de que el renglón de ${d.clave} no cerró`,
+            (m) => fallos.push({ clave: d.clave, error: m }),
+          );
         }
 
         hechas.push({ clave: d.clave, lineas: partes.length, msg: resp.msg });
@@ -548,22 +628,34 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // `fallar` es lo único que le cuenta a alguien por qué una devolución no
+        // salió. Si su propia escritura falla, la fila queda en 'enviando' y
+        // desaparece de toda pantalla — el fallo del fallo es el que no puede
+        // ser mudo.
         const fallar = async (msg: string) => {
           fallos.push({ clave: d.clave, error: msg });
           if (!simulacro) {
-            await admin.from("pedido_devolucion")
-              .update({ estado: "error", error_msg: msg, updated_at: new Date().toISOString() })
-              .eq("id", d.id);
+            await noCallar(
+              admin.from("pedido_devolucion")
+                .update({ estado: "error", error_msg: msg, updated_at: new Date().toISOString() })
+                .eq("id", d.id),
+              `por qué no salió ${d.clave} («${msg}»)`,
+            );
           }
         };
 
         // Se toma la fila ANTES de tocar el sistema: si esto no escribe, nadie
         // más la agarra, y si el worker muere después queda la marca.
         if (!simulacro) {
-          const { data: tomada } = await admin.from("pedido_devolucion")
+          const { data: tomada, error: tomarEnvErr } = await admin.from("pedido_devolucion")
             .update({ estado: "enviando", error_msg: null, detalle: null, updated_at: new Date().toISOString() })
             .eq("id", d.id).eq("estado", d.estado)
             .select("id").maybeSingle();
+          if (tomarEnvErr) {
+            console.error(`[devolver] no se pudo tomar ${d.clave}: ${tomarEnvErr.message}`);
+            fallos.push({ clave: d.clave, error: `No se pudo tomar la devolución: ${tomarEnvErr.message}` });
+            continue;
+          }
           if (!tomada) continue;   // otra persona se la llevó
         }
 
@@ -753,7 +845,12 @@ Deno.serve(async (req) => {
           conocidos = despues;
         }
 
-        await admin.from("pedido_devolucion").update({
+        // El producto YA SALIÓ de la sala. Esta fila es la única prueba de que
+        // salió y del número con el que Bodega puede recibirlo: si no se
+        // escribe, el movimiento existe en el sistema y no existe para el
+        // portal — nadie sabe que hay que ir a buscarlo.
+        await noCallar(
+          admin.from("pedido_devolucion").update({
           estado: "enviada",
           id_traslado: idTraslado,
           numero_vale: vale,
@@ -777,7 +874,10 @@ Deno.serve(async (req) => {
             : `Entró, pero no se pudo distinguir cuál es entre ${candidatos.length} candidatos `
               + `(${candidatos.join(", ") || "ninguno"}). Buscar «${d.clave}» en el concepto.`,
           updated_at: new Date().toISOString(),
-        }).eq("id", d.id);
+          }).eq("id", d.id),
+          `la salida de ${d.clave} de la sala (el producto YA salió, movimiento ${idTraslado ?? "sin identificar"})`,
+          (m) => fallos.push({ clave: d.clave, error: m }),
+        );
 
         hechas.push({
           clave: d.clave, producto: it.nombre, cantidad: d.cantidad,

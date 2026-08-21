@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.7 — Sin motivo elegido, el formulario no pide nada
+
+Reportado el 2026-08-21: «si no se ha puesto el motivo, que no ponga los inputs,
+ya que no tiene sentido».
+
+Al abrir «Sacar dinero de una bolsa» aparecían **Cuánto** y **Detalle**, con el
+botón frenado en «Falta el motivo». Un campo de monto sobre una decisión que
+nadie tomó pide un número para una salida que todavía no se sabe qué es — y el
+motivo cambia qué se pide, cuánto se puede sacar y de qué bolsa.
+
+Lo llamativo es que la regla ya estaba escrita en el propio archivo: *«sin motivo
+elegido no se pinta ninguno»*. Valía para la remesadora, el número de boleta y la
+foto, que cuelgan del catálogo; el monto y el detalle estaban puestos a mano
+arriba y abajo del bloque, así que quedaron fuera sin que nada lo notara. Una
+regla que sólo alcanza a los campos que nacieron con ella no es una regla.
+
+Ahora, mientras no hay motivo, el diálogo muestra el selector a lo ancho y nada
+más. En cuanto se elige, aparece lo que ese motivo pide.
+
 ## v2.703.6 — En una remesa, la foto va primero y trae los datos
 
 Reportado el 2026-08-21 mirando el formulario: «¿por qué sigue pidiendo la

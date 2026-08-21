@@ -746,8 +746,19 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             derecha depende de él. Cuando la foto manda, el
                             monto todavía no se conoce —lo trae la boleta—, así
                             que al lado va la remesadora, que es el único dato
-                            que el papel no dice. */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            que el papel no dice.
+
+                            Y mientras NO hay motivo, va solo y a lo ancho.
+                            Reportado el 2026-08-21: «si no se ha puesto el
+                            motivo, que no ponga los inputs, ya que no tiene
+                            sentido». Tenía razón —el propio comentario de abajo
+                            dice «sin motivo elegido no se pinta ninguno» y el
+                            monto y el detalle se habían quedado fuera de esa
+                            regla—: un «Cuánto» sobre una decisión que nadie
+                            tomó pide un número para una salida que todavía no
+                            se sabe qué es, y el motivo puede cambiar cuánto se
+                            puede sacar y de qué bolsa. */}
+                        <div className={t ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
                             <div>
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
                                     Motivo
@@ -758,10 +769,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                     placeholder="Elegir…" ariaLabel="Motivo de la salida"
                                 />
                             </div>
-                            {laFotoManda ? campoEntidad : campoMonto}
+                            {t && (laFotoManda ? campoEntidad : campoMonto)}
                         </div>
 
-                        {!laFotoManda && saleDe}
+                        {/* `t &&` no es de más: sin motivo `laFotoManda` es
+                            false, así que sin esto el bloque quedaba dependiendo
+                            de que `eleccion` esté vacía en vez de decir la
+                            regla. */}
+                        {!!t && !laFotoManda && saleDe}
 
                         {/* ── De acá abajo, todo lo pide el MOTIVO ─────────────
                             Sin motivo elegido no se pinta ninguno: la remesadora es
@@ -906,11 +921,16 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             </Suspense>
                         )}
 
-                        <PortalTextarea
-                            label="Detalle (opcional)" name="nota" rows={2}
-                            value={nota} onChange={(e) => setNota(e.target.value)}
-                            placeholder="Cualquier cosa que ayude a entenderlo después"
-                        />
+                        {/* El detalle también espera al motivo: es una nota
+                            SOBRE la salida, y sin motivo todavía no hay salida
+                            de la que anotar nada. */}
+                        {!!t && (
+                            <PortalTextarea
+                                label="Detalle (opcional)" name="nota" rows={2}
+                                value={nota} onChange={(e) => setNota(e.target.value)}
+                                placeholder="Cualquier cosa que ayude a entenderlo después"
+                            />
+                        )}
                     </>
                 )}
 

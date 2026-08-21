@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
 import { Check, X, FileText, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -9,8 +9,6 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../../constants/tipoIconos';
 import { useAuth } from '../../context/AuthContext';
-import { DecisionTraslado } from '../traslados/FilasTraslado';
-import DetalleSolicitud from './DetalleSolicitud';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
@@ -32,6 +30,26 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 // Es exactamente el mismo error que ya se corrigió un nivel más abajo con
 // `DetalleSolicitud`: dos copias del mismo componente se separan en cuanto
 // alguien mejora una, y la que no se mejora es la que menos gente mira.
+
+/* Los dos pesos del modal, diferidos — y esto NO es maquillaje del gate.
+ *
+ * Las dos cosas se dibujan ÚNICAMENTE dentro de `ModalSolicitud`, o sea sólo
+ * cuando alguien abre una solicitud. Quien entra a la bandeja a mirar la cola
+ * —que es la mayoría de las visitas— no las necesita nunca, y las estaba
+ * bajando igual: `DetalleSolicitud` 7.8 kB gzip y `FilasTraslado` 6.1, entre
+ * las dos casi un cuarto del peso de entrar a la vista (61 kB contra un techo
+ * de 58, medido el 2026-08-21 con `npm run gate:bundle`).
+ *
+ * `NotificacionDetalle` ya cargaba `DetalleSolicitud` así desde antes: acá se
+ * copia esa decisión en vez de dejar dos formas de importar el mismo archivo —
+ * que además es lo que hace que las dos compartan un solo trozo.
+ *
+ * El `Suspense` va con `fallback={null}` a propósito: el modal ya tiene marco,
+ * título y pie pintados, así que lo único que falta un instante es su cuerpo.
+ * Un esqueleto ahí parpadearía más de lo que informa. */
+const DetalleSolicitud = lazy(() => import('./DetalleSolicitud'));
+const DecisionTraslado = lazy(() =>
+    import('../traslados/FilasTraslado').then(m => ({ default: m.DecisionTraslado })));
 
 const TYPE_ICONS = ICONO_POR_TIPO;
 
@@ -453,11 +471,13 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                 </>}
             >
                 <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto pr-1">
-                    <DetalleSolicitud req={req} employeesById={employeesById}
-                        seleccion={porLinea ? seleccion : undefined}
-                        onToggle={porLinea ? alternar : undefined}
-                        onCantidad={editable ? fijarCantidad : undefined}
-                        cantidades={editable ? cantidades : undefined} />
+                    <Suspense fallback={null}>
+                        <DetalleSolicitud req={req} employeesById={employeesById}
+                            seleccion={porLinea ? seleccion : undefined}
+                            onToggle={porLinea ? alternar : undefined}
+                            onCantidad={editable ? fijarCantidad : undefined}
+                            cantidades={editable ? cantidades : undefined} />
+                    </Suspense>
 
                     {editable && (
                         <div>
@@ -487,8 +507,10 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                         la base valida. No se copió — se importa. */}
                     {decidibleTraslado && (
                         <div className="pt-1">
-                            <DecisionTraslado fila={req}
-                                onHecho={(estado) => { onResuelto?.(estado); onCerrar(); }} />
+                            <Suspense fallback={null}>
+                                <DecisionTraslado fila={req}
+                                    onHecho={(estado) => { onResuelto?.(estado); onCerrar(); }} />
+                            </Suspense>
                         </div>
                     )}
 

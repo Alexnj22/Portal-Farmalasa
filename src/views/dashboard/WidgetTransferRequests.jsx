@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
@@ -6,7 +6,6 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { useNowTick } from '../../hooks/useNowTick';
-import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
 import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
 import {
     fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
@@ -128,10 +127,12 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                             ? 'Te piden de tu sala'
                             : 'Te piden'}
                     </p>
-                    {porConfirmar.map(f => (
-                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
-                            miBranch={miBranch} />
-                    ))}
+                    <Suspense fallback={null}>
+                        {porConfirmar.map(f => (
+                            <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
+                                miBranch={miBranch} />
+                        ))}
+                    </Suspense>
                 </div>
             )}
 
@@ -147,14 +148,35 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                             ? 'En camino a tu sala'
                             : 'En camino'}
                     </p>
-                    {porRecibir.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
-                    ))}
+                    <Suspense fallback={null}>
+                        {porRecibir.map(f => (
+                            <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
+                        ))}
+                    </Suspense>
                 </div>
             )}
         </div>
     );
 }
+
+/* Las filas del traslado, diferidas — y es un ahorro de verdad, no del gate.
+ *
+ * Se dibujan sólo cuando la consulta VOLVIÓ con algo: mientras no hay nada
+ * pendiente —que es como está el tablero la mayor parte del tiempo— esta
+ * baldosa muestra un `EmptyState` y nunca las toca. Estaban en el cierre
+ * estático del Inicio igual: 6.1 kB gzip que bajaba todo el mundo en cada
+ * entrada, para un caso que además llega DESPUÉS de una consulta.
+ *
+ * El `Suspense` envuelve la lista entera y no cada fila: son hermanas del mismo
+ * trozo, así que una sola frontera alcanza.
+ *
+ * `fallback={null}`: el encabezado de la sección ya está pintado y las filas
+ * llegan un instante después. Un esqueleto acá aparecería justo cuando el
+ * esqueleto de la carga se acaba de ir — dos parpadeos para lo mismo. */
+const FilaPorConfirmar = lazy(() =>
+    import('../traslados/FilasTraslado').then(m => ({ default: m.FilaPorConfirmar })));
+const FilaPorRecibir = lazy(() =>
+    import('../traslados/FilasTraslado').then(m => ({ default: m.FilaPorRecibir })));
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 //

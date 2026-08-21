@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.8 — Entrar a Solicitudes y al Inicio pesa menos: lo que sólo se ve al hacer clic se baja al hacer clic
+
+`npm run gate:bundle` estaba en rojo: el Inicio pesaba 105 kB gzip contra un
+techo de 99 y Solicitudes 61 contra 58. El del Inicio no era nuevo —ya medía 104
+en v2.701.0— y los 2 kB de más en Solicitudes los había puesto el filtro de
+semana de v2.702.0.
+
+Se bajó peso de verdad; **no se subió ningún techo**. La regeneración del
+baseline apretó 16 y no aflojó ninguno, y el del Inicio quedó donde estaba.
+
+**Solicitudes: 61 → 43 kB.** El detalle de la solicitud (7.8 kB) y las filas de
+traslado (6.1) se dibujan únicamente dentro del modal, o sea sólo cuando alguien
+ABRE una solicitud — y los bajaba también quien entra nada más a mirar la cola,
+que es la mayoría de las visitas. Ahora se cargan al abrir. La campana ya
+cargaba el detalle así desde antes, así que además dejaron de existir dos formas
+de importar el mismo archivo: comparten un solo trozo, y por eso el paquete de
+la tarjeta bajó de 43 kB a 19.
+
+**Inicio: 105 → 98 kB.** Las filas de la baldosa de traslados se dibujan sólo
+cuando la consulta volvió con algo pendiente; la mayor parte del tiempo esa
+baldosa dice «Sin traslados pendientes» y nunca las toca. Eran 6.1 kB que bajaba
+todo el mundo en cada entrada, para un caso que además llega después de una
+consulta.
+
+En los dos sitios el aviso de carga es `null` a propósito: el marco ya está
+pintado —el modal con su título y su pie, la baldosa con su encabezado— y lo
+único que falta un instante es el cuerpo. Un esqueleto ahí parpadea más de lo
+que informa.
+
+**El margen del Inicio queda en 1 kB, y es deliberado.** Lo que sigue pesando
+ahí es el propio `DashboardView` (37.9 kB, más de 4,000 líneas), el buscador de
+inventario (9.6) y el ranking de vendedores (4.5). El primero pide partirse, el
+segundo puede separar el cuerpo de su modal del azulejo, y el tercero se pinta
+de una: diferirlo sería maquillar el gate, no aliviar al usuario. Con 1 kB de
+margen, el próximo crecimiento del Inicio vuelve a la mesa en vez de colarse —
+que es exactamente para lo que sirve el ratchet.
+
 ## v2.703.7 — Sin motivo elegido, el formulario no pide nada
 
 Reportado el 2026-08-21: «si no se ha puesto el motivo, que no ponga los inputs,

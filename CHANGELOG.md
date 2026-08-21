@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.2 — Los gates miden el artefacto correcto
+
+Cierre de la auditoría del 2026-08-21, en lo que se puede cerrar sin decidir por
+otro.
+
+**`gate:bundle` medía el `dist/` de otra sesión.** Era el único gate que no
+respetaba `OUT_DIR`: el CLAUDE.md manda compilar con
+`OUT_DIR=dist-<nombre> npm run build` para no pisar el `dist/` ajeno, pero este
+archivo tenía `dist` escrito a mano. La variable se aceptaba en el build y se
+ignoraba en la medición. Pasó hoy mismo: se compiló a `dist-audit`, se corrió el
+gate, y midió un `dist/` de otra sesión de 34 minutos antes — con dos vistas por
+encima de su techo que no tenían nada que ver con lo que se estaba midiendo.
+
+Un gate que mide el artefacto equivocado es peor que uno que no mide: **el que
+no mide se nota**.
+
+**Siete rutas corrían sin techo propio.** BitacorasView (66 kB), CargarCompraView
+(45), CuentasPorPagarView (42), CarnesDelDiaView (32), ticketPrint (7),
+bolsaComprobante (2) y entregarCarneDePapel (2) son posteriores al baseline y
+caían en el genérico de 250 kB — o sea, sin vigilancia real. Ya tienen el suyo,
+con la misma fórmula de holgura que usa `--update-baseline`.
+
+Se agregaron a mano y no regenerando el archivo, a propósito: la regeneración
+completa APRIETA de paso los techos de las otras 93 vistas contra una medición
+de esta sesión, y con varias sesiones sobre el mismo árbol eso le mueve el piso
+a trabajo ajeno que nadie revisó acá.
+
+**Quedan dos en rojo y no se tocaron**: DashboardView (101 contra 99) y
+RequestsView (59 contra 58). No son de esta sesión, y absorberlas subiéndoles el
+techo sería exactamente lo que el ratchet existe para impedir. Hay que
+decidirlas, no anotarlas.
+
+**`PedirTrasladoModal` no lleva borrador, y esa es la decisión correcta.**
+`gate:borradores` lo marcaba por tener 7 controles de captura, pero lo que se
+arma ahí no vive en el formulario: los renglones están en el store
+`useComposicionTraslado`, justamente para que cerrar el modal —que es lo que hay
+que hacer para volver a la consulta y elegir el siguiente producto— no los
+borre. Y que ese store no sobreviva a una recarga está argumentado en su propio
+encabezado: *«una solicitud a medias que reaparece dos días después es peor que
+una que se perdió — quien la ve no sabe si la armó él, ni si la existencia que
+vio sigue estando»*.
+
+Un borrador acá **contradiría** esa decisión: devolvería a la pantalla una
+solicitud armada contra existencias que ya no son las de hoy, y el traslado
+saldría contra un stock que no está. Va a `EXCEPCIONES` con el motivo escrito.
+
 ## v2.698.1 — Buscar en Ventas deja de mentir el total
 
 Segunda tanda de la auditoría del 2026-08-21. Tres migraciones, probadas antes

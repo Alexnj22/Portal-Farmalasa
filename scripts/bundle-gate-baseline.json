@@ -6,7 +6,8 @@
     "ProveedoresView": "Subido a mano el 2026-08-15, de 44 a 46 (medía 45). La vista NO creció: cambió el empaquetado. `git bisect` sobre las 309 revisiones desde que se fijó el techo señala v2.604.0 —«la campana decide en el sitio»—, y el desglose antes/después de ESE commit dice exactamente qué pasó: `HojaMovil` dejó de ir inlineada dentro del trozo de `ConfirmModal` y pasó a trozo propio, porque la campana empezó a usarla. Los mismos bytes en dos trozos en vez de uno cuestan la cabecera de gzip del segundo, y con el redondeo a kB eso son los 44 → 45. No hay nada que recortar: de los 45 kB, 9 son la vista y 36 el kit canónico que de verdad dibuja (LiquidSelect 6, GlassViewLayout 6, FilterBar 6, DataTable 4). Ni una librería pesada ni un modal que se pueda diferir. Se deja en 46 y no en 45 para que el próximo reparto de trozos —que no es una regresión de nadie— no vuelva a rebotar el gate; un salto de escalón real sigue saltando.",
     "PedidosView": "BAJADO a mano el 2026-08-19, de 151 a 29: las cinco pestañas pasaron a `lazy()` y el cierre estático de la vista quedó en 19 kB (era 154). Antes, entrar a Pedidos bajaba las cinco con RecepcionModal (1,959 líneas), CrearRutaModal (812), RutaMapModal (565) y FinalizarCajasModal (516) adentro, para mirar una. Medido: caer en Generar cuesta 41 kB (19 el cascarón + 22 la pestaña) contra 154. El techo se aprieta a propósito en vez de dejarlo en 151 —mismo criterio que DashboardView—: con el viejo, volver a importar una pestaña de forma estática pasaba raspando; con 29 salta enseguida. Lo que NO bajó es TabPedidos, que sola pesa 123 kB (59.9 su propio trozo + 16.3 avisoSalidaPedido) — el gate no la ve porque llega por `import()`, y es el próximo corte.",
     "RequestsView": "Subido a mano el 2026-08-19, de 56 a 58 (medía 57). No hay librería pesada: los 57 kB son el kit canónico (LiquidSelect 6.1, GlassViewLayout 6.0, FilterBar 5.7) más las partes de la propia vista. El techo se generó el 2026-07-30 y desde entonces la vista creció por hacer más cosas, no por una regresión: `solicitudes/DetalleSolicitud.jsx` (849 líneas) y `solicitudes/TarjetaSolicitud.jsx` (527) NO existían ese día — son 48 commits de traslados, personas y operativas. Diferir DetalleSolicitud exigiría reestructurar TarjetaSolicitud, que también la usa NotificacionDetalle. Se deja en 58 y no en 57 para que un reparto de trozos no vuelva a rebotar el gate.",
-    "PermissionsView": "Subido a mano el 2026-08-19, de 47 a 49 (medía 48). No hay librería pesada: 10.6 kB son la vista, 7.8 el catálogo `permissionModules` y el resto el kit canónico. Y el catálogo es justo lo que creció: **197 → 543 líneas** desde que se fijó el techo el 2026-07-30, en 52 commits, porque el portal ganó módulos (Bitácoras, Cargar compra, Cuentas por pagar). No hay nada que diferir — ese catálogo ES lo que la pantalla dibuja. Se deja en 49 y no en 48 por el mismo margen de reparto."
+    "PermissionsView": "Subido a mano el 2026-08-19, de 47 a 49 (medía 48). No hay librería pesada: 10.6 kB son la vista, 7.8 el catálogo `permissionModules` y el resto el kit canónico. Y el catálogo es justo lo que creció: **197 → 543 líneas** desde que se fijó el techo el 2026-07-30, en 52 commits, porque el portal ganó módulos (Bitácoras, Cargar compra, Cuentas por pagar). No hay nada que diferir — ese catálogo ES lo que la pantalla dibuja. Se deja en 49 y no en 48 por el mismo margen de reparto.",
+    "__vistas_nuevas_2026_08_21": "Primer techo para siete rutas posteriores al baseline, que hasta hoy corrían con el genérico de 250 kB — o sea, sin vigilancia real. Medidas el 2026-08-21 contra un build propio (OUT_DIR=dist-audit) del commit ab594584, con la MISMA fórmula de holgura que usa --update-baseline: max(n+10, ceil(n*1.15)). BitacorasView 66→76 · CargarCompraView 45→55 · CuentasPorPagarView 42→52 · CarnesDelDiaView 32→42 · ticketPrint 7→17 · bolsaComprobante 2→12 · entregarCarneDePapel 2→12. Se agregaron A MANO y no con --update-baseline a propósito: la regeneración completa APRIETA de paso los techos de las otras 93 vistas contra una medición de esta sesión, y con varias sesiones sobre el mismo árbol eso le mueve el piso a trabajo ajeno que nadie revisó acá. NOTA de la misma fecha: DashboardView (101 contra 99) y RequestsView (59 contra 58) quedaron POR ENCIMA de su techo y NO se tocaron. No son de esta sesión y absorberlas sería exactamente lo que el ratchet existe para impedir: hay que decidirlas, no anotarlas."
   },
   "entry": 301,
   "vistas": {
@@ -102,6 +103,13 @@
     "FormProveedorDetail": 26,
     "FormClienteDetail": 33,
     "FormNewPayrollPeriod": 15,
-    "FormEditPayrollEntry": 16
+    "FormEditPayrollEntry": 16,
+    "BitacorasView": 76,
+    "CargarCompraView": 55,
+    "CarnesDelDiaView": 42,
+    "CuentasPorPagarView": 52,
+    "bolsaComprobante": 12,
+    "entregarCarneDePapel": 12,
+    "ticketPrint": 17
   }
 }

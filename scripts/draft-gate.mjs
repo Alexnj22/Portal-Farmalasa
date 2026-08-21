@@ -73,6 +73,24 @@ const EXCEPCIONES = {
     'Guarda renglón por renglón con `guardar_conteo_item` apenas se cuenta cada ' +
     'producto. Lo que hay en pantalla en cualquier momento es un solo renglón; ' +
     'el conteo entero ya está en la base. Verificado el 2026-08-17.',
+
+  'src/views/dashboard/PedirTrasladoModal.jsx':
+    'Lo que se arma NO vive en este formulario: los renglones están en el store ' +
+    '`useComposicionTraslado`, justamente para que cerrar el modal —que es lo que ' +
+    'hay que hacer para volver a la consulta y elegir el producto siguiente— no ' +
+    'los borre. Lo que queda adentro del formulario es el alta de UN renglón: ' +
+    'estante de origen, presentación y cantidad, los tres elegidos en la consulta ' +
+    'de la que uno viene, más el motivo. ' +
+    'Y que ese store no sobreviva a una recarga es una DECISIÓN escrita, no un ' +
+    'descuido: está argumentada en el encabezado de `src/store/composicionTraslado.js` ' +
+    '(«una solicitud a medias que reaparece dos días después es peor que una que se ' +
+    'perdió — quien la ve no sabe si la armó él, ni si la existencia que vio sigue ' +
+    'estando»). Un borrador acá contradiría esa decisión: devolvería a la pantalla ' +
+    'una solicitud armada contra existencias que ya no son las de hoy, y el traslado ' +
+    'saldría contra un stock que no está. ' +
+    'Si algún día se decide que sí debe sobrevivir, el lugar es el store —con fecha ' +
+    'de vencimiento y revalidación de existencia—, no `saveDraft` sobre este modal. ' +
+    'Revisado el 2026-08-21.',
 };
 
 const esJsx = (n) => n.endsWith('.jsx');

@@ -27,14 +27,34 @@ import { join, basename, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = join(RAIZ, 'dist');
+
+/* Respeta OUT_DIR, igual que `npm run build`.
+ *
+ * Era el ÚNICO gate que no lo hacía, y el hueco no era cosmético. El CLAUDE.md
+ * manda compilar con `OUT_DIR=dist-<nombre> npm run build` para no pisar el
+ * `dist/` de otra sesión — pero este archivo tenía `dist` escrito a mano, así
+ * que la variable se aceptaba en el build y se ignoraba en la medición. El
+ * resultado era el peor de los dos mundos: el gate daba un número, con aire de
+ * medición propia, sacado del `dist/` que hubiera dejado CUALQUIER otra sesión,
+ * de cualquier commit.
+ *
+ * Pasó el 2026-08-21: una auditoría corrió `OUT_DIR=dist-audit npm run build` y
+ * después `gate:bundle`, y midió un `dist/` ajeno de 34 minutos antes. Dos
+ * vistas figuraban por encima de su techo y ninguna de las dos tenía que ver
+ * con el trabajo que se estaba midiendo.
+ *
+ * Un gate que mide el artefacto equivocado es peor que uno que no mide: el que
+ * no mide se nota. */
+const OUT = process.env.OUT_DIR || 'dist';
+const DIST = join(RAIZ, OUT);
 const ASSETS = join(DIST, 'assets');
 const BASELINE = join(RAIZ, 'scripts', 'bundle-gate-baseline.json');
 
 if (!existsSync(ASSETS)) {
-  console.error('✗ no hay dist/assets — correr `npm run build` primero.');
+  console.error(`✗ no hay ${OUT}/assets — correr \`${OUT === 'dist' ? 'npm run build' : `OUT_DIR=${OUT} npm run build`}\` primero.`);
   process.exit(2);
 }
+if (OUT !== 'dist') console.log(`\n  midiendo ${OUT}/ (OUT_DIR)`);
 
 /**
  * Librerías que NUNCA deben quedar en el cierre estático de una vista.

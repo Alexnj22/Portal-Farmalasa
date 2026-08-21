@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.9 — En una remesa, lo que trae la boleta se muestra; y el monto vacío ya no la traba
+
+Dos cosas de la misma pantalla, las dos reportadas el 2026-08-21 registrando una
+remesa real de $100.00 con la boleta 000318.
+
+**El cartel rojo imposible.** Decía *«La boleta dice $100.00 y la salida es de
+$100.00»* y frenaba el registro. Los dos números eran el mismo porque los dos
+salían de la misma foto — pero el veredicto no se había calculado contra ese
+número, sino contra **cero**: al elegir la foto, el formulario le manda al lector
+lo que se espera que diga el papel, y el monto todavía estaba vacío. `Number('')`
+en JavaScript **no es «nada», es 0**, así que el campo vacío pasó el filtro de
+«¿hay un número?» y viajó como un monto esperado de $0.00. El servidor comparó
+$100.00 contra $0.00, dijo que no coincidían —y eso bloquea, porque una boleta
+que no cuadra no se registra— y un instante después la misma lectura escribió los
+$100.00 en el campo. De ahí la frase que se contradice sola.
+
+O sea que **toda remesa que se leyera bien quedaba trabada**, y era imposible
+deducir por qué mirando la pantalla: lo que el aviso comparaba ya no existía. Hoy
+el campo vacío es `NaN` —«no hay monto escrito» no es «hay un monto y vale
+cero»— y no viaja: sin nada contra qué comparar, el lector no inventa un
+desacuerdo.
+
+**Lo que trajo la boleta ya no se pide otra vez.** El monto y el número que la
+foto leyó aparecían en casillas de escritura, con el dato adentro. Pedido del
+usuario: *«¿no debería quedar como informativo nada más?»*. Ahora se muestran
+como dato —la misma tarjeta que «Sale de»—, así que la pantalla distingue de un
+vistazo lo que hay que decidir de lo que el papel ya dijo, y no se puede pisar
+sin querer el monto de una salida de dinero.
+
+Cada dato lleva **Corregir** a un clic: vuelve a ser casilla. Es la mitad que no
+se puede perder — quien confirma la salida es una persona, y una lectura
+equivocada que no se pudiera tocar sería un vale equivocado que nadie pudo
+frenar. Lo que la boleta **no** dejó leer sigue viniendo en casilla vacía, como
+antes.
+
 ## v2.703.8 — Entrar a Solicitudes y al Inicio pesa menos: lo que sólo se ve al hacer clic se baja al hacer clic
 
 `npm run gate:bundle` estaba en rojo: el Inicio pesaba 105 kB gzip contra un

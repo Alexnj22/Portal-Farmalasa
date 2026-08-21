@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, ScanLine } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, Pencil, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
 import IdentidadDeQuienRetira from './IdentidadDeQuienRetira';
@@ -147,6 +147,19 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * pantalla —nadie confía en un campo que se llenó solo si no sabe de dónde
      * salió— y para no volver a pisarlos si se elige otra foto. */
     const [deLaFoto, setDeLaFoto] = useState([]);
+    /* Cuáles de esos campos se están corrigiendo a mano en este momento.
+     *
+     * Lo que la boleta ya dijo se MUESTRA como dato, no se vuelve a pedir en una
+     * casilla — pedido del usuario el 2026-08-21: «lo pone como input, ¿no
+     * debería quedar como informativo nada más?». Una casilla con el dato
+     * adentro le pide a la persona que revise algo que ya está decidido, y sobre
+     * todo se puede pisar sin querer: es el monto de una salida de dinero.
+     *
+     * Pero corregirlo tiene que ser posible en un clic: quien confirma la salida
+     * es una persona, y una lectura equivocada que no se pueda tocar convierte
+     * un error del lector en un vale equivocado que nadie pudo frenar. De ahí
+     * «Corregir» — el dato se abre en casilla y vuelve a ser lo que era. */
+    const [corrigiendo, setCorrigiendo] = useState([]);
     /* Con qué operación choca el número de boleta, si choca con alguna. */
     const [repetida, setRepetida] = useState([]);
     // 'FORMULARIO' → 'IDENTIDAD'. El segundo paso sólo existe para los motivos
@@ -188,7 +201,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     useEffect(() => {
         if (abierto) return;
         setTipo(''); setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
-        setDeLaFoto([]); setRepetida([]);
+        setDeLaFoto([]); setCorrigiendo([]); setRepetida([]);
         setPaso('FORMULARIO'); setPersona(null); setVale(null); setError(null);
     }, [abierto]);
 
@@ -225,6 +238,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             if (puestos.includes('el monto')) setMonto('');
             return [];
         });
+        setCorrigiendo([]);
     }, []);
 
     const lista = useMemo(() => disponibles(bolsas, saldos), [bolsas, saldos]);
@@ -262,7 +276,22 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * están mirando —todas las de este diálogo son de la misma sala— y no de la
      * elección, que todavía no existe cuando alguien está escribiendo. */
     const salaId = bolsas?.[0]?.branch_id ?? null;
-    const n = Number(String(monto).replace(',', '.'));
+    /* El campo VACÍO no es un monto — y hay que decirlo, porque `Number('')` es
+     * **0** y no `NaN`.
+     *
+     * Con la foto mandando, el campo está vacío justo cuando se elige la foto:
+     * ese 0 viajaba como «lo que se espera que diga la boleta», el servidor
+     * comparaba los $100.00 del papel contra 0 y devolvía MONTO_NO_COINCIDE —
+     * que FRENA el registro—. Y para cuando el aviso se pintaba, la misma
+     * lectura ya había escrito el 100 en el campo, así que el cartel rojo decía
+     * la frase imposible que reportó el usuario el 2026-08-21: «la boleta dice
+     * $100.00 y la salida es de $100.00». O sea que toda remesa que se leyera
+     * bien quedaba trabada, y el motivo no se podía deducir de lo que se veía.
+     *
+     * `NaN` es lo correcto acá y no un 0 de cortesía: «no hay monto escrito» no
+     * es «hay un monto y vale cero». `falta` ya exige `n > 0` y `elegirBolsas`
+     * recibe 0 cuando no es finito, así que el resto no cambia. */
+    const n = String(monto).trim() === '' ? NaN : Number(String(monto).trim().replace(',', '.'));
     const eleccion = useMemo(
         () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
         [lista, n],
@@ -280,9 +309,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
      */
     const alElegirFoto = useCallback(async (f) => {
-        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); return; }
+        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setCorrigiendo([]); return; }
         setLeyendo(true);
         setLectura(null);
+        // Una foto nueva vuelve a decidir qué campos trae ella: lo que se había
+        // abierto para corregir se cierra, y `deLaFoto` de abajo dirá cuáles son
+        // datos otra vez. Un campo escrito a mano no entra en `puestos` —no se
+        // pisa nunca—, así que sigue siendo casilla sin necesidad de recordarlo.
+        setCorrigiendo([]);
         const r = await leerBoleta(f, {
             entidad: entidad.trim() || null,
             numeroBoleta: boleta.trim() || null,
@@ -607,12 +641,40 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * las dos ramas es cómo terminan siendo dos campos que se parecen y se
      * comportan distinto. */
 
+    /* Un dato que trajo la boleta: se muestra, no se pide.
+     *
+     * Misma caja que «Sale de» —el otro bloque de la pantalla que informa en vez
+     * de preguntar— para que se lea de un vistazo cuál de los dos es: lo que hay
+     * que decidir tiene casilla, lo que el papel ya dijo tiene tarjeta. */
+    const datoDeLaBoleta = (etiqueta, valor, clave) => (
+        <div data-surface="card" className="p-3 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+                <span className="text-caption font-black uppercase tracking-widest text-content-3 block">
+                    {etiqueta}
+                </span>
+                <span className="text-body-lg font-bold tabular-nums text-content truncate block">
+                    {valor}
+                </span>
+            </div>
+            <Button variant="ghost" size="xs" icon={Pencil} className="shrink-0"
+                onClick={() => setCorrigiendo((c) => (c.includes(clave) ? c : [...c, clave]))}>
+                Corregir
+            </Button>
+        </div>
+    );
+
+    /* Qué campos los pone la foto y todavía nadie pidió corregir. La regla vale
+     * para TODO motivo con foto y no sólo para la remesa: si el dato salió del
+     * papel, salió del papel. */
+    const montoLoTrajoLaFoto = deLaFoto.includes('el monto') && !corrigiendo.includes('monto');
+    const boletaLoTrajoLaFoto = deLaFoto.includes('el número') && !corrigiendo.includes('boleta');
+
     /* `maskType="DECIMAL"` y no `type="number"`: el separador decimal del campo
      * nativo lo pone el idioma de CADA computadora, así que el mismo portal
      * aceptaba el punto en una caja y sólo la coma en la otra — y la tecla
      * rechazada no avisa, se pierde. En dinero eso es un monto equivocado. La
      * máscara acepta las dos y deja siempre punto. */
-    const campoMonto = (
+    const campoMonto = montoLoTrajoLaFoto ? datoDeLaBoleta('Cuánto', formatMoney(n), 'monto') : (
         <PortalInput
             label="Cuánto" name="monto" inputMode="decimal"
             maskType="DECIMAL" icon={HandCoins}
@@ -645,11 +707,16 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
 
     const campoBoleta = t?.pide_boleta && (
         <div className="space-y-2">
-            <PortalInput
-                label="Número de boleta" name="boleta"
-                value={boleta} onChange={(e) => setBoleta(e.target.value)}
-                placeholder={laFotoManda ? 'Lo trae la boleta' : 'El de la boleta del POS'}
-            />
+            {/* El aviso de abajo NO se mueve con el campo: la boleta repetida
+                frena el registro, y esconderlo al mostrar el número como dato
+                dejaría sin explicación un botón trabado. */}
+            {boletaLoTrajoLaFoto ? datoDeLaBoleta('Número de boleta', boleta, 'boleta') : (
+                <PortalInput
+                    label="Número de boleta" name="boleta"
+                    value={boleta} onChange={(e) => setBoleta(e.target.value)}
+                    placeholder={laFotoManda ? 'Lo trae la boleta' : 'El de la boleta del POS'}
+                />
+            )}
             {/* Va pegado al campo del número y no arriba con el error general:
                 habla de ESTE campo, y un aviso lejos del control que lo causa se
                 lee como un problema de otra cosa. */}
@@ -859,8 +926,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                         {!leyendo && deLaFoto.length > 0 && (
                             <Notice variant="info" compact icon={ScanLine}>
                                 {deLaFoto.length === 1
-                                    ? `Se tomó de la boleta ${deLaFoto[0]}. Revísalo antes de guardar.`
-                                    : `Se tomaron de la boleta ${juntarConY(deLaFoto)}. Revísalos antes de guardar.`}
+                                    ? `Se tomó de la boleta ${deLaFoto[0]}. Si no dice eso, toca Corregir.`
+                                    : `Se tomaron de la boleta ${juntarConY(deLaFoto)}. Si alguno no dice eso, toca Corregir.`}
                             </Notice>
                         )}
 
@@ -869,11 +936,17 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             ya contestó: si leyó, vienen con el dato puesto; si
                             no pudo, vienen vacíos para escribirlo.
 
-                            Visibles y editables, nunca de sólo lectura: el monto
-                            de una salida de dinero lo confirma una persona. Un
-                            campo que se llenó solo y no se puede corregir
-                            convierte un error de lectura en un vale equivocado
-                            que nadie pudo frenar. */}
+                            Lo que la foto trajo se muestra como DATO y no como
+                            casilla (usuario, 2026-08-21: «¿no debería quedar como
+                            informativo nada más?»): pedir que se revise algo que
+                            ya está decidido invita a pisarlo sin querer, y esto
+                            es el monto de una salida de dinero.
+
+                            Lo que la foto NO pudo leer sí viene en casilla, y
+                            todo dato tiene «Corregir» a un clic: un error de
+                            lectura que no se pudiera tocar sería un vale
+                            equivocado que nadie pudo frenar. El monto de una
+                            salida lo confirma una persona. */}
                         {laFotoManda && datosALaVista && (
                             <>
                                 {/* Lo que la boleta no dejó leer se dice, no se

@@ -207,11 +207,55 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     // se estaba armando, no para otra. Va en el manejador y no en un efecto
     // sobre `tipo`: los dos cambian a la vez y son la misma decisión de quien
     // usa la pantalla.
+    /* Cambiar de motivo borra TODO lo que dependía del motivo anterior.
+     *
+     * La entidad y la identidad ya se limpiaban. La foto no, y desde que la
+     * foto llena el monto y el número eso dejó de ser un descuido menor: elegir
+     * «Remesa», fotografiar la boleta y después cambiar a «Gasto» dejaba en el
+     * formulario el monto y el número de una boleta que ya no pertenece a esta
+     * salida — y el vale se habría impreso con ellos. Lo que la foto trajo se va
+     * con la foto. */
     const elegirMotivo = useCallback((codigo) => {
         setTipo(codigo); setEntidad(''); setPersona(null); setVale(null);
+        setFoto(null); setPorEditar(null); setLectura(null);
+        setBoleta(''); setRepetida([]);
+        // El monto sólo si lo había puesto la foto: uno escrito a mano es una
+        // decisión de la persona y sobrevive al cambio de motivo, como siempre.
+        setDeLaFoto((puestos) => {
+            if (puestos.includes('el monto')) setMonto('');
+            return [];
+        });
     }, []);
 
     const lista = useMemo(() => disponibles(bolsas, saldos), [bolsas, saldos]);
+
+    /* ── Cuándo la FOTO viene antes que los datos ───────────────────────────
+     *
+     * Reportado el 2026-08-21 mirando el formulario de una remesa: «¿por qué
+     * sigue pidiendo la boleta y el monto? Normalmente sólo debe pedir
+     * remesadora y foto, los demás datos los obtiene de la foto».
+     *
+     * Tenía razón y el orden estaba al revés: el formulario pedía a mano
+     * —«Falta cuánto»— justo los dos datos que la foto iba a contestar sola. Un
+     * campo obligatorio antes del papel que lo contiene es pedir dos veces lo
+     * mismo, y encima frenaba el botón antes de dejar elegir la foto.
+     *
+     * Manda la foto cuando el motivo la exige Y pide número de boleta — o sea,
+     * cuando hay un comprobante impreso con esos datos adentro. Sale del
+     * catálogo (`bolsas_tipos_salida`) y no de un `if (tipo === 'REMESA')`: el
+     * día que otro motivo pida boleta con foto obligatoria, se comporta igual
+     * sin tocar esto. Hoy es sólo la remesa.
+     */
+    const laFotoManda = t?.foto === 'OBLIGATORIA' && !!t?.pide_boleta;
+
+    /* Si ya se puede mostrar lo que la foto tenía que traer.
+     *
+     * `lectura` deja de ser null en cuanto el servidor contesta, HAYA PODIDO
+     * leer o no. Las dos cosas abren los campos, y por el mismo motivo: si leyó,
+     * aparecen con el dato puesto para confirmarlo; si no pudo, aparecen vacíos
+     * para escribirlo. Eso es la mitad «si tiene dudas, que sí pida esos datos»
+     * del pedido — la persona nunca queda sin forma de registrar la salida. */
+    const datosALaVista = !laFotoManda || !!lectura;
 
     /* De qué sala es esta salida. La numeración de las boletas es por sucursal,
      * así que sin esto no hay contra qué comparar. Sale de las bolsas que se
@@ -270,7 +314,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             }
             if (!boleta.trim() && l.numero_boleta) {
                 setBoleta(String(l.numero_boleta));
-                puestos.push('el número de boleta');
+                puestos.push('el número');
             }
             /* La entidad SÓLO si lo leído es una de las de la lista.
              *
@@ -355,6 +399,19 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         [lectura],
     );
 
+    /* Qué de lo que la foto tenía que traer sigue vacío.
+     *
+     * Se calcula sobre los CAMPOS y no sobre lo que devolvió el lector: da igual
+     * si el modelo no lo vio, si la lectura falló entera o si alguien lo borró
+     * — el hecho que importa es que ese dato no está y hay que escribirlo. */
+    const faltaLeer = useMemo(() => {
+        if (!laFotoManda || !lectura) return [];
+        return [
+            !monto.trim() && 'el monto',
+            !boleta.trim() && 'el número',
+        ].filter(Boolean);
+    }, [laFotoManda, lectura, monto, boleta]);
+
     // Lo que el bloqueo le dice a la lista de «qué falta».
     const bloqueoDeLaFoto = problemaDeLaFoto?.bloquea ? problemaDeLaFoto.texto : null;
 
@@ -434,6 +491,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     /** Lo que falta ANTES de identificar a nadie. */
     const faltaEnElFormulario = useMemo(() => {
         if (!t) return 'Falta el motivo.';
+        /* Con la foto mandando, lo primero que falta es la foto — y antes, a
+         * quién se le entregó, que es lo único que el papel no dice. Pedir
+         * «Falta cuánto» acá arriba era pedir a mano justo lo que la foto trae,
+         * y frenaba el botón antes de dejar elegirla. */
+        if (laFotoManda) {
+            if (!entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
+            if (!foto) return 'Falta la foto del comprobante.';
+        }
         if (!Number.isFinite(n) || n <= 0) return 'Falta cuánto.';
         if (!eleccion.alcanza) {
             return `En la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
@@ -450,7 +515,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         // dinero dos veces por una sola operación.
         if (problemaDeLaBoleta?.bloquea) return problemaDeLaBoleta.texto;
         return null;
-    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta]);
+    }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta, laFotoManda]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -534,6 +599,68 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
        El folio no alcanza para saber CUÁL es sobre la mesa: las bolsas de una
        sala se distinguen por el corte del que nacieron, y eso —día y hora— es lo
        que dice la etiqueta pegada afuera. Pedido del usuario el 2026-08-17. */
+    /* ── Los campos que cambian de lugar según quién manda ──────────────────
+     *
+     * Armados acá y no en el `return` porque el ORDEN depende del motivo: en una
+     * remesa la foto va antes que el monto y el número —los trae ella—, y en los
+     * demás motivos el monto va primero como siempre. Escribirlos dos veces en
+     * las dos ramas es cómo terminan siendo dos campos que se parecen y se
+     * comportan distinto. */
+
+    /* `maskType="DECIMAL"` y no `type="number"`: el separador decimal del campo
+     * nativo lo pone el idioma de CADA computadora, así que el mismo portal
+     * aceptaba el punto en una caja y sólo la coma en la otra — y la tecla
+     * rechazada no avisa, se pierde. En dinero eso es un monto equivocado. La
+     * máscara acepta las dos y deja siempre punto. */
+    const campoMonto = (
+        <PortalInput
+            label="Cuánto" name="monto" inputMode="decimal"
+            maskType="DECIMAL" icon={HandCoins}
+            value={monto} onChange={(e) => setMonto(e.target.value)}
+            placeholder="0.00" inputClassName="tabular-nums"
+        />
+    );
+
+    /* Si el campo tiene lista propia —las remesadoras—, es un desplegable: así
+     * lo que se guarda coincide con el catálogo por construcción y no por cómo
+     * lo escribió cada quien. */
+    const campoEntidad = t?.etiqueta_entidad && (opciones.length ? (
+        <div>
+            <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                {t.etiqueta_entidad}
+            </span>
+            <LiquidSelect
+                value={entidad} onChange={setEntidad}
+                options={opciones}
+                placeholder="Elegir…" ariaLabel={t.etiqueta_entidad}
+            />
+        </div>
+    ) : (
+        <PortalInput
+            label={t.etiqueta_entidad} name="entidad"
+            value={entidad} onChange={(e) => setEntidad(e.target.value)}
+            placeholder="A quién se le paga"
+        />
+    ));
+
+    const campoBoleta = t?.pide_boleta && (
+        <div className="space-y-2">
+            <PortalInput
+                label="Número de boleta" name="boleta"
+                value={boleta} onChange={(e) => setBoleta(e.target.value)}
+                placeholder={laFotoManda ? 'Lo trae la boleta' : 'El de la boleta del POS'}
+            />
+            {/* Va pegado al campo del número y no arriba con el error general:
+                habla de ESTE campo, y un aviso lejos del control que lo causa se
+                lee como un problema de otra cosa. */}
+            {problemaDeLaBoleta && (
+                <Notice variant={problemaDeLaBoleta.tono} compact icon={AlertTriangle}>
+                    {problemaDeLaBoleta.texto}
+                </Notice>
+            )}
+        </div>
+    );
+
     const saleDe = eleccion.repartos.length > 0 && (
         <div data-surface="card" className="p-3 space-y-1.5">
             <span className="text-caption font-black uppercase tracking-widest text-content-3">
@@ -615,6 +742,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             de él dependen la remesadora, la boleta, la foto y si hay
                             que identificar a alguien. Leerlo después de rellenar
                             campos que él mismo decide es leerlo al revés. */}
+                        {/* El MOTIVO manda y va primero; qué lo acompaña a su
+                            derecha depende de él. Cuando la foto manda, el
+                            monto todavía no se conoce —lo trae la boleta—, así
+                            que al lado va la remesadora, que es el único dato
+                            que el papel no dice. */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
@@ -626,23 +758,10 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                     placeholder="Elegir…" ariaLabel="Motivo de la salida"
                                 />
                             </div>
-                            {/* `maskType="DECIMAL"` y no `type="number"`: el
-                                separador decimal del campo nativo lo pone el
-                                idioma de CADA computadora, así que el mismo
-                                portal aceptaba el punto en una caja y sólo la
-                                coma en la otra — y la tecla rechazada no avisa,
-                                se pierde. En dinero eso es un monto equivocado.
-                                La máscara acepta las dos y deja siempre punto,
-                                que es el canónico del efectivo. */}
-                            <PortalInput
-                                label="Cuánto" name="monto" inputMode="decimal"
-                                maskType="DECIMAL" icon={HandCoins}
-                                value={monto} onChange={(e) => setMonto(e.target.value)}
-                                placeholder="0.00" inputClassName="tabular-nums"
-                            />
+                            {laFotoManda ? campoEntidad : campoMonto}
                         </div>
 
-                        {saleDe}
+                        {!laFotoManda && saleDe}
 
                         {/* ── De acá abajo, todo lo pide el MOTIVO ─────────────
                             Sin motivo elegido no se pinta ninguno: la remesadora es
@@ -653,42 +772,10 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             Y si el campo tiene lista propia —las remesadoras—, es un
                             desplegable: así lo que se guarda coincide con el catálogo
                             por construcción y no por cómo lo escribió cada quien. */}
-                        {t?.etiqueta_entidad && (opciones.length ? (
-                            <div>
-                                <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                                    {t.etiqueta_entidad}
-                                </span>
-                                <LiquidSelect
-                                    value={entidad} onChange={setEntidad}
-                                    options={opciones}
-                                    placeholder="Elegir…" ariaLabel={t.etiqueta_entidad}
-                                />
-                            </div>
-                        ) : (
-                            <PortalInput
-                                label={t.etiqueta_entidad} name="entidad"
-                                value={entidad} onChange={(e) => setEntidad(e.target.value)}
-                                placeholder="A quién se le paga"
-                            />
-                        ))}
-                        {t?.pide_boleta && (
-                            <>
-                                <PortalInput
-                                    label="Número de boleta" name="boleta"
-                                    value={boleta} onChange={(e) => setBoleta(e.target.value)}
-                                    placeholder="El de la boleta del POS"
-                                />
-                                {/* Va pegado al campo del número y no arriba con
-                                    el error general: habla de ESTE campo, y un
-                                    aviso lejos del control que lo causa se lee
-                                    como un problema de otra cosa. */}
-                                {problemaDeLaBoleta && (
-                                    <Notice variant={problemaDeLaBoleta.tono} compact icon={AlertTriangle}>
-                                        {problemaDeLaBoleta.texto}
-                                    </Notice>
-                                )}
-                            </>
-                        )}
+                        {/* Con la foto mandando, la remesadora ya salió arriba
+                            junto al motivo. */}
+                        {!laFotoManda && campoEntidad}
+                        {!laFotoManda && campoBoleta}
                         {/* `FileField` y no un `<input type="file">` suelto: el canónico
                             de §15.9. Las dos excepciones vivas son selectores de foto
                             donde el disparador ES la imagen (avatar, foto de producto) —
@@ -726,7 +813,9 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                 emptyState={t.foto === 'OPCIONAL' ? 'neutral' : 'pending'}
                                 hint={t.foto === 'OPCIONAL'
                                     ? 'Si te dieron comprobante, adjuntalo. Antes de guardarlo vas a poder recortarlo.'
-                                    : 'La boleta que imprimió el POS. Antes de guardarla vas a poder recortarla.'}
+                                    : laFotoManda
+                                        ? 'La boleta que imprimió el POS. De ahí salen el monto y el número; antes de guardarla vas a poder recortarla.'
+                                        : 'La boleta que imprimió el POS. Antes de guardarla vas a poder recortarla.'}
                             />
                         )}
 
@@ -754,8 +843,39 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             mirar, o se desconfía y se vuelve a escribir. */}
                         {!leyendo && deLaFoto.length > 0 && (
                             <Notice variant="info" compact icon={ScanLine}>
-                                {`Se tomaron de la boleta ${juntarConY(deLaFoto)}. Revísalos antes de guardar.`}
+                                {deLaFoto.length === 1
+                                    ? `Se tomó de la boleta ${deLaFoto[0]}. Revísalo antes de guardar.`
+                                    : `Se tomaron de la boleta ${juntarConY(deLaFoto)}. Revísalos antes de guardar.`}
                             </Notice>
+                        )}
+
+                        {/* ── Lo que trajo la boleta, para confirmarlo ────────
+                            Aparecen DESPUÉS de la foto y sólo cuando el lector
+                            ya contestó: si leyó, vienen con el dato puesto; si
+                            no pudo, vienen vacíos para escribirlo.
+
+                            Visibles y editables, nunca de sólo lectura: el monto
+                            de una salida de dinero lo confirma una persona. Un
+                            campo que se llenó solo y no se puede corregir
+                            convierte un error de lectura en un vale equivocado
+                            que nadie pudo frenar. */}
+                        {laFotoManda && datosALaVista && (
+                            <>
+                                {/* Lo que la boleta no dejó leer se dice, no se
+                                    deja adivinar por un campo vacío: «si tiene
+                                    dudas, que sí pida esos datos». */}
+                                {!leyendo && faltaLeer.length > 0 && (
+                                    <Notice variant="warning" compact icon={AlertTriangle}>
+                                        {`La boleta no dejó leer ${juntarConY(faltaLeer)}. `
+                                         + `${faltaLeer.length === 1 ? 'Escríbelo' : 'Escríbelos'} a mano.`}
+                                    </Notice>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {campoMonto}
+                                    {campoBoleta}
+                                </div>
+                                {saleDe}
+                            </>
                         )}
                         {/* El «todo bien» sólo cuando de verdad se comparó y
                             de verdad coincidió.

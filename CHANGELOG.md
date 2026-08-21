@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.6 — En una remesa, la foto va primero y trae los datos
+
+Reportado el 2026-08-21 mirando el formulario: «¿por qué sigue pidiendo la
+boleta y el monto? Normalmente sólo debe pedir remesadora y foto, los demás
+datos los obtiene de la foto. Si tiene dudas, que sí pida esos datos».
+
+La versión anterior ya llenaba los campos desde la foto, pero el ORDEN seguía al
+revés: el formulario mostraba «Cuánto» y «Número de boleta» vacíos y obligatorios
+—con el botón frenado en «Falta cuánto»— **antes** de dejar elegir el papel que
+contiene esos dos datos. Pedir a mano lo que la foto va a contestar es pedir dos
+veces lo mismo.
+
+Ahora una remesa se registra así:
+
+1. **Motivo** y **remesadora**, lado a lado. Es lo único que el papel no dice.
+2. **La foto.** El botón pide esto y no el monto.
+3. Recién entonces aparecen **el monto y el número**, con lo que la boleta decía.
+
+Los campos aparecen **visibles y editables**, nunca de sólo lectura: el monto de
+una salida de dinero lo confirma una persona, y un campo que se llenó solo y no
+se puede corregir convierte un error de lectura en un vale equivocado que nadie
+pudo frenar. Encima de ellos se dice qué salió de la boleta, y qué no: si el
+papel no dejó leer alguno, un aviso lo nombra y pide escribirlo a mano.
+
+Si la lectura falla entera, los dos campos aparecen vacíos igual — nunca queda
+alguien sin forma de registrar una salida que ya ocurrió.
+
+**Nada cambia para los otros motivos.** Quién manda sale del catálogo
+(`bolsas_tipos_salida`): la foto va primero cuando el motivo la exige *y* pide
+número de boleta, que hoy es sólo la remesa. Un gasto o un anticipo siguen
+pidiendo el monto primero, como siempre.
+
+### Y un arreglo que salió de este cambio
+
+**Cambiar de motivo no limpiaba la foto.** Se limpiaban la entidad y la
+identidad, pero no el comprobante — y desde que la foto llena el monto y el
+número eso dejó de ser un descuido menor: elegir «Remesa», fotografiar la boleta
+y después cambiar a «Gasto» dejaba en el formulario el monto y el número de una
+boleta que ya no pertenece a esa salida, y el vale se habría impreso con ellos.
+Lo que la foto trajo se va con la foto. Un monto escrito a mano sobrevive: ése es
+una decisión de la persona.
+
 ## v2.703.5 — la composición de un traslado sobrevive al cierre de sesión
 
 Dos cierres de `docs/PLAN-MOVIL-2026-08-20.md`, y el primero es una pérdida de

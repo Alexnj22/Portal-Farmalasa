@@ -21,6 +21,140 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.697.3 — confirmar un pago desde el teléfono
+
+Cierra el único hueco que quedó abierto en v2.697.0. En Facturación, «Confirmar»
+no es un botón que hace algo: es un botón que **abre un formulario** —la nota
+del pago y su comprobante— dentro de un `<tr colSpan>` hermano de la fila. En el
+teléfono `DataTable` pinta fichas y esa fila no se dibuja, así que el botón
+respondía y no llevaba a ningún lado. Por eso no entró en la tanda anterior: una
+acción cuyo destino no existe no se surfacea, se le construye el destino.
+
+El destino es `ExpedienteMovil` (§32.8), y el formulario se escribe **una sola
+vez**: `FilaConfirmar` gana `comoPanel`, que devuelve el mismo cuerpo sin el
+envoltorio `<tr><td colSpan>`. El eje sí cambia —en escritorio los dos botones
+van a la derecha del formulario porque ahí sobra ancho; en 390px van debajo, que
+es el único lugar donde caben sin encogerse por debajo del objetivo de dedo—.
+
+El recorrido queda en dos pasos y ninguno se pisa: mantener presionada la
+tarjeta abre la hoja de opciones, tocar «Confirmar» la cierra y abre el
+formulario.
+
+Verificado en WebKit iPhone 13 contra producción, en la pestaña **No Efectivo**
+(75 transacciones pendientes): la mantenida abre «Confirmar», y el formulario
+sale con su nota, el campo de comprobante con «Tomar foto» y los dos botones a
+ancho completo. Las tres tablas de la pestaña —una por forma de pago— llevan su
+propia línea de aviso del gesto.
+
+## v2.697.2 — El vigilante deja de reclamar por una sucursal que nadie calcula
+
+Anoche llegó un aviso al teléfono: «Sync minmax sin correr — [erp:6] última
+corrida hace 840 h». No era una falla: era el vigilante de salud de los procesos
+reclamando por **Bodega**, que está fuera del recálculo mensual de MIN·MAX
+**a propósito** desde la auditoría del 17-jul-2026 (su MIN·MAX se mantiene solo,
+en tiempo real, sumando el de las salas).
+
+El vigilante deduce a quién le toca correr **del propio registro**, así que una
+sucursal que alguna vez escribió una fila y después salió del cálculo se queda
+vencida para siempre: su antigüedad sólo sube. La única fila de Bodega es la de
+aquella corrida manual, y a los 35 días exactos cruzó el umbral. Iba a repetirse
+**todos los días**, porque el aviso de antigüedad lleva la fecha en su clave.
+
+Lo que cambió:
+
+- La lista de sucursales del recálculo vive ahora en `_shared/minmax.ts` y la
+  importan las dos funciones —la que calcula y la que vigila—. Antes cada una
+  tenía la suya, y la del vigilante era «todas las que aparezcan». El día que
+  entre o salga una sala, las dos se enteran juntas.
+- Al vigilante se le agregó `tieneCadencia()`: a un scope que nadie programa se
+  le perdona la **antigüedad**, nunca el **fallo**. Que no esté en el cron no
+  vuelve normal que una corrida disparada a mano termine mal. Y un scope que no
+  reconoce se sigue vigilando: la falla segura acá es avisar de más.
+
+Verificado punta a punta contra producción: antes del cambio había dos
+candidatos a aviso (el fallo de La Popular del 1-ago y la antigüedad de Bodega);
+después, la función responde `alerts: 1, sent: 0` — sólo queda el fallo real, y
+como ya estaba registrado no reenvía nada.
+
+## v2.697.1 — Los gates ven la mitad que no veían
+
+Sale de una auditoría del sistema completo (2026-08-21) medida contra
+producción. El patrón que ordena todo lo demás: **los gates estaban en verde y
+había tres fallas críticas afuera de lo que miran**. Este commit corrige lo que
+se podía corregir sin tocar la base y, sobre todo, ensancha los detectores para
+que lo que ya estaba roto se vea.
+
+**Los detectores sólo reconocían clientes llamados `supabase`.** De los 53
+clientes que se crean con `createClient` en `supabase/functions/`, **24 se
+llaman `admin`**. En llamadas: `await supabase.` aparece 79 veces y
+`await admin.` **137**. O sea que `data-gate` miraba menos de la mitad del
+código, y su `error-ignorado: 0` no significaba «limpio» sino «no miré». Ahora
+el nombre sale de los `createClient` del propio archivo, así que una función
+nueva que llame `sb` al suyo entra sola.
+
+Lo que apareció al ensanchar es deuda VIEJA, no código nuevo: `error-ignorado`
+0 → 55 y `escritura-a-ciegas` 26 → 62. **44 de esos sitios están en
+`trasladar-pedido-erp` y `devolver-pedido-erp`**, que son justo las dos
+funciones que mueven producto en el sistema — ahí un select que falla en
+silencio deja un Map vacío y el movimiento sigue igual. El baseline queda en los
+números reales **con el motivo escrito adentro del JSON**, para que nadie lo lea
+como un baseline regenerado para tapar algo. Es el mismo caso de
+`tarjeta-a-mano` en design-gate el 16-ago.
+
+**El snapshot de columnas booleanas llevaba tres semanas viejo.** Se generó el
+30-jul con 71 columnas; en prod había 96. Y el detector no opina sobre una tabla
+que no está en el snapshot, así que fallaba en las dos direcciones: 25 columnas
+invisibles, y tres de ellas (`employees.carne_pendiente`,
+`role_permissions.delega_en_ausencia`, `proveedores_maestro.iva_deducible`) de
+tablas que sí estaban, o sea candidatas a acusar código sano. Regenerado, y
+ahora incluye vistas y materializadas — el frontend consulta `employees_safe`,
+`products_with_lab`, `v_inventario_lotes`, `v_sync_health` y
+`dte_rechazos_vigentes` por nombre igual que a una tabla.
+
+**El detector booleano leía sólo hasta la primera `}`.** Con el snapshot fresco
+acusó a `devolver-pedido-erp:224` por `revisar_a_mano`, que no es una columna
+sino una clave dentro del jsonb `detalle`: el recorte `[^}]{0,400}` cortaba en
+la llave del objeto anidado. Ahora cuenta llaves y sólo mira las claves de
+primer nivel. Es exactamente el error que ya se había pagado en `design-gate`
+con el `className`.
+
+**Un pedido ya cruzó las 1,000 líneas.** Medido: el mayor tiene **1,108
+renglones para una sola sucursal**. `fetchPedidoItemsPendientesIds` y sus dos
+hermanas no paginaban, así que en ese pedido 108 renglones nunca se marcaban
+`falta_caja`: la pantalla daba la caja por procesada y esos renglones figuraban
+como llegados. Ahora pasan por `fetchAllRows`, y quien las llama trata el `null`
+del helper como error en vez de seguir con una lista corta.
+
+**Dos escrituras a ciegas del camino fiscal.** `sync-dte-sales:419` es el DELETE
+previo al modo `forceItems` —el camino de REPARACIÓN de una factura mal
+cargada—, y el upsert que sigue lleva `ignoreDuplicates: true`: si el DELETE
+fallaba en silencio, los renglones viejos sobrevivían, los nuevos se saltaban
+por duplicado y la reparación «corría bien» sin reparar. Y `:682` es el insert a
+`sync_log`, que es lo que lee `check-sync-health-alerts` para saber si una
+sucursal dejó de sincronizar: si fallaba, la vigilancia se quedaba muda sobre el
+hueco que existe para vigilar.
+
+**En `devolver-pedido-erp`, los lotes de ida.** El select que arma
+`lotesDeIda` descartaba el error y no paginaba sobre `pedido_traslado_linea`
+(3,038 filas). Si fallaba, la devolución salía SIN los lotes con los que el
+producto llegó, sin lanzar nada. Ahora va en tandas de 400, lanza el error, y
+aborta con mensaje propio si una tanda vuelve con 1000 filas exactas — que es la
+firma del corte de PostgREST, nunca una coincidencia.
+
+**`gate:eficiencia` se ponía rojo cuando el sistema funcionaba.** Contaba como
+falla toda respuesta distinta de 200, y `trasladar-pedido-erp` responde **202**
+con `{"ok":true,"background":true}` — el modo de fondo que existe para que un
+traslado grande no muera contra el plazo de 150s de una edge function. O sea que
+despachar un pedido grande bastaba para reprobar el gate. Ahora acepta 2xx y
+muestra el desglose por código, para que un 202 donde nadie lo espera se siga
+viendo.
+
+Queda abierto y medido, para la próxima: la búsqueda de Ventas devuelve 1,000 de
+9,777 y el total de dinero se calcula sobre ese recorte; `search_ventas_ids` pasa
+de 645 ms a 1,684 ms en la sexta llamada por el plan genérico de `plpgsql`; y el
+rol `authenticated` tiene `statement_timeout = 120s` contra un pool de 19
+conexiones. Los tres se arreglan en la base, no acá.
+
 ## v2.697.0 — el mismo canon móvil en las otras nueve tablas
 
 Extiende v2.696.0 al resto del portal: dónde se aplicó salió de **medir**, no de

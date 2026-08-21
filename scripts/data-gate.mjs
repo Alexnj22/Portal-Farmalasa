@@ -147,6 +147,16 @@ const EXCEPTIONS = {
   'supabase/functions/_shared/dteRelatedDoc.ts': {
     'error-ignorado': 'Lookup opcional: la ausencia del documento relacionado es un resultado válido, no un fallo.',
   },
+  'supabase/functions/devolver-pedido-erp/index.ts': {
+    'in-columna-repetida':
+      'Un solo sitio: el `.in("pedido_item_id", …)` sobre pedido_traslado_linea que busca los lotes de ida. '
+      + 'Se arregló el 2026-08-21 y el detector no puede verlo porque sigue siendo un `.in(`: la entrada va en '
+      + 'tandas de 400, el error se lanza en vez de descartarse, y una tanda que vuelva con 1000 filas exactas '
+      + '—la firma del corte de PostgREST— aborta con un mensaje propio en vez de imprimir un vale sin lotes. '
+      + 'Medido: pedido_item_id es hoy 1 a 1 (3,038 filas / 3,038 items distintos), pero el índice único es '
+      + 'sobre la terna pedido+sucursal+item, así que NADIE lo garantiza — por eso el freno queda puesto. '
+      + 'Si aparece un segundo `.in(` sobre tabla grande en este archivo, esta excepción lo taparía: revisarla.',
+  },
 };
 
 function assertSinClavesDuplicadas(src) {
@@ -269,6 +279,87 @@ function soloCodigo(src) {
     .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
 }
 
+/**
+ * Cómo se llama el cliente de supabase EN ESTE ARCHIVO.
+ *
+ * Los detectores 4 y 5 tenían el nombre `supabase` escrito a mano, y eso los
+ * dejaba mirando menos de la mitad del código. Medido el 2026-08-21 sobre
+ * `supabase/functions/`: de los 53 clientes que se crean con `createClient`,
+ * **26 se llaman `supabase` y 24 se llaman `admin`** (más `supabaseClient`,
+ * `comoElUsuario` y `client`). En llamadas: `await supabase.` aparece 79 veces
+ * y `await admin.` **137** — o sea que el detector estaba ciego a la mayoría.
+ *
+ * El síntoma era un verde que no significaba nada: `error-ignorado: 0` con
+ * **64 sitios** haciendo `const { data: x } = await admin…` sin mirar el error,
+ * que es EXACTAMENTE lo que el CLAUDE.md prohíbe para edge functions desde el
+ * incidente de `presentaciones.descripcion`.
+ *
+ * Es la misma lección que el snapshot de columnas booleanas y que
+ * `tarjeta-a-mano` en design-gate: una lista escrita a mano se desincroniza del
+ * registro. El nombre sale del archivo —de sus `createClient`— y así una
+ * función nueva que llame `sb` al suyo entra sola.
+ */
+function reClientes(src, plantilla) {
+  const nombres = new Set(['supabase']);
+  for (const m of src.matchAll(/(?:const|let|var)\s+(\w+)\s*(?::[^=]+)?=\s*createClient\b/g)) nombres.add(m[1]);
+  const alternativa = [...nombres].sort((a, b) => b.length - a.length).join('|');
+  return new RegExp(plantilla.replace('CLI', alternativa), 'g');
+}
+
+/**
+ * El literal `{ … }` que empieza en `abre`, contando llaves.
+ *
+ * Existe porque `[^}]{0,400}` —lo que había antes— corta en la PRIMERA llave de
+ * cierre, y esa llave puede ser la de un objeto anidado. Medido el 2026-08-21 en
+ * `devolver-pedido-erp:224`:
+ *
+ *     .update({ estado: "error", detalle: { revisar_a_mano: true }, … })
+ *
+ * El recorte dejaba `revisar_a_mano: true` adentro de la ventana y el detector
+ * lo reportaba como una COLUMNA de `pedido_devolucion` que «NO es boolean».
+ * `revisar_a_mano` no es una columna: es una clave dentro del jsonb `detalle`.
+ * O sea el gate acusando a código sano, que es la manera más rápida de que
+ * alguien aprenda a saltárselo.
+ *
+ * Es el mismo error que ya se había pagado en `design-gate` —un detector que
+ * leía el `className` sólo hasta la primera `}`— y por eso se arregla leyendo la
+ * estructura en vez de ensanchar la ventana. Devuelve null si nunca cierra
+ * (archivo cortado) o si el literal es absurdamente grande.
+ */
+function objetoLiteral(src, abre) {
+  if (src[abre] !== '{') return null;
+  let prof = 0;
+  for (let i = abre; i < src.length && i - abre < 4000; i++) {
+    if (src[i] === '{') prof++;
+    else if (src[i] === '}') { prof--; if (prof === 0) return src.slice(abre + 1, i); }
+  }
+  return null;
+}
+
+/**
+ * Los pares `clave: true|false` del PRIMER nivel de un literal.
+ *
+ * Todo lo que esté dentro de un `{}`, `[]` o `()` anidado se salta: ahí las
+ * claves son del jsonb, del arreglo o de la llamada — no columnas de la tabla.
+ */
+function clavesDePrimerNivel(cuerpo) {
+  const out = [];
+  let prof = 0;
+  for (let i = 0; i < cuerpo.length; i++) {
+    const c = cuerpo[i];
+    if (c === '{' || c === '[' || c === '(') { prof++; continue; }
+    if (c === '}' || c === ']' || c === ')') { prof--; continue; }
+    if (prof !== 0) continue;
+    const resto = cuerpo.slice(i);
+    const m = /^(\w+)\s*:\s*(true|false)\s*(?=[,}\n]|$)/.exec(resto);
+    if (m && (i === 0 || /[\s,{]/.test(cuerpo[i - 1]))) {
+      out.push([m[1], m[2]]);
+      i += m[0].length - 1;
+    }
+  }
+  return out;
+}
+
 /** Tabla del `.from('X')` que gobierna la posición idx (el más cercano hacia atrás). */
 function tablaEnContexto(src, idx) {
   const antes = src.slice(0, idx);
@@ -289,13 +380,15 @@ for (const archivo of archivos) {
     push('tipo-booleano', archivo, lineaDe(src, m.index),
       `.${m[1]}('${col}', ${m[3]}) sobre ${tabla}: la columna NO es boolean`);
   }
-  for (const m of src.matchAll(/\.(update|upsert|insert)\(\s*\{([^}]{0,400})\}/g)) {
+  for (const m of src.matchAll(/\.(update|upsert|insert)\(\s*\{/g)) {
     const tabla = tablaEnContexto(src, m.index);
     if (!tabla || !(tabla in BOOLEANAS)) continue;
-    for (const p of m[2].matchAll(/(\w+)\s*:\s*(true|false)\s*(?:,|$)/g)) {
-      if (BOOLEANAS[tabla].includes(p[1])) continue;
+    const cuerpo = objetoLiteral(src, m.index + m[0].length - 1);
+    if (cuerpo === null) continue;
+    for (const [clave, valor] of clavesDePrimerNivel(cuerpo)) {
+      if (BOOLEANAS[tabla].includes(clave)) continue;
       push('tipo-booleano', archivo, lineaDe(src, m.index),
-        `.${m[1]}({ ${p[1]}: ${p[2]} }) sobre ${tabla}: la columna NO es boolean`);
+        `.${m[1]}({ ${clave}: ${valor} }) sobre ${tabla}: la columna NO es boolean`);
     }
   }
 
@@ -375,7 +468,7 @@ for (const archivo of archivos) {
   }
 
   // 4. error-ignorado
-  for (const m of src.matchAll(/const\s*\{\s*data(?:\s*:\s*\w+)?\s*\}\s*=\s*await\s+supabase/g)) {
+  for (const m of src.matchAll(reClientes(src, String.raw`const\s*\{\s*data(?:\s*:\s*\w+)?\s*\}\s*=\s*await\s+(?:CLI)\s*\.`))) {
     push('error-ignorado', archivo, lineaDe(src, m.index),
       'destructurar solo `data`: el error del query se descarta');
   }
@@ -389,7 +482,7 @@ for (const archivo of archivos) {
   //    mismo que el éxito—, así que esa línea es indistinguible de haber
   //    funcionado. La regla ya estaba escrita en CLAUDE.md desde el incidente
   //    de `presentaciones.descripcion`; lo que faltaba era que algo la mirara.
-  for (const m of src.matchAll(/await\s+supabase\s*\./g)) {
+  for (const m of src.matchAll(reClientes(src, String.raw`await\s+(?:CLI)\s*\.`))) {
     const antes  = src.slice(0, m.index).trimEnd();
     const ultimo = antes.at(-1) ?? '';
     if ('=(,[?:&|'.includes(ultimo)) continue;   // se asigna, se pasa como argumento o se compone

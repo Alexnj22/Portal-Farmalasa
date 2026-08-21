@@ -256,23 +256,43 @@ export function fetchPedidoItemEventosAll(pedidoId, sucFilter) {
     });
 }
 
+/*
+ * Las tres de abajo PAGINAN, y no por precaución: el umbral YA se cruzó.
+ *
+ * Medido el 2026-08-21 sobre la tabla real: el pedido más grande tiene **1,108
+ * renglones para una sola sucursal**, o sea 108 por encima del tope de 1,000 de
+ * PostgREST. Sin paginar, `fetchPedidoItemsPendientesIds` devolvía 1,000 ids y
+ * el `updatePedidoItemsFaltaCaja` de quien la llama marcaba 1,000: los otros
+ * 108 renglones quedaban SIN marcar `falta_caja`, la pantalla daba la caja por
+ * procesada y esos renglones figuraban como si hubieran llegado.
+ *
+ * No falla, no avisa y no queda en ningún log — es exactamente la forma del
+ * truncado silencioso del CLAUDE.md. Y crece solo: los pedidos se agrandan.
+ *
+ * Devuelven el ARREGLO ya resuelto (no la query), así que quien las llama
+ * desestructuraba `{ data, error }` y ahora recibe las filas. Ver el ajuste en
+ * usePedidosData.
+ */
 export function fetchPedidoItemsPendientesIds(pedidoId, sucId) {
-    return supabase.from('pedido_items').select('id')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente');
+    return fetchAllRows(() => supabase.from('pedido_items').select('id')
+        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente')
+        .order('id', { ascending: true }));
 }
 
 export function fetchPedidoItemsFaltaElectrolit(pedidoId, sucId) {
-    return supabase.from('pedido_items')
+    return fetchAllRows(() => supabase.from('pedido_items')
         .select('id, products(nombre)')
         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-        .eq('falta_caja', true).eq('status', 'pendiente');
+        .eq('falta_caja', true).eq('status', 'pendiente')
+        .order('id', { ascending: true }));
 }
 
 export function fetchPedidoItemsFaltaEspeciales(pedidoId, sucId) {
-    return supabase.from('pedido_items')
+    return fetchAllRows(() => supabase.from('pedido_items')
         .select('id')
         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-        .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
+        .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true)
+        .order('id', { ascending: true }));
 }
 
 export function updatePedidoItemsFaltaCaja(ids, value) {

@@ -463,9 +463,14 @@ Deno.serve(async (req) => {
     // Quién pidió cada devolución, para el concepto. Es la mitad del acuerdo que
     // no está en ninguna parte del sistema: su columna «usuario» muestra la
     // cuenta del portal, y quien autoriza no es quien pidió.
-    const { data: solicitantes } = await admin
+    const { data: solicitantes, error: solErr } = await admin
       .from("employees").select("id, name, first_names, last_names")
       .in("id", [...new Set(aEnviar.map((d) => d.solicitada_por).filter(Boolean))]);
+    // No lanza: quedarse sin el nombre de quien pidió no justifica abortar un
+    // movimiento de producto. Pero sí se anota — con el error descartado, el
+    // vale salía con «-» en «solicitó» y era indistinguible de una devolución
+    // que de verdad no tiene solicitante.
+    if (solErr) console.error(`[devolver-pedido-erp] no se pudieron leer los solicitantes: ${solErr.message}`);
     const porEmpleado = new Map((solicitantes ?? []).map((e) => [String(e.id), nombreCorto(e)]));
     const quienPidio = new Map(
       aEnviar.map((d) => [d.id, porEmpleado.get(String(d.solicitada_por)) ?? "-"]),
@@ -475,10 +480,33 @@ Deno.serve(async (req) => {
     // movió al despachar, no de lo que el pedido había reservado: entre una cosa
     // y la otra Bodega se mueve, y `pedido_traslado_linea.detalle` es el registro
     // de lo que salió.
-    const { data: lineasIda } = await admin
-      .from("pedido_traslado_linea")
-      .select("pedido_item_id, detalle")
-      .in("pedido_item_id", aEnviar.map((d) => d.pedido_item_id));
+    // El error NO se descarta: si este select falla, `lotesDeIda` queda vacío y
+    // la devolución sale SIN los lotes con los que el producto llegó. No lanza
+    // nada, no aparece en ningún log y el vale se imprime igual — es la forma
+    // exacta del incidente de `presentaciones.descripcion` (un select que falla
+    // en silencio deja el Map vacío y el bug vive semanas).
+    //
+    // `pedido_item_id` se repite en `pedido_traslado_linea` mientras nadie lo
+    // declare único (el índice único es sobre la terna pedido+sucursal+item), y
+    // la tabla ya tiene 3,038 filas: acotar la ENTRADA no acota la salida, así
+    // que se pagina por el índice `pedido_traslado_linea_item_idx`.
+    const lineasIda: Record<string, unknown>[] = [];
+    const itemIds = aEnviar.map((d) => d.pedido_item_id);
+    for (let i = 0; i < itemIds.length; i += 400) {
+      const { data, error } = await admin
+        .from("pedido_traslado_linea")
+        .select("pedido_item_id, detalle")
+        .in("pedido_item_id", itemIds.slice(i, i + 400))
+        .order("pedido_item_id", { ascending: true });
+      if (error) throw new Error(`lotes de ida (tanda ${i}): ${error.message}`);
+      // 400 de entrada contra ~1 fila por item deja mucho aire bajo las 1000.
+      // Si algún día una tanda vuelve en el tope, la suposición se rompió y hay
+      // que enterarse acá y no por un vale sin lotes: 1000 exactas es la firma
+      // del corte de PostgREST, nunca una coincidencia.
+      if ((data ?? []).length >= 1000)
+        throw new Error(`lotes de ida (tanda ${i}): la consulta volvió en el tope de 1000 — pedido_item_id dejó de ser uno a uno.`);
+      lineasIda.push(...(data ?? []));
+    }
     const lotesDeIda = new Map(
       (lineasIda ?? []).map((l: Record<string, unknown>) => [
         Number(l.pedido_item_id),

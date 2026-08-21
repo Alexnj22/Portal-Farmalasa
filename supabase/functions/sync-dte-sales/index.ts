@@ -414,9 +414,18 @@ async function syncBranch(
 
   if (itemsToInsert.length > 0) {
     if (forceItems) {
-      // forceItems: borrar y reinsertar limpio desde el ERP
+      // forceItems: borrar y reinsertar limpio desde el ERP.
+      //
+      // El error NO se puede descartar acá. Éste es el camino de REPARACIÓN de
+      // una factura mal cargada, y el upsert que sigue lleva
+      // `ignoreDuplicates: true`: si el DELETE falla en silencio, los renglones
+      // viejos sobreviven, los nuevos se saltan por duplicado y la reparación
+      // "corre bien" sin haber reparado nada. Un renglón fiscal equivocado que
+      // se da por corregido es peor que uno que se sabe roto.
       const invoiceIds = [...new Set(itemsToInsert.map(i => i.invoice_id))];
-      await supabase.from('sales_invoice_items').delete().in('invoice_id', invoiceIds);
+      const { error: delItemsErr } = await supabase
+        .from('sales_invoice_items').delete().in('invoice_id', invoiceIds);
+      if (delItemsErr) throw new Error(`forceItems delete: ${delItemsErr.message}`);
     }
     const CHUNK = 500;
     for (let i = 0; i < itemsToInsert.length; i += CHUNK) {
@@ -675,8 +684,20 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* La bitácora del sync NO se escribe a ciegas.
+       *
+       * `check-sync-health-alerts` y la vista `v_sync_health` leen justamente
+       * `sync_log` para decidir si una sucursal dejó de sincronizar. Si este
+       * insert falla en silencio, la corrida que falló no deja rastro y la
+       * vigilancia se queda muda sobre el hueco que existe para vigilar — la
+       * alarma no suena porque no se enteró, no porque no haya nada.
+       *
+       * No lanza: el sync YA hizo su trabajo y tirarlo acá perdería un
+       * resultado bueno por no poder anotarlo. Se deja en el log de la función,
+       * que es donde se puede ver. */
       if (logRows.length > 0) {
-        await supabase.from('sync_log').insert(logRows);
+        const { error: logErr } = await supabase.from('sync_log').insert(logRows);
+        if (logErr) console.error(`[sync-dte-sales] sync_log insert falló (${logRows.length} filas): ${logErr.message}`);
       }
     }
 

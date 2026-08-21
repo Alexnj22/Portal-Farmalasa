@@ -1,9 +1,13 @@
 {
+  "_comment": "Ratchet: cada número SÓLO BAJA. No se regenera para tapar un hallazgo nuevo. Los dos números que subieron el 2026-08-21 son la excepción documentada —un detector que se ENSANCHÓ y ahora ve deuda vieja—, exactamente el caso de `tarjeta-a-mano` en design-gate el 2026-08-16.",
+  "_2026_08_21_error_ignorado": "0 → 55. No entró código nuevo: el detector tenía el nombre `supabase` escrito a mano y 24 de los 53 clientes de las edge functions se llaman `admin`. Medido: `await supabase.` aparece 79 veces y `await admin.` 137, o sea que el gate miraba menos de la mitad y su 0 no significaba nada. Ahora el nombre sale de los `createClient` del propio archivo. Los 55 son de siempre, y 44 se concentran en trasladar-pedido-erp y devolver-pedido-erp, que son justo las dos funciones que MUEVEN PRODUCTO en el sistema: ahí un select que falla en silencio deja un Map vacío y el movimiento sigue.",
+  "_2026_08_21_escritura_a_ciegas": "26 → 62, misma causa y mismo día. Los 26 anteriores eran los que usaban un cliente llamado `supabase`; los 36 nuevos son los de `admin`. De paso bajaron 2 reales: sync-dte-sales:419 (el DELETE de forceItems, que es el camino de REPARACIÓN de una factura) y :682 (el insert a sync_log, que es lo que lee check-sync-health-alerts para saber si un sync falló).",
+  "_como_se_baja": "Archivo por archivo, recogiendo el `error`. La cola arranca por trasladar-pedido-erp (24) y devolver-pedido-erp (20).",
   "tipo-booleano": 0,
-  "cap-1000": 3,
-  "sin-paginar": 9,
+  "cap-1000": 2,
+  "sin-paginar": 6,
   "in-columna-repetida": 5,
-  "error-ignorado": 0,
-  "escritura-a-ciegas": 26,
+  "error-ignorado": 55,
+  "escritura-a-ciegas": 62,
   "tipo-sin-rotulo": 0
 }

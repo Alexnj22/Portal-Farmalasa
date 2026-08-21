@@ -358,11 +358,34 @@ if (!SOLO_LOCAL) {
         FROM cron.job j
        WHERE j.command ILIKE '%functions/v1/%'`);
 
+    /* «Contestó bien» es 2xx, NO exactamente 200.
+     *
+     * Con `IS DISTINCT FROM 200` este chequeo se ponía rojo cuando el sistema
+     * funcionaba: `trasladar-pedido-erp` responde **202** con
+     * `{"ok":true,"aceptado":true,"background":true}` — es el modo de fondo que
+     * se diseñó a propósito para que un traslado grande no muera contra el
+     * plazo de 150s de una edge function. O sea que despachar un pedido grande
+     * bastaba para reprobar el gate. Y un gate que se pone rojo cuando todo
+     * anda es un gate que se termina ignorando, que es justo lo que el
+     * CLAUDE.md advierte de la sección de tiempos.
+     *
+     * Se sigue trayendo el desglose por código para que un 202 que aparezca
+     * donde nadie lo espera se pueda ver igual: acotar el fallo no es lo mismo
+     * que dejar de mirar. */
     const salientes = canal.consultar(`
-      SELECT count(*) FILTER (WHERE status_code IS DISTINCT FROM 200) AS no_ok,
+      SELECT count(*) FILTER (WHERE status_code NOT BETWEEN 200 AND 299
+                                 OR status_code IS NULL)            AS no_ok,
+             count(*) FILTER (WHERE status_code BETWEEN 201 AND 299) AS otros_2xx,
              count(*) FILTER (WHERE timed_out) AS colgadas,
              count(*) AS total,
-             min(created)::text AS desde
+             min(created)::text AS desde,
+             (SELECT string_agg(x.linea, ' · ' ORDER BY x.n DESC) FROM (
+                SELECT coalesce(status_code::text, 'sin respuesta') || '×' || count(*) AS linea,
+                       count(*) AS n
+                  FROM net._http_response
+                 WHERE created > now() - interval '24 hours'
+                   AND (status_code NOT BETWEEN 200 AND 299 OR status_code IS NULL)
+                 GROUP BY status_code) x)                            AS desglose_malos
         FROM net._http_response WHERE created > now() - interval '24 hours'`);
 
     const porNombre = new Map(crons.map(c => [c.jobname, c]));
@@ -509,11 +532,15 @@ if (!SOLO_LOCAL) {
     const s = salientes[0] ?? {};
     console.log(`  llamadas salientes en la ventana que guarda la base: ${Number(s.total ?? 0).toLocaleString('es')} `
               + gris(`(desde ${s.desde ?? '?'})`));
-    console.log(`      distintas de 200: ${s.no_ok ?? '?'} · colgadas por plazo: ${s.colgadas ?? '?'}`);
+    console.log(`      fuera de 2xx: ${s.no_ok ?? '?'}`
+              + (Number(s.otros_2xx ?? 0) > 0 ? gris(`  ·  2xx que no son 200: ${s.otros_2xx} (aceptado: el modo de fondo responde 202)`) : '')
+              + `  ·  colgadas por plazo: ${s.colgadas ?? '?'}`);
+    if (s.desglose_malos) console.log(gris(`      ${s.desglose_malos}`));
     if (Number(s.no_ok ?? 0) > 0)
-      fallos.push(`hay ${s.no_ok} llamada(s) saliente(s) que no contestaron 200. `
+      fallos.push(`hay ${s.no_ok} llamada(s) saliente(s) fuera de 2xx (${s.desglose_malos}). `
                 + 'Un 401 acá significa que una función volvió a quedar con verify_jwt y el cron '
-                + 'está fallando ANTES de ejecutar una línea — ya pasó tres veces.');
+                + 'está fallando ANTES de ejecutar una línea — ya pasó tres veces. Un 5xx suelto '
+                + 'puede ser el reinicio de Postgres: cruzar contra pg_postmaster_start_time().');
     if (Number(s.colgadas ?? 0) > 0)
       fallos.push(`hay ${s.colgadas} llamada(s) saliente(s) que se colgaron hasta el plazo.`);
 

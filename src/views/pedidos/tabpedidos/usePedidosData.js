@@ -831,9 +831,14 @@ export function usePedidosData({ searchTerm = '' }) {
                     missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
                 } else {
                     // Sin caja_map ni pagina_items — conservador: bloquear todos los ítems pendientes
-                    const { data: allPending, error: allPendingErr } = await fetchPedidoItemsPendientesIds(pedidoId, sucId);
-                    if (allPendingErr) throw allPendingErr;
-                    missingIds = (allPending || []).map(r => r.id);
+                    // Pagina: hay pedidos de más de 1,000 renglones por sucursal
+                    // (1,108 el mayor, medido). `fetchAllRows` devuelve null si la
+                    // primera página falló, y acá eso NO se puede pasar por alto:
+                    // lo que sigue marca renglones como faltantes, así que seguir
+                    // con una lista corta daría la caja por procesada sin marcar.
+                    const allPending = await fetchPedidoItemsPendientesIds(pedidoId, sucId);
+                    if (allPending === null) throw new Error('No se pudieron leer los renglones pendientes de la sucursal.');
+                    missingIds = allPending.map(r => r.id);
                 }
                 if (missingIds.length > 0) {
                     const { error: faltaErr } = await updatePedidoItemsFaltaCaja(missingIds, true);
@@ -1084,9 +1089,9 @@ export function usePedidosData({ searchTerm = '' }) {
 
             // Limpiar falta_caja en electrolits si llegaron en este reenvío
             if (electrolitCount > 0 && electrolitOk) {
-                const { data: faltaElec, error: faltaElecErr } = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
-                if (faltaElecErr) throw faltaElecErr;
-                const elecIds = (faltaElec || []).filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
+                const faltaElec = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
+                if (faltaElec === null) throw new Error('No se pudieron leer los renglones de Electrolit marcados como faltantes.');
+                const elecIds = faltaElec.filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
                 if (elecIds.length > 0) {
                     const { error: elecOkErr } = await updatePedidoItemsFaltaCaja(elecIds, false);
                     if (elecOkErr) throw elecOkErr;
@@ -1105,9 +1110,9 @@ export function usePedidosData({ searchTerm = '' }) {
 
                 // Limpiar falta_caja en items de especiales que sí llegaron
                 if (espLlegaron.length > 0) {
-                    const { data: faltaEsp, error: faltaEspErr } = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
-                    if (faltaEspErr) throw faltaEspErr;
-                    if ((faltaEsp ?? []).length > 0) {
+                    const faltaEsp = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
+                    if (faltaEsp === null) throw new Error('No se pudieron leer los renglones de cajas especiales marcados como faltantes.');
+                    if (faltaEsp.length > 0) {
                         // Si todas llegaron → limpiar todos; si algunas aún faltan → limpiar solo las que llegaron (proporcionalmente)
                         const idsToClean = especialesAun.length === 0
                             ? faltaEsp.map(r => r.id)

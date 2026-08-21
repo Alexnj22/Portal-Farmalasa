@@ -463,5 +463,23 @@ una persona. Es quirúrgico: no toca `min_units` ni `max_units`, y deja fuera a
 los 727 ya pisados, porque marcarlos protegería el número del cálculo y no el
 humano — se cambiaría un error automático por otro.
 
-**Pendiente de decisión del dueño.** Es una escritura sobre 1,106 filas de
-producción y no se hace sin su visto bueno explícito.
+**HECHO el 2026-08-21** (migración `20260821161901`), autorizado explícitamente
+por el dueño. Resultado medido: **1,129 filas marcadas** = las 23 que el trigger
+ya había capturado desde ayer + las 1,106 del barrido, y 12 de ellas con la razón
+de su solicitud conservada.
+
+**No se movió ningún MIN ni ningún MAX**, y se comprobó por donde no se puede
+fingir: `product_stock_params_history` sólo escribe cuando cambia un MIN/MAX, y
+en los diez minutos del barrido no registró **ni una fila**.
+
+Los tres frenos que lo hicieron seguro:
+
+1. `manual_at IS NULL` — no pisa ninguna marca existente, y hace el barrido
+   idempotente: correrlo dos veces no hace nada la segunda.
+2. El valor vigente tiene que SER el que puso la persona. Los 727 pares que el
+   recálculo del 1-ago ya se llevó quedaron **fuera a propósito**: marcarlos
+   habría protegido el número del cálculo y no el humano — se cambiaría un error
+   automático por otro.
+3. El `UPDATE` no menciona `min_units` ni `max_units`. Esto agrega la marca, no
+   restaura valores: devolver 1,106 números de inventario a ciegas es
+   exactamente el riesgo que este plan existe para evitar.

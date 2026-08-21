@@ -312,6 +312,39 @@ veces, por el cambio a plan genérico (CLAUDE.md).
 
 ---
 
+## 5 bis. El ajuste entra por TRES puertas, no por una (2026-08-21)
+
+Descubierto por una pregunta del dueño —«¿el ajuste puede ser manual desde MIN·MAX
+y desde solicitud?»— cuando las fases 1 a 4 ya estaban en producción. Sí puede, y
+**sólo una de las puertas quedaba protegida**.
+
+El trigger de la fase 2 distingue a la persona del proceso por una firma:
+publicar reescribe `published_at` en el mismo UPDATE, una edición de celda no.
+El problema es que otras dos operaciones **también** escriben `published_at`, y
+las dos son decisiones humanas:
+
+| Puerta | Qué es | Estado antes del 21-ago |
+|---|---|---|
+| Editar la celda en MIN·MAX | 7,590 ediciones en dos meses | protegida |
+| **Aprobar una solicitud** | lo que pide la sala y aprueba supervisión | **sin marca — el recálculo se la llevaba** |
+| **Poner 0 en toda la red** | la decisión más fuerte del módulo | **sin marca — podía revertirse sola** |
+
+Las tres dejan marca ahora. Y la solicitud conserva además su `reason` en
+`manual_nota`: ese porqué existía —16 de 17 solicitudes lo traen— y **se perdía
+al aprobar**.
+
+A ninguna se le infiere un motivo de la lista. Poner 0 en toda la red se parece
+mucho a «ya no rota», y precisamente por eso no se deduce: el cálculo sólo actúa
+sobre motivos que alguien declaró.
+
+**La lección, que vale más que el arreglo:** una firma elegida para distinguir
+dos casos (publicar / editar) no distingue tres. Cuando aparezca una cuarta
+operación que escriba `published_at`, va a caer del lado equivocado por omisión
+— y como no falla nada, nadie lo va a notar. Lo que lo destapó fue una pregunta,
+no un gate.
+
+---
+
 ## 6. Lo que queda FUERA, y por qué
 
 **«Por presentación» (redondear al múltiplo de la caja).** Depende del factor de

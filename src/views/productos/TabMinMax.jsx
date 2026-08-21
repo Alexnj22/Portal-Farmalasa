@@ -14,6 +14,7 @@ import {
     TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, XCircle, Eye, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import MotivoAjusteModal from './tabminmax/MotivoAjusteModal';
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -80,6 +81,10 @@ const MINMAX_HISTORY_ACTION_META = {
     // Cada acción que se agrega al filtro de `openHistory` necesita su entrada
     // acá: el `|| { label: log.action }` de más abajo no falla, publica.
     MINMAX_REQUEST_APPROVED:        { label: 'SOLICITUD APROBADA', variante: 'success' },
+    // Ésta NO trae old_min/new_min: no cambia números, declara POR QUÉ el
+    // número está donde está. Por eso el render de abajo la trata aparte —
+    // pintarle «MIN — MAX —» diría que alguien los dejó vacíos.
+    MINMAX_MOTIVO_AJUSTE:           { label: 'MOTIVO',         variante: 'neutral' },
 };
 
 // STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a ./tabminmax/constants.js (Bloque
@@ -266,9 +271,13 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
 export default function TabMinMax({ searchTerm = '', config, onConfigChange, lockedErpId }) {
     const cycleDays = config?.cycle_days ?? 45;
 
-    const { hasPermission } = useAuth();
+    const { hasPermission, getScope } = useAuth();
     const canManage = hasPermission('minmax', 'can_edit');
     const canDownload = hasPermission('minmax_descargar');
+    // «Ya no rota» es el motivo que borra historial de demanda: la base lo
+    // restringe a quien decide sobre todas las salas, y acá se oculta la opción
+    // en vez de dejar que la elija y le rebote.
+    const puedeYaNoRota = getScope('minmax') === 'ALL';
 
     const {
         selectedErp, setSelectedErp,
@@ -295,6 +304,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         filterSparse, setFilterSparse,
         filterDispatchRisk, setFilterDispatchRisk,
         filterAjuste, setFilterAjuste, ajusteStats, ajusteCount,
+        motivoRow, setMotivoRow, guardarMotivo, guardandoMotivo,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,
@@ -1266,6 +1276,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             canManage={canManage}
                                             publishing={publishing}
                                             hidingIds={hidingIds}
+                                            onOpenMotivo={() => setMotivoRow(row)}
                                             isBodegaRow={isBodega}
                                             onUnhide={async () => { await unhideProduct(row.erp_product_id); }}
                                             onHide={async () => {
@@ -1473,6 +1484,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                 <Badge variant={meta.variante} size="sm" className="shrink-0">{meta.label}</Badge>
+                                                {log.action === 'MINMAX_MOTIVO_AJUSTE' ? (
+                                                    <span className="text-label text-content-2 min-w-0">
+                                                        <strong className="text-content">
+                                                            {d.motivo ? (MOTIVO_AJUSTE[d.motivo]?.label ?? d.motivo) : 'Sin motivo'}
+                                                        </strong>
+                                                        {d.motivo === 'cliente_fijo' && d.cliente_unidades > 0 && d.cliente_dias > 0 && (
+                                                            <span className="text-content-3"> · {d.cliente_unidades} cada {d.cliente_dias} días</span>
+                                                        )}
+                                                        {d.nota && <span className="text-content-3"> · {d.nota}</span>}
+                                                    </span>
+                                                ) : (<>
                                                 <span className="text-label text-content-2 tabular-nums">
                                                     <span className="text-micro text-content-3 font-bold mr-0.5">MIN</span>
                                                     {d.old_min !== d.new_min && <span className="text-content-3">{fmt(d.old_min)} → </span>}
@@ -1483,6 +1505,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {d.old_max !== d.new_max && <span className="text-content-3">{fmt(d.old_max)} → </span>}
                                                     <strong className="text-content">{fmt(d.new_max)}</strong>
                                                 </span>
+                                                </>)}
                                                 {sucName && <span className="text-micro text-content-3 ml-auto shrink-0">{sucName}</span>}
                                             </div>
                                             {/* Quién lo PIDIÓ. La fila nombra a quien hizo el
@@ -1516,6 +1539,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} zClass="z-toast" />
 
             {/* ── Confirm publish modal ── */}
+            <MotivoAjusteModal
+                key={motivoRow ? `${motivoRow.erp_product_id}-${motivoRow._erp_sucursal_id}` : 'sin-fila'}
+                open={!!motivoRow}
+                row={motivoRow}
+                puedeYaNoRota={puedeYaNoRota}
+                guardando={guardandoMotivo}
+                onGuardar={guardarMotivo}
+                onClose={() => setMotivoRow(null)}
+            />
+
             <ConfirmModal
                 isOpen={publishConfirm.open}
                 onClose={() => setPublishConfirm({ open: false, ids: null, count: 0 })}

@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.699.1 — El porqué del ajuste, escrito donde se ve
+
+Cierra el circuito que abrieron v2.698.5 y v2.698.7: la marca del ajuste ya
+existía y la categoría en pantalla también, pero **no había dónde escribir el
+motivo**, así que «Volvió a moverse» no podía activarse nunca y el cálculo no
+iba a tener nada que leer.
+
+En cada fila de MIN·MAX, dentro de «Más», está ahora **Poner motivo**. Cuatro
+opciones —«ya no rota», «lo están buscando», «cliente fijo» y «otro»— que no se
+inventaron: salieron de las 16 razones que la gente ya escribía en las
+solicitudes de cambio. «Cliente fijo» pide su ritmo (*20 cada 60 días*) y «otro»
+exige la nota, porque es el cajón de lo que no entra en la lista y sin nota no
+dice nada.
+
+**El motivo es opcional, y eso es una decisión.** Hay unas 7,600 ediciones en
+dos meses: exigirlo en todas produciría motivos elegidos al azar, y el cálculo
+terminaría actuando sobre intenciones que nadie tuvo — peor que no tener
+ninguna. Sin motivo la fila igual queda marcada y nadie la pisa al publicar:
+sólo pasa a revisarse a mano.
+
+**«Ya no rota» quedó restringido** a quien decide sobre todas las salas. Es el
+único motivo que borra historial de demanda —le dice al cálculo que deje de
+contar lo vendido antes de esa fecha— y no puede estar a un clic de cualquiera
+que edite una celda. Lo frena la base, no la pantalla; la pantalla además le
+oculta la opción a quien no puede, para que no la elija y le rebote.
+
+Declarar un motivo **también deja marca**: alguien puede marcar «ya no rota» sin
+tocar el número, y sin fecha ese motivo no tendría corte, que es justo el dato
+del que depende. La fecha y el autor los sigue poniendo el trigger con lo que
+dice la sesión, nunca lo que manda el navegador.
+
+Y el motivo entra al historial del producto con su propia fila, tratada aparte
+del resto: no cambia números, así que pintarle «MIN — MAX —» diría que alguien
+los dejó vacíos.
+
 ## v2.699.0 — La meta no cuenta lo que no es venta de productos
 
 Bajo los códigos administrativos **100 y 1000** —que no son de ningún vendedor:

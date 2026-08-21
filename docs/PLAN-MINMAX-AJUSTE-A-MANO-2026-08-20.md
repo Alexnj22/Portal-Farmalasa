@@ -1,7 +1,9 @@
 # Que el recálculo mensual no pise el ajuste a mano — hallazgo y plan (2026-08-20)
 
-**Estado: fases 1 a 4 APLICADAS** (2026-08-21). Falta sólo la 5 —que el cálculo
-lea el motivo—, que es la única que mueve números y es opcional. Las mediciones de §2 son lecturas contra producción anteriores
+**Estado: fases 1 a 4 APLICADAS, y la captura del motivo también** (2026-08-21).
+Falta sólo la 5 —que el cálculo LEA el motivo—, que es la única que mueve
+números y es opcional. Todo lo demás ya está en producción: el ajuste se marca
+solo, publicar no lo pisa, se puede ver y filtrar, y se puede explicar. Las mediciones de §2 son lecturas contra producción anteriores
 a cualquier cambio.
 
 **Prueba de salida de la fase 1, cumplida:** las 19,041 filas conservan

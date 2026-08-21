@@ -101,6 +101,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [hidingIds,         setHidingIds]         = useState(new Set());
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterAjuste,      setFilterAjuste]      = useState('all');   // all | en_conflicto | volvio_a_moverse | respetado | any
+    const [motivoRow,         setMotivoRow]         = useState(null);
+    const [guardandoMotivo,   setGuardandoMotivo]   = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const publishTimer     = useRef(null);
@@ -218,6 +220,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                     _manual_por:    a?.manual_por    ?? null,
                     _manual_motivo: a?.manual_motivo ?? null,
                     _manual_nota:   a?.manual_nota   ?? null,
+                    _manual_cliente_unidades: a?.manual_cliente_unidades ?? null,
+                    _manual_cliente_dias:     a?.manual_cliente_dias     ?? null,
                 };
             });
             setData(mapped);
@@ -809,7 +813,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 'MINMAX_UPDATED_FROM_PEDIDO',
                 'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
                 'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
-                'MINMAX_REQUEST_APPROVED',
+                'MINMAX_REQUEST_APPROVED', 'MINMAX_MOTIVO_AJUSTE',
             ], row.erp_product_id, row._erp_sucursal_id),
             fetchEmployeesBasic(),
         ]);
@@ -820,6 +824,50 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setEmpPhotoMap(photoMap);
         setHistoryLoading(false);
     }, []);
+
+    /**
+     * Guarda el porqué de un ajuste. `manual_at` y `manual_por` NO se mandan
+     * desde acá: los pone el trigger con el dato de la sesión, así que quien
+     * edita no puede firmar en nombre de otro.
+     *
+     * La base puede rechazar «ya no rota» a quien no decide sobre todas las
+     * salas. Ese rechazo se muestra tal cual: es una regla, no un error.
+     */
+    const guardarMotivo = useCallback(async (patch) => {
+        const row = motivoRow;
+        if (!row) return;
+        setGuardandoMotivo(true);
+        try {
+            const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id, {
+                ...patch,
+                updated_at: new Date().toISOString(),
+            });
+            if (e) throw e;
+            setData(prev => prev.map(r =>
+                (r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id)
+                    ? {
+                        ...r,
+                        _manual_motivo: patch.manual_motivo,
+                        _manual_nota:   patch.manual_nota,
+                        _manual_cliente_unidades: patch.manual_cliente_unidades,
+                        _manual_cliente_dias:     patch.manual_cliente_dias,
+                        // Un motivo recién puesto marca la fila aunque nadie
+                        // haya tocado el número — es lo que hace el trigger.
+                        _manual_at: r._manual_at ?? (patch.manual_motivo ? new Date().toISOString() : null),
+                    }
+                    : r));
+            useStaff.getState().appendAuditLog('MINMAX_MOTIVO_AJUSTE', String(row.erp_product_id), {
+                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                motivo: patch.manual_motivo, nota: patch.manual_nota,
+                cliente_unidades: patch.manual_cliente_unidades, cliente_dias: patch.manual_cliente_dias,
+            });
+            setMotivoRow(null);
+        } catch (e) {
+            useToastStore.getState().showToast(row.product_name || 'Producto', mensajeAmigable(e), 'error');
+        } finally {
+            setGuardandoMotivo(false);
+        }
+    }, [motivoRow]);
 
     const requestPublish = useCallback((ids = null) => {
         const count = ids ? ids.length : draftCount;
@@ -1119,6 +1167,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         filterSparse, setFilterSparse,
         filterDispatchRisk, setFilterDispatchRisk,
         filterAjuste, setFilterAjuste, ajusteStats, ajusteCount,
+        motivoRow, setMotivoRow, guardarMotivo, guardandoMotivo,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,

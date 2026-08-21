@@ -4,12 +4,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal,
-} from 'lucide-react';
+    XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal, MessageSquareText } from 'lucide-react';
 import useCapaFlotante from '../../../utils/capaFlotante';
 import { useEnHojaDeAcciones } from '../../../components/common/hojaDeAcciones';
 
-export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
+export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds, onOpenMotivo,
     isBodegaRow,
     onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish, onZeroAllBranches }) {
 
@@ -104,6 +103,13 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     ].filter(Boolean);
 
     const extraBtns = [
+        // El porqué del ajuste. Va en «Más» y no en la fila: es la acción de
+        // segunda mano —primero se ve el conflicto, después se explica— y sólo
+        // tiene sentido donde ya hay un ajuste puesto o se está por poner uno.
+        canManage && onOpenMotivo && { key: 'motivo', icon: <MessageSquareText size={12}/>,
+            label: row._manual_motivo ? 'Ver motivo' : 'Poner motivo',
+            cls: 'text-content-2 hover:text-content hover:bg-surface-card-hover',
+            onClick: () => onOpenMotivo() },
         hasDescarta && hasRestaura && btnRestaurar,
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
             cls: 'text-brand-text hover:text-brand-hover hover:bg-chart-1/10',

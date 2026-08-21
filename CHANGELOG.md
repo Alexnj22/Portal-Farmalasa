@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.13 — el canon móvil, en CLAUDE.md
+
+`CLAUDE.md` es lo único que se lee SIEMPRE, en toda sesión y antes de tocar nada,
+y **no tenía una sola línea sobre el teléfono**. El canon estaba en DESIGN.md
+§32.8/§32.9 y en el plan — o sea, en dos archivos que se abren cuando uno ya
+sabe que tiene que abrirlos.
+
+Ése es exactamente el modo de falla que este canon vino a arreglar: **una regla
+que hay que acordarse de buscar es una regla que se olvida.** Fue lo que produjo
+las 16 tablas mal de v2.693.0.
+
+Queda escrito lo que hay que saber ANTES de tocar una vista:
+
+- **Qué declara la vista y por qué `DataTable` no puede adivinarlo** —
+  `usarAccionDeFila`, `apilada`, `acciones: 'mantener'`, `movil={false}`— con la
+  trampa que se olvida: si el `onClick` expande un `<tr colSpan>`, declarar el
+  destino no alcanza, porque ese `<tr>` no se pinta en modo ficha.
+- **Las otras cuatro reglas**: el blanco de dedo de 44pt y qué hacer cuando el
+  tamaño ES el dato; que el toque tiene que acusar recibo porque no hay hover;
+  que las áreas seguras van por token y nunca por `env()` a mano; y que si lo
+  que se puede perder vive en un store, el store es el que persiste.
+- **Por qué la verificación son TRES capas y no una**, con el caso medido: al
+  quitarle `usarAccionDeFila` a Personal el gate da verde con 0 hallazgos y el
+  barrido dice 25.
+- **La lección que se repitió seis veces**: en esta tanda, seis hallazgos no
+  estaban en el portal sino en cómo se leía la medición. Antes de creerle un
+  cero a un instrumento, fabricarle la regresión que debería cazar; y antes de
+  creerle un número grande, abrir tres casos a mano.
+
+Y un puntero desde «Estándares», junto a los otros gates, que dice lo único que
+importa ahí: **un gate en verde no dice que la vista se vea bien.**
+
 ## v2.703.12 — la cañería del notch, medida
 
 F6 de `docs/PLAN-MOVIL-2026-08-20.md`, la mitad que **no** necesita un aparato.

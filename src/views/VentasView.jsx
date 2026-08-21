@@ -45,6 +45,12 @@ const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
 const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
+// Un color por posición en un reparto (sucursales, vendedores). Sale de la
+// paleta categórica del tema —§7 de DESIGN.md— y no de colores crudos, así que
+// sigue al tema activo. Escrito UNA vez: vivía dentro del render del reparto
+// por sucursal, y la tarjeta de vendedores necesitaba exactamente el mismo.
+const COLORES_DE_REPARTO = ['bg-chart-1', 'bg-success', 'bg-chart-3', 'bg-chart-4', 'bg-chart-9', 'bg-chart-6'];
+
 const fmt    = (n) => formatMoney(n || 0);
 const fmtNum = (n) => formatQty(parseInt(n || 0));
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
@@ -1576,6 +1582,78 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     );
 }
 
+// ── Quién vendió este producto en el período ──────────────────────────────
+// Hermana de «Ventas por sucursal»: mismo lenguaje visual, misma fuente exacta
+// (`get_product_drill_summary`, período completo). La diferencia es el largo —
+// un producto de rotación alta lo vendieron 34 personas—, así que arranca
+// mostrando las seis primeras y el resto se despliega.
+//
+// El nombre sale de `employees` por `code`, igual que la tabla de ventas de
+// abajo. Los dos códigos que NO son una persona (`1000` Administración, `125`
+// Domicilio) tienen su rótulo en `SPECIAL_CODES` y se muestran con él: son
+// canales de venta, no vendedores, y ponerles el código pelado hacía que se
+// leyeran como alguien a quien no se encontró.
+const VENDEDORES_VISIBLES = 6;
+
+function VentasPorVendedor({ porVendedor, employees }) {
+    const [verTodos, setVerTodos] = useState(false);
+    const lista = porVendedor || [];
+    // El resumen llega después que el detalle: sin filas todavía no hay nada
+    // que decir, y una tarjeta vacía que aparece un segundo después es peor que
+    // ninguna.
+    if (!lista.length) return null;
+
+    const total    = lista.reduce((s, v) => s + parseFloat(v.neto || 0), 0);
+    const visibles = verTodos ? lista : lista.slice(0, VENDEDORES_VISIBLES);
+    const ocultos  = lista.length - visibles.length;
+
+    return (
+        <div data-surface="card" className="p-4">
+            <div className="flex items-baseline justify-between gap-3 mb-3">
+                <p className="text-micro font-black uppercase tracking-widest text-content-2">Ventas por vendedor</p>
+                <span className="text-micro text-content-3 tabular-nums">
+                    {lista.length} {lista.length === 1 ? 'vendedor' : 'vendedores'}
+                </span>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+                {visibles.map((v, ci) => {
+                    const emp   = employees?.find(e => e.code === v.cod_vendedor);
+                    const rotulo = SPECIAL_CODES[v.cod_vendedor]
+                        ?? (emp ? shortEmployeeName(emp) : (v.cod_vendedor || '—'));
+                    const neto  = parseFloat(v.neto || 0);
+                    const cant  = parseFloat(v.cantidad_base || 0);
+                    const pct   = total > 0 ? (neto / total) * 100 : 0;
+                    const color = COLORES_DE_REPARTO[ci % COLORES_DE_REPARTO.length];
+                    return (
+                        <div key={v.cod_vendedor ?? `sin-codigo-${ci}`}>
+                            <div className="flex justify-between items-center mb-1 gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names}
+                                        className="w-5 h-5 rounded-full shrink-0" />
+                                    <span className="text-caption text-content-2 font-semibold truncate">{rotulo}</span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
+                                    <span className="text-caption font-black text-content-2">{fmt(neto)}</span>
+                                    <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{pct.toFixed(0)}%</Badge>
+                                </div>
+                            </div>
+                            <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
+                                <div className={`h-2 rounded-full ${color} transition-all duration-[var(--dur-lento)]`} style={{ width: `${pct}%` }} />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            {(ocultos > 0 || verTodos) && (
+                <Button variant="ghost" className="mt-3" onClick={() => setVerTodos(v => !v)}>
+                    {verTodos ? 'Ver solo los primeros' : `Ver los ${lista.length}`}
+                </Button>
+            )}
+        </div>
+    );
+}
+
 // Fila del RPC get_product_sales_agg_jsonb → fila de la tabla. Compartido entre
 // la carga de browse (fetchProductos) y la búsqueda server-side con sucursal.
 function mapAggRow(item) {
@@ -1895,9 +1973,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }),
                 fetchProductPreciosDetail(productId),
                 fetchProductPreciosHistory(productId),
+                // Los tres meses TERMINAN en el mes del período elegido. Sin
+                // pasarle el período devolvía siempre los 3 anteriores a HOY, así
+                // que al elegir julio la tarjeta de al lado hablaba de julio y
+                // ésta seguía mostrando agosto, sin decirlo.
                 supabase.rpc('get_product_trend', {
                     p_erp_product_id: productId,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
+                    p_fini:           fini,
+                    p_ffin:           ffin,
                 }),
                 // Totales EXACTOS del período: el detalle de arriba corta en las
                 // últimas 300 ventas, así que pie y gráfico no pueden sumarlo.
@@ -2149,18 +2233,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             // Trend bar heights
                             const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
 
-                            const BRANCH_COLORS = ['bg-chart-1','bg-success','bg-chart-3','bg-chart-4','bg-chart-9','bg-chart-6'];
                             return (
                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                     {/* Branch rotation */}
                                     {showBranch && (
-                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
+                                        <div data-surface="card" className="p-4">
                                             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                             <div className="space-y-2.5">
                                                 {branchAgg.entries.map(([bid, neto], ci) => {
                                                     const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
                                                     const name  = branches.find(b => b.id === Number(bid))?.name || `Suc. ${bid}`;
-                                                    const color = BRANCH_COLORS[ci % BRANCH_COLORS.length];
+                                                    const color = COLORES_DE_REPARTO[ci % COLORES_DE_REPARTO.length];
                                                     const cant  = branchAgg.cantMap[bid] || 0;
                                                     return (
                                                         <div key={bid}>
@@ -2184,7 +2267,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                     {/* Trend */}
                                     {showTrend && (
-                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
+                                        <div data-surface="card" className="p-4">
                                             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                 {drillMonthly.map((m, i) => {
@@ -2218,6 +2301,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 </div>
                             );
                         })()}
+
+                        {/* Quién lo vendió. Sale del resumen del servidor —o sea del
+                            período COMPLETO— y no de las 300 ventas que carga la tabla
+                            de abajo: en un producto de mucho movimiento sumar lo
+                            cargado deja fuera a los vendedores de principio de mes.
+                            Va en su propia fila y no en el grid de arriba porque la
+                            lista es larga (34 vendedores en un producto real de
+                            agosto) y a media pantalla no entra. */}
+                        <VentasPorVendedor
+                            porVendedor={drillSummary?.por_vendedor}
+                            employees={employees}
+                        />
 
                         {/* Individual sales table */}
                         {drillData.length > 0 && (() => {
@@ -2484,7 +2579,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     { key: 'rank',         label: '#' },
                     { key: 'descripcion',  label: 'Producto',      sortable: true },
                     { key: 'laboratorio_nombre', label: 'Laboratorio', sortable: true, hideBelow: 'md' },
-                    { key: 'cantidad',     label: 'Unidades',      sortable: true, align: 'right', hideBelow: 'md' },
+                    /* `cantidad_base` y no `cantidad`: la celda PINTA las unidades
+                       con el factor aplicado (508 blísters × 10 = 5,080) y ordenar
+                       por `cantidad` ordenaba por la suma cruda —blísters + cajas +
+                       unidades sumados entre sí—, o sea por un número que no está
+                       en pantalla. Con ACETAMINOFEN la columna decía 6,843 y
+                       ordenaba como 588. Pasa en 319 de los 2,376 productos. */
+                    { key: 'cantidad_base', label: 'Unidades',     sortable: true, align: 'right', hideBelow: 'md' },
                     { key: 'neto',         label: 'Total s/IVA',   sortable: true, align: 'right' },
                     { key: 'costo_total',  label: 'Costo',         sortable: true, align: 'right', hideBelow: 'lg' },
                     { key: 'utilidad',     label: 'Utilidad',      sortable: true, align: 'right', hideBelow: 'sm' },
@@ -2505,7 +2606,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 /* `acciones: 'mantener'`: ocultar un producto de la lista —y
                    volver a mostrarlo— vivía en una columna que el teléfono no
                    pinta. Ver §32.9. */
-                movil={{ identidad: 'descripcion', ancla: 'neto', chips: ['laboratorio_nombre', 'cantidad'], usarAccionDeFila: true, acciones: 'mantener' }}
+                movil={{ identidad: 'descripcion', ancla: 'neto', chips: ['laboratorio_nombre', 'cantidad_base'], usarAccionDeFila: true, acciones: 'mantener' }}
             >
                 {paginated.map((r, i) => {
                                 const globalIdx  = (page - 1) * pageSize + i;

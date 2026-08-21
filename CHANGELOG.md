@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.704.2 — Ventas > Productos: abrir un producto deja de depender de la caché, y aparece quién lo vendió
+## v2.704.0 — Ventas > Productos: abrir un producto deja de depender de la caché, y aparece quién lo vendió
 
 Reporte del usuario sobre `ventas?tab=productos`: *«está muy lento»*, más tres
 pedidos —que las tarjetas no se vean blancas en el tema oscuro, que haya ventas

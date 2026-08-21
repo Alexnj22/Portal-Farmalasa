@@ -1,6 +1,7 @@
 {
   "_comment": "Techos de gate:perf, en milisegundos. NO son metas: son el techo por encima del cual algo se rompió. Están puestos ~5x sobre lo medido el 2026-08-18 a propósito — medir contra producción compartida es ruidoso, y un gate que falla al azar se termina ignorando. Vigilan que una consulta no vuelva a costar 700 ms, no que baje de 10 a 8. La protección fina es estructural (índices, planes), no temporal. Regenerar SOLO al bajar: npm run gate:perf -- --update-baseline, que nunca sube un techo.",
   "_2026_08_21_buscar_en_ventas": "Techo 1300 ms, y a propósito ~2x sobre lo medido en vez del ~5x del resto. Ocho llamadas seguidas contra prod tras ponerle plan_cache_mode=force_custom_plan: 704 · 636 · 646 · 633 · 645 · 654 · 633 · 638 (promedio 649, máximo 704). El modo de falla acá NO es un barrido nuevo sino uno preciso y ya ocurrido: sin force_custom_plan, plpgsql pasa al plan genérico en la SEXTA llamada de cada conexión y salta de ~650 a ~1,684 ms. Un techo de 5x (3,250) no atajaría ese 2.6x. Antes del 2026-08-21 esta consulta no se medía y era la segunda de la base por tiempo total: 10.5%.",
+  "_2026_08_21_ventas_productos": "Cuatro entradas nuevas: la tabla de Ventas > Productos y las tres llamadas de abrir un producto. Otro agujero de la misma familia que buscar-en-ventas — un reporte de «está muy lento» destapó que las tres consultas del detalle entraban por el producto y no por la fecha, con el gate en verde porque no estaban en la lista. Se miden sobre ACETAMINOFEN (2215), el producto de más historia que se vende (8,604 renglones), o sea el peor caso real. Medido tras el arreglo: productos-del-mes 335 ms, abrir-un-producto 20, totales 32, tendencia 22. Los techos son el ~5x de costumbre porque acá el modo de falla NO es un 2x fino: es 36 ms con la caché caliente contra 27.5 s con la fría, y lo que de verdad lo ataja son los cuatro chequeos de la sección B (que el código siga entrando por fecha y que la tendencia siga leyendo el agregado mensual).",
   "updated": "2026-08-21",
   "presupuestos": {
     "busqueda-del-tablero": 32,
@@ -11,6 +12,10 @@
     "estado-sincronizacion": 10,
     "faltantes-en-otra-sala": 400,
     "donde-hay-un-producto": 30,
-    "buscar-en-ventas": 1300
+    "buscar-en-ventas": 1300,
+    "productos-del-mes": 1665,
+    "abrir-un-producto": 102,
+    "totales-de-un-producto": 159,
+    "tendencia-de-un-producto": 110
   }
 }

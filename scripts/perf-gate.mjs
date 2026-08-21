@@ -163,6 +163,45 @@ SELECT * FROM (
           FROM pg_proc WHERE proname='buscar_inventario_global' AND pronamespace='public'::regnamespace
             AND pg_get_function_identity_arguments(oid) = 'p_search text'),
          'la v1 sigue viva para las pestañas viejas, pero tiene que delegar en la v2 para no quedar sin techo'
+  UNION ALL
+  -- ── Abrir un producto en Ventas (2026-08-21) ──────────────────────────────
+  -- Las tres consultas del detalle entraban por el producto, y
+  -- \`sales_invoice_items\` NO tiene fecha: filtrar por período obligaba a traer
+  -- toda la historia del producto (8,604 renglones en ACETAMINOFEN) y
+  -- preguntarle a cada factura, por clave primaria, en qué mes cayó. Con la
+  -- caché caliente son 36 ms; con la caché fría se midieron 27.5 s.
+  --
+  -- Esto NO se puede vigilar con la forma del plan: \`EXPLAIN\` de una llamada a
+  -- función devuelve un \`Function Scan\` y nada más, así que la sección C no ve
+  -- lo de adentro. Se vigila el CÓDIGO: que el conjunto de facturas del período
+  -- se materialice primero. Si alguien vuelve a la forma vieja, esto se cae.
+  SELECT 'detalle-de-producto-entra-por-fecha',
+         (SELECT position('AS MATERIALIZED' in pg_get_functiondef(oid)) > 0
+          FROM pg_proc WHERE proname='get_product_drill_lines' AND pronamespace='public'::regnamespace),
+         'sin materializar las facturas del período vuelve a recorrer la historia entera del producto (40,323 páginas contra 8,765)'
+  UNION ALL
+  SELECT 'totales-de-producto-entran-por-fecha',
+         (SELECT position('AS MATERIALIZED' in pg_get_functiondef(oid)) > 0
+          FROM pg_proc WHERE proname='get_product_drill_summary' AND pronamespace='public'::regnamespace),
+         'y además \`fac\` sin MATERIALIZED resuelve el factor una vez por RENGLÓN y no por presentación: 396 vueltas para 4 presentaciones'
+  UNION ALL
+  -- La tendencia no se arregla entrando por fecha —la ventana son tres meses y
+  -- ningún índice cubre a la vez id, fecha, estado y tipo de documento, probado:
+  -- quedaba peor—. Se arregla NO leyendo lo que ya está sumado.
+  SELECT 'tendencia-lee-el-agregado-mensual',
+         (SELECT position('product_sales_monthly_agg' in pg_get_functiondef(oid)) > 0
+          FROM pg_proc WHERE proname='get_product_trend' AND pronamespace='public'::regnamespace),
+         'si volvió a leer los tres meses en vivo son 42,373 páginas por cada producto que alguien abra'
+  UNION ALL
+  -- Se CUENTA, no se busca: el filtro aparecía DOS veces y sólo la segunda
+  -- —la de \`last_sale_live\`— era la que no descartaba nada. Un \`position\`
+  -- encuentra la primera y da por buena la que sobra.
+  SELECT 'agregado-de-productos-sin-el-filtro-vacio',
+         (SELECT count(*) = 1 FROM pg_proc p,
+           LATERAL regexp_matches(pg_get_functiondef(p.oid),
+             'IN \\(SELECT ac\\.erp_product_id FROM all_cands ac\\)', 'g')
+          WHERE p.proname='get_product_sales_agg' AND p.pronamespace='public'::regnamespace),
+         'ese IN aparecía dos veces; en \`last_sale_live\` no descartaba NINGUNA fila y costaba 155 ms de los 535'
 ) t ORDER BY clave`;
 
 /* ── C. Forma del plan ───────────────────────────────────────────────────────
@@ -250,6 +289,26 @@ const TIEMPOS = [
    * la SEXTA llamada de cada conexión y pasa de ~650 a ~1,680 ms. Un techo de 5x
    * no atajaría ese 2.6x, que es exactamente el que ya ocurrió. */
   { clave: 'buscar-en-ventas',          sql: `SELECT count(*) FROM public.search_ventas_ids('maria', CURRENT_DATE-365, CURRENT_DATE)` },
+  /* Ventas > Productos: la tabla, y las tres llamadas de abrir un producto.
+   *
+   * Otro agujero de la misma familia que `buscar-en-ventas`: el 2026-08-21 un
+   * reporte de «está muy lento» destapó que las tres consultas del detalle
+   * entraban por el producto en vez de por la fecha, con este gate en verde —
+   * porque no estaban en la lista.
+   *
+   * El producto es ACETAMINOFEN (2215) a propósito: es el de más historia de
+   * los que se venden (8,604 renglones), o sea el peor caso real, y es donde el
+   * defecto se veía. El período es el mes en curso, que es el que trae la
+   * pantalla al abrirse.
+   *
+   * Estos techos vigilan sobre todo que no vuelva el acceso aleatorio: el modo
+   * de falla medido no fue «un poco más lento» sino 36 ms con la caché caliente
+   * y 27.5 s con la fría. Por eso la protección de verdad es la de la sección B
+   * —que el código siga entrando por fecha—, y estos números son el respaldo. */
+  { clave: 'productos-del-mes',         sql: `SELECT count(*) FROM public.get_product_sales_agg(date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE, NULL, NULL)` },
+  { clave: 'abrir-un-producto',         sql: `SELECT count(*) FROM public.get_product_drill_lines(2215, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE, NULL)` },
+  { clave: 'totales-de-un-producto',    sql: `SELECT public.get_product_drill_summary(2215, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE, NULL)` },
+  { clave: 'tendencia-de-un-producto',  sql: `SELECT count(*) FROM public.get_product_trend(2215, NULL, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE)` },
 ];
 
 /* ── El canal hacia producción ────────────────────────────────────────────────

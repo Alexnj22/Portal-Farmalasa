@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import Button from './Button';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 
 // Visor de PDF con zoom propio, compartido por los dos DTE del portal: el de
 // compras (`FormPurchaseDteViewer`) y el de ventas (`FormSalesDteViewer`).
@@ -24,6 +25,7 @@ const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 // solo-lectura — así el contenedor recibe los gestos en vez del iframe.
 const PdfZoomViewer = ({ src }) => {
     const containerRef = useRef(null);
+    const enTactil = useCoarsePointer();
     const [zoom, setZoom] = useState(1);
     const zoomRef = useRef(1);
     const pinchRef = useRef(null);
@@ -105,15 +107,26 @@ const PdfZoomViewer = ({ src }) => {
                     href={src}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-caption font-bold text-brand-text hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
+                    className="flex items-center gap-1.5 text-caption font-bold text-brand-text hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 min-h-[var(--tap-min)] transition-colors"
                 >
-                    <ExternalLink size={12} /> Abrir en pestaña nueva
+                    <ExternalLink size={12} /> {enTactil ? 'Abrir' : 'Abrir en pestaña nueva'}
                 </a>
             </div>
             <div
                 ref={containerRef}
                 className="flex-1 min-h-0 rounded-3xl border border-divider bg-surface-card shadow-sm overflow-auto"
-                style={{ touchAction: zoom > 1 ? 'pan-x pan-y' : 'none' }}
+                /* ── `touch-action` NUNCA en `none` ──────────────────────
+                   Estaba en `none` mientras el zoom fuera 1, o sea **en el
+                   estado por defecto**, y `none` no le quita al navegador el
+                   pinch: le quita el DESPLAZAMIENTO. Con el iframe además en
+                   `pointer-events: none`, el documento no se podía deslizar ni
+                   por dentro ni por fuera. Reportado en el teléfono: «no puedo
+                   hacer scroll o ver el documento completo, no puedo deslizar
+                   ni hacer zoom con los dedos».
+                   El pinch no lo necesita: los dos dedos ya se frenan en el
+                   `touchmove` no-pasivo y en `gesturestart`, que es donde
+                   corresponde. */
+                style={{ touchAction: 'pan-x pan-y' }}
             >
                 <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%`, minWidth: '100%', minHeight: '100%' }}>
                     {/* #toolbar=0&navpanes=0&scrollbar=0: el visor nativo de PDF del
@@ -126,6 +139,27 @@ const PdfZoomViewer = ({ src }) => {
                     <iframe src={`${src}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full border-none pointer-events-none" title="Visor PDF" />
                 </div>
             </div>
+
+            {/* ── En el teléfono, el camino que SÍ funciona va abajo y grande ──
+                WebKit no deja recorrer un PDF metido en un `<iframe>`: pinta la
+                primera página y nada más, y el `pointer-events: none` que este
+                visor necesita para recibir los gestos termina de cerrarle la
+                puerta. O sea que en el teléfono la vista incrustada sirve para
+                RECONOCER el documento, no para leerlo.
+                Abrirlo se lo entrega al visor del sistema, que sí lo recorre y
+                lo amplía con los dedos. Estaba disponible arriba, en un enlace
+                de 12px al costado — la acción que de verdad resuelve el caso no
+                puede ser la más chica de la pantalla. */}
+            {enTactil && (
+                <a href={src} target="_blank" rel="noreferrer"
+                    className="shrink-0 flex items-center justify-center gap-2 w-full
+                        min-h-[var(--tap-min)] rounded-btn px-4 py-3
+                        text-body font-bold text-white bg-brand
+                        active:scale-[0.98] transition-transform">
+                    <ExternalLink size={16} strokeWidth={2.5} />
+                    Abrir el documento
+                </a>
+            )}
         </div>
     );
 };

@@ -48,13 +48,20 @@ const AvisoSinProducto = memo(({ datos, contexto = 'Este período', compact = fa
     // un aviso que dice «cero» es ruido en la pantalla de todos los días.
     if (!datos || facturas === 0 || total <= 0) return null;
 
-    // Los nombres que se muestran salen del detalle, no de una lista escrita
-    // acá: la lista de fichas vive en la base y puede crecer sin que este
-    // archivo se entere. Hasta dos nombres; de ahí en más, el conteo.
-    const nombres = [...new Set(detalle.map((d) => d.cliente).filter(Boolean))];
-    const aQuien = nombres.length === 0 ? null
-        : nombres.length <= 2 ? nombres.join(' y ')
-        : `${nombres.length} clientes`;
+    // ── Los nombres viven en el DESPLEGABLE, no en la frase ──────────────
+    // Estaban en los dos sitios: la frase decía «2 cobros a BANCO PROMERICA,
+    // S.A. y LABORATORIOS VIJOSA, S.A. DE C.V.» y «Ver cuáles» los repetía
+    // debajo, uno por uno y con su motivo. En 390px eso son **seis líneas de
+    // texto marrón** para decir un número — reportado probando en el teléfono:
+    // *«se ve horrible, nada amigable para móvil, ocupa como 9/10 líneas de
+    // texto»*.
+    //
+    // Las razones sociales completas son largas por naturaleza —«S.A. DE C.V.»
+    // son 11 caracteres que no aportan nada acá— y este aviso vive ARRIBA de la
+    // cifra en cuatro pantallas, o sea que su alto se paga en todas.
+    //
+    // La frase se queda con lo que hay que leer de un vistazo: cuánto y cuántos
+    // cobros. Quién fue ya tiene su lugar, y es el que se abre a propósito.
 
     const cobros = `${facturas} ${facturas === 1 ? 'cobro' : 'cobros'}`;
 
@@ -86,7 +93,7 @@ const AvisoSinProducto = memo(({ datos, contexto = 'Este período', compact = fa
                     </button>
                 )}>
                 {contexto} incluye <strong>{formatMoney(total)}</strong> que no son venta de
-                productos{aQuien ? <> — {cobros} a {aQuien}</> : <> ({cobros})</>}. No cuentan para la meta.
+                productos ({cobros}). No cuentan para la meta.
             </Notice>
 
             {abierto && (

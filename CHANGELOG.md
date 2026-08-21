@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.705.2 — el documento se puede deslizar, la sombra no se corta y el aviso deja de ocupar seis líneas
+
+Segunda tanda de lo que apareció probando en el teléfono. Los tres son visibles
+en la primera pantalla y ninguno lo levantó un barrido.
+
+### El documento no se podía recorrer
+
+Reportado: *«en facturas de compra no puedo hacer scroll o ver el documento
+completo desde móvil, no puedo deslizar ni hacer zoom con los dedos»*.
+
+Dos causas. La primera es una línea: el visor llevaba
+`touchAction: zoom > 1 ? 'pan-x pan-y' : 'none'`, o sea **`none` en el estado por
+defecto**. Y `none` no le quita al navegador el pinch: le quita el
+DESPLAZAMIENTO. Con el `<iframe>` además en `pointer-events: none` —que este
+visor necesita para recibir los gestos— el documento no se podía mover ni por
+dentro ni por fuera. El pinch nunca lo necesitó: los dos dedos ya se frenan en
+el `touchmove` no-pasivo y en `gesturestart`.
+
+La segunda no se arregla con CSS: **WebKit no deja recorrer un PDF metido en un
+`<iframe>`** — pinta la primera página y nada más. En el teléfono la vista
+incrustada sirve para RECONOCER el documento, no para leerlo. Abrirlo se lo
+entrega al visor del sistema, que sí lo recorre y lo amplía con los dedos, y esa
+acción estaba disponible… en un enlace de 12px arriba a la derecha. **La acción
+que de verdad resuelve el caso no puede ser la más chica de la pantalla**: en
+táctil ahora es un botón de ancho completo al pie del visor.
+
+### Las sombras cortadas
+
+`CarrilCards` lleva `overflow-x-auto`, y no existe recortar en un solo eje: la
+sombra de cada tarjeta se cortaba contra el borde del carril y quedaba una línea
+recta donde va un degradado. El colchón que lo evitaba existía… detrás de
+`@media(hover:hover)`, o sea **sólo en escritorio**, porque se escribió para
+darle sitio al *lift* del hover.
+
+El *lift* es de escritorio; **la sombra existe en los dos lados**. Ahora el
+colchón chico va siempre, con márgenes negativos que lo devuelven — no mueve
+nada de sitio.
+
+### El aviso de seis líneas
+
+*«Se ve horrible, nada amigable para móvil, ocupa como 9/10 líneas de texto»*.
+
+Los nombres estaban **dos veces**: la frase enumeraba las razones sociales
+completas —«2 cobros a BANCO PROMERICA, S.A. y LABORATORIOS VIJOSA, S.A. DE
+C.V.»— y «Ver cuáles» las repetía debajo, una por una y con su motivo. Son
+largas por naturaleza y este aviso vive ARRIBA de la cifra en cuatro pantallas,
+así que su alto se paga en todas.
+
+La frase se queda con lo que hay que leer de un vistazo —cuánto y cuántos
+cobros—; quién fue ya tiene su lugar, y es el que se abre a propósito.
+
+Cubierto por `tests/unit/avisoSinProducto.test.jsx`, y **no** por el barrido: el
+barrido depende de que el período abierto TENGA uno de estos cobros, y «no lo
+encontré» se lee igual que «está corto». Con datos fabricados la afirmación es
+exacta, e incluye la mitad que importa — que los nombres **sigan estando** en el
+desplegable, porque quitarlos de la frase sin dejar por dónde verlos sería
+perder el dato.
+
 ## v2.705.1 — el selector de filas del conteo ya cambia la lista
 
 Reportado desde sala: *«en conteo de inventario, al estar en un conteo, no puedo

@@ -267,8 +267,20 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                    que recibir el dedo para poder deslizarse. Lo que sobra es el
                    sobrante, así que se va con la misma media query que el lift
                    que lo justifica. */
+                /* ── El colchón de la SOMBRA no puede ser sólo de escritorio ──
+                   `overflow-x-auto` recorta también en vertical —no existe
+                   recortar en un solo eje—, así que la sombra de cada tarjeta
+                   se corta contra el borde del carril y queda una línea recta
+                   donde debería haber un degradado. Reportado en el teléfono:
+                   «las sombras se ven cortadas / rectas en vez de como sombra
+                   real».
+                   El colchón grande de abajo (`pt-6 pb-14`) es para el LIFT del
+                   hover y se va con él, bien. Pero la sombra existe en los dos
+                   lados, así que su colchón —chico— va siempre. Los márgenes
+                   negativos lo devuelven, o sea que no mueve nada de sitio. */
                 className={`flex items-stretch gap-2 scroll-smooth
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+                    py-3 -my-3
                     [@media(hover:hover)]:pt-6 [@media(hover:hover)]:pb-14
                     [@media(hover:hover)]:-mt-6 [@media(hover:hover)]:-mb-14
                     [@media(hover:hover)]:pointer-events-none [&>*]:pointer-events-auto

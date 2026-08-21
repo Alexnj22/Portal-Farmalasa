@@ -1,20 +1,18 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
+import { ERP_ORDER_MINMAX } from "../_shared/minmax.ts";
 
 // Calcula MIN/MAX para las 6 sucursales de venta en secuencia, luego notifica
 // a los Supervisores de Ventas (con fallback al jefe inmediato si están
 // de vacaciones/incapacidad/permiso hoy).
 // Disparado por pg_cron el día 1 de cada mes a las 9am (El Salvador, UTC-6 = 15:00 UTC).
 //
-// Bodega (erp_sucursal_id=6) NO se incluye a propósito (auditoría 2026-07-17):
-// su MIN/MAX real se mantiene solo/en tiempo real vía el trigger
-// trg_bodega_draft_sync (SUM de las sucursales) y publish_stock_params —
-// calculate_stock_params(6) generaba un borrador independiente basado en
-// demanda agregada que NUNCA podía aplicarse (publish_stock_params excluye
-// erp_sucursal_id=6 en ambos bloques) y quedaba como ruido acumulado.
+// Quién entra en el recálculo —y por qué Bodega no— vive en _shared/minmax.ts:
+// `check-sync-health-alerts` necesita la MISMA lista para saber a quién le toca
+// correr, y hasta el 2026-08-21 no la tenía (ver el comentario de ese archivo).
 
-const ERP_ORDER = [5, 1, 2, 3, 4, 7];
+const ERP_ORDER = ERP_ORDER_MINMAX;
 const ERP_NAMES: Record<number, string> = {
   1: "Salud 1",
   2: "Salud 2",

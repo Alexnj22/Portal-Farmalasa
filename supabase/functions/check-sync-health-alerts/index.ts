@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
+import { ERP_ORDER_MINMAX } from '../_shared/minmax.ts';
 
 // Alertas de fallo/staleness por dominio de sync.
 //
@@ -69,6 +70,30 @@ function activeMinutesBetween(fromMs: number, toMs: number): number {
 // asi que exigir 2 fallos seguidos evita despertar a alguien por nada sin
 // perder el caso real, que siempre es sostenido.
 const MIN_FALLOS_SEGUIDOS = 2;
+
+// ── Scopes que están en el registro pero NO tienen corrida programada ────────
+// El vigilante deriva sus scopes del PROPIO registro, así que a una sucursal
+// que alguna vez escribió una fila y después se sacó del cálculo se le sigue
+// midiendo la antigüedad para siempre — y nunca va a bajar. Pasó con Bodega en
+// minmax: su única fila es del 17-jul-2026 (una corrida manual, la de la
+// auditoría que justamente la sacó del cron), el 21-ago cruzó los 35 días y
+// disparó un aviso al teléfono que iba a repetirse TODOS los días, porque el
+// alertKey de antigüedad es uno por fecha.
+//
+// Se les perdona la ANTIGÜEDAD, nunca el FALLO: que nadie las programe no
+// vuelve normal que una corrida disparada a mano termine mal.
+//
+// Un scope que no se reconoce se sigue vigilando: la falla segura acá es
+// avisar de más, no callarse.
+function tieneCadencia(domain: string, scopeKey: string): boolean {
+  if (domain === 'minmax' && scopeKey.startsWith('erp:')) {
+    // La lista es la MISMA que recorre auto-calculate-minmax, importada y no
+    // copiada: si mañana entra o sale una sucursal, el vigilante se entera sin
+    // que nadie se acuerde de tocar este archivo.
+    return ERP_ORDER_MINMAX.includes(Number(scopeKey.slice(4)));
+  }
+  return true;
+}
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -168,7 +193,7 @@ serve(async (req) => {
           title: `Sync ${domain} falló`,
           message: `[${scopeKey}]${racha > 1 ? ` ${racha} seguidos —` : ''} ${row.error_msg ?? 'sin detalle'}`.slice(0, 300),
         });
-      } else if (ageMin > thresholdMin) {
+      } else if (ageMin > thresholdMin && tieneCadencia(domain, scopeKey)) {
         // dte/inventory usan umbrales de minutos: redondear a horas mostraba "0h".
         const fmt = (min: number) => min < 90
           ? `${Math.round(min)} min`

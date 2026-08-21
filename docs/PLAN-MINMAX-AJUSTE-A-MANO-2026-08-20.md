@@ -1,9 +1,9 @@
 # Que el recálculo mensual no pise el ajuste a mano — hallazgo y plan (2026-08-20)
 
-**Estado: fases 1 a 4 APLICADAS, y la captura del motivo también** (2026-08-21).
-Falta sólo la 5 —que el cálculo LEA el motivo—, que es la única que mueve
-números y es opcional. Todo lo demás ya está en producción: el ajuste se marca
-solo, publicar no lo pisa, se puede ver y filtrar, y se puede explicar. Las mediciones de §2 son lecturas contra producción anteriores
+**Estado: LAS CINCO FASES APLICADAS** (2026-08-21). El ajuste se marca solo,
+publicar no lo pisa, se puede ver, filtrar y explicar, y el cálculo lee el
+motivo. Queda un pendiente que NO es de código y que corre contra el 1-sep: los
+ajustes ANTERIORES a todo esto siguen sin marca — ver §10. Las mediciones de §2 son lecturas contra producción anteriores
 a cualquier cambio.
 
 **Prueba de salida de la fase 1, cumplida:** las 19,041 filas conservan
@@ -292,7 +292,7 @@ todos en verde, más `npm run build` y `npm run gate:design` sin deuda nueva.
 Los estados no se pueden comprobar en pantalla hasta que existan ajustes reales,
 así que la prueba es lo único que los sostiene hoy.
 
-### Fase 5 · El cálculo lee el motivo — *la única que mueve números*
+### Fase 5 · El cálculo lee el motivo — *la única que mueve números* — **APLICADA**
 
 `calculate_stock_params` aplica lo de §4.2. **Puede quedar sin hacer
 indefinidamente**: sin ella, las fases 1-4 ya resuelven lo principal —que el
@@ -342,6 +342,27 @@ dos casos (publicar / editar) no distingue tres. Cuando aparezca una cuarta
 operación que escriba `published_at`, va a caer del lado equivocado por omisión
 — y como no falla nada, nadie lo va a notar. Lo que lo destapó fue una pregunta,
 no un gate.
+
+---
+
+## 5 ter. La cuarta puerta, y la peor (2026-08-21)
+
+Encontrada al construir la fase 5, leyendo el cálculo línea por línea. El
+**auto-aplicar** —el bloque final de `calculate_stock_params`— escribe
+`min_units`/`max_units` **directamente**, sin pasar por `publish_stock_params`.
+O sea que el freno de la fase 3 no lo alcanzaba.
+
+Es la peor de las cuatro puertas por dos razones: **corre sola el día 1**, sin
+que nadie decida nada, y su único límite era que el cambio fuera ≤40% — lo cual
+no protege nada, porque un ajuste bajado un 20% entra dentro de ese margen y se
+pierde igual.
+
+Ahora exige `manual_at IS NULL`.
+
+**La lección se repite:** el freno se puso donde estaba el caso conocido
+(publicar) y no donde estaba la operación (escribir el número). Cada vez que
+apareció otra ruta de escritura, el freno no la cubría. Lo que hay que vigilar
+no es «quién publica» sino «quién escribe `min_units`».
 
 ---
 
@@ -419,3 +440,28 @@ empresa».
   elegiría mal alguno de los tres motivos que **sí** cambian el cálculo, que es
   peor que no declarar nada. `otro` exige nota escrita, no toca el cálculo y deja
   la fila «En conflicto».
+
+---
+
+## 10. Lo que NO cubre nada de esto: los ajustes anteriores
+
+Medido el 2026-08-21. Todo lo construido protege **de aquí en adelante**; nada
+de esto es retroactivo.
+
+| | |
+|---|---|
+| Solicitudes aprobadas que conservan su valor | **12** — ninguna protegida |
+| Pares editados a mano cuyo valor humano sigue vigente | **1,094** — ninguno protegido |
+| Pares cuyo ajuste el recálculo del 1-ago ya se llevó | 727 — ésos ya se perdieron |
+
+El **1-sep** el recálculo va a pasar sobre los 1,106 primeros exactamente como
+pasó sobre los 567 en agosto.
+
+**Lo que se puede hacer:** marcar con `manual_at`/`manual_por` —tomando la fecha
+y el autor de la bitácora— **sólo** las filas cuyo valor vigente ES el que puso
+una persona. Es quirúrgico: no toca `min_units` ni `max_units`, y deja fuera a
+los 727 ya pisados, porque marcarlos protegería el número del cálculo y no el
+humano — se cambiaría un error automático por otro.
+
+**Pendiente de decisión del dueño.** Es una escritura sobre 1,106 filas de
+producción y no se hace sin su visto bueno explícito.

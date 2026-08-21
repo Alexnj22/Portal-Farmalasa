@@ -21,6 +21,15 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const registrarSalida = vi.fn(async () => ({ data: { folio: 'PAG-1' }, error: null }));
+/* Lo que el lector de la boleta contesta. Por defecto: leyó bien la boleta
+   000318 por $100.00 — la remesa real del 2026-08-21. */
+const leerBoleta = vi.fn(async () => ({
+    leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: '000318',
+             entidad: 'BANCO PROMERICA', nombres: ['BANCO PROMERICA', 'RIA'] },
+    coincide: { entidad: null, numeroBoleta: null, monto: null },
+    veredicto: 'OK',
+    avisos: [],
+}));
 
 // El catálogo, calcado de las filas reales de `bolsas_tipos_salida`.
 const TIPOS = [
@@ -37,8 +46,19 @@ vi.mock('../../src/data/bolsas', () => ({
     fetchEntidadesDeSalida: vi.fn(async () => [{ tipo: 'REMESA', nombre: 'RIA' }]),
     registrarSalida: (...a) => registrarSalida(...a),
     subirComprobante: vi.fn(async () => 'https://x/f.jpg'),
+    leerBoleta: (...a) => leerBoleta(...a),
+    guardarLecturaDeBoleta: vi.fn(async () => {}),
+    boletaYaRegistrada: vi.fn(async () => []),
     identificarPorCarne: vi.fn(),
     identificarPorUsuario: vi.fn(),
+}));
+/* El editor de la foto se reemplaza por un botón: acá no se prueba el recorte
+   —eso vive en `fotoDocumento.test.js`— sino qué hace el formulario con la foto
+   ya preparada. El de verdad monta un lienzo, que en estas pruebas no existe. */
+vi.mock('../../src/components/common/EditorDeDocumento', () => ({
+    default: ({ file, onConfirm }) => (
+        <button type="button" onClick={() => onConfirm(file)}>preparar la foto</button>
+    ),
 }));
 vi.mock('../../src/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
 vi.mock('../../src/store/toastStore', () => ({ useToastStore: () => vi.fn() }));
@@ -71,7 +91,18 @@ const escribirMonto = async (v) => {
     await act(async () => {});
 };
 
-beforeEach(() => { registrarSalida.mockClear(); });
+beforeEach(() => { registrarSalida.mockClear(); leerBoleta.mockClear(); });
+
+/** La tarjeta del dato que trajo la boleta, buscada por su rótulo. */
+const tarjeta = (rotulo) => screen.getByText(rotulo).closest('[data-surface="card"]');
+
+/** Elegir la foto del comprobante y confirmarla en el editor. */
+const elegirFoto = async () => {
+    const input = document.querySelector('input[type="file"]');
+    const f = new File(['x'], 'boleta.jpg', { type: 'image/jpeg' });
+    await act(async () => { fireEvent.change(input, { target: { files: [f] } }); });
+    await act(async () => { fireEvent.click(screen.getByText('preparar la foto')); });
+};
 
 describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
     it('sin motivo elegido no dibuja ningún campo del motivo', async () => {
@@ -110,13 +141,66 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         expect(arg.vale).toBeNull();
     });
 
-    // La remesa NO se relajó: es la única que pasa por el POS.
-    it('la remesa sigue exigiendo boleta y foto', async () => {
+    // La remesa NO se relajó: es la única que pasa por el POS. Lo que cambió en
+    // v2.703.6 es el ORDEN — la foto va primero porque trae el monto y el
+    // número—, así que lo que se ancla es que la foto siga siendo obligatoria y
+    // que los datos que ella trae todavía NO se pidan a mano.
+    it('la remesa exige foto, y el monto y el número no se piden antes', async () => {
         await abrir();
         await elegirMotivo('Remesa entregada a un cliente');
-        expect(screen.getByText('Número de boleta')).toBeTruthy();
         expect(screen.getByText('Foto del comprobante')).toBeTruthy();
         expect(screen.queryByText(/Foto del comprobante \(opcional\)/i)).toBeNull();
+        expect(screen.queryByText('Número de boleta')).toBeNull();
+        expect(screen.queryByLabelText(/Cuánto/i)).toBeNull();
+    });
+
+    // ── El cartel rojo imposible (2026-08-21) ──────────────────────────────
+    // «La boleta dice $100.00 y la salida es de $100.00», con el botón trabado.
+    // El veredicto se había calculado contra CERO: el campo del monto estaba
+    // vacío y `Number('')` es 0, no NaN, así que pasaba el filtro de «¿hay un
+    // número?» y viajaba como monto esperado de $0.00.
+    it('la foto se lee con el monto VACÍO: no viaja un cero que nadie escribió', async () => {
+        await abrir();
+        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirFoto();
+
+        expect(leerBoleta).toHaveBeenCalledTimes(1);
+        const esperado = leerBoleta.mock.calls[0][1];
+        expect(esperado.monto).toBeNull();
+        expect(esperado.numeroBoleta).toBeNull();
+    });
+
+    // Regla del usuario: «la única forma en que no quede informativo es si la
+    // foto no logra distinguir el monto o boleta».
+    it('lo que la boleta dijo se muestra como dato y no se puede escribir encima', async () => {
+        await abrir();
+        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirFoto();
+
+        // El monto se busca DENTRO de su tarjeta: «Sale de» también dice
+        // $100.00, que es de dónde sale el dinero y no lo que dijo el papel.
+        expect(tarjeta('Cuánto').textContent).toContain('$100.00');
+        expect(tarjeta('Número de boleta').textContent).toContain('000318');
+        // Y ninguno de los dos es un campo de escritura.
+        expect(screen.queryByLabelText(/Cuánto/i)).toBeNull();
+        expect(screen.queryByLabelText('Número de boleta')).toBeNull();
+    });
+
+    // La otra mitad de la regla: si el lector no distinguió un dato, ahí sí se
+    // escribe a mano — con su aviso, para que nadie lo deje vacío sin verlo.
+    it('lo que la boleta no dejó leer se pide a mano', async () => {
+        leerBoleta.mockResolvedValueOnce({
+            leido: { es_boleta: true, legible: true, monto: 100, numero_boleta: null },
+            coincide: { entidad: null, numeroBoleta: null, monto: null },
+            veredicto: 'OK', avisos: [],
+        });
+        await abrir();
+        await elegirMotivo('Remesa entregada a un cliente');
+        await elegirFoto();
+
+        expect(tarjeta('Cuánto').textContent).toContain('$100.00');
+        expect(screen.getByLabelText('Número de boleta')).toBeTruthy();
+        expect(screen.getByText(/no dejó leer el número/i)).toBeTruthy();
     });
 
     // Un motivo con receptor no se registra desde el formulario: primero hay

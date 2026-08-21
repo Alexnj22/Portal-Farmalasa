@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.11 — La boleta se muestra y el editor de fotos entiende que es una tira
+
+Dos pedidos del usuario sobre la misma pantalla, el 2026-08-21.
+
+**«La única forma en que no quede informativo es si la foto no logra distinguir
+el monto o boleta».** Lo que la lectura sacó del papel ya no se puede escribir
+encima: se muestra como dato, y punto. El «Corregir» que había puesto v2.703.9
+se retiró — corregir un dato leído es volver a tomar la foto, porque en una
+remesa la boleta es la verdad y un número escrito encima del papel es justo lo
+que la revisión existe para impedir. Lo único que sigue viniendo en casilla es
+lo que la boleta **no** dejó leer, y sale vacía con su aviso.
+
+**«El editor de foto está horrible; las boletas son verticales, de una ticketera
+como 2/3 de la de 80».** Eran cuatro cosas, y la peor no se veía:
+
+1. **El recorte estaba clavado en 4:3 acostado.** El canónico de recorte no
+   tiene modo libre: si nadie le dice la proporción usa 4:3, y nadie se la
+   decía. Sobre la foto de una tira de 58 mm eso significa que encuadrar la
+   boleta obligaba a meter medio mostrador arriba y abajo — no había forma de
+   recortar sólo el papel. Ahora la proporción sale **medida del recuadro que
+   devuelve la lectura**, o sea de esta boleta; y hay tres formas a mano
+   —Corta, Normal, Larga— para cuando no hubo lectura o el papel salió más
+   corto o más largo.
+2. **El marco tenía forma de hoja.** Ancho y bajo, con la tira dibujada como una
+   astilla en el medio. Hoy el diálogo es angosto y toma el alto entero, y el
+   recorte se queda con todo lo que sobra: los controles ya no le comen una
+   fracción fija de la pantalla. Medido en un teléfono de 390×844, con el marco
+   anterior la forma del papel, «Aclarada» y el aviso quedaban fuera de la vista.
+3. **Decía «enderézala» y sólo giraba de a 90°.** Una boleta apoyada en un
+   mostrador sale torcida tres o cuatro grados casi siempre. Ahora hay un carril
+   de ±10°, y lo que asoma por las esquinas al enderezar sale blanco.
+4. **El archivo salía con el ancho al azar.** Se normalizaba por el lado largo,
+   que en una tira es el que depende de cuántos renglones imprimió el POS: la
+   misma foto de la misma letra salía con 800 px de ancho en una boleta corta y
+   con 270 en una larga — la segunda ilegible, y nadie lo notaba hasta abrir el
+   archivo. Hoy la boleta se normaliza por el **ancho** (1200 px, con tope al
+   largo) y el aviso de «el recorte quedó chico» mira ese mismo lado. Medido en
+   el banco de pruebas: 1200×3369 px, 126 kB.
+
+Además, el acercamiento de los dedos y el del carril ahora son el mismo número
+(el canónico traía 3 y el carril llegaba a 4, así que en el teléfono los dedos
+frenaban antes y parecía que la pantalla se trababa).
+
+**Y una prueba que llevaba rota desde v2.703.6**: afirmaba que la remesa pide el
+número de boleta apenas se elige el motivo, cuando ese cambio lo había movido
+detrás de la foto. Ahora ancla el orden nuevo, y con él los dos pedidos de hoy.
+
 ## v2.703.10 — los diálogos, medidos por tandas hasta el final
 
 Se corrió el barrido de diálogos completo, en tres tandas: **17 rutas, 19

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avisosDeFoto, medirDocumento } from '../../src/utils/fotoDocumento';
+import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento } from '../../src/utils/fotoDocumento';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las medidas de la foto de una receta.
@@ -124,5 +124,65 @@ describe('avisosDeFoto', () => {
 
     it('sin medidas no inventa avisos', () => {
         expect(avisosDeFoto(null)).toEqual([]);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Por qué lado sale el archivo.
+//
+// Una hoja se normaliza por el lado largo y una boleta térmica por el ancho de
+// su tira — porque lo que hace legible la letra de una boleta es cuántos
+// píxeles tiene A LO LARGO DEL RENGLÓN, y su largo depende de cuántos renglones
+// imprimió el POS. Se ancla acá porque el efecto sólo se ve abriendo el archivo
+// guardado: con la regla vieja, la misma boleta salía con 800 px de ancho o con
+// 270 según fuera corta o larga, y nada avisaba.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('escalaDeSalida', () => {
+    const anchoFinal = (a, b, doc) => Math.round(Math.min(a, b) * escalaDeSalida(a, b, doc));
+
+    it('una boleta corta y una larga salen con el MISMO ancho', () => {
+        expect(anchoFinal(1500, 3000, DOCS.boleta)).toBe(1200);
+        expect(anchoFinal(1500, 6000, DOCS.boleta)).toBe(1200);
+    });
+
+    it('con la regla de la hoja, esa misma boleta larga habría salido ilegible', () => {
+        // 1500 × 6000 normalizada por el lado largo a 1600: 400 px de ancho.
+        expect(anchoFinal(1500, 6000, DOCS.receta)).toBe(400);
+    });
+
+    it('una tira muy larga se frena en el tope para no dar un archivo enorme', () => {
+        const [a, b] = [1500, 12000];
+        const e = escalaDeSalida(a, b, DOCS.boleta);
+        expect(Math.round(b * e)).toBe(6000);
+        expect(Math.round(a * e)).toBeLessThan(1200);
+    });
+
+    it('nunca agranda: una foto chica sale como está', () => {
+        expect(escalaDeSalida(500, 1400, DOCS.boleta)).toBe(1);
+        expect(escalaDeSalida(600, 800, DOCS.receta)).toBe(1);
+    });
+
+    it('una hoja sigue midiéndose por el lado largo', () => {
+        const e = escalaDeSalida(2400, 3200, DOCS.receta);
+        expect(Math.round(3200 * e)).toBe(1600);
+    });
+
+    it('sin medidas usables no rompe', () => {
+        expect(escalaDeSalida(0, 0, DOCS.boleta)).toBe(1);
+        expect(escalaDeSalida(1000, 2000, {})).toBeCloseTo(0.8);
+    });
+});
+
+// El aviso de «recorte chico» y la normalización miran el MISMO lado: si se
+// separan, el aviso habla de un archivo que no es el que se guarda.
+describe('el aviso del recorte chico en una boleta', () => {
+    it('no molesta a una boleta bien tomada', () => {
+        const buena = { papel: 250, tinta: 0.03, color: 0, ancho: 1200, alto: 3000 };
+        expect(avisosDeFoto(buena, 'aclarada', DOCS.boleta)).toEqual([]);
+    });
+
+    it('avisa cuando la boleta se fotografió de lejos', () => {
+        const lejos = { papel: 250, tinta: 0.03, color: 0, ancho: 500, alto: 1300 };
+        expect(avisosDeFoto(lejos, 'aclarada', DOCS.boleta).some(a => /chico/.test(a.texto))).toBe(true);
     });
 });

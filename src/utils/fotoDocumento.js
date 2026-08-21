@@ -111,23 +111,38 @@ const PAPEL_OSCURO = 120;
 // así que 0.1% distingue de sobra sin acercarse al ruido.
 const COLOR_VISIBLE = 0.001;
 
-// Debajo de esto el texto no sobrevive al JPEG. 1600 es el lado largo con el que
-// sale todo; 900 es el piso de una HOJA, medido sobre su lado corto.
-//
-// El lado que se mide depende del documento y lo dice quien llama (2026-08-20).
-// Una boleta térmica bien recortada mide algo como 600 × 1500: mirarle el lado
-// corto haría saltar el aviso en TODAS las boletas bien tomadas, y un aviso que
-// aparece siempre deja de leerse y se lleva puestos a los que sí importan.
+// Debajo de esto el texto no sobrevive al JPEG. 900 es el piso de una HOJA,
+// medido sobre su lado corto; el de la boleta sale de su propio ancho (ver
+// `salida` más abajo).
 const LADO_CORTO_MINIMO = 900;
 
 /**
  * Lo único que cambia entre un documento y otro.
  *
- * `ladoMinimo` se mide por el lado LARGO en una boleta y por el CORTO en una
- * receta, y no es un detalle: una boleta térmica bien recortada mide algo como
- * 600 × 1500, o sea que el aviso de «el recorte quedó chico» —pensado sobre el
- * lado corto de una hoja— saltaría en TODAS las boletas bien tomadas. Un aviso
- * que aparece siempre deja de leerse, y se lleva puestos a los que sí importan.
+ * ── `salida`: por qué lado se normaliza el tamaño del archivo ─────────────
+ * `por: 'largo'` es lo de siempre —el lado más largo va a 1600 px— y sirve para
+ * una HOJA, donde los dos lados son parecidos.
+ *
+ * Una boleta térmica NO es una hoja: es una tira de **58 mm** de ancho (dos
+ * tercios de la de 80) y del largo que haya salido, así que su proporción va de
+ * 1:2 a 1:6 según cuántos renglones imprimió el POS. Lo que hace legible su
+ * letra es cuántos píxeles tiene **de ancho**, a lo largo del renglón — y
+ * normalizar por el lado largo deja justo eso al azar del largo del papel: la
+ * misma foto, la misma letra, salía con 800 px de ancho en una boleta corta y
+ * con 270 en una larga. La segunda es ilegible y nadie lo notaba hasta abrir el
+ * archivo. Por eso la boleta se normaliza por el lado **corto**, con un `tope`
+ * al largo para que una tira muy larga no produzca un archivo enorme.
+ *
+ * Nunca se AGRANDA (`escalaDeSalida` corta en 1): estirar una foto chica no
+ * agrega información, sólo peso.
+ *
+ * ── `medirLado`: sobre qué lado avisa «el recorte quedó chico» ────────────
+ * Sobre el mismo lado por el que se normaliza, y por eso los dos cambiaron
+ * juntos el 2026-08-21. Mientras la boleta salía normalizada por el largo, su
+ * lado corto quedaba en ~600 px SIEMPRE —incluso bien tomada—, así que mirarlo
+ * habría hecho saltar el aviso en todas; hoy una boleta bien tomada sale con
+ * 1200 px de ancho y una tomada de lejos con 500, que es exactamente la
+ * diferencia que el aviso tiene que contar.
  */
 export const DOCS = {
     receta: {
@@ -135,24 +150,81 @@ export const DOCS = {
         titulo: 'Preparar la foto',
         bajada: 'Deja sólo la receta y enderézala. Todas salen del mismo tamaño.',
         archivo: 'receta',
+        salida: { por: 'largo', lado: 1600 },
         ladoMinimo: 900,
         medirLado: 'corto',
+        // Una hoja se fotografía como se agarra: el marco ancho de siempre.
+        marco: 'ancho',
+        // La proporción del recuadro de recorte. 4:3 es lo que el canónico traía
+        // de fábrica y con lo que vivió la receta desde el primer día.
+        aspecto: 4 / 3,
         pista: '«Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra. '
              + 'Si la receta trae sello a color y se pierde, guárdala «como está».',
     },
     boleta: {
         nombre: 'la boleta',
         titulo: 'Preparar la foto de la boleta',
-        bajada: 'Deja sólo el papel de la boleta y enderézalo. Todas salen del mismo tamaño.',
+        bajada: 'Deja sólo el papel y enderézalo. Todas salen del mismo ancho.',
         archivo: 'boleta',
-        // El lado largo: la boleta es una tira angosta (ver arriba).
-        ladoMinimo: 1000,
-        medirLado: 'largo',
-        pista: 'Recorta hasta el borde del papel: lo que quede del mostrador alrededor '
-             + 'no dice nada y hace la letra más chica. «Aclarada» deja el papel blanco '
-             + 'y la impresión negra, que es lo que hace legible una boleta térmica.',
+        // 1200 px de ancho es la tira de 58 mm a ~520 ppp: más que suficiente
+        // para la letra chica de una térmica. El tope de 6000 al largo deja
+        // pasar entera cualquier boleta de hasta 1:5 —que cubre las largas de
+        // verdad— y sólo empieza a angostar más allá, donde el archivo pesaría
+        // más que lo que agrega.
+        salida: { por: 'corto', lado: 1200, tope: 6000 },
+        ladoMinimo: 850,
+        medirLado: 'corto',
+        /* La proporción del recuadro de recorte, y el motivo por el que el
+         * editor «estaba horrible» (usuario, 2026-08-21).
+         *
+         * El canónico de recorte NO tiene modo libre: si nadie le dice la
+         * proporción usa **4:3 acostado**, y eso es lo que había. O sea que
+         * sobre la foto de una tira de 58 mm el recuadro era un rectángulo
+         * ancho: encuadrar la boleta obligaba a meter medio mostrador arriba y
+         * abajo, y no existía forma de recortar sólo el papel. El comentario del
+         * editor decía «libre y no un formato fijo» — nunca lo fue.
+         *
+         * Cuando la lectura devuelve el recuadro del papel, la proporción sale
+         * de AHÍ: es la de esta boleta, medida, y no una estimación. `formas` es
+         * el respaldo para cuando no hubo lectura o cuando el papel salió más
+         * corto o más largo de lo que el recuadro dice — un rollo de 58 mm mide
+         * lo que haya impreso el POS, de dos a cinco anchos de largo.
+         */
+        aspecto: 1 / 3,
+        formas: [
+            { value: 'corta', label: 'Corta', aspecto: 1 / 2 },
+            { value: 'normal', label: 'Normal', aspecto: 1 / 3 },
+            { value: 'larga', label: 'Larga', aspecto: 1 / 5 },
+        ],
+        // La boleta es una TIRA VERTICAL y se fotografía con el teléfono
+        // parado: en un marco ancho y bajo se dibuja como una astilla en el
+        // medio de la pantalla, con el mostrador ocupando todo lo demás — que
+        // es justo lo que hay que recortar. El marco alto le da a la tira casi
+        // toda la altura disponible.
+        marco: 'alto',
+        // Corta a propósito: en un teléfono, cada renglón del aviso se lo saca
+        // al recorte, que es donde se hace el trabajo.
+        pista: 'Recorta hasta el borde del papel. «Aclarada» deja el papel blanco y la '
+             + 'impresión negra, que es lo que hace legible una boleta térmica.',
     },
 };
+
+/**
+ * Cuánto hay que escalar un recorte para que salga al tamaño del documento.
+ *
+ * Devuelve siempre ≤ 1 — ver `salida` arriba. Vive acá y no en el editor porque
+ * la usan los dos que tienen que hablar del MISMO archivo: el que lo compone y
+ * el que revisa cuánto va a medir para avisar antes de guardar.
+ */
+export function escalaDeSalida(ancho, alto, doc = {}) {
+    const s = doc.salida || { por: 'largo', lado: 1600 };
+    const largo = Math.max(ancho || 0, alto || 0);
+    const corto = Math.min(ancho || 0, alto || 0);
+    if (!largo || !corto) return 1;
+    const base = s.por === 'corto' ? s.lado / corto : s.lado / largo;
+    const tope = s.tope ? s.tope / largo : Infinity;
+    return Math.min(1, base, tope);
+}
 
 /**
  * Traduce las medidas a lo que hay que decirle a quien está por guardar.

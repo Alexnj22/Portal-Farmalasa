@@ -227,8 +227,19 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             const ultima = vivas[vivas.length - 1];
 
             if (ultima) {
+                // El fallo se DICE. Hasta el 21-ago-2026 esto era un
+                // `console.error` y nada más: el vale no salía, la salida
+                // quedaba escrita y quien la registró no tenía forma de
+                // enterarse hasta que administración abriera la bolsa y no
+                // encontrara el papel adentro. La etiqueta ya avisaba; el vale
+                // era el único de los dos que fallaba callado.
                 try { await imprimirVale(ultima, bolsa, saldo); }
-                catch (e) { console.error('bolsas: el vale no se pudo imprimir:', e?.message); }
+                catch (e) {
+                    console.error('bolsas: el vale no se pudo imprimir:', e?.message);
+                    showToast?.('Falta el vale',
+                        `${ultima.vale_folio} - imprimilo desde el detalle de la bolsa y dejalo adentro.`,
+                        'error');
+                }
             }
             await reimprimirEtiqueta(bolsa, nombrePersona?.get?.(bolsa.cerrada_por));
         }

@@ -1281,6 +1281,42 @@ export function guardarAjustesDeImpresion(ajustes) {
  *
  * @returns {Promise<{via: 'directa'|'cola'|'dialogo', ok: boolean, detalle: string}>}
  */
+/**
+ * La capa de datos de la cola, bajada JUNTO con este archivo.
+ *
+ * Sigue siendo un `import()` —no tiene por qué viajar en el chunk de una vista
+ * que quizá nunca imprima— pero **se pide al cargar este módulo y no al
+ * imprimir**, y esa diferencia es el bug del 21-ago-2026.
+ *
+ * Los diálogos que escriben plata ya bajaban `ticketPrint` y `bolsaComprobante`
+ * al ABRIR, justamente para que un despliegue en el medio no los dejara sin
+ * papel (ver el comentario de `SalidaDeBolsa`). Éste era el tercer chunk de la
+ * cadena y no lo prevenía nadie: tras un despliegue su hash ya no existe, el
+ * `import()` devuelve el `index.html` del SPA, tira, `main.jsx` recarga la
+ * página — y para entonces la salida ya está escrita. Medido: la remesa
+ * REM-1013 (21-ago 16:14, seis segundos después de un despliegue) quedó
+ * registrada, `bolsas.etiqueta_version` subió a 3 y en `cola_impresion` no hay
+ * ni el vale ni la etiqueta. Ninguno de los dos papeles salió y no hubo aviso.
+ *
+ * Al pedirlo acá arriba viaja con `ticketPrint`, así que el precalentamiento
+ * que ya hacen los diálogos lo cubre **sin que ninguna pantalla tenga que
+ * acordarse** — que es la única forma de que no se olvide en la próxima.
+ *
+ * Si falla se olvida la promesa: el siguiente intento vuelve a pedirlo en vez
+ * de quedar roto para siempre.
+ */
+let colaPromise = null;
+function cargarLaCola() {
+    if (!colaPromise) {
+        colaPromise = import('../data/impresion')
+            .catch((err) => { colaPromise = null; throw err; });
+    }
+    return colaPromise;
+}
+// Se adelanta al momento de imprimir. El `catch` es para que un fallo acá no
+// quede como promesa sin capturar: `cargarLaCola()` lo va a volver a intentar.
+cargarLaCola().catch(() => {});
+
 export async function imprimirDocumento(
     ticket, { forzarDialogo = false, soloDirecta = false, soloCola = false, sala = null } = {},
 ) {
@@ -1293,9 +1329,7 @@ export async function imprimirDocumento(
 
     if (!forzarDialogo) {
         if (sala != null) {
-            // `await import`: la capa de datos de la cola no tiene por qué
-            // viajar en el chunk de una vista que quizá nunca imprima.
-            const { encolarImpresion } = await import('../data/impresion');
+            const { encolarImpresion } = await cargarLaCola();
             const { error } = await encolarImpresion({
                 branchId: sala,
                 titulo: ticket?.titulo || 'Documento',

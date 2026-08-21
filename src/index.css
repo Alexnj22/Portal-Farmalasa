@@ -3356,6 +3356,30 @@ html, body, #root {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   §scroll del tablero · LA BALDOSA NO ROBA EL GESTO DE LA PÁGINA — 2026-08-21
+
+   Tercer reporte de la misma tecla: «si hago scroll en el body y paso por un
+   widget que tiene scroll interno, también hace scroll, no debería».
+
+   El robo no ocurre en un borde —ahí `overscroll-behavior` no tiene nada que
+   decir—: ocurre porque el navegador vuelve a elegir a quién scrollear en cada
+   evento, mirando qué hay bajo el puntero. Y el puntero está QUIETO: es la
+   página la que se mueve y le mete la baldosa debajo. Medido en Chrome, un
+   gesto de 2,000px que empieza sobre el fondo: la página recibe 900 y la
+   baldosa se queda con 1,100 (igual a 16ms, 50ms y 120ms entre eventos — el
+   «scroll latching» de Chrome no lo cubre).
+
+   Una baldosa con `pointer-events: none` no es candidata a recibir la rueda,
+   así que el navegador scrollea el ancestro con su física nativa: sin
+   `preventDefault`, sin mover `scrollTop` a mano y sin perder un píxel del
+   gesto (medido: 2,000 de 2,000). El atributo lo pone y lo quita
+   `scrollEncadenado.js` — vive lo que dura el gesto y ni un milisegundo más,
+   porque en reposo también apagaría el clic dentro de las listas. */
+[data-rejilla-widgets][data-gesto-de-la-pagina] .overscroll-contain {
+  pointer-events: none;
+}
+
 html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;

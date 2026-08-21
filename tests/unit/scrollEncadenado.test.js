@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { permitirEscapeDelScroll } from '../../src/utils/scrollEncadenado';
 
 // Estas pruebas anclan la única regla que distingue los DOS reportes opuestos
@@ -6,10 +6,16 @@ import { permitirEscapeDelScroll } from '../../src/utils/scrollEncadenado';
 //
 //   14-ago · «si scroleo y se acaba el scroll interno, hace scroll externo»
 //   20-ago · «solo escrolea internamente, si quiero escrolear todo debo salir»
+//   21-ago · «si hago scroll en el body y paso por un widget, también hace
+//             scroll, no debería»
 //
 // La diferencia entre uno y otro NO es la posición del scroller: es si el gesto
 // EMPEZÓ ahí. Un test que sólo mire el borde da verde con las dos versiones
 // rotas, así que lo que se comprueba es la continuación del gesto.
+//
+// El del 21 no se ve en `overscrollBehavior` —el robo no pasa en un borde—:
+// se ve en el atributo con el que la rejilla saca a sus baldosas del
+// hit-testing mientras el gesto es de la página.
 
 let raiz, baldosa, limpiar;
 
@@ -21,12 +27,15 @@ function medidas({ alto, contenido, arriba }) {
 }
 
 /** Una rueda con el reloj puesto a mano: el hueco entre eventos ES la regla. */
-function rodar({ deltaY, enMs }) {
+function rodar({ deltaY, enMs, sobre = baldosa }) {
   const e = new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: false });
   Object.defineProperty(e, 'timeStamp', { value: enMs });
-  baldosa.dispatchEvent(e);
+  sobre.dispatchEvent(e);
   return baldosa.style.overscrollBehavior;
 }
+
+/** ¿La rejilla se quedó con el gesto? (o sea: sus baldosas no reciben rueda) */
+const laPaginaMandaAhora = () => raiz.hasAttribute('data-gesto-de-la-pagina');
 
 beforeEach(() => {
   raiz = document.createElement('div');
@@ -105,5 +114,79 @@ describe('permitirEscapeDelScroll', () => {
     limpiar();
     limpiar = null;
     expect(rodar({ deltaY: 50, enMs: 1000 })).toBe('');
+  });
+
+  // ── El dueño del gesto (reporte del 21-ago) ────────────────────────────
+  // Esto NO se ve en `overscrollBehavior`: el robo no ocurre en un borde, sino
+  // porque el navegador vuelve a elegir a quién scrollear en cada evento
+  // mirando qué hay bajo el puntero — y el puntero está quieto, es la página la
+  // que le mete la baldosa debajo. Lo que se ancla es que la rejilla se quede
+  // con el gesto mientras dure.
+
+  it('el gesto que empieza FUERA de una baldosa es de la página', () => {
+    const fondo = document.createElement('div');
+    raiz.appendChild(fondo);
+    medidas({ alto: 100, contenido: 500, arriba: 200 });   // baldosa con recorrido
+    rodar({ deltaY: 50, enMs: 1000, sobre: fondo });
+    expect(laPaginaMandaAhora()).toBe(true);
+  });
+
+  it('y la baldosa que le pasa por debajo NO se lo quita', () => {
+    const fondo = document.createElement('div');
+    raiz.appendChild(fondo);
+    medidas({ alto: 100, contenido: 500, arriba: 200 });
+    rodar({ deltaY: 50, enMs: 1000, sobre: fondo });
+    // el gesto sigue y ahora los eventos caen sobre la baldosa
+    expect(rodar({ deltaY: 50, enMs: 1050 })).toBe('');   // no la hizo dueña
+    expect(laPaginaMandaAhora()).toBe(true);
+  });
+
+  it('la baldosa en su tope cede el gesto ENTERO, no sólo el borde', () => {
+    medidas({ alto: 100, contenido: 500, arriba: 400 });
+    rodar({ deltaY: 50, enMs: 1000 });
+    expect(laPaginaMandaAhora()).toBe(true);
+  });
+
+  it('la baldosa con recorrido se queda con el gesto', () => {
+    medidas({ alto: 100, contenido: 500, arriba: 200 });
+    rodar({ deltaY: 50, enMs: 1000 });
+    expect(laPaginaMandaAhora()).toBe(false);
+  });
+
+  it('la marca se suelta al terminar el gesto — en reposo apagaría el clic', () => {
+    vi.useFakeTimers();
+    try {
+      const fondo = document.createElement('div');
+      raiz.appendChild(fondo);
+      rodar({ deltaY: 50, enMs: 1000, sobre: fondo });
+      expect(laPaginaMandaAhora()).toBe(true);
+      vi.advanceTimersByTime(199);
+      expect(laPaginaMandaAhora()).toBe(true);   // el gesto todavía puede seguir
+      vi.advanceTimersByTime(2);
+      expect(laPaginaMandaAhora()).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('un gesto NUEVO sobre una baldosa con recorrido se la devuelve', () => {
+    vi.useFakeTimers();
+    try {
+      const fondo = document.createElement('div');
+      raiz.appendChild(fondo);
+      medidas({ alto: 100, contenido: 500, arriba: 200 });
+      rodar({ deltaY: 50, enMs: 1000, sobre: fondo });
+      vi.advanceTimersByTime(201);                 // el gesto terminó
+      expect(rodar({ deltaY: 50, enMs: 1300 })).toBe('contain');
+      expect(laPaginaMandaAhora()).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('la limpieza también suelta la marca', () => {
+    const fondo = document.createElement('div');
+    raiz.appendChild(fondo);
+    rodar({ deltaY: 50, enMs: 1000, sobre: fondo });
+    expect(laPaginaMandaAhora()).toBe(true);
+    limpiar();
+    limpiar = null;
+    expect(laPaginaMandaAhora()).toBe(false);
   });
 });

@@ -1,8 +1,8 @@
 /**
- * El escape del scroll de una baldosa — 2026-08-20.
+ * El dueño del gesto de scroll en el Inicio — 2026-08-20 / 2026-08-21.
  *
- * Contexto, porque son DOS reportes opuestos del mismo usuario sobre la misma
- * tecla y quien lea sólo uno la vuelve a mover:
+ * Contexto, porque son TRES reportes del mismo usuario sobre la misma tecla y
+ * quien lea sólo uno la vuelve a mover:
  *
  * · 14-ago (v2.604.2): «si scroleo y se acaba el scroll interno, hace scroll
  *   externo, así que se mueve». Se puso `overscroll-contain` en los scrollers
@@ -11,25 +11,41 @@
  * · 20-ago: «en inicio no puedo escrolear bien, solo escrolea internamente, si
  *   quiero escrolear todo debo salir y buscar otro lugar. lo mismo en android.
  *   en iphone si funciona bien».
+ * · 21-ago: «si hago scroll en el body y paso por un widget que tiene scroll
+ *   interno, también hace scroll, no debería».
  *
- * No se contradicen: `overscroll-behavior: contain` no distingue el
- * encadenamiento ACCIDENTAL —el que ocurre a mitad de un gesto, cuando la
- * lista se acaba— del DELIBERADO —el gesto que empieza con la lista ya en su
- * tope y quiere mover la página—. Los apaga a los dos, y como las baldosas
- * cubren el Inicio entero, no queda dónde agarrar la página.
+ * Los tres son la misma pregunta —¿de quién es ESTE gesto?— contestada en tres
+ * momentos distintos, y `overscroll-behavior` sólo sabe contestar el tercero de
+ * ellos (qué pasa AL LLEGAR al borde). Por eso hace falta esto:
  *
- * Y por eso el iPhone «funciona bien»: WebKit no bloquea el encadenamiento de
- * un scroller anidado como lo hace Chrome, así que ahí el segundo gesto SÍ
- * mueve la página. El modelo que el usuario ya validó es ese, y es el que se
- * reproduce acá — no se elige entre los dos reportes, se cumplen los dos:
+ *   el gesto EMPIEZA sobre una lista con recorrido  → es de la lista, y sigue
+ *     siéndolo aunque la lista se acabe a mitad     (reporte del 14)
+ *   el gesto EMPIEZA sobre una lista en su tope     → es de la página
+ *                                                    (reporte del 20)
+ *   el gesto EMPIEZA sobre la página                → es de la página ENTERA,
+ *     y ninguna baldosa que le pase por debajo se lo puede quitar
+ *                                                    (reporte del 21)
  *
- *   dentro del gesto  → contenido (reporte del 14)
- *   gesto que EMPIEZA en el borde → encadena (reporte del 20)
+ * ── Por qué el tercero necesita más que `overscroll-behavior` ───────────────
+ * Porque el robo no ocurre en un borde: ocurre porque el navegador vuelve a
+ * elegir a quién scrollear en cada evento, mirando qué hay bajo el puntero. Y
+ * el puntero está quieto: es la PÁGINA la que se mueve y le mete la baldosa
+ * debajo. Medido en Chrome (headless, `mouse.wheel`), un gesto de 2,000px que
+ * empieza sobre el fondo: la página recibe 900 y la baldosa se queda con 1,100.
+ * A 16ms, a 50ms y a 120ms entre eventos por igual — el «scroll latching» de
+ * Chrome no lo cubre.
  *
- * El táctil no pasa por acá: se resuelve en CSS (`index.css`, §scroll del
- * tablero), porque en un dedo no hay forma de saber la dirección antes de que
- * el navegador ya haya elegido a quién scrollear, y porque el comportamiento
- * que se busca en el dedo es exactamente el del iPhone: encadenar siempre.
+ * La herramienta que sí lo cubre es el hit-testing: una baldosa con
+ * `pointer-events: none` no es candidata a recibir la rueda, y el navegador
+ * scrollea el ancestro con su física nativa —sin `preventDefault`, sin mover
+ * `scrollTop` a mano, sin perder un píxel del gesto (medido: 2,000 de 2,000)—.
+ * Por eso el gesto de la página se marca en la REJILLA con un atributo y el
+ * resto lo hace una regla de CSS (`index.css`, §scroll del tablero).
+ *
+ * El táctil no pasa por acá: se resuelve en CSS, porque en un dedo no hay forma
+ * de saber la dirección antes de que el navegador ya haya elegido a quién
+ * scrollear, y porque el comportamiento que se busca en el dedo es el del
+ * iPhone: encadenar siempre.
  */
 
 /* Los scrollers del tablero se marcan con la clase de Tailwind, que es lo que
@@ -43,6 +59,11 @@ const SELECTOR = '.overscroll-contain';
    nuevo al empujón siguiente. */
 const PAUSA_ENTRE_GESTOS_MS = 200;
 
+/* Mientras esto esté puesto en la rejilla, sus baldosas no reciben la rueda.
+   Se quita sola al terminar el gesto — nunca queda puesta en reposo, porque
+   también apagaría el clic dentro de las listas. */
+const MARCA_PAGINA = 'data-gesto-de-la-pagina';
+
 const MARGEN_PX = 1;   // el scrollTop fraccionario de un zoom no es un borde
 
 function enElBorde(el, haciaAbajo) {
@@ -52,28 +73,50 @@ function enElBorde(el, haciaAbajo) {
 }
 
 /**
- * Instala el escape sobre `raiz` (la rejilla de widgets). Devuelve la función
- * de limpieza.
+ * Instala el dueño del gesto sobre `raiz` (la rejilla de widgets). Devuelve la
+ * función de limpieza.
  */
 export function permitirEscapeDelScroll(raiz) {
   if (!raiz) return () => {};
 
   let ultimaRueda = -Infinity;
+  let finDelGesto = null;
+
+  const soltarLaPagina = () => raiz.removeAttribute(MARCA_PAGINA);
+
+  const tomarLaPagina = () => raiz.setAttribute(MARCA_PAGINA, '');
+
+  /* No hay evento de «fin de rueda»: el gesto termina cuando deja de llegar.
+     Se reprograma en cada evento, así que la marca vive exactamente lo que
+     dure el gesto y ni un milisegundo más. */
+  const programarElFin = () => {
+    clearTimeout(finDelGesto);
+    finDelGesto = setTimeout(soltarLaPagina, PAUSA_ENTRE_GESTOS_MS);
+  };
+
+  /* Con la marca puesta, `e.target` ya NO es la baldosa —para eso está la
+     marca—, así que preguntarle a él de quién es el gesto nuevo se contestaría
+     solo que «de la página» para siempre. Se quita la marca y se rehace el
+     hit-test contra la geometría real. Sucede como mucho una vez por empujón, y
+     sólo en el borde entre un gesto y el siguiente. */
+  const bajoElPuntero = (e) => {
+    if (!raiz.hasAttribute(MARCA_PAGINA)) return e.target;
+    soltarLaPagina();
+    return document.elementFromPoint?.(e.clientX, e.clientY) || e.target;
+  };
 
   const alRodar = (e) => {
-    const el = e.target instanceof Element ? e.target.closest(SELECTOR) : null;
-    if (!el || !raiz.contains(el)) return;
-
     const gestoNuevo = e.timeStamp - ultimaRueda > PAUSA_ENTRE_GESTOS_MS;
     ultimaRueda = e.timeStamp;
+    programarElFin();
 
     // ── La decisión se toma UNA vez y dura todo el gesto ──────────────────
-    // Reponer `contain` en cada evento de continuación parece lo prudente y
-    // rompe justo lo que se vino a arreglar: una rueda emite decenas de eventos
-    // por empujón, así que el segundo ya volvería a trabar el gesto que acababa
-    // de habilitarse. Y no hace falta: si el gesto EMPEZÓ con lista por
-    // recorrer, quedó en `contain`, y ahí sigue cuando la lista se acabe a
-    // mitad de camino — que es exactamente el reporte del 14-ago.
+    // Rehacerla en cada evento parece lo prudente y rompe justo lo que se vino
+    // a arreglar: una rueda emite decenas de eventos por empujón, así que el
+    // segundo ya desharía lo que decidió el primero. Y no hace falta: si el
+    // gesto EMPEZÓ con lista por recorrer, quedó en `contain`, y ahí sigue
+    // cuando la lista se acabe a mitad de camino — que es exactamente el
+    // reporte del 14-ago.
     //
     // Además compra tolerancia al reloj del compositor: el primer evento de un
     // gesto puede aplicarse con el valor viejo (el oyente es `passive`, así que
@@ -81,18 +124,34 @@ export function permitirEscapeDelScroll(raiz) {
     // siguen ya llevan el valor nuevo y el gesto se completa igual.
     if (!gestoNuevo) return;
 
-    // Gesto nuevo: la pregunta es si esta baldosa tiene algo que ofrecer en la
-    // dirección que se pide. Si no —no scrollea, o ya está en ese tope—, el
-    // gesto es para la página y se la deja pasar.
-    const sinNadaQueRecorrer = el.scrollHeight <= el.clientHeight + MARGEN_PX;
-    el.style.overscrollBehavior =
-      (sinNadaQueRecorrer || enElBorde(el, e.deltaY > 0)) ? 'auto' : 'contain';
+    const objetivo = bajoElPuntero(e);
+    const el = objetivo instanceof Element ? objetivo.closest(SELECTOR) : null;
+    const baldosa = el && raiz.contains(el) ? el : null;
+
+    // Gesto que empieza fuera de toda baldosa: es de la página, y ninguna
+    // baldosa que le pase por debajo se lo puede quitar (reporte del 21-ago).
+    if (!baldosa) { tomarLaPagina(); return; }
+
+    // Empieza sobre una baldosa: ¿tiene algo que ofrecer en la dirección que se
+    // pide? Si no —no scrollea, o ya está en ese tope—, el gesto es para la
+    // página; y como el puntero está sobre la baldosa, dejarla en `auto` no
+    // alcanza: hay que sacarla del camino igual que en el caso de arriba.
+    const sinNadaQueRecorrer = baldosa.scrollHeight <= baldosa.clientHeight + MARGEN_PX;
+    const esSuyo = !(sinNadaQueRecorrer || enElBorde(baldosa, e.deltaY > 0));
+
+    baldosa.style.overscrollBehavior = esSuyo ? 'contain' : 'auto';
+    if (esSuyo) soltarLaPagina(); else tomarLaPagina();
   };
 
-  /* `capture: true` porque los eventos de rueda de un hijo llegan al ancestro
-     igual, pero se quiere decidir ANTES de que nadie los detenga. `passive`
-     porque nunca se hace `preventDefault`: sólo se cambia una propiedad que el
-     navegador lee al empezar a scrollear. */
-  raiz.addEventListener('wheel', alRodar, { passive: true, capture: true });
-  return () => raiz.removeEventListener('wheel', alRodar, { capture: true });
+  /* En `window` y no en la rejilla, porque el gesto que hay que reconocer es
+     justamente el que EMPIEZA fuera de ella: un oyente colgado de la rejilla no
+     ve nacer nada. `capture` para decidir antes de que nadie lo detenga, y
+     `passive` porque nunca se hace `preventDefault` — el scroll lo sigue
+     haciendo el navegador con su física, acá sólo se elige a quién. */
+  window.addEventListener('wheel', alRodar, { passive: true, capture: true });
+  return () => {
+    window.removeEventListener('wheel', alRodar, { capture: true });
+    clearTimeout(finDelGesto);
+    soltarLaPagina();
+  };
 }

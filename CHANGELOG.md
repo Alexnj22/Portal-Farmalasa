@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.700.1 — El widget ya no le roba el scroll a la página
+
+Tercer reporte sobre la misma tecla, y el que faltaba: «si hago scroll en el
+body y paso por un widget que tiene scroll interno, también hace scroll, no
+debería».
+
+No era un problema del borde —ahí ya estaba resuelto—, así que
+`overscroll-behavior` no tenía nada que decir. El robo ocurre porque el
+navegador vuelve a elegir a quién scrollear **en cada evento**, mirando qué hay
+bajo el puntero; y el puntero está quieto: es la página la que se mueve y le
+mete la baldosa debajo. Medido en Chrome, un empujón de **2,000px** que empieza
+sobre el fondo del Inicio: la página recibía **900** y la baldosa se quedaba con
+**1,100**. Igual a 16ms, a 50ms y a 120ms entre eventos — el «scroll latching»
+del navegador no lo cubre.
+
+Ahora el gesto tiene **dueño**, y se elige una sola vez, al empezar:
+
+| el empujón empieza… | lo recibe |
+|---|---|
+| sobre el fondo del Inicio | la página entera, y ninguna baldosa se lo quita |
+| sobre una lista con recorrido | la lista, y **sigue siendo suyo** aunque la lista se acabe a mitad de camino |
+| sobre una lista ya en su tope | la página |
+
+Mientras el empujón es de la página, sus baldosas dejan de recibir la rueda, así
+que el navegador scrollea con **su física de siempre**: no se mueve un
+`scrollTop` a mano ni se cancela un evento, y el gesto llega entero (medido:
+2,000 de 2,000). La marca dura lo que dura el empujón — en reposo también
+apagaría el clic dentro de las listas.
+
+Los tres reportes quedan cumplidos y ninguno revertido: la lista que se acaba a
+mitad de camino **no** empuja el tablero (14-ago), el empujón siguiente **sí**
+mueve la página (20-ago), y el gesto de la página ya no se pierde por pasar
+sobre un widget (21-ago).
+
 ## v2.700.0 — El aviso de lo que no es venta de productos
 
 La otra mitad de v2.699.0. La meta ya no cuenta esos cobros, pero las pantallas

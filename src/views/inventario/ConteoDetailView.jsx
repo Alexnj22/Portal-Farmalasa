@@ -48,6 +48,22 @@ import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const PAGE_SIZE = 25;
 
+// Devuelve el valor recién cuando dejó de cambiar por `ms`. Es lo que separa
+// "lo que se teclea" de "lo que se consulta": un buscador atado directo al
+// estado sale a la base con cada letra, y como la última respuesta puede llegar
+// antes que la anterior, además pinta resultados de un texto que ya no está.
+// Vive acá y no en `hooks/` a propósito: mover los otros buscadores del portal
+// a este patrón es un trabajo aparte, y un hook compartido a medio adoptar
+// hace creer que ya está resuelto en todos.
+function useValorDiferido(valor, ms) {
+    const [diferido, setDiferido] = useState(valor);
+    useEffect(() => {
+        const t = setTimeout(() => setDiferido(valor), ms);
+        return () => clearTimeout(t);
+    }, [valor, ms]);
+    return diferido;
+}
+
 // `variante` es lo que consume Badge. Faltaba: la cabecera pasaba
 // `variant={es.variante}` contra un mapa que solo tenía bg/text/label, así que
 // el badge de estado se renderizaba siempre con la variante por defecto.
@@ -1319,7 +1335,13 @@ export default function ConteoDetailView() {
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
+    // `search` es lo que se ve en la caja y `searchDiferido` lo que sale a
+    // consultar. Sin ese rezago cada TECLA disparaba una vuelta entera de
+    // consultas contra un conteo de 3,473 renglones: escribir "acetaminofen"
+    // eran doce vueltas, y las once primeras se descartaban al llegar. La caja
+    // tiene que responder a la tecla; la base, a la pausa.
     const [search, setSearch] = useState('');
+    const searchDiferido = useValorDiferido(search, 350);
     const [resumen, setResumen] = useState(null);
     const [labs, setLabs] = useState([]);
     const [laboratorioId, setLaboratorioId] = useState(null);
@@ -1374,29 +1396,38 @@ export default function ConteoDetailView() {
         });
     }, []);
 
-    const load = useCallback(async () => {
+    // La cabecera —de qué sucursal es, en qué estado está, cuánto falta en TODO
+    // el conteo— no depende del filtro ni de la página ni de lo que se teclee.
+    // Estaba dentro del `load`, así que cambiar de página o escribir una letra
+    // volvía a pedir dos consultas cuya respuesta ya se tenía y no podía haber
+    // cambiado. Se piden por conteo, y se rehacen a mano cuando algo del conteo
+    // entero cambió (finalizar, aprobar, agregar un producto).
+    const cargarCabecera = useCallback(async () => {
+        const [detalle, res] = await Promise.all([
+            fetchConteoDetalle(id),
+            fetchConteoResumen(id),
+        ]);
+        setConteo(detalle);
+        setResumen(res);
+    }, [id, fetchConteoDetalle, fetchConteoResumen]);
+
+    const cargarPagina = useCallback(async () => {
         setLoading(true);
         try {
-            const [detalle, productsPage, res] = await Promise.all([
-                fetchConteoDetalle(id),
-                fetchConteoProductsPage(id, {
-                    page, pageSize: PAGE_SIZE, search, filtro,
-                    laboratorioId,
-                    orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
-                    orderDir: orden.dir,
-                }),
-                fetchConteoResumen(id),
-            ]);
-            setConteo(detalle);
+            const productsPage = await fetchConteoProductsPage(id, {
+                page, pageSize: PAGE_SIZE, search: searchDiferido, filtro,
+                laboratorioId,
+                orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
+                orderDir: orden.dir,
+            });
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
-            setResumen(res);
             setDesbloqueadas({});
 
             // Nada se contrae: las líneas de los productos de la página vienen
             // de una sola llamada. Antes era una por producto, al expandirlo.
             const ids = productsPage.rows.map((r) => r.erp_product_id);
-            const lines = await fetchConteoItemsForProducts(id, ids, { search, filtro });
+            const lines = await fetchConteoItemsForProducts(id, ids, { search: searchDiferido, filtro });
             const porProducto = {};
             for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
             setItemsByProduct(porProducto);
@@ -1405,11 +1436,31 @@ export default function ConteoDetailView() {
         } finally {
             setLoading(false);
         }
-    }, [id, page, search, filtro, laboratorioId, orden, fetchConteoDetalle, fetchConteoProductsPage,
-        fetchConteoItemsForProducts, fetchConteoResumen, showToast]);
+    }, [id, page, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
+        fetchConteoItemsForProducts, showToast]);
 
-    useEffect(() => { load(); }, [load]);
-    useEffect(() => { setPage(1); }, [search, filtro, laboratorioId, orden]);
+    // Lo que corre cuando cambió el conteo entero y no sólo qué se está mirando.
+    const load = useCallback(async () => {
+        try {
+            await cargarCabecera();
+        } catch (err) {
+            showToast('Error', mensajeAmigable(err), 'error');
+        }
+        await cargarPagina();
+    }, [cargarCabecera, cargarPagina, showToast]);
+
+    useEffect(() => {
+        cargarCabecera().catch((err) => showToast('Error', mensajeAmigable(err), 'error'));
+    }, [cargarCabecera, showToast]);
+    useEffect(() => { cargarPagina(); }, [cargarPagina]);
+
+    // Cambiar de filtro vuelve a la primera página, y tiene que pasar en el
+    // MISMO evento que el cambio. Como efecto aparte llegaba tarde: la vuelta
+    // ya había salido a pedir la página 3 de una lista que todavía no existía,
+    // y recién la siguiente pedía la 1. Dos consultas para una sola decisión.
+    const cambiarFiltro = useCallback((v) => { setPage(1); setFiltro(v); }, []);
+    const cambiarLaboratorio = useCallback((v) => { setPage(1); setLaboratorioId(v); }, []);
+    const cambiarBusqueda = useCallback((v) => { setPage(1); setSearch(v); }, []);
 
     // Los laboratorios del conteo no cambian mientras se cuenta (el alcance se
     // fijó al crearlo), así que se piden una vez por conteo y no en cada `load`.
@@ -1429,7 +1480,7 @@ export default function ConteoDetailView() {
     }));
 
     const filtrosActivos = (laboratorioId != null ? 1 : 0) + (filtro !== 'TODOS' ? 1 : 0);
-    const limpiarFiltros = () => { setLaboratorioId(null); setFiltro('TODOS'); };
+    const limpiarFiltros = () => { setPage(1); setLaboratorioId(null); setFiltro('TODOS'); };
 
     // Si el conteo resulta ciego para este rol y el filtro activo era uno de los
     // dos que se retiran, vuelve a TODOS. Sin esto quedaría un filtro aplicado
@@ -1437,15 +1488,15 @@ export default function ConteoDetailView() {
     // píldora diría "1 filtro" sobre una lista sin filtrar.
     useEffect(() => {
         if (verSistema) return;
-        if (FILTRO_PILLS.some((f) => f.soloConSistema && f.key === filtro)) setFiltro('TODOS');
-    }, [verSistema, filtro]);
+        if (FILTRO_PILLS.some((f) => f.soloConSistema && f.key === filtro)) cambiarFiltro('TODOS');
+    }, [verSistema, filtro, cambiarFiltro]);
 
     // Un segundo clic invierte; el tercero NO vuelve a "sin orden". Con el orden
     // del anaquel como default, poder volver a él es útil, pero hacerlo el tercer
     // paso de un ciclo lo vuelve un accidente: se limpia desde la píldora.
-    const handleSort = (key) => setOrden((prev) => (
+    const handleSort = (key) => { setPage(1); setOrden((prev) => (
         prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
-    ));
+    )); };
 
     const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
     // Conteo sencillo: un renglón por producto y presentación, sin lote ni
@@ -1661,20 +1712,20 @@ export default function ConteoDetailView() {
             // En táctil `FilterBar` ES la barra flotante, así que el buscador y la
             // acción principal se le pasan acá y no se cablean a mano: el canónico
             // decide dónde van en cada tamaño.
-            buscador={{ value: search, onChange: setSearch, placeholder: simple ? 'Producto o laboratorio' : 'Producto, laboratorio o lote' }}
+            buscador={{ value: search, onChange: cambiarBusqueda, placeholder: simple ? 'Producto o laboratorio' : 'Producto, laboratorio o lote' }}
             accionPrincipal={editable && canEdit ? { icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true) } : null}
         >
             {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
                 sucursal, y cambiarla sería abrir otro conteo. */}
             <FilterBar.Section
                 active={laboratorioId != null}
-                onClear={() => setLaboratorioId(null)}
+                onClear={() => cambiarLaboratorio(null)}
                 label="laboratorio"
             >
                 <div className="w-[190px]">
                     <LiquidSelect
                         value={laboratorioId == null ? null : String(laboratorioId)}
-                        onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
+                        onChange={(v) => cambiarLaboratorio(v == null ? null : Number(v))}
                         options={labOpciones}
                         placeholder="Laboratorio"
                         ariaLabel="Filtrar por laboratorio"
@@ -1684,7 +1735,7 @@ export default function ConteoDetailView() {
                 </div>
             </FilterBar.Section>
             {/* 4 · estado */}
-            <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => setFiltro('TODOS')} label="estado">
+            <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => cambiarFiltro('TODOS')} label="estado">
                 {/* `FilterBar.Opciones` elige el control por la cantidad: con las
                     cuatro es un select, y en el conteo ciego —donde quedan menos—
                     vuelve solo al segmentado. Antes había que forzar
@@ -1696,7 +1747,7 @@ export default function ConteoDetailView() {
                 <FilterBar.Opciones
                     label="Filtrar los renglones"
                     value={filtro}
-                    onChange={setFiltro}
+                    onChange={cambiarFiltro}
                     options={FILTRO_PILLS
                         .filter((f) => verSistema || !f.soloConSistema)
                         .map((f) => ({ value: f.key, label: f.label }))}
@@ -1710,7 +1761,7 @@ export default function ConteoDetailView() {
     const filtersContent = (
         <ViewTabBar
             searchValue={search}
-            onSearchChange={setSearch}
+            onSearchChange={cambiarBusqueda}
             placeholder={simple ? 'Buscar producto o laboratorio...' : 'Buscar producto, laboratorio o lote...'}
             // En teléfono el buscador vive en la barra flotante, junto a los
             // filtros: dos accesos al mismo buscador —uno de ellos arriba, que se
@@ -1862,7 +1913,7 @@ export default function ConteoDetailView() {
                                 cuadraron es lo que detecta al que copió el número. */}
                             <Switch
                                 checked={recuento}
-                                onChange={(v) => { setRecuento(v); if (v) setFiltro('DIFERENCIA'); }}
+                                onChange={(v) => { setRecuento(v); if (v) cambiarFiltro('DIFERENCIA'); }}
                                 size="sm" variant="chart-1" label="Modo recuento" />
                             <span className="text-label font-bold text-content-2 flex items-center gap-1">
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Modo recuento

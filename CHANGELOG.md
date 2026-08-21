@@ -21,6 +21,176 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.704.2 — Ventas > Productos: abrir un producto deja de depender de la caché, y aparece quién lo vendió
+
+Reporte del usuario sobre `ventas?tab=productos`: *«está muy lento»*, más tres
+pedidos —que las tarjetas no se vean blancas en el tema oscuro, que haya ventas
+por vendedor, y que se validen los datos de la vista—.
+
+### Lo lento no era una consulta lenta: era una que dependía de la caché
+
+Las **tres** llamadas de abrir un producto —el detalle de ventas, los totales
+del período y la tendencia mensual— entraban por el producto. Y
+`sales_invoice_items` **no tiene fecha**: filtrar por período obligaba a traer
+toda la historia del producto —8,604 renglones en ACETAMINOFEN— y preguntarle a
+cada factura, una por una y por clave primaria, en qué mes cayó.
+
+Son 34,417 páginas de acceso **aleatorio** sobre una tabla de 341 MB. Por eso el
+mismo clic costaba **36 ms con la caché caliente y 27.5 s con la fría**, y por
+eso el problema se veía en sala y no midiendo una vez en el escritorio.
+
+Ahora entran por fecha: primero se resuelve el conjunto de facturas del período
+—recorrido de índice, sin tocar la tabla— y recién ahí se cruza con los
+renglones del producto. La tendencia, que ni con eso alcanzaba (la ventana son
+tres meses y ningún índice cubre a la vez id, fecha, estado y tipo de documento
+— probado: quedaba peor), se arregló por el otro lado: **no leer lo que ya está
+sumado**. Los dos meses cerrados salen de `product_sales_monthly_agg`, que es el
+mismo agregado del que ya salían los meses cerrados de la tabla, y sólo el mes en
+curso se lee en vivo.
+
+| | antes | después |
+|---|---|---|
+| detalle de ventas | 40,323 páginas | **8,765** |
+| tendencia mensual | 42,373 | **7,959** |
+| totales del período | 25,746 | **11,365** |
+| tabla de productos, mes en curso | 535 ms | **415 ms** |
+| tabla de productos, con sucursal | 471 ms | **254 ms** |
+
+Las páginas y no el reloj, porque el reloj acá miente: es exactamente la
+diferencia entre caché caliente y fría lo que estaba roto.
+
+De paso, tres cosas que estaban mal y no se veían desde afuera:
+
+- **El factor de cada presentación se resolvía una vez por RENGLÓN**, no por
+  presentación: 396 ejecuciones para 4 presentaciones distintas, con un
+  `Memoize` de **0 aciertos y 1,580 desalojos** (su clave de caché cambiaba en
+  cada vuelta, así que nunca acertaba). Deuda vieja, no del cambio.
+- **El agregado acotaba con un `IN (...)` que no descartaba ninguna fila** —todo
+  producto vendido este mes ya es candidato por construcción— y costaba 155 ms
+  de los 535.
+- **Los arreglos `jsonb` salían sin desempate**, así que dos cargas del mismo
+  período devolvían los mismos datos en otro orden: las píldoras de presentación
+  y el globo de «6 suc.» se reacomodaban solos.
+
+Y lo que ahora lo vigila: `npm run gate:perf` gana **cuatro chequeos
+estructurales** —que el código siga entrando por fecha, que la tendencia siga
+leyendo el agregado— más los cuatro tiempos. La protección real es la
+estructural: `EXPLAIN` de una llamada a función devuelve un `Function Scan` y
+nada más, así que la sección de planes no puede ver lo de adentro; lo que se
+vigila es el código de la función.
+
+### Las tarjetas del detalle se veían blancas en el tema oscuro
+
+«Ventas por sucursal» y «Tendencia mensual» estaban escritas a mano con
+`bg-gradient-to-br from-surface-card to-divider`. **`--divider` está declarado
+una sola vez, en `:root`, y vale `rgba(203,213,225,.5)` en los cuatro temas** —
+es un gris claro, correcto como línea divisoria y equivocado como fondo. En
+oscuro el degradado iba de la superficie del tema a ese gris, o sea de oscuro a
+blanco.
+
+Las dos pasan a `data-surface="card"`, que ya resuelve el escalón de tono por
+tema y por material (`--anidada`), y la tercera nace así.
+
+### Ventas por vendedor
+
+Tarjeta nueva en el detalle del producto, hermana de «Ventas por sucursal»:
+quién lo vendió, cuántas unidades y cuánto, con su porcentaje. Sale del período
+**completo** y no de las 300 ventas que carga la tabla de abajo — en un producto
+de mucho movimiento, sumar lo cargado deja fuera a los vendedores de principio
+de mes. Arranca con seis y el resto se despliega, porque un producto real de
+agosto lo vendieron **34 personas**. Los dos códigos que no son una persona
+(`1000` Administración, `125` Domicilio) se muestran con su rótulo.
+
+### La validación de los datos, que encontró dos cosas
+
+Todo lo de la captura cuadra al centavo contra la base: 172 unidades,
+$1,902.66, costo $780.97, utilidad $1,121.69, 59.0%, el reparto de las 6
+sucursales y los dos saltos de la tendencia (▲813% y ▲313%). Pero:
+
+- **La columna «Unidades» ordenaba por un número que no está en pantalla.**
+  Pinta las unidades con el factor aplicado (508 blísters × 10 = 5,080) y
+  ordenaba por la suma cruda, que suma blísters con cajas y con unidades.
+  ACETAMINOFEN decía **6,843** y ordenaba como **588**. Pasa en **319 de los
+  2,376** productos del mes.
+- **«Tendencia mensual» no recibía el período.** Devolvía siempre los tres meses
+  anteriores a HOY, así que al elegir julio la tarjeta de al lado hablaba de
+  julio y ésta seguía mostrando agosto, sin decirlo. Ahora los tres meses
+  terminan en el mes del período elegido.
+
+Queda anotado, sin cambiar: el pie del detalle (**«165 ventas · 172 unidades ·
+$2,142.81 total»**) suma `total_linea` crudo, o sea con IVA en los COF y sin IVA
+en los CCF. Son $7.19 en este producto. Y «ventas» cuenta renglones, no
+facturas: en agosto hay 329 casos de un producto repetido en la misma factura.
+Los dos son decisiones de qué mostrar, no defectos de cálculo.
+
+Cada función se comparó contra la vigente antes de reemplazarla: el agregado en
+7 combinaciones de parámetros (15,167 filas, 13 columnas, **cero** diferencias),
+la tendencia en 7 y los totales en 6, más el conteo crudo de mayo a agosto.
+
+## v2.703.15 — El conteo de inventario deja de preguntar el permiso una vez por fila
+
+Reporte del usuario, abriendo un conteo de Bodega: *«los filtros no me
+funcionan, es super lenta esta vista, ¿por qué? Si veo solo con diferencias, no
+me carga por lento.»*
+
+**El filtro funcionaba. Lo que no funcionaba era la espera.** Cada vez que la
+pantalla pedía la lista mandaba dos consultas en paralelo, y una de las dos
+tardaba **6.7 segundos** sobre un conteo de 3,473 renglones y 2,800 productos.
+La otra —la que trae las filas que se ven— tardaba **66 ms**. Ese contraste es
+lo que delató la causa: las dos hacen el mismo trabajo.
+
+### Qué pasaba
+
+Las dos consultas empiezan preguntando lo mismo: *¿este usuario puede ver la
+cantidad del sistema?* Una lo guarda en una variable y pregunta **una vez**. La
+otra lo dejó escrito como un `WITH cfg AS (...)`, que se lee como si preguntara
+una vez y **no lo hace**: un bloque de una sola fila y sin efectos no se calcula
+aparte, se copia dentro del filtro. Así que la pregunta —que por dentro consulta
+al empleado y a los permisos de su cargo— se hacía **una vez por producto**.
+2,800 veces para devolver un número.
+
+Medido sobre el conteo real: **6,712 ms** y 43,511 lecturas de disco. La misma
+consulta escrita sin ese bloque: **13 ms** y 397 lecturas.
+
+Es la regla del portal sobre envolver las funciones de permiso en `(SELECT ...)`
+—la que en julio bajó un conteo de 25 segundos a 19 ms— aplicada donde no era
+una policy sino una función. El lugar no importa: lo que importa es que la
+pregunta quede en un nodo que se ejecuta una vez.
+
+El arreglo es una palabra, `MATERIALIZED`, en las dos funciones que lo tenían
+(`get_conteo_products_count` y `get_conteo_items_count` — la segunda es peor: su
+cruce es contra los 3,473 **renglones**, y la llama el botón de finalizar). El
+resultado no cambia en ninguna fila: materializar decide **cuántas veces** se
+calcula, no cuál es el valor.
+
+| consulta | antes | ahora |
+|---|---|---|
+| contar productos, filtro «con diferencia» | 6,712 ms | **19.7 ms** |
+| contar productos, buscando «aceta» | — | 108 ms |
+| contar renglones pendientes (antes de finalizar) | ~7 s | **16.2 ms** |
+
+Con la sesión real de quien reportó: el filtro «con diferencia» devuelve **135
+productos en 27 ms**.
+
+### Y tres cosas más de la pantalla, que multiplicaban esa espera
+
+1. **El buscador salía a consultar con cada tecla.** Escribir «acetaminofen»
+   eran doce vueltas completas, y once se descartaban al llegar. Ahora sale
+   cuando uno deja de escribir (350 ms). Sin ese rezago, además, la respuesta
+   de una letra vieja puede llegar después de la nueva y pintar resultados de
+   un texto que ya no está.
+2. **Cambiar de página o de filtro volvía a pedir la cabecera.** De qué sucursal
+   es el conteo y cuánto falta en total no dependen del filtro ni de la página:
+   se piden por conteo, no en cada vuelta. Eran dos consultas de cuatro.
+3. **Volver a la primera página llegaba tarde.** Estaba en un efecto aparte, así
+   que al cambiar el filtro salía primero una consulta pidiendo la página 3 de
+   una lista que todavía no existía, y recién la siguiente pedía la 1. Ahora
+   pasa en el mismo evento: una consulta por decisión.
+
+El arreglo de la base ya está aplicado en producción y **no hace falta esperar
+un despliegue** para que la espera de siete segundos desaparezca; las tres
+mejoras de la pantalla sí viajan con esta versión.
+
 ## v2.703.14 — La vista previa de la foto se ajusta con los dedos, y lo dice
 
 Pregunta del usuario: *«esa vista previa, ¿se puede ajustar con los dedos? Debe

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.699.0 — La meta no cuenta lo que no es venta de productos
+
+Bajo los códigos administrativos **100 y 1000** —que no son de ningún vendedor:
+`employees` no tiene a nadie con esos códigos— venían mezcladas dos cosas que no
+son lo mismo. Venta de mostrador hecha sin código (OZEMPIC $350, LANZOPRAL
+$87.30, CONCOR, CIPRO/AMOXI) y **cobros que no son venta de productos**: la
+comisión del corresponsal bancario, el apoyo promocional de un laboratorio, las
+dietas de reunión de la cooperativa. Las dos sumaban a la meta.
+
+**No se pueden separar por su forma.** El sistema de origen factura esos cobros
+como si fueran artículos —«COMISIONES POR SERVICIO DE CORRESPONSAL» es el
+artículo 4239 y tiene su id igual que una caja de ibuprofeno—, así que ninguna
+columna los delata. Lo que sí los distingue es a QUIÉN se le cobran. De ahí
+`clientes_sin_producto`, con las tres fichas medidas: Banco Promerica, Vijosa y
+COFARSAL. La regla exige **el código administrativo Y la ficha**, que es la
+condición conservadora: el día que a Promerica se le venda un medicamento de
+verdad, esa venta va a llevar el código de quien la hizo y va a contar.
+
+**Lo que se midió en producción.** Salud 3 recibía crédito de meta todos los
+meses, entre **0.88% y 7.86%** (ago-2025: $2,883.61). Y como la meta de cada mes
+sale del ritmo de los tres cerrados anteriores, el número inflado se arrastraba
+a las metas siguientes: no sólo se regalaba avance, se pedía de más el mes que
+venía. Al aplicarlo, agosto/2026 en Salud 3 bajó $598.14 y su **tramo de bono
+pasó de «completo» a «medio»** —proyección de 101.6% a 99.8%—: la comisión del
+banco le estaba comprando un tramo que la sala no vendió.
+
+**`sum_total` no cambia.** Ventas, los libros y el corte de caja siguen viendo
+la venta entera; `sales_daily_stats` guarda aparte `sum_no_producto` y la meta
+usa la resta. Se guarda la parte y no el neto a propósito: con el neto guardado
+no habría forma de que una pantalla avise «de este total, $X no son productos».
+
+**Los meses ya congelados no se tocan** (2025-01 → 2026-07). Un mes cerrado con
+su bono calculado es un hecho asentado; reescribirlo cambiaría la historia.
+
+Nueve funciones aplican la regla desde una sola definición —la vista
+`ventas_sin_producto`, único lugar del esquema donde aparecen los códigos
+100/1000—. La forma se eligió midiendo: filtrar factura por factura con
+`NOT EXISTS` le costaba a la consulta del acumulado el *Index Only Scan*
+(**49.6 ms contra 6.9**, con 434,311 comparaciones para descartar 2 facturas),
+así que se suma entero por el índice que ya existe y se resta el pedacito
+aparte, que sale en 0.7 ms.
+
+Verificado antes en el branch de pruebas con un caso fabricado: el total del día
+quedó intacto, el avance bajó exactamente el monto de la factura y la proyección
+bajó ese monto más los dos sábados que faltaban por el promedio del perfil
+(159.30 + 2 × 159.30/3 = 265.50, al centavo). Revertir la marca devolvió los
+números originales.
+
+**Hallazgo aparte, no corregido acá:** al acumulado diario le faltan los
+primeros 17 días de mayo/2025 ($117,509.80, 85 pares fecha·sala), porque el cron
+sólo mira 365 días atrás y esa fecha ya quedó fuera de la ventana.
+
 ## v2.698.7 — La categoría «Ajustado a mano», con sus tres estados
 
 Fase 4 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`, y la que cierra el

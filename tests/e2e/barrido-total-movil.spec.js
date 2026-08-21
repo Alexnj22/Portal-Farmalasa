@@ -68,6 +68,25 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
     'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
     'profile', 'dashboard',
+    // ── Las 16 que faltaban (F4, 2026-08-21) ────────────────────────────────
+    // La lista tenía 38 rutas y `App.jsx` declara **65**. Descontando comodines,
+    // login, el kiosco pre-sesión, las de prueba y las que llevan `:id`,
+    // quedaban **16 rutas reales que el barrido no visitaba nunca** — o sea que
+    // su «cero hallazgos» hablaba de dos tercios del portal.
+    //
+    // Y no era una lista de vistas menores: `inventario`, `traslados`,
+    // `cuentas-por-pagar` y `gestion-stock` son de las más usadas. La de
+    // Traslados salió con un blanco de dedo de 40px la primera vez que se la
+    // midió.
+    //
+    // Las que siguen afuera y por qué: `/login` y `/kiosk` no tienen sesión
+    // —el barrido las mediría como la pantalla de ingreso, que es el agujero
+    // que este archivo ya conoce—; `ios-test` y `raw-test` son andamios; y las
+    // de `:id` necesitan un registro concreto, que es trabajo aparte.
+    'bitacoras', 'cargar-compra', 'carnes-del-dia', 'cierre-periodo',
+    'cuentas-por-pagar', 'encuesta-admin', 'facturas-sala', 'gestion-stock',
+    'impresion', 'inventario', 'mantenimiento', 'my-requests',
+    'orphan-objects', 'sesiones', 'traslados', 'auditview',
 ];
 
 // `TEMA=dark|solid|solid-dark|liquid` — todo lo medido hasta el 2026-08-07 fue

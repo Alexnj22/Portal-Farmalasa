@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.700.2 — el barrido visitaba 38 rutas de 65
+
+F4 de `docs/PLAN-MOVIL-2026-08-20.md`. La pregunta original era «las vistas sin
+tabla nunca pasaron por esta revisión». Al ir a medirlas apareció algo más
+concreto y peor: **`App.jsx` declara 65 rutas y el barrido visitaba 38.**
+
+Descontando comodines, login, el kiosco pre-sesión, los andamios de prueba y las
+que llevan `:id`, quedaban **16 rutas reales que no se medían nunca** — o sea que
+el «cero hallazgos» de las fases anteriores hablaba de dos tercios del portal. Y
+no eran vistas menores: **Inventario, Traslados, Cuentas por pagar y Gestión de
+stock** están entre las más usadas.
+
+Medidas las 16: desborde 0, desborde de página 0, zoom de iOS 0, inalcanzables
+0, sin acuse 0, tablas en el teléfono 0, ninguna reventada.
+
+**Un hallazgo, y en una de las más usadas**: en **Traslados**, la cara de la
+tarjeta que abre el detalle medía **308×40**. El ancho sobra; el alto queda 4px
+por debajo de los 44 del blanco de dedo, y es lo que hay que tocar para ver a
+dónde va un producto. Corregido con `min-h-[var(--tap-min)]` —que en escritorio
+vale 0— y verificado en una segunda corrida.
+
+**Las 16 quedan DENTRO de la lista del barrido**, que es el punto de la fase:
+medirlas una vez a mano no las vuelve a medir mañana. La lista pasa de 38 a **54
+rutas**, y las que siguen afuera están escritas con su motivo en el propio
+archivo.
+
+### Una anomalía que no se pudo reproducir, y se anota como tal
+
+En la primera corrida el barrido **se colgó en `gestion-stock`** y no avanzó en
+~20 minutos. Medida sola después, esa ruta responde en **23 segundos y sale
+limpia**. Y una corrida posterior tardó 10 minutos en dos rutas que antes
+tomaban segundos. El patrón apunta a **producción lenta en ese momento** —esa
+tarde se aplicaron migraciones y un cambio de `statement_timeout`— y no a la
+vista.
+
+Queda anotado en vez de convertido en un hallazgo: no se pudo reproducir, así
+que afirmar que Gestión de stock cuelga sería inventar una causa.
+
 ## v2.700.1 — El widget ya no le roba el scroll a la página
 
 Tercer reporte sobre la misma tecla, y el que faltaba: «si hago scroll en el

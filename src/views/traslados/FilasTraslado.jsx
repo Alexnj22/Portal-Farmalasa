@@ -531,8 +531,14 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 afuera. `data-filo="ceder"` es lo que hace que el destello del
                 canto corra el rectángulo de la TARJETA y no el del botón: sin
                 él, el filo cortaba la tarjeta justo encima del pie (§5.bis). */}
+            {/* `min-h-[var(--tap-min)]`: la cara de la tarjeta medía **308×40**
+                con un solo renglón de contenido —el ancho sobra, el alto queda
+                4px por debajo de los 44 del blanco de dedo (§32)—, y es lo que
+                abre el detalle del traslado. Lo encontró el barrido móvil al
+                cubrir esta ruta por primera vez. En escritorio `--tap-min` vale
+                0 y no cambia nada. */}
             <button type="button" data-filo="ceder" onClick={() => setAbierto(true)}
-                className="text-left flex items-start gap-3 w-full"
+                className="text-left flex items-start gap-3 w-full min-h-[var(--tap-min)]"
                 aria-label={`Ver el detalle de ${piezas?.nombre ?? 'este traslado'}`}>
                 {/* El ícono en su disco: a 13px suelto no se leía como estado,
                     y el estado es justo lo que esta lista viene a decir. */}

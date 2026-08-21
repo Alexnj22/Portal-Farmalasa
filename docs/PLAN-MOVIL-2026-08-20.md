@@ -203,13 +203,39 @@ Y hay que decirlo, porque su verde no cubre esto:
 - **Los formularios que exigen datos previos** —el editor de una boleta necesita
   una planilla generada— quedan fuera por falta de datos, no por diseño.
 
-### F4 · Las vistas sin tabla
+### F4 · CERRADO — el barrido visitaba 38 rutas de 65
 
-**35 de 212 archivos de vista usan `DataTable`.** Todo el canon de §32.8/§32.9
-—ficha, expediente, mantenida— aplica a esas 35. Las demás —el tablero, Cortes,
-Bitácoras, la encuesta, el reloj, el kiosco— tienen su propio layout y **nunca
-pasaron por esta revisión**. Cortes ya aparece con sus 30 sin acuse, y es la
-única de ese grupo que el barrido alcanzó a medir.
+La pregunta original era «las vistas sin tabla nunca pasaron por esta revisión».
+Al ir a medirlas apareció algo más concreto y peor: **`App.jsx` declara 65 rutas
+y el barrido visitaba 38**. Descontando comodines, login, el kiosco pre-sesión,
+los andamios de prueba y las que llevan `:id`, quedaban **16 rutas reales que no
+se medían nunca** — o sea que el «cero hallazgos» de F0/F1/F2 hablaba de dos
+tercios del portal.
+
+Y no eran vistas menores: **Inventario, Traslados, Cuentas por pagar y Gestión de
+stock** están entre las más usadas.
+
+**Medidas las 16**: desborde 0, desborde de página 0, zoom de iOS 0,
+inalcanzables 0, sin acuse 0, tablas en el teléfono 0, ninguna reventada.
+
+**Un hallazgo**: en **Traslados**, la cara de la tarjeta que abre el detalle
+medía **308×40** — el ancho sobra, el alto queda 4px por debajo de los 44 del
+blanco de dedo. Corregido con `min-h-[var(--tap-min)]` y verificado en una
+segunda corrida.
+
+**Las 16 quedan DENTRO de la lista del barrido**, que es el punto: medirlas una
+vez a mano no las vuelve a medir mañana. La lista pasa de 38 a 54 rutas, y las
+que siguen afuera están escritas con su motivo en el propio archivo.
+
+#### Una anomalía que no se pudo reproducir, y se anota como tal
+
+En la primera corrida el barrido **se colgó en `gestion-stock`** y no avanzó en
+~20 minutos. Medida sola después, esa ruta responde en **23 segundos y sale
+limpia**. Y una corrida posterior de las 16 tardó 10 minutos en dos rutas que
+antes tomaban segundos. El patrón apunta a **producción lenta en ese momento**
+—esa tarde se aplicaron migraciones y un cambio de `statement_timeout`— y no a
+la vista. Queda anotado en vez de convertido en un hallazgo: no se pudo
+reproducir, así que afirmar que Gestión de stock cuelga sería inventar una causa.
 
 ### F5 · Acostado
 
@@ -237,7 +263,7 @@ diferencia se cubre midiendo (F0), no leyendo.
 
 ## 5. Orden sugerido
 
-~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) — **cerradas**. El
+~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ — **cerradas**. El
 barrido de vistas y el de diálogos terminan, y de pie el portal mide **cero** en
 todo lo que saben contar.
 
@@ -246,11 +272,9 @@ Lo que sigue, en orden:
 1. **Destrabar «Nuevo empleado»** en el barrido de diálogos y subir el tope, para
    que F3 cubra lo que hoy anota como pendiente — el formulario más largo del
    portal sigue sin medir.
-2. **F4** — las vistas sin tabla. Cortes ya salió limpia; quedan el reloj, el
-   kiosco, las bitácoras y la encuesta.
-3. **F5** — una corrida acostado. Todo lo de este plan se midió de pie.
-4. **F6** — el aparato real. Es el único que no depende de nosotros.
-5. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
+2. **F5** — una corrida acostado. Todo lo de este plan se midió de pie.
+3. **F6** — el aparato real. Es el único que no depende de nosotros.
+4. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
 
 Y uno que no es de este plan pero está rojo: **`gate:borradores`** acusa a
 `PedirTrasladoModal.jsx` —7 campos de captura sin borrador—, de v2.691. Con la
@@ -292,3 +316,4 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.698.0 | confirmar un pago desde el teléfono · este plan |
 | v2.698.4 | F0/F1/F2 — el barrido termina, y el portal mide cero de pie |
 | v2.699.2 | F3 — los diálogos, medidos por primera vez en 390px |
+| v2.699.3 | F4 — el barrido visitaba 38 rutas de 65; ahora 54 |

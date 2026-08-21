@@ -50,7 +50,7 @@ const BackgroundGeolocation = registerPlugin('BackgroundGeolocation');
 
 export function usePedidosData({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
-    const isBranch = getScope('pedidos') === 'BRANCH';
+    const isBranch = getScope('pedidos') !== 'ALL';
     const canEdit  = hasPermission('pedidos', 'can_edit');
     // ── Editar MIN·MAX es del módulo MIN·MAX, no de Pedidos (2026-08-15) ──
     // Reportado: «un empleado que ve los pedidos puede modificar los min y max,

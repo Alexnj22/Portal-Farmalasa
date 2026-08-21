@@ -375,7 +375,7 @@ export default function LibroComprasCompletoView({ openModal }) {
 
     const branchOptions = useMemo(
         () => branches.map(b => ({ value: String(b.id), label: b.name })), [branches]);
-    const puedeElegirSucursal = getScope('libro_compras_completo') !== 'BRANCH';
+    const puedeElegirSucursal = getScope('libro_compras_completo') === 'ALL';
 
     const filtersContent = (
         <ViewTabBar

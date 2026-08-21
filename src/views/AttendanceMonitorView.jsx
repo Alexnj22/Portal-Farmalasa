@@ -82,7 +82,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [filterBranch, setFilterBranch] = useState(
-    getScope('monitor') === 'BRANCH' ? String(user?.branchId || "ALL") : "ALL"
+    getScope('monitor') !== 'ALL' ? String(user?.branchId || "ALL") : "ALL"
   );
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -586,7 +586,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     />
   );
 
-  const filtrosCuerpo = getScope('monitor') !== 'BRANCH' && (
+  const filtrosCuerpo = getScope('monitor') === 'ALL' && (
     <FilterBar
       onClear={() => setFilterBranch('ALL')}
       activeCount={filterBranch !== 'ALL' ? 1 : 0}

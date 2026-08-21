@@ -902,7 +902,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [filterBranch,      setFilterBranch]      = useState(
-    getScope('time_audit') === 'BRANCH' ? String(user?.branchId || '') : ''
+    getScope('time_audit') !== 'ALL' ? String(user?.branchId || '') : ''
   );
   const [search, setSearch] = useState('');
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
@@ -1263,7 +1263,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       acciones={accionesAsistencia}
       accionesExtra={extraAsistencia}
     >
-      {getScope('time_audit') !== 'BRANCH' && (
+      {getScope('time_audit') === 'ALL' && (
         <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
           <FilterBar.Sucursal value={filterBranch}
             onChange={val => setFilterBranch(val || '')} options={sortedBranchOptions} />

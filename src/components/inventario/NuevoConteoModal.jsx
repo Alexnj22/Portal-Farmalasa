@@ -83,7 +83,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const crearConteoInventario = useStaffStore((s) => s.crearConteoInventario);
     const previewMuestraCiclica = useStaffStore((s) => s.previewMuestraCiclica);
 
-    const isBranchScoped = getScope('conteo_inventario') === 'BRANCH';
+    const isBranchScoped = getScope('conteo_inventario') !== 'ALL';
 
     const [branchId, setBranchId] = useState('');
     const [scopeType, setScopeType] = useState('TOTAL');

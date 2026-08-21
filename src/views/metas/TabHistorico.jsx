@@ -42,7 +42,7 @@ const COLS = [
 
 const fmtPct = (v) => formatPct(v);
 
-export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloadKey, searchTerm, onClearSearch }) {
+export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloadKey, searchTerm, onClearSearch , alcanceTodas = false}) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -101,6 +101,10 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
                         onClick: () => onAgregarMeta(null, null),
                     }] : []}
                 >
+                    {/* Sólo con alcance sobre todas. `salaOpts` sale de las
+                        filas que llegaron, que es el catálogo de lo que hay —
+                        no de lo que esta persona puede mirar. */}
+                    {alcanceTodas && (
                     <FilterBar.Section active={!!salaFilter} onClear={() => setSalaFilter('')} label="sala">
                         <FilterBar.Sucursal
                             value={salaFilter || null}
@@ -108,6 +112,7 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
                             options={salaOpts}
                         />
                     </FilterBar.Section>
+                    )}
                     <FilterBar.Section active={soloConMeta} onClear={() => setSoloConMeta(false)} label="metas">
                         <FilterBar.Opciones
                             label="Qué meses mostrar"

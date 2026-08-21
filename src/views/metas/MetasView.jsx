@@ -20,7 +20,11 @@ import { SALAS_VENTA, ymHoySV, ymSumar } from './metasUtils';
 // supervisión: la sala ve SU meta en el widget «Meta del mes» del Inicio
 // (`WidgetMetaSala`), no acá. Las bonificaciones llegan en fases siguientes.
 export default function MetasView() {
-    const { hasPermission, user, permsLoading } = useAuth();
+    const { hasPermission, getScope, user, permsLoading } = useAuth();
+    /* Las tres pestañas con selector de sala lo ofrecían siempre, contra el
+     * catálogo de las 6 salas de venta y no contra el permiso. Se resuelve acá
+     * y no en cada pestaña: son la misma pregunta, y tres copias se separan. */
+    const alcanceTodas = getScope('metas') === 'ALL';
     const canEdit = hasPermission('metas', 'can_edit');
     const canApprove = hasPermission('metas', 'can_approve');
     // Confirmación ofrece cosas DISTINTAS a quien puede aprobar y a quien no
@@ -144,12 +148,14 @@ export default function MetasView() {
                     searchTerm={search}
                     onClearSearch={limpiarBusqueda}
                     salaOptions={salaOptions}
+                    alcanceTodas={alcanceTodas}
                 />
             )}
             {activeTab === 'bono' && (
                 <TabBono
                     salaNombre={salaNombre}
                     branchOptions={salaOptions}
+                    alcanceTodas={alcanceTodas}
                     canEdit={canEdit}
                     bonificacionesActivas={bonificacionesActivas}
                     bonificacionesHastaYm={bonificacionesHastaYm}
@@ -184,6 +190,7 @@ export default function MetasView() {
             )}
             {activeTab === 'historico' && (
                 <TabHistorico
+                    alcanceTodas={alcanceTodas}
                     salaNombre={salaNombre}
                     canEdit={canEdit}
                     onAgregarMeta={abrirModal}

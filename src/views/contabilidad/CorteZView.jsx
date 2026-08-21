@@ -547,7 +547,7 @@ export default function CorteZView() {
 
     const [mes, setMes] = useState(mesActual);
     const [filterBranch, setFilterBranch] = useState(
-        getScope('corte_z') === 'BRANCH' ? String(user?.branchId || '') : '');
+        getScope('corte_z') !== 'ALL' ? String(user?.branchId || '') : '');
     const [filas, setFilas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -631,7 +631,7 @@ export default function CorteZView() {
         }
     }, [filas, mes]);
 
-    const puedeElegirSucursal = getScope('corte_z') !== 'BRANCH';
+    const puedeElegirSucursal = getScope('corte_z') === 'ALL';
 
     const barraFiltros = (
         <FilterBar

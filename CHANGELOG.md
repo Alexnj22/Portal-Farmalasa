@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.703.0 — El alcance deja de fallar abierto y los selectores de sucursal responden al permiso
+
+Dos huecos de la MISMA forma que el de los traslados de Salud 3, encontrados
+al auditar el resto del portal. Ninguno de los dos hacía daño hoy — los dos
+lo iban a hacer el día que alguien configurara un permiso.
+
+**El alcance fallaba abierto.** `auth_module_scope()` en la base y `getScope()`
+en el navegador terminaban en `'ALL'` cuando el cargo no tenía fila para ese
+módulo. O sea: «no sé cuál es tu alcance → todos». No molestaba porque quien no
+tiene fila tampoco tiene permiso, y las policies preguntan las dos cosas. Pero
+el permiso **sí** se puede heredar de un jefe ausente y el alcance **no** se
+heredaba: ese día la policy daba permiso y esta función daba alcance global,
+sin que nadie lo hubiera decidido.
+
+Ahora la fila propia manda siempre; sin fila, el superusuario da global, después
+el alcance HEREDADO de quien se está cubriendo —que es la respuesta correcta:
+si sustituyo a alguien, heredo su alcance— y el terminal es el más restrictivo.
+Medido antes de aplicar sobre los 49 empleados activos × todos los módulos:
+cambian 2,474 pares y **cero de ellos tiene permiso**. No se mueve ni una
+pantalla; se cierra la puerta por la que todavía no entró nadie.
+
+La rama heredada va detrás de un guardián barato: preguntar por lo heredado
+cuesta 13 ms y 1,385 buffers, y esto lo llaman las policies. Preguntar «¿hay
+alguien ausente ahora mismo?» cuesta 0.116 ms y 1 buffer — y no es una
+aproximación: si nadie está ausente, nadie hereda nada.
+
+**Los selectores de sucursal ahora responden al permiso.** Seis pantallas
+—Personal, Horarios, Análisis de afluencia, y las tres pestañas de Metas—
+ofrecían el selector contra el CATÁLOGO de sucursales y no contra el alcance.
+En Personal además ya mentía: ofrecía las 8 salas mientras la lista de abajo
+venía recortada, así que elegir otra devolvía una lista vacía sin explicar por
+qué. Clima organizacional también dejó de ofrecerlo — ahí queda anotado que
+tapar la ranura no alcanza, porque sus otros bloques leen las respuestas sin
+pasar por el filtro.
+
+**Y toda pregunta sobre el alcance pasó a ser la misma.** Había 28 sitios
+preguntando `getScope(m) === 'BRANCH'` (o su espejo `!== 'BRANCH'`), y los
+alcances son TRES: así escrito, «sólo yo» caía del lado ancho — no es BRANCH,
+luego ve todas. Con el terminal nuevo eso habría sido una regresión inmediata.
+Los 28 preguntan ahora por el lado angosto: `=== 'ALL'` para ofrecer,
+`!== 'ALL'` para recortar.
+
+Lo vigila la categoría `alcance-contra-branch` de `npm run gate:data`,
+bloqueante en cero y **probada**: se reintrodujo un caso a mano, el gate lo
+levantó con archivo y línea, y se revirtió.
+
 ## v2.702.3 — Traslado de varios productos: la caja se coteja por producto, no por lotes sueltos
 
 Reportado sobre el traslado de 5 productos que salió de Bodega a Salud 5 el

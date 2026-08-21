@@ -17,7 +17,7 @@ import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } 
 
 const fmtPct = (v) => formatPct(v);
 
-export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch, salaOptions }) {
+export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch, salaOptions, alcanceTodas = false }) {
     const ymActual = ymHoySV();
     const ymMax = ymSumar(ymActual, 1);
     const [ym, setYm] = useState(ymActual);
@@ -221,6 +221,10 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                             nextDisabled={ym >= ymMax}
                         />
                     </FilterBar.Section>
+                    {/* Sólo con alcance sobre todas: `salaOptions` es el
+                        catálogo de las 6 salas de venta, no lo que el permiso
+                        deja ver. */}
+                    {alcanceTodas && (
                     <FilterBar.Section active={!!salaMes} onClear={() => setSalaMes('')} label="sala">
                         <FilterBar.Sucursal
                             value={salaMes || null}
@@ -228,6 +232,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                             options={salaOptions || []}
                         />
                     </FilterBar.Section>
+                    )}
                 </FilterBar>
             </div>
             </div>

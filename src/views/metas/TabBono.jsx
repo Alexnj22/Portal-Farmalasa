@@ -41,7 +41,7 @@ const VIGENCIAS = [
 // muestra lo que devuelve `get_bono_meta_sala`, sin recalcular nada del lado
 // del navegador — el reparto es dinero y vive en un solo lugar.
 export default function TabBono({
-    salaNombre, branchOptions, canEdit, bonificacionesActivas, bonificacionesHastaYm,
+    salaNombre, branchOptions, alcanceTodas = false, canEdit, bonificacionesActivas, bonificacionesHastaYm,
     onCambioBono, reloadKey, defaultBranchId,
 }) {
     const ymActual = ymHoySV();
@@ -219,6 +219,9 @@ export default function TabBono({
                                 nextDisabled={ym >= ymActual}
                             />
                         </FilterBar.Section>
+                        {/* Sólo con alcance sobre todas. Sin él la sala queda
+                            en `defaultBranchId`, que ya es la propia. */}
+                        {alcanceTodas && (
                         <FilterBar.Section label="sala">
                             <FilterBar.Sucursal
                                 value={sala}
@@ -226,6 +229,7 @@ export default function TabBono({
                                 options={branchOptions}
                             />
                         </FilterBar.Section>
+                        )}
                     </FilterBar>
                 </div>
             </div>

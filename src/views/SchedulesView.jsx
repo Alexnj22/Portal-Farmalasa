@@ -235,7 +235,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const fetchBoot = useStaff(s => s.fetchBoot);
     const addHoliday = useStaff(s => s.addHoliday);
     const deleteHoliday = useStaff(s => s.deleteHoliday);
-    const { hasPermission, getScope } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const canEdit  = hasPermission('schedules', 'can_edit');
     const SCHED_TABS = ALL_SCHED_TABS.filter(t => hasPermission(`schedules_tab_${t.key}`));
     const showToast = useToastStore(s => s.showToast);
@@ -296,11 +296,18 @@ const SchedulesView = ({ openModal, setView }) => {
     const [isLoadingSales, setIsLoadingSales] = useState(false);
 
     useEffect(() => {
+        // Con alcance de una sola sala, la que arranca es la PROPIA y no «La
+        // Popular»: el selector ya no se dibuja, así que este valor es el
+        // único que va a existir en toda la sesión.
+        if (branches && branches.length > 0 && !filterBranch && getScope('schedules') !== 'ALL' && user?.branchId) {
+            setFilterBranch(String(user.branchId));
+            return;
+        }
         if (branches && branches.length > 0 && !filterBranch) {
             const popular = branches.find(b => b.name.toLowerCase().includes('popular'));
             setFilterBranch(popular ? String(popular.id) : String(branches[0].id));
         }
-    }, [branches, filterBranch]);
+    }, [branches, filterBranch, getScope, user?.branchId]);
 
     const isDefaultWeek = useMemo(() => startDate === getLocalMonday(), [startDate]);
     const isPastWeek    = useMemo(() => startDate < getLocalMonday(), [startDate]);
@@ -702,7 +709,7 @@ const SchedulesView = ({ openModal, setView }) => {
     // problema que la había echado: entonces se mezclaba con las ranuras y leía
     // como un filtro más; ahora las acciones van tras un divisor y en su propio
     // bloque, que es lo que las distingue.
-    const puedePublicar = viewMode === 'calendar' && canEdit && getScope('schedules') !== 'BRANCH';
+    const puedePublicar = viewMode === 'calendar' && canEdit && getScope('schedules') === 'ALL';
     const accionesHorarios = puedePublicar ? [{
         key: 'publicar',
         icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle2 : Save,
@@ -743,10 +750,16 @@ const SchedulesView = ({ openModal, setView }) => {
             activeCount={[!isDefaultWeek].filter(Boolean).length}
             acciones={accionesHorarios}
         >
-            <FilterBar.Section label="sucursal">
-                <FilterBar.Sucursal value={filterBranch} onChange={setFilterBranch}
-                    options={validBranches.map(b => ({ value: String(b.id), label: b.name }))} />
-            </FilterBar.Section>
+            {/* Sólo con alcance sobre todas. `validBranches` sale del catálogo
+                —todas las farmacias— y no del permiso, así que sin esta guarda
+                una sala podía abrir el horario de otra. Cuando no la hay, el
+                efecto de arranque de más arriba deja fija la propia. */}
+            {getScope('schedules') === 'ALL' && (
+                <FilterBar.Section label="sucursal">
+                    <FilterBar.Sucursal value={filterBranch} onChange={setFilterBranch}
+                        options={validBranches.map(b => ({ value: String(b.id), label: b.name }))} />
+                </FilterBar.Section>
+            )}
 
             <FilterBar.Section active={!isDefaultWeek} onClear={handleResetFilters} label="semana">
                 <PeriodStepper

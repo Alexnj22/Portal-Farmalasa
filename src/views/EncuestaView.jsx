@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import ListRow from '../components/common/ListRow';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -359,6 +360,8 @@ export default function EncuestaView() {
     const [tab, setTab] = usePestanaEnUrl(TABS, 'resumen');
     const [expandedQ, setExpandedQ] = useState(null);
     const [expandedBloque, setExpandedBloque] = useState(null);
+    const { getScope } = useAuth();
+    const alcanceTodas = getScope('encuesta') === 'ALL';
     const [filterSucursal, setFilterSucursal] = useState('');
     const [filterRol, setFilterRol] = useState('');
 
@@ -597,10 +600,21 @@ export default function EncuestaView() {
             activeCount={[filterSucursal].filter(Boolean).length}
         >
             {/* 1 · ámbito — la sucursal va primero (§17) */}
+            {/* Sólo con alcance sobre todas. `sucursales` sale de las
+                respuestas cargadas, o sea del catálogo de lo que hay, no de lo
+                que esta persona puede mirar.
+                ⚠️ Esto tapa el SELECTOR, no los datos: los bloques de más abajo
+                —el scoreboard por sucursal, el detalle por bloque— leen
+                `RESPUESTAS` directo y no pasan por `filteredRows`. Hoy no
+                importa porque ningún cargo tiene alcance de sala en `encuesta`;
+                el día que se configure, hay que recortar la carga, no la
+                ranura. */}
+            {alcanceTodas && (
             <FilterBar.Section active={!!filterSucursal} onClear={() => setFilterSucursal('')} label="sucursal">
                 <FilterBar.Sucursal value={filterSucursal} onChange={setFilterSucursal}
                     options={sucursales.map(s => ({ value: s, label: s }))} />
             </FilterBar.Section>
+            )}
 
             {/* 2 · entidad */}
             {surveys.length > 1 && (

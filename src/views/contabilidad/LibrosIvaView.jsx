@@ -1224,7 +1224,7 @@ export default function LibrosIvaView({ openModal }) {
 
     const [mes, setMes] = useState(mesActual);
     const [filterBranch, setFilterBranch] = useState(
-        getScope('libros_iva') === 'BRANCH' ? String(user?.branchId || '') : ''
+        getScope('libros_iva') !== 'ALL' ? String(user?.branchId || '') : ''
     );
 
     // Buscar, ordenar y paginar recortan LO QUE SE VE, nunca lo que se declara:
@@ -1523,7 +1523,7 @@ export default function LibrosIvaView({ openModal }) {
         />
     );
 
-    const puedeElegirSucursal = getScope('libros_iva') !== 'BRANCH';
+    const puedeElegirSucursal = getScope('libros_iva') === 'ALL';
 
     const barraFiltros = (
         <FilterBar

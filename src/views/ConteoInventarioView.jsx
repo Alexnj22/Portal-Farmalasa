@@ -137,7 +137,7 @@ export default function ConteoInventarioView() {
     // los conteos de su sucursal. Acá el selector es para el que ve TODAS y
     // necesita mirar una sola — con BRANCH queda fijado y deshabilitado, para
     // que se vea de qué sucursal son los datos y no parezca "todo el portal".
-    const isBranchScoped = getScope('conteo_inventario') === 'BRANCH';
+    const isBranchScoped = getScope('conteo_inventario') !== 'ALL';
 
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);

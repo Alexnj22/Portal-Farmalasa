@@ -264,7 +264,7 @@ export default function TabRutas({ searchTerm = '' }) {
   // —las acciones del conductor y el botón de crear— nunca escondieron nada.
   // Hoy no cambia lo que ve nadie: las 6 filas del módulo están en `ALL`. Lo que
   // cambia es que ahora la guarda funciona el día que alguien ponga `BRANCH`.
-  const isBranch = getScope('pedidos_tab_rutas') === 'BRANCH';
+  const isBranch = getScope('pedidos_tab_rutas') !== 'ALL';
 
   const [rutas,         setRutas]         = useState([]);
   const [loading,       setLoading]       = useState(true);

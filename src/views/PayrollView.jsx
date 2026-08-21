@@ -397,7 +397,7 @@ const PayrollView = ({ openModal }) => {
 
     const [activePeriod, setActivePeriod] = useState(null);
     const [filterBranch, setFilterBranch] = useState(
-        getScope('payroll') === 'BRANCH' ? String(user?.branchId || '') : ''
+        getScope('payroll') !== 'ALL' ? String(user?.branchId || '') : ''
     );
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [searchTerm,   setSearchTerm]   = useState('');
@@ -515,7 +515,7 @@ const PayrollView = ({ openModal }) => {
             onClear={() => { setFilterBranch(''); setFilterStatus('ALL'); }}
             activeCount={[!!filterBranch, filterStatus !== 'ALL'].filter(Boolean).length}
         >
-            {getScope('payroll') !== 'BRANCH' && (
+            {getScope('payroll') === 'ALL' && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
                     <FilterBar.Sucursal value={filterBranch}
                         onChange={val => setFilterBranch(val || '')} options={branchOptions} />

@@ -3020,7 +3020,7 @@ export default function FacturacionView() {
     if (!visitadas.has(activeTab)) setVisitadas(new Set(visitadas).add(activeTab));
 
     const [filterBranch, setFilterBranch] = useState(
-        getScope('facturacion') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
+        getScope('facturacion') !== 'ALL' ? String(currentUser?.branchId || '') : ''
     );
     // El desglose por código de Observaciones vive acá arriba porque es una
     // RANURA de la píldora (§17.0): la pestaña reporta sus conteos y el filtro
@@ -3120,7 +3120,7 @@ export default function FacturacionView() {
     // ve la ranura de sucursal, pero sí la acción. Antes la condición envolvía la
     // barra entera, así que al mover la acción acá se le habría desaparecido a
     // todo el personal de sucursal.
-    const puedeElegirSucursal = getScope('facturacion') !== 'BRANCH';
+    const puedeElegirSucursal = getScope('facturacion') === 'ALL';
     const filtrosCuerpo = (
         <FilterBar
             onClear={() => { setFilterBranch(''); setSelectedMonth(mesPorDefecto); setObsCode(''); }}

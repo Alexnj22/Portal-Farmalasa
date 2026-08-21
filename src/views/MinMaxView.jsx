@@ -69,7 +69,7 @@ export default function MinMaxView() {
     useEffect(() => { loadConfig(); }, [loadConfig]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     useEffect(() => {
-        if (getScope('minmax') !== 'BRANCH' || !user?.branchId) return;
+        if (getScope('minmax') === 'ALL' || !user?.branchId) return;
         fetchErpSucursalIdForBranchLocked(user.branchId)
             .then(({ data }) => { if (data?.erp_sucursal_id) setLockedErpId(data.erp_sucursal_id); });
     }, [user?.branchId, getScope]);

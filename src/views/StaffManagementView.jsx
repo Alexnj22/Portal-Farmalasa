@@ -582,7 +582,7 @@ const StaffManagementView = ({
     // La cuenta SUPERADMIN ("Administrador del Sistema") es una cuenta técnica de
     // acceso, no un empleado real — nunca debe listarse en Gestión de Personal.
     const withoutSystemAccount = (employees || []).filter(e => e.system_role !== 'SUPERADMIN');
-    return getScope('staff_list') === 'BRANCH'
+    return getScope('staff_list') !== 'ALL'
         ? withoutSystemAccount.filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
         : withoutSystemAccount;
   }, [employees, getScope, user?.branchId]);
@@ -614,7 +614,7 @@ const StaffManagementView = ({
   // a propósito (sin kiosk/ISSS-AFP/nómina) y sus campos no calzan con
   // EmployeeRow/searchEmployees (ver PracticanteRow arriba).
   const practicantesScopeFiltered = useMemo(() => {
-    return getScope('staff_list') === 'BRANCH'
+    return getScope('staff_list') !== 'ALL'
       ? (practicantes || []).filter(p => String(p.branch_id) === String(user?.branchId))
       : (practicantes || []);
   }, [practicantes, getScope, user?.branchId]);
@@ -936,6 +936,14 @@ const StaffManagementView = ({
                                 activeCount={[selectedBranch !== 'ALL', activeStatFilter !== 'ALL'].filter(Boolean).length}
                                 acciones={accionesPersonal}
                             >
+                                {/* La ranura es del ALCANCE, no del catálogo.
+                                    Ofrecía las 8 sucursales a cualquiera, y la
+                                    lista de abajo YA venía recortada por
+                                    `scopeFilteredEmployees`: con alcance de una
+                                    sala, elegir otra devolvía una lista vacía
+                                    sin explicar por qué. Un filtro que no puede
+                                    encontrar nada es peor que no estar. */}
+                                {getScope('staff_list') === 'ALL' && (
                                 <FilterBar.Section active={selectedBranch !== 'ALL'} label="sucursal">
                                     <FilterBar.Sucursal
                                         value={selectedBranch}
@@ -943,6 +951,7 @@ const StaffManagementView = ({
                                         options={branchOptions}
                                     />
                                 </FilterBar.Section>
+                                )}
 
                                 <FilterBar.Section active={activeStatFilter !== 'ALL'}
                                     onClear={() => setActiveStatFilter('ALL')} label="estado">

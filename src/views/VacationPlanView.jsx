@@ -350,7 +350,7 @@ const VacationPlanView = () => {
     const currentYear = new Date().getFullYear();
     const [year, setYear]               = useState(currentYear);
     const [branchFilter, setBranchFilter] = useState(
-        getScope('vacation_plan') === 'BRANCH' ? String(user?.branchId || '') : 'ALL'
+        getScope('vacation_plan') !== 'ALL' ? String(user?.branchId || '') : 'ALL'
     );
     const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -713,7 +713,7 @@ const VacationPlanView = () => {
             onClear={() => { setYear(currentYear); setBranchFilter('ALL'); setStatusFilter('ALL'); }}
             activeCount={[year !== currentYear, branchFilter !== 'ALL', statusFilter !== 'ALL'].filter(Boolean).length}
         >
-            {getScope('vacation_plan') !== 'BRANCH' && (
+            {getScope('vacation_plan') === 'ALL' && (
                 <FilterBar.Section active={branchFilter !== 'ALL'} onClear={() => setBranchFilter('ALL')} label="sucursal">
                     <FilterBar.Sucursal value={branchFilter}
                         onChange={val => setBranchFilter(val || 'ALL')} options={branchOptions} />

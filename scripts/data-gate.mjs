@@ -259,7 +259,7 @@ const leerFuente = (archivo) => (soloIndexado
   ? (desdeIndice.get(archivo) ?? '')
   : readFileSync(join(RAIZ, archivo), 'utf8'));
 
-const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-columna-repetida': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [] };
+const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'in-columna-repetida': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [], 'alcance-contra-branch': [] };
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
   hallazgos[cat].push({ archivo, linea, detalle });
@@ -492,6 +492,30 @@ for (const archivo of archivos) {
   for (const m of src.matchAll(reClientes(src, String.raw`const\s*\{\s*data(?:\s*:\s*\w+)?\s*\}\s*=\s*await\s+(?:CLI)\s*\.`))) {
     push('error-ignorado', archivo, lineaDe(src, m.index),
       'destructurar solo `data`: el error del query se descarta');
+  }
+
+  /* 4b. alcance-contra-branch — preguntar por 'BRANCH' en vez de por 'ALL'.
+   *
+   * Hay TRES alcances, no dos: 'ALL', 'BRANCH' y 'MINE'. Preguntar
+   * `getScope(m) === 'BRANCH'` para decidir si se recorta —o su espejo
+   * `!== 'BRANCH'` para decidir si se ofrece el selector de sucursal— deja a
+   * 'MINE' del lado ancho: no es BRANCH, luego ve todas. Y desde el 2026-08-21
+   * `getScope` devuelve 'MINE' cuando el módulo no está en `rolePerms`, que es
+   * justo el caso que antes caía en 'ALL'.
+   *
+   * La pregunta correcta es siempre la misma y es sobre el lado angosto:
+   * **¿tiene alcance global?** → `=== 'ALL'` para ofrecer, `!== 'ALL'` para
+   * recortar. Nació en cero: los 28 sitios que había se convirtieron el mismo
+   * día, y no hay ninguno legítimo — si mañana hace falta distinguir BRANCH de
+   * MINE, se distingue con una comparación propia y su motivo escrito, no
+   * reintroduciendo la que confunde.
+   *
+   * Sólo `src/`: en `supabase/` el alcance lo resuelve `auth_module_scope()`,
+   * que es SQL y tiene su propio CASE de tres ramas. */
+  for (const m of soloCodigo(src).matchAll(/getScope\([^)]*\)\s*[!=]==\s*'BRANCH'/g)) {
+    if (!archivo.startsWith('src/')) continue;
+    push('alcance-contra-branch', archivo, lineaDe(src, m.index),
+      "compara el alcance contra 'BRANCH': hay tres, y 'MINE' queda del lado ancho — preguntar por 'ALL'");
   }
 
   // 5. escritura-a-ciegas — `await supabase…` cuyo resultado no se recoge.

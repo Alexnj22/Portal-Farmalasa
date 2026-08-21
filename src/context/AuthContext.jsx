@@ -266,13 +266,16 @@ export const AuthProvider = ({ children }) => {
         filas.forEach(p => {
           const prev = map[p.module_key];
           if (!prev) {
-            map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };
+            map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'MINE' };
           } else {
             map[p.module_key] = {
               can_view: prev.can_view || p.can_view,
               can_edit: prev.can_edit || p.can_edit,
               can_approve: prev.can_approve || p.can_approve,
-              scope: (prev.scope === 'ALL' || p.scope === 'ALL') ? 'ALL' : (prev.scope || p.scope || 'ALL'),
+              // Una fila sin `scope` cae a 'MINE' y no a 'ALL': el default más
+              // ancho es el que convierte «no sé» en «todo». En prod las 1,607
+              // filas lo tienen puesto, así que esto es la red, no el caso.
+              scope: (prev.scope === 'ALL' || p.scope === 'ALL') ? 'ALL' : (prev.scope || p.scope || 'MINE'),
             };
           }
         });
@@ -1238,7 +1241,23 @@ export const AuthProvider = ({ children }) => {
     // Se sigue escribiendo en el usuario para el temporizador de inactividad,
     // pero los permisos ya no dependen de que sobreviva ahí.
 
-    const getScope = (moduleKey) => rolePerms?.[moduleKey]?.scope ?? 'ALL';
+    /* El alcance, con el MISMO terminal que `auth_module_scope()` en la base.
+     *
+     * Terminaba en `'ALL'`: «no sé cuál es tu alcance → todos». Hoy no hace
+     * daño porque un módulo que no está en `rolePerms` tampoco da permiso, y
+     * ninguna vista se dibuja sin él — pero es la misma forma de fallo que
+     * costó los 29 traslados ajenos de Salud 3: un default que decide a lo
+     * ancho lo que nadie decidió.
+     *
+     * El superusuario va aparte porque `hasPermission` le dice que sí a todo:
+     * sin esta rama entraría a cualquier pantalla con alcance de una sola sala.
+     * Y va DESPUÉS del `rolePerms`, no antes, para que un superusuario con fila
+     * explícita conserve la suya.
+     *
+     * Lo heredado por ausencia no necesita rama: `mis_permisos_heredados()`
+     * viene mezclado en `rolePerms` con su propio `scope` (ver el `.then` de
+     * arriba), así que llega por el camino normal. */
+    const getScope = (moduleKey) => rolePerms?.[moduleKey]?.scope ?? (isSU ? 'ALL' : 'MINE');
 
     // Espejo exacto de auth_module_locked() en la BD: vigente + no soy el titular.
     // Si las dos mitades no coinciden, la UI habilita botones que el servidor

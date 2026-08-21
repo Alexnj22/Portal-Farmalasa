@@ -8,6 +8,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
 import { timeToMins } from '../../utils/scheduleHelpers';
+import { useAuth } from '../../context/AuthContext';
 import { AiThinkingState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
 
@@ -29,7 +30,14 @@ const FormWfmAnalytics = ({ branches }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [salesData, setSalesData] = useState([]);
     const [branchName, setBranchName] = useState('');
-    const [selectedBranch, setSelectedBranch] = useState(branches?.[0]?.id ? String(branches[0].id) : '');
+    /* El alcance es el de Horarios, que es de donde se abre esta pantalla.
+     * Sin alcance sobre todas, arranca —y se queda— en la sala propia. */
+    const { user, getScope } = useAuth();
+    const puedeElegirSucursal = getScope('schedules') === 'ALL';
+    const [selectedBranch, setSelectedBranch] = useState(() =>
+        !puedeElegirSucursal && user?.branchId
+            ? String(user.branchId)
+            : (branches?.[0]?.id ? String(branches[0].id) : ''));
     const [timeRange, setTimeRange] = useState('30'); // '0' significa "Hoy"
     // Lo que en esta ventana NO es venta de productos. La gráfica de horas se
     // dibuja por CANTIDAD de transacciones, así que un cobro suelto no le mueve
@@ -308,9 +316,15 @@ const FormWfmAnalytics = ({ branches }) => {
                         <TrendingUp size={20} strokeWidth={2.5} className="text-chart-9-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-[var(--dur-slow)]" />
                     </div>
                     
-                    <div className="w-full sm:w-[250px] overflow-visible group/branch hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
-                        <LiquidSelect value={selectedBranch} onChange={setSelectedBranch} options={branchOptions} clearable={false} compact icon={Building2} />
-                    </div>
+                    {/* Se abre desde Horarios, así que responde a su alcance.
+                        Ofrecía las sucursales del catálogo sin preguntarle al
+                        permiso: con alcance de una sala se podía mirar la
+                        afluencia y las ventas por hora de las demás. */}
+                    {puedeElegirSucursal && (
+                        <div className="w-full sm:w-[250px] overflow-visible group/branch hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
+                            <LiquidSelect value={selectedBranch} onChange={setSelectedBranch} options={branchOptions} clearable={false} compact icon={Building2} />
+                        </div>
+                    )}
                 </div>
 
                 {/* FILTROS DE RANGO (PILL TABS) */}

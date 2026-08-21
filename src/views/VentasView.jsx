@@ -888,7 +888,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     filterAnuladas={filterAnuladas} setFilterAnuladas={setFilterAnuladas}
                     filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
                     showAntibiotico={antibioticIds.size > 0}
-                    branchLocked={getScope('ventas') === 'BRANCH'}
+                    branchLocked={getScope('ventas') !== 'ALL'}
                     privacyMode={privacyMode} setPrivacyMode={setPrivacyMode}
                 />
                 </div>
@@ -1311,7 +1311,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 })()}
                 </CarrilCards>
                 )}
-                <div className={`flex justify-end min-w-0 ${verCards ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
+                <div className={`flex justify-end min-w-0 ${verCards ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') !== 'ALL'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
@@ -2462,7 +2462,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 })()}
                 </CarrilCards>
                 )}
-                <div className={`flex justify-end min-w-0 ${(verCards || hiddenCount > 0 || showHidden) ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
+                <div className={`flex justify-end min-w-0 ${(verCards || hiddenCount > 0 || showHidden) ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') !== 'ALL'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {error && (
@@ -2724,7 +2724,7 @@ export default function VentasView() {
     const activeTab   = VALID_TABS.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
     const [filterBranch, setFilterBranch] = useState(
-        getScope('ventas') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
+        getScope('ventas') !== 'ALL' ? String(currentUser?.branchId || '') : ''
     );
     const [monthRange, setMonthRange]   = useState(() => {
         const r = currentMonthRange();

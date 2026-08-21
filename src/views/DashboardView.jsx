@@ -1817,7 +1817,7 @@ const DashboardView = ({ openModal }) => {
 
   useEffect(() => {
     if (salesBranch || !salesBranches.length) return;
-    if (getScope('dash_sales') === 'BRANCH' && userBranchStr) {
+    if (getScope('dash_sales') !== 'ALL' && userBranchStr) {
       setSalesBranch(userBranchStr);
     } else {
       const pop = salesBranches.find(b => /popular/i.test(b.name)) || salesBranches[0];
@@ -2016,7 +2016,7 @@ const DashboardView = ({ openModal }) => {
   const presentToday    = useMemo(()=>{ const ids=new Set(); employees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===today) ids.add(e.id);})); return ids.size; },[employees,today]);
   const branchAlerts    = useMemo(()=>branches.filter(b=>getBranchIssue(b)!==null),[branches]);
 
-  const trendScopeIsBranch = getScope('dash_trend') === 'BRANCH';
+  const trendScopeIsBranch = getScope('dash_trend') !== 'ALL';
   const trendEmployees = trendScopeIsBranch && userBranchStr
     ? employees.filter(e => String(e.branchId ?? e.branch_id ?? '') === userBranchStr)
     : employees;
@@ -2049,7 +2049,7 @@ const DashboardView = ({ openModal }) => {
   },[trendOffset]);
 
   const activeBranches     = useMemo(()=>branches.filter(b=>b.id),[branches]);
-  const currentShiftBranch = getScope('dash_shifts') === 'BRANCH' && userBranchStr
+  const currentShiftBranch = getScope('dash_shifts') !== 'ALL' && userBranchStr
     ? userBranchStr
     : (shiftBranch || String(activeBranches[0]?.id||''));
   const shiftStatusData    = useMemo(()=>activeEmployees.filter(e=>String(e.branchId)===currentShiftBranch).map(e=>({...e,currentStatus:getTodayAttendanceStatus(e)})),[activeEmployees,currentShiftBranch]);
@@ -2493,7 +2493,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
-          action={getScope('dash_shifts') !== 'BRANCH' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
+          action={getScope('dash_shifts') === 'ALL' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {employees.length === 0 ? (
               <div className="px-4 py-3 space-y-5">
@@ -2537,7 +2537,7 @@ const DashboardView = ({ openModal }) => {
     /* ── SALES ── */
     if (wid === 'sales') {
       if (!showWidget('sales','dash_sales')) return null;
-      const isSalesLocked = getScope('dash_sales') === 'BRANCH';
+      const isSalesLocked = getScope('dash_sales') !== 'ALL';
       const effectiveSalesBranch = isSalesLocked && userBranchStr ? userBranchStr : salesBranch;
       return wrapWidget('sales',
         <WidgetCard noClip icon={BarChart2} category="ventas"
@@ -3771,7 +3771,7 @@ const DashboardView = ({ openModal }) => {
 
         {/* KPI row — content varies by tab */}
         {(()=>{
-          const kpiScope = getScope('dash_kpi') === 'BRANCH';
+          const kpiScope = getScope('dash_kpi') !== 'ALL';
           const kpiBranchStr = kpiScope ? userBranchStr : '';
           const kpiEmps = kpiBranchStr
             ? activeEmployees.filter(e => String(e.branchId ?? e.branch_id ?? '') === kpiBranchStr)

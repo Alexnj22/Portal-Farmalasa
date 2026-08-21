@@ -88,7 +88,7 @@ export default function ResumenFiscalView() {
     const [loading, setLoading]   = useState(true);
     const [error, setError]       = useState('');
 
-    const puedeElegirSucursal = getScope('resumen_fiscal') !== 'BRANCH';
+    const puedeElegirSucursal = getScope('resumen_fiscal') === 'ALL';
 
     const branchOptions = useMemo(
         () => (branches || []).map(b => ({ value: String(b.id), label: b.name })),

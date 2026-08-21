@@ -1,7 +1,8 @@
 # Que el recálculo mensual no pise el ajuste a mano — hallazgo y plan (2026-08-20)
 
-**Estado: fase 1 APLICADA** (2026-08-21, migración `20260821041336`). El resto
-sigue sin tocarse. Las mediciones de §2 son lecturas contra producción anteriores
+**Estado: fases 1, 2 y 3 APLICADAS** (2026-08-21, migraciones `20260821041336`,
+`20260821041927` y `20260821042224`). Faltan la 4 (la categoría en pantalla) y
+la 5 (que el cálculo lea el motivo), que es la única que mueve números. Las mediciones de §2 son lecturas contra producción anteriores
 a cualquier cambio.
 
 **Prueba de salida de la fase 1, cumplida:** las 19,041 filas conservan
@@ -227,16 +228,31 @@ para funcionar. Se corrigió con `(… ) IS TRUE`, que convierte el `NULL` en
 `FALSE`. Los diez casos de borde se probaron en staging antes de tocar
 producción; nueve pasaron a la primera y éste no.
 
-### Fase 2 · Pedir el motivo al editar — *no cambia ninguna fórmula*
+### Fase 2 · La marca del ajuste humano — *no cambia ninguna fórmula* — **APLICADA**
 
-La celda de MIN·MAX deja de guardar en silencio: pide el motivo con la lista de
-§4.2 más nota libre, exactamente como ya lo pide el flujo de solicitud. El valor
-sigue yendo a donde va hoy, y además queda en `manual_*`.
+**Se replanteó al construirla, y quedó mejor.** El diseño original ponía la
+marca en el frontend: cada camino de edición tenía que acordarse de mandarla. Hay
+tres —celda viva, borrador y Bodega— más los que se escriban después: es una prop
+opt-in, o sea una prop olvidada. La marca la pone ahora un **trigger**, así que
+ningún camino puede saltearla y quien edita no puede mentir sobre quién fue (el
+nombre sale de la sesión, no del navegador — misma regla que `src/data/audit.js`).
 
-**Prueba de salida:** editar un valor deja la fila con `manual_motivo` escrito y
-`min_units`/`max_units` con el mismo número que habría quedado antes del cambio.
+Distinguir a la persona del proceso tenía una trampa que sólo se ve midiendo: el
+recálculo corre sin sesión y `auth.uid()` lo descarta, pero **publicar corre con
+la sesión de quien publica**. Lo que sí lo distingue es que publicar reescribe
+`published_at` en el mismo UPDATE — su firma, que ninguna edición de celda tiene.
 
-### Fase 3 · Publicar deja de pisar — *quita una pérdida, no agrega riesgo*
+El **motivo** sigue siendo aparte y opcional: sin él la fila queda marcada como
+ajuste humano y cae en «En conflicto» —no se pisa, se revisa—; con él, el cálculo
+de la fase 5 podrá actuar en consecuencia. Exigirlo en las 7,590 ediciones
+produciría motivos elegidos al azar, y el cálculo actuaría sobre intenciones que
+nadie tuvo: peor que no tener ninguno.
+
+**Prueba de salida, cumplida:** cinco casos de borde en staging —recálculo sin
+sesión, persona editando, publicación, update que no toca MIN/MAX, y mover el
+MAX— los cinco correctos. Huella de las 19,041 filas idéntica antes y después.
+
+### Fase 3 · Publicar deja de pisar — *quita una pérdida, no agrega riesgo* — **APLICADA**
 
 `publish_stock_params` excluye del barrido las filas con ajuste vigente y las
 aparta para revisión con los tres números y el motivo a la vista.
@@ -244,9 +260,20 @@ aparta para revisión con los tres números y el motivo a la vista.
 Esta fase hace el sistema **más conservador que hoy**: en vez de sobrescribir 567
 decisiones humanas, las deja quietas hasta que alguien decida.
 
-**Prueba de salida:** correr la publicación en staging sobre una copia con
-ajustes sembrados y verificar que (a) las filas con motivo conservan su valor,
-(b) las filas sin motivo se publican **idénticas** a como se publican hoy.
+La línea es el **acto deliberado**: el barrido (sin `p_erp_product_ids`) deja
+quietas las filas con `manual_at`; la publicación dirigida a productos concretos
+sí las actualiza, porque alguien los eligió uno por uno — el frontend ya
+distinguía los dos casos (`scope: 'selective' | 'all'`), no hubo que inventarlo.
+
+Devuelve además `omitidas_por_ajuste_manual`, y el portal lo dice en pantalla.
+Una publicación que calla lo que no hizo se lee como «publicó todo»: es el mismo
+silencio con el que desaparecieron los 567.
+
+**Prueba de salida, cumplida:** tres casos en staging con borradores sembrados
+—barrido que deja quieta la ajustada, publicación dirigida que sí la pisa, y el
+conteo de omitidas—, los tres correctos. Huella de las 19,041 filas idéntica, y
+los permisos de ejecución de la función intactos (`authenticated`, `postgres`,
+`service_role`).
 
 ### Fase 4 · La categoría en pantalla — *sólo lectura*
 

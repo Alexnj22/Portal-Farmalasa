@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.5 — Publicar deja de pisar lo que puso una persona
+
+Fases 2 y 3 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`. Hasta hoy,
+publicar los borradores del recálculo era un barrido: copiaba el número
+propuesto sobre el vigente sin mirar si esa fila la había corregido alguien.
+Medido contra producción: de 969 pares producto·sala ajustados a mano antes del
+recálculo del 1-ago y nunca vueltos a tocar, **567 (59%) ya no tienen el valor
+que se les puso**.
+
+**La marca la pone la base, no la pantalla.** Un trigger sobre
+`product_stock_params` deja `manual_at` y `manual_por` cada vez que alguien
+mueve un MIN o un MAX desde una sesión de usuario. Vive ahí y no en el frontend
+a propósito: hay tres caminos de edición —celda viva, borrador y Bodega— más los
+que se escriban después, y pedirle a cada uno que se acuerde de mandar el dato
+es una prop opt-in, o sea una prop olvidada. De paso, quien edita no puede
+mentir sobre quién fue: el nombre sale de la sesión, no del navegador.
+
+Distinguir a la persona del proceso tenía una trampa. El recálculo corre sin
+sesión, así que `auth.uid()` alcanza para descartarlo — pero **publicar corre
+con la sesión de quien publica**, y ahí `auth.uid()` no distingue nada. Lo que
+sí lo distingue es que publicar reescribe `published_at` en el mismo UPDATE: es
+su firma, y no la comparte ninguna edición de celda.
+
+**Y publicar dejó de pisar.** El barrido deja quietas las filas con ajuste de
+una persona; la publicación dirigida a productos concretos sí las actualiza,
+porque alguien los eligió uno por uno. La función devuelve además cuántas dejó
+sin tocar, y el portal lo dice en pantalla: una publicación que calla lo que no
+hizo se lee como «publicó todo», que es justo el silencio con el que
+desaparecieron aquellos 567.
+
+Ninguna de las dos migraciones movió un número: las 19,041 filas conservan
+`min_units`/`max_units` con la misma huella md5 antes y después
+(`6c5bd0fe…`, suma MIN 246,533 y suma MAX 379,537). Las dos se probaron antes en
+el branch de staging, y ahí apareció el hallazgo que justifica la prueba: el
+freno `psp_cliente_fijo_completo` escrito de la forma obvia **no frenaba** —con
+las columnas en `NULL` la expresión da `NULL`, y un `CHECK` sólo rechaza con
+`FALSE`—, así que un «cliente fijo» sin su ritmo habría entrado sin error.
+
 ## v2.698.4 — el barrido móvil llega al final, y el portal mide cero de pie
 
 Primeras tres fases de `docs/PLAN-MOVIL-2026-08-20.md`. Las tres empezaron

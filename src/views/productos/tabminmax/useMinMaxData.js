@@ -786,13 +786,25 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 sucursal_id: selectedErp,
                 published_by: user?.email ?? null,
                 published_count: res?.published,
+                omitidas_por_ajuste_manual: res?.omitidas_por_ajuste_manual ?? 0,
                 scope: productIds ? 'selective' : 'all',
                 product_ids: productIds ?? null,
             });
             await loadData(selectedErp);
             const n = res?.published ?? 0;
+            const omitidas = res?.omitidas_por_ajuste_manual ?? 0;
             const label = productIds ? `${n} producto${n !== 1 ? 's' : ''}` : `${n.toLocaleString()} borradores`;
-            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Publicó ${label} exitosamente`, 'success');
+            // Lo que quedó quieto por tener ajuste de una persona se DICE. Callarlo
+            // haría leer «publicó todo» donde no publicó todo, que es exactamente el
+            // silencio con el que desaparecieron 567 ajustes sin que nadie lo notara.
+            const cola = omitidas > 0
+                ? ` · ${omitidas.toLocaleString()} sin tocar, las ajustó alguien a mano`
+                : '';
+            useToastStore.getState().showToast(
+                ERP_NAMES[selectedErp],
+                `Publicó ${label} exitosamente${cola}`,
+                omitidas > 0 ? 'info' : 'success',
+            );
         } catch (e) { useToastStore.getState().showToast('Error al publicar', mensajeAmigable(e), 'error'); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);

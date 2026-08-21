@@ -447,7 +447,21 @@ async function syncBranch(
   }
 
   // 6. Changelogs
-  if (changelogs.length > 0) await supabase.from('sales_invoice_changelog').insert(changelogs);
+  // El error de este insert NO se descarta.
+  //
+  // Se tragó en silencio el historial de toda factura sin `codigo_generacion`
+  // —la columna era NOT NULL hasta el 2026-08-21— y, como va en un solo lote,
+  // con ella se caían TODOS los cambios de esa sala en ese minuto. Así se perdió
+  // el «FINALIZADA → NULA» de 0000061286_COF (La Popular, 21-ago) y con él la
+  // única prueba de cuándo se anuló esa venta.
+  //
+  // No aborta la corrida: las facturas ya se escribieron y volver a bajarlas no
+  // arregla el historial. Pero queda en el log, que es lo que faltaba: un cambio
+  // que no se registra es indistinguible de un cambio que no pasó.
+  if (changelogs.length > 0) {
+    const { error: logErr } = await supabase.from('sales_invoice_changelog').insert(changelogs);
+    if (logErr) console.error(`[changelog] sucursal ${branchId}: se perdieron ${changelogs.length} cambio(s) — ${logErr.message}`);
+  }
 
   // idMin/idMax calculado sobre todas las ventas del ERP (no solo upserted)
   const allErpNums = ventas.map(v => parseInt(String(v.id_factura))).filter(n => !isNaN(n));

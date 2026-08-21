@@ -13,92 +13,91 @@ export function fetchAntibioticProductIds() {
 }
 
 /*
- * El filtro «Receta Médica» vive en la base, no acá.
+ * La lista de Ventas y sus totales viven en la BASE, no acá. Las dos.
  *
- * La versión anterior pedía los `invoice_id` de `sales_invoice_items` con un
- * `.in('erp_product_id', …)` sin paginar y los reinyectaba como `.in('id', …)`.
- * PostgREST corta en 1000 filas sin avisar: contra 4,013 renglones reales el
- * navegador veía 901 facturas de 3,655, y como la consulta tampoco llevaba
- * fechas, el recorte caía repartido por toda la historia. Agosto/2026 mostraba
- * 8 ventas de 93.
+ * Nacieron para el filtro «Receta Médica» y desde el 2026-08-21 sirven también
+ * al camino normal, por `soloReceta`. Son la misma consulta con una línea de
+ * diferencia, y unificarlas no fue prolijidad: eran DOS caminos con el MISMO
+ * bug, y sólo uno estaba arreglado.
  *
- * Y traer la lista completa tampoco servía: con «Este año» son ~1,700 ids, y
- * esos ids viajan dentro de la URL del `.in()`.
+ * ── El bug de «Receta Médica» (arreglado el 2026-08-17) ──
+ * Pedía los `invoice_id` de `sales_invoice_items` con un `.in('erp_product_id',
+ * …)` sin paginar y los reinyectaba como `.in('id', …)`. PostgREST corta en
+ * 1000 filas sin avisar: contra 4,013 renglones reales el navegador veía 901
+ * facturas de 3,655, y como la consulta tampoco llevaba fechas, el recorte caía
+ * repartido por toda la historia. Agosto/2026 mostraba 8 ventas de 93.
+ *
+ * ── El mismo bug en el camino normal (arreglado el 2026-08-21) ──
+ * `search_ventas_ids` devuelve SETOF y se llamaba con `supabase.rpc()` sin
+ * paginar, así que el mismo tope de 1000 la cortaba. Medido contra producción:
+ *
+ *     buscar «maria» · Este mes         →    810 filas   (entra)
+ *     buscar «maria» · Últimos 6 meses  →  7,540 filas   → llegaban 1,000
+ *     buscar «maria» · Este año         →  9,777 filas   → llegaban 1,000
+ *
+ * Y no era sólo que faltaran filas: los totales del encabezado se SUMABAN sobre
+ * el conjunto recortado, así que el monto y el conteo en pantalla no eran los
+ * del período. Después la lista pintaba 200 de esos 1,000 arbitrarios. Los dos
+ * rangos están a un clic en el PeriodPicker.
+ *
+ * La salida es la misma de siempre: cuando el conjunto no cabe ni en la
+ * respuesta ni en la URL, el filtro va a la base. Adentro de la función,
+ * `search_ventas_ids` se llama como SUBCONSULTA y ahí el tope no existe.
  *
  * `p_anuladas` es 'todas' | 'solo' | 'excluir' porque la lista y los totales
  * NO piden lo mismo — ver dónde los llama VentasView.
+ *
+ * `p_solo_receta` es el DÉCIMO argumento de la lista y el SEXTO de los totales,
+ * y las dos llamadas se mueven juntas: si dejan de coincidir, el encabezado
+ * vuelve a hablar de una lista que no está en pantalla.
  */
-export function fetchVentasConReceta({ fini, ffin, branchFilter, anuladas, searchTerm, sortCol, sortDir, page, pageSize }) {
+export function fetchVentasConReceta({ fini, ffin, branchFilter, anuladas, searchTerm, sortCol, sortDir, page, pageSize, soloReceta = true }) {
     return supabase.rpc('get_ventas_con_receta', {
-        p_fini:      fini,
-        p_ffin:      ffin,
-        p_branch_id: branchFilter ? Number(branchFilter) : null,
-        p_anuladas:  anuladas,
-        p_search:    searchTerm?.trim() || null,
-        p_sort_col:  sortCol,
-        p_sort_dir:  sortDir,
-        p_limit:     pageSize,
-        p_offset:    (page - 1) * pageSize,
+        p_fini:         fini,
+        p_ffin:         ffin,
+        p_branch_id:    branchFilter ? Number(branchFilter) : null,
+        p_anuladas:     anuladas,
+        p_search:       searchTerm?.trim() || null,
+        p_sort_col:     sortCol,
+        p_sort_dir:     sortDir,
+        p_limit:        pageSize,
+        p_offset:       (page - 1) * pageSize,
+        p_solo_receta:  soloReceta,
     });
 }
 
-export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, searchTerm }) {
+export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, searchTerm, soloReceta = true }) {
     return supabase.rpc('get_ventas_receta_stats', {
-        p_fini:      fini,
-        p_ffin:      ffin,
-        p_branch_id: branchFilter ? Number(branchFilter) : null,
-        p_anuladas:  anuladas,
-        p_search:    searchTerm?.trim() || null,
+        p_fini:         fini,
+        p_ffin:         ffin,
+        p_branch_id:    branchFilter ? Number(branchFilter) : null,
+        p_anuladas:     anuladas,
+        p_search:       searchTerm?.trim() || null,
+        p_solo_receta:  soloReceta,
     });
 }
 
 /*
- * ACOTADA POR EL DATO, no por la consulta: el `.in('invoice_id', …)` va sobre
- * una columna que se repite, así que el detector `in-columna-repetida` la marca
- * y tiene razón en marcarla. Lo que la salva es el `.eq('erp_product_id', 0)`:
- * los renglones de canje de puntos son **798 en TODA la tabla** (medido
- * 2026-08-17), o sea que ninguna combinación de facturas puede acercarla a las
- * 1000. Si algún día el canje de puntos se vuelve masivo, esto pagina.
- */
-export function fetchPuntosLineItems(invoiceIds) {
-    return supabase.from('sales_invoice_items')
-        .select('invoice_id, total_linea')
-        .eq('erp_product_id', 0)
-        .in('invoice_id', invoiceIds);
-}
-
-/*
- * Usado por fetchStats con filtros especiales (anuladas/búsqueda) —
- * fetchAllRows evita el cap silencioso de 1000 filas: sin esto, el monto
- * mostrado podía quedar truncado aunque el conteo (count exact) fuera correcto.
+ * Acá vivían `fetchPuntosLineItems` y `fetchInvoicesForStatsSpecial`, que
+ * armaban en el navegador los totales del encabezado cuando había búsqueda o el
+ * chip «Anuladas». Las dos se fueron el 2026-08-21 con el camino que las
+ * necesitaba, y conviene saber por qué para no volver a escribirlas.
  *
- * Trae el ALCANCE de la lista, no las ventas que suman: con el chip apagado eso
- * incluye las anuladas, porque la lista las muestra. Por eso viene `estado` —
- * quien llama cuenta todas y suma sólo las que no están anuladas. Hasta el
- * 2026-08-17 esta consulta las excluía y el encabezado contaba 31 ventas menos
- * de las que se podían recorrer en pantalla.
+ * `fetchInvoicesForStatsSpecial` paginaba bien su propio select —usaba
+ * `fetchAllRows`, con su `.order('id')` obligatorio y todo—, pero le entraba
+ * una lista de ids que YA venía recortada: `search_ventas_ids` devuelve SETOF y
+ * se la llamaba con `supabase.rpc()` sin paginar, así que PostgREST la cortaba
+ * en 1,000. Con «maria» sobre «Este año» eran 9,777 facturas.
  *
- * El `.order('id')` es obligatorio, no cosmético: `fetchAllRows` pagina con
- * `range()`, que corta por POSICIÓN. Sin orden total la base puede devolver la
- * misma fila en dos páginas y perder otra — y acá el resultado es una suma de
- * dinero, así que el error sería un monto mal, no una fila que falta.
+ * O sea que la mitad cuidadosa de la función era irrelevante: **paginaba con
+ * precisión sobre un conjunto que ya estaba mal**. Es la forma más difícil de
+ * ver de este bug — el código que se lee como correcto porque lo es, sobre una
+ * entrada que no.
+ *
+ * Hoy el conteo, el monto y los puntos salen de `get_ventas_receta_stats` en
+ * UNA llamada, con el conjunto armado adentro de la base, donde
+ * `search_ventas_ids` es una subconsulta y el tope no existe.
  */
-export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, isSearching, searchTerm }) {
-    let searchIds = null;
-    if (isSearching) {
-        const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });
-        if (error) throw error;
-        searchIds = (data || []).map((r) => r.id);
-    }
-    return fetchAllRows(() => {
-        let q = supabase.from('sales_invoices').select('id, total, estado')
-            .gte('fecha', fini).lte('fecha', ffin).order('id', { ascending: true });
-        if (branchFilter) q = q.eq('branch_id', branchFilter);
-        if (filterAnuladas) q = q.in('estado', cancelledEstados);
-        if (isSearching) q = q.in('id', searchIds.length > 0 ? searchIds : [0]);
-        return q;
-    });
-}
 
 // La forma de una fila de la lista de ventas. Sale del `.select()` a propósito:
 // la cadena ya pasaba de 180 caracteres y `data-gate` mira una ventana de 450

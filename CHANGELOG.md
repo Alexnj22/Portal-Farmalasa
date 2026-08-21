@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.1 — Buscar en Ventas deja de mentir el total
+
+Segunda tanda de la auditoría del 2026-08-21. Tres migraciones, probadas antes
+en el branch de pruebas.
+
+**Buscar «maria» en «Este año» encontraba 9,777 ventas y mostraba 1,000.**
+`search_ventas_ids` devuelve un conjunto y el navegador la llamaba sin paginar,
+así que PostgREST la cortaba en 1,000 sin decir nada. Medido contra producción:
+
+| buscar «maria» | coinciden | llegaban |
+|---|---|---|
+| Este mes | 810 | 810 |
+| Últimos 6 meses | 7,540 | 1,000 |
+| Este año | 9,777 | 1,000 |
+
+Y lo peor no era la lista: **el monto y el conteo del encabezado se calculaban
+sobre ese recorte**, así que el número grande de la pantalla no era el del
+período. Después la lista pintaba 200 de esos 1,000 — ni siquiera «los 200 más
+recientes», sino los 200 primeros de un recorte que nadie eligió. Los dos rangos
+están a un clic.
+
+La salida es la que ya estaba escrita para «Receta Médica»: cuando el conjunto
+no cabe ni en la respuesta ni en la URL, el filtro va a la base. Esas dos
+funciones se diferenciaban del camino normal en UNA línea, así que en vez de
+escribir un par gemelo —la misma lista dicha dos veces— se les agregó
+`p_solo_receta`. Con `DEFAULT true` ningún llamador de antes cambia de
+comportamiento. Ahora hay **un solo predicado** para los dos caminos, y el
+encabezado no puede volver a describir una lista que no está en pantalla.
+
+De paso se fueron `fetchInvoicesForStatsSpecial` y `sumPuntosForIds`. La primera
+merece una nota: paginaba impecablemente —`fetchAllRows`, con su `.order('id')`
+y el comentario explicando por qué—, pero le entraba una lista de ids que ya
+venía recortada. Es la forma más difícil de ver de este bug: **código correcto
+sobre una entrada que no lo es.**
+
+**La misma búsqueda se volvía 2.6× más lenta en la sexta llamada.** Es la trampa
+del plan genérico de `plpgsql`, que ya está documentada en el proyecto. Siete
+llamadas idénticas, antes: `655 · 647 · 645 · 665 · 649 · 1,684 · 1,659`. La
+corrección se le había aplicado el 17-ago a `get_ventas_receta_stats`, que es
+una de las que **llama** a ésta; la caliente quedó sin ella. Ocho llamadas
+después de ponérsela: `704 · 636 · 646 · 633 · 645 · 654 · 633 · 638`. Plano.
+
+Era el segundo mayor consumidor de la base — 10.5% del tiempo total en la
+ventana medida.
+
+**Una consulta lenta ya no puede retener una conexión del portal dos minutos.**
+El rol `authenticated` tenía `statement_timeout = 120s` contra un pool de 19
+conexiones de PostgREST y un `max_connections` de 60: 19 consultas lentas en
+vuelo agotaban el pool, y cada una podía quedarse dos minutos. Es el mecanismo
+del apagón del 8-jul, el que en el navegador se ve como «error de CORS». Baja a
+**30s**, que sale de medir y no de elegir: la única consulta real del portal que
+pasó de 8 segundos fue justamente la búsqueda, con 9,837 ms, y esa quedó
+arreglada arriba. `service_role` se queda en 120s a propósito — ese número tiene
+su motivo escrito desde el 1-ago, y ahora la relación queda por fin en el orden
+correcto: fondo 120s, pantalla 30s.
+
+**Y `gate:perf` ahora mide la búsqueda de Ventas.** Era el agujero más grande de
+su lista: la consulta que dominaba el tiempo de la base no estaba entre las ocho
+que vigilaba, no porque pasara su techo sino porque no estaba. Las ocho salieron
+de la memoria de quien escribió el gate, no del catálogo. El techo nuevo es
+1,300 ms — ~2× sobre lo medido y no el ~5× del resto, porque acá el modo de
+falla es preciso y ya ocurrió: sin `force_custom_plan` la consulta salta a
+~1,680 ms, y un techo de 5× no atajaría ese 2.6×.
+
 ## v2.698.0 — confirmar un pago desde el teléfono, y el plan de lo que falta
 
 Cierra el único hueco que quedó abierto en v2.697.0. En Facturación, «Confirmar»

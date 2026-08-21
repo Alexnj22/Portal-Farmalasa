@@ -1,6 +1,7 @@
 {
   "_comment": "Techos de gate:perf, en milisegundos. NO son metas: son el techo por encima del cual algo se rompió. Están puestos ~5x sobre lo medido el 2026-08-18 a propósito — medir contra producción compartida es ruidoso, y un gate que falla al azar se termina ignorando. Vigilan que una consulta no vuelva a costar 700 ms, no que baje de 10 a 8. La protección fina es estructural (índices, planes), no temporal. Regenerar SOLO al bajar: npm run gate:perf -- --update-baseline, que nunca sube un techo.",
-  "updated": "2026-08-18",
+  "_2026_08_21_buscar_en_ventas": "Techo 1300 ms, y a propósito ~2x sobre lo medido en vez del ~5x del resto. Ocho llamadas seguidas contra prod tras ponerle plan_cache_mode=force_custom_plan: 704 · 636 · 646 · 633 · 645 · 654 · 633 · 638 (promedio 649, máximo 704). El modo de falla acá NO es un barrido nuevo sino uno preciso y ya ocurrido: sin force_custom_plan, plpgsql pasa al plan genérico en la SEXTA llamada de cada conexión y salta de ~650 a ~1,684 ms. Un techo de 5x (3,250) no atajaría ese 2.6x. Antes del 2026-08-21 esta consulta no se medía y era la segunda de la base por tiempo total: 10.5%.",
+  "updated": "2026-08-21",
   "presupuestos": {
     "busqueda-del-tablero": 32,
     "busqueda-vista-inventario": 43,
@@ -9,6 +10,7 @@
     "nombre-de-cliente": 10,
     "estado-sincronizacion": 10,
     "faltantes-en-otra-sala": 400,
-    "donde-hay-un-producto": 30
+    "donde-hay-un-producto": 30,
+    "buscar-en-ventas": 1300
   }
 }

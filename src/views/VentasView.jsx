@@ -30,8 +30,8 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
 import {
-    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats, fetchPuntosLineItems,
-    fetchInvoicesForStatsSpecial, fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
+    fetchAntibioticProductIds, fetchVentasConReceta, fetchVentasRecetaStats,
+    fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
     fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
     fetchProductPreciosDetail, fetchProductPreciosHistory,
 } from '../data/ventas';
@@ -420,20 +420,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
     const prevMonthRange = useMemo(() => computePrevRange(fini, ffin), [fini, ffin]);
 
-    // Suma puntos canjeados (erp_product_id=0, deduplicado por factura tomando el
-    // total_linea mayor) para un set de IDs de factura ya filtrado — mismo cálculo
-    // que el RPC get_puntos_canjeados pero sobre una lista arbitraria de IDs.
-    const sumPuntosForIds = async (ids) => {
-        if (!ids.length) return 0;
-        const { data, error } = await fetchPuntosLineItems(ids);
-        if (error) console.error('sumPuntosForIds: fetch sales_invoice_items failed:', error.message);
-        const maxByInvoice = new Map();
-        for (const r of (data || [])) {
-            const cur = maxByInvoice.get(r.invoice_id);
-            if (cur === undefined || Number(r.total_linea) > cur) maxByInvoice.set(r.invoice_id, Number(r.total_linea));
-        }
-        return [...maxByInvoice.values()].reduce((a, b) => a + b, 0);
-    };
+    // Acá vivía `sumPuntosForIds`, que sumaba los puntos canjeados sobre una lista
+    // de ids traída al navegador. Se fue con el camino que la necesitaba: esa
+    // lista salía de `search_ventas_ids` sin paginar, o sea recortada en 1,000
+    // por PostgREST, así que los puntos se sumaban sobre un subconjunto que nadie
+    // eligió. Hoy el cálculo es el de `get_ventas_receta_stats` —mismo criterio,
+    // DISTINCT ON por factura tomando el `total_linea` mayor— pero adentro de la
+    // base, donde el conjunto está completo.
 
     // Stats: RPC rápido (usa sales_daily_stats pre-agregado) para el caso normal.
     // Anuladas / antibiótico / búsqueda no tienen parámetro en el RPC (y romperían
@@ -448,11 +441,21 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         // exactamente las mismas filas que va a dibujar la lista. El alcance que se
         // le pasa es el MISMO que el de fetchRows — si los dos dejan de coincidir,
         // el encabezado vuelve a hablar de una lista que no está en pantalla.
-        if (filterAntibiotico) {
+        const hasSpecialFilter = filterAnuladas || isSearching;
+
+        if (filterAntibiotico || hasSpecialFilter) {
             const { data, error } = await fetchVentasRecetaStats({
                 fini, ffin, branchFilter,
                 anuladas:   filterAnuladas ? 'solo' : 'todas',
                 searchTerm: isSearching ? searchTerm : null,
+                // El MISMO alcance que pide fetchRows. `soloReceta: false` es el
+                // camino normal (buscar, o el chip «Anuladas» sin la píldora):
+                // hasta el 2026-08-21 se armaba acá con `search_ventas_ids` sin
+                // paginar y PostgREST lo cortaba en 1,000 — con «maria» sobre
+                // «Este año» eran 9,777 facturas, y el monto de este encabezado
+                // se sumaba sobre las 1,000 que llegaban. Ahora el conjunto lo
+                // arma la base y el número de pantalla es el del período.
+                soloReceta: Boolean(filterAntibiotico),
             });
             if (error) console.error('fetchStats: get_ventas_receta_stats failed:', error.message);
             const r = data?.[0] || {};
@@ -462,39 +465,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             setTotalPuntos(parseFloat(r.total_puntos || 0));
             // Sin comparativo de período anterior, igual que el resto de las vistas
             // filtradas: compararía universos distintos.
-            setPrevStats({ count: 0, countValido: 0, sum: 0, puntos: 0 });
-            setLoadingStats(false);
-            return;
-        }
-
-        const hasSpecialFilter = filterAnuladas || isSearching;
-
-        if (hasSpecialFilter) {
-            // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — con
-            // una búsqueda de texto amplia el total de facturas coincidentes puede
-            // superar 1000, y antes de este fix la SUMA/puntos se calculaban solo
-            // sobre las primeras 1000 aunque el conteo mostrado (count exact) sí
-            // fuera el real — monto silenciosamente incorrecto en pantalla.
-            const invoices = await fetchInvoicesForStatsSpecial({
-                fini, ffin, branchFilter, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
-                isSearching, searchTerm,
-            }) || [];
-            // `invoices` es el alcance de la lista. Las que suman dinero son las que
-            // no están anuladas — salvo cuando el chip «Anuladas» está encendido, que
-            // es cuando se las está auditando y el monto que se busca es justamente
-            // el de ellas. Misma regla que get_ventas_receta_stats.
-            const cuentan = filterAnuladas
-                ? invoices
-                : invoices.filter(r => !CANCELLED_ESTADOS.includes(r.estado));
-            const sum = cuentan.reduce((acc, r) => acc + Number(r.total || 0), 0);
-            const puntos = await sumPuntosForIds(cuentan.map(r => r.id));
-
-            setTotalCount(invoices.length);
-            setTotalCountValido(cuentan.length);
-            setTotalAmount(sum);
-            setTotalPuntos(puntos);
-            // Sin comparativo de período anterior para vistas filtradas — evita un %
-            // engañoso que compare universos distintos (ej. "anuladas" vs "todo el mes pasado").
             setPrevStats({ count: 0, countValido: 0, sum: 0, puntos: 0 });
             setLoadingStats(false);
             return;
@@ -561,7 +531,30 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             });
             if (error) console.error('fetchRows: get_ventas_con_receta failed:', error.message);
             fetched = data || [];
+        } else if (isSearching) {
+            // Buscar va por la BASE, igual que «Receta Médica» pero sin su filtro.
+            //
+            // Antes se pedían los ids con `search_ventas_ids` desde el navegador y
+            // se reinyectaban con `.in('id', …)`. PostgREST corta esa RPC en 1,000
+            // sin avisar: «maria» sobre «Este año» son 9,777 facturas y llegaban
+            // 1,000, de las que la lista pintaba 200 — ni siquiera «las 200 más
+            // recientes», sino las 200 primeras de un recorte que nadie eligió. Y
+            // esos 1,000 ids viajaban dentro de la URL: 7,303 bytes medidos.
+            //
+            // Adentro de la función el tope no existe, porque `search_ventas_ids`
+            // es una subconsulta y no una respuesta de PostgREST.
+            const { data, error } = await fetchVentasConReceta({
+                fini, ffin, branchFilter: filterBranch,
+                anuladas:   filterAnuladas ? 'solo' : 'todas',
+                searchTerm, sortCol, sortDir, page, pageSize,
+                soloReceta: false,
+            });
+            if (error) console.error('fetchRows: get_ventas_con_receta (búsqueda) failed:', error.message);
+            fetched = data || [];
         } else {
+            // Sin búsqueda la lista pagina por índice con `.range()`, que es más
+            // barato que la función y no tiene el problema del tope: `range()` ES
+            // la paginación, no una respuesta que se recorta.
             const asc = sortDir === 'asc';
             const { data } = await fetchInvoicesList({
                 fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,

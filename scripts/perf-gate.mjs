@@ -233,6 +233,23 @@ const TIEMPOS = [
   // corridas: 163–186 ms.
   { clave: 'faltantes-en-otra-sala',    sql: `SELECT count(*) FROM public.get_faltantes_con_stock_en_otra_sala(6, 20)` },
   { clave: 'donde-hay-un-producto',     sql: `SELECT public.get_donde_hay(187, 5)` },
+  /* Buscar en Ventas, que era el agujero más grande de esta lista.
+   *
+   * El 2026-08-21 una auditoría midió `pg_stat_statements` ordenado por tiempo
+   * TOTAL y `search_ventas_ids` salió segunda —2,367 ms de promedio, 10.5% del
+   * tiempo de toda la base— con este gate en verde. No era que estuviera dentro
+   * de su techo: es que no estaba en la lista. Las ocho mediciones de arriba
+   * salieron de la memoria de quien escribió el gate, no del catálogo.
+   *
+   * Se mide sobre un año a propósito, porque «Este año» y «Últimos 6 meses»
+   * están a un clic en el PeriodPicker y son los rangos donde la consulta duele.
+   *
+   * El techo es más ajustado que el resto (~2x sobre lo medido, no 5x) porque
+   * acá el modo de falla conocido tiene una forma precisa: si alguien le quita
+   * el `plan_cache_mode = force_custom_plan`, plpgsql vuelve al plan genérico en
+   * la SEXTA llamada de cada conexión y pasa de ~650 a ~1,680 ms. Un techo de 5x
+   * no atajaría ese 2.6x, que es exactamente el que ya ocurrió. */
+  { clave: 'buscar-en-ventas',          sql: `SELECT count(*) FROM public.search_ventas_ids('maria', CURRENT_DATE-365, CURRENT_DATE)` },
 ];
 
 /* ── El canal hacia producción ────────────────────────────────────────────────

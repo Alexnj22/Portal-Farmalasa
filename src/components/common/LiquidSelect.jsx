@@ -466,11 +466,20 @@ const LiquidSelect = ({
                flotante. `msDelTema` lee la unidad porque Lightning CSS minifica
                `220ms` a `.22s` y un parseFloat a secas daría 0.22 milisegundos. */
             transition={{ duration: msDelTema('--menu-entrada', 220) / 1000, ease: [0.23, 1, 0.32, 1] }}
-            className={`fixed z-confirm ${coords.transformOrigin} overflow-y-auto p-3
-            transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
+            /* El scroll NO puede vivir en este elemento: su `::after` —el borde de
+               vidrio de `data-surface`— es `position:absolute; inset:0`, y en un
+               contenedor con scroll eso se dimensiona contra la parte VISIBLE.
+               Con una lista más alta que el menú, el borde quedaba dibujado a
+               media lista y el resto del contenido caía fuera del vidrio: se veía
+               partido en dos. Pasa en cualquier select con lista larga; lo
+               destapó el filtro de MIN·MAX al llegar a once opciones.
+               El panel recorta y el hijo scrollea. */
+            className={`fixed z-confirm ${coords.transformOrigin} overflow-hidden p-3 flex flex-col
+            transform-gpu`}
         >
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
-            <div className="flex flex-col gap-1 w-full">
+            <div className="flex flex-col gap-1 w-full overflow-y-auto min-h-0
+                scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {!searchTerm && clearable && value != null && value !== '' && (
                     <button
                         type="button"

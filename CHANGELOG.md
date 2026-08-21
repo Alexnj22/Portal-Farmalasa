@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.700.3 — El menú largo deja de verse partido en dos
+
+Reportado con una captura: el filtro de estado de MIN·MAX se veía cortado a la
+mitad, con un borde curvo terminando después de «10 Ocultos» y las opciones
+siguientes flotando fuera del vidrio.
+
+No era del filtro. El borde de vidrio de un menú es un `::after` con
+`position:absolute; inset:0`, y estaba puesto sobre **el mismo elemento que hace
+scroll**. En un contenedor con scroll eso se dimensiona contra la parte visible,
+así que en cuanto la lista supera el alto del menú el borde se dibuja a media
+lista y el resto del contenido cae fuera. Le pasa a **cualquier** `LiquidSelect`
+con lista larga —es decir, a todo el portal— y llevaba ahí desde siempre: lo
+destapó el filtro de MIN·MAX al llegar a once opciones.
+
+Ahora el panel recorta y el que scrollea es el hijo. El borde vuelve a rodear el
+menú entero.
+
 ## v2.700.2 — el barrido visitaba 38 rutas de 65
 
 F4 de `docs/PLAN-MOVIL-2026-08-20.md`. La pregunta original era «las vistas sin

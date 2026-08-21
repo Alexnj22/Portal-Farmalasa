@@ -283,19 +283,42 @@ vale 0 en todo emulador**, así que la emulación no puede distinguir «está bi
 resuelto» de «no está resuelto». El notch y la barra de gestos necesitan un
 teléfono real con el shell de Capacitor.
 
-### F7 · Lo que el gate no puede ver, por construcción
+### F7 · CERRADO — lo que el gate no puede ver, lo cierra la medición
 
-`toque-de-ficha-sin-destino` lee el fuente. Una fila envuelta en su propio
-componente —`memo(EmployeeRow)`— es una caja cerrada: no se puede saber desde
-afuera si adentro hay un `onClick`. **Un verde no prueba que las 59 tablas estén
-bien; prueba que ninguna de las que se pueden leer quedó sin declarar.** La
-diferencia se cubre midiendo (F0), no leyendo.
+`toque-de-ficha-sin-destino` lee el **fuente**, y ahí una fila envuelta en su
+propio componente —`memo(EmployeeRow)`— es una caja cerrada: no se puede saber
+desde afuera si adentro hay un `onClick`. Su verde probaba que ninguna de las
+tablas **legibles** quedó sin declarar, no que las 59 estén bien.
 
----
+**Ese dato sí existe en tiempo de render.** `Ficha` RECIBE el `onClick` de la
+fila, venga de donde venga, y sabe si la vista declaró `usarAccionDeFila`. Ahora
+lo estampa en el DOM como `data-destino`:
+
+| valor | qué significa |
+|---|---|
+| `propio` | el toque va al destino de la vista |
+| `hoja` | no hay destino propio y la hoja aporta algo — correcto |
+| `ninguno` | no hay destino y la hoja no aporta nada — la ficha no se toca |
+| **`perdido`** | **hay un `onClick` y la vista no lo declaró**: la hoja genérica le gana al destino real |
+
+El barrido cuenta los `perdido`. **Lo que el análisis estático no alcanza, lo
+cierra la medición** — que es la misma división de trabajo que este proyecto ya
+usa entre `gate:movil` y el barrido.
+
+#### Probado contra la regresión que el gate NO ve
+
+Se le quitó `usarAccionDeFila` a **Personal**, que es justamente la vista cuyas
+filas van envueltas en `memo(EmployeeRow)`:
+
+- `npm run gate:movil` → **verde, 0 hallazgos**. Ciego, como estaba previsto.
+- el barrido → **`staff(25)`**, o sea las 25 fichas de la página.
+
+**Medido con el árbol sano: 54 rutas, `tocarPerdido` = 0.** Y este cero está
+medido, no leído.
 
 ## 5. Orden sugerido
 
-~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ · ~~F5~~ — **cerradas**. El
+~~F0~~ · ~~F1~~ · ~~F2~~ (v2.698.4) · ~~F3~~ (v2.699.2) · ~~F4~~ · ~~F5~~ · ~~F7~~ — **cerradas**. El
 barrido de vistas y el de diálogos terminan, y de pie el portal mide **cero** en
 todo lo que saben contar.
 
@@ -305,7 +328,6 @@ Lo que sigue, en orden:
    que F3 cubra lo que hoy anota como pendiente — el formulario más largo del
    portal sigue sin medir.
 2. **F6** — el aparato real. Es el único que no depende de nosotros.
-3. **F7** — cerrar el hueco de las filas envueltas en su propio componente.
 
 Y uno que no es de este plan pero está rojo: **`gate:borradores`** acusa a
 `PedirTrasladoModal.jsx` —7 campos de captura sin borrador—, de v2.691. Con la
@@ -348,4 +370,5 @@ Lo aprendido en esta tanda, para no volver a pagarlo:
 | v2.698.4 | F0/F1/F2 — el barrido termina, y el portal mide cero de pie |
 | v2.699.2 | F3 — los diálogos, medidos por primera vez en 390px |
 | v2.700.2 | F4 — el barrido visitaba 38 rutas de 65; ahora 54 |
-| v2.700.3 | F5 — acostado, y un resumen que tapaba hallazgos |
+| v2.702.1 | F5 — acostado, y un resumen que tapaba hallazgos |
+| v2.702.2 | F7 — `data-destino`: lo que el gate no ve, lo cuenta el barrido |

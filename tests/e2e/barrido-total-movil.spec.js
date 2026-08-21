@@ -506,18 +506,19 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // peor que no medirla: promete que se miró.
         const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0
             || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0
-            || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0);
+            || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0 || v.tocarPerdido > 0);
         console.log(`\n╔══ ${informe.length} vistas · con algo que corregir: ${malas.length} ══╗`);
-        console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen dedo zoom acuse imposib');
+        console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen dedo zoom acuse imposib perdido');
         informe.forEach(v => {
             if (v.error) { console.log(`  ${v.ruta.padEnd(24)} (no cargó)`); return; }
             const mal = v.tablas > 0 || v.desbordePagina > 0 || v.desbordan > 0 || v.zoomIOS > 0
-                || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0;
+                || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0 || v.tocarPerdido > 0;
             console.log(`  ${mal ? '✗' : '·'} ${v.ruta.padEnd(22)}`
                 + String(v.tablas).padStart(6) + String(v.fichas).padStart(7)
                 + String(v.desbordePagina).padStart(6) + String(v.desbordan).padStart(6)
                 + String(v.chicos).padStart(5) + String(v.zoomIOS).padStart(5)
-                + String(v.sinAcuse).padStart(6) + String(v.imposibles).padStart(8));
+                + String(v.sinAcuse).padStart(6) + String(v.imposibles).padStart(8)
+                + String(v.tocarPerdido ?? 0).padStart(8));
         });
         const rotas = informe.filter(v => v.reventó);
         console.log(`\n  REVENTADAS:               ${rotas.map(v => v.ruta).join(', ') || 'ninguna'}`);
@@ -525,6 +526,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         console.log(`  con TABLA en el teléfono: ${informe.filter(v => v.tablas > 0).map(v => v.ruta).join(', ') || 'ninguna'}`);
         console.log(`  con desborde de página:   ${informe.filter(v => v.desbordePagina > 0).map(v => v.ruta).join(', ') || 'ninguna'}`);
         console.log(`  con inputs <16px:         ${informe.filter(v => v.zoomIOS > 0).map(v => v.ruta).join(', ') || 'ninguna'}`);
+        console.log(`  con TOQUE PERDIDO:        ${informe.filter(v => v.tocarPerdido > 0).map(v => `${v.ruta}(${v.tocarPerdido})`).join(', ') || 'ninguna'}`);
         console.log(`╚════════════════════════════════════════════╝`);
 
         // Corta con ruido, no reporta. Un informe de 7 rutas se lee igual que

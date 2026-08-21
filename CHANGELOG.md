@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.702.2 — lo que el gate no puede ver, lo cuenta el barrido
+
+F7 de `docs/PLAN-MOVIL-2026-08-20.md`, y el último hueco declarado del canon
+móvil.
+
+`toque-de-ficha-sin-destino` (gate:movil) lee el **fuente**, y ahí una fila
+envuelta en su propio componente —`memo(EmployeeRow)`— es una caja cerrada: no
+se puede saber desde afuera si adentro hay un `onClick`. Su verde probaba que
+ninguna de las tablas **legibles** quedó sin declarar, no que las 59 estén bien.
+Eso quedó escrito como límite desde el día que nació el gate.
+
+**Pero ese dato sí existe en tiempo de render.** `Ficha` RECIBE el `onClick` de
+la fila, venga de donde venga, y sabe si la vista declaró `usarAccionDeFila`.
+Ahora lo estampa en el DOM como `data-destino`:
+
+- `propio` — el toque va al destino de la vista.
+- `hoja` — no hay destino propio y la hoja genérica aporta algo: correcto.
+- `ninguno` — no hay destino y la hoja no aporta nada: la ficha no se toca.
+- **`perdido`** — hay un `onClick` y la vista no lo declaró, así que la hoja
+  genérica le gana al destino real. **Ése es el defecto que este canon vino a
+  arreglar**, y es el que se cuenta.
+
+El barrido lo cuenta por ruta y lo lista aparte. **Lo que el análisis estático no
+alcanza, lo cierra la medición** — la misma división de trabajo que este proyecto
+ya usa entre los gates y los barridos.
+
+### Probado contra la regresión que el gate NO ve
+
+Se le quitó `usarAccionDeFila` a **Personal**, que es justamente la vista cuyas
+filas van envueltas en `memo(EmployeeRow)`:
+
+- `npm run gate:movil` → **verde, 0 hallazgos**. Ciego, como estaba previsto.
+- el barrido → **`staff(25)`**, las 25 fichas de la página.
+
+Es la prueba de la complementariedad, no una suposición sobre ella.
+
+**Medido con el árbol sano: 54 rutas, cero toques perdidos.** Y este cero está
+medido, no leído.
+
 ## v2.702.1 — acostado: 54 rutas, y un resumen que tapaba hallazgos
 
 F5 de `docs/PLAN-MOVIL-2026-08-20.md`. **Todo lo medido hasta hoy fue de pie**, y

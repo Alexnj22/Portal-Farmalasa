@@ -711,6 +711,31 @@ function Ficha({ celdas, onClick }) {
   // hoja que repite lo que ya se está leyendo es un control que responde y no
   // sirve — «solo abre prácticamente la misma info de la card».
   // (`hayHoja` y `alTocar` se resuelven arriba, junto al resto de los hooks.)
+
+  // ── `data-destino`: el dato que el gate NO puede leer ────────────────────
+  // `toque-de-ficha-sin-destino` (gate:movil) mira el FUENTE, y ahí una fila
+  // envuelta en su propio componente —`memo(EmployeeRow)`, y son ocho vistas—
+  // es una caja cerrada: no se puede saber desde afuera si adentro hay un
+  // `onClick`. Su verde prueba que ninguna de las tablas LEGIBLES quedó sin
+  // declarar, no que las 59 estén bien. Ese hueco quedó escrito como F7 del
+  // plan móvil.
+  //
+  // Acá el dato existe: `Ficha` RECIBE el `onClick` de la fila, venga de donde
+  // venga, y sabe si la vista declaró `usarAccionDeFila`. Se estampa en el DOM
+  // y el barrido lo cuenta — o sea que lo que el análisis estático no alcanza,
+  // lo cierra la medición, que es la misma división de trabajo que ya usa este
+  // proyecto entre `gate:movil` y `barrido-total-movil`.
+  //
+  //   propio   el toque va al destino de la vista
+  //   hoja     no hay destino propio y la hoja aporta algo: correcto
+  //   ninguno  no hay destino y la hoja no aporta nada: la ficha no se toca
+  //   perdido  HAY un `onClick` y la vista no lo declaró — la hoja genérica le
+  //            gana al destino real. Esto es el defecto, y es el que se cuenta.
+  const destino = (movil?.usarAccionDeFila && onClick) ? 'propio'
+    : onClick ? 'perdido'
+    : hayHoja ? 'hoja'
+    : 'ninguno';
+
   const chipsVisibles = papeles.chips
     .map(col => ({ col, v: deCol(col) }))
     .filter(({ v }) => v != null && v !== '' && v !== '—');
@@ -773,7 +798,8 @@ function Ficha({ celdas, onClick }) {
 
   if (acciones.length > 0) {
     return (
-      <div data-surface="card" className={`group w-full px-3.5 py-3 rounded-card ${fueraDePantalla}`}>
+      <div data-surface="card" data-destino={destino}
+        className={`group w-full px-3.5 py-3 rounded-card ${fueraDePantalla}`}>
         <Elem
           {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
           className="w-full text-left block
@@ -796,6 +822,7 @@ function Ficha({ celdas, onClick }) {
         {...(alTocar ? { type: 'button' } : {})}
         {...(conMantener ? gestos : (alTocar ? { onClick: alTocar } : {}))}
         data-surface="card"
+        data-destino={destino}
         className={`group w-full text-left px-3.5 py-3 rounded-card
           transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
           active:scale-[0.985] ${fueraDePantalla}

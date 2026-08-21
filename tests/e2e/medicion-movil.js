@@ -347,7 +347,20 @@ export const MEDIR = () => {
              zoomIOS: zoomIOS.slice(0, 8), tablas, overscroll,
              sinAcuse: sinAcuse.slice(0, 8), encadenan,
              imposibles: imposibles.slice(0, 8),
+             // ── El toque de la ficha que perdió su destino (F7) ─────────
+             // `DataTable` estampa `data-destino` en cada ficha: `propio` si el
+             // toque va al destino de la vista, `hoja` si sólo queda la hoja
+             // genérica y aporta algo, `ninguno` si no hay nada que abrir, y
+             // **`perdido`** cuando HAY un `onClick` de fila y la vista no lo
+             // declaró — la hoja genérica le gana al destino real.
+             //
+             // Se cuenta acá y no en `gate:movil` porque el gate lee el fuente,
+             // y una fila envuelta en su propio componente es una caja cerrada:
+             // no se puede saber desde afuera si adentro hay un `onClick`. Lo
+             // que el análisis estático no alcanza, lo cierra la medición.
+             tocarPerdido: document.querySelectorAll('[data-destino="perdido"]').length,
              totales: { desbordan: desbordan.length, chicos: chicos.length, zoomIOS: zoomIOS.length,
                         imposibles: imposibles.length,
-                        sinAcuse: sinAcuse.length, encadenan: encadenan.length } };
+                        sinAcuse: sinAcuse.length, encadenan: encadenan.length,
+                        tocarPerdido: document.querySelectorAll('[data-destino="perdido"]').length } };
 };

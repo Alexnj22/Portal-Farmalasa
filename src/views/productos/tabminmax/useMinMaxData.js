@@ -10,9 +10,10 @@ import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { smartFilter } from '../../../utils/searchUtils';
 import { normXyz, hasDispatchRisk } from './helpers';
-import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
+import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, AJUSTE_CFGS } from './constants';
 import {
     upsertStockParams, upsertStockParamsReturning, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
+    fetchAjustesManuales,
     fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
     fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMaxPair,
 } from '../../../data/stockParams';
@@ -39,6 +40,36 @@ const warnIfOutrageous = (field, numVal, row) => {
             'info'
         );
     }
+};
+
+/**
+ * En cuál de los tres estados está un ajuste puesto por una persona.
+ *
+ * Devuelve null si nadie tocó la fila — que es el caso de casi todas. El orden
+ * importa: «volvió a moverse» gana sobre «en conflicto» porque dice algo más
+ * fuerte (el motivo que se declaró dejó de ser cierto), y quien lo mire va a
+ * querer resolver eso antes que el desacuerdo de números.
+ */
+export const estadoAjuste = (r) => {
+    if (!r?._manual_at) return null;
+
+    // El motivo era «ya no rota» y el producto volvió a venderse después de que
+    // alguien lo dijera. `last_sale_date` es una fecha sin hora: se compara
+    // contra el DÍA del ajuste para no hacerla retroceder al leerla como UTC.
+    if (r._manual_motivo === 'ya_no_rota' && r.last_sale_date) {
+        const diaAjuste = String(r._manual_at).slice(0, 10);
+        if (String(r.last_sale_date).slice(0, 10) > diaAjuste) return 'volvio_a_moverse';
+    }
+
+    // El cálculo propone algo distinto de lo que quedó vigente. Puede venir de
+    // un borrador sin publicar o del último valor calculado.
+    const hayBorradorDistinto = r.draft_status === 'pending'
+        && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max);
+    const calculoDistinto = r.calc_min != null
+        && (r.calc_min !== r.effective_min || r.calc_max !== r.effective_max);
+    if (hayBorradorDistinto || calculoDistinto) return 'en_conflicto';
+
+    return 'respetado';
 };
 
 export function useMinMaxData({ searchTerm = '', lockedErpId }) {
@@ -69,6 +100,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [filterDispatchRisk, setFilterDispatchRisk] = useState(false);
     const [hidingIds,         setHidingIds]         = useState(new Set());
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
+    const [filterAjuste,      setFilterAjuste]      = useState('all');   // all | en_conflicto | volvio_a_moverse | respetado | any
     const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const publishTimer     = useRef(null);
@@ -162,16 +194,32 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // chunk — ~6 ejecuciones por load. El wrapper devuelve todo de un
             // solo, sin el cap de 1000 filas (json_agg, no jsonb_agg: 0.4s vs
             // 1.9s server-side por el spill a disco del jsonb de 4.6MB).
-            const [rowsRes, costRes, draftRes, cfgRes] = await Promise.all([
+            // Los ajustes a mano van aparte del RPC grande: agregarle columnas
+            // obliga a recrearlo entero (cambia el tipo de retorno) y es la
+            // consulta más pesada de la vista. Son pocas filas y las cubre
+            // `idx_psp_manual_at`.
+            const [rowsRes, costRes, draftRes, cfgRes, ajustesRes] = await Promise.all([
                 supabase.rpc('get_stock_analysis_jsonb',   { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 fetchStockConfig(),
+                fetchAjustesManuales(erpId),
             ]);
             if (rowsRes.error) throw rowsRes.error;
             if (costRes.error) throw costRes.error;
             if (rid !== loadRef.current) return;
-            const mapped = (rowsRes.data || []).map(r => ({ ...r, _erp_sucursal_id: erpId }));
+            const ajustes = new Map((ajustesRes?.data || []).map(a => [a.erp_product_id, a]));
+            const mapped = (rowsRes.data || []).map(r => {
+                const a = ajustes.get(r.erp_product_id);
+                return {
+                    ...r,
+                    _erp_sucursal_id: erpId,
+                    _manual_at:     a?.manual_at     ?? null,
+                    _manual_por:    a?.manual_por    ?? null,
+                    _manual_motivo: a?.manual_motivo ?? null,
+                    _manual_nota:   a?.manual_nota   ?? null,
+                };
+            });
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(costRes.data  || null);
@@ -298,10 +346,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const {
         hasPublishedData, draftCount, sparseCount, changesCount,
         bodegaPendingCount, dispatchRiskCount,
-        stats,
+        stats, ajusteStats, ajusteCount,
         criticalACount,
     } = useMemo(() => {
         const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
+        const ajusteCounts = Object.fromEntries(AJUSTE_CFGS.map(a => [a.key, 0]));
+        let ajustadas = 0;
         let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0, dispatchRisk = 0;
         let firstCalc = null, firstDraftCalc = null;
         let critA = 0, critAOut = 0, critABelow = 0;
@@ -321,6 +371,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             }
             if (r.draft_status === 'sparse_data') sparse++;
             if (r.alert_status in statCounts) statCounts[r.alert_status]++;
+            const est = estadoAjuste(r);
+            if (est) { ajustadas++; ajusteCounts[est]++; }
             if (hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo)) dispatchRisk++;
             if (!firstCalc && r.calculated_at && !r.is_dead_stock) firstCalc = r.calculated_at;
             if (!firstDraftCalc && r.draft_status === 'pending' && r.draft_calculated_at) firstDraftCalc = r.draft_calculated_at;
@@ -335,6 +387,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             draftCount: drafts, sparseCount: sparse, changesCount: changes,
             bodegaPendingCount: bPending, dispatchRiskCount: dispatchRisk,
             stats: statCounts,
+            ajusteStats: ajusteCounts, ajusteCount: ajustadas,
             lastCalcAt: firstCalc, lastDraftCalcAt: firstDraftCalc,
             criticalACount: critA, criticalAOut: critAOut, criticalABelow: critABelow,
         };
@@ -828,10 +881,11 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     // ── Derived ──────────────────────────────────────────────────────────────
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
-    const hasAnyFilter    = hasActiveFilter || filterDraft || filterSparse || filterChangesOnly || filterDispatchRisk;
+    const hasAnyFilter    = hasActiveFilter || filterDraft || filterSparse || filterChangesOnly || filterDispatchRisk || filterAjuste !== 'all';
     const clearAllFilters = useCallback(() => {
         setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all');
         setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterDispatchRisk(false);
+        setFilterAjuste('all');
     }, []);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
@@ -844,13 +898,17 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (filterDraft && r.draft_status !== 'pending')                                                                 return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
             if (filterDispatchRisk && !hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo))          return false;
+            if (filterAjuste !== 'all') {
+                const est = estadoAjuste(r);
+                if (filterAjuste === 'any' ? !est : est !== filterAjuste)                                                    return false;
+            }
             if (r.is_catalog_only && filterAlert !== 'no_data' && !searchTerm)                                               return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                                    return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz)           return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                                                     return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, filterDispatchRisk, hiddenIds, filterHidden]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, filterDispatchRisk, filterAjuste, hiddenIds, filterHidden]);
 
     const { filtered, isSearchFuzzy, searchHiddenByFilter } = useMemo(() => {
         if (!searchTerm) return { filtered: filteredBase, isSearchFuzzy: false, searchHiddenByFilter: false };
@@ -955,7 +1013,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
-    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterSparse, filterDispatchRisk, filterHidden]);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterSparse, filterDispatchRisk, filterAjuste, filterHidden]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -1060,6 +1118,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         filterDraft, setFilterDraft,
         filterSparse, setFilterSparse,
         filterDispatchRisk, setFilterDispatchRisk,
+        filterAjuste, setFilterAjuste, ajusteStats, ajusteCount,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,

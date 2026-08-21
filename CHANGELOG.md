@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.698.7 — La categoría «Ajustado a mano», con sus tres estados
+
+Fase 4 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`, y la que cierra el
+círculo: desde v2.698.5 publicar deja quietas las filas que ajustó una persona,
+pero **no había dónde verlas**. Un mecanismo que aparta trabajo y no lo muestra
+es un silencio nuevo, sólo que del otro lado.
+
+En MIN·MAX, el selector de estado suma ahora **«Ajustado a mano»** con sus tres
+lecturas, cada una con su conteo:
+
+- **En conflicto** — alguien puso un número y el cálculo propone otro. Es lo
+  primero que hay que mirar.
+- **Volvió a moverse** — se marcó «ya no rota» y el producto volvió a venderse:
+  el motivo dejó de ser cierto.
+- **Respetado** — el ajuste sigue en pie y el cálculo no lo contradice.
+
+Van en el MISMO control que «excesos» o «bajo mínimo» y no en una barra aparte,
+porque contestan la misma pregunta —qué recorte de la lista quiero ver— y porque
+«en conflicto» compite por la atención con los demás: separarlos fingiría que son
+decisiones distintas. Y cada fila ajustada estrena su etiqueta, con quién la
+puso, cuándo y con qué motivo.
+
+Los ajustes se leen en una consulta aparte y no dentro de `get_stock_analysis`:
+agregarle columnas a ese RPC obliga a recrearlo entero —cambia su tipo de
+retorno— y es la consulta más pesada de la vista. Son pocas filas y las cubre
+`idx_psp_manual_at`, que en esta versión pasa a indexar por la marca de tiempo y
+no por el motivo: el motivo es opcional, la marca no, y un ajuste sin motivo
+declarado sigue siendo un ajuste que no hay que pisar.
+
+Los tres estados van con doce pruebas (`tests/unit/ajusteAMano.test.js`), porque
+ninguno se puede comprobar mirando la pantalla hasta que existan ajustes reales
+cargados. Dos de esas pruebas fijan decisiones que se rompen solas: una venta
+anterior al ajuste **no** lo invalida —es justamente la que motivó bajarlo— y la
+del mismo día tampoco, porque `last_sale_date` es una fecha sin hora y
+compararla contra el instante del ajuste la haría retroceder al leerla como UTC.
+
 ## v2.698.6 — Un solo lugar decide si tenés permiso
 
 Sigue la cola que dejó la auditoría. Al mirar los 75 sitios que quedaban

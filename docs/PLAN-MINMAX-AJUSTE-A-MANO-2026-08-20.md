@@ -1,8 +1,7 @@
 # Que el recálculo mensual no pise el ajuste a mano — hallazgo y plan (2026-08-20)
 
-**Estado: fases 1, 2 y 3 APLICADAS** (2026-08-21, migraciones `20260821041336`,
-`20260821041927` y `20260821042224`). Faltan la 4 (la categoría en pantalla) y
-la 5 (que el cálculo lea el motivo), que es la única que mueve números. Las mediciones de §2 son lecturas contra producción anteriores
+**Estado: fases 1 a 4 APLICADAS** (2026-08-21). Falta sólo la 5 —que el cálculo
+lea el motivo—, que es la única que mueve números y es opcional. Las mediciones de §2 son lecturas contra producción anteriores
 a cualquier cambio.
 
 **Prueba de salida de la fase 1, cumplida:** las 19,041 filas conservan
@@ -275,9 +274,21 @@ conteo de omitidas—, los tres correctos. Huella de las 19,041 filas idéntica,
 los permisos de ejecución de la función intactos (`authenticated`, `postgres`,
 `service_role`).
 
-### Fase 4 · La categoría en pantalla — *sólo lectura*
+### Fase 4 · La categoría en pantalla — *sólo lectura* — **APLICADA**
 
-La píldora y los tres estados de §4.3. No escribe nada.
+Los tres estados de §4.3, dentro del selector de estado que la vista ya tenía y
+no en una barra nueva: contestan la misma pregunta que «excesos» o «bajo mínimo»
+—qué recorte quiero ver— y «en conflicto» compite por la atención con ellos.
+Cada fila ajustada lleva además su etiqueta con quién, cuándo y por qué.
+
+Los ajustes se leen en una consulta aparte (`fetchAjustesManuales`) y no dentro
+de `get_stock_analysis`: agregarle columnas obliga a recrear ese RPC entero
+—cambia su tipo de retorno— y es la consulta más pesada de la vista.
+
+**Prueba de salida, cumplida:** doce casos en `tests/unit/ajusteAMano.test.js`,
+todos en verde, más `npm run build` y `npm run gate:design` sin deuda nueva.
+Los estados no se pueden comprobar en pantalla hasta que existan ajustes reales,
+así que la prueba es lo único que los sostiene hoy.
 
 ### Fase 5 · El cálculo lee el motivo — *la única que mueve números*
 

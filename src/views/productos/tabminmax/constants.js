@@ -56,3 +56,44 @@ export const XYZ_CFG = {
     moderate: { label: 'Y', desc: 'Moderada', cls: 'text-content-3 bg-surface-card-hover border-border-card', color: 'var(--chart-8-muted)' },
     erratic:  { label: 'Z', desc: 'Errática', cls: 'text-danger-text bg-danger/10 border-danger/30',    color: 'var(--danger)' },
 };
+
+// ── Ajuste a mano ────────────────────────────────────────────────────────────
+// Los motivos son los mismos cuatro que acepta el CHECK de
+// `product_stock_params.manual_motivo`, y salieron de las 16 razones que la
+// gente YA escribía en las solicitudes de cambio — no de una lista inventada.
+// Ver docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
+export const MOTIVO_AJUSTE = {
+    ya_no_rota:   { label: 'Ya no rota',        detalle: 'Se dejó de vender o sólo se trae por encargo' },
+    lo_buscan:    { label: 'Lo están buscando', detalle: 'Hay demanda que no aparece porque no hubo producto' },
+    cliente_fijo: { label: 'Cliente fijo',      detalle: 'Un cliente compra una cantidad conocida cada cierto tiempo' },
+    otro:         { label: 'Otro',              detalle: 'Queda anotado, y la fila se revisa a mano' },
+};
+
+// Los tres estados de un ajuste. El orden es el de urgencia: lo primero que hay
+// que mirar es lo que el cálculo contradice.
+export const AJUSTE_CFGS = [
+    {
+        key: 'en_conflicto',
+        label: 'En conflicto',
+        ayuda: 'Alguien puso este número y el cálculo propone otro. Hay que decidir cuál queda.',
+        dot: 'bg-stock-approaching',
+        active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',
+        chipActive: 'bg-stock-approaching/10 text-warning-text',
+    },
+    {
+        key: 'volvio_a_moverse',
+        label: 'Volvió a moverse',
+        ayuda: 'Se marcó como «ya no rota» y volvió a venderse. El motivo dejó de ser cierto.',
+        dot: 'bg-stock-overstocked',
+        active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',
+        chipActive: 'bg-stock-overstocked/10 text-chart-1-text',
+    },
+    {
+        key: 'respetado',
+        label: 'Respetado',
+        ayuda: 'El ajuste sigue en pie y el cálculo no lo contradice.',
+        dot: 'bg-stock-ok',
+        active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]',
+        chipActive: 'bg-stock-ok/10 text-success-text',
+    },
+];

@@ -177,6 +177,27 @@ export async function fetchStockParamsForRevision(productIds, sucursalIds) {
     return { data };
 }
 
+/**
+ * Los ajustes que puso una persona en una sucursal — quién, cuándo, por qué.
+ *
+ * Va en una consulta APARTE y no dentro de `get_stock_analysis` a propósito:
+ * agregarle columnas a ese RPC obliga a recrearlo entero (cambia el tipo de
+ * retorno), y es la consulta más pesada de la vista. Acá son pocas filas y las
+ * cubre `idx_psp_manual_at`, el índice parcial que sólo indexa las ajustadas.
+ *
+ * `manual_at` y no `manual_motivo` es el filtro correcto: el motivo es opcional
+ * —se pide sólo cuando alguien quiere que el cálculo lo respete— y un ajuste sin
+ * motivo declarado sigue siendo un ajuste que no hay que pisar.
+ */
+export async function fetchAjustesManuales(erpSucursalId) {
+    const data = await fetchAllRows(() => supabase.from('product_stock_params')
+        .select('erp_product_id, manual_at, manual_por, manual_motivo, manual_nota, manual_cliente_unidades, manual_cliente_dias')
+        .eq('erp_sucursal_id', erpSucursalId)
+        .not('manual_at', 'is', null)
+        .order('id', { ascending: true }));
+    return { data };
+}
+
 // ── ExpandedPanel.jsx (2 sitios) ──────────────────────────────────────────────
 
 export function fetchStockParamsHistory(erpProductId, erpSucursalId) {

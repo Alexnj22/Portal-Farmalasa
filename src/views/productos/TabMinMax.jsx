@@ -24,7 +24,7 @@ import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
 import { applyPresRule } from '../../utils/presentacion';
 import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from './tabminmax/helpers';
-import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS } from './tabminmax/constants';
+import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS, AJUSTE_CFGS, MOTIVO_AJUSTE } from './tabminmax/constants';
 import CoverageBar from './tabminmax/CoverageBar';
 import StockBar from './tabminmax/StockBar';
 import AbcXyzBadge from './tabminmax/AbcXyzBadge';
@@ -41,7 +41,7 @@ import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import BorradoresRanura from './tabminmax/BorradoresRanura';
 import { upsertStockParams } from '../../data/stockParams';
-import { useMinMaxData } from './tabminmax/useMinMaxData';
+import { useMinMaxData, estadoAjuste } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
@@ -294,6 +294,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         filterDraft, setFilterDraft,
         filterSparse, setFilterSparse,
         filterDispatchRisk, setFilterDispatchRisk,
+        filterAjuste, setFilterAjuste, ajusteStats, ajusteCount,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,
@@ -369,6 +370,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         setFilterAbc(p => (p === 'A' ? 'all' : p));
         setFilterSparse(false);
         setFilterDispatchRisk(false);
+        setFilterAjuste('all');
         setFilterHidden(false);
         setPage(1);
     };
@@ -386,12 +388,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             ? [{ value: 'riesgo', label: `${dispatchRiskCount} Riesgo regla` }] : []),
         ...(hiddenIds.size > 0
             ? [{ value: 'ocultos', label: `${hiddenIds.size} Ocultos` }] : []),
+        // Lo que puso una persona. Va en el MISMO control que el resto porque
+        // contesta la misma pregunta —qué recorte de la lista quiero ver— y
+        // porque «en conflicto» compite por la atención con «excesos» o
+        // «bajo mínimo»: verlos en dos sitios distintos sería fingir que son
+        // decisiones separadas.
+        ...(!loading && ajusteCount > 0
+            ? [{ value: 'ajuste:any', label: `${ajusteCount} Ajustado a mano` }] : []),
+        ...(!loading
+            ? AJUSTE_CFGS.filter(a => ajusteStats[a.key] > 0)
+                .map(a => ({ value: `ajuste:${a.key}`, label: `${ajusteStats[a.key]} · ${a.label}` }))
+            : []),
     ];
 
     // Cuál está puesto. El orden importa poco porque el select apaga los otros
     // al elegir, pero `filterHidden` va primero: es el único que AGREGA filas en
     // vez de recortarlas, así que manda sobre lo demás.
     const estadoSel = filterHidden ? 'ocultos'
+        : filterAjuste !== 'all' ? `ajuste:${filterAjuste}`
         : filterSparse ? 'sparse'
         : filterDispatchRisk ? 'riesgo'
         : filterAlert !== 'all' ? filterAlert
@@ -404,6 +418,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         else if (v === 'sparse') setFilterSparse(true);
         else if (v === 'riesgo') setFilterDispatchRisk(true);
         else if (v === 'ocultos') setFilterHidden(true);
+        else if (v?.startsWith('ajuste:')) setFilterAjuste(v.slice(7));
         else if (v) setFilterAlert(v);
     };
 
@@ -819,6 +834,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-body font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <Badge variant="chart-3" size="sm" uppercase={false} className="shrink-0">MANUAL</Badge>}
+                                                    {(() => {
+                                                        // Lo que puso una persona, y en qué estado quedó. El `title` lleva
+                                                        // quién y cuándo porque es lo primero que se pregunta quien mira
+                                                        // un número que no cuadra con el cálculo.
+                                                        const est = estadoAjuste(row);
+                                                        if (!est) return null;
+                                                        const cfg = AJUSTE_CFGS.find(a => a.key === est);
+                                                        const motivo = row._manual_motivo ? MOTIVO_AJUSTE[row._manual_motivo]?.label : null;
+                                                        const cuando = row._manual_at
+                                                            ? new Date(row._manual_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                            : null;
+                                                        const detalle = [
+                                                            cfg?.ayuda,
+                                                            row._manual_por ? `Lo puso ${row._manual_por}${cuando ? ` el ${cuando}` : ''}` : null,
+                                                            motivo ? `Motivo: ${motivo}` : 'Sin motivo declarado',
+                                                            row._manual_nota || null,
+                                                        ].filter(Boolean).join(' · ');
+                                                        const variant = est === 'en_conflicto' ? 'warning'
+                                                            : est === 'volvio_a_moverse' ? 'chart-1'
+                                                            : 'success';
+                                                        return (
+                                                            <Badge title={detalle} variant={variant} size="sm" uppercase={false} className="shrink-0">
+                                                                {est === 'respetado' ? 'AJUSTADO' : cfg?.label?.toUpperCase()}
+                                                            </Badge>
+                                                        );
+                                                    })()}
                                                     {hasDraft && !isBodega && <Badge size="sm" uppercase={false}>BORRADOR</Badge>}
                                                     {hasDraft && isBodega && <Badge variant="warning" size="sm" uppercase={false} className="shrink-0">SUC. PEND.</Badge>}
                                                     {dispatchRisk && <Badge title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así" variant="danger" size="sm" uppercase={false}>RIESGO REGLA</Badge>}

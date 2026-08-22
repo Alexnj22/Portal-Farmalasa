@@ -3,7 +3,7 @@
 // supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { likePattern } from '../utils/searchUtils';
+import { filtroProductoOCodigo } from '../utils/searchUtils';
 
 // keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
 // que desde entonces se marcó activo=false en el catálogo — igual debe listarse
@@ -68,7 +68,7 @@ export function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey
     q = q.order(sortKey, { ascending });
     if (sortKey !== 'nombre') q = q.order('nombre', { ascending: true });
 
-    if (term.length >= 2) q = q.ilike('nombre_norm', likePattern(term));
+    if (term.length >= 2) q = q.or(filtroProductoOCodigo(term));
 
     if (ruleFilter === 'con') {
         q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);

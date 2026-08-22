@@ -101,3 +101,31 @@ export function smartFilter(query, data, getFields) {
 
     return { results: scored.map(s => s.item), isFuzzy: scored.length > 0 };
 }
+
+/**
+ * Filtro PostgREST de «producto por nombre O por código de barras».
+ *
+ * Los seis buscadores de producto del navegador filtraban sólo por
+ * `nombre_norm`. Pedido del usuario el 2026-08-22: «agrega el código de barras
+ * también a la búsqueda donde hayan productos» — para poder escanear la caja en
+ * vez de escribir el nombre.
+ *
+ * Va acá y no escrito a mano en cada archivo porque el `.or()` de PostgREST se
+ * rompe de una forma que no da error: sus condiciones se separan por COMA, así
+ * que una coma dentro del patrón partiría el filtro en dos y devolvería otra
+ * cosa. `likePattern` normaliza con `normSearch`, que **elimina la coma** (y el
+ * punto, el guion y la barra), así que el patrón nunca puede traerla — pero eso
+ * es cierto por una razón que vive en otro archivo, y por eso se escribe una
+ * vez y con el motivo al lado.
+ *
+ * `codigo_barras` no tiene columna normalizada y no la necesita: son dígitos.
+ * Medido el 2026-08-22 sobre los 4,384 productos activos: 4,277 tienen código y
+ * **ninguno lo repite**, así que un escaneo cae en un producto y sólo uno.
+ *
+ * Uso:  q.or(filtroProductoOCodigo(term))
+ */
+export function filtroProductoOCodigo(term, { conPrincipioActivo = false } = {}) {
+    const pat = likePattern(term);
+    const campos = ['nombre_norm', ...(conPrincipioActivo ? ['pactivo_norm'] : []), 'codigo_barras'];
+    return campos.map(c => `${c}.ilike.${pat}`).join(',');
+}

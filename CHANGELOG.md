@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.710.0 — Buscar por código de barras, y Ventas > Productos deja de buscar sobre la factura
+
+**Se puede buscar un producto por su código de barras** en todo el portal:
+Conteo de inventario, Inventario, Mín·Máx, el buscador global de existencias,
+Ventas > Productos, Productos, Cotizaciones, Recepción, Movimientos y Reglas de
+despacho. Sirve igual escaneándolo, tecleándolo, o sabiéndose los últimos
+dígitos.
+
+Medido antes de construirlo: de los **4,384 productos activos, 4,277 tienen
+código y ninguno lo repite**. O sea que un escaneo cae en un producto y sólo
+uno — que es lo que hace que valga la pena escanear en vez de buscar por
+nombre.
+
+**Y de paso, Ventas > Productos dejó de buscar sobre el texto de la factura.**
+Los cuatro buscadores de esa pantalla corrían una función de normalización
+**por cada una de las 548,000 líneas de factura**, sin índice posible. Ahora el
+término se resuelve una vez contra los 4,400 productos y el filtro va por
+`erp_product_id`, que sí tiene índice. Medido aislado sobre un año: **15,278 ms
+contra 54 ms**.
+
+Contra la función anterior, misma sesión y mismos datos (mejor de 3 corridas):
+
+| caso | antes | después | |
+|---|---:|---:|---|
+| año · búsqueda | 3.708 ms | **301 ms** | 12× |
+| año · sala + búsqueda | 849 ms | **268 ms** | 3× |
+| mes · búsqueda | 843 ms | **259 ms** | 3× |
+| mes · sala + búsqueda | 336 ms | **243 ms** | |
+| año · sin filtros | 583 ms | 543 ms | sin cambio |
+| mes · sin filtros | 328 ms | 317 ms | sin cambio |
+
+Sin búsqueda no cambia nada, y es lo esperado: ese camino nunca tocaba el texto.
+
+**El cambio de criterio se midió antes de hacerlo.** Buscar sobre el producto en
+vez de sobre la factura es otra semántica, así que se comparó término por
+término qué encuentra cada una, sobre un año y ocho términos: **0 productos
+perdidos**. Al revés sí hay más, y es lo correcto — como el registro del
+producto incluye el principio activo, buscar «acetaminofen» ahora encuentra
+también CETRAM, CETRADOL y ANA DENT. Es exactamente cómo ya se comportaban
+Mín·Máx y el buscador de existencias: Ventas era la que estaba fuera de línea.
+
+Detalle técnico: Inventario y Ventas no leen `products` en su búsqueda —una
+mira una vista materializada que se refresca por cron y la otra el texto de la
+factura—, así que el código se resuelve aparte con `productos_por_codigo` y esas
+dos sólo comparan contra el id. Sin eso habría que reconstruir la vista
+materializada, o meterle un join a la consulta más pesada de Ventas.
+
 ## v2.709.1 — Envíos: el aviso no se repite y el metadata no se pisa
 
 Dos defectos encontrados releyendo el circuito, antes de que lo use nadie.

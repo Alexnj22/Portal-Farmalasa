@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
-import { likePattern } from '../utils/searchUtils';
+import { filtroProductoOCodigo } from '../utils/searchUtils';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -71,7 +71,7 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
         .from('products')
         .select('id, nombre, regulado, perecedero')
         .eq('activo', true)
-        .ilike('nombre_norm', likePattern(q))
+        .or(filtroProductoOCodigo(q))
         .order('nombre')
         .range(0, 60);
 

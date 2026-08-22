@@ -7,7 +7,7 @@
 // agregar_item_conteo, que costea server-side con el mismo criterio que el
 // snapshot.
 import { supabase } from '../supabaseClient';
-import { likePattern } from '../utils/searchUtils';
+import { filtroProductoOCodigo } from '../utils/searchUtils';
 
 // Un conteo por sucursal cada vez que se audita: la tabla crece del orden de
 // decenas al año, muy lejos del tope de 1000 de PostgREST. El límite va
@@ -30,7 +30,7 @@ export function searchActiveProductsForConteo(term) {
     return supabase.from('products')
         .select('id, nombre, laboratorios(nombre)')
         .eq('activo', true)
-        .ilike('nombre_norm', likePattern(term))
+        .or(filtroProductoOCodigo(term))
         .order('nombre')
         .limit(30);
 }

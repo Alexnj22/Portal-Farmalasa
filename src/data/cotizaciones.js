@@ -3,7 +3,7 @@
 // data/system.js: fetchBranchesBasic, mismo query exacto).
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { likePattern } from '../utils/searchUtils';
+import { filtroProductoOCodigo } from '../utils/searchUtils';
 
 // Paginado con fetchAllRows — antes era un while-loop manual con el mismo
 // patrón 1000-en-1000 ya presente en otros archivos de este bloque.
@@ -22,7 +22,7 @@ export function searchProductsActive(term) {
     return supabase.from('products')
         .select('id, nombre')
         .eq('activo', true)
-        .ilike('nombre_norm', likePattern(term))
+        .or(filtroProductoOCodigo(term))
         .order('nombre')
         .limit(20);
 }

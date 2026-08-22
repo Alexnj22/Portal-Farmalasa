@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.708.1 — Enviar producto: la función que habla con el sistema
+
+`enviar-producto-erp`, con los tres momentos del circuito y **un movimiento por
+renglón**, que es lo que permite que la otra sala acepte tres productos y
+devuelva dos:
+
+- **Despachar** — sale de la sala que envía. Relee la existencia contra el
+  sistema (no contra lo que la pantalla creía), resuelve la presentación por su
+  factor, reparte por lote —primero los que la pantalla eligió, después el que
+  vence primero— y deja el número de cada movimiento en su renglón. Un renglón
+  que falla no tumba a los otros: se anota y el resto sigue.
+- **Decidir** — en la sala que recibió la caja. Aceptar y devolver empiezan
+  igual: el producto tiene que entrar al inventario de esa sala primero
+  (devolver algo que no entró no se puede). Lo aceptado queda; lo devuelto sale
+  de vuelta en el acto, por los mismos lotes con los que llegó.
+- **Recibir la devolución** — de vuelta en la sala que envió, cuando la caja
+  está en el estante. Nadie da por recibido lo que va en el camión.
+
+Tres frenos que ya se habían pagado caros en el pedido y en el traslado, y que
+acá vienen puestos desde el día uno: **un «no» del sistema no prueba que no
+salió** (se le vuelve a preguntar al listado antes de dar el fallo por bueno),
+**la pantalla de recepción sigue mostrando líneas de un movimiento ya recibido**
+(así que el estado se pregunta al listado, no se deduce), y el **candado** que
+impide que dos personas de la misma sala despachen el mismo envío a la vez.
+
 ## v2.708.0 — Conteo en el teléfono: girar, teclear seguido y moverse por la lista
 
 Cinco defectos del conteo con el teléfono en la mano. Ninguno da error, y por

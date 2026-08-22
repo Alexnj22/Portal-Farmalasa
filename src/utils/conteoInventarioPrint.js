@@ -599,7 +599,10 @@ function buildResultadosTable(items, simple = false, area = null) {
 }
 
 function buildTotalesBlock(conteo, items) {
-    const conDiferencia = items.filter((i) => i.diferencia != null && i.diferencia !== 0).length;
+    // Mismo criterio que la hoja de ajuste y que las tarjetas del portal: si el
+    // reporte dice «22 con diferencia» y el ajuste trae 0 renglones, el que lo
+    // recibe no sabe cuál de los dos creer.
+    const conDiferencia = items.filter(esAjuste).length;
     const sinContar = items.filter((i) => i.estado_item === 'PENDIENTE').length;
     const noUbicados = items.filter((i) => i.estado_item === 'SIN_UBICAR').length;
     return {
@@ -654,7 +657,14 @@ const AJU_LABELS = ['Código', 'Producto', 'Presentación', 'Lote', 'Vence', 'Si
 const AJU_COL_WIDTHS_SIMPLE = ['9%', '34%', '20%', '9%', '9%', '9%', '10%'];
 const AJU_LABELS_SIMPLE = ['Código', 'Producto', 'Presentación', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
 
-const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0;
+// Un renglón entra al ajuste cuando tiene diferencia propia Y su pila no cuadra
+// en unidades. `diferencia_grupo` es el neto que calcula la base
+// (`conteo_lineas_netas`): un paquete de 10 sin abrir que el sistema tiene como
+// diez sueltas da «-10» y «+1» en dos renglones y CERO unidades de diferencia,
+// así que no hay nada que teclear en el sistema. Cuando la pila sí falta, sus
+// renglones salen enteros —con el número por presentación—, que es lo que hace
+// falta para corregirla.
+const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0 && (i.diferencia_grupo ?? i.diferencia) !== 0;
 const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.costo_unitario) : null);
 
 // Orden por código: es como se teclea en el ERP, un renglón tras otro, sin
@@ -843,7 +853,7 @@ export function exportAjustesConteo(conteo, items) {
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.
 export async function printResultadosConteo(conteo, items, { soloDiferencias = false } = {}) {
-    const filtered = soloDiferencias ? items.filter((i) => i.diferencia != null && i.diferencia !== 0) : items;
+    const filtered = soloDiferencias ? items.filter(esAjuste) : items;
     const simple = esSimple(conteo);
     const { normales, vencidos, partido } = partirPorArea(filtered);
     // Acá NO va salto de página: el reporte se lee, no se recorre. Partirlo en

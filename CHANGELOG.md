@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.706.0 — Conteo de inventario: la diferencia de un producto se mide en unidades
+
+Reportado sobre **VENDA DE GASA MIGASA 2X10 YDS.**: el sistema tiene 14
+unidades y ningún paquete; en el anaquel había **1 paquete de 10 sin abrir y 4
+sueltas**. Es la misma cantidad —14 unidades— y la pantalla decía **−9** en el
+producto, **−10** en el renglón de UNIDAD y **+1** en el de PAQUETE.
+
+El conteo estaba bien; lo que estaba mal era la suma. `sum(diferencia)` juntaba
+1 paquete con −10 unidades como si fueran la misma cosa. Un paquete no es una
+unidad, y el factor ya estaba guardado desde v2.397.0 — nadie lo usaba para
+sumar.
+
+**Qué cambia**
+
+- Las presentaciones del mismo producto, lote y vencimiento son **una sola
+  pila**. Cuando dentro hay más de un tamaño de empaque, los tres totales del
+  producto —sistema, físico y diferencia— pasan a **unidades**, y la banda lo
+  dice con una «u» y su explicación al pasar el puntero. Un producto que solo
+  viene en cajas de 100 sigue diciendo «1 caja»: convertir ahí sería mostrarle
+  al que cuenta un número que no tiene en la mano.
+- **Lo que decide si hay diferencia es el neto en unidades**, y con el mismo
+  criterio en todos lados: el filtro «Con diferencia», el recuento a ciegas, las
+  tarjetas del encabezado, el badge de la lista de conteos y la **hoja de
+  ajuste**. Una pila que cuadra no tiene nada que teclear en el sistema.
+- El número por renglón no cambia —es el que el sistema guarda por presentación
+  y el que hay que corregir cuando la pila sí falta—, pero se muestra **apagado**
+  cuando su pila cuadra. En rojo, «−10» se lee como diez unidades perdidas.
+- La plata dejó de mentir por partida doble: ese mismo producto sumaba
+  «faltante $10.16» **y** «sobrante $10.16» con la mercadería completa en el
+  anaquel. Ahora se valúa una vez por pila, sobre el neto.
+- Medido en el conteo abierto de Salud 4: de 150 renglones marcados con
+  diferencia, **22 eran este falso positivo** (11 productos).
+
+**Y el nombre del producto ya no se pinta de verde al terminarlo.** La banda ya
+se tiñe, el badge es verde y el contador «2/2» también: era la cuarta vez que se
+decía lo mismo, y sobre el fondo teñido es la que peor se lee.
+
 ## v2.705.3 — Ventas > Productos: el color del vendedor es el de su sala, y el detalle no se vacía al reabrirlo
 
 Cinco cosas del repaso del usuario sobre el detalle de producto.

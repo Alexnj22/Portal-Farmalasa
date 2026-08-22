@@ -166,6 +166,51 @@ const fmtHora = (iso) => (iso ? new Date(iso).toLocaleTimeString('es-SV', { hour
 const difClass = (dif) => (dif == null ? 'text-content-3' : dif === 0 ? 'text-success' : dif < 0 ? 'text-danger' : 'text-chart-1-text');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
+// Un producto puede venir en dos presentaciones del MISMO anaquel —«PAQUETE X
+// 10» y «UNIDAD»—, y el sistema las guarda en dos casilleros separados. Si en
+// la repisa hay un paquete sin abrir que el sistema tiene como diez sueltas, el
+// renglón de UNIDAD dice «-10» y el de PAQUETE «+1» aunque no falte una sola
+// venda. La suma que importa está en unidades y la hace el servidor
+// (`diferencia_grupo`); acá solo se decide cómo se PINTA el número del renglón:
+// apagado cuando su grupo cuadra, porque en rojo se lee como diez unidades
+// perdidas y eso fue exactamente el reporte del 2026-08-21.
+const esReacomodo = (item) => !!item?.grupo_mixto && (item?.diferencia_grupo ?? 0) === 0;
+const REACOMODO_AVISO = 'El sistema cuenta los paquetes y las unidades por separado. En unidades este producto cuadra: el total del producto lo dice.';
+
+// Vuelve a netear las pilas de un producto con lo que hay en memoria. Es la
+// copia cliente de `conteo_lineas_netas`, y existe porque `diferencia_grupo`
+// llega calculado sobre lo GUARDADO: al teclear el segundo renglón de una pila,
+// el primero seguiría mostrando el neto viejo hasta refrescar.
+//
+// La pila es (área de vencidos, lote, vencimiento) dentro del producto —el
+// `erp_product_id` ya está fijo acá— y un renglón sin factor conocido se queda
+// SOLO, igual que en la base: sin factor no hay conversión posible y agrupar
+// por ignorancia haría que dos renglones reclamaran la misma existencia.
+function conNetoDelGrupo(lines) {
+    const clave = (l) => (l.factor == null
+        ? `L:${l.id}`
+        : `G:${l.is_vencidos ? '1' : '0'}|${l.lote ?? ''}|${l.fecha_vencimiento ?? ''}`);
+    const pilas = new Map();
+    lines.forEach((l) => {
+        const k = clave(l);
+        if (!pilas.has(k)) pilas.set(k, []);
+        pilas.get(k).push(l);
+    });
+    const resumen = new Map();
+    pilas.forEach((grupo, k) => {
+        const factores = new Set(grupo.map((l) => l.factor).filter((f) => f != null));
+        const mixto = factores.size > 1;
+        const neto = grupo.reduce((sum, l) => (l.diferencia == null
+            ? sum
+            : sum + l.diferencia * (mixto ? (l.factor ?? 1) : 1)), 0);
+        resumen.set(k, { mixto, neto });
+    });
+    return lines.map((l) => {
+        const { mixto, neto } = resumen.get(clave(l));
+        return { ...l, grupo_mixto: mixto, diferencia_grupo: neto };
+    });
+}
+
 // Umbral "próximo a vencer" — mismo valor usado en get_conteo_products_page
 // para que el aviso a nivel de grupo (sin expandir) y el de la línea coincidan.
 const VENCE_UMBRAL_DIAS = 90;
@@ -309,6 +354,10 @@ function ItemRow({
     // cuente. En un conteo «según la hoja» NO se mueve: es el impreso, y
     // anunciarlo como vivo contradice al encabezado y al papel.
     const isLive = enVivo && item.fisico_cantidad == null && !item.es_agregado_manual;
+    // El neto del grupo lo calcula el servidor sobre lo GUARDADO, así que
+    // mientras se teclea el renglón sin confirmar se pinta normal: la señal de
+    // «esto cuadra en unidades» aparece cuando el número ya está registrado.
+    const reacomodo = esReacomodo(item) && item.fisico_cantidad != null;
 
     // Una línea ya confirmada NO es un campo. Una celda que sigue pareciendo un
     // input invita a teclear encima de lo ya contado; el lápiz es el único
@@ -461,7 +510,7 @@ function ItemRow({
                 {producto ? (
                     <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <p className={`font-bold text-body-sm truncate ${bloqueada ? 'text-success' : 'text-content'}`}>
+                            <p className="font-bold text-body-sm truncate text-content">
                                 {producto.product_nombre || `Producto ${producto.erp_product_id}`}
                             </p>
                             {producto.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
@@ -594,6 +643,10 @@ function ItemRow({
                 <DataCell align="center">
                     {tapado ? (
                         <span className="text-body-sm font-black text-content-3 tabular-nums">{TAPADO}</span>
+                    ) : reacomodo ? (
+                        <LiquidTooltip content={REACOMODO_AVISO}>
+                            <span className="text-body-sm font-black tabular-nums text-content-3">{difLabel(dif)}</span>
+                        </LiquidTooltip>
                     ) : (
                         <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
                     )}
@@ -618,8 +671,28 @@ function ItemRow({
     );
 }
 
+// El total de una banda cuando sus renglones son presentaciones distintas del
+// mismo anaquel: la suma cruda no significa nada —1 paquete + 4 unidades no son
+// «5»—, así que el servidor la devuelve convertida a unidades y acá se dice de
+// qué unidad habla. El sufijo es del ancho de dos caracteres a propósito: la
+// tabla ya entra justa a 1440.
+function TotalDelProducto({ valor, enUnidades, clase = 'text-content-2', etiqueta = null }) {
+    const texto = etiqueta ?? (valor ?? '—');
+    const numero = <span className={`text-body-sm font-black tabular-nums ${clase}`}>{texto}</span>;
+    if (!enUnidades || valor == null) return numero;
+    return (
+        <LiquidTooltip content="Este producto se cuenta en dos presentaciones (paquetes y unidades). El total está en unidades.">
+            <span className="inline-flex items-baseline gap-0.5">
+                {numero}
+                <span className="text-micro text-content-3">u</span>
+            </span>
+        </LiquidTooltip>
+    );
+}
+
 function ProductGroupRow({ product, index, verSistema, simple = false }) {
     const dif = product.diferencia_total;
+    const enUnidades = !!product.total_en_unidades;
     // Todos sus lotes confirmados: la banda deja de llamar. Es la señal que se
     // busca al recorrer un anaquel — qué falta, no qué ya está.
     const completo = product.item_count > 0 && product.contados_count >= product.item_count;
@@ -634,7 +707,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
             <DataCell className="min-w-[180px] max-w-[340px]">
                 <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
-                        <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>
+                        <p className="font-bold text-body-sm truncate text-content">
                             {product.product_nombre || `Producto ${product.erp_product_id}`}
                         </p>
                         {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
@@ -658,13 +731,13 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
             <DataCell hideBelow="1440" />
             {verSistema && (
                 <DataCell align="center">
-                    <span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total ?? '—'}</span>
+                    <TotalDelProducto valor={product.sistema_total} enUnidades={enUnidades} />
                 </DataCell>
             )}
-            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
+            <DataCell align="center"><TotalDelProducto valor={product.fisico_total} enUnidades={enUnidades} /></DataCell>
             {verSistema && (
                 <DataCell align="center">
-                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                    <TotalDelProducto valor={dif} enUnidades={enUnidades} clase={difClass(dif)} etiqueta={difLabel(dif)} />
                 </DataCell>
             )}
             <DataCell align="center">
@@ -724,6 +797,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     // existencia en el instante del guardado.
     const dif = fisico !== '' && sistema != null ? Number(fisico) - sistema : null;
     const isLive = enVivo && item.fisico_cantidad == null && !item.es_agregado_manual;
+    const reacomodo = esReacomodo(item) && item.fisico_cantidad != null;
     // El recuento tapa el sistema y el primer conteo hasta que el supervisor
     // registra el suyo: si ve que decía 12, escribe 12.
     const tapado = recuento && !revelado;
@@ -874,9 +948,15 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                             {tapado ? (
                                 <span className="text-body-sm font-black text-content-3 tabular-nums">{TAPADO}</span>
                             ) : (
-                                <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                                <span className={`text-body-sm font-black tabular-nums ${reacomodo ? 'text-content-3' : difClass(dif)}`}>{difLabel(dif)}</span>
                             )}
                         </span>
+                    )}
+                    {/* El teléfono no tiene puntero: lo que en la tabla es un
+                        tooltip acá tiene que estar escrito. Sale una sola vez
+                        por renglón y solo cuando hay algo que explicar. */}
+                    {reacomodo && !tapado && (
+                        <span className="text-micro text-content-3 basis-full text-center">Cuadra en unidades</span>
                     )}
                     {!tapado && item.fisico_primer_conteo != null && (
                         <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
@@ -905,7 +985,7 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
     return (
         <div data-surface="card" className={`p-3 ${completo ? 'bg-success/10' : ''}`}>
             <div className="flex items-start justify-between gap-2">
-                <p className={`font-bold text-body-sm leading-tight text-balance min-w-0 ${completo ? 'text-success' : 'text-content'}`}>
+                <p className="font-bold text-body-sm leading-tight text-balance min-w-0 text-content">
                     {product.product_nombre || `Producto ${product.erp_product_id}`}
                 </p>
                 <span className={`text-caption font-bold tabular-nums shrink-0 ${completo ? 'text-success' : 'text-content-3'}`}>
@@ -933,6 +1013,12 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
                             <span className="text-caption text-content-3">Dif.</span>
                             <span className={`text-body-sm font-black tabular-nums ${difClass(product.diferencia_total)}`}>{difLabel(product.diferencia_total)}</span>
                         </span>
+                    )}
+                    {/* En la tabla esto es un tooltip sobre el número; en el
+                        teléfono no hay puntero, así que se escribe. Sin ella los
+                        tres números de arriba no dicen de qué unidad hablan. */}
+                    {product.total_en_unidades && (
+                        <span className="text-micro text-content-3 basis-full">Totales en unidades (hay paquetes y unidades)</span>
                     )}
                 </div>
             )}
@@ -1528,23 +1614,31 @@ export default function ConteoDetailView() {
 
     // Recalcula los totales agregados del producto a partir de sus líneas ya
     // en memoria — evita un refetch de la página de productos por cada guardado.
+    //
+    // Y tiene que aplicar EXACTAMENTE el mismo criterio que `conteo_lineas_netas`
+    // en la base: si el recálculo optimista y el del servidor no coinciden, el
+    // número cambia solo al refrescar la página y nadie sabe cuál era el bueno.
     const recomputeProductTotals = (erpProductId, lines) => {
         const item_count = lines.length;
         const contados_count = lines.filter((l) => l.estado_item !== 'PENDIENTE').length;
-        const con_diferencia_count = lines.filter((l) => l.diferencia != null && l.diferencia !== 0).length;
-        const sistema_total = lines.reduce((sum, l) => sum + (l.sistema_cantidad ?? 0), 0);
+        const con_diferencia_count = lines.filter((l) => l.diferencia != null && l.diferencia !== 0
+            && (l.diferencia_grupo ?? 0) !== 0).length;
+        const mult = (l) => (l.grupo_mixto ? (l.factor ?? 1) : 1);
+        const sistema_total = lines.reduce((sum, l) => sum + (l.sistema_cantidad ?? 0) * mult(l), 0);
         const contadas = lines.filter((l) => l.fisico_cantidad != null);
-        const fisico_total = contadas.length ? contadas.reduce((sum, l) => sum + l.fisico_cantidad, 0) : null;
-        const diferencia_total = contadas.length ? contadas.reduce((sum, l) => sum + (l.diferencia ?? 0), 0) : null;
+        const fisico_total = contadas.length ? contadas.reduce((sum, l) => sum + l.fisico_cantidad * mult(l), 0) : null;
+        const diferencia_total = contadas.length ? contadas.reduce((sum, l) => sum + (l.diferencia ?? 0) * mult(l), 0) : null;
+        const total_en_unidades = lines.some((l) => l.grupo_mixto);
         setProducts((prev) => prev.map((p) => (p.erp_product_id === erpProductId ? {
-            ...p, item_count, contados_count, con_diferencia_count, sistema_total, fisico_total, diferencia_total,
+            ...p, item_count, contados_count, con_diferencia_count, sistema_total, fisico_total,
+            diferencia_total, total_en_unidades,
         } : p)));
     };
 
     const handleSaveItem = async (itemId, payload, erpProductId) => {
         const result = await guardarConteoItem(itemId, payload);
         setItemsByProduct((prev) => {
-            const lines = (prev[erpProductId] || []).map((it) => (it.id === itemId ? {
+            const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
                 ...it,
                 fisico_cantidad: payload.fisicoCantidad,
                 nota: payload.nota,
@@ -1553,7 +1647,7 @@ export default function ConteoDetailView() {
                 diferencia: result.diferencia,
                 contado_por_nombre: user?.name || it.contado_por_nombre,
                 contado_at: new Date().toISOString(),
-            } : it));
+            } : it)));
             recomputeProductTotals(erpProductId, lines);
             return { ...prev, [erpProductId]: lines };
         });
@@ -1563,7 +1657,7 @@ export default function ConteoDetailView() {
     const handleRecountItem = async (itemId, payload, erpProductId) => {
         const result = await recontarConteoItem(itemId, payload);
         setItemsByProduct((prev) => {
-            const lines = (prev[erpProductId] || []).map((it) => (it.id === itemId ? {
+            const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
                 ...it,
                 fisico_primer_conteo: result.fisico_primer_conteo,
                 fisico_cantidad: payload.fisicoCantidad,
@@ -1571,7 +1665,7 @@ export default function ConteoDetailView() {
                 diferencia: result.diferencia,
                 recontado_at: new Date().toISOString(),
                 recontado_por_nombre: user?.name || it.recontado_por_nombre,
-            } : it));
+            } : it)));
             recomputeProductTotals(erpProductId, lines);
             return { ...prev, [erpProductId]: lines };
         });

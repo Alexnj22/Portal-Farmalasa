@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.706.1 — Conteo: la página se recuerda, y aparecen «primera» y «última»
+
+Pedido del usuario, contando: *«imagina que estoy haciendo el conteo y estoy en
+la página 50, y se me actualiza, me devuelve a la página 1»*.
+
+**La página y el tamaño ahora viven en la dirección** (`?pag=50&ver=100`), no en
+la memoria de la pantalla. Recargar, volver por el historial o abrir el enlace
+que alguien pasó deja la lista donde estaba. Y «se me actualiza» no era
+hipotético: la sesión de sala se cierra sola a los 5 minutos, la aplicación se
+recarga cuando se publica una versión, y F5 existe — con cualquiera de las tres
+había que volver a buscar dónde se iba entre 1,400 productos.
+
+Tres decisiones que no se ven pero se notan:
+
+- **Pasar de página no apila historial.** Un solo «atrás» sale de la vista
+  aunque se hayan recorrido cincuenta páginas.
+- **Cambiar de filtro, de búsqueda o de orden vuelve a la primera**: cambian qué
+  lista es, así que la posición vieja ya no señala nada.
+- **Un enlace que pide una página que ya no existe** —el filtro dejó tres donde
+  había sesenta— se corrige a la última real en vez de mostrar una tabla vacía
+  sin decir por qué. Y espera a saber el total: corregir antes tiraría a la 1
+  justo el enlace que se acaba de abrir.
+
+**Botones de primera y última página**, pegados a las flechas. Son los dos
+saltos que se hacen sin pensar el número: escribirlos en el campo «pág. 50/57»
+obliga a saber cuántas hay, y «última» ni siquiera es un número fijo — cambia
+con el filtro. Salen sólo cuando hay más de una página, y en el teléfono a
+partir de tres (con dos, «primera» hace lo mismo que «anterior» y le come el
+ancho al rango del medio). Como `TablePagination` es el paginador de todo el
+portal, los dos botones aparecen en las 17 vistas que lo usan.
+
+De paso: el selector de filas por página quedó validado contra la lista de
+opciones reales. Ese número viaja como límite a la consulta, y uno escrito a
+mano en la dirección pediría una página que la base recorta en silencio.
+
 ## v2.706.0 — Conteo de inventario: la diferencia de un producto se mide en unidades
 
 Reportado sobre **VENDA DE GASA MIGASA 2X10 YDS.**: el sistema tiene 14

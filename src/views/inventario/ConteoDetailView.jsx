@@ -41,6 +41,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { inputHoverClass } from '../../utils/inputStyles';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -1420,12 +1421,22 @@ export default function ConteoDetailView() {
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
-    // Cuántos PRODUCTOS trae una página. Era una constante y el selector de
-    // `TablePagination` recibía un `onPageSizeChange` vacío: se podía elegir 100,
-    // el control se pintaba en 100 y la tabla seguía trayendo 25 — sin error y
-    // sin fila de menos visible, que es por qué sobrevivió.
-    const [tamPagina, setTamPagina] = useState(PAGE_SIZE_INICIAL);
+    // La página y el tamaño viven en la DIRECCIÓN, no en `useState`. Contar es
+    // recorrer un anaquel de 1,400 productos de a 25: perder la posición no
+    // cuesta un clic, cuesta volver a buscar dónde se iba. Y perderla no es
+    // hipotético — la sesión de sala se cierra sola a los 5 minutos y la
+    // aplicación se recarga cuando se publica una versión.
+    //
+    // El tamaño de página estaba en `useState` con un `onPageSizeChange` vacío:
+    // se podía elegir 100, el control se pintaba en 100 y la tabla seguía
+    // trayendo 25 — sin error y sin fila de menos visible, que es por qué
+    // sobrevivió. Ahora lo valida el hook contra la lista blanca, que además es
+    // lo que impide que un `?ver=` escrito a mano pida una página que PostgREST
+    // recorta en silencio.
+    const { page, pageSize: tamPagina, totalPages, setPage, setPageSize, resetPage } = usePaginaEnUrl({
+        total,
+        tamPorDefecto: PAGE_SIZE_INICIAL,
+    });
     // `search` es lo que se ve en la caja y `searchDiferido` lo que sale a
     // consultar. Sin ese rezago cada TECLA disparaba una vuelta entera de
     // consultas contra un conteo de 3,473 renglones: escribir "acetaminofen"
@@ -1549,12 +1560,13 @@ export default function ConteoDetailView() {
     // MISMO evento que el cambio. Como efecto aparte llegaba tarde: la vuelta
     // ya había salido a pedir la página 3 de una lista que todavía no existía,
     // y recién la siguiente pedía la 1. Dos consultas para una sola decisión.
-    const cambiarFiltro = useCallback((v) => { setPage(1); setFiltro(v); }, []);
-    const cambiarLaboratorio = useCallback((v) => { setPage(1); setLaboratorioId(v); }, []);
-    const cambiarBusqueda = useCallback((v) => { setPage(1); setSearch(v); }, []);
-    // Volver a la página 1: en 2,800 productos, pasar de 25 a 100 deja a la
-    // página 40 fuera de rango y la tabla saldría vacía sin decir por qué.
-    const cambiarTamPagina = useCallback((v) => { setPage(1); setTamPagina(Number(v)); }, []);
+    const cambiarFiltro = useCallback((v) => { resetPage(); setFiltro(v); }, [resetPage]);
+    const cambiarLaboratorio = useCallback((v) => { resetPage(); setLaboratorioId(v); }, [resetPage]);
+    const cambiarBusqueda = useCallback((v) => { resetPage(); setSearch(v); }, [resetPage]);
+    // `setPageSize` ya vuelve a la página 1 —en 2,800 productos, pasar de 25 a
+    // 100 deja a la página 40 fuera de rango y la tabla saldría vacía sin decir
+    // por qué— y lo hace en la misma escritura, no en dos.
+    const cambiarTamPagina = useCallback((v) => { setPageSize(Number(v)); }, [setPageSize]);
 
     // Los laboratorios del conteo no cambian mientras se cuenta (el alcance se
     // fijó al crearlo), así que se piden una vez por conteo y no en cada `load`.
@@ -1574,7 +1586,7 @@ export default function ConteoDetailView() {
     }));
 
     const filtrosActivos = (laboratorioId != null ? 1 : 0) + (filtro !== 'TODOS' ? 1 : 0);
-    const limpiarFiltros = () => { setPage(1); setLaboratorioId(null); setFiltro('TODOS'); };
+    const limpiarFiltros = () => { resetPage(); setLaboratorioId(null); setFiltro('TODOS'); };
 
     // Si el conteo resulta ciego para este rol y el filtro activo era uno de los
     // dos que se retiran, vuelve a TODOS. Sin esto quedaría un filtro aplicado
@@ -1588,7 +1600,7 @@ export default function ConteoDetailView() {
     // Un segundo clic invierte; el tercero NO vuelve a "sin orden". Con el orden
     // del anaquel como default, poder volver a él es útil, pero hacerlo el tercer
     // paso de un ciclo lo vuelve un accidente: se limpia desde la píldora.
-    const handleSort = (key) => { setPage(1); setOrden((prev) => (
+    const handleSort = (key) => { resetPage(); setOrden((prev) => (
         prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
     )); };
 
@@ -1788,7 +1800,6 @@ export default function ConteoDetailView() {
         }
     };
 
-    const totalPages = Math.ceil(total / tamPagina) || 1;
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
 
     // Qué documentos existen para este conteo AHORA. Mientras se cuenta hay uno

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 
@@ -37,6 +37,13 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  * salto real se hace escribiendo el número, y para eso el "pág. 1/52" es
  * clickeable y se vuelve un campo. Así el "Ir a" deja de ocupar espacio
  * permanente para una acción que casi no se usa.
+ *
+ * **Primera y última** (2026-08-22, pedido contando inventario). Los dos únicos
+ * saltos que se hacen sin pensar el número: volver al principio, y ver el final.
+ * Escribirlos en el campo obliga a saber cuántas páginas hay —el "última" ni
+ * siquiera es un número fijo: cambia con el filtro— así que eran los dos que el
+ * campo no resolvía. Van pegados a sus flechas y sólo cuando hay más de una
+ * página: en una lista de una página serían cuatro controles apagados.
  */
 
 const NAV = `w-[max(36px,var(--tap-min))] h-[max(36px,var(--tap-min))] rounded-btn flex items-center justify-center shrink-0
@@ -96,6 +103,16 @@ export default function TablePagination({
             <nav ref={rootRef} aria-label="Paginación"
                 className="w-full flex items-center justify-between gap-2 h-14 px-2
                     rounded-card border border-border-card bg-surface-card">
+                {/* «Primera» y «última» sólo con más de una página, y en el
+                    teléfono además sólo a partir de tres: con dos, «anterior» y
+                    «primera» hacen lo mismo y son dos blancos de 40px comiendo
+                    el ancho que necesita el rango del medio. */}
+                {totalPages > 2 && (
+                    <button type="button" className={`${NAV} w-10 h-10`} disabled={page <= 1}
+                        onClick={() => navegar(() => onPageChange(1))} aria-label="Primera página">
+                        <ChevronsLeft size={18} strokeWidth={2.5} />
+                    </button>
+                )}
                 <button type="button" className={`${NAV} w-10 h-10`} disabled={page <= 1}
                     onClick={() => navegar(() => onPageChange(page - 1))} aria-label="Página anterior">
                     <ChevronLeft size={18} strokeWidth={2.5} />
@@ -114,6 +131,12 @@ export default function TablePagination({
                     onClick={() => navegar(() => onPageChange(page + 1))} aria-label="Página siguiente">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
+                {totalPages > 2 && (
+                    <button type="button" className={`${NAV} w-10 h-10`} disabled={page >= totalPages}
+                        onClick={() => navegar(() => onPageChange(totalPages))} aria-label="Última página">
+                        <ChevronsRight size={18} strokeWidth={2.5} />
+                    </button>
+                )}
             </nav>
         );
     }
@@ -160,6 +183,13 @@ export default function TablePagination({
 
             {/* zona 2 · pasar página — al centro real del ancho */}
             <span className="justify-self-center flex items-center">
+                {totalPages > 1 && (
+                    <button type="button" className={NAV} disabled={page <= 1}
+                        onClick={() => navegar(() => onPageChange(1))}
+                        aria-label="Primera página">
+                        <ChevronsLeft size={16} strokeWidth={2.5} />
+                    </button>
+                )}
                 <button type="button" className={NAV} disabled={page <= 1}
                     onClick={() => navegar(() => onPageChange(page - 1))}
                     aria-label="Página anterior">
@@ -202,6 +232,13 @@ export default function TablePagination({
                     aria-label="Página siguiente">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
+                {totalPages > 1 && (
+                    <button type="button" className={NAV} disabled={page >= totalPages}
+                        onClick={() => navegar(() => onPageChange(totalPages))}
+                        aria-label="Última página">
+                        <ChevronsRight size={16} strokeWidth={2.5} />
+                    </button>
+                )}
             </span>
 
             {/* zona 3 · cuánto hay — el rango y el total, a la derecha */}

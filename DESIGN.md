@@ -1958,6 +1958,39 @@ Y si la lista depende de DATOS que llegan después (contadores, filtros por
 cantidad), se valida contra la lista **estática** y no contra la visible: si no,
 mientras carga se cae a la primera pestaña y ya no vuelve.
 
+#### La página de una tabla también — `usePaginaEnUrl` (2026-08-22)
+
+Mismo argumento y mismo silencio, pero lo que se pierde no es un clic: es un
+recorrido. Lo pidió el usuario contando inventario —*«imagina que estoy haciendo
+el conteo y estoy en la página 50, y se me actualiza, me devuelve a la página
+1»*— y «se me actualiza» acá no es hipotético: la sesión de sala se cierra sola
+a los 5 minutos (v2.647.0), el service worker recarga la aplicación al publicar
+una versión, y F5 existe. Cualquiera de las tres deja a alguien de pie frente al
+anaquel buscando de nuevo dónde iba entre 1,400 productos.
+
+`usePaginaEnUrl` (`src/hooks/usePaginaEnUrl.js`) devuelve
+`{ page, pageSize, totalPages, setPage, setPageSize, resetPage }` y se diferencia
+de su hermano en tres decisiones, las tres con motivo:
+
+1. **Reemplaza, no empuja.** Una pestaña se cambia tres veces; una página,
+   cincuenta. Con `push`, salir de la vista costaría cincuenta toques de
+   «atrás». La página es una POSICIÓN, no un paso de navegación.
+2. **El tamaño va junto y validado contra `PAGE_SIZE_OPTIONS`.** Juntos porque
+   «página 50» sin «de a cuántos» no ubica nada. Validado porque el tamaño viaja
+   como `p_limit` a una RPC: un `?ver=99999` escrito a mano pediría una página
+   que PostgREST **recorta a 1000 filas sin error ni aviso**. La lista blanca es
+   lo que impide que la dirección elija un número que el servidor no cumple.
+3. **Recibe el TOTAL DE FILAS, no el total de páginas** —ése se calcula con el
+   tamaño, que es justo lo que el hook decide— y corrige la dirección fuera de
+   rango **sólo cuando el total ya se sabe**: antes de la primera respuesta vale
+   0, y corregir ahí tiraría un `?pag=50` a la 1 justo antes de que llegara la
+   lista, rompiendo lo que el hook vino a arreglar.
+
+Y **`resetPage()` es lo que llaman el filtro, la búsqueda y el orden**: cambian
+QUÉ lista es, así que la posición vieja ya no señala nada. Anclado en
+`tests/unit/paginaEnUrl.test.jsx` (11 casos; la prueba de «atrás» se verificó
+contra un `push` deliberado y falla, que es lo que la hace valer).
+
 ### DataTable
 
 File: `src/components/common/DataTable.jsx`
@@ -4177,6 +4210,12 @@ rango, y el hover sale de `--lift-hover` — en Solid no se levanta.
 - **Móvil (<720px):** una fila de ancho completo, flechas de 40px pegadas a los
   bordes donde llega el pulgar, estado al centro en dos líneas. El selector de
   tamaño desaparece: nadie cambia cuántas filas ve desde un teléfono.
+- **Primera y última** (2026-08-22, pedido contando inventario). Los dos únicos
+  saltos que se hacen sin pensar el número. Escribirlos en el campo obliga a
+  saber cuántas páginas hay, y «última» ni siquiera es un número fijo: cambia
+  con el filtro. Salen sólo con **más de una** página (en el teléfono, con más
+  de dos: con dos, «primera» hace lo mismo que «anterior» y son dos blancos de
+  40px comiéndole el ancho al rango del medio).
 
 **Nunca escribir la paginación a mano.** Y no es un `SegmentedControl`: aunque
 se comporta como uno-de-N, `role="radiogroup"` es incorrecto para un lector de

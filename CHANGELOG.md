@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.707.0 — Enviar producto a otra sala: la base del circuito
+
+Hasta hoy el portal sólo sabía **pedir**: la sala que no tiene abre una
+solicitud y la que tiene confirma. Falta el movimiento contrario —empujar—, que
+es el más común de una bodega: llega un producto nuevo y hay que repartirlo, o
+uno está próximo a vencer y en esta sala no rota. Eso se resolvía por teléfono y
+tecleando el traslado a mano.
+
+Esta versión trae la mitad de abajo: la estructura y el circuito en la base.
+
+- **El envío es una solicitud al revés.** Sale primero y la decisión llega
+  después, porque el producto viaja con el motorista, no con un botón: mientras
+  la sala de destino no lo mire, el envío está `PENDING` con el producto ya
+  fuera de la sala que lo mandó.
+- **Cada renglón viaja solo.** En el sistema, un renglón es su propio traslado
+  —igual que en el pedido de Bodega—, así que aceptar uno es recibir el suyo y
+  devolver otro es devolver el suyo. Sin eso, un solo producto dañado obligaría
+  a devolver la caja entera.
+- **El motivo es obligatorio y sale de una lista** (producto nuevo, próximo a
+  vencer, sobrestock, lo pidieron, otro). Es lo único que le explica al otro
+  lado por qué le llegó una caja que no pidió.
+- **Sólo se envía desde la sala propia** —o desde la que se cubre mientras está
+  cerrada—: un envío saca producto sin pedirle permiso a nadie, así que el freno
+  tiene que estar al crearlo.
+- **El aviso al destino sale cuando el producto salió**, no al crear la fila.
+  Entre una cosa y la otra puede fallar el sistema, y avisar de una caja que no
+  salió manda a alguien a buscar lo que no existe.
+
 ## v2.706.1 — Conteo: la página se recuerda, y aparecen «primera» y «última»
 
 Pedido del usuario, contando: *«imagina que estoy haciendo el conteo y estoy en

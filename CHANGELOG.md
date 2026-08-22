@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.709.1 — Envíos: el aviso no se repite y el metadata no se pisa
+
+Dos defectos encontrados releyendo el circuito, antes de que lo use nadie.
+
+**El aviso salía dos veces cuando el despacho se retomaba.** Un envío grande se
+corta por tiempo y se termina apretando de nuevo; al terminar volvía a avisarle
+a la sala de destino, contando también los productos que ya le habíamos
+anunciado. Ahora se cuenta lo anunciado: el caso normal avisa una vez, un
+despacho en dos tandas avisa dos veces diciendo cada una algo distinto, y llamar
+dos veces seguidas no avisa dos veces.
+
+**Y el candado del despacho borraba ese contador**, así que el freno de arriba
+no habría servido. La causa es la de siempre: escribir el `metadata` entero
+—leerlo al arrancar, reescribirlo al terminar— pisa lo que otra escritura puso
+en el medio. Tomar el envío, soltarlo y cerrarlo pasaron a la base, donde el
+`||` de jsonb funde contra la fila viva en vez de reemplazarla.
+
+De regalo, cerrar un envío es ahora una sola escritura con su propia guarda:
+dos personas de la misma sala decidiendo a la vez ya no disparan dos avisos de
+resolución.
+
 ## v2.709.0 — Enviar producto a otra sala: la pantalla
 
 Lo que faltaba para que el circuito se pueda usar. Todo vive en «Traslados entre

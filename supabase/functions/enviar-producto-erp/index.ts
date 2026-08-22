@@ -239,20 +239,17 @@ Deno.serve(async (req) => {
       if (pendientes.length === 0)
         return json({ ok: false, codigo: "NADA_QUE_ENVIAR", error: "Ya salió todo lo de este envío." }, 409);
 
-      /* El candado, igual que en el traslado: el aviso le llega a varias
-       * personas de la sala y cualquiera puede apretar. Sin esto, dos que
-       * aprieten a la vez pasan las dos la lectura de estado y las dos escriben
-       * en el sistema. Caduca a los 3 minutos —más que los 150 s que vive una
-       * invocación—, así que una corrida que muera a mitad se destraba sola. */
-      const ahora = new Date();
-      const caduco = new Date(ahora.getTime() - 3 * 60_000).toISOString();
+      /* El candado: el aviso le llega a varias personas de la sala y cualquiera
+       * puede apretar. Sin esto, dos que aprieten a la vez pasan las dos la
+       * lectura de estado y las dos escriben en el sistema.
+       *
+       * Vive en la BASE y no acá porque tomarlo y soltarlo escriben en el mismo
+       * `metadata` donde el aviso al destino guarda su contador: un
+       * `update({ metadata: { ...meta } })` es leer-modificar-escribir, y
+       * borraba lo que la otra escritura había puesto en el medio. El `||` de
+       * jsonb funde contra la fila viva. */
       const { data: tomada, error: candadoErr } = await admin
-        .from("approval_requests")
-        .update({ metadata: { ...meta, despachando_at: ahora.toISOString(), despachando_by: quien.id } })
-        .eq("id", sol.id)
-        .eq("status", "PENDING")
-        .or(`metadata->>despachando_at.is.null,metadata->>despachando_at.lt.${caduco}`)
-        .select("id").maybeSingle();
+        .rpc("tomar_despacho_envio", { p_request_id: sol.id, p_actor: quien.id });
       // Sin mirar el `error`, un fallo de la consulta se leería como «alguien
       // más está despachando»: una respuesta del negocio que en realidad
       // significa «no se pudo preguntar». Son dos cosas y hay que decir cuál.
@@ -260,7 +257,7 @@ Deno.serve(async (req) => {
         console.error("[enviar-producto-erp] candado:", candadoErr.message);
         return json({ ok: false, error: "No se pudo tomar el envío para despacharlo." }, 503);
       }
-      if (!tomada)
+      if (tomada !== true)
         return json({
           ok: false, codigo: "YA_EN_CURSO",
           error: "Alguien más de tu sala está despachando este envío en este momento.",
@@ -456,9 +453,10 @@ Deno.serve(async (req) => {
       // Se suelta el candado en cuanto termina la corrida: lo que quedó se
       // reintenta apretando de nuevo, y hacer esperar tres minutos por eso no
       // protege de nada.
-      await admin.from("approval_requests")
-        .update({ metadata: { ...meta, despachado_at: new Date().toISOString() } })
-        .eq("id", sol.id).eq("status", "PENDING");
+      await anotar(
+        admin.rpc("cerrar_despacho_envio", { p_request_id: sol.id }),
+        "la salida del envío del despacho",
+      );
 
       // El aviso al destino sale AHORA, con los vales en la mano, y sólo si
       // algo salió de verdad. Avisar de una caja que no salió manda a alguien a
@@ -776,22 +774,24 @@ Deno.serve(async (req) => {
         const devueltas = filas.filter((x) => x.estado === "devuelta" || x.estado === "devuelta_recibida");
         cerrado = aceptadas > 0 ? "APPROVED" : (devueltas.length > 0 ? "REJECTED" : null);
         if (cerrado) {
-          // El motivo va al `metadata` porque es lo que lee el aviso de vuelta
-          // —y lo que exige `validar_rechazo_con_motivo` para un REJECTED—. El
-          // `approver_id` pasa a ser quien DECIDIÓ y no quien recibió el aviso:
-          // es lo que hace que el aviso diga el nombre correcto.
+          /* El cierre entero es UNA escritura de la base y no cuatro campos
+           * desde acá: toca el mismo `metadata` donde el aviso al destino
+           * guarda su contador, y mandarlo entero borraría lo que la otra
+           * escritura puso en el medio. El `||` de jsonb funde.
+           *
+           * El motivo va ahí porque es lo que lee el aviso de vuelta —y lo que
+           * `validar_rechazo_con_motivo` exige para un REJECTED—; el
+           * `approver_id` pasa a ser quien DECIDIÓ y no quien recibió el aviso,
+           * que es lo que hace que ese aviso diga el nombre correcto. */
           const motivosDados = [...new Set(devueltas.map((x) => x.motivo_rechazo).filter(Boolean))];
           await anotar(
-            admin.from("approval_requests").update({
-              status: cerrado,
-              approver_id: quien.id,
-              approver_note: String(nota ?? "").trim() || null,
-              metadata: {
-                ...meta,
-                ...(motivosDados.length ? { rejection_reason: motivosDados.join("; ") } : {}),
-              },
-              updated_at: new Date().toISOString(),
-            }).eq("id", sol.id).eq("status", "PENDING"),
+            admin.rpc("cerrar_envio", {
+              p_request_id: sol.id,
+              p_status: cerrado,
+              p_actor: quien.id,
+              p_nota: String(nota ?? "").trim() || null,
+              p_motivos: motivosDados.length ? motivosDados.join("; ") : null,
+            }),
             "el cierre del envío",
             (m) => fallos.push({ producto: "el envío", error: m }),
           );

@@ -40,7 +40,7 @@ import Notice from '../../components/common/Notice';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
-import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto, { useFichasEnVezDeTabla } from '../../hooks/useLayoutCompacto';
 import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { inputHoverClass } from '../../utils/inputStyles';
@@ -230,6 +230,45 @@ function vencimientoStatus(fechaVencimiento) {
 const renglonEtiqueta = (item, simple) => (simple
     ? (item.presentacion ? `presentación ${item.presentacion}` : 'sin presentación')
     : `lote ${item.lote || 'sin lote'}`);
+
+// Contar es teclear seguido sin levantar la vista del anaquel: Enter salta al
+// siguiente renglón que falta y las flechas recorren.
+//
+// Vive acá arriba y no dentro de la fila porque **las dos maquetas lo
+// necesitan**. Estaba escrito dentro de `ItemRow`, o sea sólo en la tabla: en el
+// teléfono había que tocar el campo, escribir, cerrar el teclado, scrollear y
+// volver a tocar — treinta veces por página.
+//
+// `offsetParent !== null` se queda aunque ya no haya dos maquetas montadas a la
+// vez: cuesta nada y es lo único que separa un campo visible de uno que quedó
+// escondido dentro de algo colapsado.
+const camposDeCaptura = () => Array.from(document.querySelectorAll('input[data-fisico-input="true"]'))
+    .filter((el) => el.offsetParent !== null);
+
+function alTeclearEnCaptura(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const pendiente = camposDeCaptura().find((el) => el !== e.currentTarget && el.value === '');
+        // Se enfoca el siguiente DIRECTAMENTE, sin `blur()` previo: enfocar ya
+        // dispara el blur del actual —o sea el guardado— y en un teléfono el
+        // blur explícito cierra el teclado para volver a abrirlo un cuadro
+        // después. Sin campo siguiente sí hace falta el blur: es lo único que
+        // guarda lo que se acaba de escribir.
+        if (pendiente) {
+            pendiente.focus();
+            pendiente.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        } else {
+            e.currentTarget.blur();
+        }
+        return;
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const inputs = camposDeCaptura();
+    const idx = inputs.indexOf(e.currentTarget);
+    const next = e.key === 'ArrowDown' ? inputs[idx + 1] : inputs[idx - 1];
+    if (next) { next.focus(); next.select(); }
+}
 
 function VencimientoBadge({ status }) {
     if (!status) return null;
@@ -477,31 +516,6 @@ function ItemRow({
         }
     };
 
-    // Contar es teclear seguido sin levantar la vista del anaquel: las flechas
-    // recorren los campos y Enter salta al siguiente que falta.
-    //
-    // `offsetParent !== null` NO es de más: la tabla y las tarjetas del teléfono
-    // están las DOS en el DOM (el corte es `md:hidden`, que oculta pero no quita),
-    // así que sin el filtro cada línea aporta dos campos y la flecha abajo salta
-    // al gemelo invisible del otro layout.
-    const handleFisicoKeyDown = (e) => {
-        const campos = () => Array.from(document.querySelectorAll('input[data-fisico-input="true"]'))
-            .filter((el) => el.offsetParent !== null);
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.currentTarget.blur();
-            const pendiente = campos().find((el) => el !== e.currentTarget && el.value === '');
-            if (pendiente) { pendiente.focus(); pendiente.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-            return;
-        }
-        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-        e.preventDefault();
-        const inputs = campos();
-        const idx = inputs.indexOf(e.currentTarget);
-        const next = e.key === 'ArrowDown' ? inputs[idx + 1] : inputs[idx - 1];
-        if (next) { next.focus(); next.select(); }
-    };
-
     return (
         <DataRow index={index} className={bloqueada ? 'bg-success/5' : (producto ? '' : 'bg-surface-card-hover/30')}>
             {/* Con banda de grupo encima, esta celda solo marca la sangría. Sin
@@ -611,7 +625,8 @@ function ItemRow({
                                     value={fisico}
                                     onChange={(e) => setFisico(e.target.value)}
                                     placeholder={recuento && !revelado ? 'Recontar' : '—'}
-                                    onKeyDown={handleFisicoKeyDown}
+                                    onKeyDown={alTeclearEnCaptura}
+                                    enterKeyHint="next"
                                     onBlur={commit}
                                     readOnly={!puedeEscribir}
                                     compact
@@ -899,6 +914,11 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                             value={fisico}
                             onChange={(e) => setFisico(e.target.value)}
                             onBlur={onBlur}
+                            onKeyDown={alTeclearEnCaptura}
+                            // La tecla del teclado del teléfono dice «siguiente»
+                            // y hace lo que dice: salta al próximo renglón sin
+                            // contar sin cerrar el teclado.
+                            enterKeyHint="next"
                             placeholder={recuento ? 'Recontar' : '—'}
                             readOnly={!editable && !recuento}
                             data-fisico-input="true"
@@ -1417,6 +1437,12 @@ export default function ConteoDetailView() {
     // arreglo del teléfono acostado dejaba a este lado en `false` y a la hoja
     // en `true`, que es exactamente el caso que este comentario advertía.
     const compacto = useLayoutCompacto();
+    // Fichas o tabla — y por un booleano, no por `md:hidden`. Dos motivos, los
+    // dos medidos y los dos escritos en el hook: girar el teléfono sacaba la
+    // tabla densa (844px de ancho pasan el corte `md` de 768), y esconder con
+    // CSS dejaba las DOS maquetas montadas, o sea cada renglón dibujado dos
+    // veces con su campo de captura.
+    const enFichas = useFichasEnVezDeTabla();
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
@@ -2079,7 +2105,8 @@ export default function ConteoDetailView() {
 
                 {/* Teléfono: tarjetas. La tabla de 11 columnas no se opera de pie
                     en un pasillo, y `DataTable` no reflowa a tarjetas (DESIGN.md §32). */}
-                <div className="md:hidden space-y-2">
+                {enFichas ? (
+                <div className="space-y-2">
                     {loading ? (
                         <div data-surface="card" className="p-4"><SkeletonText lines={6} /></div>
                     ) : products.length === 0 ? (
@@ -2107,8 +2134,8 @@ export default function ConteoDetailView() {
                         />
                     ))}
                 </div>
-
-                <div className="hidden md:block">
+                ) : (
+                <div>
                     <DataTable
                         columns={columnas(verSistema, simple)}
                         sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
@@ -2156,6 +2183,7 @@ export default function ConteoDetailView() {
                         })}
                     </DataTable>
                 </div>
+                )}
 
                 {total > 0 && (
                     <TablePagination pageSize={tamPagina} onPageSizeChange={cambiarTamPagina} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />

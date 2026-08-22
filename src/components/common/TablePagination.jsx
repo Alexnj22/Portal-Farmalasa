@@ -46,6 +46,40 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  * página: en una lista de una página serían cuatro controles apagados.
  */
 
+// Quién scrollea de verdad. En escritorio es el contenedor de `GlassViewLayout`
+// (`lg:overflow-y-auto`); en teléfono ese mismo div NO scrollea —el `overflow`
+// arranca en `lg`— y el que se mueve es el documento. Sin esta distinción, el
+// salto al principio de la página nueva funcionaba en la computadora y no hacía
+// nada en el teléfono, que es donde más falta hace.
+function scrollerDe(el) {
+    let n = el.parentElement;
+    while (n && n !== document.body) {
+        const { overflowY } = getComputedStyle(n);
+        if ((overflowY === 'auto' || overflowY === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+        n = n.parentElement;
+    }
+    return null;
+}
+
+// `scrollIntoView({block:'start'})` deja el borde superior pegado al del
+// contenedor, y en escritorio ahí vive el encabezado sticky de la vista: la
+// primera fila de la lista quedaba debajo. Se mide el encabezado y se descuenta.
+// En teléfono mide 0 porque es `hidden lg:block`, así que el mismo código sirve
+// para los dos sin preguntar por el tamaño de pantalla.
+function irAlPrincipioDe(lista) {
+    const cabecera = document.querySelector('[data-surface="page-header"]');
+    const alto = cabecera ? cabecera.getBoundingClientRect().height : 0;
+    const desfase = alto > 0 && getComputedStyle(cabecera).position === 'sticky' ? alto + 8 : 0;
+    const cont = scrollerDe(lista);
+    const arriba = lista.getBoundingClientRect().top;
+    if (cont) {
+        const delta = arriba - cont.getBoundingClientRect().top - desfase;
+        cont.scrollTo({ top: cont.scrollTop + delta, behavior: 'instant' });
+    } else {
+        window.scrollTo({ top: window.scrollY + arriba - desfase, behavior: 'instant' });
+    }
+}
+
 const NAV = `w-[max(36px,var(--tap-min))] h-[max(36px,var(--tap-min))] rounded-btn flex items-center justify-center shrink-0
     text-content-3 transition-[background-color,color,transform] duration-[var(--dur-fast)]
     hover:bg-surface-card-hover hover:text-brand-text hover:translate-y-[var(--lift-hover)]
@@ -73,13 +107,27 @@ export default function TablePagination({
     const desde = mostrado === 0 ? 0 : (page - 1) * pageSize + 1;
     const hasta = Math.min(page * pageSize, mostrado);
 
-    // Tras cambiar de página, mantener la paginación a la vista. Si la tabla
-    // era más larga que la ventana, al pasar de página el usuario quedaba
-    // mirando el medio de la lista nueva sin referencia.
+    // Tras cambiar de página se va al PRINCIPIO de la lista nueva.
+    //
+    // Antes se hacía `scrollIntoView({block:'nearest'})` sobre la paginación
+    // misma, con la intención de dejar una referencia a la vista. Pero la
+    // paginación está DEBAJO de la lista y uno acaba de tocarla, o sea que ya
+    // está en pantalla: `nearest` no mueve nada y la página nueva arranca
+    // entera por encima. En el Conteo de inventario eso son 25 fichas para
+    // subir a dedo antes de poder contar el primer producto.
+    //
+    // El ancla es el hermano anterior, que es la lista: DESIGN.md §17.2 fija
+    // que `DataTable` y `TablePagination` van como hermanos sueltos en el flujo
+    // de la vista. Si algún día no lo fueran, se cae al comportamiento de antes
+    // en vez de saltar a cualquier lado.
     const navegar = useCallback((fn) => {
         fn();
         requestAnimationFrame(() => {
-            rootRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+            const nav = rootRef.current;
+            const lista = nav?.previousElementSibling;
+            if (!nav) return;
+            if (!lista) { nav.scrollIntoView({ behavior: 'instant', block: 'nearest' }); return; }
+            irAlPrincipioDe(lista);
         });
     }, []);
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
@@ -60,17 +60,56 @@ const GlassViewLayout = ({
     const scrollContainerRef = useRef(null);
     const [showScrollNav, setShowScrollNav] = useState(false);
 
-    const handleInternalScroll = useCallback(() => {
-        if (!scrollContainerRef.current) return;
-        requestAnimationFrame(() => {
-            const { scrollTop } = scrollContainerRef.current;
-            setShowScrollNav(scrollTop > 150);
-        });
+    // ── Quién scrollea, según el tamaño ──────────────────────────────────
+    // El contenedor de abajo tiene `lg:overflow-y-auto`: el `overflow` ARRANCA
+    // en `lg`. Debajo de 1024px ese div no scrollea —se mueve el documento— así
+    // que su `onScroll` nunca se disparaba, `showScrollNav` se quedaba en
+    // `false` y **los botones «Ir al inicio» y «Ir al final» no existían en
+    // ningún teléfono ni tablet, en ninguna vista del portal**. Estaban
+    // escritos, montados y muertos.
+    //
+    // Lo destapó el usuario pidiendo justamente eso mientras contaba
+    // inventario: «algún botón por ahí para volver a inicio o fin». Ya estaba
+    // hecho; lo que faltaba era que alguien scrolleara donde el código miraba.
+    const scroller = useCallback(() => {
+        const el = scrollContainerRef.current;
+        // `scrollHeight > clientHeight` distingue «este div scrollea» de «este
+        // div tiene la clase pero el contenido entra»: sin eso, en escritorio
+        // con poco contenido se elegiría el contenedor y el documento quedaría
+        // sin vigilar.
+        if (el && el.scrollHeight > el.clientHeight + 1) {
+            const { overflowY } = getComputedStyle(el);
+            if (overflowY === 'auto' || overflowY === 'scroll') return el;
+        }
+        return null;
     }, []);
 
+    const handleInternalScroll = useCallback(() => {
+        requestAnimationFrame(() => {
+            const el = scroller();
+            setShowScrollNav((el ? el.scrollTop : window.scrollY) > 150);
+        });
+    }, [scroller]);
+
+    // El documento sólo se escucha cuando ES el que scrollea. Escucharlo siempre
+    // haría que en escritorio los botones aparecieran por el scroll de la página
+    // entera mientras la lista —que es lo que se quiere recorrer— no se movió.
+    useEffect(() => {
+        window.addEventListener('scroll', handleInternalScroll, { passive: true });
+        handleInternalScroll();
+        return () => window.removeEventListener('scroll', handleInternalScroll);
+    }, [handleInternalScroll]);
+
     const scrollTo = useCallback((pos) => {
-        scrollContainerRef.current?.scrollTo({ top: pos, behavior: 'smooth' });
-    }, []);
+        const el = scroller();
+        if (el) el.scrollTo({ top: pos, behavior: 'smooth' });
+        else window.scrollTo({ top: pos, behavior: 'smooth' });
+    }, [scroller]);
+
+    const irAlFinal = useCallback(() => {
+        const el = scroller();
+        scrollTo(el ? el.scrollHeight : document.documentElement.scrollHeight);
+    }, [scroller, scrollTo]);
 
     // bg-transparent para transparentBody (no lleva data-surface); el resto del
     // material (fondo/borde/sombra/radio/transición/hover) ya lo aplica
@@ -118,7 +157,10 @@ const GlassViewLayout = ({
     // `esMovil` se retira con esto: la condición dejó de tener dos ramas.
     const cuerpoConCard = false;
 
-    const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
+    // 40px eran suficientes cuando estos botones sólo existían en escritorio.
+    // Ahora aparecen en el teléfono, así que llevan el mínimo táctil: `--tap-min`
+    // vale 0 con mouse —el botón sigue midiendo 40— y 44pt con dedo.
+    const floatBtn = 'w-10 h-10 min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-2xl flex items-center justify-center';
     const floatStyle = {
         background: 'var(--surface-card)',
         backdropFilter: 'blur(24px) saturate(200%)',
@@ -374,25 +416,31 @@ const GlassViewLayout = ({
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 16 }}
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                        className="fixed bottom-8 right-8 z-sidebar flex flex-col gap-2 pointer-events-auto"
+                        // `bottom` sale de `--alto-barra-flotante` (la escribe
+                        // `BarraFlotante` con un ResizeObserver) más el área
+                        // segura: en escritorio la variable vale 0 y quedan los
+                        // 2rem de siempre; en teléfono suben por encima del
+                        // clúster de filtros en vez de esconderse detrás.
+                        style={{ bottom: 'calc(var(--alto-barra-flotante, 0px) + var(--sa-bottom, 0px) + 1rem)' }}
+                        className="fixed right-4 md:right-8 z-sidebar flex flex-col gap-2 pointer-events-auto"
                     >
                         <motion.button
                             onClick={() => scrollTo(0)}
                             whileHover={{ scale: 1.1, y: -2 }}
                             whileTap={{ scale: 0.90 }}
                             transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                            title="Ir al inicio"
+                            aria-label="Ir al inicio"
                             className={floatBtn}
                             style={floatStyle}
                         >
                             <ChevronUp size={18} strokeWidth={2.5} className="text-content-2" />
                         </motion.button>
                         <motion.button
-                            onClick={() => scrollTo(scrollContainerRef.current?.scrollHeight ?? 99999)}
+                            onClick={irAlFinal}
                             whileHover={{ scale: 1.1, y: 2 }}
                             whileTap={{ scale: 0.90 }}
                             transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                            title="Ir al final"
+                            aria-label="Ir al final"
                             className={floatBtn}
                             style={floatStyle}
                         >

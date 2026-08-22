@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.708.0 — Conteo en el teléfono: girar, teclear seguido y moverse por la lista
+
+Cinco defectos del conteo con el teléfono en la mano. Ninguno da error, y por
+eso los cinco llevaban meses: la pantalla se dibuja perfecta en los cinco casos.
+
+**Girar el teléfono devolvía la tabla de escritorio.** El corte `md` de Tailwind
+son 768px y un teléfono acostado mide más — iPhone 13 **844**, 15 Pro Max
+**932**, Android típico **915**. Al girar, las fichas se escondían y aparecía la
+tabla densa de 7 columnas, la que necesita 1028px, con campos de 56px y botones
+de mouse. El portal **ya sabía** que era un teléfono (por eso los filtros se van
+al clúster flotante); lo que faltaba era que la lista se lo preguntara. El único
+que se salvaba era el iPhone SE, y por accidente: 667px caen debajo del corte.
+
+**Y las dos maquetas estaban siempre montadas.** `md:hidden` esconde, no quita:
+cada renglón se dibujaba dos veces —una ficha y una fila de tabla, cada una con
+su campo de captura—. Con «Ver 100» eso son ~260 campos en un teléfono en vez de
+130. Ahora se monta una sola.
+
+**El teclado del teléfono no llevaba al siguiente renglón.** En la computadora,
+Enter salta al próximo sin contar y las flechas recorren; la ficha del teléfono
+no tenía nada de eso, así que era tocar, escribir, cerrar el teclado, scrollear y
+volver a tocar, treinta veces por página. Ahora la tecla dice **«siguiente»** y
+hace lo que dice — y salta sin cerrar el teclado.
+
+**Cambiar de página dejaba al FINAL de la lista nueva.** El paginador se traía a
+sí mismo a la vista, y está debajo de todo: como uno acababa de tocarlo, ya
+estaba en pantalla y nada se movía. La página nueva arrancaba entera por encima,
+o sea 25 fichas para subir a dedo antes de contar el primer producto. Ahora se
+va al principio de la lista, descontando el encabezado fijo de la computadora
+para que la primera fila no quede debajo.
+
+**Y «Ir al inicio» / «Ir al final» no existían en ningún teléfono.** Los dos
+botones estaban escritos hace tiempo, pero su detector de scroll miraba un
+contenedor que sólo scrollea desde 1024px: debajo de eso se mueve el documento,
+el evento no se disparaba nunca y los botones no aparecían — **en ninguna vista
+del portal**, no sólo en el conteo. Ahora escuchan al que scrollea de verdad,
+suben por encima de la barra flotante para no quedar detrás, y miden 44pt en
+lugar de 40.
+
+Los tres arreglos de la paginación y del scroll viven en componentes
+compartidos, así que alcanzan a las 17 vistas que los usan.
+
 ## v2.707.0 — Enviar producto a otra sala: la base del circuito
 
 Hasta hoy el portal sólo sabía **pedir**: la sala que no tiene abre una

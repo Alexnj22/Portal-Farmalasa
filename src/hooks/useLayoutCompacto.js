@@ -51,6 +51,45 @@ export function useLayoutCompacto() {
 }
 
 /**
+ * ¿Esta lista se dibuja en FICHAS en vez de en tabla?
+ *
+ * Es una pregunta distinta de la de arriba y por eso tiene su propio corte.
+ * `useLayoutCompacto` pregunta **con qué se apunta** —de eso dependen los
+ * blancos de dedo, la barra flotante y las hojas inferiores—. Ésta pregunta
+ * **si la tabla cabe**, que es geometría pura.
+ *
+ * ── Por qué no alcanzaba con `md:hidden` / `hidden md:block` ──────────────
+ * Las vistas resolvían esto con esas dos clases, o sea con el corte `md` de
+ * Tailwind: **768px**. Y un teléfono acostado mide más que eso:
+ *
+ *     iPhone 13 acostado        844 × 390
+ *     iPhone 15 Pro Max acost.  932 × 430
+ *     Android grande acostado   915 × 412
+ *
+ * Así que girar el teléfono escondía las fichas y sacaba la tabla densa — la
+ * misma que en el Conteo de inventario necesita 1028px para entrar sin scroll,
+ * con campos de 56px y botones pensados para un mouse. El único que se salvaba
+ * era el iPhone SE (667 acostado), y otra vez por accidente. Es exactamente el
+ * caso que motivó `useLayoutCompacto`, sin aplicar a la lista.
+ *
+ * ── Y por qué 767 y no 719 ────────────────────────────────────────────────
+ * Porque 767 es el `md` que esta consulta viene a reemplazar: entre 720 y 767
+ * la vista YA dibujaba fichas, y bajar el corte a 719 le metería la tabla a una
+ * franja donde hoy se ve bien. El número no es nuevo, es el que ya regía.
+ *
+ * ── Lo que se gana además: una sola maqueta en el DOM ─────────────────────
+ * `md:hidden` **esconde, no desmonta**. Con las dos clases, cada renglón se
+ * dibujaba dos veces —una ficha y una fila de tabla, cada una con su campo de
+ * captura—, y en el Conteo con «Ver 100» eso son ~260 campos en un teléfono en
+ * vez de 130. Con un booleano monta un árbol solo.
+ */
+const FICHAS = '(max-width: 767px), (hover: none) and (max-height: 500px)';
+
+export function useFichasEnVezDeTabla() {
+    return useMediaQuery(FICHAS);
+}
+
+/**
  * ¿El diálogo tiene que entrar de COSTADO en vez de desde abajo?
  *
  * Acostado, una hoja inferior es la forma equivocada y se puede medir: en un

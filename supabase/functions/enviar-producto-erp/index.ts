@@ -402,7 +402,7 @@ Deno.serve(async (req) => {
             await fallar(
               `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`
               + (nuevos.length
-                ? `. Ojo: salieron ${nuevos.length} traslado(s) más de esa sala en ese momento (${nuevos.join(", ")}), así que puede haber salido igual — comprobalo antes de reintentar.`
+                ? `. Ojo: salieron ${nuevos.length} traslado(s) más de esa sala en ese momento (${nuevos.join(", ")}), así que puede haber salido igual — compruébalo antes de reintentar.`
                 : ""),
             );
             continue;
@@ -474,7 +474,7 @@ Deno.serve(async (req) => {
           fallos.push({
             producto: "el aviso a la otra sala",
             error: `El producto salió pero no se pudo avisar a ${meta.branch_name ?? "la otra sala"}: `
-                 + `${avisoErr.message}. Avisales por otro medio.`,
+                 + `${avisoErr.message}. Avísales por otro medio.`,
           });
         }
         avisados = Number(n ?? 0);
@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
           ? {
             codigo: "SIN_TIEMPO",
             error: `No alcanzó el tiempo: salieron ${hechas.length} de ${pendientes.length} productos. `
-                 + `Volvé a darle a enviar para los que faltan.`,
+                 + `Vuelve a darle a enviar para los que faltan.`,
           }
           : {}),
       });
@@ -721,7 +721,7 @@ Deno.serve(async (req) => {
             // tal cual: dejarlo como «devuelta» sería inventar un movimiento.
             fallar(
               `${nombre} entró a tu sala pero el sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`
-              + (nuevos.length ? ` · salieron ${nuevos.length} traslado(s) en ese momento (${nuevos.join(", ")}): comprobalo antes de reintentar` : ""),
+              + (nuevos.length ? ` · salieron ${nuevos.length} traslado(s) en ese momento (${nuevos.join(", ")}): compruébalo antes de reintentar` : ""),
             );
             continue;
           }
@@ -805,7 +805,7 @@ Deno.serve(async (req) => {
           ? {
             codigo: "SIN_TIEMPO",
             error: `No alcanzó el tiempo: se resolvieron ${hechas.length} de ${trabajo.length} productos. `
-                 + `Volvé a darle para los que faltan.`,
+                 + `Vuelve a darle para los que faltan.`,
           }
           : {}),
       });

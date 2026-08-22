@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, Send } from 'lucide-react';
+import Button from '../../components/common/Button';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -10,6 +11,7 @@ import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
 import {
     fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '../../data/traslados';
+import { fetchEnviosVivos, momentoDelEnvio } from '../../data/envios';
 
 // Widget «Traslados entre Salas».
 //
@@ -36,7 +38,7 @@ import {
 /* ─── El contenido del modal ──────────────────────────────────────────────── */
 // Ya no pide nada: recibe las dos listas que la baldosa trajo al montarse, así
 // que abrir el modal muestra el contenido en vez de un esqueleto.
-function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
+function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
     const { hasPermission, user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
@@ -82,10 +84,31 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
      * sería la deriva que el encabezado de `FilasTraslado` viene a evitar. */
     const ahora = useNowTick(60_000);
 
-    const cargando = porConfirmar === null || porRecibir === null;
+    /* Los envíos, repartidos por MOMENTO — que es lo mismo que decir «por a
+     * quién le toca hacer algo». La pregunta se contesta en `momentoDelEnvio` y
+     * no acá: un envío le aparece a las dos salas y NO dice lo mismo a cada una,
+     * así que si cada pantalla lo resolviera por su cuenta terminarían mostrando
+     * estados distintos del mismo envío. */
+    const porMomento = useMemo(() => {
+        const g = { por_decidir: [], por_despachar: [], en_camino: [], por_recibir_devolucion: [] };
+        for (const e of envios ?? []) {
+            const m = momentoDelEnvio(e, miBranch);
+            if (g[m]) g[m].push(e);
+        }
+        return g;
+    }, [envios, miBranch]);
+
+    /* Enviar es `can_edit` —sacar producto de tu sala—, no `can_approve`, que es
+     * decidir sobre lo que llega. Y hace falta tener sala: quien no está
+     * asignado a una no tiene de dónde sacar el producto. */
+    const puedeEnviar = hasPermission('traslados', 'can_edit') && Boolean(miBranch);
+    const [abrirEnvio, setAbrirEnvio] = useState(false);
+
+    const cargando = porConfirmar === null || porRecibir === null || envios === null;
     const vacio = !cargando
         && (!puedeConfirmar || porConfirmar.length === 0)
-        && porRecibir.length === 0;
+        && porRecibir.length === 0
+        && (envios ?? []).length === 0;
 
     return (
         <div className="flex flex-col gap-4 flex-1 min-h-0">
@@ -105,6 +128,27 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                     </p>
                 </div>
             </div>
+
+            {/* Empujar producto a otra sala. Va ARRIBA y no al final: es lo
+                único que se puede EMPEZAR desde acá —todo lo demás es contestar
+                algo que ya existe—, y un botón de empezar debajo de una lista
+                de pendientes no se encuentra el día que la lista está larga. */}
+            {puedeEnviar && (
+                <Button variant="secondary" icon={Send} size="sm"
+                    className="shrink-0 min-h-[var(--tap-min)]"
+                    onClick={() => setAbrirEnvio(true)}>
+                    Enviar producto a otra sala
+                </Button>
+            )}
+
+            {abrirEnvio && (
+                <Suspense fallback={null}>
+                    <EnviarProductoModal
+                        onClose={() => setAbrirEnvio(false)}
+                        onListo={onCambio}
+                    />
+                </Suspense>
+            )}
 
             {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
@@ -155,6 +199,67 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                     </Suspense>
                 </div>
             )}
+
+            {/* ── Los envíos ────────────────────────────────────────────────
+                Van DESPUÉS del traslado y en su propio bloque: son el mismo
+                movimiento al revés, pero lo que hay que hacer con ellos es
+                distinto, y mezclarlos en una lista sola obligaría a leer cada
+                tarjeta para saber si te toca contestar o sólo mirar.
+
+                El orden es el de la urgencia: lo que espera una decisión tuya,
+                lo que se te quedó a medio salir, lo que te devuelven, y al final
+                lo que sólo hay que mirar. */}
+            {!cargando && porMomento.por_decidir.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        Te enviaron
+                    </p>
+                    <Suspense fallback={null}>
+                        {porMomento.por_decidir.map(e => (
+                            <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} />
+                        ))}
+                    </Suspense>
+                </div>
+            )}
+
+            {!cargando && porMomento.por_despachar.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        Sin salir de tu sala
+                    </p>
+                    <Suspense fallback={null}>
+                        {porMomento.por_despachar.map(e => (
+                            <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} />
+                        ))}
+                    </Suspense>
+                </div>
+            )}
+
+            {!cargando && porMomento.por_recibir_devolucion.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        Te devuelven
+                    </p>
+                    <Suspense fallback={null}>
+                        {porMomento.por_recibir_devolucion.map(e => (
+                            <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} />
+                        ))}
+                    </Suspense>
+                </div>
+            )}
+
+            {!cargando && porMomento.en_camino.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        Enviaste
+                    </p>
+                    <Suspense fallback={null}>
+                        {porMomento.en_camino.map(e => (
+                            <FilaEnvioEnCamino key={e.id} envio={e} />
+                        ))}
+                    </Suspense>
+                </div>
+            )}
         </div>
     );
 }
@@ -178,6 +283,19 @@ const FilaPorConfirmar = lazy(() =>
 const FilaPorRecibir = lazy(() =>
     import('../traslados/FilasTraslado').then(m => ({ default: m.FilaPorRecibir })));
 
+/* Y las del envío, por el mismo motivo: la mayor parte del tiempo no hay
+ * ninguno, y el compositor —que trae buscador, presentaciones y borrador— sólo
+ * hace falta cuando alguien va a mandar algo. */
+const FilaEnvioPorDecidir = lazy(() =>
+    import('../traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioPorDecidir })));
+const FilaEnvioPorDespachar = lazy(() =>
+    import('../traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioPorDespachar })));
+const FilaEnvioEnCamino = lazy(() =>
+    import('../traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioEnCamino })));
+const FilaDevolucionPorRecibir = lazy(() =>
+    import('../traslados/FilasEnvio').then(m => ({ default: m.FilaDevolucionPorRecibir })));
+const EnviarProductoModal = lazy(() => import('./EnviarProductoModal'));
+
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 //
 // Trae las listas al montarse y de ahí sale el número, igual que en «Facturas de
@@ -193,6 +311,7 @@ export default function WidgetTransferRequests() {
     const { user, getScope } = useAuth();
     const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
+    const [envios,       setEnvios]       = useState(null);
     const [pendientes,   setPendientes]   = useState(null);
     const [error,        setError]        = useState('');
 
@@ -213,13 +332,20 @@ export default function WidgetTransferRequests() {
         // La cobertura depende de la HORA, así que se pregunta en cada carga: a
         // las 17:00 Bodega cierra y sus traslados pasan a ser de quien la cubre.
         const cubiertas = branchId ? await fetchSalasQueCubro(branchId) : [];
-        const [a, b] = await Promise.all([
+        // Los envíos van en el MISMO viaje: son la otra mitad del movimiento y
+        // pedirlos aparte haría que la baldosa se dibuje dos veces, una con la
+        // mitad del contenido. Su alcance lo decide el RLS, no `branchId`.
+        const [a, b, c] = await Promise.all([
             fetchTrasladosPorConfirmar({ branchIds: branchId ? [branchId, ...cubiertas] : null }),
             fetchTrasladosPorRecibir({ branchId }),
+            fetchEnviosVivos(),
         ]);
-        if (a.error || b.error) setError((a.error ?? b.error).message ?? 'No se pudo leer.');
+        if (a.error || b.error || c.error) {
+            setError((a.error ?? b.error ?? c.error).message ?? 'No se pudo leer.');
+        }
         setPorConfirmar(a.filas);
         setPorRecibir(b.filas);
+        setEnvios(c.envios);
         setPendientes(a.total);
     }, [branchId]);
 
@@ -228,25 +354,39 @@ export default function WidgetTransferRequests() {
     // y mismo motivo que en `TrasladosView`.
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
+    /* El número de la baldosa cuenta lo que ESPERA UNA RESPUESTA TUYA, no las
+     * filas que hay: lo que te piden de tu sala más lo que te enviaron y todavía
+     * no miraste. Lo que está en camino no cuenta —no hay nada que hacer con
+     * ello— y por eso vive en el detalle. */
+    const porDecidir = useMemo(
+        () => (envios ?? []).filter(e => momentoDelEnvio(e, miBranch) === 'por_decidir').length,
+        [envios, miBranch],
+    );
+    const enVuelo = useMemo(() => {
+        const cuenta = (m) => (envios ?? []).filter(e => momentoDelEnvio(e, miBranch) === m).length;
+        return (porRecibir?.length ?? 0) + cuenta('en_camino') + cuenta('por_despachar')
+             + cuenta('por_recibir_devolucion');
+    }, [envios, miBranch, porRecibir]);
+
     return (
         <LanzadorSolicitud
             icon={ArrowLeftRight}
             label="Traslados entre salas"
-            pendientes={pendientes}
-            etiquetaPendientes="te piden"
-            etiquetaPendientesPlural="te piden"
+            pendientes={pendientes === null ? null : pendientes + porDecidir}
+            etiquetaPendientes="por contestar"
+            etiquetaPendientesPlural="por contestar"
             vacio="Sin traslados"
             tono="brand"
             maxWidth="max-w-lg"
-            descripcion="Pedir producto a otra sala, y confirmar lo que te piden"
+            descripcion="Pedir y enviar producto entre salas, y contestar lo que te llega"
             // Las dos mitades del mismo movimiento. La baldosa ya traía las dos
             // listas al montarse y pintaba SÓLO la primera: lo que uno está
             // esperando de otra sala —la mitad que hace levantar el teléfono—
             // estaba en memoria y no se mostraba. Cero consultas nuevas.
             instrumento={porConfirmar === null
                 ? <FranjaVacia />
-                : <Flujo entra={pendientes ?? 0} sale={porRecibir?.length ?? 0} />}
-            detalle={porRecibir?.length ? `${porRecibir.length} esperás` : null}
+                : <Flujo entra={(pendientes ?? 0) + porDecidir} sale={enVuelo} />}
+            detalle={enVuelo ? `${enVuelo} en vuelo` : null}
         >
             {/* Sin `min-h` ni scroller propio: el cuerpo canónico
                 (`LiquidModal.Body`) ya scrollea, y el alto lo topa el modal. */}
@@ -254,6 +394,7 @@ export default function WidgetTransferRequests() {
                 <PanelTraslados
                     porConfirmar={porConfirmar}
                     porRecibir={porRecibir}
+                    envios={envios}
                     error={error}
                     onCambio={cargar}
                 />

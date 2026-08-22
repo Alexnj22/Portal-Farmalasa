@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeftRight, Ban, History, PackageCheck } from 'lucide-react';
+import { ArrowLeftRight, Ban, History, PackageCheck, Send } from 'lucide-react';
+import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -18,7 +19,12 @@ import { ChipPersona } from './solicitudes/PersonasSolicitud';
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
+import { fetchEnviosVivos, momentoDelEnvio } from '../data/envios';
 import GrupoPorRecibir from './traslados/GrupoPorRecibir';
+import {
+    FilaEnvioPorDecidir, FilaEnvioPorDespachar, FilaEnvioEnCamino, FilaDevolucionPorRecibir,
+} from './traslados/FilasEnvio';
+import EnviarProductoModal from './dashboard/EnviarProductoModal';
 
 // Vista «Traslados entre Salas».
 //
@@ -69,6 +75,12 @@ import GrupoPorRecibir from './traslados/GrupoPorRecibir';
 
 const TABS = [
     { key: 'recibir',   label: 'En camino' },
+    // Los envíos son el mismo movimiento al revés —producto que sale de tu sala
+    // sin que nadie lo haya pedido— y por eso viven acá y no en otra pantalla.
+    // Pestaña propia y no mezclados en «En camino»: lo que hay que HACER con
+    // ellos es distinto, y en una lista sola habría que leer cada tarjeta para
+    // saber si te toca contestar o sólo mirar.
+    { key: 'envios',    label: 'Envíos' },
     { key: 'historial', label: 'Historial' },
 ];
 
@@ -121,7 +133,7 @@ const TIPOS = [
 ];
 
 export default function TrasladosView() {
-    const { user, getScope } = useAuth();
+    const { user, getScope, hasPermission } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const branches  = useStaffStore(s => s.branches);
     const personasDeSolicitudes = useStaffStore(s => s.personasDeSolicitudes);
@@ -155,6 +167,8 @@ export default function TrasladosView() {
 
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
+    const [envios,       setEnvios]       = useState(null);
+    const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     const [error,        setError]        = useState('');
     /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
      * contestaron no están en `porRecibir` —esa lista es de lo que ya salió—,
@@ -192,14 +206,19 @@ export default function TrasladosView() {
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
     // se resuelve cuando llega la respuesta, que es cuando se sabe.
     const cargar = useCallback(async () => {
-        const [b, c] = await Promise.all([
+        const [b, c, d] = await Promise.all([
             fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
             fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
+            // Su alcance lo decide el RLS, no `salaQueRecorta`: un envío le toca
+            // a las dos salas y cuál de las dos sos cambia lo que hay que hacer,
+            // no si se puede ver.
+            fetchEnviosVivos(),
         ]);
-        const fallo = b.error ?? c.error;
+        const fallo = b.error ?? c.error ?? d.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
         setHistorial(c.filas);
+        setEnvios(d.envios);
 
         /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
          * es un dato de adorno para las que no tienen hermanas, y pedirlo
@@ -270,13 +289,46 @@ export default function TrasladosView() {
         return { grupos, sueltas };
     }, [vistas.recibir]);
 
-    const cargando = porRecibir === null || historial === null;
+    /* Los envíos, repartidos por MOMENTO. La pregunta «¿a quién le toca?» la
+     * contesta `momentoDelEnvio` y no esta pantalla: el mismo envío le aparece a
+     * las dos salas y no dice lo mismo a cada una, así que dos pantallas que lo
+     * resuelvan por su cuenta terminan mostrando estados distintos. */
+    const porMomento = useMemo(() => {
+        // Una sola pasada del buscador sobre la lista entera, como en el resto
+        // de la vista: llamarlo por elemento vuelve a construir su índice en
+        // cada uno.
+        const todos = envios ?? [];
+        const base = busqueda.trim()
+            ? smartFilter(busqueda, todos, e => [
+                [e.origen_branch_name, e.branch_name, e.motivo_tipo, e.reason,
+                 ...(e.lineas ?? []).map(l => l.descripcion)].filter(Boolean).join(' '),
+            ]).results
+            : todos;
+        const g = { por_decidir: [], por_despachar: [], en_camino: [], por_recibir_devolucion: [] };
+        for (const e of base) {
+            const m = momentoDelEnvio(e, miBranch);
+            if (g[m]) g[m].push(e);
+        }
+        return g;
+    }, [envios, miBranch, busqueda]);
+
+    /* Enviar es `can_edit` —sacar producto de tu sala— y no `can_approve`, que
+     * es decidir sobre lo que llega. Y hace falta tener sala: quien no está
+     * asignado a una no tiene de dónde sacar el producto. */
+    const puedeEnviar = hasPermission('traslados', 'can_edit') && Boolean(miBranch);
+
+    const cargando = porRecibir === null || historial === null || envios === null;
 
     // El contador va en la pestaña y sale de lo que HAY, no de lo filtrado: un
     // número que baja al escribir en el buscador deja de decir cuánto falta.
     // El historial no lleva: es un archivo, no una cola que alguien vacía.
     const conCuenta = TABS.map(t => {
-        const total = t.key === 'recibir' ? (porRecibir ?? []).length : 0;
+        // El número dice lo que ESPERA UNA RESPUESTA, no cuántas filas hay: en
+        // «Envíos» eso es lo que te enviaron y todavía no miraste, no lo que
+        // está en camino —con eso no hay nada que hacer—.
+        const total = t.key === 'recibir' ? (porRecibir ?? []).length
+            : t.key === 'envios' ? porMomento.por_decidir.length
+            : 0;
         return { ...t, label: total > 0 ? `${t.label} · ${total}` : t.label };
     });
 
@@ -302,6 +354,7 @@ export default function TrasladosView() {
     const lista = vistas[activeTab] ?? [];
 
     const enHistorial = activeTab === 'historial';
+    const enEnvios    = activeTab === 'envios';
     const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0)
         + (enHistorial && !enSemanaActual ? 1 : 0);
     const limpiarTodo = () => { setSala(''); setTipo(''); setSemana(semanaActual); };
@@ -318,7 +371,7 @@ export default function TrasladosView() {
                 ancho del cuerpo y deja de leerse como píldora: se ve como una
                 barra vacía con un desplegable en la esquina, que fue lo
                 reportado — «el filter pill no es canónico». */}
-            {(alcanceTodas || enHistorial) && (
+            {(alcanceTodas || enHistorial) && !enEnvios && (
               <div className="flex justify-end px-4 md:px-5 pt-4">
                 <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}>
                     {alcanceTodas && (
@@ -363,8 +416,66 @@ export default function TrasladosView() {
               </div>
             )}
 
-            {/* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */}
-            {enHistorial ? (
+            {/* ── Los envíos ────────────────────────────────────────────────
+                Cuatro bloques, en orden de urgencia: lo que espera una decisión
+                tuya, lo que se te quedó a medio salir, lo que te devuelven, y al
+                final lo que sólo hay que mirar. Las tarjetas son las MISMAS del
+                widget — dos copias de la misma tarjeta terminan comportándose
+                distinto. */}
+            {enEnvios ? (
+                <div className="p-4 md:p-5 flex flex-col gap-4">
+                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+
+                    {puedeEnviar && (
+                        <div>
+                            <Button variant="secondary" icon={Send}
+                                className="min-h-[var(--tap-min)]"
+                                onClick={() => setAbrirEnvio(true)}>
+                                Enviar producto a otra sala
+                            </Button>
+                        </div>
+                    )}
+
+                    {abrirEnvio && (
+                        <EnviarProductoModal onClose={() => setAbrirEnvio(false)} onListo={cargar} />
+                    )}
+
+                    {cargando && <SkeletonText lines={4} />}
+
+                    {!cargando && Object.values(porMomento).every(v => v.length === 0) && (
+                        <EmptyState
+                            icon={Send}
+                            title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Sin envíos en curso'}
+                            subtitle={busqueda.trim() ? undefined
+                                : 'Acá aparece el producto que sale de tu sala hacia otra, y el que te mandan a ti.'}
+                        />
+                    )}
+
+                    {[
+                        { clave: 'por_decidir',            titulo: 'Te enviaron',        Fila: FilaEnvioPorDecidir },
+                        { clave: 'por_despachar',          titulo: 'Sin salir de tu sala', Fila: FilaEnvioPorDespachar },
+                        { clave: 'por_recibir_devolucion', titulo: 'Te devuelven',       Fila: FilaDevolucionPorRecibir },
+                        { clave: 'en_camino',              titulo: 'Enviaste',           Fila: FilaEnvioEnCamino },
+                    ].map(({ clave, titulo, Fila }) => (
+                        !cargando && porMomento[clave].length > 0 && (
+                            <div key={clave} className="flex flex-col gap-2">
+                                <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                                    {titulo}
+                                </p>
+                                {/* Misma rejilla que «En camino»: en un monitor,
+                                    una columna estira cada tarjeta a 1.700 px
+                                    para dos renglones de texto. */}
+                                <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
+                                    {porMomento[clave].map(e => (
+                                        <Fila key={e.id} envio={e} onHecho={cargar} />
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    ))}
+                </div>
+            ) : /* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */
+            enHistorial ? (
                 <div className="p-4 md:p-5">
                     <DataTable
                         columns={COLS_HISTORIAL}

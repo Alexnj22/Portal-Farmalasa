@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.709.0 — Enviar producto a otra sala: la pantalla
+
+Lo que faltaba para que el circuito se pueda usar. Todo vive en «Traslados entre
+salas» —la baldosa del tablero y la pantalla completa—, porque es el mismo
+movimiento: pedir y enviar son las dos direcciones de lo mismo, y en dos
+pantallas distintas habría que acordarse de mirar las dos.
+
+**Para mandar** (botón «Enviar producto a otra sala»): se busca el producto —el
+buscador mira TU sala, que es de donde va a salir—, se le pone la cantidad y la
+presentación, se agrega, y así con los que hagan falta. Al final, a qué sala va
+y por qué. El motivo es obligatorio: es lo único que le explica al otro lado por
+qué le llegó una caja que no pidió.
+
+Tres cosas que el formulario dice antes de que haga falta preguntarlas:
+
+- **De qué lote va a salir**, con su vencimiento. Un envío por «próximo a
+  vencer» existe justamente para mandar ESE lote, y verlo antes es la única
+  forma de saber que se está mandando el que se quería.
+- **Si entre varios renglones te estás pasando.** Dos renglones de 5 sobre una
+  existencia de 8 son dos renglones válidos y un envío imposible; eso se veía
+  recién al apretar.
+- **Qué va a pasar al apretar**: acá no hay nadie que apruebe primero, el
+  producto sale de tu sala en el momento.
+
+**Para contestar**, cuando te llega: producto por producto, «me la quedo» o
+«devolver» con su motivo. Nada viene marcado de antemano —hay «Aceptar todo»
+para el camino rápido, y es un acto explícito—: aceptar es meter el producto a
+tu inventario y hacerte responsable de venderlo.
+
+Y el formulario **guarda borrador**: la sesión de sala se cierra sola a los cinco
+minutos, y armar un envío de ocho productos y atender a alguien en el medio no
+puede significar volver a empezar.
+
 ## v2.708.1 — Enviar producto: la función que habla con el sistema
 
 `enviar-producto-erp`, con los tres momentos del circuito y **un movimiento por

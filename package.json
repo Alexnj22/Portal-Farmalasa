@@ -33,7 +33,13 @@
     "gate:permisos": "node scripts/permissions-gate.mjs",
     "fichas:diaria": "echo \"La corrida diaria ahora vive en Supabase (cron sincronizar-fichas-clientes-2130-sv). Para dispararla a mano, invocar la edge function.\"",
     "verificar:recepcion": "node scripts/verificar-recepcion.mjs",
-    "gate:eficiencia": "node scripts/eficiencia-gate.mjs"
+    "gate:eficiencia": "node scripts/eficiencia-gate.mjs",
+    "gate:auditoria": "node scripts/auditoria-gate.mjs",
+    "auditoria": "node scripts/auditoria-gate.mjs",
+    "auditoria:desbloquear": "node scripts/auditoria-cli.mjs desbloquear",
+    "auditoria:sellar": "node scripts/auditoria-cli.mjs sellar",
+    "auditoria:recalcular": "node scripts/auditoria-cli.mjs recalcular",
+    "auditoria:sincronizar": "node scripts/auditoria-cli.mjs sincronizar"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

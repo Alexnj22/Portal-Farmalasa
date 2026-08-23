@@ -64,6 +64,22 @@ fi
 # ── 3. Los gates ────────────────────────────────────────────────────────────────
 node scripts/version-gate.mjs || exit 1
 
+# auditoria-gate: corre SIEMPRE y sin condición, porque es el único que puede
+# decir «esto ya se auditó, no lo toques sin avisar». Acotarlo a ciertas rutas
+# lo dejaría ciego justo donde importa — un área congelada es congelada entera,
+# y la pieza que la rompe puede ser un util del chasis.
+#
+# En `--hook` no consulta nada externo: lee el mapa de auditoria/areas.mjs, el
+# registro de puntajes y el índice de git. Milisegundos.
+#
+# Bloquea si el commit toca un área CONGELADA sin desbloqueo abierto. Para
+# seguir: preguntarle al usuario, y después
+#   npm run auditoria:desbloquear -- <area> "motivo"
+# La otra mitad —volver a verificar y sellar— la exige `npm run gate:auditoria`
+# al cerrar, no acá: un gate que bloquea cada commit del trabajo en curso enseña
+# a escribir --no-verify, y a partir de ahí no protege nada.
+node scripts/auditoria-gate.mjs --hook || exit 1
+
 if git diff --cached --name-only | grep -q '^supabase/migrations'; then
   node scripts/migration-gate.mjs --hook || exit 1
 fi

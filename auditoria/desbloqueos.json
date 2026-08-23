@@ -1,0 +1,4 @@
+{
+  "nota": "Áreas congeladas que están abiertas ahora mismo. Mientras haya una acá, `npm run gate:auditoria` falla — es la mitad \"verificación después\" del candado.",
+  "abiertos": []
+}

@@ -1,0 +1,207 @@
+{
+  "nota": "Los puntajes de la auditoría. El mapa (qué archivo es de qué área) vive en areas.mjs. Este archivo se edita al AUDITAR; `pct` y `estado` los deriva `npm run auditoria:recalcular` y no se escriben a mano.",
+  "iniciado": "2026-08-23",
+  "recalculado": null,
+  "areas": {
+    "plataforma": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "acceso": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "permisos": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "tablero": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "personal": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "asistencia": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "horarios": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "nomina": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "solicitudes": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "comunicacion": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "sucursales": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "ventas": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "metas": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "cortes-efectivo": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "facturacion-dte": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "productos": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "inventario": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "minmax": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "pedidos": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "traslados": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "compras": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "fiscal": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "bitacoras": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "impresion": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    },
+    "sistema": {
+      "ejes": {},
+      "pct": 0,
+      "estado": "sin-auditar",
+      "sello_sala": null,
+      "hallazgos": [],
+      "verificaciones": []
+    }
+  }
+}

@@ -52,9 +52,17 @@ export const MOTIVOS_RECHAZO_ENVIO = [
     'Otro',
 ];
 
-/** Crea el envío. Los renglones, el aprobador y la validación los pone la base. */
+/**
+ * Crea el envío. Los renglones, el aprobador y la validación los pone la base.
+ *
+ * Acepta UNA fila o un ARRAY, y devuelve siempre la lista de ids. El array es
+ * cómo sale una composición que saca producto de VARIAS salas —un envío por
+ * sala de origen— y va en un solo `insert` a propósito: entran todos o no entra
+ * ninguno. Media composición enviada, sin forma de saber cuál mitad, es peor
+ * que ninguna.
+ */
 export function crearEnvio(payload) {
-    return supabase.from('approval_requests').insert(payload).select('id').single();
+    return supabase.from('approval_requests').insert(payload).select('id');
 }
 
 /**
@@ -145,11 +153,22 @@ export async function fetchEnviosHistorial(limite = 100) {
  */
 export function momentoDelEnvio(envio, miBranch) {
     const lineas = envio?.lineas ?? [];
-    const soyOrigen  = String(envio?.origen_branch_id ?? '') === String(miBranch ?? '');
     const hay = (estado) => lineas.some(l => l.estado === estado);
 
-    if (hay('por_enviar') || hay('error')) return soyOrigen ? 'por_despachar' : 'preparando';
-    if (hay('devuelta'))                   return soyOrigen ? 'por_recibir_devolucion' : 'devuelto';
+    const soyOrigen  = String(envio?.origen_branch_id ?? '') === String(miBranch ?? '');
+    const soyDestino = String(envio?.branch_id ?? '')        === String(miBranch ?? '');
+
+    /* ── Quien no es ninguna de las dos ────────────────────────────────────
+     * Con alcance sobre todas —supervisión, administración— se puede obrar por
+     * las dos salas, y muchas veces no se tiene sala propia. Sin esto, `miBranch`
+     * en null hacía `soyOrigen = false` para TODO: los envíos ajenos se le
+     * mostraban como «te enviaron» y los que estaban a medio despachar no
+     * aparecían por ninguna parte. Para ese caso el momento es el de la acción
+     * que está pendiente, sea de quien sea. */
+    const ajeno = !soyOrigen && !soyDestino;
+
+    if (hay('por_enviar') || hay('error')) return (soyOrigen || ajeno) ? 'por_despachar' : 'preparando';
+    if (hay('devuelta'))                   return (soyOrigen || ajeno) ? 'por_recibir_devolucion' : 'devuelto';
     if (hay('enviada'))                    return soyOrigen ? 'en_camino' : 'por_decidir';
     return 'cerrado';
 }

@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.713.0 — Envíos: multisala, dos columnas y un solo encabezado
+
+Cuatro correcciones sobre lo entregado ayer, las cuatro reportadas con capturas.
+
+**El envío ya pregunta de qué sala sale.** *«Como multisala no me pregunta la
+sucursal para hacer el traslado; si tiene el alcance todas debe salir en todos
+los que sean necesarios.»* El buscador daba por sentado que el producto salía de
+la sala de quien arma el envío — y quien tiene alcance sobre todas
+(supervisión, administración) muchas veces no tiene sala asignada, así que el
+botón ni siquiera le aparecía.
+
+Ahora, con alcance sobre todas, el buscador muestra **en qué salas hay y
+cuánto**, y cada renglón lleva la suya («desde Bodega», «desde Salud 2»). Al
+transferir sale **un envío por cada sala de origen**, todos hacia el mismo
+destino: es lo único que puede funcionar, porque el permiso para despacharlo, el
+documento del sistema con su vale y a quién se le avisa están clavados a una
+sala. La lista se elige sola —la propia si tiene, y si no la que más tiene— y se
+puede cambiar.
+
+Dos frenos nuevos que antes se descubrían recién al apretar: un renglón no puede
+salir de la misma sala a la que va el envío, y el aviso de «te estás pasando de
+existencia» ahora cuenta **por producto y por sala** (el mismo producto sacado de
+dos salas son dos existencias, y sumarlas inventaba un exceso donde no lo había).
+
+**Y el panel:** un solo encabezado —había dos, el del modal y otro idéntico
+adentro—, las tarjetas en **dos columnas** con el modal más ancho, y el botón de
+enviar en primario y a todo lo ancho, que era lo que se pedía con «que sea más
+evidente».
+
 ## v2.712.0 — Escanear el código de barras con la cámara
 
 Cierra lo que quedó abierto en v2.710.0: ahí el portal aprendió a **buscar** por

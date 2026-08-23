@@ -312,10 +312,11 @@ export default function TrasladosView() {
         return g;
     }, [envios, miBranch, busqueda]);
 
-    /* Enviar es `can_edit` —sacar producto de tu sala— y no `can_approve`, que
-     * es decidir sobre lo que llega. Y hace falta tener sala: quien no está
-     * asignado a una no tiene de dónde sacar el producto. */
-    const puedeEnviar = hasPermission('traslados', 'can_edit') && Boolean(miBranch);
+    /* Enviar es `can_edit` —sacar producto de una sala— y no `can_approve`, que
+     * es decidir sobre lo que llega. La sala propia hace falta sólo sin alcance
+     * sobre todas: con alcance se elige por renglón, y quien lo tiene —
+     * supervisión, administración— muchas veces no tiene sala asignada. */
+    const puedeEnviar = hasPermission('traslados', 'can_edit') && (alcanceTodas || Boolean(miBranch));
 
     const cargando = porRecibir === null || historial === null || envios === null;
 

@@ -39,7 +39,7 @@ import { fetchEnviosVivos, momentoDelEnvio } from '../../data/envios';
 // Ya no pide nada: recibe las dos listas que la baldosa trajo al montarse, así
 // que abrir el modal muestra el contenido en vez de un esqueleto.
 function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
-    const { hasPermission, user } = useAuth();
+    const { hasPermission, getScope, user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
 
@@ -98,10 +98,15 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
         return g;
     }, [envios, miBranch]);
 
-    /* Enviar es `can_edit` —sacar producto de tu sala—, no `can_approve`, que es
-     * decidir sobre lo que llega. Y hace falta tener sala: quien no está
-     * asignado a una no tiene de dónde sacar el producto. */
-    const puedeEnviar = hasPermission('traslados', 'can_edit') && Boolean(miBranch);
+    /* Enviar es `can_edit` —sacar producto de una sala—, no `can_approve`, que
+     * es decidir sobre lo que llega.
+     *
+     * Y la sala propia hace falta SÓLO sin alcance sobre todas. Exigirla siempre
+     * escondía el botón justo a quien más lo necesita: supervisión y
+     * administración no tienen sala asignada, y son quienes reparten un producto
+     * nuevo entre las siete. Con alcance, la sala se elige por renglón. */
+    const puedeEnviar = hasPermission('traslados', 'can_edit')
+        && (getScope('traslados') === 'ALL' || Boolean(miBranch));
     const [abrirEnvio, setAbrirEnvio] = useState(false);
 
     const cargando = porConfirmar === null || porRecibir === null || envios === null;
@@ -112,30 +117,27 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
 
     return (
         <div className="flex flex-col gap-4 flex-1 min-h-0">
-            {/* El encabezado NO es decoración: sin él el modal se abre en una
-                caja con un mensaje suelto y no dice qué se abrió. Los otros
-                widgets de la familia se explican solos por su contenido —cinco
-                tarjetas rotuladas, un buscador—; este puede estar vacío, y un
-                vacío sin título no se entiende. Visto en el navegador. */}
-            <div className="flex items-center gap-2.5 shrink-0">
-                <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                    <ArrowLeftRight size={16} strokeWidth={2} className="text-brand-text" />
-                </div>
-                <div className="min-w-0">
-                    <p className="text-body-sm font-black text-content leading-tight">Traslados entre salas</p>
-                    <p className="text-micro text-content-3 mt-0.5">
-                        Lo que te piden de tu sala y lo que viene en camino
-                    </p>
-                </div>
-            </div>
+            {/* ── Acá NO va un encabezado ──────────────────────────────────
+                Vivía uno —ícono, «Traslados entre salas» y su bajada— y
+                `LanzadorSolicitud` ya pinta exactamente eso en la cabecera del
+                modal: el mismo ícono, el mismo título y una bajada que dice lo
+                mismo con otras palabras. Reportado con una captura: «hay doble
+                encabezado».
+
+                La nota que lo justificaba —«sin él el modal se abre en una caja
+                con un mensaje suelto»— era cierta cuando este panel se dibujaba
+                sin cabecera propia del modal. Hoy la tiene, y repetirla roba el
+                alto que la lista necesita. */}
 
             {/* Empujar producto a otra sala. Va ARRIBA y no al final: es lo
                 único que se puede EMPEZAR desde acá —todo lo demás es contestar
                 algo que ya existe—, y un botón de empezar debajo de una lista
-                de pendientes no se encuentra el día que la lista está larga. */}
+                de pendientes no se encuentra el día que la lista está larga.
+                `primary` y ancho completo: es LA acción de esta pantalla, y en
+                secundario se leía como una fila más del listado. */}
             {puedeEnviar && (
-                <Button variant="secondary" icon={Send} size="sm"
-                    className="shrink-0 min-h-[var(--tap-min)]"
+                <Button variant="primary" icon={Send}
+                    className="shrink-0 min-h-[var(--tap-min)] w-full"
                     onClick={() => setAbrirEnvio(true)}>
                     Enviar producto a otra sala
                 </Button>
@@ -172,10 +174,16 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                             : 'Te piden'}
                     </p>
                     <Suspense fallback={null}>
-                        {porConfirmar.map(f => (
-                            <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
-                                miBranch={miBranch} />
-                        ))}
+                        {/* Dos columnas: en `max-w-3xl` una sola estira cada
+                            tarjeta a lo ancho del modal para tres renglones de
+                            texto, y cuatro traslados ya no entran en la
+                            pantalla. `auto-rows-fr` las iguala de alto. */}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porConfirmar.map(f => (
+                                <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
+                                    miBranch={miBranch} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -193,9 +201,11 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                             : 'En camino'}
                     </p>
                     <Suspense fallback={null}>
-                        {porRecibir.map(f => (
-                            <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
-                        ))}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porRecibir.map(f => (
+                                <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -215,9 +225,11 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Te enviaron
                     </p>
                     <Suspense fallback={null}>
-                        {porMomento.por_decidir.map(e => (
-                            <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} />
-                        ))}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porMomento.por_decidir.map(e => (
+                                <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -228,9 +240,11 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Sin salir de tu sala
                     </p>
                     <Suspense fallback={null}>
-                        {porMomento.por_despachar.map(e => (
-                            <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} />
-                        ))}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porMomento.por_despachar.map(e => (
+                                <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -241,9 +255,11 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Te devuelven
                     </p>
                     <Suspense fallback={null}>
-                        {porMomento.por_recibir_devolucion.map(e => (
-                            <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} />
-                        ))}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porMomento.por_recibir_devolucion.map(e => (
+                                <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -254,9 +270,11 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Enviaste
                     </p>
                     <Suspense fallback={null}>
-                        {porMomento.en_camino.map(e => (
-                            <FilaEnvioEnCamino key={e.id} envio={e} />
-                        ))}
+                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            {porMomento.en_camino.map(e => (
+                                <FilaEnvioEnCamino key={e.id} envio={e} />
+                            ))}
+                        </div>
                     </Suspense>
                 </div>
             )}
@@ -377,7 +395,11 @@ export default function WidgetTransferRequests() {
             etiquetaPendientesPlural="por contestar"
             vacio="Sin traslados"
             tono="brand"
-            maxWidth="max-w-lg"
+            // Ancho para DOS columnas de tarjetas. En `max-w-lg` cada tarjeta
+            // ocupaba el modal entero y la lista se leía como una tira infinita
+            // —reportado con una captura de cuatro traslados en camino, que ya
+            // no entraban en la pantalla—.
+            maxWidth="max-w-3xl"
             descripcion="Pedir y enviar producto entre salas, y contestar lo que te llega"
             // Las dos mitades del mismo movimiento. La baldosa ya traía las dos
             // listas al montarse y pintaba SÓLO la primera: lo que uno está

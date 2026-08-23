@@ -48,18 +48,39 @@ const fmtVence = (d) => d
     : 'sin fecha';
 
 export default function EnviarProductoModal({ onClose, onListo }) {
-    const { user } = useAuth();
+    const { user, getScope } = useAuth();
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? null;
     const claveBorrador = `envio_${miBranch ?? 'sin_sala'}`;
 
+    /* ── Quién puede mandar desde una sala que no es la suya ──────────────
+     *
+     * Con alcance sobre TODAS —supervisión, administración, bodega central— el
+     * envío no puede dar por sentado que el producto sale de la sala de quien
+     * lo arma: esa persona no tiene una sala en el sentido que este formulario
+     * necesita. Reportado así: «como multisala no me pregunta la sucursal para
+     * hacer el traslado; si tiene el alcance todas debe salir en todos los que
+     * sean necesarios».
+     *
+     * Entonces el buscador deja de recortar a una sala y cada renglón lleva la
+     * SUYA. Es la misma forma que ya tiene el compositor de pedir a otra sala,
+     * y por el mismo motivo: al mandar sale un envío POR SALA DE ORIGEN, porque
+     * todo lo que hay debajo está clavado a un origen —el permiso, el documento
+     * del sistema con su vale, y a quién se le avisa—.
+     *
+     * El servidor no se entera de esto: `validar_envio_producto` ya acepta
+     * cualquier origen para quien tiene alcance ALL, y lo rebota para quien no.
+     * Acá sólo se deja de esconder la pregunta. */
+    const alcanceTodo = getScope('traslados') === 'ALL';
+
     const [pestana, setPestana] = useState('agregar');
     const [termino, setTermino] = useState('');
     const [buscando, setBuscando] = useState(false);
     const [resultados, setResultados] = useState(null);
     const [elegido, setElegido] = useState(null);
+    const [origenErp, setOrigenErp] = useState(null);
     const [presentaciones, setPresentaciones] = useState([]);
     const [presIdx, setPresIdx] = useState('0');
     const [cantidad, setCantidad] = useState('1');
@@ -107,35 +128,55 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * envío que rebota al apretar. */
     useEffect(() => {
         const q = termino.trim();
-        if (q.length < MIN_LETRAS || !miErp) { setResultados(null); return; }
+        // Sin alcance sobre todas hace falta una sala propia: sin ella no hay de
+        // dónde sacar el producto. Con alcance, la sala se elige por renglón.
+        if (q.length < MIN_LETRAS || (!alcanceTodo && !miErp)) { setResultados(null); return; }
         let cancelado = false;
         setBuscando(true);
         const t = setTimeout(() => {
             buscarInventarioGlobalV2(q).then(({ filas }) => {
                 if (cancelado) return;
+                /* Un producto, sus salas. Antes esto se recortaba a la sala
+                 * propia y el resultado era un solo número; con alcance sobre
+                 * todas, el mismo producto está en varias y de cuál sale es
+                 * justamente la pregunta que faltaba. */
                 const porProducto = new Map();
                 for (const f of filas ?? []) {
-                    if (Number(f.erp_sucursal_id) !== Number(miErp)) continue;
-                    if (f.is_vencidos) continue;
+                    if (f.is_vencidos) continue;   // ese estante todavía no es origen
+                    if (!alcanceTodo && Number(f.erp_sucursal_id) !== Number(miErp)) continue;
+                    if (!NOMBRE_SALA[Number(f.erp_sucursal_id)]) continue;
                     if (!porProducto.has(f.erp_product_id)) {
                         porProducto.set(f.erp_product_id, {
                             erp_product_id: f.erp_product_id,
                             descripcion: f.descripcion,
-                            filas: [],
+                            porSala: new Map(),
                         });
                     }
-                    porProducto.get(f.erp_product_id).filas.push(f);
+                    const p = porProducto.get(f.erp_product_id);
+                    const erp = Number(f.erp_sucursal_id);
+                    if (!p.porSala.has(erp)) p.porSala.set(erp, []);
+                    p.porSala.get(erp).push(f);
                 }
                 setResultados([...porProducto.values()].map(p => ({
-                    ...p,
-                    unidades: sumaUnidades(p.filas),
-                    lotes: lotesEnUnidades(p.filas),
-                })).filter(p => p.unidades > 0));
+                    erp_product_id: p.erp_product_id,
+                    descripcion: p.descripcion,
+                    // Ordenadas por existencia: la que más tiene es la que puede
+                    // ceder sin quedarse corta, igual que al pedir.
+                    salas: [...p.porSala.entries()]
+                        .map(([erp, filas]) => ({
+                            erp,
+                            nombre: NOMBRE_SALA[erp] ?? `Sucursal ${erp}`,
+                            unidades: sumaUnidades(filas),
+                            lotes: lotesEnUnidades(filas),
+                        }))
+                        .filter(x => x.unidades > 0)
+                        .sort((a, b) => b.unidades - a.unidades),
+                })).filter(p => p.salas.length > 0));
                 setBuscando(false);
             }).catch(() => { if (!cancelado) { setResultados([]); setBuscando(false); } });
         }, 250);
         return () => { cancelado = true; clearTimeout(t); setBuscando(false); };
-    }, [termino, miErp]);
+    }, [termino, miErp, alcanceTodo]);
 
     // Las presentaciones del producto elegido. Viajan por SIGNIFICADO —tipo +
     // factor—, nunca por su id: el portal y el sistema de origen las numeran
@@ -152,28 +193,50 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         return () => { cancelado = true; };
     }, [elegido?.erp_product_id]);
 
+    /* De qué sala sale el producto en curso. Se elige sola —la propia si tiene,
+     * y si no la que más tiene—, pero se puede cambiar: con alcance sobre todas,
+     * cuál sala cede el producto es una decisión, no un dato. */
+    useEffect(() => {
+        if (!elegido) { setOrigenErp(null); return; }
+        const propia = elegido.salas.find(x => Number(x.erp) === Number(miErp));
+        setOrigenErp(String((propia ?? elegido.salas[0]).erp));
+    }, [elegido, miErp]);
+
+    const origen = elegido?.salas?.find(x => String(x.erp) === String(origenErp)) ?? null;
+
     const pres = presentaciones[Number(presIdx)] ?? null;
     const unidadesPedidas = (Number(cantidad) || 0) * (Number(pres?.factor) || 0);
     const reparto = useMemo(
-        () => (elegido && unidadesPedidas > 0
-            ? repartirPedido(elegido.lotes ?? [], unidadesPedidas)
+        () => (origen && unidadesPedidas > 0
+            ? repartirPedido(origen.lotes ?? [], unidadesPedidas)
             : { reparto: [], faltan: 0 }),
-        [elegido, unidadesPedidas],
+        [origen, unidadesPedidas],
     );
 
     const problemaDelPaso = !elegido ? 'Elige un producto.'
+        : !origen ? 'Elige de qué sala sale.'
         : !pres ? 'Elige la presentación.'
         : unidadesPedidas <= 0 ? 'Pon la cantidad.'
-        : unidadesPedidas > (elegido.unidades ?? 0)
-            ? `Tu sala tiene ${elegido.unidades} ${elegido.unidades === 1 ? 'unidad' : 'unidades'}.`
+        : unidadesPedidas > (origen.unidades ?? 0)
+            ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}.`
         : reparto.faltan > 0 ? `Faltan ${reparto.faltan} en los lotes.`
+        // El origen y el destino se eligen en dos momentos distintos y nada los
+        // ata: sin esto, un renglón podía salir de la misma sala a la que va —y
+        // eso el servidor lo rebota recién al apretar «Transferir».
+        : String(origen.erp) === String(destino)
+            ? `${origen.nombre} es la sala a la que va el envío.`
         : null;
 
     const agregar = useCallback(() => {
-        if (problemaDelPaso || !elegido || !pres) return;
+        if (problemaDelPaso || !elegido || !pres || !origen) return;
         setRenglones(r => [...r, {
             erp_product_id: elegido.erp_product_id,
             descripcion: elegido.descripcion,
+            // De qué sala sale ESTE renglón. Va en el renglón y no en el envío
+            // porque una composición puede sacar producto de varias salas, y al
+            // mandar sale un envío por cada una.
+            origen_erp: Number(origen.erp),
+            origen_nombre: origen.nombre,
             presentacion_tipo: pres.tipo,
             factor: Number(pres.factor),
             cantidad: Number(cantidad),
@@ -184,9 +247,9 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             // a vencer» sin decir cuál lote es exactamente lo contrario de lo
             // que se quiso hacer.
             lotes: reparto.reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma })),
-            // Cuántas tiene la sala AHORA. Es lo que deja avisar en la lista si
-            // se agregó dos veces el mismo producto y entre los dos se pasan.
-            existencia: elegido.unidades,
+            // Cuántas tiene ESA sala AHORA. Es lo que deja avisar en la lista
+            // si se agregó dos veces el mismo producto y entre los dos se pasan.
+            existencia: origen.unidades,
             presentaciones,
         }]);
         setElegido(null);
@@ -194,7 +257,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         setResultados(null);
         setCantidad('1');
         setPestana('lista');
-    }, [problemaDelPaso, elegido, pres, cantidad, unidadesPedidas, reparto, presentaciones]);
+    }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -221,24 +284,52 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * dos renglones válidos y un envío imposible, y eso hoy sólo se descubría
      * al apretar. */
     const excesos = useMemo(() => {
-        const porProducto = new Map();
+        // Por producto Y SALA: el mismo producto sacado de dos salas distintas
+        // son dos existencias distintas, y sumarlas inventaría un exceso donde
+        // no lo hay.
+        const porClave = new Map();
         for (const r of renglones) {
-            const a = porProducto.get(r.erp_product_id) ?? { unidades: 0, existencia: r.existencia ?? 0, nombre: r.descripcion };
+            const clave = `${r.erp_product_id}|${r.origen_erp ?? miErp}`;
+            const a = porClave.get(clave) ?? {
+                unidades: 0, existencia: r.existencia ?? 0,
+                nombre: r.descripcion, sala: r.origen_nombre ?? NOMBRE_SALA[miErp] ?? 'tu sala',
+            };
             a.unidades += r.unidades;
-            porProducto.set(r.erp_product_id, a);
+            porClave.set(clave, a);
         }
-        return [...porProducto.values()].filter(a => a.unidades > a.existencia);
-    }, [renglones]);
+        return [...porClave.values()].filter(a => a.unidades > a.existencia);
+    }, [renglones, miErp]);
 
+    /* A dónde puede ir. Sin alcance sobre todas, cualquiera menos la propia.
+     * Con alcance se ofrecen TODAS —quien manda no tiene una sala en este
+     * sentido— y lo que impide mandarse algo a sí misma es el freno por
+     * renglón: origen y destino no pueden ser la misma sala. */
     const salasDestino = useMemo(
         () => Object.entries(NOMBRE_SALA)
-            .filter(([erp]) => Number(erp) !== Number(miErp))
+            .filter(([erp]) => alcanceTodo || Number(erp) !== Number(miErp))
             .map(([erp, nombre]) => ({ value: erp, label: nombre })),
-        [miErp],
+        [miErp, alcanceTodo],
+    );
+
+    /* Los renglones que quedaron apuntando a la sala a la que va el envío.
+     * Puede pasar al revés del freno de arriba: se agrega el renglón y DESPUÉS
+     * se elige ese mismo destino. */
+    const chocanConElDestino = useMemo(
+        () => renglones.filter(r => destino && String(r.origen_erp ?? miErp) === String(destino)),
+        [renglones, destino, miErp],
+    );
+
+    /* ¿El envío saca de más de una sala? Es lo que decide si la lista tiene que
+     * decir de dónde sale cada renglón y si el pie habla de un envío o de
+     * varios. */
+    const variosOrigenes = useMemo(
+        () => new Set(renglones.map(r => Number(r.origen_erp ?? miErp))).size > 1,
+        [renglones, miErp],
     );
 
     const listoParaMandar = renglones.length > 0 && destino && motivo
         && excesos.length === 0
+        && chocanConElDestino.length === 0
         && !(motivo === 'Otro' && !nota.trim());
 
     const transferir = async () => {
@@ -247,7 +338,25 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         setError('');
         try {
             const erpDestino = Number(destino);
-            const fila = {
+
+            /* ── Una composición, un envío POR SALA DE ORIGEN ──────────────
+             *
+             * Todo lo que hay debajo está clavado a UN origen: el permiso que
+             * decide quién puede despacharlo, el documento del sistema —uno por
+             * origen, con su propio número de vale— y a quién se le avisa. Una
+             * sola fila con dos orígenes no se podría despachar ni recibir.
+             *
+             * Es la misma forma que ya tiene el compositor de pedir a otra
+             * sala, y el orden de los renglones dentro de cada envío importa:
+             * la posición es el nombre del renglón para todo el circuito. */
+            const porOrigen = new Map();
+            for (const r of renglones) {
+                const erp = Number(r.origen_erp ?? miErp);
+                if (!porOrigen.has(erp)) porOrigen.set(erp, []);
+                porOrigen.get(erp).push(r);
+            }
+
+            const filas = [...porOrigen.entries()].map(([erpOrigen, grupo]) => ({
                 employee_id: user?.id,
                 type: 'INVENTORY_TRANSFER_PUSH',
                 status: 'PENDING',
@@ -255,15 +364,17 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                 metadata: {
                     motivo_tipo: motivo,
                     reason: nota.trim() || motivo,
-                    // Mi sala: la que ENVÍA.
-                    origen_erp_sucursal_id: miErp,
-                    origen_branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
+                    // La sala que ENVÍA: la del renglón, no la de quien arma.
+                    origen_erp_sucursal_id: erpOrigen,
+                    origen_branch_name: grupo[0].origen_nombre
+                        ?? NOMBRE_SALA[erpOrigen]
+                        ?? user?.branchName ?? user?.branch_name ?? '',
                     // La que recibe. El `branch_id` lo resuelve la base desde el
                     // mapa: qué sala del portal es cada sucursal del sistema no
                     // lo decide el navegador.
                     erp_sucursal_id: erpDestino,
                     branch_name: NOMBRE_SALA[erpDestino] ?? '',
-                    items: renglones.map(r => ({
+                    items: grupo.map(r => ({
                         erp_product_id: r.erp_product_id,
                         descripcion: r.descripcion,
                         presentacion_tipo: r.presentacion_tipo,
@@ -272,35 +383,52 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                         lotes: r.lotes ?? null,
                     })),
                 },
-            };
+            }));
 
-            const { data, error: e } = await crearEnvio(fila);
+            /* Entran TODAS o no entra ninguna: un solo `insert`. Media
+             * composición enviada, sin forma de saber cuál mitad, es peor que
+             * ninguna. */
+            const { data, error: e } = await crearEnvio(filas);
             if (e) throw e;
 
             /* Y recién ahora sale el producto. Son dos pasos porque el primero
              * deja el rastro —con sus renglones, en la misma transacción— y el
              * segundo mueve inventario: si el segundo no sale, el envío queda
              * con todo por despachar y se retoma desde la tarjeta. Lo que no
-             * puede pasar es lo contrario. */
-            const r = await despacharEnvio(data.id);
+             * puede pasar es lo contrario.
+             *
+             * Uno por uno y no en paralelo: cada despacho abre su propia sesión
+             * contra el sistema de origen, y el sistema sigue a la sesión —dos
+             * a la vez podrían escribir con la sucursal de la otra. */
+            const creados = Array.isArray(data) ? data : [data];
+            const salidas = [];
+            for (const fila of creados) {
+                salidas.push(await despacharEnvio(fila.id));
+            }
+
+            const enviadas = salidas.reduce((n, x) => n + (x?.enviadas ?? 0), 0);
+            const fallos   = salidas.flatMap(x => x?.fallos ?? []);
+            const avisos   = [...new Set(salidas.map(x => x?.error).filter(Boolean))];
 
             await appendAuditLog('ENVIO_A_OTRA_SALA', String(miBranch ?? ''), {
-                envio: data.id,
+                envios: creados.map(x => x.id),
                 sala: NOMBRE_SALA[erpDestino] ?? erpDestino,
+                desde: [...porOrigen.keys()].map(erp => NOMBRE_SALA[erp] ?? erp),
                 productos: renglones.length,
                 unidades: renglones.reduce((s, x) => s + x.unidades, 0),
                 motivo,
-                enviadas: r?.enviadas ?? 0,
-                fallos: (r?.fallos ?? []).length,
+                enviadas,
+                fallos: fallos.length,
             });
 
             clearDraft(claveBorrador);
             setResultado({
                 sala: NOMBRE_SALA[erpDestino] ?? '',
+                desde: [...porOrigen.keys()].map(erp => NOMBRE_SALA[erp] ?? `Sucursal ${erp}`),
                 total: renglones.length,
-                enviadas: r?.enviadas ?? 0,
-                fallos: r?.fallos ?? [],
-                aviso: r?.error ?? null,
+                enviadas,
+                fallos,
+                aviso: avisos.length ? avisos.join(' · ') : null,
             });
             setRenglones([]);
             onListo?.();
@@ -347,9 +475,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                 <LiquidModal.Body className="flex flex-col gap-3">
                     <p className="text-body-sm text-content-2 font-medium leading-snug">
                         {nadaSalio
-                            ? `El envío a ${resultado.sala} quedó armado y el producto sigue en tu sala.`
+                            ? `El envío a ${resultado.sala} quedó armado y el producto sigue en su estante.`
                             : `Salieron ${resultado.enviadas} de ${resultado.total} ${
-                                resultado.total === 1 ? 'producto' : 'productos'} para ${resultado.sala}.`}
+                                resultado.total === 1 ? 'producto' : 'productos'} para ${resultado.sala}`
+                              + ((resultado.desde ?? []).length > 1
+                                  ? `, desde ${resultado.desde.join(' y ')}.`
+                                  : '.')}
                         {resultado.enviadas > 0 && ' Ya les avisamos: cuando abran la caja deciden qué se quedan.'}
                     </p>
                     {resultado.aviso && (
@@ -391,7 +522,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                     <div className="flex-1 min-w-0">
                         <p className="text-body font-black text-content leading-tight">Enviar a otra sala</p>
                         <p className="text-label text-content-3 mt-0.5">
-                            Producto que sale de tu sala hacia otra
+                            {/* «tu sala» sólo cuando de verdad es la propia: con
+                                alcance sobre todas, el producto sale de la sala
+                                que se elija en cada renglón. */}
+                            {alcanceTodo
+                                ? 'Producto que sale de una sala hacia otra'
+                                : 'Producto que sale de tu sala hacia otra'}
                         </p>
                     </div>
                     <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} aria-label="Cerrar" />
@@ -448,9 +584,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                                 <p className="text-body-sm font-black text-content leading-tight">
                                                     {p.descripcion}
                                                 </p>
+                                                {/* Dónde HAY, y cuánto. Con alcance sobre
+                                                    todas el mismo producto está en varias
+                                                    salas, y saber en cuáles es lo que
+                                                    decide de dónde conviene sacarlo. */}
                                                 <p className="text-micro font-semibold text-content-2 mt-0.5">
-                                                    {p.unidades} {p.unidades === 1 ? 'unidad' : 'unidades'}
-                                                    {p.lotes[0]?.vence ? ` · vence ${fmtVence(p.lotes[0].vence)}` : ''}
+                                                    {p.salas.map(x => `${x.nombre} ${x.unidades}`).join(' · ')}
                                                 </p>
                                             </button>
                                         ))}
@@ -467,13 +606,37 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                             {elegido.descripcion}
                                         </p>
                                         <p className="text-micro font-semibold text-content-2 mt-0.5">
-                                            Tu sala tiene {elegido.unidades}{' '}
-                                            {elegido.unidades === 1 ? 'unidad' : 'unidades'}
+                                            {origen
+                                                ? `${origen.nombre} tiene ${origen.unidades} ${
+                                                    origen.unidades === 1 ? 'unidad' : 'unidades'}`
+                                                : 'Elige de qué sala sale'}
                                         </p>
                                     </div>
                                     <Button variant="ghost" size="xs" icon={X} iconOnly
                                         onClick={() => setElegido(null)} aria-label="Elegir otro producto" />
                                 </div>
+
+                                {/* ── De qué sala sale ──────────────────────────
+                                    Sólo cuando hay más de una: con una sola, un
+                                    desplegable de un elemento es un control que no
+                                    decide nada. Y aparece ANTES de la cantidad
+                                    porque la cambia — cada sala tiene su existencia
+                                    y sus lotes. */}
+                                {elegido.salas.length > 1 && (
+                                    <div>
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sale de</p>
+                                        <LiquidSelect
+                                            clearable={false}
+                                            value={String(origenErp ?? '')}
+                                            onChange={v => setOrigenErp(String(v ?? ''))}
+                                            options={elegido.salas.map(x => ({
+                                                value: String(x.erp),
+                                                label: `${x.nombre} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}`,
+                                            }))}
+                                            ariaLabel="Sala de la que sale el producto"
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="flex flex-wrap items-end gap-2">
                                     <div className="w-24">
@@ -491,7 +654,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                             clearable={false}
                                             value={presIdx}
                                             onChange={v => setPresIdx(String(v))}
-                                            options={opcionesDePresentacion(presentaciones, elegido.unidades)}
+                                            options={opcionesDePresentacion(presentaciones, origen?.unidades ?? 0)}
                                             ariaLabel="Presentación"
                                         />
                                     </div>
@@ -553,6 +716,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                                         <p className="text-micro font-semibold text-content-2 mt-0.5 truncate">
                                                             {r.cantidad} × {r.presentacion_tipo}
                                                             {' · '}{r.unidades} {r.unidades === 1 ? 'unidad' : 'unidades'}
+                                                            {/* De qué sala sale, sólo cuando el envío
+                                                                saca de más de una: con una sola es un
+                                                                dato que se repite en cada renglón. */}
+                                                            {variosOrigenes && r.origen_nombre ? ` · desde ${r.origen_nombre}` : ''}
                                                         </p>
                                                     )}
                                                 </div>
@@ -607,10 +774,19 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                             </div>
                         )}
 
+                        {chocanConElDestino.length > 0 && (
+                            <p className="text-micro font-semibold text-danger-text leading-snug px-1">
+                                {chocanConElDestino.length === 1
+                                    ? `${chocanConElDestino[0].descripcion} sale de la misma sala a la que va el envío.`
+                                    : `${chocanConElDestino.length} productos salen de la misma sala a la que va el envío.`}
+                                {' '}Cámbiales la sala o elige otro destino.
+                            </p>
+                        )}
+
                         {excesos.map(x => (
-                            <p key={x.nombre} className="text-micro font-semibold text-danger-text leading-snug px-1">
-                                Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y tu sala
-                                tiene {x.existencia}.
+                            <p key={`${x.nombre}|${x.sala}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
+                                Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y{' '}
+                                {x.sala} tiene {x.existencia}.
                             </p>
                         ))}
 
@@ -666,8 +842,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                         el momento. */}
                     {pestana === 'lista' && renglones.length > 0 && (
                         <p className="text-micro text-content-3 font-medium leading-snug">
-                            Al transferir, el producto sale de tu sala y le avisamos a la otra. Ellos deciden
-                            qué se quedan cuando abran la caja.
+                            {variosOrigenes
+                                ? 'Al transferir sale un envío POR CADA sala de la que sacas producto, '
+                                  + 'y todos van a la misma sala de destino. '
+                                : 'Al transferir, el producto sale de la sala y le avisamos a la otra. '}
+                            Ellos deciden qué se quedan cuando abran la caja.
                         </p>
                     )}
                     <div className="flex items-center justify-end gap-2">

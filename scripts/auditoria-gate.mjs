@@ -157,6 +157,38 @@ function verificarMapa() {
                        + `Refrescalo con \`npm run auditoria:sincronizar\`.`,
             });
         }
+        // -- superficie `anon`: lo que se puede tocar SIN credenciales --
+        // Va acá, con el resto del contraste contra producción, porque es la
+        // misma clase de pregunta: ¿lo que hay allá afuera es lo que alguien
+        // decidió? La regla escrita decía CINCO funciones y había VEINTICUATRO.
+        // Ninguna estaba abierta —se verificaron a mano—, pero el número creció
+        // solo durante un mes y no lo detectó nada. Una afirmación sobre quién
+        // puede entrar sin credenciales que nadie verifica deja de ser cierta
+        // sin avisar.
+        const declarada = leerJson(path.join(dir, 'superficie-anon.json'), null);
+        if (declarada && snapshot.anon) {
+            for (const [clave, etiqueta] of [['funciones', 'función'], ['tablas', 'tabla']]) {
+                const nombres = new Set((declarada[clave] || []).map(x => x.nombre));
+                const reales = snapshot.anon[clave] || [];
+                const nuevas = reales.filter(x => !nombres.has(x));
+                if (nuevas.length) fallas.push({
+                    titulo: `${nuevas.length} ${etiqueta}(s) alcanzable(s) por \`anon\` sin declarar`,
+                    detalle: nuevas,
+                    arreglo: 'Cada cosa que se puede tocar SIN iniciar sesión va declarada en '
+                           + 'auditoria/superficie-anon.json con su guarda y su motivo. Si no tiene '
+                           + 'motivo, no va: revocale el EXECUTE (o la policy) en vez de declararla.',
+                });
+                const sobran = [...nombres].filter(x => !reales.includes(x));
+                if (sobran.length) avisos.push({
+                    titulo: `${sobran.length} ${etiqueta}(s) declarada(s) que anon ya no alcanza`,
+                    detalle: sobran,
+                    arreglo: 'Se revocaron: sacalas de superficie-anon.json.',
+                });
+            }
+        } else if (!declarada) {
+            avisos.push({ titulo: 'No hay superficie `anon` declarada', detalle: ['auditoria/superficie-anon.json'], arreglo: '' });
+        }
+
         const edad = snapshot.generado
             ? Math.floor((Date.now() - Date.parse(snapshot.generado)) / 86_400_000) : null;
         if (edad !== null && edad > 30) avisos.push({

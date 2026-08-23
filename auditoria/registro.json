@@ -1,207 +1,2461 @@
 {
-  "nota": "Los puntajes de la auditoría. El mapa (qué archivo es de qué área) vive en areas.mjs. Este archivo se edita al AUDITAR; `pct` y `estado` los deriva `npm run auditoria:recalcular` y no se escriben a mano.",
+  "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": null,
+  "recalculado": "2026-08-23",
   "areas": {
     "plataforma": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "el trabón al girar el teléfono está EN PAUSA"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 79,
+          "evidencia": "barrido: 2 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "catch-mudo: src/context/AuthContext.jsx:1000",
+            "catch-mudo: src/context/AuthContext.jsx:1040"
+          ]
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/system.js"
+          ]
+        },
+        "vista": {
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 89,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 1 texto(s) que nombran el sistema de origen",
+          "hallazgos": [
+            "src/components/common/SidebarSyncStatus.jsx:76 — <span className={`text-micro font-semibold uppercase tracking-wider ${"
+          ]
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 95,
+          "evidencia": "14 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "3 documento(s) vivos: DESIGN.md, CLAUDE.md, docs/CHECKLIST-VISTA-NUEVA.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 92,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] el trabón al girar el teléfono está EN PAUSA",
+        "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1000",
+        "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1040",
+        "[observabilidad] src/data/system.js",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[ux] src/components/common/SidebarSyncStatus.jsx:76 — <span className={`text-micro font-semibold uppercase tracking-wider ${"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "acceso": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 71,
+          "evidencia": "4 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta probar el lector físico en sala",
+            "falta que el papel conteste qué simbología lee el lector",
+            "falta prueba en vivo del candado doble",
+            "carné: turno y sala definido y sin implementar"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 83,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "FK sin índice: intentos_identidad.branch_id",
+            "identidad_vales: RLS encendido y CERO policies"
+          ]
+        },
+        "seguridad": {
+          "pct": 86,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+            "kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+            "kiosco_bitacora(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+            "kiosco_declarar_turno(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+            "kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+            "kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila"
+          ]
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "4 documento(s) vivos: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 87,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta probar el lector físico en sala",
+        "[flujo] falta que el papel conteste qué simbología lee el lector",
+        "[flujo] falta prueba en vivo del candado doble",
+        "[flujo] carné: turno y sala definido y sin implementar",
+        "[bd] FK sin índice: intentos_identidad.branch_id",
+        "[bd] identidad_vales: RLS encendido y CERO policies",
+        "[seguridad] kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[seguridad] kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[seguridad] kiosco_bitacora(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[seguridad] kiosco_declarar_turno(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[seguridad] kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[seguridad] kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "permisos": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "staff_salary: el salario viaja al navegador de cualquiera que abra el expediente"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 73,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "staff_salary: la pantalla ofrece un permiso de «datos sensibles» que no gatea NADA — ni en el navegador ni en el servidor"
+          ]
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/permissions.js"
+          ]
+        },
+        "vista": {
+          "pct": 86,
+          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 75,
+          "evidencia": "1 documento(s) vivos: docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 85,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] staff_salary: el salario viaja al navegador de cualquiera que abra el expediente",
+        "[seguridad] staff_salary: la pantalla ofrece un permiso de «datos sensibles» que no gatea NADA — ni en el navegador ni en el servidor",
+        "[observabilidad] src/data/permissions.js",
+        "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "tablero": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 83,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/views/DashboardView.jsx",
+            "formulario largo sin borrador: src/views/dashboard/WidgetAnnulmentRequest.jsx",
+            "formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/dashboard.js"
+          ]
+        },
+        "vista": {
+          "pct": 89,
+          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 84,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240) · gate:bundle EN ROJO: 1 kB sobre el techo",
+          "hallazgos": [
+            "gate:bundle en rojo: 1 kB sobre el techo declarado"
+          ]
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 87,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios",
+        "[resiliencia] formulario largo sin borrador: src/views/DashboardView.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetAnnulmentRequest.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx",
+        "[observabilidad] src/data/dashboard.js",
+        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[eficiencia] gate:bundle en rojo: 1 kB sobre el techo declarado",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "personal": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta el APK nuevo de la cámara en Android y probarlo en sala"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 73,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "el salario de todo el personal viaja al navegador de cualquiera que abra un expediente (ver permisos/staff_salary)"
+          ]
+        },
+        "resiliencia": {
+          "pct": 64,
+          "evidencia": "barrido: 0 catch callado, 3 botón sin freno · gate:borradores: 4 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2151",
+            "submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2167",
+            "submit-sin-freno: src/views/EmployeeDetailView.jsx:1198",
+            "formulario largo sin borrador: src/components/forms/EmployeeFormModal.jsx",
+            "formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
+            "formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
+            "formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/employees.js",
+            "src/data/practicantes.js"
+          ]
+        },
+        "vista": {
+          "pct": 71,
+          "evidencia": "gate:design en verde · 9 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "9 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 82,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
+        "[seguridad] el salario de todo el personal viaja al navegador de cualquiera que abra un expediente (ver permisos/staff_salary)",
+        "[resiliencia] submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2151",
+        "[resiliencia] submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2167",
+        "[resiliencia] submit-sin-freno: src/views/EmployeeDetailView.jsx:1198",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/EmployeeFormModal.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx",
+        "[observabilidad] src/data/employees.js",
+        "[observabilidad] src/data/practicantes.js",
+        "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "asistencia": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/attendanceAudit.js"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[observabilidad] src/data/attendanceAudit.js",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "horarios": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 93,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "FK sin índice: schedule_coverage.home_branch_id"
+          ]
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "holidays y shifts: legibles por anon con USING(true), sin motivo escrito"
+          ]
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/schedules.js",
+            "src/data/vacationPlans.js"
+          ]
+        },
+        "vista": {
+          "pct": 77,
+          "evidencia": "gate:design en verde · 7 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "7 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[bd] FK sin índice: schedule_coverage.home_branch_id",
+        "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
+        "[observabilidad] src/data/schedules.js",
+        "[observabilidad] src/data/vacationPlans.js",
+        "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "nomina": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/payroll.js"
+          ]
+        },
+        "vista": {
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
+        "[observabilidad] src/data/payroll.js",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "solicitudes": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar"
+          ]
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/requests.js"
+          ]
+        },
+        "vista": {
+          "pct": 89,
+          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 89,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[seguridad] asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar",
+        "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
+        "[observabilidad] src/data/requests.js",
+        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "comunicacion": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "push llega a 4 de 59 — la mayoría de los avisos no salen del portal"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/views/EncuestaAdminView.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/encuestas.js",
+            "src/data/notifications.js"
+          ]
+        },
+        "vista": {
+          "pct": 59,
+          "evidencia": "gate:design en verde · 13 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "13 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 84,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] push llega a 4 de 59 — la mayoría de los avisos no salen del portal",
+        "[resiliencia] formulario largo sin borrador: src/views/EncuestaAdminView.jsx",
+        "[observabilidad] src/data/encuestas.js",
+        "[observabilidad] src/data/notifications.js",
+        "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "sucursales": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado"
+          ]
+        },
+        "resiliencia": {
+          "pct": 79,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 4 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/components/forms/BranchTabGeneral.jsx",
+            "formulario largo sin borrador: src/components/forms/BranchTabInmueble.jsx",
+            "formulario largo sin borrador: src/components/forms/BranchTabLegal.jsx",
+            "formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 83,
+          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "5 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 83,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 2 texto(s) que nombran el sistema de origen",
+          "hallazgos": [
+            "src/views/branch-tabs/TabStaff.jsx:226 — const { data, error } = await supabase.functions.invoke('sync-wfm-sale",
+            "src/views/branch-tabs/TabStaff.jsx:287 — aria-label=\"Progreso de la sincronización histórica\">"
+          ]
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 86,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[seguridad] branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabGeneral.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabInmueble.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabLegal.jsx",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
+        "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[ux] src/views/branch-tabs/TabStaff.jsx:226 — const { data, error } = await supabase.functions.invoke('sync-wfm-sale",
+        "[ux] src/views/branch-tabs/TabStaff.jsx:287 — aria-label=\"Progreso de la sincronización histórica\">",
+        "[pruebas] ninguna prueba nombra un archivo de esta área",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "ventas": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 77,
+          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "la brecha de mayo/2025 en el acumulado diario: $117,509.80 en 85 pares",
+            "falta verlo en sala (lo que no es venta de productos)",
+            "hay ventas de gente de Bodega en salas, sin revisar"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 92,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "índice nunca usado: idx_psr_sucursal_producto (456 kB)",
+            "índice nunca usado: idx_changelog_branch_detected (392 kB)"
+          ]
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 92,
+          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] la brecha de mayo/2025 en el acumulado diario: $117,509.80 en 85 pares",
+        "[flujo] falta verlo en sala (lo que no es venta de productos)",
+        "[flujo] hay ventas de gente de Bodega en salas, sin revisar",
+        "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",
+        "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
+        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "metas": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/views/metas/GastoModal.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 75,
+          "evidencia": "1 documento(s) vivos: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 90,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[resiliencia] formulario largo sin borrador: src/views/metas/GastoModal.jsx",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "cortes-efectivo": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 77,
+          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta probar en sala",
+            "el −$621.17 falso de Salud 1 sin explicar",
+            "falta probar las bolsas en sala"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 93,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "FK sin índice: cortes_caja_eventos.employee_id"
+          ]
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 95,
+          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 85,
+          "evidencia": "2 documento(s) vivos: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 92,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta probar en sala",
+        "[flujo] el −$621.17 falso de Salud 1 sin explicar",
+        "[flujo] falta probar las bolsas en sala",
+        "[bd] FK sin índice: cortes_caja_eventos.employee_id",
+        "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "facturacion-dte": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 95,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "índice nunca usado: idx_customers_erp_id (968 kB)"
+          ]
+        },
+        "seguridad": {
+          "pct": 92,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "es_telefono_sv_valido(): sin SET search_path — viola la regla 4 del hardening",
+            "customer_ficha_estado(): sin SET search_path — viola la regla 4 del hardening",
+            "es_cliente_mostrador(): sin SET search_path — viola la regla 4 del hardening"
+          ]
+        },
+        "resiliencia": {
+          "pct": 78,
+          "evidencia": "barrido: 0 catch callado, 1 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "submit-sin-freno: src/views/CotizacionesView.jsx:1101",
+            "formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
+            "formulario largo sin borrador: src/views/CotizacionesView.jsx",
+            "formulario largo sin borrador: src/views/FacturacionView.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/cotizaciones.js",
+            "src/data/facturacion.js"
+          ]
+        },
+        "vista": {
+          "pct": 92,
+          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 71,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 4 texto(s) que nombran el sistema de origen",
+          "hallazgos": [
+            "src/components/forms/FormClienteDetail.jsx:140 — ? <Badge size=\"sm\" variant=\"neutral\">Descartado: el ERP ya tenía otro ",
+            "src/components/forms/FormClienteDetail.jsx:289 — 'Guardado, pendiente de enviar al ERP',",
+            "src/components/forms/FormClienteDetail.jsx:542 — : <Badge variant=\"neutral\">Sin portar del ERP</Badge>}",
+            "src/components/forms/FormClienteDetail.jsx:554 — placeholder=\"Notas internas del portal (no viajan al ERP)\""
+          ]
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "3 documento(s) vivos: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/RETOMAR-CLIENTES-2026-08-01.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 86,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[bd] índice nunca usado: idx_customers_erp_id (968 kB)",
+        "[seguridad] es_telefono_sv_valido(): sin SET search_path — viola la regla 4 del hardening",
+        "[seguridad] customer_ficha_estado(): sin SET search_path — viola la regla 4 del hardening",
+        "[seguridad] es_cliente_mostrador(): sin SET search_path — viola la regla 4 del hardening",
+        "[resiliencia] submit-sin-freno: src/views/CotizacionesView.jsx:1101",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/CotizacionesView.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/FacturacionView.jsx",
+        "[observabilidad] src/data/cotizaciones.js",
+        "[observabilidad] src/data/facturacion.js",
+        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[ux] src/components/forms/FormClienteDetail.jsx:140 — ? <Badge size=\"sm\" variant=\"neutral\">Descartado: el ERP ya tenía otro ",
+        "[ux] src/components/forms/FormClienteDetail.jsx:289 — 'Guardado, pendiente de enviar al ERP',",
+        "[ux] src/components/forms/FormClienteDetail.jsx:542 — : <Badge variant=\"neutral\">Sin portar del ERP</Badge>}",
+        "[ux] src/components/forms/FormClienteDetail.jsx:554 — placeholder=\"Notas internas del portal (no viajan al ERP)\""
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "productos": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 89,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "índice nunca usado: idx_products_pa_trgm (592 kB)",
+            "índice nunca usado: idx_products_pactivo_norm_trgm (592 kB)",
+            "índice nunca usado: idx_product_precios_history_pres (448 kB)"
+          ]
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/views/productos/TabCatalogo.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 65,
+          "evidencia": "barrido: 3 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/laboratorios.js",
+            "src/data/minmaxLabs.js",
+            "src/data/productos.js"
+          ]
+        },
+        "vista": {
+          "pct": 83,
+          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "5 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 76,
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[bd] índice nunca usado: idx_products_pa_trgm (592 kB)",
+        "[bd] índice nunca usado: idx_products_pactivo_norm_trgm (592 kB)",
+        "[bd] índice nunca usado: idx_product_precios_history_pres (448 kB)",
+        "[resiliencia] formulario largo sin borrador: src/views/productos/TabCatalogo.jsx",
+        "[observabilidad] src/data/laboratorios.js",
+        "[observabilidad] src/data/minmaxLabs.js",
+        "[observabilidad] src/data/productos.js",
+        "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "inventario": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 86,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "índice nunca usado: idx_igmv_desc_trgm (1976 kB)",
+            "índice nunca usado: idx_igmv_desc_norm_trgm (1976 kB)",
+            "índice nunca usado: idx_conteo_items_source_sync_key (768 kB)",
+            "índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)"
+          ]
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/ventasPerdidas.js"
+          ]
+        },
+        "vista": {
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 69,
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 75,
+          "evidencia": "1 documento(s) vivos: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 90,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[bd] índice nunca usado: idx_igmv_desc_trgm (1976 kB)",
+        "[bd] índice nunca usado: idx_igmv_desc_norm_trgm (1976 kB)",
+        "[bd] índice nunca usado: idx_conteo_items_source_sync_key (768 kB)",
+        "[bd] índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)",
+        "[observabilidad] src/data/ventasPerdidas.js",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "minmax": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "MIN·MAX no lee el factor",
+            "falta el 1-sep del cron de La Popular"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/minmaxRequests.js"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 76,
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "3 documento(s) vivos: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 91,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] MIN·MAX no lee el factor",
+        "[flujo] falta el 1-sep del cron de La Popular",
+        "[observabilidad] src/data/minmaxRequests.js",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "pedidos": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 71,
+          "evidencia": "4 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "faltan el brazo del sobrante y el cron de 3 días (decisión de diferencias)",
+            "falta que alguien confirme el lote que llegó — que es lo legal",
+            "falta una ruta real (conductor = creador)",
+            "faltan el aviso a bodega y el camino del sobrante en la devolución"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 73,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "FK sin índice: pedido_traslado_linea.erp_sucursal_id (2.5 MB)",
+            "FK sin índice: pedido_apoyo.employee_id",
+            "FK sin índice: pedido_recepcion_extras.erp_product_id",
+            "FK sin índice: pedido_recepcion_firmas.employee_id",
+            "FK sin índice: pedido_items.confirmado_suc_por + rechazado_por (17 MB — la tabla NO es pequeña)"
+          ]
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger"
+          ]
+        },
+        "resiliencia": {
+          "pct": 81,
+          "evidencia": "barrido: 0 catch callado, 2 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "submit-sin-freno: src/views/pedidos/TabPedidos.jsx:817",
+            "submit-sin-freno: src/views/pedidos/TabPedidos.jsx:828",
+            "formulario largo sin borrador: src/views/pedidos/RecepcionModal.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/dispatchRules.js",
+            "src/data/recepcion.js"
+          ]
+        },
+        "vista": {
+          "pct": 74,
+          "evidencia": "gate:design en verde · 8 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+            "tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada"
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 95,
+          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "3 documento(s) vivos: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/PRUEBA-TRASLADO-2026-08-11.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 86,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] faltan el brazo del sobrante y el cron de 3 días (decisión de diferencias)",
+        "[flujo] falta que alguien confirme el lote que llegó — que es lo legal",
+        "[flujo] falta una ruta real (conductor = creador)",
+        "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
+        "[bd] FK sin índice: pedido_traslado_linea.erp_sucursal_id (2.5 MB)",
+        "[bd] FK sin índice: pedido_apoyo.employee_id",
+        "[bd] FK sin índice: pedido_recepcion_extras.erp_product_id",
+        "[bd] FK sin índice: pedido_recepcion_firmas.employee_id",
+        "[bd] FK sin índice: pedido_items.confirmado_suc_por + rechazado_por (17 MB — la tabla NO es pequeña)",
+        "[seguridad] notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger",
+        "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:817",
+        "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:828",
+        "[resiliencia] formulario largo sin borrador: src/views/pedidos/RecepcionModal.jsx",
+        "[observabilidad] src/data/dispatchRules.js",
+        "[observabilidad] src/data/recepcion.js",
+        "[vista] 8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "traslados": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 65,
+          "evidencia": "5 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta la PRIMERA CORRIDA contra inventario real (enviar producto a otra sala)",
+            "falta la primera composición real y el primer despacho de menos",
+            "falta que alguien pida del área de vencidos y que Bodega lo despache",
+            "falta verlo en pantalla (lo confirma la sala)",
+            "falta probar la sala de respaldo después de las 17:00"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger"
+          ]
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/envios.js",
+            "src/data/traslados.js"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 71,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240) · gate:bundle EN ROJO: 14 kB sobre el techo",
+          "hallazgos": [
+            "gate:bundle en rojo: 14 kB sobre el techo declarado"
+          ]
+        },
+        "pruebas": {
+          "pct": 95,
+          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 85,
+          "evidencia": "2 documento(s) vivos: docs/RETOMAR-TRASLADOS-2026-08-06.md, docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta la PRIMERA CORRIDA contra inventario real (enviar producto a otra sala)",
+        "[flujo] falta la primera composición real y el primer despacho de menos",
+        "[flujo] falta que alguien pida del área de vencidos y que Bodega lo despache",
+        "[flujo] falta verlo en pantalla (lo confirma la sala)",
+        "[flujo] falta probar la sala de respaldo después de las 17:00",
+        "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
+        "[observabilidad] src/data/envios.js",
+        "[observabilidad] src/data/traslados.js",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[eficiencia] gate:bundle en rojo: 14 kB sobre el techo declarado"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "compras": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 71,
+          "evidencia": "4 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta correr el barrido contra los documentos reales",
+            "falta el plazo de los 163 proveedores y el insert al sistema",
+            "6 pares de compras que comparten sello",
+            "las recetas están medidas (5 reales) y sin construir"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 96,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada"
+          ]
+        },
+        "resiliencia": {
+          "pct": 83,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
+            "formulario largo sin borrador: src/views/purchases/CuentasPorPagarView.jsx",
+            "formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx"
+          ]
+        },
+        "observabilidad": {
+          "pct": 74,
+          "evidencia": "barrido: 2 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/cuentasPorPagar.js",
+            "src/data/facturasCompra.js"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 53,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 7 texto(s) que nombran el sistema de origen",
+          "hallazgos": [
+            "src/components/forms/FormProveedorDetail.jsx:243 — setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pu",
+            "src/views/purchases/FacturasCompraView.jsx:339 — if (state === 'not_found') return <LiquidTooltip content={`Código comp",
+            "src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,",
+            "src/views/purchases/FacturasCompraView.jsx:970 — ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sin",
+            "src/views/purchases/FacturasCompraView.jsx:971 — : 'Sincronizar',",
+            "src/views/purchases/FacturasCompraView.jsx:1465 — 'Sincronización completa',",
+            "src/views/purchases/FacturasCompraView.jsx:1471 — useToastStore.getState().showToast('Error al sincronizar', mensajeAmig"
+          ]
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 85,
+          "evidencia": "2 documento(s) vivos: docs/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 83,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta correr el barrido contra los documentos reales",
+        "[flujo] falta el plazo de los 163 proveedores y el insert al sistema",
+        "[flujo] 6 pares de compras que comparten sello",
+        "[flujo] las recetas están medidas (5 reales) y sin construir",
+        "[seguridad] update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada",
+        "[resiliencia] formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/purchases/CuentasPorPagarView.jsx",
+        "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
+        "[observabilidad] src/data/cuentasPorPagar.js",
+        "[observabilidad] src/data/facturasCompra.js",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[ux] src/components/forms/FormProveedorDetail.jsx:243 — setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pu",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:339 — if (state === 'not_found') return <LiquidTooltip content={`Código comp",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:970 — ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sin",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:971 — : 'Sincronizar',",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:1465 — 'Sincronización completa',",
+        "[ux] src/views/purchases/FacturasCompraView.jsx:1471 — useToastStore.getState().showToast('Error al sincronizar', mensajeAmig"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "fiscal": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 77,
+          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "art.162 retención IVA $48.95 sin resolver",
+            "art.156 retención renta $262.52 sin marcar",
+            "libros de compras: quedan hallazgos abiertos"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente"
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 95,
+          "evidencia": "5 documento(s) vivos: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 90,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] art.162 retención IVA $48.95 sin resolver",
+        "[flujo] art.156 retención renta $262.52 sin marcar",
+        "[flujo] libros de compras: quedan hallazgos abiertos",
+        "[vista] LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "bitacoras": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta la consulta al CSSP desde el portal",
+            "falta el aviso de franja por vencerse"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/bitacoras.js"
+          ]
+        },
+        "vista": {
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 75,
+          "evidencia": "1 documento(s) vivos: docs/PLAN-BITACORAS-SRS-2026-08-16.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 88,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] falta la consulta al CSSP desde el portal",
+        "[flujo] falta el aviso de franja por vencerse",
+        "[observabilidad] src/data/bitacoras.js",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "impresion": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 77,
+          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)",
+            "falta medir el ancho del rollo",
+            "sigue sin probarse en otra sala"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 93,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": [
+            "FK sin índice: cola_impresion.dispositivo"
+          ]
+        },
+        "seguridad": {
+          "pct": 92,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": [
+            "canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
+            "confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
+            "reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro"
+          ]
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 92,
+          "evidencia": "barrido: 0 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": [
+            "tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular"
+          ]
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 83,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": [
+            "402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
+          ]
+        },
+        "pruebas": {
+          "pct": 76,
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 75,
+          "evidencia": "1 documento(s) vivos: docs/IMPRESION-EN-TICKETERA-2026-08-13.md",
+          "hallazgos": []
+        }
+      },
+      "pct": 89,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)",
+        "[flujo] falta medir el ancho del rollo",
+        "[flujo] sigue sin probarse en otra sala",
+        "[bd] FK sin índice: cola_impresion.dispositivo",
+        "[seguridad] canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
+        "[seguridad] confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
+        "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
+        "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     },
     "sistema": {
-      "ejes": {},
-      "pct": 0,
-      "estado": "sin-auditar",
+      "ejes": {
+        "flujo": {
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "auditoría 2026-07-30: quedan puntos abiertos",
+            "auditoría DTE proveedores: H5b y D"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 85,
+          "evidencia": "barrido: 0 catch callado, 2 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": [
+            "submit-sin-freno: src/views/IOSTestView.jsx:197",
+            "submit-sin-freno: src/views/IOSTestView.jsx:343"
+          ]
+        },
+        "observabilidad": {
+          "pct": 83,
+          "evidencia": "barrido: 1 archivo(s) de src/data que escriben y no nombran appendAuditLog",
+          "hallazgos": [
+            "src/data/orphanObjects.js"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 85,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17",
+          "hallazgos": [
+            "el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 40,
+          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": [
+            "ninguna prueba nombra un archivo de esta área"
+          ]
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "hallazgos": [
+            "el área no tiene ni un documento propio en docs/"
+          ]
+        }
+      },
+      "pct": 86,
+      "estado": "en-curso",
       "sello_sala": null,
-      "hallazgos": [],
-      "verificaciones": []
+      "hallazgos": [
+        "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
+        "[flujo] auditoría DTE proveedores: H5b y D",
+        "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:197",
+        "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:343",
+        "[observabilidad] src/data/orphanObjects.js",
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
+        "[pruebas] ninguna prueba nombra un archivo de esta área",
+        "[doc] el área no tiene ni un documento propio en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-08-23",
+          "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        }
+      ]
     }
   }
 }

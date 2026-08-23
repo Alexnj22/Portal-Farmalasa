@@ -1,5 +1,5 @@
 {
-  "generado": "2026-08-23T22:14:27.747Z",
+  "generado": "2026-08-23T22:35:37.803Z",
   "tablas": [
     "announcements",
     "approval_requests",
@@ -251,5 +251,38 @@
     "vacuum-sales-invoices",
     "verificar-facturas-reclamadas-2h",
     "wfm_weekly_snapshot"
-  ]
+  ],
+  "anon": {
+    "funciones": [
+      "asignar_aprobador_solicitud",
+      "canjear_codigo_de_vinculacion",
+      "confirmar_impresion",
+      "es_ultimo_dia_del_mes_sv",
+      "expandir_lineas_envio",
+      "get_kiosk_boot_payload",
+      "get_kiosk_coverage_employees",
+      "kiosco_aviso_leido",
+      "kiosco_bitacora",
+      "kiosco_declarar_turno",
+      "kiosco_identificar",
+      "kiosco_marcajes_recientes",
+      "kiosco_marcar",
+      "marcar_ajuste_manual_minmax",
+      "nit_sv_valido",
+      "notificar_decision_diferencia",
+      "notificar_resolucion_envio",
+      "reclamar_impresion",
+      "sello_mh_valido",
+      "update_proveedor_manual",
+      "validar_envio_producto",
+      "verify_kiosk_authorization",
+      "verify_kiosk_device",
+      "verify_kiosk_pin"
+    ],
+    "tablas": [
+      "branches",
+      "holidays",
+      "shifts"
+    ]
+  }
 }

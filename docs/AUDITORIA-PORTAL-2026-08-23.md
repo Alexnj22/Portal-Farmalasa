@@ -1,0 +1,418 @@
+# Auditoría completa del portal — 2026-08-23
+
+**Promedio: 88%.** Veinticinco áreas, doce ejes cada una, 221 hallazgos
+registrados. Ninguna área congelada todavía, y eso es a propósito: el sello lo
+pone una corrida real en sala, no una medición.
+
+El portal está en mucho mejor estado del que aparenta desde adentro. La regla
+más cara del proyecto —envolver `auth_*` en `(SELECT …)`, el incidente del
+2026-07-08 que tiró producción— **se sostiene entera en las 176 tablas: cero
+violaciones**. El advisor de seguridad está en cero errores, no hay una sola
+tabla sin llave primaria, no hay una vista sin `security_invoker`, y las 687
+pruebas pasan.
+
+Lo que la auditoría encontró no es un portal roto. Es un portal cuyas
+afirmaciones escritas dejaron de coincidir con la realidad en algunos puntos, y
+nada lo estaba mirando.
+
+---
+
+## 1. Qué se midió y cómo
+
+### Las 25 áreas
+
+El % se asigna por **área funcional**, no por módulo de permiso ni por archivo.
+Un módulo de permiso es una LLAVE, no un circuito: `traslados` y
+`dash_traslados` son dos llaves de la misma puerta, y un traslado cruza seis
+pantallas, dos tablas y una edge function. Puntuar por llave da un tablero
+ilegible y un candado que no protege nada — congelaría la vista y dejaría libre
+la función que hace el trabajo.
+
+El área es la unidad que tiene sentido congelar porque es la unidad que tiene
+sentido probar: «un traslado sale de Bodega y llega a la sala» se verifica de
+una vez o no se verifica.
+
+El mapa vive en `auditoria/areas.mjs` y su cobertura está **verificada contra el
+disco y contra producción**:
+
+| pieza | total | asignadas | huérfanas |
+|---|---:|---:|---:|
+| archivos de `src/` | 524 | 524 | **0** |
+| tablas | 180 | 180 | **0** |
+| edge functions | 59 | 59 | **0** |
+| tareas programadas | 68 | 68 | **0** |
+
+Ese cero importa más de lo que parece. Un archivo sin área no entra en ningún
+porcentaje: el día que alguien agregue una vista y no la mapee, el portal diría
+«88% auditado» sobre un denominador que ya no es el suyo. Por eso el gate falla
+—no avisa: falla— si aparece un huérfano.
+
+### Los 12 ejes
+
+Los ocho que se pidieron, más cuatro que se agregaron porque sin ellos «está
+verde» no quiere decir nada.
+
+| bloque | eje | peso | la pregunta |
+|---|---|:--:|---|
+| **Construcción** | Flujo y lógica | 3 | ¿El circuito cierra, incluidos el doble clic, el que se arrepiente y el que llega tarde? |
+| | Datos y verdad | 3 | ¿Lo que muestra es cierto? Techo de 1000 filas, tipo real de la columna, unidades que no se suman. |
+| | Base de datos | 2 | PK, RLS con policy, índice por FK, `search_path`, migraciones archivadas. |
+| **Blindaje** | Seguridad y permisos | 3 | ¿Lo decide el SERVIDOR? Sin `USING(true)`, `auth_*` en `(SELECT)`, nada abierto a `anon`. |
+| | Resiliencia | 2 | ¿Qué pasa cuando falla? Error de red, doble envío, la sesión que se cierra sola. |
+| | Observabilidad | 2 | ¿Se puede reconstruir lo que pasó? |
+| **Experiencia** | Vista y UI | 2 | Tokens, no colores crudos, DESIGN.md. |
+| | Móvil | 2 | Canon §32.8/§32.9, gate + barrido + diálogos. |
+| | UX, copy y accesibilidad | 2 | Habla del portal y no del sistema de origen. Pestaña en la URL. 44pt. |
+| | Fluidez y eficiencia | 2 | Forma del plan, peso del chunk, cadencia de los crons. |
+| **Confianza** | Pruebas | 2 | ¿Hay una prueba que falle si esto se rompe? |
+| | Documentación y memoria | 1 | ¿Está escrito donde se va a leer? |
+
+**Los cuatro que se agregaron** —seguridad, resiliencia, observabilidad y
+pruebas— salieron de mirar cómo fallan de verdad las cosas en este repo. Los
+tres incidentes más caros de julio y agosto (el outage del 08-jul, el sello de
+Hacienda leído como booleano, el filtro de Receta Médica truncado a 1000 filas)
+no fueron problemas de vista ni de flujo: fueron problemas de que algo escrito
+dejó de ser cierto y ningún instrumento lo miraba.
+
+### El sello de sala: por qué nadie llega a 100
+
+Doce ejes en verde topan en **95%**. El 100 lo desbloquea una corrida real con
+datos de producción, registrada con su fecha y su evidencia.
+
+No es una formalidad. Hoy la memoria del proyecto tiene **catorce ítems
+abiertos** que dicen literalmente «falta probarlo en sala», «falta la primera
+corrida real», «falta verlo en pantalla». Un área con los doce ejes perfectos y
+sin una sola corrida es código que compila y que nadie usó nunca — y congelarlo
+sería prometer que funciona.
+
+El sello es un **tope**, no un sumando. Si fuera un sumando, un área podría
+compensar la falta de prueba real con puntaje de otro lado, que es exactamente
+la confusión entre «construido» y «funciona» que el sello viene a evitar.
+
+---
+
+## 2. El resultado
+
+```
+  área                              %    fluj dato   bd segu resi obse vist movi   ux efic prue  doc
+  ─────────────────────────────────────────────────────────────────────────────────────────────────
+  Plataforma y chasis              92      89   95   98   98   79   83   95   85   89   95   95   95
+  Cortes de caja y bolsas          92      77   95   93   98   91   92   98   85   95   95   95   85
+  Min · Máx                        91      83   95   98   98   95   83   98   85   95   95   76   95
+  Metas y cumplimiento             90      95   95   98   98   91   92   98   85   95   95   40   75
+  Inventario, conteo y v. perdidas 90      95   95   86   98   95   83   95   85   95   95   69   75
+  Libros fiscales y cierre         90      77   95   98   98   95   92   98   85   95   95   62   95
+  Solicitudes y aprobaciones       89      95   95   98   96   91   83   89   85   95   95   69   55
+  Impresión en ticketera           89      77   95   93   92   95   92   98   85   95   83   76   75
+  Asistencia y marcaciones         88      95   95   98   98   95   83   98   85   95   95   40   55
+  Horarios, turnos y vacaciones    88      95   95   93   96   95   74   77   85   95   95   69   55
+  Nómina y bonificaciones          88      95   95   98   98   91   83   95   85   95   95   40   55
+  Ventas                           88      77   95   92   98   95   92   92   85   95   95   62   55
+  Productos y laboratorios         88      95   95   89   98   91   65   83   85   95   95   76   55
+  Traslados entre salas            88      65   95   98   96   95   74   98   85   95   71   95   85
+  Bitácoras reguladas (SRS)        88      83   95   98   98   95   83   95   85   95   95   40   75
+  Acceso, identidad y kiosco       87      71   95   83   86   95   92   95   85   95   95   69   95
+  Tablero de inicio                87      89   95   98   98   83   83   89   85   95   84   69   55
+  Sucursales                       86      95   95   98   96   79   92   83   85   83   95   40   55
+  Facturación, DTE y clientes      86      95   95   95   92   78   74   92   85   71   95   62   95
+  Pedidos a sucursales             86      71   95   73   96   81   74   74   85   95   95   95   95
+  Sistema, salud y auditoría       86      83   95   98   98   85   83   98   85   95   95   40   55
+  Permisos y candado de módulo     85      89   95   98   73   95   83   86   85   95   95   40   75
+  Avisos, notificaciones, encuestas 84     89   95   98   98   91   74   59   85   95   95   40   55
+  Compras y cuentas por pagar      83      71   95   98   96   83   74   98   85   53   95   62   85
+  Personal y expediente            82      89   95   98   73   64   74   71   85   95   95   69   55
+```
+
+Los números salen de `auditoria/puntuar.mjs`, que tiene las reglas del cálculo
+escritas adentro. No se escriben a mano: el gate rechaza un `pct` que no se
+derive de los ejes, y rechaza un eje en 90 o más que no diga con qué se
+comprobó. Un puntaje sin evidencia es una opinión.
+
+### Lo que la tabla dice en una línea
+
+- **Ningún área está mal.** La más baja es 82. El portal está construido.
+- **El eje más flojo del portal, con diferencia, es `pruebas`**: ocho áreas no
+  tienen ni un archivo de prueba que nombre uno de sus archivos.
+- **El segundo es `doc`**: once áreas no tienen un solo documento propio.
+- **El más fuerte es `datos`**: 95 en las 25. `gate:data` cubre bien el techo de
+  las 1000 filas, los tipos de columna y los errores tragados.
+
+---
+
+## 3. Los hallazgos
+
+### 3.1 Grave — hay un dato que sale
+
+**El salario de las 49 personas viaja al navegador de cualquiera que abra un
+expediente.** El módulo `staff_salary` existe en la pantalla de Permisos, se
+puede prender y apagar, y **no gatea nada**: ni en el navegador ni en el
+servidor. Quien tenga `staff_detail` ve los salarios, tenga o no la llave que la
+pantalla dice que hace falta.
+
+No es nuevo — `gate:permisos` lo reporta como «hallazgo abierto por decisión»
+desde el 2026-08-03, con la nota «dejarlo por ahora». Lo que la auditoría agrega
+es la medida de cuánto tiempo lleva abierto (20 días) y que es el ÚNICO hallazgo
+de esta categoría en todo el portal.
+
+Hay dos salidas y las dos son aceptables; lo que no es aceptable es la de hoy,
+que es ofrecer un control que no controla:
+
+1. Gatearlo de verdad: filtrar las columnas de salario en el servidor cuando el
+   llamador no tiene `staff_salary`, y esconderlas en la vista.
+2. Borrar el módulo de la pantalla de Permisos y decir en su lugar que el
+   salario va con el expediente.
+
+### 3.2 Medio — una regla escrita dejó de ser cierta
+
+**La superficie que se puede tocar sin iniciar sesión creció de 5 a 24.**
+CLAUDE.md afirma que sólo cinco funciones son ejecutables por `anon` y que
+«ninguna otra función del proyecto es ejecutable por `anon`». Producción tiene
+**24 funciones y 3 tablas**.
+
+La primera lectura fue «hay diecinueve agujeros» y **estaba mal**. Se abrieron
+tres a mano antes de escribirlo, y las tres se defienden solas:
+
+- `kiosco_marcar` entra por `kiosco_sucursal(device_id, device_token)`: sin token
+  válido no hace nada. Las seis del kiosco son iguales.
+- `update_proveedor_manual` abre con
+  `IF NOT (SELECT auth_can_edit_any(ARRAY['proveedores'])) THEN RAISE EXCEPTION
+  'FORBIDDEN'`. Para `anon` eso es siempre falso.
+- `expandir_lineas_envio` y otras cinco son funciones de **trigger**: sin `NEW`
+  no se pueden ejecutar. Inertes por construcción.
+
+Entonces el hallazgo no es que el portal esté abierto. Es que **la superficie
+creció sola durante un mes y no lo detectó nada**, y la regla escrita dice otra
+cosa. El riesgo no es lo que hay hoy: es que el día que entre una función sin
+guarda, nadie se entera.
+
+`update_proveedor_manual` muestra exactamente cómo se acumula: tiene **dos
+sobrecargas**, la revocación del 2026-07-29 alcanzó a una y la otra se quedó con
+el `GRANT`.
+
+**Ya está arreglado.** `auditoria/superficie-anon.json` declara las 27 entradas
+con su guarda y su motivo, y el gate falla si producción expone algo que no esté
+ahí. Con su regresión fabricada.
+
+**`gate:bundle` está EN ROJO.** Dos vistas pasaron su techo:
+
+| vista | mide | techo | exceso |
+|---|---:|---:|---:|
+| `TrasladosView` | 61 kB | 47 kB | **+14 kB** |
+| `DashboardView` | 100 kB | 99 kB | +1 kB |
+
+El de Traslados viene del trabajo de envíos de hoy. El del Tablero es el margen
+de 1 kB que el baseline dejó a propósito con la nota «el próximo crecimiento del
+Inicio tiene que discutirse, no colarse».
+
+**Una migración vive en producción y no en el repo:**
+`20260823222500_envios_el_tope_de_renglones_sale_de_lo_medido`. Es de hoy, del
+trabajo de envíos de otra sesión. Es la deriva exacta que la regla previene:
+`apply_migration` escribió en el servidor y el archivo nunca se guardó. El SQL es
+recuperable desde `supabase_migrations.schema_migrations`.
+
+**Tres funciones sin `SET search_path`** (regla 4 del hardening):
+`es_telefono_sv_valido`, `customer_ficha_estado`, `es_cliente_mostrador`.
+
+**`identidad_vales` tiene RLS encendido y CERO policies.** Puede ser deliberado
+—se accede sólo por una función DEFINER— pero no está escrito en ningún lado, y
+una tabla que nadie puede leer sin que nadie sepa por qué es una trampa para el
+próximo que la toque.
+
+**El botón «Iniciar» de una ruta no se apaga mientras trabaja**
+(`src/views/pedidos/TabPedidos.jsx:817`). Dos toques mandan
+`avisarSalidaALasSalas` **dos veces**: el aviso de salida le llega duplicado a
+cada sala. Es el único de los ocho que encontró el barrido cuyo doble toque tiene
+consecuencia hacia afuera; los otros son copiar al portapapeles e imprimir.
+
+**Dos `catch` que sólo dicen «silencioso»** (`src/context/AuthContext.jsx:1000` y
+`:1040`). Están en el procesamiento de sesión: un error ahí deja a la persona con
+permisos viejos y sin rastro en ningún lado. La diferencia con los otros
+`catch` del archivo —que también se callan— es que ésos **explican por qué**
+(«timeout o red inestable → se confía en el caché local»), y eso es una decisión.
+«Silencioso» no es un motivo.
+
+### 3.3 Menor — higiene
+
+- **12 textos nombran el sistema de origen o la jerga de la tubería**, contra la
+  regla que el usuario corrigió dos veces. Compras 7 («Sincronizar»,
+  «Sincronizando (tanda N)», «Sincronización completa», «Error al sincronizar»,
+  «match ERP»), Facturación 4 («Descartado: el ERP ya tenía otro valor»,
+  «Guardado, pendiente de enviar al ERP», «Sin portar del ERP»), Sucursales 2 y
+  el rótulo **«Sync»** del menú lateral, que lo ve todo el mundo todos los días.
+- **5 llaves foráneas sin índice que no son columnas de auditoría**, más
+  `pedido_items` (17 MB) con dos de auditoría — la excepción de la regla dice «en
+  tablas pequeñas» y ésa no lo es.
+- **10 índices que nunca se usaron**, ~8 MB. Se mantienen en cada escritura y no
+  aceleran ninguna lectura. Cuatro son de Inventario, tres de Productos.
+- **`impresion_dispositivos`: 402 escrituras por hora sobre SEIS filas**, cero
+  inserciones. Es el latido de las cajas de impresión reescribiendo su fila
+  entera — el patrón que la regla de los syncs prohíbe, en chico.
+- **`cortes-caja-30s` dispara 2878 veces al día y declara 1920.** El manifiesto
+  del gate de eficiencia quedó viejo.
+- **45 tablas sin `created_at`**, contra la regla 1 del hardening. Muchas son de
+  sincronización y ahí tiene sentido; no está escrito cuáles y por qué.
+- **3 errores de lint** que sobreviven, ninguno nuevo.
+- **45 carpetas `dist-*`** acumuladas en el árbol de trabajo.
+
+### 3.4 Lo que está bien y conviene no perder
+
+Un informe que sólo lista lo malo hace que se pierda lo que costó ganar.
+
+- **Cero policies llamando `auth_*` fuera de `(SELECT …)`**, en las 176 tablas.
+  Ésta es la regla del outage del 2026-07-08 y **se sostiene entera**.
+- **Cero errores en el advisor de seguridad.** Cero tablas sin llave primaria.
+  Cero vistas sin `security_invoker`. Cero `USING(true)` de escritura para
+  `authenticated` (los cuatro que hay son de `service_role`).
+- **687 pruebas en 54 archivos, todas verdes.**
+- **`gate:perf` en verde**: 14 de 14 índices y crons vivos, 5 de 5 planes
+  entrando por índice, y los 14 tiempos medidos por debajo de su techo.
+- **`gate:eficiencia` en verde**: 894 escrituras por hora de un tope de 1240,
+  5858 llamadas salientes y **ninguna fuera de 2xx**.
+- **`gate:movil` con las cinco categorías en cero**, y ocho excepciones con
+  motivo escrito.
+- **Migraciones sin deriva local**: 532 post-baseline, todas con su archivo.
+
+---
+
+## 4. El candado
+
+Es la parte que responde a «cuando ya esté finalizado no se toque nada de eso, y
+si se toca que pregunte antes y se haga verificación después».
+
+### Los dos chequeos
+
+```
+npm run gate:auditoria --hook     ← en el pre-commit, sin red, milisegundos
+npm run gate:auditoria            ← al cerrar el trabajo
+```
+
+**`--hook` es el «preguntar antes».** Bloquea el commit que toca un área
+congelada. Para seguir hay que abrir un desbloqueo a mano, con motivo escrito.
+
+**El gate completo es el «verificar después».** Falla mientras quede un
+desbloqueo abierto. El commit puntual pasa, pero el trabajo no se puede dar por
+cerrado hasta volver a sellar el área.
+
+**Son dos y no uno a propósito.** Un gate que bloquea CADA commit de un trabajo
+en curso enseña a escribir `--no-verify`, y a partir de ahí no protege nada. Un
+gate que sólo avisa se olvida el día que hay prisa — es exactamente cómo se
+perdieron 164 entradas del changelog. La única combinación que sobrevive al
+apuro es bloquear la primera vez (barato de resolver) y bloquear el cierre (que
+es cuando de verdad importa haber verificado).
+
+### El ciclo completo
+
+```bash
+# 1. El commit choca contra el candado y dice qué hacer.
+# 2. Se le pregunta al usuario si de verdad quiere tocar esa área.
+npm run auditoria:desbloquear -- traslados "el motivo obligatorio no llega al historial"
+
+# 3. Se trabaja. Cada commit avisa que el área está abierta.
+# 4. Se vuelve a verificar y se sella. Sin evidencia escrita no sella.
+npm run auditoria:sellar -- traslados "gate:design, gate:movil, barrido de /traslados y un envío real desde Salud 2"
+```
+
+### Lo que el gate NO deja hacer
+
+- Escribir un `pct` a mano que no salga de los ejes.
+- Declarar un eje en 90 o más sin evidencia escrita.
+- Congelar un área que no llegó a 100.
+- Congelar un área sin sello de sala.
+- Dejar un archivo, una tabla, una edge function o un cron sin área.
+- Que producción exponga algo a `anon` que no esté declarado con su motivo.
+
+Las seis tienen su **regresión fabricada** en
+`tests/unit/auditoriaGate.test.js`, porque a un detector en cero no se le cree
+hasta haberle construido el caso que debería hacerlo fallar. Una de esas
+regresiones ya sirvió: destapó que el gate leía el índice real de git cuando
+debía leer sólo lo inyectado — o sea que pasaba o fallaba según lo que
+estuviera haciendo otra sesión en ese momento.
+
+---
+
+## 5. Lo que este informe NO puede afirmar
+
+Tres límites, escritos para que nadie lea el 88% como más de lo que es.
+
+**El eje `flujo` no se midió: se dedujo.** «¿El circuito cierra de punta a
+punta?» no lo contesta ningún detector — lo contesta usarlo. Acá sale de los
+PENDIENTES DECLARADOS en la memoria del proyecto, que es evidencia citable pero
+indirecta. Un área con 95 en `flujo` quiere decir que nadie declaró un hueco, no
+que no lo tenga.
+
+**El eje `movil` está topado en 85 en las 25 áreas.** `gate:movil` está en cero,
+pero **lee el fuente**, y hay filas que desde el fuente son una caja cerrada —
+eso ya se midió: quitándole `usarAccionDeFila` a Personal el gate daba verde con
+0 hallazgos y el barrido decía 25. Lo que cierra ese hueco es el barrido de 54
+rutas en WebKit, y su última corrida completa es del **2026-08-17**. Todo lo
+construido después no está medido.
+
+**El barrido de código sobre-acusa y está escrito.** Cada categoría de
+`scripts/auditoria-barrido.mjs` lleva su `ve:` y su `no ve:`. Los números de
+`escritura-sin-bitacora` (27) son los menos confiables: el detector mira un
+archivo por vez y no puede seguir la cadena hasta un trigger de Postgres o hasta
+el llamador.
+
+### El instrumento mintió tres veces antes de acertar
+
+Vale la pena dejarlo escrito porque es la lección que más se repite en este
+repo, y volvió a pasar hoy:
+
+1. `fecha-sin-hora` reportó 7. Los tres primeros eran **el comentario de
+   `src/utils/semana.js` que EXPLICA por qué `new Date('2026-08-18')` retrocede
+   un día**. El detector estaba acusando a la documentación de la regla que venía
+   a hacer cumplir. Con los comentarios fuera: **0**.
+2. `catch-mudo` reportó 5. Tres eran `catch` que **sí** manejan el error: su
+   comentario ocupaba justo las ocho líneas de la ventana y el código real caía
+   afuera. Un detector con la ventana corta no encuentra menos — encuentra MAL,
+   y acusa con más fuerza al código que más se molestó en explicarse. Con la
+   ventana real: **2**, y los dos verificados a mano.
+3. `submit-sin-freno` reportó 13. Nueve eran botones que sólo cambian una
+   variable local («Confirmar» que hace `setModo('confirmar')`) o el botón
+   «Cancelar» de al lado, que heredaba el `onClick` del de abajo porque el corte
+   del elemento tomaba doce líneas de corrido. Exigiendo `onClick={async …}` con
+   un `await` adentro: **8**, de los cuales uno solo tiene consecuencia real.
+
+Y una cuarta, que es la peor porque va en la dirección contraria: al filtrar el
+ruido de `texto-del-sistema-de-origen` descarté la línea entera cuando llevaba
+`className=`, y **eso se comió un hallazgo real** — el rótulo «Sync» del menú
+lateral vive en un `<span>` que además lleva clases de Tailwind. Un filtro que
+apaga el hallazgo junto con el ruido es peor que no filtrar: deja el número más
+chico y más falso.
+
+---
+
+## 6. Qué sigue, en orden
+
+1. **Resolver `staff_salary`** — gatearlo o borrarlo. Es el único hallazgo de la
+   categoría grave.
+2. **Bajar `TrasladosView` a su techo** (o discutir el techo, con el motivo
+   escrito, como manda el ratchet).
+3. **Guardar el archivo de la migración `20260823222500`** — es de otra sesión;
+   quien la aplicó es quien la recupera.
+4. **Correr el barrido móvil de 54 rutas.** Es el único eje topado en las 25
+   áreas a la vez, y una sola corrida lo desbloquea entero.
+5. **Poner los primeros sellos de sala.** Las áreas que ya corren en producción
+   con datos reales —Ventas, Fiscal, Personal, Asistencia— sólo necesitan que
+   alguien registre la verificación para pasar de 95 al 100.
+6. **Las ocho áreas sin ninguna prueba**: Metas, Asistencia, Nómina, Bitácoras,
+   Sucursales, Avisos, Permisos y Sistema.
+7. **Los 12 textos que nombran el sistema de origen**, empezando por «Sync» en
+   el menú lateral porque lo ve todo el mundo.
+
+---
+
+## Los archivos
+
+| archivo | qué es |
+|---|---|
+| `auditoria/areas.mjs` | El mapa: qué archivo, tabla, función y cron es de qué área. |
+| `auditoria/registro.json` | Los puntajes. `pct` y `estado` se derivan, no se escriben. |
+| `auditoria/puntuar.mjs` | Las reglas del cálculo, con la evidencia medida adentro. |
+| `auditoria/superficie-anon.json` | Todo lo alcanzable sin iniciar sesión, con su guarda y su motivo. |
+| `auditoria/desbloqueos.json` | Las áreas abiertas ahora mismo. |
+| `auditoria/snapshot-produccion.json` | Tablas, crons y superficie `anon` tal como estaban al medir. |
+| `scripts/auditoria-gate.mjs` | El candado y el contraste del mapa. |
+| `scripts/auditoria-cli.mjs` | desbloquear · sellar · recalcular · sincronizar. |
+| `scripts/auditoria-barrido.mjs` | El instrumento: lo que los once gates no miran. |
+| `tests/unit/auditoriaGate.test.js` | Las regresiones que el candado tiene que cazar. |

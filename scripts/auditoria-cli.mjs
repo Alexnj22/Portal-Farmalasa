@@ -166,8 +166,17 @@ case 'sincronizar': {
     );
     const datos = leer(path.resolve(origen), null);
     if (!datos?.tablas || !datos?.crons) morir('El archivo tiene que traer `tablas` y `crons`.');
-    escribir(SNAPSHOT, { generado: new Date().toISOString(), tablas: datos.tablas.sort(), crons: datos.crons.sort() });
-    console.log(`\n  ✓ Snapshot actualizado: ${datos.tablas.length} tablas, ${datos.crons.length} crons.\n`);
+    escribir(SNAPSHOT, {
+        generado: new Date().toISOString(),
+        tablas: datos.tablas.sort(),
+        crons: datos.crons.sort(),
+        // Lo que se puede tocar SIN iniciar sesión. Se guarda en el mismo
+        // snapshot porque se mide en la misma corrida: separarlo garantiza que
+        // uno de los dos se quede viejo.
+        anon: datos.anon ? { funciones: (datos.anon.funciones || []).sort(), tablas: (datos.anon.tablas || []).sort() } : undefined,
+    });
+    console.log(`\n  ✓ Snapshot actualizado: ${datos.tablas.length} tablas, ${datos.crons.length} crons`
+        + (datos.anon ? `, superficie anon: ${(datos.anon.funciones || []).length} funciones y ${(datos.anon.tablas || []).length} tablas.` : '.') + '\n');
     break;
 }
 

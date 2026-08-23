@@ -373,17 +373,35 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    35 tablas expuestas el 2026-07-02 (`20260702_granular_write_policies.sql`).
 4. **Funciones**: SECURITY DEFINER solo si es necesario, SIEMPRE con
    `SET search_path = public, extensions`, y `REVOKE EXECUTE ... FROM PUBLIC, anon` +
-   `GRANT ... TO authenticated, service_role`. Únicas funciones con anon permitido
-   (las 5 del pre-login del kiosco, todas validan `device_token` internamente):
-   `get_kiosk_boot_payload`, `get_kiosk_coverage_employees`, `verify_kiosk_device`,
-   `verify_kiosk_pin`, `verify_kiosk_authorization`.
-   Las últimas tres se agregaron en las fases 1/2/4 del rediseño de credenciales
-   del kiosco (2026-07-29) y son las que reemplazaron la comparación client-side.
-   **La regla se aplicó retroactivamente el 2026-07-29**
-   (`20260729_revoke_anon_function_surface`): ninguna otra función del proyecto
-   es ejecutable por `anon`. Las 31 que quedan pertenecen a `pg_trgm`/`pg_net`
-   — son internas de extensión y revocarles EXECUTE rompe los índices de trigram;
-   salen del namespace público moviendo la extensión, no revocando.
+   `GRANT ... TO authenticated, service_role`.
+
+   **Lo que `anon` alcanza vive en `auditoria/superficie-anon.json`, no en este
+   párrafo** — y esa mudanza es en sí misma el hallazgo. Hasta el 2026-08-23 acá
+   decía que las únicas eran las CINCO del pre-login del kiosco y que «ninguna
+   otra función del proyecto es ejecutable por `anon`». La auditoría midió **24
+   funciones y 3 tablas**.
+
+   Se abrieron tres a mano antes de escribir nada y las tres se defienden solas:
+   las del kiosco entran por `kiosco_sucursal(device_id, device_token)`,
+   `update_proveedor_manual` lanza `FORBIDDEN` sin `auth_can_edit_any`, y seis
+   son funciones de TRIGGER —sin `NEW` no se ejecutan—. **No había ningún
+   agujero.** El problema era otro y es peor: la superficie creció sola durante
+   un mes, la regla escrita decía otra cosa, y nada lo miraba. Una afirmación
+   sobre quién puede entrar sin credenciales que nadie verifica deja de ser
+   cierta sin avisar.
+
+   `update_proveedor_manual` muestra cómo se acumula: tiene DOS sobrecargas, y
+   la revocación del 2026-07-29 alcanzó a una sola. Al cambiarle la firma a una
+   función, la vieja se queda con sus permisos.
+
+   Hoy lo vigila `npm run gate:auditoria`: cada entrada va declarada con su
+   guarda y su motivo, y **producción exponiendo algo que no esté ahí FALLA el
+   gate**. Al agregar una función o una policy para `anon`, se declara ahí — y
+   si no tiene motivo, no se declara: se le revoca el EXECUTE.
+
+   (Las 31 de `pg_trgm`/`pg_net` no cuentan: son internas de extensión y
+   revocarles EXECUTE rompe los índices de trigram; salen del namespace público
+   moviendo la extensión, no revocando.)
 5. **Vistas**: SIEMPRE `WITH (security_invoker = true)` (o `ALTER VIEW ... SET`).
 6. **Vistas materializadas**: no exponerlas a la API — `REVOKE ALL FROM anon, authenticated`
    y acceso solo vía RPC SECURITY DEFINER. Excepción actual: `mv_product_factor`
@@ -718,6 +736,50 @@ lo siguió editando y el commit se llevaría una foto parcial. Además lista lo 
 queda fuera del commit, corre `version-gate` siempre y `migration-gate` cuando el
 commit toca `supabase/migrations`. `git commit --no-verify` lo saltea: es para una
 emergencia real, no para silenciar un hallazgo.
+
+## REGLA CRÍTICA: lo que ya se auditó no se toca sin preguntar (2026-08-23)
+
+El portal está repartido en **25 áreas** (`auditoria/areas.mjs`) y cada una lleva
+un % sobre **12 ejes**. Un área que llega a 100 y tiene su sello de sala queda
+**CONGELADA**: `npm run gate:auditoria --hook` corre en el pre-commit y **falla**
+si el commit la toca.
+
+**Antes de tocar un área congelada: preguntarle al usuario.** No es una
+formalidad del gate — es literalmente lo que pidió. Después:
+
+```bash
+npm run auditoria:desbloquear -- <area> "por qué se toca"
+# … el trabajo …
+npm run auditoria:sellar -- <area> "qué se corrió para verificarlo"
+```
+
+Mientras el desbloqueo esté abierto, `npm run gate:auditoria` (sin `--hook`)
+**falla**. Ésa es la mitad «verificación después»: el commit puntual pasa, el
+trabajo no se cierra. Son dos chequeos y no uno a propósito — uno que bloquea
+cada commit del trabajo en curso enseña a escribir `--no-verify`, y uno que sólo
+avisa se olvida el día que hay prisa.
+
+**El % no se escribe a mano.** Sale de `auditoria/puntuar.mjs`, que tiene las
+reglas del cálculo adentro. El gate rechaza un `pct` que no derive de los ejes,
+y rechaza un eje en 90 o más **sin evidencia escrita** — un puntaje sin
+evidencia es una opinión, y una opinión se hereda de la sesión anterior sin que
+nadie pueda volver a mirarla.
+
+**El sello de sala es un TOPE, no un sumando.** Doce ejes en verde topan en 95;
+el 100 lo desbloquea una corrida real con datos de producción. Si fuera un
+sumando, un área podría compensar la falta de prueba real con puntaje de otro
+lado — que es exactamente la confusión entre «construido» y «funciona». Hoy hay
+catorce ítems en memoria que dicen «falta probarlo en sala».
+
+**Un archivo, tabla, función o cron sin área hace fallar el gate.** No es
+contabilidad: lo que no está mapeado no entra en ningún porcentaje, y el día que
+alguien agregue una vista sin mapearla el portal diría «88% auditado» sobre un
+denominador viejo. Al crear una vista o una tabla, agregarla a `areas.mjs`.
+
+El informe completo —los 221 hallazgos, qué está bien, y las tres veces que el
+instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`.
+
+---
 
 ## Estándares del proyecto
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)

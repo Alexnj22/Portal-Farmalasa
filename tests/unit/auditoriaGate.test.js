@@ -12,7 +12,7 @@
 // alguna de éstas empieza a pasar en verde con el defecto puesto, el gate se
 // quedó ciego y el porcentaje del portal deja de significar algo.
 
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -27,13 +27,17 @@ afterAll(() => fs.rmSync(tmp, { recursive: true, force: true }));
 // Corre el gate contra un directorio de registro fabricado. Devuelve
 // { ok, salida } en vez de lanzar, porque lo que se prueba es justamente el
 // código de salida.
-function correr({ registro, desbloqueos = { abiertos: [] }, preparados = [], hook = true }) {
+function correr({ registro, desbloqueos = { abiertos: [] }, preparados = [], hook = true, extra = null }) {
     fs.writeFileSync(path.join(tmp, 'registro.json'), JSON.stringify(registro));
     fs.writeFileSync(path.join(tmp, 'desbloqueos.json'), JSON.stringify(desbloqueos));
     // El snapshot se copia del real: estas pruebas son sobre el CANDADO, y sin
     // snapshot el gate emite un aviso que ensucia la lectura de cada caso.
     const real = path.join(RAIZ, 'auditoria', 'snapshot-produccion.json');
     if (fs.existsSync(real)) fs.copyFileSync(real, path.join(tmp, 'snapshot-produccion.json'));
+    const anon = path.join(RAIZ, 'auditoria', 'superficie-anon.json');
+    if (fs.existsSync(anon)) fs.copyFileSync(anon, path.join(tmp, 'superficie-anon.json'));
+    if (extra) for (const [nombre, valor] of Object.entries(extra))
+        fs.writeFileSync(path.join(tmp, nombre), JSON.stringify(valor));
 
     const env = { ...process.env, AUDITORIA_DIR: tmp, AUDITORIA_PREPARADOS: preparados.join(',') };
     try {
@@ -157,5 +161,35 @@ describe('un puntaje no se puede inventar', () => {
         const r = correr({ registro: { areas }, hook: false });
         expect(r.ok).toBe(true);
         expect(TOPE_SIN_SELLO).toBeLessThan(100);
+    });
+});
+
+describe('la superficie que se toca SIN credenciales está vigilada', () => {
+    it('lo que produccion expone a anon está declarado con su motivo', () => {
+        const snap = JSON.parse(fs.readFileSync(path.join(RAIZ, 'auditoria/snapshot-produccion.json'), 'utf8'));
+        const dec = JSON.parse(fs.readFileSync(path.join(RAIZ, 'auditoria/superficie-anon.json'), 'utf8'));
+        for (const clave of ['funciones', 'tablas']) {
+            const nombres = new Set(dec[clave].map(x => x.nombre));
+            expect((snap.anon?.[clave] || []).filter(x => !nombres.has(x))).toEqual([]);
+        }
+        // Y cada una tiene que decir CÓMO se defiende. Una entrada sin guarda
+        // escrita es una declaración vacía: sirve para callar el gate y para
+        // nada más.
+        for (const f of dec.funciones) { expect(f.guarda, f.nombre).toBeTruthy(); expect(f.motivo.length, f.nombre).toBeGreaterThan(30); }
+    });
+
+    it('el gate FALLA si producción expone algo que nadie declaró', () => {
+        const snap = JSON.parse(fs.readFileSync(path.join(RAIZ, 'auditoria/snapshot-produccion.json'), 'utf8'));
+        const r = correr({
+            registro: { areas: {} },
+            hook: false,
+            extra: { 'snapshot-produccion.json': {
+                ...snap,
+                anon: { ...snap.anon, funciones: [...snap.anon.funciones, 'borrar_todo_sin_permiso'] },
+            } },
+        });
+        expect(r.ok).toBe(false);
+        expect(r.salida).toContain('borrar_todo_sin_permiso');
+        expect(r.salida).toContain('sin declarar');
     });
 });

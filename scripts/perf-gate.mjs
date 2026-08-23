@@ -202,6 +202,24 @@ SELECT * FROM (
              'IN \\(SELECT ac\\.erp_product_id FROM all_cands ac\\)', 'g')
           WHERE p.proname='get_product_sales_agg' AND p.pronamespace='public'::regnamespace),
          'ese IN aparecía dos veces; en \`last_sale_live\` no descartaba NINGUNA fila y costaba 155 ms de los 535'
+  UNION ALL
+  -- La protección de verdad del 12x del 2026-08-22.
+  --
+  -- Buscar en Ventas > Productos costaba 3,708 ms sobre un año porque los
+  -- cuatro buscadores corrían \`norm_search(descripcion) LIKE ALL (...)\` sobre
+  -- el TEXTO DE LA FACTURA: una llamada a función por fila, sobre 594K líneas,
+  -- sin índice posible. Aislado: 15,278 ms contra 54 ms resolviendo el término
+  -- a ids sobre las 4,400 filas de \`products\`.
+  --
+  -- Se vigila por la FORMA DEL CÓDIGO y no por el reloj, y es a propósito: con
+  -- la caché caliente y un término que no matchea nada, el reloj no distingue
+  -- las dos versiones. Lo que las distingue es sobre qué tabla se busca.
+  SELECT 'busqueda-de-productos-no-recorre-la-factura',
+         (SELECT pg_get_functiondef(p.oid) NOT LIKE '%norm_search(sii.descripcion)%'
+             AND pg_get_functiondef(p.oid) NOT LIKE '%norm_search(a.descripcion)%'
+             AND pg_get_functiondef(p.oid) LIKE '%prods_buscados%'
+          FROM pg_proc p WHERE p.proname='get_product_sales_agg' AND p.pronamespace='public'::regnamespace),
+         'sin esto la búsqueda vuelve a normalizar el texto de 594K líneas de factura: 3,708 ms contra 301 sobre un año'
 ) t ORDER BY clave`;
 
 /* ── C. Forma del plan ───────────────────────────────────────────────────────
@@ -309,6 +327,21 @@ const TIEMPOS = [
   { clave: 'abrir-un-producto',         sql: `SELECT count(*) FROM public.get_product_drill_lines(2215, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE, NULL)` },
   { clave: 'totales-de-un-producto',    sql: `SELECT public.get_product_drill_summary(2215, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE, NULL)` },
   { clave: 'tendencia-de-un-producto',  sql: `SELECT count(*) FROM public.get_product_trend(2215, NULL, date_trunc('month', CURRENT_DATE)::date, CURRENT_DATE)` },
+  /* Buscar en Ventas > Productos, sobre UN AÑO.
+   *
+   * `productos-del-mes` ya estaba en esta lista desde el 2026-08-21 y aun así
+   * no vio el defecto del 2026-08-22, porque mide NAVEGAR y el problema estaba
+   * en BUSCAR: 3,708 ms sobre un año contra 583 sin término. La entrada que
+   * faltaba no era un techo más bajo, era otro caso.
+   *
+   * Es la tercera vez que este gate aprende lo mismo —`buscar-en-ventas` y las
+   * cuatro de Ventas > Productos entraron igual— y siempre por la misma puerta:
+   * lo que no está en la lista no se mide, y un gate en verde sobre una lista
+   * incompleta se lee como «está todo bien».
+   *
+   * El año y no el mes porque «Este año» está a un clic en el PeriodPicker, y
+   * es donde el defecto valía 12x en vez de 3x. */
+  { clave: 'buscar-en-productos',       sql: `SELECT count(*) FROM public.get_product_sales_agg(CURRENT_DATE-365, CURRENT_DATE, NULL, 'acetaminofen')` },
 ];
 
 /* ── El canal hacia producción ────────────────────────────────────────────────

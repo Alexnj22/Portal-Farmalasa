@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.714.1 — El código de barras no se busca cuando el término es un nombre
+
+**Una regresión mía, cazada por el gate de velocidad.** Al agregar búsqueda por
+código de barras (v2.710.0), dos buscadores se pusieron 4× más lentos:
+
+| | antes del gate | techo | ahora |
+|---|---:|---:|---:|
+| buscador del tablero | 134,98 ms | 32 ms | **9,07 ms** |
+| buscador de Inventario | 127,65 ms | 43 ms | **9,95 ms** |
+
+La causa era la misma en los dos: normalizar el código de barras **de cada una
+de las 4.400 filas de productos, en toda búsqueda**. Escribir «amoxicilina»
+pagaba 4.400 normalizaciones de códigos que no podían coincidir con nada.
+
+La salida no fue sacar la función sino no llamarla cuando no puede servir: **un
+nombre de producto nunca empieza con un dígito y un código siempre**. El filtro
+va sobre el término escrito y no sobre la columna, y eso importa — 100 de los
+4.854 códigos tienen letras (`2024001Ks`, códigos internos), así que exigir que
+la columna fuera numérica dejaría a esos 100 sin poder buscarse. El piso de 4
+caracteres deja fuera «500», «10» y «2x», que la gente escribe todo el tiempo.
+
+Quedaron **más rápidos que antes de agregar el código de barras**, y ningún
+techo se tocó.
+
+**Y se cerró el agujero que dejó pasar el problema de ayer.** El gate ya medía
+Ventas > Productos desde el 21, y aun así no vio los 3.708 ms: porque medía
+**navegar** y el problema estaba en **buscar**. Ahora hay dos cosas nuevas:
+
+- `buscar-en-productos` — el caso que faltaba, sobre un año, que es donde el
+  defecto valía 12× en vez de 3×.
+- Un chequeo **estructural**: que esa búsqueda no vuelva a recorrer el texto de
+  la factura. Es la protección de verdad — con la caché caliente y un término
+  que no encuentra nada, el reloj no distingue las dos versiones; lo que las
+  distingue es sobre qué tabla se busca. Verificado contra la definición vieja:
+  la reprueba por las tres condiciones.
+
+Es la tercera vez que este gate aprende lo mismo, y siempre por la misma puerta:
+lo que no está en la lista no se mide, y un verde sobre una lista incompleta se
+lee como «está todo bien».
+
 ## v2.714.0 — El área de vencidos manda: por qué el sistema rechazaba un traslado con el estante lleno
 
 Cierra el caso que quedó abierto en v2.668.2 —«no explica ese caso»— y que

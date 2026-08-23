@@ -1,8 +1,14 @@
 # Auditoría completa del portal — 2026-08-23
 
-**Promedio: 88%.** Veinticinco áreas, doce ejes cada una, 221 hallazgos
-registrados. Ninguna área congelada todavía, y eso es a propósito: el sello lo
-pone una corrida real en sala, no una medición.
+**Promedio: 88%.** Veinticinco áreas, doce ejes cada una. Ninguna área congelada
+todavía, y eso es a propósito: el sello lo pone una corrida real en sala, no una
+medición.
+
+> **Al cierre de la jornada: 221 → 206 hallazgos, y los doce gates en verde.**
+> Se cerraron los 32 textos que nombraban el sistema de origen (v2.719.2), el
+> `gate:bundle` que estaba en rojo (v2.719.3), y un hallazgo de accesibilidad que
+> esta auditoría no había visto: las pestañas del portal no se anunciaban como
+> pestañas. El detalle, en la §7.
 
 El portal está en mucho mejor estado del que aparenta desde adentro. La regla
 más cara del proyecto —envolver `auth_*` en `(SELECT …)`, el incidente del
@@ -95,32 +101,32 @@ la confusión entre «construido» y «funciona» que el sello viene a evitar.
 
 ```
   área                              %    fluj dato   bd segu resi obse vist movi   ux efic prue  doc
-  ─────────────────────────────────────────────────────────────────────────────────────────────────
-  Plataforma y chasis              92      89   95   98   98   79   83   95   85   89   95   95   95
-  Cortes de caja y bolsas          92      77   95   93   98   91   92   98   85   95   95   95   85
-  Min · Máx                        91      83   95   98   98   95   83   98   85   95   95   76   95
-  Metas y cumplimiento             90      95   95   98   98   91   92   98   85   95   95   40   75
-  Inventario, conteo y v. perdidas 90      95   95   86   98   95   83   95   85   95   95   69   75
-  Libros fiscales y cierre         90      77   95   98   98   95   92   98   85   95   95   62   95
-  Solicitudes y aprobaciones       89      95   95   98   96   91   83   89   85   95   95   69   55
-  Impresión en ticketera           89      77   95   93   92   95   92   98   85   95   83   76   75
-  Asistencia y marcaciones         88      95   95   98   98   95   83   98   85   95   95   40   55
-  Horarios, turnos y vacaciones    88      95   95   93   96   95   74   77   85   95   95   69   55
-  Nómina y bonificaciones          88      95   95   98   98   91   83   95   85   95   95   40   55
-  Ventas                           88      77   95   92   98   95   92   92   85   95   95   62   55
-  Productos y laboratorios         88      95   95   89   98   91   65   83   85   95   95   76   55
-  Traslados entre salas            88      65   95   98   96   95   74   98   85   95   71   95   85
-  Bitácoras reguladas (SRS)        88      83   95   98   98   95   83   95   85   95   95   40   75
-  Acceso, identidad y kiosco       87      71   95   83   86   95   92   95   85   95   95   69   95
-  Tablero de inicio                87      89   95   98   98   83   83   89   85   95   84   69   55
-  Sucursales                       86      95   95   98   96   79   92   83   85   83   95   40   55
-  Facturación, DTE y clientes      86      95   95   95   92   78   74   92   85   71   95   62   95
-  Pedidos a sucursales             86      71   95   73   96   81   74   74   85   95   95   95   95
-  Sistema, salud y auditoría       86      83   95   98   98   85   83   98   85   95   95   40   55
-  Permisos y candado de módulo     85      89   95   98   73   95   83   86   85   95   95   40   75
-  Avisos, notificaciones, encuestas 84     89   95   98   98   91   74   59   85   95   95   40   55
-  Compras y cuentas por pagar      83      71   95   98   96   83   74   98   85   53   95   62   85
-  Personal y expediente            82      89   95   98   73   64   74   71   85   95   95   69   55
+  ──────────────────────────────────────────────────────────────────────────────────────────────────
+  Plataforma y chasis              92       89   95   98   98   79   83   95   85   95   95   95   95
+  Cortes de caja y bolsas de efect 92       77   95   93   98   91   92   98   85   95   95   95   85
+  Inventario, conteo y ventas perd 91       95   95   86   98   95   83   95   85   95   95   76   75
+  Min · Máx                        91       83   95   98   98   95   83   98   85   95   95   76   95
+  Metas y cumplimiento             90       95   95   98   98   91   92   98   85   95   95   40   75
+  Libros fiscales y cierre de perí 90       77   95   98   98   95   92   98   85   95   95   62   95
+  Tablero de inicio                89       89   95   98   98   83   83   89   85   95   95   76   55
+  Solicitudes y aprobaciones       89       95   95   98   96   91   83   89   85   95   95   69   55
+  Traslados entre salas            89       65   95   98   96   95   74   98   85   95   95   95   85
+  Impresión en ticketera           89       77   95   93   92   95   92   98   85   95   83   76   75
+  Asistencia y marcaciones         88       95   95   98   98   95   83   98   85   95   95   40   55
+  Horarios, turnos y vacaciones    88       95   95   93   96   95   74   77   85   95   95   69   55
+  Nómina y bonificaciones          88       95   95   98   98   91   83   95   85   95   95   40   55
+  Ventas                           88       77   95   92   98   95   92   92   85   95   95   62   55
+  Facturación, DTE y clientes      88       95   95   95   92   78   74   92   85   95   95   62   95
+  Productos, presentaciones y labo 88       95   95   89   98   91   65   83   85   95   95   76   55
+  Bitácoras reguladas (SRS)        88       83   95   98   98   95   83   95   85   95   95   40   75
+  Acceso, identidad y kiosco       87       71   95   83   86   95   92   95   85   95   95   69   95
+  Sucursales                       86       95   95   98   96   79   92   83   85   95   95   40   55
+  Pedidos a sucursales             86       71   95   73   96   81   74   74   85   95   95   95   95
+  Compras y cuentas por pagar      86       71   95   98   96   83   74   98   85   89   95   62   85
+  Sistema, salud y auditoría gener 86       83   95   98   98   85   83   98   85   95   95   40   55
+  Permisos, cargos y candado de mó 85       89   95   98   73   95   83   86   85   95   95   40   75
+  Avisos, notificaciones y encuest 84       89   95   98   98   91   74   59   85   95   95   40   55
+  Personal y expediente            82       89   95   98   73   64   74   71   85   95   95   69   55
 ```
 
 Los números salen de `auditoria/puntuar.mjs`, que tiene las reglas del cálculo
@@ -416,3 +422,114 @@ chico y más falso.
 | `scripts/auditoria-cli.mjs` | desbloquear · sellar · recalcular · sincronizar. |
 | `scripts/auditoria-barrido.mjs` | El instrumento: lo que los once gates no miran. |
 | `tests/unit/auditoriaGate.test.js` | Las regresiones que el candado tiene que cazar. |
+
+
+---
+
+## 7. Lo que se cerró el mismo día
+
+### 7.1 Los 32 textos que nombraban el sistema de origen — v2.719.2
+
+El barrido encontró 14. Eran **21**: el detector buscaba «ERP» y «sincronizar» y
+no conocía **WFM**. Seis textos visibles lo nombraban, y uno le informaba al
+usuario que el portal usa un «algoritmo predictivo leyendo Supabase».
+
+Los peores no eran los del ERP. En el expediente de una sucursal, el panel que
+recarga el histórico de ventas se llamaba **«Motor de Sincronización WFM»**, su
+botón decía **«Ejecutar Inyección»**, y al terminar anunciaba **«🎉 Volcado
+Express finalizado»**. Hoy dice «Recargar el histórico de ventas», el botón dice
+«Recargar», y al terminar dice cuántos meses se recargaron.
+
+Los otros once se encontraron mirando el **bundle** y no el fuente: cadenas de
+prosa dentro de `dist/`. Ahí aparecieron «El ERP no entregó el inventario de esta
+sucursal», «Esa categoría no es una de las seis del ERP» y el aviso de que «se
+están terminando de sincronizar los datos del empleado».
+
+**Verificado contra el bundle, no contra el fuente.** Los trece textos viejos se
+buscaron en `dist/` después de compilar: cero coincidencias, y los nuevos sí
+están. Grepear `src/` no alcanza — la mitad de estos textos viven en
+`aria-label`, `title` y `placeholder`.
+
+**Un detector al que le falta una palabra no falla: devuelve un número menor, que
+se lee como buena noticia.** El vocabulario ahora incluye WFM, Supabase,
+PostgREST, SheetJS, «inyección» y «volcado», y descarta `console.*` y los
+argumentos de `invoke()`, que no los lee nadie.
+
+Queda pendiente y es una decisión, no un arreglo: el módulo **«Salud de syncs»**
+se llama así en el menú y en la pantalla de Permisos.
+
+### 7.2 El `gate:bundle` que estaba en rojo — v2.719.3
+
+| vista | antes | ahora | techo |
+|---|---:|---:|---:|
+| Inicio | 100 kB | **87 kB** | 99 |
+| Traslados | 61 kB | **bajo 47** | 47 |
+
+**El Inicio.** El buscador de inventario tenía 1,414 líneas en un archivo y 1,180
+eran el cuerpo del modal. Las descargaba **todo el que abre el portal**, para una
+pantalla que la mayoría de las visitas no abre nunca. El azulejo ya invocaba el
+cuerpo por render-prop, así que sólo faltaba mudarlo — y estaba escrito desde el
+21-ago en el baseline del propio gate. Nadie lo había hecho.
+
+**Traslados.** Tres piezas que sólo aparecen a pedido viajaban estáticas, y en
+los tres casos `WidgetTransferRequests` **ya lo hacía bien**: el patrón estaba
+resuelto en el repo y esta vista no lo seguía.
+
+Diferir lo que se pinta siempre sería mentirle al gate, y el baseline lo dice de
+`RankingVendedores`. La diferencia acá es que estas tarjetas dependen de un dato
+que todavía no llegó: el chunk se pide en paralelo con una consulta que de todos
+modos hay que esperar. **El baseline no se tocó.**
+
+### 7.3 Un hallazgo que esta auditoría no había visto
+
+**Las pestañas del portal no se anunciaban como pestañas.** `ViewTabBar` las
+pintaba como `<button>` sueltos: sin `role="tablist"`, sin `role="tab"`, sin
+`aria-selected`. Un lector de pantalla leía tres botones y no decía cuál está
+activo. Vale para las **29 vistas con pestañas**.
+
+Lo destapó una prueba de Playwright que buscaba `getByRole('tab')` en Traslados y
+no encontraba nada — con las tres pestañas dibujadas en la captura.
+
+**Ningún gate podía verlo, y por eso importa:** los tres gates visuales miran
+cómo se ve, el barrido móvil mide dónde cae. Ninguno escucha. Un defecto que sólo
+existe para quien usa lector de pantalla no tiene instrumento en este repo, y
+esta auditoría tampoco lo tenía — el eje `ux` incluye accesibilidad en su
+enunciado y ningún detector la medía.
+
+### 7.4 Una prueba nueva, porque el gate que premia diferir es ciego
+
+Un `lazy()` sin su `Suspense`, un nombre mal escrito en el
+`.then(m => ({ default: m.Algo }))` o un import a una ruta muerta **compilan,
+pasan el lint, pasan las 689 pruebas unitarias y BAJAN el número del gate**. El
+defecto sólo aparece cuando alguien aprieta el botón.
+
+O sea que la medición que premia diferir es ciega justamente al modo en que
+diferir se rompe. `tests/e2e/carga-diferida.spec.js` abre cada cosa diferida
+contra el entorno de pruebas y exige ver su contenido.
+
+Esa prueba tuvo que aprender lo mismo que todo detector de este repo: arrancó
+exigiendo la consola limpia y falló **tres veces** por cosas del entorno —el
+branch de pruebas no tiene las edge functions desplegadas, a propósito—. Estaba
+midiendo la salud del entorno en vez de la carga del módulo. Hoy sólo falla ante
+los cuatro errores que únicamente puede dar un diferido roto.
+
+### 7.5 Y un gate hizo su trabajo
+
+`gate:perf` **bloqueó el commit** de la mudanza: vigila `MIN_LETRAS_BUSQUEDA` por
+ruta fija y el archivo se había movido. Un chequeo así no distingue «la constante
+se borró» de «el archivo se movió» — y de las dos, la primera es la peligrosa:
+con menos de 3 letras el buscador salía con la primera tecla y traía 16,722
+filas. Se le apuntó al archivo nuevo y se confirmó a mano que sigue en 3.
+
+---
+
+## 8. Lo que sigue, actualizado
+
+1. **`staff_salary`** — el único hallazgo grave, y sigue abierto porque tiene dos
+   salidas legítimas y la decisión no es técnica.
+2. **Correr el barrido móvil de 54 rutas.** Sigue siendo lo de mayor rendimiento:
+   un eje topado en las 25 áreas a la vez, que una sola corrida desbloquea.
+3. **Poner los primeros sellos de sala.**
+4. **Las ocho áreas sin ninguna prueba.**
+5. **La migración `20260823222500`**, que vive en producción y no en el repo.
+6. **El módulo «Salud de syncs»**, que nombra la tubería en el menú.

@@ -57,11 +57,9 @@
           ]
         },
         "ux": {
-          "pct": 89,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 1 texto(s) que nombran el sistema de origen",
-          "hallazgos": [
-            "src/components/common/SidebarSyncStatus.jsx:76 — <span className={`text-micro font-semibold uppercase tracking-wider ${"
-          ]
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
         },
         "eficiencia": {
           "pct": 95,
@@ -88,8 +86,7 @@
         "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1040",
         "[observabilidad] src/data/system.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[ux] src/components/common/SidebarSyncStatus.jsx:76 — <span className={`text-micro font-semibold uppercase tracking-wider ${"
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
       ],
       "verificaciones": [
         {
@@ -161,7 +158,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -260,7 +257,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -355,19 +352,17 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
-          "pct": 84,
-          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240) · gate:bundle EN ROJO: 1 kB sobre el techo",
-          "hallazgos": [
-            "gate:bundle en rojo: 1 kB sobre el techo declarado"
-          ]
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "pct": 76,
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -378,7 +373,7 @@
           ]
         }
       },
-      "pct": 87,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -389,7 +384,6 @@
         "[observabilidad] src/data/dashboard.js",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[eficiencia] gate:bundle en rojo: 1 kB sobre el techo declarado",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -462,7 +456,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -557,7 +551,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -651,7 +645,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -743,7 +737,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -838,7 +832,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -932,7 +926,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1029,12 +1023,9 @@
           ]
         },
         "ux": {
-          "pct": 83,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 2 texto(s) que nombran el sistema de origen",
-          "hallazgos": [
-            "src/views/branch-tabs/TabStaff.jsx:226 — const { data, error } = await supabase.functions.invoke('sync-wfm-sale",
-            "src/views/branch-tabs/TabStaff.jsx:287 — aria-label=\"Progreso de la sincronización histórica\">"
-          ]
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
         },
         "eficiencia": {
           "pct": 95,
@@ -1067,8 +1058,6 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[ux] src/views/branch-tabs/TabStaff.jsx:226 — const { data, error } = await supabase.functions.invoke('sync-wfm-sale",
-        "[ux] src/views/branch-tabs/TabStaff.jsx:287 — aria-label=\"Progreso de la sincronización histórica\">",
         "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
@@ -1134,7 +1123,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1223,7 +1212,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1313,7 +1302,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1411,14 +1400,9 @@
           ]
         },
         "ux": {
-          "pct": 71,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 4 texto(s) que nombran el sistema de origen",
-          "hallazgos": [
-            "src/components/forms/FormClienteDetail.jsx:140 — ? <Badge size=\"sm\" variant=\"neutral\">Descartado: el ERP ya tenía otro ",
-            "src/components/forms/FormClienteDetail.jsx:289 — 'Guardado, pendiente de enviar al ERP',",
-            "src/components/forms/FormClienteDetail.jsx:542 — : <Badge variant=\"neutral\">Sin portar del ERP</Badge>}",
-            "src/components/forms/FormClienteDetail.jsx:554 — placeholder=\"Notas internas del portal (no viajan al ERP)\""
-          ]
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
         },
         "eficiencia": {
           "pct": 95,
@@ -1436,7 +1420,7 @@
           "hallazgos": []
         }
       },
-      "pct": 86,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1451,11 +1435,7 @@
         "[observabilidad] src/data/cotizaciones.js",
         "[observabilidad] src/data/facturacion.js",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[ux] src/components/forms/FormClienteDetail.jsx:140 — ? <Badge size=\"sm\" variant=\"neutral\">Descartado: el ERP ya tenía otro ",
-        "[ux] src/components/forms/FormClienteDetail.jsx:289 — 'Guardado, pendiente de enviar al ERP',",
-        "[ux] src/components/forms/FormClienteDetail.jsx:542 — : <Badge variant=\"neutral\">Sin portar del ERP</Badge>}",
-        "[ux] src/components/forms/FormClienteDetail.jsx:554 — placeholder=\"Notas internas del portal (no viajan al ERP)\""
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
       ],
       "verificaciones": [
         {
@@ -1522,7 +1502,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1620,7 +1600,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1629,8 +1609,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "pct": 76,
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1639,7 +1619,7 @@
           "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1709,7 +1689,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1813,7 +1793,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -1919,19 +1899,17 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
-          "pct": 71,
-          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240) · gate:bundle EN ROJO: 14 kB sobre el techo",
-          "hallazgos": [
-            "gate:bundle en rojo: 14 kB sobre el techo declarado"
-          ]
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1940,7 +1918,7 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1952,8 +1930,7 @@
         "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
         "[observabilidad] src/data/envios.js",
         "[observabilidad] src/data/traslados.js",
-        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[eficiencia] gate:bundle en rojo: 14 kB sobre el techo declarado"
+        "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido"
       ],
       "verificaciones": [
         {
@@ -2021,16 +1998,10 @@
           ]
         },
         "ux": {
-          "pct": 53,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 7 texto(s) que nombran el sistema de origen",
+          "pct": 89,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 1 texto(s) pendiente(s)",
           "hallazgos": [
-            "src/components/forms/FormProveedorDetail.jsx:243 — setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pu",
-            "src/views/purchases/FacturasCompraView.jsx:339 — if (state === 'not_found') return <LiquidTooltip content={`Código comp",
-            "src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,",
-            "src/views/purchases/FacturasCompraView.jsx:970 — ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sin",
-            "src/views/purchases/FacturasCompraView.jsx:971 — : 'Sincronizar',",
-            "src/views/purchases/FacturasCompraView.jsx:1465 — 'Sincronización completa',",
-            "src/views/purchases/FacturasCompraView.jsx:1471 — useToastStore.getState().showToast('Error al sincronizar', mensajeAmig"
+            "src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,"
           ]
         },
         "eficiencia": {
@@ -2049,7 +2020,7 @@
           "hallazgos": []
         }
       },
-      "pct": 83,
+      "pct": 86,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2064,13 +2035,7 @@
         "[observabilidad] src/data/cuentasPorPagar.js",
         "[observabilidad] src/data/facturasCompra.js",
         "[movil] el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido",
-        "[ux] src/components/forms/FormProveedorDetail.jsx:243 — setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pu",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:339 — if (state === 'not_found') return <LiquidTooltip content={`Código comp",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:970 — ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sin",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:971 — : 'Sincronizar',",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:1465 — 'Sincronización completa',",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:1471 — useToastStore.getState().showToast('Error al sincronizar', mensajeAmig"
+        "[ux] src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,"
       ],
       "verificaciones": [
         {
@@ -2131,7 +2096,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -2220,7 +2185,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -2317,7 +2282,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {
@@ -2414,7 +2379,7 @@
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: 0 texto(s) que nombran el sistema de origen",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
           "hallazgos": []
         },
         "eficiencia": {

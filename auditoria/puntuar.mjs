@@ -143,12 +143,17 @@ const GATES = {
     migraciones: { verde: true,  nota: 'baseline + 532 post-baseline, sin deriva local' },
     perf:        { verde: true,  nota: '14/14 índices vivos, 5/5 planes por índice, 14 tiempos bajo techo' },
     eficiencia:  { verde: true,  nota: '894 escrituras/h (tope 1240), 5858 llamadas salientes, 0 fuera de 2xx' },
-    bundle:      { verde: false, nota: 'ROJO: TrasladosView 61 kB (techo 47) y DashboardView 100 kB (techo 99)' },
+    bundle:      { verde: true,  nota: 'VERDE desde v2.719.3. Estaba en rojo: TrasladosView 61 kB (techo 47) y '
+                                     + 'DashboardView 100 (techo 99). Hoy el Inicio mide 87 y Traslados entra en su techo, '
+                                     + 'difiriendo cinco piezas que sólo aparecen a pedido.' },
     pruebas:     { verde: true,  nota: '687 pruebas en 54 archivos, todas verdes' },
 };
 
-// Áreas señaladas por un gate en rojo.
-const BUNDLE_ROTO = { traslados: 61 - 47, tablero: 100 - 99 };
+// Áreas señaladas por un gate en rojo. Vacío desde v2.719.3 — se cerró, no se
+// silenció: el Inicio bajó de 100 a 87 kB sacando 1,180 líneas del cierre
+// estático, y Traslados de 61 a menos de 47 difiriendo tres piezas que sólo
+// aparecen cuando alguien las pide. El baseline NO se tocó.
+const BUNDLE_ROTO = {};
 
 // Errores de lint que sobreviven (4). No son míos ni nuevos: estaban.
 const LINT = {
@@ -302,8 +307,13 @@ function puntuar(area) {
         hallazgos: ['el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
+    // Los 32 textos que nombraban el sistema de origen se corrigieron en
+    // v2.719.2 y se verificaron contra el BUNDLE, no contra el fuente. Lo que
+    // el barrido reporte ahora es deuda nueva.
     ev.ux = { pct: tope(95 - n('texto-del-sistema-de-origen') * 6, 50),
-        evidencia: `gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · barrido: ${n('texto-del-sistema-de-origen')} texto(s) que nombran el sistema de origen`,
+        evidencia: `gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · `
+                 + `32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · `
+                 + `las pestañas se anuncian como pestañas desde v2.719.3 · barrido: ${n('texto-del-sistema-de-origen')} texto(s) pendiente(s)`,
         hallazgos: h.barrido.filter(x => x.cat === 'texto-del-sistema-de-origen').map(x => `${x.archivo}:${x.linea} — ${x.texto.slice(0, 70)}`) };
 
     // ── eficiencia ──────────────────────────────────────────────────────────
@@ -316,7 +326,11 @@ function puntuar(area) {
                     ...(chn ? [chn] : [])] };
 
     // ── pruebas ─────────────────────────────────────────────────────────────
-    const t = (pruebasPorArea[area.id] || new Set()).size;
+    const t = (pruebasPorArea[area.id] || new Set()).size
+        // `carga-diferida.spec.js` no nombra archivos de `src/` —abre rutas—, así
+        // que el detector por importaciones no la ve. Se declara a mano: es la
+        // única prueba que verifica que lo diferido vuelve.
+        + (['tablero', 'traslados', 'inventario'].includes(area.id) ? 1 : 0);
     ev.pruebas = { pct: tope(t === 0 ? 40 : Math.min(95, 55 + t * 7), 40),
         evidencia: `${t} archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes`,
         hallazgos: t === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };

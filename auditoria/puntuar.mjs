@@ -138,9 +138,11 @@ const GATES = {
     data:        { verde: true,  nota: 'techo de 1000, tipos y errores tragados: en verde' },
     borradores:  { verde: true,  nota: '24 formularios largos sin borrador, bajo baseline' },
     ux:          { verde: true,  nota: 'medido 2026-08-17, anchos 1440/1280' },
-    permisos:    { verde: true,  nota: '89 módulos cruzados; 1 hallazgo abierto por decisión: staff_salary' },
+    permisos:    { verde: true,  nota: '89 módulos cruzados; CERO hallazgos abiertos desde v2.720.0 — staff_salary '
+                                     + 'era el último y se cerró en las dos capas' },
     doc:         { verde: true,  nota: '15 bloques de DESIGN.md revisados' },
-    migraciones: { verde: true,  nota: 'baseline + 532 post-baseline, sin deriva local' },
+    migraciones: { verde: true,  nota: 'baseline + 534 post-baseline, y desde v2.720.0 sin deriva contra PROD: '
+                                     + 'se recuperó del registro el archivo de 20260823222500, que estaba aplicado y sin guardar' },
     perf:        { verde: true,  nota: '14/14 índices vivos, 5/5 planes por índice, 14 tiempos bajo techo' },
     eficiencia:  { verde: true,  nota: '894 escrituras/h (tope 1240), 5858 llamadas salientes, 0 fuera de 2xx' },
     bundle:      { verde: true,  nota: 'VERDE desde v2.719.3. Estaba en rojo: TrasladosView 61 kB (techo 47) y '
@@ -199,7 +201,8 @@ const PENDIENTES = {
     tablero:   ['la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios'],
     plataforma: ['el trabón al girar el teléfono está EN PAUSA'],
     sistema:   ['auditoría 2026-07-30: quedan puntos abiertos', 'auditoría DTE proveedores: H5b y D'],
-    permisos:  ['staff_salary: el salario viaja al navegador de cualquiera que abra el expediente'],
+    // `staff_salary` salió de acá en v2.720.0. `gate:permisos` quedó sin un solo
+    // hallazgo abierto — era el último.
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -273,8 +276,16 @@ function puntuar(area) {
     if (area.id === 'facturacion-dte') higiene.push(...SERVIDOR.search_path_mutable.map(f => `${f}(): sin SET search_path — viola la regla 4 del hardening`));
     if (area.id === 'sucursales') higiene.push('branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado');
     if (area.id === 'horarios') higiene.push('holidays y shifts: legibles por anon con USING(true), sin motivo escrito');
-    if (area.id === 'permisos') abiertos.push('staff_salary: la pantalla ofrece un permiso de «datos sensibles» que no gatea NADA — ni en el navegador ni en el servidor');
-    if (area.id === 'personal') abiertos.push('el salario de todo el personal viaja al navegador de cualquiera que abra un expediente (ver permisos/staff_salary)');
+    // `staff_salary` se cerró en v2.720.0, en las dos capas: los campos de
+    // dinero salieron de `employees_safe` y viven detrás de
+    // `get_employee_salarios`, y la sección del expediente dejó de gatearse por
+    // «poder editar la ficha». Era el ÚNICO hallazgo grave del portal.
+    //
+    // Queda anotado lo que NO se movió, para que no se pierda: `dui`,
+    // `afp_number` e `isss_number` siguen en la vista. Son identidad previsional
+    // y no «salarios e ingresos» —que es lo que ese módulo dice gatear— así que
+    // bajo qué llave van es otra decisión, no un olvido.
+    if (area.id === 'personal') higiene.push('dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea');
     const anonMios = [...abiertos, ...higiene];
     ev.seguridad = { pct: tope(98 - higiene.length * 2 - abiertos.length * 25, 55),
         evidencia: '0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · '
@@ -302,9 +313,20 @@ function puntuar(area) {
     // filas que desde el fuente son una caja cerrada. El barrido de 54 rutas es
     // lo que cierra ese hueco y su última corrida completa es del 2026-08-17.
     // Nada barrido después de esa fecha puede declararse verde.
+    // El barrido SÍ se corrió el 2026-08-23 y dijo «54 vistas · 0 por corregir».
+    // Ese cero era del INSTRUMENTO: sólo 13 rutas tenían algo que medir y las
+    // otras 41 llegaron sin datos —el entorno de pruebas no los tiene, y la
+    // cuenta de pruebas no abre todas las pantallas—. Su bandera `vacia` medía
+    // el texto del body ENTERO, y el menú lateral solo ya pasaba el umbral, así
+    // que ninguna vista sin datos se marcaba nunca.
+    //
+    // Se arregló el instrumento (ahora informa «MEDIDAS N» y marca las que no
+    // pudo medir), pero el eje NO sube: para medir de verdad hace falta correrlo
+    // contra un entorno CON datos. Un gate que no pudo medir no puede dar verde.
     ev.movil = { pct: 85,
-        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e de 54 rutas: última corrida 2026-08-17',
-        hallazgos: ['el barrido de 54 rutas no se volvió a correr desde el 2026-08-17: lo posterior no está medido'] };
+        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas',
+        hallazgos: ['el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41',
+                    'la última corrida sobre un entorno CON datos es del 2026-08-17'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en

@@ -334,8 +334,21 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 const fichas = [...document.querySelectorAll('button[data-surface="card"], div[data-surface="card"]')]
                     .filter(e => e.firstElementChild?.classList?.contains('justify-between')).length;
                 const anchas = tablas.filter(t => t.getBoundingClientRect().width > vw + 1).length;
+                // ── `vacia` medía el BODY ENTERO y por eso nunca daba true ──
+                // El menú lateral con sus veinte ítems ya pasa los 120
+                // caracteres, así que una vista con un `EmptyState` se contaba
+                // como medida. En la corrida del 2026-08-23: 54 rutas, «0 por
+                // corregir», y **13 tenían algo que medir**. Las otras 41
+                // llegaron sin datos y el resumen las dio por buenas.
+                //
+                // Ahora la señal es directa: si no hay ni una ficha, ni una
+                // tabla, ni una fila de lista, el instrumento NO PUDO MEDIR el
+                // acomodo de los datos. Eso no es «está bien», y decirlo así es
+                // la diferencia entre un barrido y un barrido que se cree.
+                const filas = document.querySelectorAll('tbody tr, [role="row"], li[data-fila]').length;
                 return { tablas: tablas.length, fichas, tablasAnchas: anchas,
                          reventó: /ALGO SALIÓ MAL/.test(document.body.innerText),
+                         sinDatos: fichas === 0 && tablas.length === 0 && filas === 0,
                          vacia: document.body.innerText.trim().length < 120 };
             });
             if (extra.reventó) extra.error = [...new Set(errores)].slice(0, 3);
@@ -507,13 +520,25 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0
             || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0
             || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0 || v.tocarPerdido > 0);
-        console.log(`\n╔══ ${informe.length} vistas · con algo que corregir: ${malas.length} ══╗`);
+        // Un cero se lee como «está todo bien», así que el encabezado tiene que
+        // decir sobre cuántas vistas se midió DE VERDAD. Sin eso, «54 vistas · 0
+        // por corregir» y «13 vistas · 0 por corregir» se imprimen igual — y la
+        // segunda no es una respuesta sobre las 54.
+        const conDatos = informe.filter(v => !v.sinDatos && !v.error);
+        const sinDatos = informe.filter(v => v.sinDatos && !v.error);
+        console.log(`\n╔══ ${informe.length} vistas · MEDIDAS ${conDatos.length} · con algo que corregir: ${malas.length} ══╗`);
+        if (sinDatos.length) {
+            console.log(`  ⚠ ${sinDatos.length} llegaron SIN NADA que medir (ni ficha, ni tabla, ni fila).`);
+            console.log(`    Su cero es del instrumento, no del portal: o la cuenta no tiene el`);
+            console.log(`    permiso, o el entorno no tiene datos para esa vista.`);
+            console.log(`    ${sinDatos.map(v => v.ruta).join(', ')}`);
+        }
         console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen dedo zoom acuse imposib perdido');
         informe.forEach(v => {
             if (v.error) { console.log(`  ${v.ruta.padEnd(24)} (no cargó)`); return; }
             const mal = v.tablas > 0 || v.desbordePagina > 0 || v.desbordan > 0 || v.zoomIOS > 0
                 || v.chicos > 0 || v.sinAcuse > 0 || v.imposibles > 0 || v.tocarPerdido > 0;
-            console.log(`  ${mal ? '✗' : '·'} ${v.ruta.padEnd(22)}`
+            console.log(`  ${mal ? '✗' : v.sinDatos ? '?' : '·'} ${v.ruta.padEnd(22)}`
                 + String(v.tablas).padStart(6) + String(v.fichas).padStart(7)
                 + String(v.desbordePagina).padStart(6) + String(v.desbordan).padStart(6)
                 + String(v.chicos).padStart(5) + String(v.zoomIOS).padStart(5)

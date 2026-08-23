@@ -4,11 +4,16 @@
 todavía, y eso es a propósito: el sello lo pone una corrida real en sala, no una
 medición.
 
-> **Al cierre de la jornada: 221 → 206 hallazgos, y los doce gates en verde.**
-> Se cerraron los 32 textos que nombraban el sistema de origen (v2.719.2), el
-> `gate:bundle` que estaba en rojo (v2.719.3), y un hallazgo de accesibilidad que
-> esta auditoría no había visto: las pestañas del portal no se anunciaban como
-> pestañas. El detalle, en la §7.
+> **Al cierre de la jornada: los doce gates en verde y el único hallazgo grave
+> cerrado.** Se resolvieron los 32 textos que nombraban el sistema de origen
+> (v2.719.2), el `gate:bundle` que estaba en rojo (v2.719.3), y `staff_salary`,
+> que era una llave sin cerradura (v2.720.0). Más dos cosas que esta auditoría
+> no había visto: las pestañas del portal no se anunciaban como pestañas, y el
+> barrido móvil daba un cero que era del instrumento. El detalle, en la §7.
+>
+> El conteo de hallazgos pasó de 221 a **229**, y eso no es un retroceso: se
+> cerraron quince y se **descubrieron** los del barrido, que estaban ahí y nadie
+> los contaba. Un número que sólo baja es un número que dejó de mirar.
 
 El portal está en mucho mejor estado del que aparenta desde adentro. La regla
 más cara del proyecto —envolver `auth_*` en `(SELECT …)`, el incidente del
@@ -533,3 +538,60 @@ filas. Se le apuntó al archivo nuevo y se confirmó a mano que sigue en 3.
 4. **Las ocho áreas sin ninguna prueba.**
 5. **La migración `20260823222500`**, que vive en producción y no en el repo.
 6. **El módulo «Salud de syncs»**, que nombra la tubería en el menú.
+
+
+### 7.6 `staff_salary` — el único hallazgo grave, cerrado (v2.720.0)
+
+**La medición corrigió al informe que lo levantó.** La nota de `gate:permisos`
+decía «el salario viaja al navegador de cualquiera que abra el expediente».
+Cierto en la letra y engañoso en el fondo: los **cuatro** cargos que podían abrir
+un expediente —Administrador, Jefe/a de Talento Humano, QA/Testing y
+Supervisor/a de Ventas— eran exactamente los cuatro que tenían la llave. **No se
+le escapaba a nadie.**
+
+Lo que fallaba era otra cosa y peor de sostener: la protección era una
+**coincidencia de configuración**, no una regla. El día que alguien le diera
+`staff_detail` a una jefatura de sala —justo lo que la pantalla de Permisos
+invita a hacer, con `staff_salary` apagado al lado— el sueldo viajaba igual, y
+el interruptor que decía controlarlo no hacía nada.
+
+Se arregló ahora **precisamente porque hoy no le quitaba el dato a nadie**: los
+cuatro que lo verían son los cuatro que ya lo ven, así que el cambio no le cierra
+una puerta a nadie que la esté usando.
+
+- **En el servidor**: `base_salary`, `bank_name` y `account_number` salieron de
+  `employees_safe` (83 → 80 columnas) y viven detrás de `get_employee_salarios`,
+  que comprueba el módulo y respeta su alcance. Sin la llave devuelve **vacío, no
+  error**: «no te toca» no puede parecer «se rompió».
+- **En la pantalla**: la sección de dinero del expediente estaba gateada por
+  `canEdit` —poder EDITAR la ficha— y ahora la gatea su propio módulo. Donde
+  decía **`$0.00`** con el dato ausente ahora dice `—`.
+
+Probado primero en el branch `staging` y verificado en producción. La migración
+se aplicó **antes** del push, porque un push a `main` despliega en segundos.
+
+`gate:permisos` quedó **sin un solo hallazgo abierto**. Era el último.
+
+### 7.7 El barrido móvil dio un cero que era suyo, no del portal
+
+Se corrió el barrido de las 54 rutas y anunció: **«54 vistas · con algo que
+corregir: 0»**. Cero reventadas, cero tablas en el teléfono, cero desbordes.
+
+**Sólo 13 rutas tenían algo que medir.** Las otras 41 llegaron sin una ficha, sin
+una tabla y sin una fila —el entorno de pruebas no tiene datos para ellas, y la
+cuenta de pruebas no abre todas las pantallas— y el resumen las contó como
+buenas.
+
+La causa: su bandera `vacia` medía `document.body.innerText.length < 120`, o sea
+el **body entero, chasis incluido**. El menú lateral con sus veinte ítems ya pasa
+ese umbral, así que ninguna vista sin datos se marcaba nunca.
+
+Se arregló el instrumento: ahora informa **«MEDIDAS N de 54»**, marca con `?` las
+que no pudo medir y las lista con el motivo. Pero **el eje `movil` no sube**:
+para medir de verdad hace falta correrlo contra un entorno con datos. Un gate que
+no pudo medir no puede dar verde.
+
+Es la cuarta vez en el día que el hallazgo estaba en la medición y no en el
+portal. Vale la pena decirlo así de claro: **de los seis problemas que esta
+auditoría encontró en sus propios instrumentos, ninguno se habría notado mirando
+el número.** Todos aparecieron al abrir tres casos a mano.

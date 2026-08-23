@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.716.0 — El encabezado del conteo se pliega con el teléfono acostado
+
+Primera entrega **verificada en un iPhone de verdad** (WebKit, no un tamaño
+emulado): resulta que las credenciales de prueba ya estaban en el repo y no lo
+sabía, así que ahora puedo mirar las pantallas en vez de deducirlas.
+
+Y lo primero que se midió fue esto: con el teléfono **acostado** (844 × 390),
+encima de la lista había **474px — el 121% de la pantalla**. No se veía **un
+solo producto** sin scrollear. Repartidos así:
+
+| | |
+|---|---:|
+| tarjeta del conteo (Volver · Bodega · botones) | 147 px |
+| tarjetas de resumen | 75 px |
+| título de la vista | 68 px |
+| barra del portal | 65 px |
+| banner de construcción | 31 px |
+
+**Ahora el encabezado se pliega a una línea** — «Bodega · EN PROGRESO · 84% ·
+faltan 548» — y se abre de un toque. No se esconde: «Finalizar», «Imprimir» y
+«Volver» viven ahí adentro y son acciones reales. Se pliega **sólo donde el alto
+escasea**; parado no cambia nada, porque ahí el alto sobra.
+
+De paso, el título de la vista aprieta su relleno en pantallas cortas —de 20/16
+a 8/6 px—, y eso alcanza a **todas** las vistas del portal cuando el teléfono
+está acostado.
+
+| | antes | ahora |
+|---|---:|---:|
+| acostado, encima de la lista | 474 px (121%) | **275 px (71%)** |
+| productos a la vista | 0 | 1 |
+| parado | 526 px (62%) | 526 px — sin cambio |
+
+**Y una prueba encontró un bug que el compilador no vio.** Para volver al techo
+de peso, el formulario de «Agregar producto» salió a su propio archivo y pasa a
+cargarse sólo al abrirlo. Mover 162 líneas dejó tres cosas sin definir
+—`Campo`, `CajaFecha` y un icono— y **ni el build ni el linter lo notaron**: sólo
+se ve al renderizar. Quedó anclado en una prueba nueva, que además cubre lo que
+el navegador no puede: el botón «Agregar» exige permiso de gestión, y la cuenta
+con la que corre el barrido no lo tiene.
+
 ## v2.715.0 — Envíos: tarjetas con jerarquía, motivo obligatorio y dos huecos de la auditoría
 
 **Las tarjetas.** Reportado con captura: *«no se le ve peso a nada»*. Eran tres

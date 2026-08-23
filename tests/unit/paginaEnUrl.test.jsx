@@ -33,15 +33,24 @@ import usePaginaEnUrl from '../../src/hooks/usePaginaEnUrl';
 //     que vino a arreglar.
 // ═══════════════════════════════════════════════════════════════════════════
 
-let ultimo = null;
-let atras = null;
+// Un objeto y no dos variables sueltas: escribirle a una variable de módulo
+// DESDE el render es lo que marca `react-hooks/globals`, y con razón — es la
+// forma de un efecto colado en el cuerpo del componente. Escribirle una
+// propiedad a un objeto estable no lo es.
+const capturado = { api: null, atras: null };
 
 function Sonda({ total = null }) {
     const api = usePaginaEnUrl({ total });
     const location = useLocation();
     const navigate = useNavigate();
-    ultimo = api;
-    atras = () => navigate(-1);
+    // En un EFECTO y no en el cuerpo del render: escribir afuera mientras se
+    // renderiza es lo que marca `react-hooks/globals`, y con razón. Sin lista de
+    // dependencias a propósito —hace falta la API de CADA render— y `act()` los
+    // vacía antes de que la prueba lea, así que la sonda sigue estando al día.
+    React.useEffect(() => {
+        capturado.api = api;
+        capturado.atras = () => navigate(-1);
+    });
     return <span data-testid="url">{`${location.pathname}${location.search}`}</span>;
 }
 
@@ -66,20 +75,20 @@ function montar(inicial, props = {}) {
 const url = () => screen.getByTestId('url').textContent;
 
 describe('usePaginaEnUrl', () => {
-    beforeEach(() => { cleanup(); ultimo = null; atras = null; });
+    beforeEach(() => { cleanup(); capturado.api = null; capturado.atras = null; });
 
     it('lee la página y el tamaño de la dirección', () => {
         montar('/conteo/abc?pag=50&ver=100');
-        expect(ultimo.page).toBe(50);
-        expect(ultimo.pageSize).toBe(100);
+        expect(capturado.api.page).toBe(50);
+        expect(capturado.api.pageSize).toBe(100);
     });
 
     it('una dirección sucia cae al default, nunca a NaN', () => {
         for (const sucia of ['?pag=abc', '?pag=0', '?pag=-3', '?pag=', '']) {
             cleanup();
             montar(`/conteo/abc${sucia}`);
-            expect(ultimo.page).toBe(1);
-            expect(Number.isInteger(ultimo.page)).toBe(true);
+            expect(capturado.api.page).toBe(1);
+            expect(Number.isInteger(capturado.api.page)).toBe(true);
         }
     });
 
@@ -87,46 +96,46 @@ describe('usePaginaEnUrl', () => {
         for (const tam of ['99999', '1000', '7', 'cien']) {
             cleanup();
             montar(`/conteo/abc?ver=${tam}`);
-            expect(ultimo.pageSize).toBe(25);
+            expect(capturado.api.pageSize).toBe(25);
         }
         // Y los tres que sí existen entran tal cual.
         for (const tam of [25, 50, 100]) {
             cleanup();
             montar(`/conteo/abc?ver=${tam}`);
-            expect(ultimo.pageSize).toBe(tam);
+            expect(capturado.api.pageSize).toBe(tam);
         }
     });
 
     it('cambiar de página REEMPLAZA: un solo «atrás» sale de la vista', () => {
         montar('/conteo/abc');
-        act(() => { ultimo.setPage(2); });
-        act(() => { ultimo.setPage(3); });
-        act(() => { ultimo.setPage(4); });
+        act(() => { capturado.api.setPage(2); });
+        act(() => { capturado.api.setPage(3); });
+        act(() => { capturado.api.setPage(4); });
         expect(url()).toBe('/conteo/abc?pag=4');
         // Lo que de verdad importa: recorrer páginas no apila historial. Con
         // `push`, salir tras 50 páginas costaría 50 toques.
-        const volver = atras;
+        const volver = capturado.atras;
         act(() => { volver(); });
         expect(url()).toBe('/inventario');
     });
 
     it('la página 1 no ensucia el enlace', () => {
         montar('/conteo/abc?pag=7');
-        act(() => { ultimo.setPage(1); });
+        act(() => { capturado.api.setPage(1); });
         expect(url()).toBe('/conteo/abc');
     });
 
     it('cambiar el tamaño vuelve a la página 1 en UNA sola escritura', () => {
         montar('/conteo/abc?pag=40');
-        act(() => { ultimo.setPageSize(100); });
+        act(() => { capturado.api.setPageSize(100); });
         expect(url()).toBe('/conteo/abc?ver=100');
-        expect(ultimo.page).toBe(1);
-        expect(ultimo.pageSize).toBe(100);
+        expect(capturado.api.page).toBe(1);
+        expect(capturado.api.pageSize).toBe(100);
     });
 
     it('resetPage borra la posición y deja el resto de la dirección', () => {
         montar('/conteo/abc?pag=12&ver=50&tab=productos');
-        act(() => { ultimo.resetPage(); });
+        act(() => { capturado.api.resetPage(); });
         expect(url()).toContain('ver=50');
         expect(url()).toContain('tab=productos');
         expect(url()).not.toContain('pag=');
@@ -135,26 +144,26 @@ describe('usePaginaEnUrl', () => {
     it('NO corrige la página mientras el total todavía es 0', () => {
         // Es el caso del arranque: la dirección dice 50 y la lista no llegó.
         montar('/conteo/abc?pag=50', { total: 0 });
-        expect(ultimo.page).toBe(50);
+        expect(capturado.api.page).toBe(50);
         expect(url()).toBe('/conteo/abc?pag=50');
     });
 
     it('corrige a la última página real cuando el total ya se sabe', () => {
         montar('/conteo/abc?pag=50', { total: 60 });   // 60 filas / 25 = 3 páginas
-        expect(ultimo.totalPages).toBe(3);
+        expect(capturado.api.totalPages).toBe(3);
         expect(url()).toBe('/conteo/abc?pag=3');
-        expect(ultimo.page).toBe(3);
+        expect(capturado.api.page).toBe(3);
     });
 
     it('una lista de una sola página deja la dirección limpia', () => {
         montar('/conteo/abc?pag=9', { total: 10 });
-        expect(ultimo.totalPages).toBe(1);
+        expect(capturado.api.totalPages).toBe(1);
         expect(url()).toBe('/conteo/abc');
     });
 
     it('una página dentro de rango no se toca', () => {
         montar('/conteo/abc?pag=2', { total: 60 });
-        expect(ultimo.page).toBe(2);
+        expect(capturado.api.page).toBe(2);
         expect(url()).toBe('/conteo/abc?pag=2');
     });
 });

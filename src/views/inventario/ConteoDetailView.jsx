@@ -7,9 +7,7 @@ import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
-    Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle,
+    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -29,10 +27,6 @@ import { useToastStore } from '../../store/toastStore';
 import {
     printHojaConteo, printResultadosConteo, printAjustesConteo, exportAjustesConteo,
 } from '../../utils/conteoInventarioPrint';
-import {
-    searchActiveProductsForConteo, fetchProductPresentacionesForConteo, fetchErpSucursalIdsForBranch,
-    fetchInventoryLotesForProduct,
-} from '../../data/conteoInventario';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
@@ -42,13 +36,15 @@ import Notice from '../../components/common/Notice';
 // del cierre de esta vista —y el techo del `bundle-gate` los vio— para una
 // pantalla que se abre de pie frente a un anaquel, muchas veces con datos.
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
+// Mismo motivo que el lector: 162 líneas que sólo existen al tocar «Agregar».
+const AddManualItemForm = lazy(() => import('./AddManualItemForm'));
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
-import useLayoutCompacto, { useFichasEnVezDeTabla } from '../../hooks/useLayoutCompacto';
+import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '../../hooks/useLayoutCompacto';
 import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
+import { CajaFecha } from './camposDeConteo';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
-import { inputHoverClass } from '../../utils/inputStyles';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
@@ -1527,6 +1523,15 @@ export default function ConteoDetailView() {
     // CSS dejaba las DOS maquetas montadas, o sea cada renglón dibujado dos
     // veces con su campo de captura.
     const enFichas = useFichasEnVezDeTabla();
+    // Con el teléfono acostado el alto es lo que falta: medido el 2026-08-23 en
+    // un iPhone 13 (844 × 390), encima de la lista había 474px — el 121% de la
+    // pantalla, o sea que no se veía UN producto sin scrollear. Contar es mirar
+    // el anaquel y teclear; el encabezado es contexto, no herramienta.
+    const altoEscaso = useAltoEscaso();
+    // Plegado por defecto SÓLO donde el alto escasea. Es estado de pantalla y
+    // no de la dirección a propósito: no describe qué se está mirando, y un
+    // enlace compartido no debería llegar con el encabezado cerrado.
+    const [encabezadoAbierto, setEncabezadoAbierto] = useState(false);
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
@@ -2051,7 +2056,37 @@ export default function ConteoDetailView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de inventario" filtersContent={filtersContent}>
             <div className="px-2 py-4 pb-28 md:p-6 md:pb-6 lg:p-8 space-y-6">
-                {conteo && (
+                {/* ── Con el teléfono acostado, el encabezado se pliega ──────
+                    474px encima de la lista sobre una pantalla de 390 es no ver
+                    ningún producto hasta scrollear. Plegado quedan ~40px y la
+                    primera fila entra. No se ESCONDE: la barra dice lo mismo en
+                    una línea —sala, avance y cuánto falta— y se abre de un
+                    toque, porque «Finalizar», «Imprimir» y «Volver» viven ahí
+                    adentro y son acciones reales, no adorno. */}
+                {conteo && altoEscaso && !encabezadoAbierto && (
+                    <button type="button"
+                        onClick={() => setEncabezadoAbierto(true)}
+                        // Nombre propio: sin él, un lector de pantalla anuncia
+                        // «Bodega En progreso 84%», que describe el contenido y
+                        // no lo que el botón HACE.
+                        aria-label="Desplegar el encabezado del conteo"
+                        aria-expanded={false}
+                        data-surface="card"
+                        className="w-full min-h-[var(--tap-min)] px-3 py-2 flex items-center gap-2
+                                   text-left active:scale-[0.99] transition-transform duration-[var(--dur-fast)]">
+                        <span className="text-label font-black text-content truncate">{conteo.branches?.name}</span>
+                        {es && <Badge variant={es.variante} size="sm">{es.label}</Badge>}
+                        {resumen && (
+                            <span className="text-caption text-content-3 tabular-nums whitespace-nowrap ml-auto">
+                                {formatPct((resumen.total_items > 0 ? resumen.contados / resumen.total_items : 0) * 100, { decimales: 0 })}
+                                {resumen.pendientes > 0 ? ` · faltan ${formatQty(resumen.pendientes)}` : ' · completo'}
+                            </span>
+                        )}
+                        <ChevronLeft size={14} className="shrink-0 -rotate-90 text-content-3" />
+                    </button>
+                )}
+
+                {conteo && !(altoEscaso && !encabezadoAbierto) && (
                     <div data-surface="card" className="p-4 md:p-5">
                         {/* Volver vive acá y no en una fila propia arriba: era un botón
                             solo en 40px de alto, y el lugar donde uno busca "de dónde
@@ -2061,6 +2096,15 @@ export default function ConteoDetailView() {
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-start gap-2 min-w-0">
                                 <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver</Button>
+                                {/* Volver a plegar. Sólo donde se pudo plegar:
+                                    en cualquier otra pantalla sería un botón
+                                    que esconde algo que no molestaba. */}
+                                {altoEscaso && (
+                                    <Button variant="ghost" icon={ChevronUp} iconOnly
+                                        aria-label="Plegar el encabezado"
+                                        aria-expanded
+                                        onClick={() => setEncabezadoAbierto(false)} />
+                                )}
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2 mb-1">
                                         <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
@@ -2177,7 +2221,10 @@ export default function ConteoDetailView() {
                     recalcular_totales_conteo al cerrar— valían 0 justo durante los
                     días en que sirve saber cuánto falta. */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    {resumen && (
+                    {/* El carril de resumen es contexto y se pliega con el
+                        encabezado. La píldora de filtros NO: es herramienta —
+                        buscar y filtrar es parte de contar, no de mirar. */}
+                    {resumen && !(altoEscaso && !encabezadoAbierto) && (
                         <CarrilCards className="flex-1" ariaLabel="Resumen del conteo">
                             {tarjetasResumen(resumen, !hasResults, canVerMontos)}
                         </CarrilCards>
@@ -2230,7 +2277,7 @@ export default function ConteoDetailView() {
                 )}
 
                 {showAddForm && editable && conteo && !compacto && (
-                    <AddManualItemForm
+                    <Suspense fallback={null}><AddManualItemForm
                         branchId={conteo.branch_id}
                         simple={simple}
                         onAdd={async (payload) => {
@@ -2239,7 +2286,7 @@ export default function ConteoDetailView() {
                             await load();
                         }}
                         onCancel={() => setShowAddForm(false)}
-                    />
+                    /></Suspense>
                 )}
 
                 {/* La BODEGA. El área de vencidos va en su propia sección más
@@ -2353,16 +2400,18 @@ export default function ConteoDetailView() {
                         arrastre. El formulario lleva sus propios botones, así que
                         va sin `pie`. */}
                     <HojaMovil titulo="Agregar producto" subtitulo="Al conteo en curso" icono={PackagePlus}>
-                        <AddManualItemForm
-                            branchId={conteo.branch_id}
-                            simple={simple}
-                            onAdd={async (payload) => {
-                                await agregarProductoManualConteo(id, payload);
-                                setShowAddForm(false);
-                                await load();
-                            }}
-                            onCancel={() => setShowAddForm(false)}
-                        />
+                        <Suspense fallback={null}>
+                            <AddManualItemForm
+                                branchId={conteo.branch_id}
+                                simple={simple}
+                                onAdd={async (payload) => {
+                                    await agregarProductoManualConteo(id, payload);
+                                    setShowAddForm(false);
+                                    await load();
+                                }}
+                                onCancel={() => setShowAddForm(false)}
+                            />
+                        </Suspense>
                     </HojaMovil>
                 </ModalShell>
             )}
@@ -2448,14 +2497,6 @@ export default function ConteoDetailView() {
 // el de fecha son TRES inputs adentro (día/mes/año). El nombre accesible lo lleva
 // cada control por su cuenta — `ariaLabel` en los selects, `aria-label` en el
 // input, y los suyos propios el date picker.
-function Campo({ label, children }) {
-    return (
-        <div className="flex flex-col gap-1 min-w-0">
-            <span className="text-micro font-black uppercase tracking-widest text-content-3 ml-1">{label}</span>
-            {children}
-        </div>
-    );
-}
 
 // El envoltorio que `LiquidDatePicker` EXIGE. DESIGN.md §14 lo dice con estas
 // palabras: «`LiquidDatePicker` es el caso contrario y su envoltorio SÍ va. Su
@@ -2473,179 +2514,4 @@ function Campo({ label, children }) {
 // mismo envoltorio en el portal (h-[36px] rounded-xl, h-[42px] rounded-2xl,
 // h-10 overflow-hidden, …). Es un canónico que hace que cada llamador se
 // invente su cromo, y merece una pasada propia.
-function CajaFecha({ inerte, titulo, children }) {
-    return (
-        <div
-            role="group"
-            title={titulo}
-            aria-disabled={inerte || undefined}
-            className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center
-                h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}
-                ${inerte ? 'opacity-60 pointer-events-none' : ''}`}
-        >
-            {children}
-        </div>
-    );
-}
 
-function AddManualItemForm({ branchId, onAdd, onCancel, simple = false }) {
-    const { showToast } = useToastStore();
-    const [results, setResults] = useState([]);
-    const [selected, setSelected] = useState(null);
-    const [presentacionOpts, setPresentacionOpts] = useState([]);
-    const [presentacion, setPresentacion] = useState('');
-    const [loteOpts, setLoteOpts] = useState([]);
-    const [lote, setLote] = useState('');
-    const [loteOtro, setLoteOtro] = useState('');
-    const [fechaVencimiento, setFechaVencimiento] = useState('');
-    const [saving, setSaving] = useState(false);
-
-    // Antes se filtraban los productos ya presentes en el conteo, lo que hacía
-    // imposible el caso más común de una farmacia: el snapshot trae el lote A y
-    // en el anaquel aparece también el B. El duplicado real es
-    // (producto, presentación, lote), y ahora lo rechaza agregar_item_conteo.
-    const handleSearch = async (q) => {
-        if (!q || q.trim().length < 2) { setResults([]); return; }
-        const { data, error } = await searchActiveProductsForConteo(q.trim());
-        if (error) console.error('handleSearch: product search failed:', error.message);
-        setResults(data || []);
-    };
-
-    const handleSelectProduct = async (val) => {
-        const found = results.find((p) => String(p.id) === val) || null;
-        setSelected(found);
-        setPresentacion('');
-        setLote('');
-        setLoteOtro('');
-        setFechaVencimiento('');
-        setPresentacionOpts([]);
-        setLoteOpts([]);
-        if (!found) return;
-
-        const [{ data: precios, error: preciosErr }, { data: erpMap, error: erpMapErr }] = await Promise.all([
-            fetchProductPresentacionesForConteo(found.id),
-            fetchErpSucursalIdsForBranch(branchId),
-        ]);
-        if (preciosErr) console.error('handleSelectProduct: fetch product_precios failed:', preciosErr.message);
-        if (erpMapErr) console.error('handleSelectProduct: fetch erp_sucursal_map failed:', erpMapErr.message);
-        const tipos = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
-        setPresentacionOpts(tipos.map((t) => ({ value: t, label: t })));
-
-        // Los lotes solo se piden si el conteo los lleva: en sencillo esta
-        // consulta no alimentaría ningún campo.
-        const erpIds = (erpMap || []).map((m) => m.erp_sucursal_id);
-        if (erpIds.length && !simple) {
-            const { data: lotes, error: lotesErr } = await fetchInventoryLotesForProduct(found.id, erpIds);
-            if (lotesErr) console.error('handleSelectProduct: fetch lotes failed:', lotesErr.message);
-            const seen = new Map();
-            (lotes || []).forEach((l) => { if (!seen.has(l.lote)) seen.set(l.lote, l.fecha_vencimiento); });
-            setLoteOpts(Array.from(seen.entries()).map(([value, fecha]) => ({ value, fecha })));
-        }
-    };
-
-    const handleSelectLote = (val) => {
-        setLote(val);
-        if (val === '__OTRO__') { setFechaVencimiento(''); return; }
-        const match = loteOpts.find((l) => l.value === val);
-        setFechaVencimiento(match?.fecha || '');
-    };
-
-    const finalLote = lote === '__OTRO__' ? loteOtro.trim() : lote;
-    const canSubmit = selected && presentacion && (simple || finalLote);
-
-    // El costo ya no lo manda el cliente: lo pone agregar_item_conteo con el
-    // mismo criterio que el snapshot (costo de la presentación de la línea).
-    const handleSubmit = async () => {
-        if (!canSubmit) return;
-        setSaving(true);
-        try {
-            await onAdd({
-                erpProductId: selected.id,
-                presentacion,
-                lote: simple ? null : finalLote,
-                fechaVencimiento: simple ? null : (fechaVencimiento || null),
-            });
-            showToast('Producto agregado', selected.nombre, 'success');
-        } catch (err) {
-            showToast('No se agregó el producto', mensajeAmigable(err), 'error');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return (
-        <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <p className="text-label font-black uppercase tracking-widest text-chart-9-text flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
-                <Button variant="ghost" icon={X} iconOnly onClick={onCancel} />
-            </div>
-            <div className="md:w-2/3">
-                <Campo label="Producto">
-                    <LiquidSelect value={selected ? String(selected.id) : null} onChange={handleSelectProduct} options={results.map((p) => ({ value: String(p.id), label: `${p.nombre}${p.laboratorios?.nombre ? ` · ${p.laboratorios.nombre}` : ''}` }))} placeholder="Buscar producto..." serverSearch onSearchChange={handleSearch} />
-                </Campo>
-            </div>
-
-            {/* Los cuatro campos del renglón en UNA fila. El vencimiento vivía en
-                una fila aparte junto al botón, así que la fecha quedaba desalineada
-                de los campos a los que pertenece y el botón parecía parte del
-                formulario en vez de su cierre. Las columnas son literales y no
-                calculadas: Tailwind escanea el fuente (`grid-cols-${n}` no
-                existiría en el CSS). */}
-            {/* En un conteo sencillo el renglón se identifica con producto y
-                presentación: los otros tres campos no describen nada que este
-                conteo guarde, así que no se muestran deshabilitados —se van—. */}
-            <div className={`grid grid-cols-1 gap-2 ${simple ? 'md:grid-cols-2' : lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
-                <Campo label="Presentación">
-                    <LiquidSelect value={presentacion || null} onChange={setPresentacion} options={presentacionOpts} placeholder={selected ? 'Presentación...' : 'Elige un producto primero'} disabled={!selected} clearable={false} ariaLabel="Presentación" />
-                </Campo>
-                {!simple && (
-                    <Campo label="Lote">
-                        <LiquidSelect
-                            value={lote || null}
-                            onChange={handleSelectLote}
-                            options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
-                            placeholder={selected ? 'Lote...' : 'Elige un producto primero'}
-                            disabled={!selected}
-                            clearable={false}
-                            ariaLabel="Lote"
-                        />
-                    </Campo>
-                )}
-                {!simple && lote === '__OTRO__' && (
-                    <Campo label="Número de lote">
-                        <PortalInput
-                            aria-label="Número de lote nuevo"
-                            value={loteOtro}
-                            onChange={(e) => setLoteOtro(e.target.value)}
-                            placeholder="Ej. A-1234"
-                            inputClassName="text-body-xl"
-                        />
-                    </Campo>
-                )}
-                {/* Un lote que ya existe en el ERP trae su vencimiento: se muestra
-                    pero no se edita, porque cambiarlo acá no cambiaría el del ERP.
-                    `aria-disabled` + `title` para que no sea solo un gris. */}
-                {!simple && (
-                    <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
-                        <CajaFecha
-                            inerte={lote !== '__OTRO__'}
-                            titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote' : undefined}
-                        >
-                            <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
-                        </CajaFecha>
-                    </Campo>
-                )}
-            </div>
-
-            {/* El botón cierra el formulario, no es uno de sus campos: fila propia,
-                a la derecha. Y el ícono va por la prop `icon`, no como hijo — como
-                hijo entra al mismo <span> que el texto y el botón se partía en dos
-                renglones ("+" arriba, "Agregar al conteo" abajo). */}
-            <div className="flex justify-end">
-                <Button tone="chart-9" icon={Plus} loading={saving} disabled={!canSubmit || saving} onClick={handleSubmit}>
-                    Agregar al conteo
-                </Button>
-            </div>
-        </div>
-    );
-}

@@ -310,7 +310,22 @@ const GlassViewLayout = ({
                     `truncate` ya no va —era lo que producía «Pedidos a Sucur…»—; la
                     elipsis queda sólo como red del `line-clamp` a partir del tercer
                     renglón. */}
-                <div className="lg:hidden pt-5 pb-4 px-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 min-h-0">
+                {/* Con el teléfono ACOSTADO el relleno se aprieta. Medido el
+                    2026-08-23 en el Conteo de inventario (iPhone 13, 844 × 390):
+                    de los 474px que había encima de la lista, 68 eran este
+                    bloque y buena parte era aire — `pt-5 pb-4` sobre una
+                    pantalla de 390px de alto es el 9% del total gastado en
+                    márgenes. Parado no se toca: ahí el alto sobra y apretar el
+                    título sólo lo afearía.
+
+                    El corte es el mismo `--alto-escaso` de `useAltoEscaso`
+                    escrito como media query, y no un `useMediaQuery` más: este
+                    bloque ya se dibuja con clases y meterle un hook por una
+                    diferencia de relleno agregaría un render por cada giro de
+                    pantalla, en TODAS las vistas. */}
+                <div className="lg:hidden pt-5 pb-4 px-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 min-h-0
+                                [@media(hover:none)_and_(max-height:500px)]:pt-2
+                                [@media(hover:none)_and_(max-height:500px)]:pb-1.5">
                     <div className="flex items-center gap-2.5 min-w-0 grow basis-0">
                         {headerLeft ? (
                             <div className="min-w-0">{headerLeft}</div>

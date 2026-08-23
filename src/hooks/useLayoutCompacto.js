@@ -114,4 +114,35 @@ export function usePanelLateral() {
     return useMediaQuery(LATERAL);
 }
 
+/**
+ * ¿El ALTO es el recurso escaso?
+ *
+ * Misma consulta que la de arriba, y el mismo nombre no alcanzaba: el panel
+ * lateral es UNA consecuencia de que el alto escasee, no la pregunta. Un
+ * encabezado que se pliega es otra, y llamarla `usePanelLateral` obligaría a
+ * leer «panel lateral» donde no hay ningún panel.
+ *
+ * Es un alias deliberado y no una copia del literal: el archivo ya dice por qué
+ * —«si los cortes divergen queda una franja donde se ven las dos cosas, o
+ * ninguna»— y dos preguntas distintas sobre el mismo hecho tienen que moverse
+ * juntas.
+ *
+ * ── Lo que lo pidió ───────────────────────────────────────────────────────
+ * Medido el 2026-08-23 en el Conteo de inventario, con el teléfono acostado
+ * (iPhone 13, 844 × 390): **474px encima de la lista, o sea el 121% de la
+ * pantalla**. No se veía UN producto sin scrollear. Repartidos así:
+ *
+ *     147px  la tarjeta del conteo (Volver · Bodega · botones)
+ *      75px  las tarjetas de resumen
+ *      68px  el título de la vista
+ *      65px  la barra del portal
+ *      31px  el banner de construcción
+ *
+ * Parado son 526px sobre 844, o sea el 62%: molesto pero se ve el principio de
+ * la lista. El caso que hay que resolver es el acostado.
+ */
+export function useAltoEscaso() {
+    return useMediaQuery(LATERAL);
+}
+
 export default useLayoutCompacto;

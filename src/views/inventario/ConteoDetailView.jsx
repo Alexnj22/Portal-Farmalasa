@@ -1001,6 +1001,85 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     );
 }
 
+// Una lista de conteo: fichas en el teléfono, tabla en escritorio. Sale a su
+// propio componente porque ahora hay DOS —la bodega y el área de vencidos— y
+// dibujarlas con dos copias del mismo bloque es cómo se desincronizan.
+function ListaDeConteo({
+    enFichas, loading, products, itemsByProduct, verSistema, simple, columnas: cols,
+    orden, onSort, vacio, ...fila
+}) {
+    if (enFichas) {
+        return (
+            <div className="space-y-2">
+                {loading ? (
+                    <div data-surface="card" className="p-4"><SkeletonText lines={6} /></div>
+                ) : products.length === 0 ? (
+                    <div data-surface="card" className="p-8 text-center">
+                        <Package size={28} className="mx-auto text-content-3 mb-2" />
+                        <p className="text-body-sm text-content-3">{vacio}</p>
+                    </div>
+                ) : products.map((product) => (
+                    <ProductCardMovil
+                        key={product.erp_product_id}
+                        product={product}
+                        lines={itemsByProduct[product.erp_product_id]}
+                        verSistema={verSistema}
+                        simple={simple}
+                        {...fila}
+                        onSave={(itemId, payload) => fila.onSave(itemId, payload, product.erp_product_id)}
+                        onRecount={(itemId, payload) => fila.onRecount(itemId, payload, product.erp_product_id)}
+                    />
+                ))}
+            </div>
+        );
+    }
+    return (
+        <div>
+            <DataTable
+                columns={cols}
+                sortKey={orden?.key} sortDir={orden?.dir} onSort={onSort}
+                // `dense`: 7 columnas de captura densa. Con el padding normal
+                // (48px por columna) la tabla pedía 1203px en un marco de 1028
+                // y arrastraba scroll horizontal.
+                dense
+                loading={loading} empty={{ icon: Package, message: vacio }}
+            >
+                {products.map((product, i) => {
+                    const key = product.erp_product_id;
+                    const lines = itemsByProduct[key];
+                    // `item_count` viene con la página de productos, así que
+                    // se sabe ANTES de que lleguen los renglones: decidirlo
+                    // con `lines.length` haría aparecer y desaparecer la
+                    // banda de grupo cuando termina de cargar.
+                    const soloUno = product.item_count === 1;
+                    return (
+                        <React.Fragment key={key}>
+                            {!soloUno && <ProductGroupRow product={product} index={i} verSistema={verSistema} simple={simple} />}
+                            {!lines && (
+                                <tr><td colSpan={cols.length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
+                            )}
+                            {lines && lines.map((item, j) => (
+                                <ItemRow
+                                    key={item.id}
+                                    item={item}
+                                    index={soloUno ? i : j}
+                                    producto={soloUno ? product : null}
+                                    verSistema={verSistema}
+                                    simple={simple}
+                                    {...fila}
+                                    desbloqueada={!!fila.desbloqueadas[item.id]}
+                                    onSave={(itemId, payload) => fila.onSave(itemId, payload, key)}
+                                    onRecount={(itemId, payload) => fila.onRecount(itemId, payload, key)}
+                                />
+                            ))}
+                        </React.Fragment>
+                    );
+                })}
+            </DataTable>
+        </div>
+    );
+}
+
 function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }) {
     const completo = product.item_count > 0 && product.contados_count >= product.item_count;
     return (
@@ -1447,6 +1526,12 @@ export default function ConteoDetailView() {
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
+    // El área de vencidos: su propia lista, sin paginación. Son decenas de
+    // productos (83 en el conteo abierto contra 2,759 de bodega), así que
+    // paginarla sería un control para pasar de página que nunca se usa.
+    const [vencidos, setVencidos] = useState([]);
+    const [vencidosItems, setVencidosItems] = useState({});
+    const [vencidosLoading, setVencidosLoading] = useState(true);
     // La página y el tamaño viven en la DIRECCIÓN, no en `useState`. Contar es
     // recorrer un anaquel de 1,400 productos de a 25: perder la posición no
     // cuesta un clic, cuesta volver a buscar dónde se iba. Y perderla no es
@@ -1544,7 +1629,7 @@ export default function ConteoDetailView() {
         try {
             const productsPage = await fetchConteoProductsPage(id, {
                 page, pageSize: tamPagina, search: searchDiferido, filtro,
-                laboratorioId,
+                laboratorioId, area: 'NORMAL',
                 orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
                 orderDir: orden.dir,
             });
@@ -1555,7 +1640,7 @@ export default function ConteoDetailView() {
             // Nada se contrae: las líneas de los productos de la página vienen
             // de una sola llamada. Antes era una por producto, al expandirlo.
             const ids = productsPage.rows.map((r) => r.erp_product_id);
-            const lines = await fetchConteoItemsForProducts(id, ids, { search: searchDiferido, filtro });
+            const lines = await fetchConteoItemsForProducts(id, ids, { search: searchDiferido, filtro, area: 'NORMAL' });
             const porProducto = {};
             for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
             setItemsByProduct(porProducto);
@@ -1565,6 +1650,37 @@ export default function ConteoDetailView() {
             setLoading(false);
         }
     }, [id, page, tamPagina, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
+        fetchConteoItemsForProducts, showToast]);
+
+    // El área de vencidos. Va en su propia vuelta y no dentro de `cargarPagina`
+    // porque no comparte paginación con la bodega: si compartiera la vuelta,
+    // pasar de página volvería a pedir los mismos 83 productos.
+    //
+    // El tope de 500 es deliberado y no es el cap de PostgREST: si algún día el
+    // área de vencidos pasara de 500 productos, lo que hace falta es paginarla,
+    // no subir el número. Está por debajo de las 1000 a propósito, para que el
+    // día que corte se note acá y no en un truncado silencioso.
+    const cargarVencidos = useCallback(async () => {
+        setVencidosLoading(true);
+        try {
+            const pagina = await fetchConteoProductsPage(id, {
+                page: 1, pageSize: 500, search: searchDiferido, filtro,
+                laboratorioId, area: 'VENCIDOS',
+            });
+            setVencidos(pagina.rows);
+            const ids = pagina.rows.map((r) => r.erp_product_id);
+            const lines = await fetchConteoItemsForProducts(id, ids, {
+                search: searchDiferido, filtro, area: 'VENCIDOS',
+            });
+            const porProducto = {};
+            for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
+            setVencidosItems(porProducto);
+        } catch (err) {
+            showToast('Error', mensajeAmigable(err), 'error');
+        } finally {
+            setVencidosLoading(false);
+        }
+    }, [id, searchDiferido, filtro, laboratorioId, fetchConteoProductsPage,
         fetchConteoItemsForProducts, showToast]);
 
     // Lo que corre cuando cambió el conteo entero y no sólo qué se está mirando.
@@ -1581,6 +1697,7 @@ export default function ConteoDetailView() {
         cargarCabecera().catch((err) => showToast('Error', mensajeAmigable(err), 'error'));
     }, [cargarCabecera, showToast]);
     useEffect(() => { cargarPagina(); }, [cargarPagina]);
+    useEffect(() => { cargarVencidos(); }, [cargarVencidos]);
 
     // Cambiar de filtro vuelve a la primera página, y tiene que pasar en el
     // MISMO evento que el cambio. Como efecto aparte llegaba tarde: la vuelta
@@ -1656,7 +1773,7 @@ export default function ConteoDetailView() {
     // Y tiene que aplicar EXACTAMENTE el mismo criterio que `conteo_lineas_netas`
     // en la base: si el recálculo optimista y el del servidor no coinciden, el
     // número cambia solo al refrescar la página y nadie sabe cuál era el bueno.
-    const recomputeProductTotals = (erpProductId, lines) => {
+    const recomputeProductTotals = (erpProductId, lines, setLista) => {
         const item_count = lines.length;
         const contados_count = lines.filter((l) => l.estado_item !== 'PENDIENTE').length;
         const con_diferencia_count = lines.filter((l) => l.diferencia != null && l.diferencia !== 0
@@ -1667,48 +1784,60 @@ export default function ConteoDetailView() {
         const fisico_total = contadas.length ? contadas.reduce((sum, l) => sum + l.fisico_cantidad * mult(l), 0) : null;
         const diferencia_total = contadas.length ? contadas.reduce((sum, l) => sum + (l.diferencia ?? 0) * mult(l), 0) : null;
         const total_en_unidades = lines.some((l) => l.grupo_mixto);
-        setProducts((prev) => prev.map((p) => (p.erp_product_id === erpProductId ? {
+        setLista((prev) => prev.map((p) => (p.erp_product_id === erpProductId ? {
             ...p, item_count, contados_count, con_diferencia_count, sistema_total, fisico_total,
             diferencia_total, total_en_unidades,
         } : p)));
     };
 
-    const handleSaveItem = async (itemId, payload, erpProductId) => {
-        const result = await guardarConteoItem(itemId, payload);
-        setItemsByProduct((prev) => {
-            const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
-                ...it,
-                fisico_cantidad: payload.fisicoCantidad,
-                nota: payload.nota,
-                estado_item: payload.estadoItem,
-                sistema_cantidad: result.sistema_cantidad,
-                diferencia: result.diferencia,
-                contado_por_nombre: user?.name || it.contado_por_nombre,
-                contado_at: new Date().toISOString(),
-            } : it)));
-            recomputeProductTotals(erpProductId, lines);
-            return { ...prev, [erpProductId]: lines };
-        });
-        return result;
-    };
+    // Las dos secciones —bodega y área de vencidos— guardan igual; lo único que
+    // cambia es en qué lista viven sus renglones. Se arma con una fábrica y no
+    // con dos copias: un guardado que actualiza la lista equivocada no falla,
+    // sólo deja el número viejo en pantalla hasta refrescar.
+    const hacerHandlers = (setItems, setLista) => ({
+        guardar: async (itemId, payload, erpProductId) => {
+            const result = await guardarConteoItem(itemId, payload);
+            setItems((prev) => {
+                const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
+                    ...it,
+                    fisico_cantidad: payload.fisicoCantidad,
+                    nota: payload.nota,
+                    estado_item: payload.estadoItem,
+                    sistema_cantidad: result.sistema_cantidad,
+                    diferencia: result.diferencia,
+                    contado_por_nombre: user?.name || it.contado_por_nombre,
+                    contado_at: new Date().toISOString(),
+                } : it)));
+                recomputeProductTotals(erpProductId, lines, setLista);
+                return { ...prev, [erpProductId]: lines };
+            });
+            return result;
+        },
+        recontar: async (itemId, payload, erpProductId) => {
+            const result = await recontarConteoItem(itemId, payload);
+            setItems((prev) => {
+                const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
+                    ...it,
+                    fisico_primer_conteo: result.fisico_primer_conteo,
+                    fisico_cantidad: payload.fisicoCantidad,
+                    sistema_cantidad: result.sistema_cantidad,
+                    diferencia: result.diferencia,
+                    recontado_at: new Date().toISOString(),
+                    recontado_por_nombre: user?.name || it.recontado_por_nombre,
+                } : it)));
+                recomputeProductTotals(erpProductId, lines, setLista);
+                return { ...prev, [erpProductId]: lines };
+            });
+            return result;
+        },
+    });
 
-    const handleRecountItem = async (itemId, payload, erpProductId) => {
-        const result = await recontarConteoItem(itemId, payload);
-        setItemsByProduct((prev) => {
-            const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
-                ...it,
-                fisico_primer_conteo: result.fisico_primer_conteo,
-                fisico_cantidad: payload.fisicoCantidad,
-                sistema_cantidad: result.sistema_cantidad,
-                diferencia: result.diferencia,
-                recontado_at: new Date().toISOString(),
-                recontado_por_nombre: user?.name || it.recontado_por_nombre,
-            } : it)));
-            recomputeProductTotals(erpProductId, lines);
-            return { ...prev, [erpProductId]: lines };
-        });
-        return result;
-    };
+    const bodega   = hacerHandlers(setItemsByProduct, setProducts);
+    const vencidas = hacerHandlers(setVencidosItems, setVencidos);
+    const handleSaveItem       = bodega.guardar;
+    const handleRecountItem    = bodega.recontar;
+    const handleSaveVencido    = vencidas.guardar;
+    const handleRecountVencido = vencidas.recontar;
 
     const handleEditLote = async (itemId, payload, erpProductId) => {
         const result = await editarLoteConteoItem(itemId, payload);
@@ -2103,90 +2232,77 @@ export default function ConteoDetailView() {
                     />
                 )}
 
-                {/* Teléfono: tarjetas. La tabla de 11 columnas no se opera de pie
-                    en un pasillo, y `DataTable` no reflowa a tarjetas (DESIGN.md §32). */}
-                {enFichas ? (
-                <div className="space-y-2">
-                    {loading ? (
-                        <div data-surface="card" className="p-4"><SkeletonText lines={6} /></div>
-                    ) : products.length === 0 ? (
-                        <div data-surface="card" className="p-8 text-center">
-                            <Package size={28} className="mx-auto text-content-3 mb-2" />
-                            <p className="text-body-sm text-content-3">Sin productos para este filtro</p>
-                        </div>
-                    ) : products.map((product) => (
-                        <ProductCardMovil
-                            key={product.erp_product_id}
-                            product={product}
-                            lines={itemsByProduct[product.erp_product_id]}
-                            desbloqueadas={desbloqueadas}
-                            verSistema={verSistema}
-                            editable={editable}
-                            recuento={recuento}
-                            onUnlock={setDesbloqueada}
-                            onSave={(itemId, payload) => handleSaveItem(itemId, payload, product.erp_product_id)}
-                            onRecount={(itemId, payload) => handleRecountItem(itemId, payload, product.erp_product_id)}
-                            onShowHistory={abrirHistorial}
-                            onEditLote={abrirEditLote}
-                            currentUser={user}
-                            simple={simple}
-                            enVivo={conteo?.fuente_sistema === 'VIVO'}
-                        />
-                    ))}
-                </div>
-                ) : (
-                <div>
-                    <DataTable
-                        columns={columnas(verSistema, simple)}
-                        sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
-                        // `dense`: 7 columnas de captura densa. Con el padding normal
-                        // (48px por columna) la tabla pedía 1203px en un marco de 1028
-                        // y arrastraba scroll horizontal.
-                        dense
-                        loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}
-                    >
-                        {products.map((product, i) => {
-                            const key = product.erp_product_id;
-                            const lines = itemsByProduct[key];
-                            // `item_count` viene con la página de productos, así que
-                            // se sabe ANTES de que lleguen los renglones: decidirlo
-                            // con `lines.length` haría aparecer y desaparecer la
-                            // banda de grupo cuando termina de cargar.
-                            const soloUno = product.item_count === 1;
-                            return (
-                                <React.Fragment key={key}>
-                                    {!soloUno && <ProductGroupRow product={product} index={i} verSistema={verSistema} simple={simple} />}
-                                    {!lines && (
-                                        <tr><td colSpan={columnas(verSistema, simple).length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
-                                    )}
-                                    {lines && lines.map((item, j) => (
-                                        <ItemRow
-                                            key={item.id}
-                                            item={item}
-                                            index={soloUno ? i : j}
-                                            producto={soloUno ? product : null}
-                                            editable={editable}
-                                            recuento={recuento}
-                                            desbloqueada={!!desbloqueadas[item.id]}
-                                            onUnlock={setDesbloqueada}
-                                            onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
-                                            onRecount={(itemId, payload) => handleRecountItem(itemId, payload, key)}
-                                            onShowHistory={abrirHistorial}
-                                            onEditLote={abrirEditLote}
-                                            currentUser={user}
-                                            simple={simple}
-                                            enVivo={conteo?.fuente_sistema === 'VIVO'}
-                                        />
-                                    ))}
-                                </React.Fragment>
-                            );
-                        })}
-                    </DataTable>
-                </div>
-                )}
+                {/* La BODEGA. El área de vencidos va en su propia sección más
+                    abajo: es otro anaquel y se recorre aparte. */}
+                <ListaDeConteo
+                    enFichas={enFichas}
+                    loading={loading}
+                    products={products}
+                    itemsByProduct={itemsByProduct}
+                    verSistema={verSistema}
+                    simple={simple}
+                    columnas={columnas(verSistema, simple)}
+                    orden={orden}
+                    onSort={handleSort}
+                    vacio="Sin productos para este filtro"
+                    desbloqueadas={desbloqueadas}
+                    editable={editable}
+                    recuento={recuento}
+                    onUnlock={setDesbloqueada}
+                    onSave={handleSaveItem}
+                    onRecount={handleRecountItem}
+                    onShowHistory={abrirHistorial}
+                    onEditLote={abrirEditLote}
+                    currentUser={user}
+                    enVivo={conteo?.fuente_sistema === 'VIVO'}
+                />
 
                 {total > 0 && (
                     <TablePagination pageSize={tamPagina} onPageSizeChange={cambiarTamPagina} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
+                )}
+
+                {/* ── Área de vencidos ──────────────────────────────────────
+                    El sistema aparta lo vencido en su propia área, que es OTRO
+                    anaquel: se recorre y se cuenta por separado. Iba mezclado
+                    con la bodega, y no era sólo cuestión de orden — un producto
+                    que está en las dos salía en UNA fila con los totales de
+                    ambas sumados (42 de 83 en el conteo abierto).
+
+                    Va al final y no arriba porque el recorrido empieza por la
+                    bodega, que es el 97% de los renglones. Y sólo aparece si
+                    hay algo: una sección vacía sugiere que falta contarla.
+
+                    Sin paginación propia: son decenas de productos, no miles.
+                    Si algún día crece, acá va su `TablePagination`. */}
+                {vencidos.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="danger" icon={AlertTriangle} uppercase={false}>Área de vencidos</Badge>
+                            <span className="text-caption text-content-3">
+                                {vencidos.length} producto{vencidos.length === 1 ? '' : 's'} apartado{vencidos.length === 1 ? '' : 's'} — se cuentan aparte de la bodega
+                            </span>
+                        </div>
+                        <ListaDeConteo
+                            enFichas={enFichas}
+                            loading={vencidosLoading}
+                            products={vencidos}
+                            itemsByProduct={vencidosItems}
+                            verSistema={verSistema}
+                            simple={simple}
+                            columnas={columnas(verSistema, simple)}
+                            vacio="Sin productos en el área de vencidos"
+                            desbloqueadas={desbloqueadas}
+                            editable={editable}
+                            recuento={recuento}
+                            onUnlock={setDesbloqueada}
+                            onSave={handleSaveVencido}
+                            onRecount={handleRecountVencido}
+                            onShowHistory={abrirHistorial}
+                            onEditLote={abrirEditLote}
+                            currentUser={user}
+                            enVivo={conteo?.fuente_sistema === 'VIVO'}
+                        />
+                    </div>
                 )}
             </div>
 

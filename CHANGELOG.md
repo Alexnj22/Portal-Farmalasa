@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.711.0 — Conteo: el área de vencidos se cuenta aparte de la bodega
+
+Pedido del usuario: *«debes separar los productos de bodega de vencidos, debe
+salir como una tabla aparte o al final de la tabla, no se debe mezclar con la
+bodega normal»*.
+
+**Y al medirlo resultó ser más que un problema de orden.** En el conteo abierto:
+
+| | productos |
+|---|---:|
+| en la bodega | 2.759 |
+| en el área de vencidos | 83 |
+| **en las dos a la vez** | **42** |
+
+La lista agrupaba sólo por producto, así que esos 42 salían en **una sola fila**
+y su «Sistema / Físico / Dif.» **sumaba las dos áreas**. No era sólo que se
+vieran mezclados: el total de esos productos estaba mal, y sin ninguna señal —
+la fila se pintaba igual de bien. Verificado después del cambio: 2.759 + 83 =
+2.842 contra los 2.800 que devolvía antes; la diferencia son exactamente los 42.
+
+Ahora el área de vencidos tiene **su propia sección al final**, con su badge y
+la cuenta de productos apartados. Sólo aparece si hay algo — una sección vacía
+sugeriría que falta contarla. Va al final y no arriba porque el recorrido
+empieza por la bodega, que es el 97% de los renglones. Y no tiene paginación
+propia a propósito: son decenas de productos, no miles.
+
+La separación es **por renglón y no por producto**, porque el área de vencidos
+es otro anaquel: un producto puede estar en los dos y hay que contarlo dos
+veces, una en cada lugar, con sus propios números.
+
+**La hoja impresa ya lo hacía bien desde antes** — imprime «ÁREA NORMAL» y
+«ÁREA DE VENCIDOS» como bloques separados con salto de página, el reporte de
+resultados igual y el CSV trae su columna. O sea que el papel que se lleva al
+anaquel decía que eran dos áreas y la pantalla no.
+
 ## v2.710.1 — Envíos: el desenlace dice la verdad
 
 Tres correcciones que sólo aparecieron **abriendo la pantalla** en el entorno de

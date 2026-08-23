@@ -163,20 +163,27 @@ export const createConteoInventarioSlice = (set, get) => ({
     // correcto sobre un conteo de 2,500 renglones y no lo es. El servidor
     // además ignora el orden por sistema/diferencia en un conteo ciego — la
     // lista ordenada por el número tapado lo revela igual.
+    //
+    // `area` parte la lista en dos anaqueles: 'NORMAL' es la bodega, 'VENCIDOS'
+    // el área donde el sistema aparta lo vencido. NULL las junta, que era el
+    // comportamiento viejo — y era un error: un producto que está en las dos
+    // (42 de 83 en el conteo abierto) salía en UNA fila con los totales de
+    // ambas sumados.
     fetchConteoProductsPage: async (conteoId, {
         page = 1, pageSize = 25, search = '', filtro = 'TODOS',
-        laboratorioId = null, orderBy = null, orderDir = 'asc',
+        laboratorioId = null, orderBy = null, orderDir = 'asc', area = null,
     } = {}) => {
         const from = (page - 1) * pageSize;
         const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
             supabase.rpc('get_conteo_products_count', {
                 p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
-                p_laboratorio_id: laboratorioId,
+                p_laboratorio_id: laboratorioId, p_area: area,
             }),
             supabase.rpc('get_conteo_products_page', {
                 p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
                 p_limit: pageSize, p_offset: from,
                 p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
+                p_area: area,
             }),
         ]);
         if (countErr) throw countErr;
@@ -231,7 +238,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     // renglones para una página: se habrían perdido en silencio, que es el modo
     // de falla exacto de la regla del `.in()` sobre una columna que se repite.
     // Con tandas de 25, el peor caso real son 700 filas por llamada.
-    fetchConteoItemsForProducts: async (conteoId, erpProductIds, { search = '', filtro = 'TODOS' } = {}) => {
+    fetchConteoItemsForProducts: async (conteoId, erpProductIds, { search = '', filtro = 'TODOS', area = null } = {}) => {
         if (!erpProductIds?.length) return [];
         const TANDA = 25;
         const tandas = [];
@@ -248,6 +255,10 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_offset: 0,
             p_erp_product_id: null,
             p_erp_product_ids: ids,
+            // El área tiene que viajar también acá: los 42 productos que están
+            // en los dos anaqueles traerían sus DOS juegos de renglones a las
+            // dos secciones, y cada una mostraría los del otro lado.
+            p_area: area,
         })));
         const filas = [];
         for (const { data, error } of respuestas) {

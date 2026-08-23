@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { buscarInventarioGlobalV2 } from '../../data/inventory';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearEnvio, despacharEnvio, MOTIVOS_ENVIO } from '../../data/envios';
+import { crearEnvio, despacharEnvio, MOTIVOS_ENVIO, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
@@ -213,7 +213,16 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         [origen, unidadesPedidas],
     );
 
-    const problemaDelPaso = !elegido ? 'Elige un producto.'
+    /* ── El tope, dicho ANTES ─────────────────────────────────────────────
+     * Existía desde el primer día —el despacho vive 110 s— y se descubría a
+     * mitad de camino, con parte de la caja ya fuera de la sala. El número sale
+     * de medir el pedido de Bodega, que despacha igual: ver
+     * `TOPE_RENGLONES_ENVIO`. */
+    const lleno = renglones.length >= TOPE_RENGLONES_ENVIO;
+
+    const problemaDelPaso = lleno
+            ? `Un envío admite hasta ${TOPE_RENGLONES_ENVIO} productos. Manda éste y arma otro con el resto.`
+        : !elegido ? 'Elige un producto.'
         : !origen ? 'Elige de qué sala sale.'
         : !pres ? 'Elige la presentación.'
         : unidadesPedidas <= 0 ? 'Pon la cantidad.'
@@ -229,6 +238,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
 
     const agregar = useCallback(() => {
         if (problemaDelPaso || !elegido || !pres || !origen) return;
+        if (renglones.length >= TOPE_RENGLONES_ENVIO) return;
         setRenglones(r => [...r, {
             erp_product_id: elegido.erp_product_id,
             descripcion: elegido.descripcion,
@@ -257,7 +267,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         setResultados(null);
         setCantidad('1');
         setPestana('lista');
-    }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones]);
+    }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -553,7 +563,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                         onChange={setPestana}
                         options={[
                             { value: 'agregar', label: 'Agregar' },
-                            { value: 'lista',   label: `En el envío${renglones.length ? ` · ${renglones.length}` : ''}` },
+                            // El contador muestra el tope cuando falta poco: enterarse
+                            // de que no entra otro AL APRETAR «agregar» es peor que verlo
+                            // venir con tres renglones de anticipación.
+                            { value: 'lista', label: `En el envío${renglones.length
+                                ? ` · ${renglones.length}${renglones.length >= TOPE_RENGLONES_ENVIO - 3 ? `/${TOPE_RENGLONES_ENVIO}` : ''}`
+                                : ''}` },
                         ]}
                     />
                 </div>

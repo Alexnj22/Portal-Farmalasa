@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.719.1 — Un envío admite hasta 20 productos, y el número sale de medir
+
+El tope **ya existía**: el despacho vive 110 segundos y lo que no salió en ese
+rato queda para otra vuelta. Lo que no existía era decirlo — se descubría a
+mitad de camino, con parte de la caja ya fuera de la sala.
+
+**De dónde sale el 20.** No de estimarlo: de medir el pedido de Bodega, que
+despacha exactamente igual —un movimiento por renglón, contra el mismo sistema,
+con las mismas consultas por línea—. 3.137 renglones reales despachados entre el
+12 y el 21 de agosto:
+
+| | por renglón |
+|---|---|
+| mediana | 2,7 s |
+| p90 | 4,3 s |
+| p99 | 6,0 s |
+
+Y el arranque de una corrida —abrir sesión, leer las existencias de la
+ubicación, la foto de pendientes— se lleva otros 8 s en el p90, medido sobre 20
+corridas. Quedan 102 s para el bucle: 102 ÷ 4,3 = **23,6 renglones**. Se fija en
+20, redondo y con margen para un renglón lento.
+
+Vale la pena decir lo que ese número desmiente: la primera medición del circuito
+del pedido, en agosto, hablaba de **370 ms por producto**. Hoy son 2.700. Un tope
+calculado con aquel dato habría dado 250 renglones y sería una trampa.
+
+La pantalla lo dice antes —el contador muestra «· 18/20» cuando falta poco, y al
+llegar explica por qué no entra otro— y **la base lo cobra**: un envío de 21
+rebota, porque una validación que sólo vive en el navegador es una sugerencia.
+
+Y para no depender más de los números del pedido, cada renglón despachado guarda
+ahora **lo que tardó** en su propia fila: dentro de unas semanas el envío va a
+poder contestar esto con sus propias mediciones.
+
 ## v2.719.0 — El área de vencidos se comprueba después de despachar, y el freno sólo evita el rechazo
 
 Cierra el caso del termómetro con la forma que pidió el usuario:

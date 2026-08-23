@@ -53,6 +53,22 @@ export const MOTIVOS_RECHAZO_ENVIO = [
 ];
 
 /**
+ * Cuántos productos entran en un envío.
+ *
+ * El tope EXISTE desde el primer día —el despacho vive 110 s y lo que no salió
+ * queda para otra vuelta—; lo que faltaba era decirlo antes de armar la caja.
+ *
+ * El 20 sale de MEDIR, no de estimar: 3.137 renglones reales del pedido de
+ * Bodega, que despacha exactamente igual, dan **p90 de 4,3 s por renglón**, y
+ * el arranque de una corrida se lleva otros 8 s. 102 s ÷ 4,3 = 23,6, redondeado
+ * para abajo con margen para un renglón lento.
+ *
+ * La que MANDA es `tope_renglones_envio()` en la base; ésta está acá para poder
+ * avisar antes de que alguien arme veinticinco renglones, no para decidir.
+ */
+export const TOPE_RENGLONES_ENVIO = 20;
+
+/**
  * Crea el envío. Los renglones, el aprobador y la validación los pone la base.
  *
  * Acepta UNA fila o un ARRAY, y devuelve siempre la lista de ids. El array es

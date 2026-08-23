@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.719.3 — El Inicio y Traslados dejan de bajar lo que nadie abre
+
+`npm run gate:bundle` estaba **en rojo** y lo destapó la auditoría del 23-ago:
+el Inicio medía 100 kB contra un techo de 99, y Traslados 61 contra 47. Hoy el
+Inicio mide **87** y Traslados entra en su techo.
+
+**El Inicio: 100 → 87 kB.** El buscador de inventario tenía 1,414 líneas en un
+solo archivo, y 1,180 de ellas —el panel de resultados, los lotes, el pedido a
+otra sala— eran el cuerpo del modal. Las descargaba **todo el que abre el
+portal**, para una pantalla que la mayoría de las visitas no abre nunca. El
+azulejo ya invocaba el cuerpo por render-prop, así que sólo faltaba mudarlo:
+ahora vive en `dashboard/inventario/PanelDeInventario.jsx` y el azulejo lo pide
+con `lazy()`. Las tres tablas de salas que usan los dos lados se fueron a
+`inventario/salas.js` — duplicarlas habría dejado dos verdades sobre el orden de
+las salas, que es de las cosas que se desincronizan solas.
+
+Estaba escrito desde el 21-ago en el baseline del propio gate: «ahí el cuerpo del
+modal SÍ se puede separar del azulejo, y el azulejo ya lo invoca por
+render-prop». Nadie lo había hecho.
+
+**Traslados: 61 → bajo 47 kB.** Tres piezas que sólo aparecen a pedido viajaban
+estáticas. `EnviarProductoModal` (921 líneas más su buscador de inventario y su
+catálogo de presentaciones) para un modal que se abre con un botón; las cuatro
+tarjetas de `FilasEnvio` para una pestaña que no es la que abre por defecto; y
+las tarjetas de «En camino», que se dibujan sólo cuando la consulta VOLVIÓ con
+algo. En los tres casos `WidgetTransferRequests` **ya lo hacía bien** — el
+patrón estaba resuelto en el repo y esta vista no lo seguía.
+
+Diferir lo que se pinta siempre sería mentirle al gate, y el baseline lo dice de
+`RankingVendedores`. La diferencia acá es que estas tarjetas dependen de un dato
+que todavía no llegó: el chunk se pide en paralelo con una consulta que de todos
+modos hay que esperar. No agrega espera, la comparte.
+
+**Las pestañas del portal ahora se anuncian como pestañas.** `ViewTabBar` las
+pintaba como `<button>` sueltos: sin `role="tablist"`, sin `role="tab"`, sin
+`aria-selected`. Un lector de pantalla leía tres botones y no decía cuál está
+activo. Vale para las **29 vistas con pestañas**.
+
+Lo destapó una prueba que buscaba `getByRole('tab')` en Traslados y no
+encontraba nada, con las tres pestañas dibujadas en la captura. Ningún gate
+podía verlo: los tres visuales miran cómo se ve y el barrido móvil mide dónde
+cae — ninguno escucha.
+
+**Y una prueba nueva, porque el gate que premia diferir es ciego al modo en que
+diferir se rompe.** Un `lazy()` sin su `Suspense`, un nombre mal escrito en el
+`.then(m => …)` o un import a una ruta que ya no existe **compilan, pasan el
+lint, pasan las 689 pruebas unitarias y BAJAN el número del gate**. El defecto
+sólo aparece cuando alguien aprieta el botón. `tests/e2e/carga-diferida.spec.js`
+abre cada cosa diferida contra el entorno de pruebas y exige ver su contenido.
+
+Esa prueba tuvo que aprender lo mismo que todo detector de este repo: arrancó
+exigiendo la consola limpia y falló tres veces por cosas del ENTORNO —el branch
+de pruebas no tiene las edge functions desplegadas, a propósito—. Estaba
+midiendo la salud del entorno en vez de la carga del módulo. Hoy sólo falla ante
+los cuatro errores que únicamente puede dar un diferido roto.
+
+Verificado en el navegador contra el entorno de pruebas, no sólo compilando: el
+modal de inventario abre con su buscador, y las tres pestañas de Traslados
+pintan.
+
 ## v2.719.2 — El portal deja de nombrar el sistema de origen
 
 Treinta y dos textos que ve el usuario nombraban un sistema del que nadie sabe

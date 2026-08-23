@@ -296,7 +296,17 @@ export default function ViewTabBar({
             clavaba en 910px pasara lo que pasara — el desborde salía del marco
             en vez de recortarse. Hoy el que decide es `cabeLaFila`, así que el
             techo solo tiene que ser mayor que la fila más ancha que se acepte. */}
+        {/* `role="tablist"` + `role="tab"` + `aria-selected` en cada botón.
+            Faltaban los tres, y con eso un lector de pantalla no anunciaba
+            «pestaña 2 de 3, seleccionada»: leía tres botones sueltos, sin
+            decir cuál está activo. La diferencia se ve sólo con el lector
+            puesto, así que sobrevivió a los tres gates visuales y al barrido
+            móvil — ninguno escucha.
+            Lo destapó una prueba de Playwright que buscaba `getByRole('tab')`
+            en Traslados y no encontraba nada, con las tres pestañas dibujadas
+            en la captura. Vale para las 29 vistas con pestañas del portal. */}
         <div ref={filaRef}
+          role="tablist"
           inert={!cabeLaFila || !hayPestanas ? true : undefined}
           aria-hidden={!cabeLaFila || !hayPestanas ? true : undefined}
           className={`items-center gap-1 md:gap-1.5 ${!hayPestanas
@@ -309,6 +319,8 @@ export default function ViewTabBar({
             const isActive = tab.key === activeTab;
             return (
               <button key={tab.key}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
                 /* §11 · el radio sale del tema (`--tab-pill-radius`): píldora en
                    Liquid, 0.5rem en Solid. Estaba clavado en `rounded-full`, que

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, Send } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -14,17 +14,46 @@ import { useStaffStore } from '../store/staffStore';
 import { useNowTick } from '../hooks/useNowTick';
 import { smartFilter } from '../utils/searchUtils';
 import { getLocalMonday, formatWeekRange, shiftWeek } from '../utils/semana';
-import { FilaPorRecibir } from './traslados/FilasTraslado';
+// Diferidas igual que en `WidgetTransferRequests`, y por el MISMO motivo escrito
+// en el baseline del gate de peso: estas tarjetas se dibujan sólo cuando la
+// consulta VOLVIÓ con algo en camino, y cuando no hay nada la pantalla muestra
+// un `EmptyState`. O sea que el chunk se pide en paralelo con una consulta que
+// de todos modos hay que esperar — no agrega espera, la comparte.
+//
+// No es lo mismo que diferir algo que se pinta siempre: eso sería mentirle al
+// gate, y el propio baseline lo dice de `RankingVendedores`. La diferencia es
+// que acá el render depende de un dato que todavía no llegó.
+const FilaPorRecibir = lazy(() =>
+    import('./traslados/FilasTraslado').then(m => ({ default: m.FilaPorRecibir })));
 import { ChipPersona } from './solicitudes/PersonasSolicitud';
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
-import GrupoPorRecibir from './traslados/GrupoPorRecibir';
-import {
-    FilaEnvioPorDecidir, FilaEnvioPorDespachar, FilaEnvioEnCamino, FilaDevolucionPorRecibir,
-} from './traslados/FilasEnvio';
-import EnviarProductoModal from './dashboard/EnviarProductoModal';
+const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
+// Las cuatro tarjetas de envío viven SÓLO en la pestaña «Envíos», y la pestaña
+// que abre por defecto es «En camino». Estáticas, las bajaba también quien nunca
+// entra a la otra — y `WidgetTransferRequests` ya difería dos de estas mismas
+// cuatro, así que el patrón estaba resuelto y esta vista no lo seguía.
+const FilaEnvioPorDecidir = lazy(() =>
+    import('./traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioPorDecidir })));
+const FilaEnvioPorDespachar = lazy(() =>
+    import('./traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioPorDespachar })));
+const FilaEnvioEnCamino = lazy(() =>
+    import('./traslados/FilasEnvio').then(m => ({ default: m.FilaEnvioEnCamino })));
+const FilaDevolucionPorRecibir = lazy(() =>
+    import('./traslados/FilasEnvio').then(m => ({ default: m.FilaDevolucionPorRecibir })));
+// Diferido, igual que en la baldosa del tablero (`WidgetTransferRequests`), que
+// ya lo hacía bien. Acá viajaba ESTÁTICO: 921 líneas más su cierre —el buscador
+// de inventario, el catálogo de presentaciones, el reparto por lotes— dentro del
+// chunk de la vista, y con eso Traslados medía 61 kB contra un techo de 47.
+//
+// Los descargaba todo el que entraba a ver qué hay en camino, que es lo que la
+// vista hace la mayor parte del tiempo; el modal sólo aparece si alguien aprieta
+// «Enviar producto a otra sala». Lo destapó `npm run gate:bundle` en la
+// auditoría del 2026-08-23 — ninguna prueba ni ningún otro gate lo veía, porque
+// el peso de un chunk no rompe nada: sólo tarda.
+const EnviarProductoModal = lazy(() => import('./dashboard/EnviarProductoModal'));
 
 // Vista «Traslados entre Salas».
 //
@@ -456,6 +485,10 @@ export default function TrasladosView() {
                 widget — dos copias de la misma tarjeta terminan comportándose
                 distinto. */}
             {enEnvios ? (
+                /* Un solo `Suspense` para toda la pestaña: las cuatro tarjetas
+                   salen del MISMO chunk, así que envolverlas por separado pediría
+                   cuatro veces lo mismo y mostraría cuatro huecos en vez de uno. */
+                <Suspense fallback={<div className="p-4 md:p-5"><SkeletonText lines={4} /></div>}>
                 <div className="p-4 md:p-5 flex flex-col gap-4">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
@@ -470,7 +503,9 @@ export default function TrasladosView() {
                     )}
 
                     {abrirEnvio && (
-                        <EnviarProductoModal onClose={() => setAbrirEnvio(false)} onListo={cargar} />
+                        <Suspense fallback={null}>
+                            <EnviarProductoModal onClose={() => setAbrirEnvio(false)} onListo={cargar} />
+                        </Suspense>
                     )}
 
                     {cargando && <SkeletonText lines={4} />}
@@ -507,6 +542,7 @@ export default function TrasladosView() {
                         )
                     ))}
                 </div>
+                </Suspense>
             ) : /* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */
             enHistorial ? (
                 <div className="p-4 md:p-5">
@@ -731,6 +767,12 @@ export default function TrasladosView() {
                         entonces el encabezado que dice «lo pediste a 3 salas» no
                         tendría debajo las tres. Agruparlas es justamente lo que
                         se vino a hacer acá. */}
+                    {/* Un solo `Suspense` para los dos bloques: grupos y sueltas
+                        salen del mismo par de chunks, y el `fallback` es el mismo
+                        esqueleto que ya se muestra mientras carga la consulta —
+                        así el usuario no ve DOS estados de espera distintos para
+                        la misma pantalla. */}
+                    <Suspense fallback={!cargando ? <SkeletonText lines={4} /> : null}>
                     {!cargando && bloques.grupos.map(({ grupoId, filas }) => (
                         <GrupoPorRecibir key={grupoId} grupo={grupos[grupoId]} filas={filas} onHecho={cargar}>
                             <div className="grid gap-3 xl:grid-cols-2">
@@ -748,6 +790,7 @@ export default function TrasladosView() {
                             ))}
                         </div>
                     )}
+                    </Suspense>
                 </div>
             )}
         </GlassViewLayout>

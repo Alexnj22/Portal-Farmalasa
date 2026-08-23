@@ -47,7 +47,7 @@ const FormularioFacturacion = lazy(() =>
 const FormularioMinMax = lazy(() =>
     import('../dashboard/WidgetMinMaxRequest').then(m => ({ default: m.FormularioMinMax })));
 const FormularioPedirASala = lazy(() =>
-    import('../dashboard/WidgetInventorySearch').then(m => ({ default: m.FormularioPedirASala })));
+    import('../dashboard/inventario/PanelDeInventario').then(m => ({ default: m.FormularioPedirASala })));
 
 const Cargando = () => (
     <div className="flex-1 min-h-[220px] grid place-items-center">

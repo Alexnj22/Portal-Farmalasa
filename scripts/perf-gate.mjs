@@ -76,7 +76,14 @@ const MARGEN = 5;              // cuántas veces lo medido es el techo, al regen
 const CODIGO = [
   {
     clave: 'minimo-3-letras',
-    archivo: 'src/views/dashboard/WidgetInventorySearch.jsx',
+    // Se mudó el 2026-08-23: el cuerpo del buscador salió de
+    // `WidgetInventorySearch.jsx` para que sus 1,180 líneas dejaran de viajar en
+    // el cierre estático del Inicio. El gate siguió mirando el archivo viejo y
+    // BLOQUEÓ el commit con «no encontré la constante» — que es exactamente lo
+    // que tiene que hacer: un chequeo por ruta fija no distingue «la constante
+    // se borró» de «el archivo se movió», y de las dos la primera es la
+    // peligrosa. Confirmado a mano que sigue en 3.
+    archivo: 'src/views/dashboard/inventario/PanelDeInventario.jsx',
     prueba: (t) => {
       const m = t.match(/const\s+MIN_LETRAS_BUSQUEDA\s*=\s*(\d+)/);
       if (!m) return 'no encontré la constante MIN_LETRAS_BUSQUEDA';

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.721.0 — Las ocho áreas sin pruebas dejan de estarlo
+
+La auditoría del 23-ago encontró que el eje más flojo del portal era **pruebas**:
+ocho de las veinticinco áreas no tenían un solo archivo que las nombrara —
+Asistencia, Nómina, Metas, Bitácoras, Sucursales, Avisos, Permisos y Sistema.
+
+**93 pruebas nuevas en 7 archivos.** La suite pasa de 689 a 793.
+
+La pregunta al escribirlas no fue «cómo subo el número» sino **qué se rompe en
+silencio si nadie mira**. En cada área se buscó la lógica cuyo fallo no produce
+un error, sino un dato equivocado que alguien descubre semanas después:
+
+| área | lo que se probó | por qué duele |
+|---|---|---|
+| Nómina | la tabla de renta y la quincena | paga mal y no avisa · **encontró un defecto** |
+| Bitácoras | el día de El Salvador y el folio | un libro que se le presenta al Consejo |
+| Avisos | a quién le llega cada aviso | el que no llega no se extraña |
+| Metas | los meses SV y el histórico | el mes corrido compara contra otro mes |
+| Asistencia | la hora del turno y la tardanza | de ahí salen las horas de la planilla |
+| Sucursales | `clampInt`, teléfono y `safeParse` | están en el camino de guardar |
+| Permisos | la forma de las 156 llaves | una clave repetida gobierna otra cosa |
+| Sistema | la caja negra | es lo que queda cuando el portal se cae |
+
+**Asistencia además se refactorizó**: su única matemática vivía dentro del render
+de `AttendanceAuditView.jsx`, sin exportar, así que no había forma de medirla.
+`buildCSTDate`, `getCSTDateStr` y `minutosDeTardanza` viven ahora en
+`data/attendanceAudit.js`.
+
+**Dos hallazgos anotados y no cambiados**, porque cambiarlos mueve lo que ve el
+usuario y eso es una decisión:
+
+- El cálculo de tardanza está **duplicado** entre la vista y
+  `consolidate-timesheets`. Hoy las dos fórmulas coinciden —comprobado sobre las
+  429 filas— pero son dos copias de la misma regla, que es exactamente lo que
+  llevó a centralizar la audiencia de avisos cuando divergió.
+- `ts?.late_minutes || (recálculo)`: con `late_minutes` en **0** —«puntual», y
+  hoy lo son las 429— el `||` descarta el timesheet y recalcula. Si alguien
+  corrige una tardanza a 0, la pantalla la vuelve a mostrar.
+
+**`conteo_ver_sistema` es la única de las 156 llaves fuera del canon §7-bis** (su
+clave debería empezar por `conteo_inventario_`). Se ancló como excepción con su
+motivo escrito en vez de arreglarse: hay 9 filas otorgadas y una función de
+Postgres que la nombra, así que renombrarla exige migración y no arregla ningún
+comportamiento. La prueba comprueba además que la lista de excepciones siga
+teniendo UNA y que esa una siga existiendo — una excepción que se queda cuando el
+caso desapareció perdona en silencio al siguiente.
+
+**Y tres de estas pruebas nacieron mal**, lo cual vale la pena decir porque es el
+patrón del día: la de continuidad de tramos exigía una forma que la ley no tiene,
+y la de `localStorage` espiaba el prototipo cuando jsdom expone los métodos en la
+instancia. Las dos «fallaron» contra código correcto.
+
 ## v2.720.2 — Las carpetas de compilación de cada sesión se limpian solas
 
 La regla de trabajo en paralelo dice compilar a un directorio propio

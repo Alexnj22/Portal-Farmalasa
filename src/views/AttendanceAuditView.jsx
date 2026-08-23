@@ -28,6 +28,9 @@ import { smartFilter } from '../utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, fetchEmployeeExceptions,
+    buildCSTDate,
+    getCSTDateStr,
+    minutosDeTardanza,
 } from '../data/attendanceAudit';
 import { updateAttendancePunch, updateEmployee } from '../data/employees';
 import { resolverApprovalRequest } from '../data/requests';
@@ -86,14 +89,8 @@ function getMondayOfCurrentWeek() {
   cst.setUTCDate(cst.getUTCDate() - (cst.getUTCDay() + 6) % 7);
   return cst.toISOString().slice(0, 10);
 }
-function getCSTDateStr(isoOrDate) {
-  const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
-  return new Date(d.getTime() - 6 * 3600000).toISOString().slice(0, 10);
-}
-function buildCSTDate(dateStr, timeStr) {
-  if (!dateStr || !timeStr) return null;
-  return new Date(`${dateStr}T${timeStr}:00-06:00`);
-}
+// `getCSTDateStr`, `buildCSTDate` y `minutosDeTardanza` viven en
+// `data/attendanceAudit.js`: son matemática pura y acá no se podían probar.
 function fmtTimeCSTStr(isoStr) {
   if (!isoStr) return '–';
   const d = new Date(new Date(isoStr).getTime() - 6 * 3600000);
@@ -464,12 +461,16 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   })() : null;
 
   // Late minutes (prefer timesheet, else compute)
-  const lateMin = ts?.late_minutes || ((() => {
-    if (!entryPunch || !shiftStart) return 0;
-    const exp = buildCSTDate(dateStr, shiftStart);
-    if (!exp) return 0;
-    return Math.max(0, Math.floor((new Date(entryPunch.timestamp).getTime() - exp.getTime()) / 60000));
-  })());
+  // El `||` y no `??` es deliberado, pero conviene saber qué implica: con
+  // `late_minutes` en 0 —que es «puntual», y hoy lo son las 429 filas— el
+  // timesheet se ignora y se recalcula. Las dos fórmulas dan lo mismo, así que
+  // no cambia nada visible; el día que alguien CORRIJA una tardanza a 0 en el
+  // timesheet, la pantalla la volvería a mostrar. Anotado en la auditoría del
+  // 2026-08-23 y no cambiado acá: tocarlo mueve lo que ve el usuario.
+  const lateMin = ts?.late_minutes || minutosDeTardanza(
+    entryPunch?.timestamp,
+    shiftStart ? buildCSTDate(dateStr, shiftStart) : null,
+  );
 
   const cardBg = isToday
     ? 'bg-brand/[0.09] border-brand/25 shadow-[var(--shadow-glow-brand-sm)]'

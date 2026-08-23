@@ -180,10 +180,13 @@ Deno.serve(async (req) => {
      * todavía no para un envío: habría que ofrecerla en la pantalla y medir la
      * existencia contra ella, que es lo que hace `v_inventario_disponible_
      * vencidos`. Se anota acá para que quien lo agregue sepa dónde. */
-    const ubicacionDe = (m: { inv_ubicaciones?: unknown } | null | undefined) => Number(
+    const ubicacionDe = (
+      m: { inv_ubicaciones?: unknown } | null | undefined,
+      vencidos = false,
+    ) => Number(
       (Array.isArray(m?.inv_ubicaciones)
         ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
-        : []).find((u) => !u.isVencidos)?.id ?? 0,
+        : []).find((u) => Boolean(u.isVencidos) === vencidos)?.id ?? 0,
     );
     const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen));
     const ubicDestino = ubicacionDe(porSucursal.get(erpDestino));
@@ -268,6 +271,18 @@ Deno.serve(async (req) => {
       // La existencia de la ubicación se lee UNA vez y no por renglón: son ~4 s
       // y adentro del bucle un envío de cinco productos pagaría veinte.
       const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+
+      // Lo APARTADO en el área de vencidos de la sucursal que envía: el sistema
+      // descarga de ahí primero y no pasa al estante, así que es la otra mitad
+      // del tope (ver `disponibleEnBodega`). Hoy sólo Bodega tiene esa segunda
+      // ubicación y una sala nunca la tiene, así que esta lectura no se paga en
+      // el camino normal — pero el día que Bodega envíe por acá, el freno ya
+      // está.
+      const ubicVencidos = ubicacionDe(porSucursal.get(erpOrigen), true);
+      const enVencidos = ubicVencidos
+        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+        : null;
+
       let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
 
       const hechas: Record<string, unknown>[] = [];
@@ -311,11 +326,16 @@ Deno.serve(async (req) => {
         const hay = disponibleEnBodega(
           f, Number(pres.unidad),
           enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
+          enVencidos ? (enVencidos.get(Number(l.erp_product_id)) ?? 0) : null,
         );
         if (Number(l.cantidad) > hay.paquetes) {
           await fallar(
-            `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
-            `el envío lleva ${l.cantidad}.`,
+            hay.desdeVencidos > 0
+              ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el ` +
+                `área de vencidos, y el sistema descarga primero de ahí sin pasar al estante: en un envío ` +
+                `sólo entran ${hay.paquetes} y el envío lleva ${l.cantidad}.`
+              : `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
+                `el envío lleva ${l.cantidad}.`,
           );
           continue;
         }

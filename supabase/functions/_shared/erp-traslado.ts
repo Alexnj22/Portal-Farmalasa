@@ -250,14 +250,20 @@ export function leerFila(html: string): Fila {
  * mercadería que el reparto sí sabía armar.
  */
 export function disponibleEnBodega(
-  f: Fila, unidad: number, enLaUbicacion?: number | null,
-): { paquetes: number; unidades: number; lotes: number } {
+  f: Fila, unidad: number, enLaUbicacion?: number | null, enVencidos?: number | null,
+): { paquetes: number; unidades: number; lotes: number; desdeVencidos: number } {
   const u = Number(unidad) || 1;
   if (f.regulado && f.lotes.length) {
+    // Con lote el portal NOMBRA de cuál descargar, así que el sistema no elige:
+    // este camino no sufre lo del área de vencidos que está abajo. Medido el
+    // 2026-08-23: el producto 2621, con 2 unidades apartadas en vencidos,
+    // despachó 3 sin una queja **en la misma corrida** en que el termómetro
+    // —sin lote— fue rechazado.
     return {
       paquetes: f.lotes.reduce((n, l) => n + Math.floor(l.stock / u), 0),
       unidades: f.lotes.reduce((n, l) => n + l.stock, 0),
       lotes: f.lotes.length,
+      desdeVencidos: 0,
     };
   }
   // Sin control de lote NO se puede usar la casilla: el sistema la rotula
@@ -279,7 +285,41 @@ export function disponibleEnBodega(
   // sistema sigue siendo la puerta de verdad y un freno que se cierra por una
   // consulta secundaria dejaría de despachar por algo que no es del pedido.
   const existencia = enLaUbicacion == null ? f.existencia : enLaUbicacion;
-  return { paquetes: Math.floor(existencia / u), unidades: existencia, lotes: 0 };
+
+  // ── Y hay una segunda mitad, que costó tres despachos rechazados ─────────
+  //
+  // Leer bien el estante NO alcanza, porque el sistema **no descarga del
+  // estante mientras quede algo en el área de vencidos**: entra por ahí, y si
+  // lo apartado no cubre lo pedido no pasa a la otra ubicación — contesta «No
+  // hay suficiente stock en las ubicaciones». El `origen` que se le manda lo
+  // ignora.
+  //
+  // Medido el 2026-08-23 sobre el TERMOMETRO DIGITAL WELLPRO (1545), con 26 en
+  // el estante y 1 apartado en vencidos:
+  //
+  //   pedir 8 → rechazado          pedir 2 y 3 → rechazados (18 y 19-ago)
+  //   pedir 1 → ENTRA, y la unidad sale del ÁREA DE VENCIDOS (quedó en cero)
+  //   pedir 7 con vencidos ya vacío → entra, y sale del estante
+  //
+  // O sea que el tope de UN traslado es lo apartado, no lo del estante. Sin
+  // este freno el renglón se aprueba, Bodega arma la caja, el sistema la
+  // rechaza y la mercadería viaja igual: 8 termómetros terminaron en Salud 3
+  // sin un solo movimiento en el sistema, y nadie se enteró porque el pedido
+  // igual se cerró como recibido.
+  //
+  // Se toma el MENOR de los dos a propósito: nunca más de lo apartado (o el
+  // sistema rechaza) y nunca más de lo que hay en el estante (o se despacha
+  // como normal mercadería que Bodega separó por vencer). `desdeVencidos` dice
+  // cuántas de las que salgan van a venir de ahí — quien despacha tiene que
+  // poder avisarlo, no descubrirlo.
+  const apartado = Number(enVencidos ?? 0);
+  const tope = apartado > 0 ? Math.min(existencia, apartado) : existencia;
+  return {
+    paquetes: Math.floor(tope / u),
+    unidades: tope,
+    lotes: 0,
+    desdeVencidos: apartado > 0 ? tope : 0,
+  };
 }
 
 /**

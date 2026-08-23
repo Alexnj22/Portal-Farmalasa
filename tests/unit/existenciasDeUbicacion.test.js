@@ -122,3 +122,54 @@ describe('disponibleEnBodega — qué número usa', () => {
         expect(disponibleEnBodega(conLotes, 10, 3).lotes).toBe(2);
     });
 });
+
+// ── El área de vencidos manda sobre el estante ───────────────────────────────
+//
+// Medido contra el sistema el 2026-08-23 con el TERMOMETRO DIGITAL WELLPRO
+// (1545), 26 en el estante y 1 apartado en el área de vencidos:
+//
+//   pedir 8 → «No hay suficiente stock en las ubicaciones» (nada escrito)
+//   pedir 1 → entra, y la unidad sale del ÁREA DE VENCIDOS (queda en cero)
+//   pedir 7, ya con vencidos vacío → entra, y sale del estante
+//
+// O sea: el sistema descarga primero de vencidos y NO pasa al estante en el
+// mismo envío, e ignora el `origen` que se le manda. Antes de este freno el
+// renglón se aprobaba, Bodega armaba la caja y el sistema la rechazaba: 8
+// termómetros llegaron a Salud 3 sin un movimiento en el sistema.
+describe('disponibleEnBodega — lo apartado en vencidos es el techo del envío', () => {
+    const sinLote = { regulado: false, lotes: [], existencia: 27, presentaciones: [], encontrado: true, vence: '' };
+    const conLotes = { regulado: true, existencia: 10, presentaciones: [], encontrado: true, vence: '',
+                       lotes: [{ id: '1', numero: 'A', vence: '', stock: 50 }] };
+
+    it('el caso real: 26 en el estante y 1 apartado dejan pasar 1, no 26', () => {
+        const hay = disponibleEnBodega(sinLote, 1, 26, 1);
+        expect(hay.paquetes).toBe(1);
+        expect(hay.desdeVencidos).toBe(1);
+    });
+
+    it('con el área de vencidos vacía el techo vuelve a ser el estante', () => {
+        expect(disponibleEnBodega(sinLote, 1, 26, 0).paquetes).toBe(26);
+        expect(disponibleEnBodega(sinLote, 1, 26, 0).desdeVencidos).toBe(0);
+        expect(disponibleEnBodega(sinLote, 1, 26, null).paquetes).toBe(26);
+    });
+
+    // Nunca más de lo que hay en el estante: si lo apartado es mayor, mandar
+    // por lo apartado despacharía como normal mercadería que Bodega separó.
+    it('se toma el MENOR de los dos', () => {
+        expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(2);
+        expect(disponibleEnBodega(sinLote, 1, 300, 2).paquetes).toBe(2);
+    });
+
+    it('el factor se aplica DESPUÉS del techo: 3 apartadas en cajas de 5 no son ni una caja', () => {
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).paquetes).toBe(0);
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(3);
+    });
+
+    // Con lote el portal NOMBRA de cuál descargar, así que el sistema no elige.
+    // Medido el mismo día: el producto 2621, con 2 apartadas en vencidos,
+    // despachó 3 en la misma corrida en que el termómetro fue rechazado.
+    it('con control de lote el área de vencidos no achica nada', () => {
+        expect(disponibleEnBodega(conLotes, 10, 3, 1).paquetes).toBe(5);
+        expect(disponibleEnBodega(conLotes, 10, 3, 1).desdeVencidos).toBe(0);
+    });
+});

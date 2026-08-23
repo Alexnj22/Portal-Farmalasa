@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.714.0 — El área de vencidos manda: por qué el sistema rechazaba un traslado con el estante lleno
+
+Cierra el caso que quedó abierto en v2.668.2 —«no explica ese caso»— y que
+seguía vivo: el 21-ago fue el tercer rechazo del mismo producto.
+
+**El sistema descarga primero del área de vencidos y NO pasa al estante.** Es
+todo. Medido contra el sistema el 23-ago con el TERMOMETRO DIGITAL WELLPRO, que
+tenía **26 en el estante y 1 apartado en vencidos**:
+
+| se pidió | resultado |
+|---|---|
+| 8 | «No hay suficiente stock en las ubicaciones» — no se escribió nada |
+| 2 y 3 | lo mismo, el 18 y el 19 de agosto |
+| **1** | entra, y la unidad sale del **área de vencidos** (quedó en cero) |
+| **7**, ya con vencidos vacío | entra, y sale del estante |
+
+O sea que el tope de un traslado es **lo apartado**, no lo que hay en el
+estante. Y el `origen` que se le manda —la ubicación de la que tiene que
+salir— lo ignora.
+
+**Por qué no se veía.** El freno del portal ya leía bien el estante desde
+v2.668.2, así que aprobaba: Bodega armaba la caja, el sistema la rechazaba, el
+renglón quedaba en error… y la mercadería viajaba igual. **Ocho termómetros
+llegaron a Salud 3 sin un solo movimiento en el sistema**, y nadie se enteró
+porque el pedido igual se cerró como recibido y la línea en error no le avisa a
+nadie. Los libros decían que estaban en Bodega.
+
+Se regularizaron los ocho el 23-ago (traslados 32268 y 32269): Bodega quedó en
+19, Salud 3 en 9, y los tres renglones que estaban en error quedaron cerrados
+con la explicación adentro.
+
+**El arreglo.** `disponibleEnBodega` recibe ahora también lo apartado en el área
+de vencidos y devuelve el MENOR de los dos: nunca más de lo apartado —o el
+sistema rechaza— y nunca más de lo que hay en el estante —o se despacharía como
+normal mercadería que Bodega separó por vencer—. Lo aplican los cuatro caminos
+que mueven producto: el despacho del pedido, **su simulacro** —que es lo que
+Bodega ve antes de armar la caja, y por eso es donde de verdad se evita el
+problema—, el traslado entre salas y el envío de producto.
+
+Cuando el tope muerde, el mensaje dice qué hacer en vez de decir «no hay»,
+porque **sí hay**: «Hay N apartadas en el área de vencidos y el sistema descarga
+primero de ahí sin pasar al estante: en un envío sólo entran N. Sacá el apartado
+del área de vencidos y volvé a despachar.» Y cuando el envío sale de ahí, la
+línea lo dice —mismo canal que el aviso del lote que no era el reservado—:
+quien recibe la caja tiene que enterarse de que esa mercadería estaba apartada
+por vencer.
+
+**A quién más le podía pasar:** de los 82 productos con algo apartado en el área
+de vencidos de Bodega, **33 no llevan control de lote** y estaban expuestos. Los
+otros 49 nunca lo estuvieron: con lote el portal NOMBRA de cuál descargar, así
+que el sistema no elige — el producto 2621, con 2 apartadas, despachó 3 sin una
+queja en la misma corrida en que el termómetro fue rechazado.
+
+Las cuentas quedan ancladas en `tests/unit/existenciasDeUbicacion.test.js` con
+los números medidos, incluido el caso que dio origen a todo.
+
 ## v2.713.0 — Envíos: multisala, dos columnas y un solo encabezado
 
 Cuatro correcciones sobre lo entregado ayer, las cuatro reportadas con capturas.

@@ -627,6 +627,16 @@ Deno.serve(async (req) => {
     // traslado de cinco productos pagaría veinte. Ver `existenciasDeUbicacion`.
     const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
 
+    // Y lo apartado en el área de vencidos, porque el sistema descarga de ahí
+    // primero y no pasa al estante — ver `disponibleEnBodega`. Sólo cuando el
+    // origen es el ESTANTE: si ya se está pidiendo del área de vencidos, la
+    // cifra de arriba es esa misma y contarla dos veces bajaría el tope sin
+    // motivo.
+    const ubicVencidos = origenVencidos ? 0 : ubicacionDe(porSucursal.get(erpOrigen), true);
+    const enVencidos = ubicVencidos
+      ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+      : null;
+
     // Cuánto tardó cada renglón contra el sistema de origen. No es diagnóstico
     // de sobra: es de dónde va a salir el TOPE de productos por solicitud.
     // Hasta hoy toda solicitud tuvo un renglón, así que el costo marginal del
@@ -700,12 +710,17 @@ Deno.serve(async (req) => {
       const hay = disponibleEnBodega(
         f, Number(unidad),
         enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
+        enVencidos ? (enVencidos.get(Number(l.erp_product_id)) ?? 0) : null,
       );
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
-          error: `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
-               + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
+          error: hay.desdeVencidos > 0
+            ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área `
+              + `de vencidos, y el sistema descarga primero de ahí sin pasar al estante: en un envío sólo `
+              + `entran ${hay.paquetes} y se pidieron ${l.cantidad}.`
+            : `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
+              + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
       // ── Los lotes ────────────────────────────────────────────────────────

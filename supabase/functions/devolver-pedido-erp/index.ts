@@ -617,6 +617,13 @@ Deno.serve(async (req) => {
       let conocidos = await pendientesDeOrigen(cookie, ubicSala);
       // Lo que hay de verdad en el área de trabajo de la sala. Ver
       // `existenciasDeUbicacion`: la casilla de la pantalla suma vencidos.
+      //
+      // Acá NO hace falta el cuarto argumento de `disponibleEnBodega` —lo
+      // apartado en el área de vencidos, de donde el sistema descarga primero—
+      // porque el origen de una devolución es siempre una SALA, y una sala
+      // tiene una sola ubicación (`erp_sucursal_map.inv_ubicaciones`: sólo
+      // Bodega trae dos). El día que una sala tenga su propia área de vencidos,
+      // este es el lugar.
       const enUbicacion = await existenciasDeUbicacion(cookie, erpSala, ubicSala);
 
       for (const d of lista) {

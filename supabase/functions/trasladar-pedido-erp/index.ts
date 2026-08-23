@@ -176,6 +176,20 @@ function ubicacionDeTrabajo(m: { inv_ubicaciones?: unknown } | null): number {
   return Number(lista.find((u) => !u.isVencidos)?.id ?? 0);
 }
 
+/**
+ * El área de vencidos, que NO es origen y sin embargo manda.
+ *
+ * El sistema descarga de ahí primero y no pasa al estante — ver
+ * `disponibleEnBodega`. Hoy sólo Bodega tiene dos ubicaciones; para una sala
+ * esto da 0 y el freno se comporta como siempre.
+ */
+function ubicacionDeVencidos(m: { inv_ubicaciones?: unknown } | null): number {
+  const lista = Array.isArray(m?.inv_ubicaciones)
+    ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
+    : [];
+  return Number(lista.find((u) => u.isVencidos)?.id ?? 0);
+}
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -969,6 +983,14 @@ Deno.serve(async (req) => {
       // `existenciasDeUbicacion`.
       const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
 
+      // Y lo APARTADO en el área de vencidos, que es de donde el sistema
+      // descarga primero — ver `disponibleEnBodega`. Otra lectura por corrida,
+      // no por producto: el área de vencidos de Bodega tiene 82 filas.
+      const ubicVencidos = ubicacionDeVencidos(mapaOrigen);
+      const enVencidos = ubicVencidos
+        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+        : null;
+
       let hechas = 0, fallidas = 0, sinTiempo = false;
 
       for (;;) {
@@ -1041,10 +1063,17 @@ Deno.serve(async (req) => {
           const hay = disponibleEnBodega(
             f, Number(pres.unidad),
             enUbicacion ? (enUbicacion.get(Number(ln.erp_product_id)) ?? 0) : null,
+            enVencidos ? (enVencidos.get(Number(ln.erp_product_id)) ?? 0) : null,
           );
           if (Number(ln.cantidad) > hay.paquetes) {
             await fallar(
-              `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
+              hay.desdeVencidos > 0
+                // El número solo se lee como «no hay», y acá SÍ hay: están en la
+                // otra ubicación y el sistema no las alcanza en el mismo envío.
+                ? `Hay ${hay.desdeVencidos} apartadas en el área de vencidos y el sistema descarga primero `
+                  + `de ahí sin pasar al estante, así que en un envío sólo entran ${hay.paquetes} y hacen `
+                  + `falta ${ln.cantidad}. Sacá el apartado del área de vencidos y volvé a despachar.`
+                : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
             );
             continue;
           }
@@ -1057,6 +1086,17 @@ Deno.serve(async (req) => {
 
           if (!f.regulado) {
             renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
+            // Sale del área de vencidos y no del estante, y eso no lo elige el
+            // portal: lo decide el sistema. Es la misma familia que el aviso del
+            // lote —«no salió el que el pedido había reservado»— y por eso va
+            // por el mismo canal: quien recibe la caja tiene que enterarse de
+            // que esa mercadería estaba apartada por vencer.
+            if (hay.desdeVencidos > 0) {
+              avisos.push(
+                `salió del área de vencidos: el sistema descarga primero de ahí `
+                + `(${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"})`,
+              );
+            }
           } else {
             // El reparto es `repartirEnLotes` de `_shared` y no una copia: hasta
             // el 2026-08-18 esta función tenía la suya, y las dos se movieron por
@@ -1269,8 +1309,15 @@ Deno.serve(async (req) => {
       let unidades = 0;
       let verificados = 0;
       // La misma lectura que hace el despacho: si esta pantalla contara de otra
-      // forma, pondría en cero productos que el despacho sí puede mandar.
+      // forma, pondría en cero productos que el despacho sí puede mandar. Por
+      // eso también lee lo apartado en vencidos: es la mitad del tope, y una
+      // pantalla que no la mire deja a Bodega armando una caja que el sistema
+      // va a rechazar.
       const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+      const ubicVencidosSim = ubicacionDeVencidos(mapaOrigen);
+      const enVencidosSim = ubicVencidosSim
+        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidosSim)
+        : null;
 
       for (const it of items) {
         if (Date.now() - arranque > presupuesto) {
@@ -1321,12 +1368,17 @@ Deno.serve(async (req) => {
         const hay = disponibleEnBodega(
           f, Number(pres.unidad),
           enUbicacion ? (enUbicacion.get(Number(it.erp_product_id)) ?? 0) : null,
+          enVencidosSim ? (enVencidosSim.get(Number(it.erp_product_id)) ?? 0) : null,
         );
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
             detalle: hay.unidades <= 0
               ? "Ya no tiene existencia en bodega."
+              : hay.desdeVencidos > 0
+              ? `Hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos `
+                + `y el sistema descarga primero de ahí sin pasar al estante: en un envío sólo entran `
+                + `${hay.paquetes} y el pedido lleva ${it.cantidad}.`
               : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
           });
           continue;

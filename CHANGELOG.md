@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.720.1 — La planilla usaba la tabla de renta anterior a la reforma
+
+Nómina no tenía **ni una prueba**. Al escribirlas apareció esto.
+
+`calcRenta` usaba la tabla de retención **anterior al Decreto Ejecutivo No. 10 de
+2025**, que rige desde la primera quincena de mayo de 2025 y subió el mínimo
+exento de $338,67 a **$550 mensuales**. Y además le faltaban las **cuotas
+fijas**: el tramo II sumaba sólo el 10% del exceso, sin los $8,83.
+
+Ni siquiera era internamente consistente. Con sus propios números, el tramo IV
+tenía que arrancar en $3.250,68 anuales y decía $3.462,47.
+
+**Qué costaba.** Con base gravada de $275,00 —el mínimo exento exacto— retenía
+**$10,57 a alguien que por ley no paga nada**. Con $500,00 retenía $44,97 contra
+los $40,48 que corresponden.
+
+**A quién le pasó: a nadie.** Al medirlo no había ni un período de planilla
+generado, ni una entrada, ni un solo empleado con sueldo cargado — cero de 49.
+Era un defecto latente esperando la primera corrida. Que es exactamente lo que
+una prueba tiene que atrapar: la nómina no avisa cuando paga mal.
+
+La tabla ahora es **quincenal y directa**, como la publica Hacienda, en vez de
+anualizar ×24 y volver a dividir. Anualizar sólo agregaba dos redondeos y una
+oportunidad más de que los tramos dejaran de empalmar. Vive en una constante
+nombrada con su decreto escrito al lado, y las pruebas la vigilan tramo por
+tramo.
+
+**Doce pruebas, y una nació mal.** La primera versión exigía que los tramos
+EMPALMARAN y falló contra el código correcto: la premisa era mía y era falsa. La
+tabla salvadoreña **no es continua** —un centavo por encima de $275,00 cuesta
+$8,83 de golpe— porque es una tabla de retención, un anticipo, y el ajuste fino
+va en el recálculo anual. Ahora se anclan los saltos medidos, que caza lo mismo
+sin exigirle a la ley una forma que no tiene.
+
+Verificado por regresión: quitándole la cuota fija al tramo II, 5 de las 12
+pruebas fallan.
+
 ## v2.720.0 — El salario deja de viajar con la ficha
 
 `staff_salary` era **una llave sin cerradura**. El módulo existía en la pantalla

@@ -7,15 +7,48 @@ import {
 
 // ─── El Salvador ISR (Renta) biweekly table ─────────────────────────────────
 // Base: net quincena after ISSS & AFP deductions
-function calcRenta(netQuincena) {
-    // Annualize → apply table → de-annualize
-    const annual = netQuincena * 24;
-    let annualTax = 0;
-    if (annual <= 4064)            annualTax = 0;
-    else if (annual <= 9142.86)    annualTax = (annual - 4064) * 0.10;
-    else if (annual <= 22857.14)   annualTax = 507.83 + (annual - 9142.87) * 0.20;
-    else                           annualTax = 3462.47 + (annual - 22857.14) * 0.30;
-    return parseFloat((annualTax / 24).toFixed(2));
+// ── La tabla de retención de renta, QUINCENAL ───────────────────────────────
+//
+// Decreto Ejecutivo No. 10 de 2025, vigente desde la PRIMERA QUINCENA DE MAYO DE
+// 2025. Reformó el art. 37 de la Ley de Impuesto sobre la Renta y subió el
+// mínimo exento a $550 mensuales ($275 quincenales).
+//
+// ── Por qué está escrita así, y no anualizando ─────────────────────────────
+// Hasta el 2026-08-23 esto anualizaba la base (×24), aplicaba una tabla ANUAL y
+// volvía a dividir. Dos problemas:
+//
+//   1. La tabla anual era la ANTERIOR a la reforma —exento $4.064 al año, o sea
+//      $169,33 por quincena— y llevaba desactualizada desde mayo de 2025.
+//   2. Le faltaban las CUOTAS FIJAS. El tramo II sumaba sólo el 10% del exceso,
+//      sin los $8,83; el III arrancaba en $507,83 en vez de $720,00 anuales. Ni
+//      siquiera era internamente consistente: con sus propios números, el tramo
+//      IV debía arrancar en $3.250,68 y decía $3.462,47.
+//
+// La tabla oficial es quincenal, así que se escribe quincenal. Anualizar y
+// desanualizar sólo agrega dos redondeos y una oportunidad de que los tramos
+// dejen de empalmar.
+//
+// ── Cuánto costaba ─────────────────────────────────────────────────────────
+// Con base gravada de $275,00 el portal retenía $10,57 a alguien que por ley no
+// debe pagar nada. Con $500,00 retenía $44,97 contra los $40,48 que
+// corresponden. No le pasó a nadie: al descubrirlo no había ni un período de
+// planilla generado ni un solo empleado con sueldo cargado. Era un defecto
+// latente, y de dinero.
+//
+// ⚠️ Al cambiar la ley se cambia ESTA constante, y `payroll.test.js` la vigila
+// tramo por tramo, incluidos los bordes exactos.
+export const TRAMOS_RENTA_QUINCENAL = [
+    { hasta: 275.00,     cuotaFija: 0,      tasa: 0,    sobreExceso: 0 },
+    { hasta: 447.62,     cuotaFija: 8.83,   tasa: 0.10, sobreExceso: 275.00 },
+    { hasta: 1019.05,    cuotaFija: 30.00,  tasa: 0.20, sobreExceso: 447.62 },
+    { hasta: Infinity,   cuotaFija: 144.28, tasa: 0.30, sobreExceso: 1019.05 },
+];
+
+export function calcRenta(netQuincena) {
+    const base = Number(netQuincena) || 0;
+    if (base <= 0) return 0;
+    const t = TRAMOS_RENTA_QUINCENAL.find(x => base <= x.hasta);
+    return parseFloat((t.cuotaFija + (base - t.sobreExceso) * t.tasa).toFixed(2));
 }
 
 // ─── Core payroll calculator for one employee ────────────────────────────────

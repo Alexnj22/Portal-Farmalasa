@@ -90,6 +90,24 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 // suelto. Un `hex` nuevo en LoginView hoy sigue pasando, pero uno nuevo en
 // cualquier vista normal falla — que es lo que antes no ocurría.
 const EXCEPTIONS = {
+  // El lector de código de barras: `white` y `shadow-literal` sobre la vista de
+  // la CÁMARA, que es el único rectángulo del portal que no tiene tema.
+  //
+  //   · `bg-black` es el fondo del `<video>`. La imagen viene de la cámara y no
+  //     del tema, y lo que rodea al cuadro cuando la relación de aspecto no
+  //     coincide tiene que ser negro — cualquier token lo pintaría de un color
+  //     que se ve como un error de encuadre.
+  //   · `border-white/80` es la guía de encuadre. Tiene que contrastar contra
+  //     LO QUE SEA que esté mirando la cámara —una caja blanca, una repisa
+  //     oscura, un anaquel a contraluz—, no contra el fondo de la aplicación.
+  //     Un token de borde se pierde sobre la mitad de los anaqueles.
+  //   · La sombra `0 0 0 9999px` no es una sombra: es el truco de anillo que
+  //     oscurece todo lo que queda FUERA de la guía. No está en la escala
+  //     `--shadow-*` porque no pertenece a ella — no describe elevación.
+  //     La alternativa son cuatro divs posicionados para el mismo píxel.
+  //
+  // Documentado en DESIGN.md §6 junto al resto de las excepciones de color.
+  'src/components/common/LectorDeCodigo.jsx': ['white', 'shadow-literal'],
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
   // 343 referencias vivas no se rompan mientras migran.

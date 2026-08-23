@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import HojaMovil from '../../components/common/HojaMovil';
 import AsaHoja from '../../components/common/AsaHoja';
 import Button from '../../components/common/Button';
@@ -37,6 +37,11 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
+// Diferido: el lector sólo existe si alguien toca «escanear», y arrastra el
+// diálogo entero además de la librería de decodificación. Estático costaba 2 kB
+// del cierre de esta vista —y el techo del `bundle-gate` los vio— para una
+// pantalla que se abre de pie frente a un anaquel, muchas veces con datos.
+const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
@@ -1559,6 +1564,10 @@ export default function ConteoDetailView() {
     const [labs, setLabs] = useState([]);
     const [laboratorioId, setLaboratorioId] = useState(null);
     const [printChooserOpen, setPrintChooserOpen] = useState(false);
+    // Escanear es la otra forma de escribir en el buscador, no otra búsqueda:
+    // el código cae en el mismo campo, y desde v2.710.0 el servidor lo mira
+    // junto al nombre, el laboratorio, el lote y la presentación.
+    const [lectorAbierto, setLectorAbierto] = useState(false);
     // Orden por columna. `null` = el orden del anaquel (laboratorio, producto),
     // que es el que sirve para recorrerlo contando; lo resuelve el servidor.
     const [orden, setOrden] = useState({ key: null, dir: 'asc' });
@@ -1980,7 +1989,7 @@ export default function ConteoDetailView() {
             // En táctil `FilterBar` ES la barra flotante, así que el buscador y la
             // acción principal se le pasan acá y no se cablean a mano: el canónico
             // decide dónde van en cada tamaño.
-            buscador={{ value: search, onChange: cambiarBusqueda, placeholder: simple ? 'Producto o laboratorio' : 'Producto, laboratorio o lote' }}
+            buscador={{ value: search, onChange: cambiarBusqueda, placeholder: simple ? 'Producto o código' : 'Producto, lote o código', alEscanear: () => setLectorAbierto(true) }}
             accionPrincipal={editable && canEdit ? { icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true) } : null}
         >
             {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
@@ -2030,7 +2039,8 @@ export default function ConteoDetailView() {
         <ViewTabBar
             searchValue={search}
             onSearchChange={cambiarBusqueda}
-            placeholder={simple ? 'Buscar producto o laboratorio...' : 'Buscar producto, laboratorio o lote...'}
+            placeholder={simple ? 'Buscar producto, laboratorio o código...' : 'Buscar producto, laboratorio, lote o código...'}
+            onEscanear={() => setLectorAbierto(true)}
             // En teléfono el buscador vive en la barra flotante, junto a los
             // filtros: dos accesos al mismo buscador —uno de ellos arriba, que se
             // va con el scroll— es peor que uno solo bien puesto.
@@ -2305,6 +2315,25 @@ export default function ConteoDetailView() {
                     </div>
                 )}
             </div>
+
+            {/* Escanear escribe en el buscador y no salta al producto: así el
+                resultado se ve con el mismo filtro que el resto, se puede
+                corregir a mano, y si el código no está en ESTE conteo la
+                pantalla lo dice en vez de no hacer nada. */}
+            {/* Sólo se monta al abrirlo: si se montara siempre, `lazy` bajaría
+                el trozo igual al entrar a la vista y no habría diferido nada.
+                Sin `fallback` visible — el propio diálogo ya muestra su
+                «preparando» mientras la cámara arranca. */}
+            {lectorAbierto && (
+                <Suspense fallback={null}>
+                    <LectorDeCodigo
+                        abierto={lectorAbierto}
+                        onCerrar={() => setLectorAbierto(false)}
+                        onLeer={(codigo) => cambiarBusqueda(codigo)}
+                        titulo="Escanear producto"
+                    />
+                </Suspense>
+            )}
 
             {/* El alta en hoja inferior, el mismo material que la de filtros: en
                 teléfono el formulario inline empujaba la lista tres pantallas hacia

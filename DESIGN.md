@@ -4176,6 +4176,33 @@ etiqueta y su forma de contenedor.
 correr el tiempo) ni `PeriodPicker` (elegir un rango arbitrario). Acá el
 período dura siempre lo mismo y solo se mueve hacia atrás o hacia adelante.
 
+### 17.1.1 Escanear un código — `onEscanear`
+
+`ViewTabBar` acepta `onEscanear`, y lo publica junto con el resto del buscador
+por el canal de vista. Eso hace que el botón de cámara aparezca **en los dos
+lados**: dentro del campo del encabezado en escritorio, y dentro del campo
+abierto de la barra flotante en táctil. Publicarlo por el canal y no cablearlo
+a mano es lo que evita que escanear exista en la computadora y no en el
+teléfono, que es justamente donde se escanea.
+
+El lector es `LectorDeCodigo` (`components/common/`), y va montado **sólo
+mientras está abierto**, detrás de `lazy` + `Suspense`: montarlo siempre haría
+que `lazy` bajara su trozo al entrar a la vista y no habría diferido nada
+—medido: 2 kB del cierre estático de `ConteoDetailView`, que su techo del
+`bundle-gate` vio enseguida—.
+
+**Escanear escribe en el buscador, no salta al producto.** Así el resultado se
+ve con el mismo filtro que el resto, se puede corregir a mano, y si el código no
+está en esa pantalla la vista lo dice en vez de no hacer nada.
+
+**Su vista de cámara es la única excepción de color del portal** (`white` y
+`shadow-literal` en `design-gate`): el `<video>` muestra lo que ve la cámara, no
+el tema. El fondo tiene que ser negro —cualquier token se lee como un error de
+encuadre—, la guía tiene que contrastar contra lo que sea que haya enfrente (una
+caja blanca, un anaquel a contraluz) y no contra el fondo de la aplicación, y la
+«sombra» de 9999px no es una sombra sino el anillo que oscurece lo que queda
+fuera de la guía. El motivo está escrito también en `EXCEPTIONS`.
+
 ### 17.2 `TablePagination` — paginación
 
 ```jsx

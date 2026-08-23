@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X } from 'lucide-react';
+import { Search, X, ScanLine } from 'lucide-react';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import Contador from './Contador';
 import ModalShell from './ModalShell';
@@ -571,6 +571,22 @@ const BarraPortal = ({
                             className="flex-1 min-w-0 bg-transparent border-none outline-none
                                 text-body-xl font-bold text-content placeholder:text-content-3"
                         />
+                        {/* Escanear, sólo si la vista lo ofrece. Va DENTRO del
+                            campo y no como acción suelta de la barra porque no
+                            es otra acción: es la otra forma de escribir en este
+                            mismo buscador. Y va antes de la ✕ para que limpiar
+                            —que es lo destructivo— quede siempre en el mismo
+                            borde, con o sin cámara. */}
+                        {buscador.alEscanear && (
+                            <button type="button" aria-label="Escanear un código de barras"
+                                onClick={() => buscador.alEscanear()}
+                                className="w-10 h-10 min-w-[var(--tap-min)] min-h-[var(--tap-min)] shrink-0 rounded-full
+                                    flex items-center justify-center text-brand-text
+                                    hover:bg-brand/15 active:scale-[0.97]
+                                    transition-[background-color,transform] duration-[var(--dur-fast)]">
+                                <ScanLine size={16} strokeWidth={2.5} />
+                            </button>
+                        )}
                         {conTexto && (
                             <button type="button" aria-label="Limpiar la búsqueda"
                                 onClick={() => { buscador.onChange?.(''); setBuscando(false); }}

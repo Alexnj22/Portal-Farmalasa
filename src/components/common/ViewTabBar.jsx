@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect, useCallback } from 'react';
-import { Search, X, ChevronRight } from 'lucide-react';
+import { Search, X, ChevronRight, ScanLine } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 import { usePublicarBuscador, useHayBarraFlotante } from './CanalDeVista';
@@ -69,6 +69,11 @@ export default function ViewTabBar({
   onTabChange,
   searchValue = '',
   onSearchChange,
+  // Abrir el lector de código de barras. Opcional: la vista que no puede
+  // escanear no dibuja el botón. Se publica junto con el resto del buscador
+  // para que la barra flotante lo reciba igual — si no, escanear existiría en
+  // escritorio y no en el teléfono, que es donde se escanea.
+  onEscanear = null,
   placeholder = 'Buscar...',
   showSearch = true,
 }) {
@@ -167,7 +172,7 @@ export default function ViewTabBar({
 
   // Se publica aunque la lupa siga acá: la barra flotante decide si lo usa.
   usePublicarBuscador(showSearch && onSearchChange
-    ? { value: searchValue, onChange: onSearchChange, placeholder }
+    ? { value: searchValue, onChange: onSearchChange, placeholder, alEscanear: onEscanear || undefined }
     : null);
 
   // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
@@ -257,6 +262,13 @@ export default function ViewTabBar({
           value={searchValue}
           onChange={e => onSearchChange?.(e.target.value)}
         />
+        {onEscanear && (
+          <button aria-label="Escanear un código de barras" onClick={onEscanear}
+            className="p-1 shrink-0 text-brand-text hover:opacity-80 active:scale-[0.97]
+              transition-[opacity,transform] duration-[var(--dur-fast)]">
+            <ScanLine size={16} strokeWidth={2.5} />
+          </button>
+        )}
         {searchValue && (
           <button aria-label="Borrar la búsqueda" onClick={() => onSearchChange?.('')}
             className={`p-1 transition-all shrink-0 ${clearBtnCls}`}>

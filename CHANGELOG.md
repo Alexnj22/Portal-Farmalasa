@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.712.0 — Escanear el código de barras con la cámara
+
+Cierra lo que quedó abierto en v2.710.0: ahí el portal aprendió a **buscar** por
+código de barras en diez pantallas, pero el código había que teclearlo. Ahora
+hay un botón de cámara dentro del buscador.
+
+**Aparece en los dos lados** — dentro del campo del encabezado en la
+computadora, y dentro del campo abierto de la barra flotante en el teléfono.
+Sale del mismo canal que el buscador, que es lo que evita que escanear exista en
+la computadora y no en el teléfono, que es justamente donde se escanea. Por
+ahora lo ofrece el **Conteo de inventario**; las otras nueve pantallas ya
+buscan por código y sumar el botón es una línea.
+
+**Escanear escribe en el buscador, no salta al producto.** Así el resultado se
+ve con el mismo filtro que el resto, se puede corregir a mano, y si el código no
+está en ese conteo la pantalla lo dice en vez de no hacer nada.
+
+Tres cosas que no se ven y son las que hacen que funcione frente a un anaquel:
+
+- **La cámara se apaga de verdad.** Hay que soltar el lector, las pistas del
+  stream y el `srcObject`: con dejar una sola, la luz de la cámara se queda
+  encendida después de cerrar. Se hace desde los tres caminos —leyó, cerró, se
+  desmontó—, porque el que se olvide es el que la deja prendida.
+- **Medio segundo de calentamiento.** Los primeros cuadros vienen borrosos y el
+  decodificador les inventa lecturas: sin la espera, abrir el lector delante de
+  un anaquel devolvía el código de algo que no se estaba apuntando.
+- **Sólo los seis formatos que trae una caja de farmacia** (EAN, UPC, CODE 128 y
+  39). Con todos habilitados, el decodificador prueba cada uno en cada cuadro y
+  en un teléfono de gama media eso se siente como que «no lee».
+
+La librería de decodificación y el diálogo entero viajan **fuera** del paquete de
+la vista: se bajan al tocar el botón. Estático costaba 2 kB del cierre de
+Conteo, y el `bundle-gate` los vio enseguida.
+
 ## v2.711.0 — Conteo: el área de vencidos se cuenta aparte de la bodega
 
 Pedido del usuario: *«debes separar los productos de bodega de vencidos, debe

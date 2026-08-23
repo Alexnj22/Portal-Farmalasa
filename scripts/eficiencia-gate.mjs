@@ -100,6 +100,26 @@ const CRONS = [
           + 'siempre. Sólo toca el sistema cuando hay una recepción que se cortó.',
   },
   {
+    job: 'continuar-envios', slug: 'enviar-producto-erp', cadencia: '*/10 * * * *',
+    corridasDia: 144, sistema: 0,
+    motivo: 'Retoma un envío cuyo despacho se cortó por tiempo. NO toca el sistema de origen en '
+          + 'la corrida normal: `envios_por_continuar` es una consulta a la base y devuelve vacío '
+          + 'casi siempre, porque un envío entero entra en una sola corrida. Cuando hay algo a '
+          + 'medias sí trabaja, y es exactamente cuando tiene que hacerlo. '
+          + '⚠️ El detector NO lo ve solo: su `net.http_post` vive dentro de '
+          + '`continuar_envios_pendientes()` y el comando del cron sólo la llama, así que no '
+          + 'aparece en el barrido de `functions/v1/` que arma la lista de crons sin declarar. '
+          + 'Está acá a mano, y por eso mismo: un cron que dispara peticiones y que el gate no '
+          + 'puede descubrir es el que más falta hace declarar.',
+  },
+  {
+    job: 'avisar-envios-sin-decidir', slug: null, cadencia: '0 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'No llama a ninguna función: es una consulta y un aviso. Le recuerda a la sala de '
+          + 'destino el envío que lleva dos días sin contestar — producto que no está en ninguna '
+          + 'de las dos salas y que nadie puede vender mientras tanto.',
+  },
+  {
     job: 'drain-cliente-erp-queue', slug: 'push-cliente-erp', cadencia: '3,13,23,33,43,53 * * * *',
     corridasDia: 144, sistema: null,
     motivo: 'SIN MEDIR. Vacía la cola de fichas de cliente; con la cola vacía no debería tocar el '
@@ -326,7 +346,10 @@ const enDisco = new Set(readdirSync('supabase/functions', { withFileTypes: true 
   .filter(d => d.isDirectory() && !d.name.startsWith('_')).map(d => d.name));
 const tocan = funcionesQueTocanElSistema();
 for (const c of CRONS) {
-  if (!enDisco.has(c.slug))
+  // `slug: null` es «no llama a ninguna función»: un cron de SQL puro. Se
+  // declara igual —para que el cruce contra producción avise si se apaga— y no
+  // se le exige un archivo en disco que por definición no tiene.
+  if (c.slug && !enDisco.has(c.slug))
     fallos.push(`el cron ${c.job} apunta a «${c.slug}», que no existe en supabase/functions/. `
               + 'Un slug mal escrito no da error: el cron dispara al vacío para siempre.');
   // `sistema: 0` sobre una función que SÍ sabe hablar con el sistema es casi
@@ -343,6 +366,11 @@ if (!SOLO_LOCAL) {
   let canal;
   try {
     canal = abrirCanal('eficiencia-gate');
+    /* Los nombres salen del manifiesto de este archivo, no de afuera: se
+     * interpolan porque `consultar` no toma parámetros. El `'x'` de relleno
+     * evita un `IN ()` vacío, que no es SQL válido. */
+    const sinFuncion = [...CRONS.filter(c => !c.slug).map(c => c.job), 'x']
+      .map(j => `'${String(j).replace(/'/g, "''")}'`).join(', ');
     const crons = canal.consultar(`
       SELECT j.jobname, j.schedule, j.active,
              substring(j.command from 'functions/v1/([a-z0-9-]+)') AS slug,
@@ -356,7 +384,12 @@ if (!SOLO_LOCAL) {
                  AND d.status <> 'succeeded'
                ORDER BY d.start_time DESC LIMIT 1) AS ultimo_fallo
         FROM cron.job j
-       WHERE j.command ILIKE '%functions/v1/%'`);
+       -- Los que llaman a una edge function, MÁS los declarados que no llaman a
+       -- ninguna. Sin la segunda mitad, un cron de SQL puro —un aviso, una
+       -- purga— se podía declarar en el manifiesto y el cruce contra producción
+       -- lo daba por apagado siempre, porque ni siquiera lo traía.
+       WHERE j.command ILIKE '%functions/v1/%'
+          OR j.jobname IN (${sinFuncion})`);
 
     /* «Contestó bien» es 2xx, NO exactamente 200.
      *

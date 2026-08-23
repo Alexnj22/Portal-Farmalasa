@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeftRight, Ban, History, PackageCheck, Send } from 'lucide-react';
+import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, Send } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -19,7 +19,7 @@ import { ChipPersona } from './solicitudes/PersonasSolicitud';
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
-import { fetchEnviosVivos, momentoDelEnvio } from '../data/envios';
+import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
 import GrupoPorRecibir from './traslados/GrupoPorRecibir';
 import {
     FilaEnvioPorDecidir, FilaEnvioPorDespachar, FilaEnvioEnCamino, FilaDevolucionPorRecibir,
@@ -113,6 +113,17 @@ const TABS = [
 // Reportado así: «no sale tampoco el proceso de aprobaciones». Va pegado a
 // «Pidió» porque son las dos mitades del mismo circuito, y en el teléfono cae
 // a la hoja de detalle de `DataTable` en vez de desaparecer.
+/* El historial de un ENVÍO contesta otra pregunta que el de un traslado: no
+ * «qué pasó con este producto» sino «qué se quedó la otra sala y qué devolvió,
+ * y por qué». Por eso son columnas propias y no las de arriba. */
+const COLS_ENVIOS = [
+    { key: 'recorrido', label: 'Recorrido' },
+    { key: 'motivo',    label: 'Motivo',              hideBelow: 'md' },
+    { key: 'devuelto',  label: 'Devuelto',            hideBelow: 'lg' },
+    { key: 'resultado', label: 'Quedó / volvió', align: 'center' },
+    { key: 'fecha',     label: 'Fecha',          align: 'right' },
+];
+
 const COLS_HISTORIAL = [
     { key: 'producto',  label: 'Producto' },
     { key: 'recorrido', label: 'Recorrido',  hideBelow: 'md' },
@@ -168,6 +179,7 @@ export default function TrasladosView() {
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
     const [envios,       setEnvios]       = useState(null);
+    const [enviosCerrados, setEnviosCerrados] = useState(null);
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     const [error,        setError]        = useState('');
     /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
@@ -206,19 +218,26 @@ export default function TrasladosView() {
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
     // se resuelve cuando llega la respuesta, que es cuando se sabe.
     const cargar = useCallback(async () => {
-        const [b, c, d] = await Promise.all([
+        const [b, c, d, e] = await Promise.all([
             fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
             fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
             // Su alcance lo decide el RLS, no `salaQueRecorta`: un envío le toca
             // a las dos salas y cuál de las dos sos cambia lo que hay que hacer,
             // no si se puede ver.
             fetchEnviosVivos(),
+            /* Y los CERRADOS, que no se veían en ninguna parte. `get_envios_
+             * historial` estaba escrita desde el primer día y no la llamaba
+             * nadie: un envío desaparecía en cuanto terminaba, con su motivo y
+             * con lo que la otra sala devolvió y por qué. Es el mismo hueco que
+             * esta vista vino a tapar para el traslado el 2026-08-07. */
+            fetchEnviosHistorial(200),
         ]);
-        const fallo = b.error ?? c.error ?? d.error;
+        const fallo = b.error ?? c.error ?? d.error ?? e.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
         setHistorial(c.filas);
         setEnvios(d.envios);
+        setEnviosCerrados(e.envios);
 
         /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
          * es un dato de adorno para las que no tienen hermanas, y pedirlo
@@ -255,6 +274,19 @@ export default function TrasladosView() {
         if (!busqueda.trim()) return base;
         return smartFilter(busqueda, base, f => [textoBuscable(f, nombrePor)]).results;
     }, [busqueda, nombrePor]);
+
+    /* Los envíos cerrados, pasados por el mismo buscador que el resto de la
+     * pestaña: si uno escribe el nombre de una sala, las dos tablas tienen que
+     * recortarse igual o la de abajo miente. */
+    const enviosVistos = useMemo(() => {
+        const todos = enviosCerrados ?? [];
+        if (!busqueda.trim()) return todos;
+        return smartFilter(busqueda, todos, e => [
+            [e.origen_branch_name, e.branch_name, e.motivo_tipo, e.reason,
+             ...(e.lineas ?? []).map(l => l.descripcion),
+             ...(e.lineas ?? []).map(l => l.motivo_rechazo)].filter(Boolean).join(' '),
+        ]).results;
+    }, [enviosCerrados, busqueda]);
 
     const vistas = useMemo(() => ({
         recibir:   filtrar(porRecibir),
@@ -318,7 +350,7 @@ export default function TrasladosView() {
      * supervisión, administración— muchas veces no tiene sala asignada. */
     const puedeEnviar = hasPermission('traslados', 'can_edit') && (alcanceTodas || Boolean(miBranch));
 
-    const cargando = porRecibir === null || historial === null || envios === null;
+    const cargando = porRecibir === null || historial === null || envios === null || enviosCerrados === null;
 
     // El contador va en la pestaña y sale de lo que HAY, no de lo filtrado: un
     // número que baja al escribir en el buscador deja de decir cuánto falta.
@@ -468,7 +500,7 @@ export default function TrasladosView() {
                                     para dos renglones de texto. */}
                                 <div className="grid gap-3 xl:grid-cols-2">
                                     {porMomento[clave].map(e => (
-                                        <Fila key={e.id} envio={e} onHecho={cargar} />
+                                        <Fila key={e.id} envio={e} onHecho={cargar} ahora={ahora} />
                                     ))}
                                 </div>
                             </div>
@@ -581,6 +613,80 @@ export default function TrasladosView() {
                             );
                         })}
                     </DataTable>
+
+                    {/* ── Y los ENVÍOS cerrados ────────────────────────────
+                        Tabla aparte y no mezclados con los traslados: un envío
+                        no tiene UN desenlace sino uno por renglón —la sala se
+                        quedó tres y devolvió dos— y meterlo en la columna
+                        «Estado» de arriba obligaría a resumir en una palabra lo
+                        que hay que poder leer entero. Es el registro de por qué
+                        una sala devolvió producto: el único que queda.
+
+                        `get_envios_historial` existía desde el primer día y no
+                        la llamaba nadie, así que un envío desaparecía en cuanto
+                        terminaba. Mismo hueco que esta vista le tapó al
+                        traslado el 2026-08-07. */}
+                    {enviosVistos.length > 0 && (
+                        <div className="mt-6 flex flex-col gap-3">
+                            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                                Envíos cerrados
+                            </p>
+                            <DataTable
+                                columns={COLS_ENVIOS}
+                                loading={cargando}
+                                minWidth="820px"
+                                empty={{ icon: Send, message: 'Todavía no se cerró ningún envío' }}
+                                movil={{ ancla: 'recorrido', identidad: 'motivo', chips: ['resultado', 'fecha'] }}
+                            >
+                                {enviosVistos.map((e, i) => {
+                                    const acept = (e.lineas ?? []).filter(l => l.estado === 'aceptada').length;
+                                    const devue = (e.lineas ?? []).filter(l => String(l.estado).startsWith('devuelta')).length;
+                                    return (
+                                        <DataRow key={e.id} index={i}>
+                                            <DataCell>
+                                                <span className="flex items-center gap-2 min-w-0">
+                                                    {devue > 0
+                                                        ? <CornerUpLeft size={13} className="text-danger-text shrink-0" strokeWidth={2.5} />
+                                                        : <PackageCheck size={13} className="text-success-text shrink-0" strokeWidth={2.5} />}
+                                                    <span className="text-body-sm font-semibold text-content whitespace-nowrap">
+                                                        {e.origen_branch_name ?? '—'} → {e.branch_name ?? '—'}
+                                                    </span>
+                                                </span>
+                                            </DataCell>
+                                            <DataCell hideBelow="md">
+                                                <span className="text-label text-content-2 line-clamp-2" title={e.reason ?? ''}>
+                                                    <span className="font-bold">{e.motivo_tipo ?? '—'}</span>
+                                                    {e.reason && e.reason !== e.motivo_tipo ? ` · ${e.reason}` : ''}
+                                                </span>
+                                            </DataCell>
+                                            <DataCell hideBelow="lg">
+                                                {/* Qué devolvieron y por qué: es lo único que un
+                                                    historial de envíos tiene que poder contestar. */}
+                                                <span className="text-label text-content-2 line-clamp-2">
+                                                    {(e.lineas ?? [])
+                                                        .filter(l => String(l.estado).startsWith('devuelta'))
+                                                        .map(l => `${l.descripcion ?? l.erp_product_id} (${l.motivo_rechazo ?? 'sin motivo'})`)
+                                                        .join('; ') || '—'}
+                                                </span>
+                                            </DataCell>
+                                            <DataCell align="center">
+                                                <span className="text-label font-bold whitespace-nowrap">
+                                                    <span className="text-success-text">{acept}</span>
+                                                    <span className="text-content-3"> / </span>
+                                                    <span className={devue > 0 ? 'text-danger-text' : 'text-content-3'}>{devue}</span>
+                                                </span>
+                                            </DataCell>
+                                            <DataCell align="right">
+                                                <span className="text-label text-content-3 tabular-nums whitespace-nowrap">
+                                                    {fmtFechaLarga(e.updated_at ?? e.created_at)}
+                                                </span>
+                                            </DataCell>
+                                        </DataRow>
+                                    );
+                                })}
+                            </DataTable>
+                        </div>
+                    )}
                 </div>
             ) : (
                 /* «En camino»: tarjetas y no tabla, porque cada fila lleva su

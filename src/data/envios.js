@@ -125,6 +125,25 @@ export const recibirDevolucion = (requestId) =>
     invocar({ request_id: requestId, accion: 'recibir_devolucion' });
 
 /**
+ * Cancela un envío que TODAVÍA NO SALIÓ.
+ *
+ * No pasa por la Edge Function porque no hay nada que mover: es una fila que se
+ * cierra. Y no manda quién lo cancela — eso lo contesta la base con
+ * `auth_employee_id()`, igual que las policies: un parámetro no puede decidir
+ * con el nombre de quién se firma.
+ *
+ * En cuanto un renglón salió, esto rebota: el producto está fuera de la sala y
+ * lo que corresponde es que la otra lo conteste o lo devuelva.
+ */
+export async function cancelarEnvio(requestId, motivo) {
+    const { error } = await supabase.rpc('cancelar_envio', {
+        p_request_id: requestId,
+        p_motivo: motivo,
+    });
+    return { ok: !error, error: error?.message ?? null };
+}
+
+/**
  * Los envíos que todavía tienen algo que hacer, con sus renglones adentro.
  *
  * Una sola consulta para los tres momentos —falta despachar, falta decidir,

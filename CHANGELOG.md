@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.718.0 — Envíos: candado en los tres pasos, continuación automática, cancelar e historial
+
+Lo que quedaba abierto de la auditoría del circuito.
+
+**El candado dejó de ser sólo del despacho.** Protegía el paso que saca el
+producto y los otros dos estaban a la intemperie: el aviso les llega a TODOS los
+que pueden contestar en la sala de destino, así que dos personas apretando a la
+vez mandaban a recibir el mismo movimiento y **el producto entraba dos veces al
+inventario**. La guarda que había —preguntarle al listado si el traslado sigue
+esperando— reusa la cola hasta 20 segundos: achicaba la ventana, no la cerraba.
+Ahora hay un candado por paso (despachar, decidir, recibir la devolución), y son
+tres y no uno para que la sala de destino pueda contestar mientras la de origen
+reintenta un despacho.
+
+**Un renglón que salió sin número ya no cuelga el envío.** Cuando el sistema no
+deja distinguir cuál movimiento es el propio, la línea se quedaba `enviada` para
+siempre: la cabecera nunca cerraba, el aviso de vuelta no salía y la tarjeta
+seguía pidiendo una decisión que ya se había tomado. Pasa a `error`, que es lo
+que significa de verdad — hay que mirarla a mano — y guarda la decisión igual.
+
+**Lo que quedó a medias se retoma solo.** Dos crons nuevos:
+
+- `continuar-envios`, cada 10 minutos, retoma un despacho que se cortó por
+  tiempo. Antes la única salida era que alguien entrara a la tarjeta y apretara,
+  con parte del envío ya fuera de la sala: es el mismo hueco que costó los 6
+  renglones del pedido 120. Firma con **quien armó el envío**, no con una cuenta
+  de máquina, y no elige qué renglones salen: manda el envío y la función lo
+  resuelve. Una línea en `error` nunca se reintenta sola.
+- `avisar-envios-sin-decidir`, una vez al día, le recuerda a la sala de destino
+  el envío que lleva dos días sin contestar. Mientras tanto el producto no está
+  en ninguna de las dos salas y nadie lo puede vender. Avisa a los 2 días y otra
+  vez a los 5, no todos los días: un aviso que se repite se aprende a ignorar.
+
+**Se puede cancelar un envío que no salió**, con su motivo. Antes se quedaba en
+la lista para siempre y la única salida era despacharlo; una lista con basura
+que no se puede limpiar se deja de mirar entera. En cuanto un renglón salió,
+esto rebota: el producto está fuera de la sala y lo contesta la otra.
+
+**Y el historial de envíos aparece.** `get_envios_historial` estaba escrita
+desde el primer día y no la llamaba nadie, así que un envío desaparecía al
+cerrarse — con él, el único registro de qué devolvió una sala y por qué. Va en
+su propia tabla bajo Historial, con columnas propias: un envío no tiene UN
+desenlace sino uno por renglón.
+
+De paso, las tarjetas de envío dicen **cuánto llevan** esperando, en rojo pasadas
+24 horas, y el gate de eficiencia aprendió a vigilar crons de SQL puro (los que
+no llaman a ninguna función se le escapaban del cruce contra producción).
+
 ## v2.717.1 — Buscar por código en Mín·Máx lanzaba error
 
 Verificación del trabajo de eficiencia de estos días. Salieron **dos defectos**,
@@ -79,54 +127,6 @@ punto 2, que era el defecto).
 Sin búsqueda no cambia, y es lo correcto: ese camino nunca recorría el texto de
 la factura. **La ganancia está entera en buscar**, que es donde estaba el
 problema.
-
-## v2.717.0 — Envíos: candado en los tres pasos, continuación automática, cancelar e historial
-
-Lo que quedaba abierto de la auditoría del circuito.
-
-**El candado dejó de ser sólo del despacho.** Protegía el paso que saca el
-producto y los otros dos estaban a la intemperie: el aviso les llega a TODOS los
-que pueden contestar en la sala de destino, así que dos personas apretando a la
-vez mandaban a recibir el mismo movimiento y **el producto entraba dos veces al
-inventario**. La guarda que había —preguntarle al listado si el traslado sigue
-esperando— reusa la cola hasta 20 segundos: achicaba la ventana, no la cerraba.
-Ahora hay un candado por paso (despachar, decidir, recibir la devolución), y son
-tres y no uno para que la sala de destino pueda contestar mientras la de origen
-reintenta un despacho.
-
-**Un renglón que salió sin número ya no cuelga el envío.** Cuando el sistema no
-deja distinguir cuál movimiento es el propio, la línea se quedaba `enviada` para
-siempre: la cabecera nunca cerraba, el aviso de vuelta no salía y la tarjeta
-seguía pidiendo una decisión que ya se había tomado. Pasa a `error`, que es lo
-que significa de verdad — hay que mirarla a mano — y guarda la decisión igual.
-
-**Lo que quedó a medias se retoma solo.** Dos crons nuevos:
-
-- `continuar-envios`, cada 10 minutos, retoma un despacho que se cortó por
-  tiempo. Antes la única salida era que alguien entrara a la tarjeta y apretara,
-  con parte del envío ya fuera de la sala: es el mismo hueco que costó los 6
-  renglones del pedido 120. Firma con **quien armó el envío**, no con una cuenta
-  de máquina, y no elige qué renglones salen: manda el envío y la función lo
-  resuelve. Una línea en `error` nunca se reintenta sola.
-- `avisar-envios-sin-decidir`, una vez al día, le recuerda a la sala de destino
-  el envío que lleva dos días sin contestar. Mientras tanto el producto no está
-  en ninguna de las dos salas y nadie lo puede vender. Avisa a los 2 días y otra
-  vez a los 5, no todos los días: un aviso que se repite se aprende a ignorar.
-
-**Se puede cancelar un envío que no salió**, con su motivo. Antes se quedaba en
-la lista para siempre y la única salida era despacharlo; una lista con basura
-que no se puede limpiar se deja de mirar entera. En cuanto un renglón salió,
-esto rebota: el producto está fuera de la sala y lo contesta la otra.
-
-**Y el historial de envíos aparece.** `get_envios_historial` estaba escrita
-desde el primer día y no la llamaba nadie, así que un envío desaparecía al
-cerrarse — con él, el único registro de qué devolvió una sala y por qué. Va en
-su propia tabla bajo Historial, con columnas propias: un envío no tiene UN
-desenlace sino uno por renglón.
-
-De paso, las tarjetas de envío dicen **cuánto llevan** esperando, en rojo pasadas
-24 horas, y el gate de eficiencia aprendió a vigilar crons de SQL puro (los que
-no llaman a ninguna función se le escapaban del cruce contra producción).
 
 ## v2.716.1 — El freno mira si la fila apartada se puede distinguir, no si existe
 

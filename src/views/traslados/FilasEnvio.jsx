@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Check, CornerUpLeft, Loader2, PackageCheck, Send } from 'lucide-react';
+import { Ban, Check, CornerUpLeft, Loader2, PackageCheck, Send } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
-    MOTIVOS_RECHAZO_ENVIO, decidirEnvio, despacharEnvio, recibirDevolucion,
+    MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio, recibirDevolucion,
 } from '../../data/envios';
 import { fmtCuando, fmtFechaLarga } from './trasladoTexto';
+import { desdeHace } from '../solicitudes/movimientoTexto';
 
 // Las tarjetas del envío, en un solo lugar.
 //
@@ -74,9 +75,14 @@ function ListaRenglones({ lineas, conEstado = false }) {
  *              'warning' lo que espera acción tuya, 'danger' lo que vuelve,
  *              'brand' lo que sólo hay que mirar.
  */
-function Cabecera({ envio, tono = 'brand' }) {
+function Cabecera({ envio, tono = 'brand', ahora = null }) {
     const n = envio.lineas?.length ?? 0;
     const unidades = (envio.lineas ?? []).reduce((s, l) => s + Number(l.unidades ?? 0), 0);
+    /* El reloj llega por prop y no se lee acá: `Date.now()` en el render es una
+     * llamada impura —el linter la corta— y además serían N relojes pintando el
+     * mismo minuto. Uno solo arriba, como en el traslado en camino. */
+    const espera = desdeHace(envio.created_at, ahora);
+    const viejo  = Boolean(ahora) && (ahora - new Date(envio.created_at).getTime()) > 86400000;
     const paleta = {
         brand:   'bg-brand/10 ring-brand/20 text-brand-text',
         warning: 'bg-warning/10 ring-warning/20 text-warning-text',
@@ -100,9 +106,20 @@ function Cabecera({ envio, tono = 'brand' }) {
                 <p className="text-body font-black text-content leading-snug truncate">
                     <Recorrido envio={envio} />
                 </p>
+                {/* Cuánto lleva. Un envío sin contestar deja el producto EN
+                    TRÁNSITO —ni en una sala ni en la otra, y nadie lo puede
+                    vender—, así que la antigüedad no es un adorno: es lo que
+                    dice si hay que levantar el teléfono. Se tiñe pasadas 24 h,
+                    igual que el traslado en camino, y a los dos días el cron
+                    manda además su recordatorio. */}
                 <p className="text-label font-bold text-content-2 mt-0.5 truncate">
                     {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
                     <span className="text-content-3 font-medium"> · {fmtCuando(envio.created_at)}</span>
+                    {espera && (
+                        <span className={`font-black ${viejo ? 'text-danger-text' : 'text-content-3'}`}>
+                            {' · '}{espera}
+                        </span>
+                    )}
                 </p>
                 <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                     <Badge variant="brand" size="sm">{envio.motivo_tipo ?? 'sin motivo'}</Badge>
@@ -131,7 +148,7 @@ function Cabecera({ envio, tono = 'brand' }) {
  * es meter el producto al inventario de tu sala y hacerte responsable de
  * venderlo. Hay «Aceptar todo» para el camino rápido, y es un acto explícito.
  */
-export function FilaEnvioPorDecidir({ envio, onHecho }) {
+export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
     const pendientes = useMemo(
         () => (envio.lineas ?? []).filter(l => l.estado === 'enviada'),
         [envio.lineas],
@@ -180,7 +197,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho }) {
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} tono="warning" />
+            <Cabecera envio={envio} tono="warning" ahora={ahora} />
 
             <div className="flex flex-col gap-1.5">
                 {pendientes.map(l => {
@@ -261,10 +278,18 @@ export function FilaEnvioPorDecidir({ envio, onHecho }) {
 }
 
 /* ─── Lo que armaste y todavía no salió ───────────────────────────────────── */
-export function FilaEnvioPorDespachar({ envio, onHecho }) {
+export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
     const faltan = (envio.lineas ?? []).filter(l => l.estado === 'por_enviar' || l.estado === 'error');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
+    const [cancelando, setCancelando] = useState(false);
+    const [motivoCancel, setMotivoCancel] = useState('');
+
+    /* Cancelar sólo tiene sentido si NO salió nada. En cuanto un renglón salió,
+     * el producto está fuera de la sala y esto deja de ser una fila que se
+     * cierra para pasar a ser un movimiento que alguien tiene que contestar —la
+     * base lo rebota igual, pero ofrecer el botón sería prometerlo. */
+    const nadaSalio = (envio.lineas ?? []).every(l => !l.enviado_at);
 
     const reintentar = async () => {
         setEnviando(true);
@@ -275,9 +300,19 @@ export function FilaEnvioPorDespachar({ envio, onHecho }) {
         onHecho?.();
     };
 
+    const cancelar = async () => {
+        if (!motivoCancel.trim()) return;
+        setEnviando(true);
+        setError('');
+        const r = await cancelarEnvio(envio.id, motivoCancel.trim());
+        setEnviando(false);
+        if (!r.ok) { setError(r.error ?? 'No se pudo cancelar.'); return; }
+        onHecho?.();
+    };
+
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} tono="warning" />
+            <Cabecera envio={envio} tono="warning" ahora={ahora} />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             {/* Lo que el sistema contestó cuando no salió. Es lo que dice si hay
                 que ir a mirar el estante o si alcanza con volver a apretar. */}
@@ -287,20 +322,55 @@ export function FilaEnvioPorDespachar({ envio, onHecho }) {
                 </p>
             ))}
             {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
-            <Button size="sm" variant="primary" icon={enviando ? Loader2 : Send}
-                className="min-h-[var(--tap-min)]"
-                onClick={reintentar} disabled={enviando}>
-                {enviando ? 'Enviando…' : `Volver a enviar ${faltan.length === 1 ? 'el producto' : `los ${faltan.length}`}`}
-            </Button>
+
+            {cancelando ? (
+                <div className="flex flex-col gap-2">
+                    <PortalTextarea
+                        rows={2} required
+                        label="Por qué lo cancelas"
+                        value={motivoCancel}
+                        onChange={e => setMotivoCancel(e.target.value)}
+                        placeholder="Ej.: me equivoqué de sala"
+                    />
+                    <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
+                            onClick={() => { setCancelando(false); setMotivoCancel(''); }} disabled={enviando}>
+                            Volver
+                        </Button>
+                        <Button size="sm" variant="danger" className="min-h-[var(--tap-min)] flex-1"
+                            onClick={cancelar} disabled={enviando || !motivoCancel.trim()}>
+                            {enviando ? 'Cancelando…' : 'Cancelar el envío'}
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-center gap-1.5">
+                    {/* Cancelar es la salida del envío que no puede salir: sin
+                        ella, un envío cuyo despacho falla entero se queda en la
+                        lista para siempre, y una lista con basura que no se
+                        puede limpiar se deja de mirar entera. */}
+                    {nadaSalio && (
+                        <Button size="sm" variant="ghost" icon={Ban} className="min-h-[var(--tap-min)]"
+                            onClick={() => setCancelando(true)} disabled={enviando}>
+                            Cancelar
+                        </Button>
+                    )}
+                    <Button size="sm" variant="primary" icon={enviando ? Loader2 : Send}
+                        className="min-h-[var(--tap-min)] flex-1"
+                        onClick={reintentar} disabled={enviando}>
+                        {enviando ? 'Enviando…' : `Volver a enviar ${faltan.length === 1 ? 'el producto' : `los ${faltan.length}`}`}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
 
 /* ─── Lo que ya salió y esperás respuesta ─────────────────────────────────── */
-export function FilaEnvioEnCamino({ envio }) {
+export function FilaEnvioEnCamino({ envio, ahora = null }) {
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} tono="brand" />
+            <Cabecera envio={envio} tono="brand" ahora={ahora} />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             <p className="text-micro text-content-3 font-medium leading-snug">
                 {envio.branch_name ?? 'La otra sala'} decide qué se queda cuando abra la caja.
@@ -310,7 +380,7 @@ export function FilaEnvioEnCamino({ envio }) {
 }
 
 /* ─── Lo que te devolvieron y todavía no entró ────────────────────────────── */
-export function FilaDevolucionPorRecibir({ envio, onHecho }) {
+export function FilaDevolucionPorRecibir({ envio, onHecho, ahora = null }) {
     const devueltas = (envio.lineas ?? []).filter(l => l.estado === 'devuelta');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
@@ -326,7 +396,7 @@ export function FilaDevolucionPorRecibir({ envio, onHecho }) {
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} tono="danger" />
+            <Cabecera envio={envio} tono="danger" ahora={ahora} />
             <div className="flex flex-col gap-0.5">
                 {devueltas.map(l => (
                     <p key={l.posicion} className="text-micro text-content-2 font-semibold leading-snug">

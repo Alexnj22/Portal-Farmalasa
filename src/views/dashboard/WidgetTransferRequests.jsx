@@ -233,7 +233,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Suspense fallback={null}>
                         <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_decidir.map(e => (
-                                <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} />
+                                <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} ahora={ahora} />
                             ))}
                         </div>
                     </Suspense>
@@ -248,7 +248,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Suspense fallback={null}>
                         <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_despachar.map(e => (
-                                <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} />
+                                <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} ahora={ahora} />
                             ))}
                         </div>
                     </Suspense>
@@ -263,7 +263,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Suspense fallback={null}>
                         <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_recibir_devolucion.map(e => (
-                                <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} />
+                                <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} ahora={ahora} />
                             ))}
                         </div>
                     </Suspense>
@@ -278,7 +278,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Suspense fallback={null}>
                         <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.en_camino.map(e => (
-                                <FilaEnvioEnCamino key={e.id} envio={e} />
+                                <FilaEnvioEnCamino key={e.id} envio={e} ahora={ahora} />
                             ))}
                         </div>
                     </Suspense>

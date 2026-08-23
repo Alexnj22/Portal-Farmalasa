@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.710.1 — Envíos: el desenlace dice la verdad
+
+Tres correcciones que sólo aparecieron **abriendo la pantalla** en el entorno de
+pruebas. Los gates estaban en verde y el código compilaba: es la misma lección
+del canon móvil —compilar y pasar los gates no prueba nada sobre lo que se ve.
+
+- **Decía «Producto en camino», con su tilde verde, habiendo salido cero.** Es
+  lo peor que puede hacer un aviso: quien lo lee da el envío por hecho, deja de
+  mirar, y el producto sigue en su estante. Ahora son tres desenlaces con su
+  nombre y su color — no salió nada, salió una parte, salió todo.
+- **Mostraba el error crudo en inglés** («Failed to send a request to the Edge
+  Function»), que además nombra una pieza de la que el portal no habla nunca.
+  Un corte de comunicación se dice como lo que es, y con qué hacer: lo que no
+  salió queda guardado y se vuelve a intentar.
+- **«Sale de: GENERICO (1, vence sin fecha)»** — el número suelto entre
+  paréntesis no se entiende. Hoy es `GENERICO ×1`, y el vencimiento sólo
+  aparece cuando existe.
+
 ## v2.710.0 — Buscar por código de barras, y Ventas > Productos deja de buscar sobre la factura
 
 **Se puede buscar un producto por su código de barras** en todo el portal:

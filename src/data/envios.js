@@ -58,6 +58,25 @@ export function crearEnvio(payload) {
 }
 
 /**
+ * Cuando lo que falló fue el VIAJE, no el envío.
+ *
+ * Un corte de red o una función que no contesta llegan como
+ * «Failed to send a request to the Edge Function» — en inglés y hablando de una
+ * pieza que el portal no nombra nunca (§«la pantalla habla del portal»). Y lo
+ * que hay que decir no es el error: es que el envío quedó armado y cómo
+ * retomarlo, porque el producto NO salió de la sala.
+ */
+const ES_DE_TRANSPORTE = /Edge Function|Failed to (send|fetch)|NetworkError|Load failed|fetch failed/i;
+
+function traducir(msg) {
+    const texto = String(msg ?? '').trim();
+    if (!texto) return 'No se pudo completar.';
+    if (!ES_DE_TRANSPORTE.test(texto)) return texto;
+    return 'No se pudo completar: se cortó la comunicación. Lo que no salió queda '
+         + 'guardado en el envío y se puede volver a intentar.';
+}
+
+/**
  * Nunca lanza: devuelve `{ ok, ... }` y el llamador decide qué mostrar.
  *
  * `functions.invoke` marca error para cualquier status >= 400, pero el motivo
@@ -72,9 +91,9 @@ async function invocar(body) {
             const cuerpo = await error.context?.json?.();
             if (cuerpo) return cuerpo;
         } catch { /* el cuerpo no era JSON */ }
-        return { ok: false, error: error.message ?? 'No se pudo enviar.' };
+        return { ok: false, error: traducir(error.message) };
     } catch (e) {
-        return { ok: false, error: e?.message ?? String(e) };
+        return { ok: false, error: traducir(e?.message ?? String(e)) };
     }
 }
 

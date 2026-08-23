@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Check, Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -320,37 +320,56 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * acá el producto ya salió, y si algún renglón no pudo salir hay que poder
      * leer cuál. */
     if (resultado) {
+        /* El desenlace tiene que decir la VERDAD, no celebrar.
+         *
+         * Decía «Producto en camino» con su tilde verde aunque hubieran salido
+         * cero —visto en el entorno de pruebas—, y eso es exactamente lo que un
+         * aviso no puede hacer: quien lo lee da el envío por hecho, deja de
+         * mirar, y el producto sigue en su estante. Son tres desenlaces y cada
+         * uno se llama por su nombre. */
+        const nadaSalio = resultado.enviadas === 0;
+        const parcial   = !nadaSalio && resultado.enviadas < resultado.total;
         return (
-            <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Envío realizado">
+            <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resultado del envío">
                 <LiquidModal.Header>
                     <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
-                            <Check size={16} className="text-success-text" strokeWidth={2.5} />
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            nadaSalio ? 'bg-danger/10' : parcial ? 'bg-warning/10' : 'bg-success/10'}`}>
+                            {nadaSalio
+                                ? <AlertTriangle size={16} className="text-danger-text" strokeWidth={2.5} />
+                                : <Check size={16} className={parcial ? 'text-warning-text' : 'text-success-text'} strokeWidth={2.5} />}
                         </div>
-                        <p className="text-body font-black text-content">Producto en camino</p>
+                        <p className="text-body font-black text-content">
+                            {nadaSalio ? 'No salió nada' : parcial ? 'Salió una parte' : 'Producto en camino'}
+                        </p>
                     </div>
                 </LiquidModal.Header>
                 <LiquidModal.Body className="flex flex-col gap-3">
                     <p className="text-body-sm text-content-2 font-medium leading-snug">
-                        Salieron {resultado.enviadas} de {resultado.total}{' '}
-                        {resultado.total === 1 ? 'producto' : 'productos'} para {resultado.sala}.
+                        {nadaSalio
+                            ? `El envío a ${resultado.sala} quedó armado y el producto sigue en tu sala.`
+                            : `Salieron ${resultado.enviadas} de ${resultado.total} ${
+                                resultado.total === 1 ? 'producto' : 'productos'} para ${resultado.sala}.`}
                         {resultado.enviadas > 0 && ' Ya les avisamos: cuando abran la caja deciden qué se quedan.'}
                     </p>
                     {resultado.aviso && (
-                        <p className="text-label text-warning-text font-semibold leading-snug">{resultado.aviso}</p>
+                        <p className={`text-label font-semibold leading-snug ${
+                            nadaSalio ? 'text-danger-text' : 'text-warning-text'}`}>{resultado.aviso}</p>
                     )}
-                    {resultado.fallos.length > 0 && (
+                    {(resultado.fallos.length > 0 || nadaSalio) && (
                         <div className="flex flex-col gap-1">
-                            <p className="text-caption font-black text-content-2 uppercase tracking-widest">
-                                No salieron
-                            </p>
+                            {resultado.fallos.length > 0 && (
+                                <p className="text-caption font-black text-content-2 uppercase tracking-widest">
+                                    No salieron
+                                </p>
+                            )}
                             {resultado.fallos.map((f, i) => (
                                 <p key={i} className="text-micro text-danger-text font-semibold leading-snug">
                                     {f.producto}: {f.error}
                                 </p>
                             ))}
                             <p className="text-micro text-content-3 font-medium leading-snug mt-1">
-                                Quedan en el envío y puedes volver a intentarlo desde «Traslados entre salas».
+                                Quedan en el envío, bajo «Sin salir de tu sala», y ahí mismo se vuelve a intentar.
                             </p>
                         </div>
                     )}
@@ -485,7 +504,8 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 {reparto.reparto.length > 0 && (
                                     <p className="text-micro font-semibold text-content-2 leading-snug">
                                         Sale de: {reparto.reparto.map(l =>
-                                            `${l.lote || 'sin lote'} (${l.toma}, vence ${fmtVence(l.vence)})`).join(' · ')}
+                                            `${l.lote || 'sin lote'} ×${l.toma}`
+                                            + (l.vence ? ` (vence ${fmtVence(l.vence)})` : '')).join(' · ')}
                                     </p>
                                 )}
 

@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.714.2 — El pedido no saca del área de vencidos: con algo apartado, no despacha
+
+Corrección de la política de v2.714.0, señalada por el usuario:
+
+> «el pedido no debe enviar del área de vencido, por eso es que a la hora de
+> generarse un pedido no toma en cuenta esa area, así que, ¿por qué envía de
+> ahí?»
+
+Tiene razón, y la respuesta es que **el portal no lo elige**: el traslado se
+manda con `origen` = la ubicación del estante, explícito en el payload, y el
+sistema lo ignora — descarga del área de vencidos igual. Medido: la unidad de
+prueba salió de ahí teniendo 26 en el estante.
+
+El freno de v2.714.0 topaba en **lo apartado**, que es lo que el sistema sí
+acepta. Estaba mal por lo mismo: seguía sacando de vencidos, sólo que menos
+cantidad. Y el pedido se calcula sin mirar esa área, así que su cantidad ni
+siquiera cuenta con ella — llevársela es despachar como normal lo que Bodega
+separó por vencer, sin que nadie lo haya decidido.
+
+**Ahora el tope es CERO.** Con algo apartado el producto no se despacha, y el
+mensaje dice qué hacer en vez de decir «no hay» —porque sí hay, y el estante
+puede estar lleno—: «No se puede despachar mientras haya N apartadas en el área
+de vencidos: la salida las toma primero, y el pedido no cuenta con esa área.
+Sacá el apartado y volvé a despachar.»
+
+Lo ve Bodega **antes de armar la caja**, porque el mismo número lo usa el
+simulacro. Pedir del área de vencidos sigue siendo posible: se pide a propósito,
+por su propio camino, que es lo que existe desde el 2026-08-19.
+
+Un detalle que casi lo deja mudo: en el simulacro la rama del apartado tiene que
+preguntarse **antes** que la de «ya no tiene existencia», porque con el tope en
+cero esa segunda gana siempre y diría justo lo contrario de lo que pasa.
+
+**Lo que cuesta:** los 32 productos sin control de lote que hoy tienen algo
+apartado en Bodega no se despachan por pedido hasta que alguien resuelva el
+apartado. Es el precio de no mandar mercadería próxima a vencer sin decidirlo —
+y es visible desde el simulacro, no un error después de armar la caja.
+
 ## v2.714.1 — El código de barras no se busca cuando el término es un nombre
 
 **Una regresión mía, cazada por el gate de velocidad.** Al agregar búsqueda por

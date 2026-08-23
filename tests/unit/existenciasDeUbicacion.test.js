@@ -133,18 +133,26 @@ describe('disponibleEnBodega — qué número usa', () => {
 //   pedir 7, ya con vencidos vacío → entra, y sale del estante
 //
 // O sea: el sistema descarga primero de vencidos y NO pasa al estante en el
-// mismo envío, e ignora el `origen` que se le manda. Antes de este freno el
-// renglón se aprobaba, Bodega armaba la caja y el sistema la rechazaba: 8
-// termómetros llegaron a Salud 3 sin un movimiento en el sistema.
-describe('disponibleEnBodega — lo apartado en vencidos es el techo del envío', () => {
+// mismo envío, e ignora el `origen` que se le manda —que es el del ESTANTE, y
+// va explícito en el payload—. Antes de este freno el renglón se aprobaba,
+// Bodega armaba la caja y el sistema la rechazaba: 8 termómetros llegaron a
+// Salud 3 sin un movimiento en el sistema.
+//
+// El tope es CERO y no «lo apartado»: un pedido se calcula sin mirar esa área,
+// así que llevarse de ahí —aunque el sistema lo acepte— es despachar como
+// normal lo que Bodega separó por vencer.
+describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', () => {
     const sinLote = { regulado: false, lotes: [], existencia: 27, presentaciones: [], encontrado: true, vence: '' };
     const conLotes = { regulado: true, existencia: 10, presentaciones: [], encontrado: true, vence: '',
                        lotes: [{ id: '1', numero: 'A', vence: '', stock: 50 }] };
 
-    it('el caso real: 26 en el estante y 1 apartado dejan pasar 1, no 26', () => {
+    // Con algo apartado NO sale nada, aunque el estante esté lleno: un pedido
+    // no debe llevarse mercadería apartada por vencer, y no hay forma de
+    // decirle al sistema que descargue del estante.
+    it('el caso real: 26 en el estante y 1 apartado no dejan pasar nada', () => {
         const hay = disponibleEnBodega(sinLote, 1, 26, 1);
-        expect(hay.paquetes).toBe(1);
-        expect(hay.desdeVencidos).toBe(1);
+        expect(hay.paquetes).toBe(0);
+        expect(hay.desdeVencidos).toBe(1);   // cuántas están frenando, para poder decirlo
     });
 
     it('con el área de vencidos vacía el techo vuelve a ser el estante', () => {
@@ -153,16 +161,19 @@ describe('disponibleEnBodega — lo apartado en vencidos es el techo del envío'
         expect(disponibleEnBodega(sinLote, 1, 26, null).paquetes).toBe(26);
     });
 
-    // Nunca más de lo que hay en el estante: si lo apartado es mayor, mandar
-    // por lo apartado despacharía como normal mercadería que Bodega separó.
-    it('se toma el MENOR de los dos', () => {
-        expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(2);
-        expect(disponibleEnBodega(sinLote, 1, 300, 2).paquetes).toBe(2);
+    // Una sola apartada frena las 300 del estante. Es a propósito: el techo no
+    // es «cuánto acepta el sistema» sino «de dónde sale», y sale de vencidos.
+    it('una apartada frena todo el estante, no lo recorta', () => {
+        expect(disponibleEnBodega(sinLote, 1, 300, 1).paquetes).toBe(0);
+        expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(0);
     });
 
-    it('el factor se aplica DESPUÉS del techo: 3 apartadas en cajas de 5 no son ni una caja', () => {
+    // `unidades` en cero es lo que hace que un mensaje que pregunte primero por
+    // «no hay existencia» diga justo lo contrario de lo que pasa.
+    it('con algo apartado las unidades quedan en cero aunque el estante esté lleno', () => {
         expect(disponibleEnBodega(sinLote, 5, 26, 3).paquetes).toBe(0);
-        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(3);
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(0);
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).desdeVencidos).toBe(3);
     });
 
     // Con lote el portal NOMBRA de cuál descargar, así que el sistema no elige.

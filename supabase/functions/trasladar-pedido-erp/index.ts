@@ -1068,11 +1068,12 @@ Deno.serve(async (req) => {
           if (Number(ln.cantidad) > hay.paquetes) {
             await fallar(
               hay.desdeVencidos > 0
-                // El número solo se lee como «no hay», y acá SÍ hay: están en la
-                // otra ubicación y el sistema no las alcanza en el mismo envío.
-                ? `Hay ${hay.desdeVencidos} apartadas en el área de vencidos y el sistema descarga primero `
-                  + `de ahí sin pasar al estante, así que en un envío sólo entran ${hay.paquetes} y hacen `
-                  + `falta ${ln.cantidad}. Sacá el apartado del área de vencidos y volvé a despachar.`
+                // «No hay» se leería como que el estante está vacío, y no lo
+                // está: lo que pasa es que la salida se lleva primero lo
+                // apartado, y un pedido no debe llevarse eso.
+                ? `No se puede despachar mientras haya ${hay.desdeVencidos} `
+                  + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
+                  + `primero, y el pedido no cuenta con esa área. Sacá el apartado y volvé a despachar.`
                 : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
             );
             continue;
@@ -1086,17 +1087,6 @@ Deno.serve(async (req) => {
 
           if (!f.regulado) {
             renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
-            // Sale del área de vencidos y no del estante, y eso no lo elige el
-            // portal: lo decide el sistema. Es la misma familia que el aviso del
-            // lote —«no salió el que el pedido había reservado»— y por eso va
-            // por el mismo canal: quien recibe la caja tiene que enterarse de
-            // que esa mercadería estaba apartada por vencer.
-            if (hay.desdeVencidos > 0) {
-              avisos.push(
-                `salió del área de vencidos: el sistema descarga primero de ahí `
-                + `(${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"})`,
-              );
-            }
           } else {
             // El reparto es `repartirEnLotes` de `_shared` y no una copia: hasta
             // el 2026-08-18 esta función tenía la suya, y las dos se movieron por
@@ -1373,12 +1363,15 @@ Deno.serve(async (req) => {
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
-            detalle: hay.unidades <= 0
+            // El apartado se pregunta PRIMERO: con algo apartado el tope es 0,
+            // así que «no tiene existencia» ganaría siempre y diría justo lo
+            // contrario de lo que pasa — el estante puede estar lleno.
+            detalle: hay.desdeVencidos > 0
+              ? `No se puede despachar mientras haya ${hay.desdeVencidos} `
+                + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
+                + `primero, y el pedido no cuenta con esa área. Sacá el apartado y volvé a despachar.`
+              : hay.unidades <= 0
               ? "Ya no tiene existencia en bodega."
-              : hay.desdeVencidos > 0
-              ? `Hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos `
-                + `y el sistema descarga primero de ahí sin pasar al estante: en un envío sólo entran `
-                + `${hay.paquetes} y el pedido lleva ${it.cantidad}.`
               : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
           });
           continue;

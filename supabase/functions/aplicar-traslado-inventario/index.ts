@@ -716,9 +716,9 @@ Deno.serve(async (req) => {
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
           error: hay.desdeVencidos > 0
-            ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área `
-              + `de vencidos, y el sistema descarga primero de ahí sin pasar al estante: en un envío sólo `
-              + `entran ${hay.paquetes} y se pidieron ${l.cantidad}.`
+            ? `De ${nombre} no se puede despachar mientras haya ${hay.desdeVencidos} `
+              + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
+              + `primero. Sacá el apartado, o pedilo desde el área de vencidos.`
             : `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
               + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);

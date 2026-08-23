@@ -331,9 +331,9 @@ Deno.serve(async (req) => {
         if (Number(l.cantidad) > hay.paquetes) {
           await fallar(
             hay.desdeVencidos > 0
-              ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el ` +
-                `área de vencidos, y el sistema descarga primero de ahí sin pasar al estante: en un envío ` +
-                `sólo entran ${hay.paquetes} y el envío lleva ${l.cantidad}.`
+              ? `De ${nombre} no se puede enviar mientras haya ${hay.desdeVencidos} ` +
+                `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma ` +
+                `primero. Sacá el apartado y volvé a intentarlo.`
               : `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
                 `el envío lleva ${l.cantidad}.`,
           );

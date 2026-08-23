@@ -301,24 +301,32 @@ export function disponibleEnBodega(
   //   pedir 1 → ENTRA, y la unidad sale del ÁREA DE VENCIDOS (quedó en cero)
   //   pedir 7 con vencidos ya vacío → entra, y sale del estante
   //
-  // O sea que el tope de UN traslado es lo apartado, no lo del estante. Sin
-  // este freno el renglón se aprueba, Bodega arma la caja, el sistema la
-  // rechaza y la mercadería viaja igual: 8 termómetros terminaron en Salud 3
-  // sin un solo movimiento en el sistema, y nadie se enteró porque el pedido
-  // igual se cerró como recibido.
+  // Y el `origen` que se le manda es el del ESTANTE, explícito en el payload:
+  // lo ignora. Sin este freno el renglón se aprueba, Bodega arma la caja, el
+  // sistema la rechaza y la mercadería viaja igual: 8 termómetros terminaron
+  // en Salud 3 sin un solo movimiento en el sistema, y nadie se enteró porque
+  // el pedido igual se cerró como recibido.
   //
-  // Se toma el MENOR de los dos a propósito: nunca más de lo apartado (o el
-  // sistema rechaza) y nunca más de lo que hay en el estante (o se despacha
-  // como normal mercadería que Bodega separó por vencer). `desdeVencidos` dice
-  // cuántas de las que salgan van a venir de ahí — quien despacha tiene que
-  // poder avisarlo, no descubrirlo.
+  // Y con algo apartado NO se despacha nada, aunque el estante esté lleno.
+  //
+  // La primera versión de este freno topaba en lo apartado —lo que el sistema
+  // sí acepta— y estaba mal: seguía sacando del área de vencidos, sólo que en
+  // menor cantidad. **Un pedido no debe llevarse mercadería apartada por
+  // vencer**, y menos sin que nadie lo decida: el pedido se calcula sin mirar
+  // esa área (`v_inventario_disponible_vencidos`), así que su cantidad ni
+  // siquiera cuenta con ella. Pedir del área de vencidos existe y es otra cosa
+  // —se pide a propósito, desde el 2026-08-19—.
+  //
+  // Como no hay forma de decirle al sistema que descargue del estante, la
+  // única salida honesta es no despachar y decir por qué: alguien tiene que
+  // sacar el apartado primero. `desdeVencidos` es cuántas están frenando.
   const apartado = Number(enVencidos ?? 0);
-  const tope = apartado > 0 ? Math.min(existencia, apartado) : existencia;
+  const tope = apartado > 0 ? 0 : existencia;
   return {
     paquetes: Math.floor(tope / u),
     unidades: tope,
     lotes: 0,
-    desdeVencidos: apartado > 0 ? tope : 0,
+    desdeVencidos: apartado,
   };
 }
 

@@ -41,7 +41,16 @@ export const CaraPersona = ({ persona, className = 'w-10 h-10 rounded-full' }) =
 // no hay cara que poner y un nombre suelto sería el de uno de varios. Va el
 // mismo icono con el que el portal nombra una sucursal en todos lados
 // (`FilterBar.Sucursal`), para que se lea como un lugar y no como alguien.
-export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', className = '' }) => (
+export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', className = '', soloFoto = false }) => (
+    /* ── `soloFoto`: la cara sin el nombre ────────────────────────────────
+     * Para las tarjetas apretadas —media columna en una rejilla de dos— donde
+     * el circuito es contexto y no titular: dos caras con una flecha en medio
+     * dicen «de quién a quién» sin gastar el renglón que necesita el dato de la
+     * acción. El nombre no se pierde: va en el `title` de quien la usa y entero
+     * en el detalle.
+     *
+     * Es una variante del canónico y no un chip aparte a propósito: dos formas
+     * de dibujar a una persona terminan divergiendo en cuanto una se toca. */
     <span className={`flex items-center gap-1.5 min-w-0 ${className}`}>
         {/* Sin persona no va un círculo vacío: un disco gris al lado del texto
             se lee como una foto que no cargó, y lo que pasa es que no hay a
@@ -49,9 +58,11 @@ export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', class
         {sala
             ? <Building2 size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
             : persona && <CaraPersona persona={persona} className="w-5 h-5 rounded-full" />}
-        <span className={`text-caption truncate ${sala || persona ? 'font-bold text-content-2' : 'font-medium text-content-3 italic'}`}>
-            {sala || (persona ? shortEmployeeName(persona) : vacio)}
-        </span>
+        {!soloFoto && (
+            <span className={`text-caption truncate ${sala || persona ? 'font-bold text-content-2' : 'font-medium text-content-3 italic'}`}>
+                {sala || (persona ? shortEmployeeName(persona) : vacio)}
+            </span>
+        )}
     </span>
 );
 

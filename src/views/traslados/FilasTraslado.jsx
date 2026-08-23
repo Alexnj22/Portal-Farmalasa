@@ -613,36 +613,56 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 de que el toque entró — y son **23 tarjetas** en esta lista, o
                 sea la lista entera. Lo levantó la corrida ACOSTADO. */}
             <button type="button" data-filo="ceder" onClick={() => setAbierto(true)}
-                className="text-left flex items-start gap-3 w-full min-h-[var(--tap-min)] active:scale-[0.99]"
+                className="text-left flex items-start gap-3.5 w-full min-h-[var(--tap-min)] active:scale-[0.99]"
                 aria-label={`Ver el detalle de ${piezas?.nombre ?? 'este traslado'}`}>
-                {/* El ícono en su disco: a 13px suelto no se leía como estado,
-                    y el estado es justo lo que esta lista viene a decir. */}
-                <span className={`shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center
-                                  ring-1 ring-inset ${trabado ? 'bg-danger/12 ring-danger/25' : 'bg-warning/12 ring-warning/25'}`}>
-                    <Truck size={16} strokeWidth={2.5}
-                        className={trabado ? 'text-danger-text' : 'text-warning-text'} />
+                {/* ── El ANCLA: cuánto viene ────────────────────────────────
+                    Acá había un camión de 16px en un disco. Decía «esto es un
+                    traslado» —que ya lo dice el encabezado de la sección— y no
+                    decía nada más; mientras tanto la cantidad viajaba como una
+                    píldora gris del mismo peso que el resto, o sea que la
+                    tarjeta no tenía un solo punto de entrada para la mirada.
+                    Reportado así: «no se le ve peso a nada».
+
+                    El número manda porque es lo que hay que cotejar contra la
+                    caja que uno tiene enfrente, y de paso hace de estado: se
+                    tiñe cuando el traslado lleva más de un día parado. */}
+                <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center justify-center
+                                  ring-1 ring-inset ${trabado ? 'bg-danger/10 ring-danger/25' : 'bg-warning/10 ring-warning/20'}`}>
+                    <span className={`text-h3 font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
+                        {piezas?.numero ?? '—'}
+                    </span>
+                    <span className={`mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none text-center
+                                      ${trabado ? 'text-danger-text/80' : 'text-warning-text/80'}`}>
+                        {piezas?.unidad ?? ''}
+                    </span>
                 </span>
 
                 <div className="flex-1 min-w-0">
                     {/* El ancla: qué es. `line-clamp-2` y no `truncate` porque
                         los nombres de producto se distinguen por el final
                         —presentación y laboratorio— y cortarlos en una línea
-                        deja dos filas idénticas. */}
-                    <p className="text-body font-bold text-content leading-snug line-clamp-2"
+                        deja dos filas idénticas.
+
+                        `min-h` de dos renglones: la rejilla iguala alturas, así
+                        que un nombre de dos líneas al lado de uno de una dejaba
+                        a la corta con un hueco. Reservar el alto acá lo reparte
+                        parejo en vez de acumularlo abajo. */}
+                    <p className="text-body font-black text-content leading-snug line-clamp-2 min-h-[2.5em]"
                         title={piezas?.nombre ?? resumenItems(meta)}>
                         {piezas?.nombre ?? resumenItems(meta)}
                     </p>
 
-                    {/* Cuánto, y de dónde a dónde. El destino va SIEMPRE: quien
-                        tiene alcance de todas las sucursales ve traslados que no
-                        son suyos, y sin él no hay cómo distinguirlos. */}
-                    <div className="mt-1.5 flex items-center gap-2 flex-wrap min-w-0">
-                        {piezas && <Badge variant="neutral" size="sm">{piezas.cuenta}</Badge>}
-                        {/* Sin envoltorio: `Recorrido` ya es el `span` y ya trae
-                            su `truncate`; meterlo dentro de otro flex le quita
-                            el ancho contra el que recortar. */}
-                        <Recorrido meta={meta} className="text-label font-semibold text-content-2 min-w-0" />
-                    </div>
+                    {/* De dónde a dónde. Las salas en tinta plena y la flecha
+                        apagada: el recorrido son dos NOMBRES, y pintarlo todo
+                        del mismo gris lo convertía en una cadena de texto que
+                        había que leer entera para saber si el traslado era
+                        tuyo. Va SIEMPRE: con alcance de todas las sucursales
+                        esta lista mezcla las siete. */}
+                    <p className="mt-1 text-label font-bold text-content-2 truncate">
+                        {meta?.origen_branch_name ?? 'otra sala'}
+                        <span className="text-content-3 font-medium"> → </span>
+                        {meta?.branch_name ?? 'destino'}
+                    </p>
 
                     {/* Qué trae la caja. Quien recibe es el único que puede
                         comprobarlo — pero en la tarjeta va TOPADO: un traslado
@@ -685,44 +705,51 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
             {/* El pie, como en `RequestCard`: a la izquierda cuándo salió y
                 cuánto lleva, a la derecha qué se hace con eso. El botón sólo se
                 estira en el teléfono. */}
-            <div className="mt-auto flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-divider">
-                <div className="flex flex-col gap-0.5 min-w-0">
-                    {/* El circuito: quién lo pidió y quién lo despachó. Faltaba
-                        entero —«no sale quién solicitó, quién lo aprobó»— y es
-                        lo que convierte una caja anónima en el pedido de
-                        alguien a alguien. Los dos nombres llegan por
-                        `nombrePor`, que cae al mapa de personas escondidas: el
-                        que despacha suele tener un cargo que el maestro de
-                        personal no muestra. */}
+            {/* ── El pie: desde cuándo, entre quiénes, y qué se hace ──────
+                Antes eran dos renglones apilados a la izquierda con el botón al
+                costado, y los rótulos «PIDIÓ» y «ENVIÓ» en versalitas negras
+                competían con el nombre del producto. Son contexto, no titular.
+
+                Lo que SÍ sube de peso es la espera: en una cola cuyo motivo de
+                existir es que hay traslados parados —veinte, el más viejo de más
+                de una semana— «hace 4 días» es lo que decide si hay que ir a
+                buscar la caja hoy. */}
+            <div className="mt-auto pt-2.5 border-t border-divider flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-3 min-w-0">
+                    <span className={`flex items-center gap-1.5 min-w-0 shrink-0
+                                      ${trabado ? 'text-danger-text' : 'text-content-2'}`}>
+                        <Clock size={12} strokeWidth={2.5} className="shrink-0" />
+                        <span className="text-label font-black truncate">
+                            {espera ? `${espera} en camino` : `Salió ${fmtCuando(salio)}`}
+                        </span>
+                    </span>
+
+                    {/* Las caras, sin rótulo: la flecha entre las dos ya dice
+                        quién pidió y quién despachó, en el mismo sentido en que
+                        se lee el recorrido de arriba. El nombre entero vive en
+                        el detalle. */}
+                    {/* `role="img"` + `aria-label` y no `title`: las dos caras
+                        con la flecha son un DIBUJO del circuito, no prosa con
+                        ayuda al pasar el ratón — y un `title` en un span no
+                        interactivo no llega al lector de pantalla ni al
+                        teléfono, que es donde más se usa esta lista (§15.10). */}
                     {(quienPidio || quienEnvio) && (
-                        <span className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
-                            {quienPidio && (
-                                <span className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">Pidió</span>
-                                    <ChipPersona persona={quienPidio} />
-                                </span>
+                        <span className="flex items-center gap-1.5 min-w-0 justify-end" role="img"
+                            aria-label={[quienEnvio && `Envió ${quienEnvio.name}`,
+                                         quienPidio && `pidió ${quienPidio.name}`].filter(Boolean).join(', ')}>
+                            {quienEnvio && <ChipPersona persona={quienEnvio} soloFoto />}
+                            {quienPidio && quienEnvio && (
+                                <span className="text-content-3 text-micro shrink-0">→</span>
                             )}
-                            {quienEnvio && (
-                                <span className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">Envió</span>
-                                    <ChipPersona persona={quienEnvio} />
-                                </span>
-                            )}
+                            {quienPidio && <ChipPersona persona={quienPidio} soloFoto />}
                         </span>
                     )}
-                    <span className="flex items-center gap-1 min-w-0 text-micro text-content-3">
-                        <Clock size={11} strokeWidth={2.5} className="shrink-0" />
-                        <span className="truncate">Salió {fmtCuando(salio)}</span>
-                        {espera && (
-                            <span className={`shrink-0 font-bold ${trabado ? 'text-danger-text' : 'text-content-3'}`}>
-                                · {espera}
-                            </span>
-                        )}
-                    </span>
                 </div>
 
+                {/* Ancho completo: es la única acción de la tarjeta y en media
+                    columna un botón chico a la derecha se pierde. */}
                 <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
-                    onClick={recibir} className="w-full sm:w-auto">
+                    onClick={recibir} className="w-full">
                     {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
                 </Button>
             </div>

@@ -462,6 +462,15 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
          * Function y su propio permiso. Este `false` es lo que apaga los botones
          * genéricos para que no haya dos formas de decir que sí. */
         if (req.type === 'INVENTORY_TRANSFER_REQUEST') return false;
+        /* Y el ENVÍO tampoco, por el mismo motivo y con más consecuencia: acá
+         * el producto YA SALIÓ de la sala. `approveRequest` lo marcaría
+         * APROBADO sin recibirlo en el sistema, el aviso de vuelta diría que se
+         * lo quedaron, y la caja se quedaría en tránsito para siempre — fuera
+         * de una sala y sin entrar a la otra.
+         *
+         * Se decide renglón por renglón en «Traslados entre salas», que es
+         * donde está la única pantalla capaz de aceptar unos y devolver otros. */
+        if (req.type === 'INVENTORY_TRANSFER_PUSH') return false;
         if (req.type === 'SHIFT_CHANGE' && req.status === 'PENDING'
             && paraQuien(req) === miId && deQuienEs(req) !== miId) return true;
         const modulo = MODULO_QUE_DECIDE[req.type];
@@ -490,6 +499,9 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
          * tipo, y después aplica el alcance. Si llegó hasta acá, es de quien
          * mira. */
         if (r.type === 'INVENTORY_TRANSFER_REQUEST') return true;
+        // El envío se reparte igual que el traslado: lo contesta la SALA de
+        // destino, no una persona nombrada. Mismo motivo, misma rama.
+        if (r.type === 'INVENTORY_TRANSFER_PUSH') return true;
         // El cambio de turno lo contesta el compañero y no es asunto de nadie
         // más mientras está pendiente.
         if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && paraQuien(r) !== miId) return false;

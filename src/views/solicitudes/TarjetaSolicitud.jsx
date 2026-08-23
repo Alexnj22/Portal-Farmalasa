@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, X, FileText, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -339,7 +340,12 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
      * se pregunta acá porque `canApprove` habla del módulo del ámbito. Es la
      * misma cuenta que hace la policy de la base: sin ese permiso no hay botón,
      * y con él la base acepta. */
-    const decidible  = req.status === 'PENDING' && canApprove && !esTraslado;
+    /* El ENVÍO tampoco pasa por la decisión genérica, y acá cuesta más caro que
+     * en el traslado: el producto YA SALIÓ de la sala de origen. Aprobarlo con
+     * `approveRequest` lo daría por recibido sin cargarlo en el sistema. Se
+     * decide renglón por renglón en «Traslados entre salas». */
+    const esEnvio    = req.type === 'INVENTORY_TRANSFER_PUSH';
+    const decidible  = req.status === 'PENDING' && canApprove && !esTraslado && !esEnvio;
     const decidibleTraslado = esTraslado && req.status === 'PENDING'
         && hasPermission('traslados', 'can_approve');
 
@@ -511,6 +517,30 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 <DecisionTraslado fila={req}
                                     onHecho={(estado) => { onResuelto?.(estado); onCerrar(); }} />
                             </Suspense>
+                        </div>
+                    )}
+
+                    {/* ── El envío se contesta en su pantalla ──────────────
+                        Y hay que DECIRLO. Sin esto el modal se abre con el
+                        detalle, sin un solo botón y sin explicación: es el
+                        «me pierdo» que hizo mudar la decisión del traslado acá,
+                        pero al revés.
+
+                        No trae su bloque de decisión como el traslado porque el
+                        envío se resuelve renglón por renglón —aceptar unos y
+                        devolver otros—, y eso es una pantalla, no un par de
+                        botones. */}
+                    {esEnvio && req.status === 'PENDING' && (
+                        <div className="pt-1">
+                            <p className="text-label text-content-2 font-medium leading-snug">
+                                Este envío se contesta producto por producto en{' '}
+                                <Link to="/traslados?tab=envios"
+                                    className="font-black text-brand-text underline underline-offset-2"
+                                    onClick={onCerrar}>
+                                    Traslados entre salas
+                                </Link>
+                                : ahí se acepta lo que se queda la sala y se devuelve lo demás con su motivo.
+                            </p>
                         </div>
                     )}
 

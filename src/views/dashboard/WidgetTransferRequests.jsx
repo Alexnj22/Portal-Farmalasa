@@ -177,8 +177,14 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         {/* Dos columnas: en `max-w-3xl` una sola estira cada
                             tarjeta a lo ancho del modal para tres renglones de
                             texto, y cuatro traslados ya no entran en la
-                            pantalla. `auto-rows-fr` las iguala de alto. */}
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                            pantalla.
+
+                            Sin `auto-rows-fr`: igualaba TODAS las filas a la más
+                            alta y dejaba un hueco de ~120px en las cortas. El
+                            `stretch` que trae grid por defecto ya empareja las
+                            de una misma fila, que es lo que hace falta para que
+                            los botones queden a la misma altura. */}
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porConfirmar.map(f => (
                                 <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio}
                                     miBranch={miBranch} />
@@ -201,7 +207,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                             : 'En camino'}
                     </p>
                     <Suspense fallback={null}>
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porRecibir.map(f => (
                                 <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} ahora={ahora} personaPor={personaPor} />
                             ))}
@@ -225,7 +231,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Te enviaron
                     </p>
                     <Suspense fallback={null}>
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_decidir.map(e => (
                                 <FilaEnvioPorDecidir key={e.id} envio={e} onHecho={onCambio} />
                             ))}
@@ -240,7 +246,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Sin salir de tu sala
                     </p>
                     <Suspense fallback={null}>
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_despachar.map(e => (
                                 <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} />
                             ))}
@@ -255,7 +261,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Te devuelven
                     </p>
                     <Suspense fallback={null}>
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.por_recibir_devolucion.map(e => (
                                 <FilaDevolucionPorRecibir key={e.id} envio={e} onHecho={onCambio} />
                             ))}
@@ -270,7 +276,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         Enviaste
                     </p>
                     <Suspense fallback={null}>
-                        <div className="grid gap-2 md:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-2 md:grid-cols-2">
                             {porMomento.en_camino.map(e => (
                                 <FilaEnvioEnCamino key={e.id} envio={e} />
                             ))}

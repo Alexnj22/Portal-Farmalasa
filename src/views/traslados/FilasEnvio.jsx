@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Check, CornerUpLeft, Loader2, PackageCheck, Send, Truck } from 'lucide-react';
+import { Check, CornerUpLeft, Loader2, PackageCheck, Send } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -60,25 +60,61 @@ function ListaRenglones({ lineas, conEstado = false }) {
     );
 }
 
-/** El encabezado que comparten las cuatro. */
-function Cabecera({ envio, icon: Icon, tono = 'text-brand-text' }) {
+/**
+ * El encabezado que comparten las cuatro.
+ *
+ * ── Por qué el número manda ───────────────────────────────────────────────
+ * Tenía un ícono de 13px y tres renglones del mismo peso: cuántos productos,
+ * el recorrido, el motivo. Nada anclaba la mirada —«no se le ve peso a nada»—
+ * y lo primero que hay que saber de una caja es CUÁNTO trae, porque es lo que
+ * se cuenta contra el estante. El ícono se va: qué es esto ya lo dice el
+ * encabezado de la sección, y el color del ancla ya dice en qué estado está.
+ *
+ * @param tono  El color del ancla, que habla del ESTADO y nunca del tipo:
+ *              'warning' lo que espera acción tuya, 'danger' lo que vuelve,
+ *              'brand' lo que sólo hay que mirar.
+ */
+function Cabecera({ envio, tono = 'brand' }) {
     const n = envio.lineas?.length ?? 0;
     const unidades = (envio.lineas ?? []).reduce((s, l) => s + Number(l.unidades ?? 0), 0);
+    const paleta = {
+        brand:   'bg-brand/10 ring-brand/20 text-brand-text',
+        warning: 'bg-warning/10 ring-warning/20 text-warning-text',
+        danger:  'bg-danger/10 ring-danger/25 text-danger-text',
+    }[tono] ?? 'bg-brand/10 ring-brand/20 text-brand-text';
+
     return (
-        <div className="flex items-start gap-2">
-            <Icon size={13} className={`${tono} shrink-0 mt-0.5`} strokeWidth={2.5} />
+        <div className="flex items-start gap-3.5">
+            <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center
+                              justify-center ring-1 ring-inset ${paleta}`}>
+                <span className="text-h3 font-black leading-none tabular-nums">{n}</span>
+                <span className="mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none opacity-80">
+                    {n === 1 ? 'producto' : 'prod.'}
+                </span>
+            </span>
+
             <div className="flex-1 min-w-0">
-                <p className="text-label font-black text-content leading-tight">
-                    {n} {n === 1 ? 'producto' : 'productos'} · {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
+                {/* El recorrido ES el título de un envío: no hay UN producto que
+                    nombrar —son varios— y lo que distingue una tarjeta de otra
+                    es de dónde sale y a dónde va. */}
+                <p className="text-body font-black text-content leading-snug truncate">
+                    <Recorrido envio={envio} />
                 </p>
-                <p className="text-micro text-content-3 mt-0.5 truncate">
-                    <Recorrido envio={envio} /> · {fmtCuando(envio.created_at)}
+                <p className="text-label font-bold text-content-2 mt-0.5 truncate">
+                    {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
+                    <span className="text-content-3 font-medium"> · {fmtCuando(envio.created_at)}</span>
                 </p>
-                <div className="mt-1">
+                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                     <Badge variant="brand" size="sm">{envio.motivo_tipo ?? 'sin motivo'}</Badge>
                 </div>
+                {/* El motivo escrito: desde el 2026-08-23 es obligatorio, así que
+                    es el renglón que de verdad explica la caja. Va en tinta de
+                    contenido y no de nota al pie. */}
                 {envio.reason && envio.reason !== envio.motivo_tipo && (
-                    <p className="text-micro text-content-2 mt-1 leading-snug">{envio.reason}</p>
+                    <p className="text-micro text-content-2 mt-1.5 leading-snug line-clamp-2"
+                        title={envio.reason}>
+                        {envio.reason}
+                    </p>
                 )}
             </div>
         </div>
@@ -144,7 +180,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho }) {
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} icon={PackageCheck} />
+            <Cabecera envio={envio} tono="warning" />
 
             <div className="flex flex-col gap-1.5">
                 {pendientes.map(l => {
@@ -241,7 +277,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho }) {
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} icon={Send} tono="text-warning-text" />
+            <Cabecera envio={envio} tono="warning" />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             {/* Lo que el sistema contestó cuando no salió. Es lo que dice si hay
                 que ir a mirar el estante o si alcanza con volver a apretar. */}
@@ -264,7 +300,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho }) {
 export function FilaEnvioEnCamino({ envio }) {
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} icon={Truck} />
+            <Cabecera envio={envio} tono="brand" />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             <p className="text-micro text-content-3 font-medium leading-snug">
                 {envio.branch_name ?? 'La otra sala'} decide qué se queda cuando abra la caja.
@@ -290,7 +326,7 @@ export function FilaDevolucionPorRecibir({ envio, onHecho }) {
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <Cabecera envio={envio} icon={CornerUpLeft} tono="text-danger-text" />
+            <Cabecera envio={envio} tono="danger" />
             <div className="flex flex-col gap-0.5">
                 {devueltas.map(l => (
                     <p key={l.posicion} className="text-micro text-content-2 font-semibold leading-snug">

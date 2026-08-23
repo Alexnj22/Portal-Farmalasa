@@ -327,10 +327,22 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         [renglones, miErp],
     );
 
-    const listoParaMandar = renglones.length > 0 && destino && motivo
-        && excesos.length === 0
-        && chocanConElDestino.length === 0
-        && !(motivo === 'Otro' && !nota.trim());
+    /* Qué le falta al envío para poder salir. Se dice en UNA frase y no con el
+     * botón apagado a secas: un botón que no se puede apretar y no dice por qué
+     * es un callejón sin salida. */
+    const faltaParaMandar = renglones.length === 0 ? 'Agrega al menos un producto.'
+        : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
+        : !destino ? 'Elige la sala de destino.'
+        : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
+        : !motivo ? 'Elige el motivo.'
+        // Cuatro letras es el mismo piso que cobra la base: menos que eso no
+        // explica nada, y que se rebote recién al apretar sería peor.
+        : nota.trim().length < 4 ? 'Escribe por qué se lo mandas.'
+        : nota.trim().toLowerCase() === motivo.toLowerCase()
+            ? 'El motivo escrito no puede ser sólo la categoría de arriba.'
+        : null;
+
+    const listoParaMandar = !faltaParaMandar;
 
     const transferir = async () => {
         if (!listoParaMandar || enviando) return;
@@ -817,14 +829,28 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 ariaLabel="Motivo del envío"
                             />
                             </div>
+                            {/* ── El motivo escrito, SIEMPRE ────────────────
+                                Pedido del usuario: era «Detalle (opcional)» y
+                                sólo se exigía con «Otro».
+
+                                La categoría de arriba dice el TIPO —sobrestock,
+                                próximo a vencer—; esto dice por qué ESTA caja. A
+                                la sala de destino le llegó producto que no
+                                pidió: sin el texto, lo único que recibe es una
+                                palabra y una caja. Lo exige también la base, que
+                                además rebota el motivo que se limita a repetir
+                                la categoría. */}
                             <PortalTextarea
-                                label={motivo === 'Otro' ? 'Explica el motivo' : 'Detalle (opcional)'}
+                                label="Por qué se lo mandas"
+                                required
                                 rows={2}
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
-                                placeholder={motivo === 'Otro'
-                                    ? 'Escribe por qué se lo mandas'
-                                    : 'Algo más que la otra sala tenga que saber'}
+                                placeholder={motivo === 'Próximo a vencer'
+                                    ? 'Ej.: vence en octubre y acá no rota, allá se vende'
+                                    : motivo === 'Producto nuevo'
+                                    ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
+                                    : 'Explica por qué esta sala lo necesita más que la tuya'}
                             />
                         </div>
                     </div>
@@ -840,6 +866,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                     {/* Qué va a pasar al apretar, ANTES de apretar: acá no hay
                         nadie que apruebe primero — el producto sale de tu sala en
                         el momento. */}
+                    {pestana === 'lista' && faltaParaMandar && renglones.length > 0 && (
+                        <p className="text-micro font-semibold text-warning-text leading-snug">
+                            {faltaParaMandar}
+                        </p>
+                    )}
                     {pestana === 'lista' && renglones.length > 0 && (
                         <p className="text-micro text-content-3 font-medium leading-snug">
                             {variosOrigenes

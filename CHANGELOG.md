@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.715.0 — Envíos: tarjetas con jerarquía, motivo obligatorio y dos huecos de la auditoría
+
+**Las tarjetas.** Reportado con captura: *«no se le ve peso a nada»*. Eran tres
+cosas a la vez:
+
+- Un **hueco vertical de unos 120px** en la mitad de las tarjetas. La rejilla
+  llevaba `auto-rows-fr`, que iguala TODAS las filas a la altura de la más alta:
+  una tarjeta con nombre de dos líneas y dos lotes estiraba a las veinte. Sin
+  él, cada fila se mide por su contenido y las dos tarjetas de una misma fila
+  siguen pareja, que es lo que se había pedido.
+- **Nada anclaba la mirada.** Donde había un camión de 16px en un disco —que
+  decía «esto es un traslado», lo mismo que el encabezado de la sección— ahora
+  va **la cantidad**, grande: es lo que se cuenta contra la caja que uno tiene
+  enfrente. Y hace de estado: se tiñe de rojo cuando el traslado lleva más de un
+  día parado.
+- **Lo urgente estaba abajo y chico.** «Hace 4 días en camino» pasó al pie con
+  peso propio: en una cola que existe porque hay traslados parados, es lo que
+  decide si hay que ir a buscar la caja hoy. Las personas bajaron a dos caras
+  con una flecha (el nombre entero sigue en el detalle) y el botón ocupa el
+  ancho, que en media columna es lo único que se ve.
+
+**El motivo escrito es obligatorio siempre.** Era «Detalle (opcional)» y sólo se
+exigía al elegir «Otro». La categoría dice el tipo —sobrestock, próximo a
+vencer—; lo que la otra sala necesita saber es por qué ESTA caja. Lo cobra la
+base, que además rebota el motivo que se limita a repetir la categoría, y la
+pantalla dice en una frase qué falta en vez de dejar el botón apagado sin
+explicar.
+
+**Y dos huecos que encontró la auditoría del circuito:**
+
+- **En Solicitudes, un envío ofrecía los botones genéricos de aprobar.** Habrían
+  marcado el envío como aceptado **sin recibir el producto en el sistema**: la
+  caja se quedaba en tránsito para siempre, fuera de una sala y sin entrar a la
+  otra, y el aviso de vuelta decía que se lo habían quedado. Ahora esos botones
+  no salen y la solicitud dice dónde se contesta.
+- **El aviso al destino no salía en la segunda tanda de un despacho.** El freno
+  contra el aviso repetido contaba los renglones que *siguen esperando decisión*
+  en vez de los que *salieron*: si la sala de destino contestaba rápido, ese
+  número bajaba y la segunda tanda quedaba muda. Llegaba producto que nadie
+  anunció. Verificado en producción con ROLLBACK: las dos tandas avisan.
+
 ## v2.714.2 — El pedido no saca del área de vencidos: con algo apartado, no despacha
 
 Corrección de la política de v2.714.0, señalada por el usuario:

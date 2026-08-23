@@ -60,6 +60,12 @@ export function piezasDe(meta) {
         const i = items[0];
         return {
             cuenta: `${i.cantidad} ${i.presentacion_tipo ?? ''}`.trim(),
+            // La cuenta partida en dos: el NÚMERO es el ancla de la tarjeta y la
+            // unidad su pie de foto. Juntos en una cadena obligaban a la tarjeta
+            // a pintarlos con el mismo peso, que es lo que hacía que «10 CAJA»
+            // pesara igual que todo lo demás y nada anclara la mirada.
+            numero: String(i.cantidad ?? ''),
+            unidad: String(i.presentacion_tipo ?? '').trim() || 'unidad',
             nombre: i.descripcion ?? String(i.erp_product_id ?? 'Sin nombre'),
         };
     }
@@ -68,7 +74,11 @@ export function piezasDe(meta) {
     const unidades = meta?.total_unidades ?? 0;
     return {
         cuenta: `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`,
+        numero: String(items.length),
+        unidad: items.length === 1 ? 'producto' : 'productos',
         nombre: `${items.length} productos`,
+        varios: true,
+        unidades,
     };
 }
 

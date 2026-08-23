@@ -466,7 +466,7 @@ export default function TrasladosView() {
                                 {/* Misma rejilla que «En camino»: en un monitor,
                                     una columna estira cada tarjeta a 1.700 px
                                     para dos renglones de texto. */}
-                                <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
+                                <div className="grid gap-3 xl:grid-cols-2">
                                     {porMomento[clave].map(e => (
                                         <Fila key={e.id} envio={e} onHecho={cargar} />
                                     ))}
@@ -603,14 +603,20 @@ export default function TrasladosView() {
                         />
                     )}
 
-                    {/* `auto-rows-fr`: todas las tarjetas miden lo mismo, no
-                        sólo las de una misma fila. Sin él la rejilla dimensiona
-                        cada fila por su contenido, así que una con lotes y otra
-                        sin ellos quedan desparejas en cuanto hay más de dos —
-                        reportado: «las cards deben medir lo mismo de alto». El
-                        `h-full` de la tarjeta y el `mt-auto` de su pie son la
-                        otra mitad: sin ellos la tarjeta no llena la celda que
-                        esto le da. */}
+                    {/* ── Igualadas por FILA, no por rejilla entera ────────
+                        Tenía `auto-rows-fr`, que iguala TODAS las filas a la
+                        altura de la más alta: una tarjeta con nombre de dos
+                        líneas y dos lotes estiraba a las veinte, y las cortas
+                        quedaban con un hueco vertical de ~120px en el medio.
+                        Reportado con captura: «no se le ve peso a nada» — parte
+                        de eso era el vacío.
+
+                        Sin él, `stretch` (el default de grid) sigue igualando
+                        las tarjetas de UNA MISMA FILA, que es lo que se pedía en
+                        «las cards deben medir lo mismo de alto», y cada fila se
+                        dimensiona por su propio contenido. El `h-full` de la
+                        tarjeta y el `mt-auto` de su pie siguen haciendo falta:
+                        son los que alinean los botones dentro de la fila. */}
                     {/* ── Primero las que se pidieron juntas ────────────────
                         Los grupos van arriba y las sueltas debajo, en vez de
                         respetar el orden por fecha. El motivo: las hermanas de
@@ -621,7 +627,7 @@ export default function TrasladosView() {
                         se vino a hacer acá. */}
                     {!cargando && bloques.grupos.map(({ grupoId, filas }) => (
                         <GrupoPorRecibir key={grupoId} grupo={grupos[grupoId]} filas={filas} onHecho={cargar}>
-                            <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
+                            <div className="grid gap-3 xl:grid-cols-2">
                                 {filas.map(f => (
                                     <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                                 ))}
@@ -630,7 +636,7 @@ export default function TrasladosView() {
                     ))}
 
                     {!cargando && bloques.sueltas.length > 0 && (
-                        <div className="grid gap-3 xl:grid-cols-2 auto-rows-fr">
+                        <div className="grid gap-3 xl:grid-cols-2">
                             {bloques.sueltas.map(f => (
                                 <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                             ))}

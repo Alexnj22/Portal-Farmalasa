@@ -1,13 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { checkCronSecret, getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   anotar,
   armarConcepto,
   conSala,
+  apartadoQueEstorba,
   disponibleEnBodega,
   estadoDeRecepcion,
-  existenciasDeUbicacion,
+  leerUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -127,8 +128,28 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    const quien = await requireActiveEmployeeUser(req, admin);
-    if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    /* ── Quién llama: una persona, o el cron que retoma lo que quedó ──────
+     *
+     * El cron existe porque un despacho que corta por tiempo dejaba renglones
+     * `por_enviar` y la única salida era que alguien mirara la tarjeta — con
+     * parte del envío ya fuera de la sala. Es el mismo hueco que costó los 6
+     * renglones del pedido 120, y la misma respuesta.
+     *
+     * Firma con QUIEN ARMÓ EL ENVÍO y no con una cuenta de máquina: el
+     * movimiento en el sistema lleva ese nombre en el concepto, y quien abra el
+     * kardex dentro de un año tiene que leer a la persona que decidió mandar el
+     * producto, no al proceso que terminó el trabajo. Mismo criterio que
+     * `continuar-traslados-pedido`, que firma con `creado_por`.
+     *
+     * Y el cron NO elige qué renglones salen: manda un `request_id` y la
+     * función resuelve el resto con su propia lectura. Un renglón que nadie
+     * despachó no puede colarse por acá. */
+    const porCron = checkCronSecret(req);
+    let quien = porCron ? null : await requireActiveEmployeeUser(req, admin);
+    if (!porCron && !quien)
+      return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    if (porCron && accion !== "despachar")
+      return json({ ok: false, error: "El cron sólo retoma despachos." }, 403);
 
     /* Despachar es `can_edit` —sacar producto de mi sala—; decidir es
      * `can_approve` —resolver sobre lo que llegó—. Son dos permisos porque son
@@ -136,7 +157,11 @@ Deno.serve(async (req) => {
      * contra `puede_confirmar_traslado`). Recibir la devolución es del lado de
      * quien envió, así que vuelve a ser `can_edit`. */
     const accionPermiso = accion === "decidir" ? "can_approve" : "can_edit";
-    const permiso = await permisoDeModulo(admin, quien.id, "traslados", accionPermiso);
+    const permiso = porCron
+      // El cron ya está autorizado por su secreto, y la persona que firma es la
+      // que armó el envío: su permiso se cobró cuando lo creó.
+      ? { puede: true, alcanceTodo: true, emp: null, roto: null }
+      : await permisoDeModulo(admin, quien!.id, "traslados", accionPermiso);
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede)
       return json({
@@ -145,7 +170,7 @@ Deno.serve(async (req) => {
           ? "No tienes permiso para decidir sobre los envíos de tu sala."
           : "No tienes permiso para enviar producto a otra sala.",
       }, 403);
-    const emp = permiso.emp as { branch_id?: number } | null;
+    let emp = permiso.emp as { branch_id?: number } | null;
     const alcanceTodo = permiso.alcanceTodo;
 
     // ── El envío se relee de la BD, nunca se recibe del navegador ──────────
@@ -158,6 +183,20 @@ Deno.serve(async (req) => {
     if (!sol) return json({ ok: false, error: "Ese envío no existe." }, 404);
     if (sol.type !== "INVENTORY_TRANSFER_PUSH")
       return json({ ok: false, error: `El tipo ${sol.type} no se aplica desde acá.` }, 422);
+
+    /* Y recién acá se sabe con qué nombre firma el cron: el del envío. Se lee
+     * de la base, nunca del cuerpo de la petición — quién armó el envío es un
+     * hecho de la fila, no algo que el llamador pueda proponer. */
+    if (porCron) {
+      const { dato: autor, roto } = await leerBien<{ id: string; name: string; branch_id: number }>(
+        admin.from("employees").select("id, name, branch_id").eq("id", sol.employee_id).maybeSingle(),
+        "quién armó el envío",
+      );
+      if (roto) return json({ ok: false, error: roto }, 503);
+      if (!autor) return json({ ok: false, error: "El envío no tiene a quién atribuirle el despacho." }, 422);
+      quien = { id: autor.id, name: autor.name, status: "ACTIVO", code: "" };
+      emp = { branch_id: autor.branch_id };
+    }
 
     const meta = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
     const erpOrigen  = Number(meta.origen_erp_sucursal_id);
@@ -222,7 +261,10 @@ Deno.serve(async (req) => {
       return Array.isArray(cubiertas) && cubiertas.includes(branch);
     };
 
-    const yo = conSala({ ...(emp ?? {}), name: quien.name }, codigoDeBranch(emp?.branch_id));
+    // Acá `quien` ya está resuelto en los dos caminos —sesión o cron—, así que
+    // el resto del archivo no distingue quién llamó.
+    const actor = quien!;
+    const yo = conSala({ ...(emp ?? {}), name: actor.name }, codigoDeBranch(emp?.branch_id));
 
     // ══════════════════════════════════════════════════════════════════════
     // DESPACHAR · en la sala que envía
@@ -235,10 +277,17 @@ Deno.serve(async (req) => {
       if (!(await puedeObrarPor(branchOrigen)))
         return json({ ok: false, error: "Este envío lo despacha la sala de la que sale el producto." }, 403);
 
-      // Lo que falta mandar. Una línea en `error` se reintenta —el error suele
-      // ser algo que se corrige, como una existencia que volvió—; una `enviada`
-      // no se vuelve a tocar, que es lo que hace seguro apretar dos veces.
-      const pendientes = lineas.filter((l) => l.estado === "por_enviar" || l.estado === "error");
+      /* Lo que falta mandar. Una `enviada` no se vuelve a tocar, que es lo que
+       * hace seguro apretar dos veces.
+       *
+       * Una línea en `error` sí se reintenta CUANDO LO PIDE UNA PERSONA —el
+       * error suele ser algo que se corrige, como una existencia que volvió— y
+       * NUNCA cuando el que retoma es el cron: reintentar a ciegas cada diez
+       * minutos un renglón que el sistema ya rechazó es pelearse con él para
+       * siempre. Es la misma regla que `reintentar-ingreso-pedido` aprendió con
+       * las líneas cerradas a propósito. */
+      const pendientes = lineas.filter((l) =>
+        l.estado === "por_enviar" || (!porCron && l.estado === "error"));
       if (pendientes.length === 0)
         return json({ ok: false, codigo: "NADA_QUE_ENVIAR", error: "Ya salió todo lo de este envío." }, 409);
 
@@ -252,7 +301,7 @@ Deno.serve(async (req) => {
        * borraba lo que la otra escritura había puesto en el medio. El `||` de
        * jsonb funde contra la fila viva. */
       const { data: tomada, error: candadoErr } = await admin
-        .rpc("tomar_despacho_envio", { p_request_id: sol.id, p_actor: quien.id });
+        .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "despachando" });
       // Sin mirar el `error`, un fallo de la consulta se leería como «alguien
       // más está despachando»: una respuesta del negocio que en realidad
       // significa «no se pudo preguntar». Son dos cosas y hay que decir cuál.
@@ -270,7 +319,8 @@ Deno.serve(async (req) => {
 
       // La existencia de la ubicación se lee UNA vez y no por renglón: son ~4 s
       // y adentro del bucle un envío de cinco productos pagaría veinte.
-      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+      const lecturaOrigen = await leerUbicacion(cookie, erpOrigen, ubicOrigen);
+      const enUbicacion = lecturaOrigen?.unidades ?? null;
 
       // Lo APARTADO en el área de vencidos de la sucursal que envía: el sistema
       // descarga de ahí primero y no pasa al estante, así que es la otra mitad
@@ -279,8 +329,8 @@ Deno.serve(async (req) => {
       // el camino normal — pero el día que Bodega envíe por acá, el freno ya
       // está.
       const ubicVencidos = ubicacionDe(porSucursal.get(erpOrigen), true);
-      const enVencidos = ubicVencidos
-        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+      const lecturaVencidos = ubicVencidos
+        ? await leerUbicacion(cookie, erpOrigen, ubicVencidos)
         : null;
 
       let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
@@ -289,8 +339,18 @@ Deno.serve(async (req) => {
       const fallos: { producto: string; error: string }[] = [];
       let cortadoEn = -1;
 
+      /* Cuánto tarda cada renglón contra el sistema. No es diagnóstico de
+       * sobra: es de donde va a salir el TOPE de productos por envío.
+       *
+       * El despacho corta a los 110 s, así que el tope existe hoy —sólo que no
+       * está escrito en ningún lado y se descubre a mitad de camino—. Ponerlo
+       * sin medir sería inventarlo: la misma decisión que en la solicitud a
+       * varias salas, donde se dejó sin tope a propósito hasta tener el dato. */
+      const msPorRenglon: number[] = [];
+
       for (let i = 0; i < pendientes.length; i++) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
+        const arranqueRenglon = Date.now();
         const l = pendientes[i];
         const nombre = l.descripcion ?? String(l.erp_product_id);
         const clave = claveDe(sol.id, l.posicion);
@@ -326,14 +386,14 @@ Deno.serve(async (req) => {
         const hay = disponibleEnBodega(
           f, Number(pres.unidad),
           enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
-          enVencidos ? (enVencidos.get(Number(l.erp_product_id)) ?? 0) : null,
+          apartadoQueEstorba(lecturaOrigen, lecturaVencidos, Number(l.erp_product_id)),
         );
         if (Number(l.cantidad) > hay.paquetes) {
           await fallar(
             hay.desdeVencidos > 0
-              ? `De ${nombre} no se puede enviar mientras haya ${hay.desdeVencidos} ` +
-                `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma ` +
-                `primero. Sacá el apartado y volvé a intentarlo.`
+              ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el ` +
+                `área de vencidos que no se distinguen de las del estante —ninguna tiene fecha de ` +
+                `vencimiento—, así que el envío puede llevarse la apartada. Resolvé esa existencia primero.`
               : `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
                 `el envío lleva ${l.cantidad}.`,
           );
@@ -459,7 +519,7 @@ Deno.serve(async (req) => {
               existencia_previa: f.existencia,
               regulado: f.regulado,
               erp_ubicacion_origen: ubicOrigen,
-              por: quien.id, por_nombre: quien.name,
+              por: actor.id, por_nombre: actor.name,
             },
             updated_at: new Date().toISOString(),
           }).eq("id", l.id),
@@ -467,6 +527,7 @@ Deno.serve(async (req) => {
           (m) => fallos.push({ producto: nombre, error: m }),
         );
 
+        msPorRenglon.push(Date.now() - arranqueRenglon);
         hechas.push({ producto: nombre, cantidad: l.cantidad, id_traslado: idTraslado, avisos });
       }
 
@@ -474,7 +535,7 @@ Deno.serve(async (req) => {
       // reintenta apretando de nuevo, y hacer esperar tres minutos por eso no
       // protege de nada.
       await anotar(
-        admin.rpc("cerrar_despacho_envio", { p_request_id: sol.id }),
+        admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "despachando" }),
         "la salida del envío del despacho",
       );
 
@@ -500,6 +561,9 @@ Deno.serve(async (req) => {
 
       return json({
         ok: fallos.length === 0 && cortadoEn < 0,
+        // Lo que va a fijar el tope de renglones por envío, cuando haya
+        // suficientes corridas para leerlo.
+        ms_por_renglon: msPorRenglon,
         enviadas: hechas.length,
         pendientes: pendientes.length - hechas.length - fallos.length,
         avisados,
@@ -566,6 +630,27 @@ Deno.serve(async (req) => {
       if (trabajo.length === 0)
         return json({ ok: false, codigo: "NADA_QUE_DECIDIR", error: "Esos productos ya estaban decididos." }, 409);
 
+      /* ── El candado, también acá ───────────────────────────────────────
+       * El aviso les llega a TODOS los que pueden contestar en la sala de
+       * destino, así que dos pueden apretar a la vez: los dos pasan la lectura
+       * de «¿qué falta decidir?» y los dos mandan a recibir el MISMO
+       * movimiento, o sea que el producto entra dos veces al inventario.
+       *
+       * La guarda de más abajo —preguntarle al listado si el traslado sigue
+       * esperando— no cierra esta ventana: reusa la cola hasta 20 segundos, que
+       * es justo el tamaño del hueco. La achica; no la tapa. */
+      const { data: tomado, error: candadoErr } = await admin
+        .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
+      if (candadoErr) {
+        console.error("[enviar-producto-erp] candado decidir:", candadoErr.message);
+        return json({ ok: false, error: "No se pudo tomar el envío para decidirlo." }, 503);
+      }
+      if (tomado !== true)
+        return json({
+          ok: false, codigo: "YA_EN_CURSO",
+          error: "Alguien más de tu sala está contestando este envío en este momento.",
+        }, 409);
+
       const cookie = await sesionEn(erpDestino);
       /* La cola de recepción se lee UNA vez y se reusa 20 s: preguntar por
        * renglón cuesta 250-880 ms y una guarda que hace lenta la operación es
@@ -590,7 +675,28 @@ Deno.serve(async (req) => {
         const fallar = (msg: string) => { fallos.push({ producto: nombre, error: msg }); };
 
         if (!idIda) {
-          fallar(`${nombre} salió sin número de movimiento: hay que buscar «${clave}» en el sistema y recibirlo a mano.`);
+          /* Salió del estante y no se pudo distinguir cuál movimiento es. No hay
+           * nada que esta función pueda hacer con eso, pero SÍ hay algo que no
+           * puede pasar: que la línea se quede en `enviada` para siempre.
+           *
+           * Mientras quede una `enviada` el envío nunca cierra —la cabecera se
+           * queda PENDING, el aviso de vuelta no sale y la tarjeta pide una
+           * decisión que ya se tomó—, así que pasa a `error`, que es lo que
+           * significa de verdad: hay que mirarla a mano. La decisión de la sala
+           * se guarda igual, para no perderla. */
+          const msg = `${nombre} salió sin número de movimiento: hay que buscar «${clave}» en el sistema `
+            + `y recibirlo a mano.`;
+          await anotar(
+            admin.from("envio_linea").update({
+              estado: "error", error: msg,
+              motivo_rechazo: aceptar ? null : motivo,
+              nota_rechazo: aceptar ? null : (notaL || null),
+              decidido_por: actor.id, decidido_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }).eq("id", l.id),
+            `el renglón sin número de ${nombre}`,
+          );
+          fallar(msg);
           continue;
         }
 
@@ -669,7 +775,7 @@ Deno.serve(async (req) => {
             admin.from("envio_linea").update({
               estado: "aceptada",
               recibido_at: new Date().toISOString(),
-              decidido_por: quien.id, decidido_at: new Date().toISOString(),
+              decidido_por: actor.id, decidido_at: new Date().toISOString(),
               error: null,
               updated_at: new Date().toISOString(),
             }).eq("id", l.id),
@@ -761,7 +867,7 @@ Deno.serve(async (req) => {
             id_traslado_devolucion: idVuelta,
             motivo_rechazo: motivo,
             nota_rechazo: notaL || null,
-            decidido_por: quien.id, decidido_at: new Date().toISOString(),
+            decidido_por: actor.id, decidido_at: new Date().toISOString(),
             aviso: reparto.avisos.length ? reparto.avisos.join(" · ") : null,
             error: idVuelta ? null
               : `Volvió, pero no se pudo distinguir cuál movimiento es entre ${candidatos.length} candidatos `
@@ -808,7 +914,7 @@ Deno.serve(async (req) => {
             admin.rpc("cerrar_envio", {
               p_request_id: sol.id,
               p_status: cerrado,
-              p_actor: quien.id,
+              p_actor: actor.id,
               p_nota: String(nota ?? "").trim() || null,
               p_motivos: motivosDados.length ? motivosDados.join("; ") : null,
             }),
@@ -817,6 +923,14 @@ Deno.serve(async (req) => {
           );
         }
       }
+
+      // Se suelta apenas termina: lo que quedó sin decidir se contesta
+      // apretando de nuevo. Si la corrida muere, el candado caduca solo a los
+      // 3 minutos — más que lo que vive una invocación.
+      await anotar(
+        admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
+        "la salida del envío de la decisión",
+      );
 
       return json({
         ok: fallos.length === 0 && cortadoEn < 0,
@@ -842,6 +956,21 @@ Deno.serve(async (req) => {
     const porVolver = lineas.filter((l) => l.estado === "devuelta" && l.id_traslado_devolucion);
     if (porVolver.length === 0)
       return json({ ok: false, codigo: "NADA_QUE_RECIBIR", error: "No hay nada devuelto esperando entrar." }, 409);
+
+    // Mismo candado que los otros dos pasos: cualquiera de la sala que envió
+    // puede apretar «ya está de vuelta», y dos a la vez cargarían el mismo
+    // movimiento dos veces.
+    const { data: tomadaVuelta, error: candadoVueltaErr } = await admin
+      .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "recibiendo" });
+    if (candadoVueltaErr) {
+      console.error("[enviar-producto-erp] candado devolución:", candadoVueltaErr.message);
+      return json({ ok: false, error: "No se pudo tomar la devolución para recibirla." }, 503);
+    }
+    if (tomadaVuelta !== true)
+      return json({
+        ok: false, codigo: "YA_EN_CURSO",
+        error: "Alguien más de tu sala está recibiendo esta devolución en este momento.",
+      }, 409);
 
     const cookie = await sesionEn(erpOrigen);
     const estadoDe = lectorDeRecepcion(cookie);
@@ -926,6 +1055,11 @@ Deno.serve(async (req) => {
       }
       await cerrar(null);
     }
+
+    await anotar(
+      admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "recibiendo" }),
+      "la salida de la devolución",
+    );
 
     return json({ ok: fallos.length === 0, recibidas: hechas.length, hechas, fallos });
   } catch (e) {

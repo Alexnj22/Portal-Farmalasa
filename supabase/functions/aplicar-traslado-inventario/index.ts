@@ -56,9 +56,10 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   conSala,
+  apartadoQueEstorba,
   disponibleEnBodega,
   estadoDeRecepcion,
-  existenciasDeUbicacion,
+  leerUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -625,16 +626,16 @@ Deno.serve(async (req) => {
     // la de vencidos, porque desde el 2026-08-19 se puede pedir de ahí. Se lee
     // UNA vez por solicitud y no por renglón: son 4 s, y adentro del bucle un
     // traslado de cinco productos pagaría veinte. Ver `existenciasDeUbicacion`.
-    const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+    const lecturaOrigen = await leerUbicacion(cookie, erpOrigen, ubicOrigen);
+    const enUbicacion = lecturaOrigen?.unidades ?? null;
 
-    // Y lo apartado en el área de vencidos, porque el sistema descarga de ahí
-    // primero y no pasa al estante — ver `disponibleEnBodega`. Sólo cuando el
-    // origen es el ESTANTE: si ya se está pidiendo del área de vencidos, la
-    // cifra de arriba es esa misma y contarla dos veces bajaría el tope sin
-    // motivo.
+    // Y el área de vencidos, para saber qué filas de ahí no se pueden
+    // distinguir de las del estante — ver `apartadoQueEstorba`. Sólo cuando el
+    // origen es el ESTANTE: si ya se está pidiendo del área de vencidos, esa
+    // mercadería es justamente la que se quiere y no hay nada que frenar.
     const ubicVencidos = origenVencidos ? 0 : ubicacionDe(porSucursal.get(erpOrigen), true);
-    const enVencidos = ubicVencidos
-      ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+    const lecturaVencidos = ubicVencidos
+      ? await leerUbicacion(cookie, erpOrigen, ubicVencidos)
       : null;
 
     // Cuánto tardó cada renglón contra el sistema de origen. No es diagnóstico
@@ -710,15 +711,15 @@ Deno.serve(async (req) => {
       const hay = disponibleEnBodega(
         f, Number(unidad),
         enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
-        enVencidos ? (enVencidos.get(Number(l.erp_product_id)) ?? 0) : null,
+        apartadoQueEstorba(lecturaOrigen, lecturaVencidos, Number(l.erp_product_id)),
       );
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
           error: hay.desdeVencidos > 0
-            ? `De ${nombre} no se puede despachar mientras haya ${hay.desdeVencidos} `
-              + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
-              + `primero. Sacá el apartado, o pedilo desde el área de vencidos.`
+            ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área `
+              + `de vencidos que no se distinguen de las del estante —ninguna tiene fecha de vencimiento—, así `
+              + `que la salida puede llevarse la apartada. Resolvé esa existencia, o pedila desde el área de vencidos.`
             : `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
               + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);

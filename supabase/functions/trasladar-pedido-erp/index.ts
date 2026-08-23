@@ -4,9 +4,10 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   anotar,
   armarConcepto,
+  apartadoQueEstorba,
   disponibleEnBodega,
   estadoDeRecepcion,
-  existenciasDeUbicacion,
+  leerUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -981,14 +982,15 @@ Deno.serve(async (req) => {
       // de freno. Una sola lectura por corrida: 4 s y 1.5 MB para las 2,644
       // filas de Bodega, contra ~370 ms por producto. Ver
       // `existenciasDeUbicacion`.
-      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+      const lecturaEstante = await leerUbicacion(cookie, erpOrigen, ubicOrigen);
+      const enUbicacion = lecturaEstante?.unidades ?? null;
 
-      // Y lo APARTADO en el área de vencidos, que es de donde el sistema
-      // descarga primero — ver `disponibleEnBodega`. Otra lectura por corrida,
-      // no por producto: el área de vencidos de Bodega tiene 82 filas.
+      // Y el área de vencidos, para saber qué filas de ahí no se pueden
+      // distinguir de las del estante — ver `apartadoQueEstorba`. Otra lectura
+      // por corrida, no por producto: son 82 filas.
       const ubicVencidos = ubicacionDeVencidos(mapaOrigen);
-      const enVencidos = ubicVencidos
-        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidos)
+      const lecturaVencidos = ubicVencidos
+        ? await leerUbicacion(cookie, erpOrigen, ubicVencidos)
         : null;
 
       let hechas = 0, fallidas = 0, sinTiempo = false;
@@ -1063,7 +1065,7 @@ Deno.serve(async (req) => {
           const hay = disponibleEnBodega(
             f, Number(pres.unidad),
             enUbicacion ? (enUbicacion.get(Number(ln.erp_product_id)) ?? 0) : null,
-            enVencidos ? (enVencidos.get(Number(ln.erp_product_id)) ?? 0) : null,
+            apartadoQueEstorba(lecturaEstante, lecturaVencidos, Number(ln.erp_product_id)),
           );
           if (Number(ln.cantidad) > hay.paquetes) {
             await fallar(
@@ -1071,9 +1073,10 @@ Deno.serve(async (req) => {
                 // «No hay» se leería como que el estante está vacío, y no lo
                 // está: lo que pasa es que la salida se lleva primero lo
                 // apartado, y un pedido no debe llevarse eso.
-                ? `No se puede despachar mientras haya ${hay.desdeVencidos} `
-                  + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
-                  + `primero, y el pedido no cuenta con esa área. Sacá el apartado y volvé a despachar.`
+                ? `No se puede despachar: hay ${hay.desdeVencidos} `
+                  + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos que no se distinguen `
+                  + `de las del estante —ninguna tiene fecha de vencimiento—, así que la salida puede llevarse `
+                  + `la apartada. Resolvé esa existencia y volvé a despachar.`
                 : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
             );
             continue;
@@ -1303,10 +1306,11 @@ Deno.serve(async (req) => {
       // eso también lee lo apartado en vencidos: es la mitad del tope, y una
       // pantalla que no la mire deja a Bodega armando una caja que el sistema
       // va a rechazar.
-      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+      const lecturaEstanteSim = await leerUbicacion(cookie, erpOrigen, ubicOrigen);
+      const enUbicacion = lecturaEstanteSim?.unidades ?? null;
       const ubicVencidosSim = ubicacionDeVencidos(mapaOrigen);
-      const enVencidosSim = ubicVencidosSim
-        ? await existenciasDeUbicacion(cookie, erpOrigen, ubicVencidosSim)
+      const lecturaVencidosSim = ubicVencidosSim
+        ? await leerUbicacion(cookie, erpOrigen, ubicVencidosSim)
         : null;
 
       for (const it of items) {
@@ -1358,7 +1362,7 @@ Deno.serve(async (req) => {
         const hay = disponibleEnBodega(
           f, Number(pres.unidad),
           enUbicacion ? (enUbicacion.get(Number(it.erp_product_id)) ?? 0) : null,
-          enVencidosSim ? (enVencidosSim.get(Number(it.erp_product_id)) ?? 0) : null,
+          apartadoQueEstorba(lecturaEstanteSim, lecturaVencidosSim, Number(it.erp_product_id)),
         );
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
@@ -1367,9 +1371,10 @@ Deno.serve(async (req) => {
             // así que «no tiene existencia» ganaría siempre y diría justo lo
             // contrario de lo que pasa — el estante puede estar lleno.
             detalle: hay.desdeVencidos > 0
-              ? `No se puede despachar mientras haya ${hay.desdeVencidos} `
-                + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos: la salida las toma `
-                + `primero, y el pedido no cuenta con esa área. Sacá el apartado y volvé a despachar.`
+              ? `No se puede despachar: hay ${hay.desdeVencidos} `
+                + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos que no se distinguen de `
+                + `las del estante —ninguna tiene fecha de vencimiento—, así que la salida puede llevarse la `
+                + `apartada. Resolvé esa existencia y volvé a despachar.`
               : hay.unidades <= 0
               ? "Ya no tiene existencia en bodega."
               : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,

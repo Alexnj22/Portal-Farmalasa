@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.716.1 — El freno mira si la fila apartada se puede distinguir, no si existe
+
+Corrige el diagnóstico de v2.714.0 y v2.714.2. Los dos partían de que **la
+salida entra por el área de vencidos**. Auditando el mes entero, no es así: la
+ubicación **se respeta**. Cuatro productos con mercadería apartada despacharon
+del estante sin tocarla, y sus filas siguen intactas:
+
+| producto | apartado | despachos | ¿se tocó lo apartado? |
+|---|---|---|---|
+| ALCOHOL 70 | 1 desde el 14-jul | 2 uds el 17-ago, 1 el 19-ago | no |
+| ALCOHOL 90 | 5 desde el 5-ago | 5 el 17-ago, 5 el 18-ago | no |
+| BRONCOLEXIL | 6 desde el 17-ago | 2 el 19-ago | no |
+| NEUROBION | 28 desde el 17-ago | 3, 4 y 3 el 17 y 18-ago | no |
+
+**El único que salió del área de vencidos fue el TERMOMETRO**, y su
+particularidad es que sus dos filas son idénticas y **sin fecha de
+vencimiento**:
+
+```
+estante:   lote GENERICO · UNIDAD 1x1 · vence 0000-00-00 · 18
+vencidos:  lote GENERICO · UNIDAD 1x1 · vence 0000-00-00 ·  1
+```
+
+Sin fecha no hay con qué distinguirlas y la salida agarra la que no es. Con
+fecha funciona aunque **todo lo demás coincida**: BRONCOLEXIL tiene el mismo
+lote y la MISMA fecha en las dos áreas y salió del estante sin una queja.
+
+Por eso el freno ahora pregunta lo que corresponde —`apartadoQueEstorba`: ¿hay
+algo apartado que el sistema no pueda distinguir de lo del estante?— en vez de
+«¿hay algo apartado?». La diferencia no es teórica: la condición vieja dejaba
+sin despachar **32 productos** que llevaban meses saliendo bien; la nueva frena
+**3**, los únicos en esa combinación (termómetro, tobillera y rodillera).
+
+Y no se va a limpiar sola: el área de vencidos guarda también **averías**, que
+por definición no vencen y nunca van a tener fecha. Un termómetro averiado vive
+ahí con todo derecho.
+
+El mensaje dice ahora la razón de verdad, que es lo que permite resolverlo:
+«hay N apartadas en el área de vencidos que no se distinguen de las del estante
+—ninguna tiene fecha de vencimiento—, así que la salida puede llevarse la
+apartada».
+
+Anclado en `tests/unit/existenciasDeUbicacion.test.js` contra el reporte REAL de
+Bodega: el termómetro da 1 y BRONCOLEXIL da 0.
+
 ## v2.716.0 — El encabezado del conteo se pliega con el teléfono acostado
 
 Primera entrega **verificada en un iPhone de verdad** (WebKit, no un tamaño

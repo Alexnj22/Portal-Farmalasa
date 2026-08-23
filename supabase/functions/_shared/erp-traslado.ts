@@ -307,19 +307,20 @@ export function disponibleEnBodega(
   // en Salud 3 sin un solo movimiento en el sistema, y nadie se enteró porque
   // el pedido igual se cerró como recibido.
   //
-  // Y con algo apartado NO se despacha nada, aunque el estante esté lleno.
+  // Y cuando lo apartado en el área de vencidos NO se puede distinguir de lo
+  // del estante, no se despacha nada aunque el estante esté lleno.
   //
-  // La primera versión de este freno topaba en lo apartado —lo que el sistema
-  // sí acepta— y estaba mal: seguía sacando del área de vencidos, sólo que en
-  // menor cantidad. **Un pedido no debe llevarse mercadería apartada por
-  // vencer**, y menos sin que nadie lo decida: el pedido se calcula sin mirar
-  // esa área (`v_inventario_disponible_vencidos`), así que su cantidad ni
-  // siquiera cuenta con ella. Pedir del área de vencidos existe y es otra cosa
-  // —se pide a propósito, desde el 2026-08-19—.
+  // `enVencidos` no es «cuánto hay apartado»: es cuánto puede salir por error,
+  // y lo calcula `apartadoQueEstorba` —ahí está medido por qué la condición es
+  // «sin fecha de los dos lados» y no «hay algo apartado»—. Con la segunda,
+  // este freno dejaba sin despachar 32 productos que llevaban meses saliendo
+  // bien del estante.
   //
-  // Como no hay forma de decirle al sistema que descargue del estante, la
-  // única salida honesta es no despachar y decir por qué: alguien tiene que
-  // sacar el apartado primero. `desdeVencidos` es cuántas están frenando.
+  // No se topa en lo apartado: se frena del todo. El pedido se calcula sin
+  // mirar esa área, así que llevarse de ahí —aunque el sistema lo acepte— es
+  // mandar a la sala mercadería apartada por vencer o averiada sin que nadie lo
+  // haya decidido. Pedir del área de vencidos existe y es otra cosa: se pide a
+  // propósito, desde el 2026-08-19.
   const apartado = Number(enVencidos ?? 0);
   const tope = apartado > 0 ? 0 : existencia;
   return {
@@ -364,6 +365,23 @@ export function disponibleEnBodega(
 export async function existenciasDeUbicacion(
   cookie: string, erpSucursal: number, ubicacion: number,
 ): Promise<Map<number, number> | null> {
+  return (await leerUbicacion(cookie, erpSucursal, ubicacion))?.unidades ?? null;
+}
+
+/** Lo que hay en una ubicación: cuánto, y de qué filas no se sabe el vencimiento. */
+export interface LecturaUbicacion {
+  unidades: Map<number, number>;
+  /** Productos con AL MENOS una fila sin fecha de vencimiento en esa ubicación. */
+  sinFecha: Set<number>;
+}
+
+/**
+ * La misma lectura, con la fecha de vencimiento incluida — ver
+ * `apartadoQueEstorba`, que es para lo único que sirve el segundo dato.
+ */
+export async function leerUbicacion(
+  cookie: string, erpSucursal: number, ubicacion: number,
+): Promise<LecturaUbicacion | null> {
   try {
     const cuerpo = await pedir(
       cookie,
@@ -372,7 +390,7 @@ export async function existenciasDeUbicacion(
       undefined,
       { extra: { Referer: `${BASE}/dashboard.php` }, timeoutMs: 60_000 },
     );
-    return existenciasDelReporte(JSON.parse(cuerpo));
+    return lecturaDelReporte(JSON.parse(cuerpo));
   } catch {
     return null;
   }
@@ -383,23 +401,83 @@ export async function existenciasDeUbicacion(
  * pruebas contra un payload REAL del sistema. Ver `existenciasDeUbicacion`.
  */
 export function existenciasDelReporte(payload: unknown): Map<number, number> | null {
+  return lecturaDelReporte(payload)?.unidades ?? null;
+}
+
+/** La cuenta con las fechas, que es de donde sale `existenciasDelReporte`. */
+export function lecturaDelReporte(payload: unknown): LecturaUbicacion | null {
   const factorDe = (detalle: unknown): number => {
     const n = Number(String(detalle ?? "").match(/^\s*1\s*[xX]\s*(\d+)\s*$/)?.[1] ?? 1);
     return Number.isFinite(n) && n > 0 ? n : 1;
+  };
+  // El sistema escribe «0000-00-00» cuando el producto no vence —un termómetro,
+  // una tobillera—, y también llega vacío o nulo. Las tres son lo mismo: no hay
+  // fecha con la que distinguir esta fila de otra igual en la otra ubicación.
+  const sinFechaDe = (v: unknown): boolean => {
+    const t = String(v ?? "").trim();
+    return t === "" || /^0{4}-0{2}-0{2}$/.test(t) || t.toLowerCase() === "null";
   };
   const filas = (payload as { inventario?: unknown })?.inventario;
   // Una lista vacía se trata como «no se pudo leer»: una ubicación de verdad
   // vacía no existe en la práctica, y dar 0 a todo frenaría el pedido entero.
   if (!Array.isArray(filas) || filas.length === 0) return null;
-  const mapa = new Map<number, number>();
+  const unidades = new Map<number, number>();
+  const sinFecha = new Set<number>();
   for (const p of filas as Record<string, unknown>[]) {
     const id = Number(p?.id_producto);
     if (!Number.isFinite(id) || id <= 0) continue;
     const det = Array.isArray(p?.detalles) ? p.detalles as Record<string, unknown>[] : [];
     const base = det.reduce((n, d) => n + Number(d?.cantidad ?? 0) * factorDe(d?.detalle), 0);
-    mapa.set(id, (mapa.get(id) ?? 0) + base);
+    unidades.set(id, (unidades.get(id) ?? 0) + base);
+    // Sólo cuentan las filas con existencia: una fila en cero no se puede
+    // confundir con nada porque no hay de dónde descargar.
+    if (det.some((d) => Number(d?.cantidad ?? 0) > 0 && sinFechaDe(d?.fecha_vencimiento))) {
+      sinFecha.add(id);
+    }
   }
-  return mapa;
+  return { unidades, sinFecha };
+}
+
+/**
+ * Cuánto de lo apartado en el área de vencidos puede terminar saliendo por
+ * error — que es lo ÚNICO que hay que frenar.
+ *
+ * ── Lo que se midió, y lo que NO era ────────────────────────────────────────
+ * El 2026-08-23 pareció que la salida entraba siempre por el área de vencidos.
+ * No es así: auditando el mes entero, la ubicación **se respeta**. Cuatro
+ * productos con mercadería apartada despacharon del estante sin tocarla:
+ *
+ *   ALCOHOL 70   1 apartada desde el 14-jul, intacta · despachó 2 y 1
+ *   ALCOHOL 90   5 apartadas desde el  5-ago, intactas · despachó 5 y 5
+ *   BRONCOLEXIL  6 apartadas, intactas · despachó 2 — y comparte lote Y fecha
+ *                con una fila del estante, así que ni el lote ni la fecha
+ *                repetidos alcanzan para confundirla
+ *   NEUROBION    28 apartadas, intactas · despachó 3, 4 y 3
+ *
+ * El único que salió del área de vencidos fue el TERMOMETRO, y su
+ * particularidad es que sus dos filas son **idénticas y sin fecha**: mismo
+ * producto, mismo lote GENERICO, misma presentación, «0000-00-00» en las dos.
+ * Sin fecha no hay con qué distinguirlas y la salida agarra la que no es.
+ *
+ * Por eso el freno mira exactamente eso —sin fecha de los DOS lados— y no «hay
+ * algo apartado»: frenar por lo segundo dejaba sin despachar 32 productos que
+ * llevaban meses saliendo bien.
+ *
+ * Y el área de vencidos también guarda AVERÍAS, que no vencen y por eso nunca
+ * van a tener fecha: esta condición no se va a limpiar sola.
+ */
+export function apartadoQueEstorba(
+  estante: LecturaUbicacion | null,
+  vencidos: LecturaUbicacion | null,
+  erpProductId: number,
+): number {
+  // Sin lectura no se inventa un freno: el sistema sigue siendo la puerta.
+  if (!estante || !vencidos) return 0;
+  const apartado = vencidos.unidades.get(erpProductId) ?? 0;
+  if (apartado <= 0) return 0;
+  return vencidos.sinFecha.has(erpProductId) && estante.sinFecha.has(erpProductId)
+    ? apartado
+    : 0;
 }
 
 /**

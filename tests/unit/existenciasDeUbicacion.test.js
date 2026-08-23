@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     existenciasDelReporte,
+    lecturaDelReporte,
+    apartadoQueEstorba,
     disponibleEnBodega,
 } from '../../supabase/functions/_shared/erp-traslado.ts';
 import real from './fixtures/inventario-bodega-2026-08-19.json';
@@ -182,5 +184,71 @@ describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', ()
     it('con control de lote el área de vencidos no achica nada', () => {
         expect(disponibleEnBodega(conLotes, 10, 3, 1).paquetes).toBe(5);
         expect(disponibleEnBodega(conLotes, 10, 3, 1).desdeVencidos).toBe(0);
+    });
+});
+
+// ── Cuál de lo apartado puede salir por error ────────────────────────────────
+//
+// Auditado el 2026-08-23 sobre el mes entero: la ubicación SE RESPETA. Cuatro
+// productos con mercadería apartada despacharon del estante sin tocarla —
+// ALCOHOL 70 (1 apartada desde el 14-jul), ALCOHOL 90 (5 desde el 5-ago),
+// BRONCOLEXIL (6, y comparte lote Y fecha con una fila del estante) y NEUROBION
+// (28). El único que salió del área de vencidos fue el TERMOMETRO, cuyas dos
+// filas son idénticas y SIN FECHA.
+//
+// Por eso el freno mira eso y no «hay algo apartado»: con lo segundo quedaban
+// sin despachar 32 productos que llevaban meses saliendo bien.
+describe('apartadoQueEstorba — sólo lo que no se puede distinguir', () => {
+    const lectura = (filas) => lecturaDelReporte({ inventario: filas });
+    const prod = (id, cantidad, fecha) => ({
+        id_producto: String(id),
+        detalles: [{ detalle: '1x1', cantidad, fecha_vencimiento: fecha }],
+    });
+
+    it('el caso real: las dos filas sin fecha, no se puede distinguir', () => {
+        const estante  = lectura([prod(1545, 18, '0000-00-00')]);
+        const vencidos = lectura([prod(1545, 1, '0000-00-00')]);
+        expect(apartadoQueEstorba(estante, vencidos, 1545)).toBe(1);
+    });
+
+    it('con fecha en las dos, aunque sea la MISMA, no estorba (BRONCOLEXIL)', () => {
+        const estante  = lectura([prod(4839, 1, '2028-03-01')]);
+        const vencidos = lectura([prod(4839, 6, '2028-03-01')]);
+        expect(apartadoQueEstorba(estante, vencidos, 4839)).toBe(0);
+    });
+
+    it('basta que UNA de las dos tenga fecha para distinguirlas', () => {
+        expect(apartadoQueEstorba(lectura([prod(9, 5, '2027-04-30')]), lectura([prod(9, 1, null)]), 9)).toBe(0);
+        expect(apartadoQueEstorba(lectura([prod(9, 5, null)]), lectura([prod(9, 1, '2028-04-01')]), 9)).toBe(0);
+    });
+
+    it('sin nada apartado no hay nada que frenar', () => {
+        expect(apartadoQueEstorba(lectura([prod(9, 5, null)]), lectura([prod(8, 1, null)]), 9)).toBe(0);
+    });
+
+    // Una fila en cero no se confunde con nada: no hay de dónde descargar.
+    it('una fila apartada en cero no estorba', () => {
+        expect(apartadoQueEstorba(lectura([prod(9, 5, null)]), lectura([prod(9, 0, null)]), 9)).toBe(0);
+    });
+
+    // Sin lectura no se inventa un freno: el sistema sigue siendo la puerta, y
+    // cerrar por una consulta secundaria dejaría de despachar por otra cosa.
+    it('si no se pudo leer alguna ubicación, no frena', () => {
+        expect(apartadoQueEstorba(null, lectura([prod(9, 1, null)]), 9)).toBe(0);
+        expect(apartadoQueEstorba(lectura([prod(9, 5, null)]), null, 9)).toBe(0);
+    });
+
+    // Contra el reporte REAL de Bodega del 19-ago, que es de donde salió el caso.
+    it('sobre el reporte real: el termómetro estorba y BRONCOLEXIL no', () => {
+        const est = lecturaDelReporte(real.trabajo);
+        const ven = lecturaDelReporte(real.vencidos);
+        expect(apartadoQueEstorba(est, ven, 1545)).toBe(1);   // sin fecha las dos
+        expect(apartadoQueEstorba(est, ven, 4839)).toBe(0);   // con fecha: se distinguen
+    });
+
+    it('«0000-00-00», vacío y nulo son la misma cosa: sin fecha', () => {
+        for (const f of ['0000-00-00', '', null, undefined]) {
+            expect(apartadoQueEstorba(lectura([prod(9, 5, f)]), lectura([prod(9, 2, f)]), 9)).toBe(2);
+        }
     });
 });

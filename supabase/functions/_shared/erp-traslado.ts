@@ -301,14 +301,10 @@ export function disponibleEnBodega(
   //   pedir 1 → ENTRA, y la unidad sale del ÁREA DE VENCIDOS (quedó en cero)
   //   pedir 7 con vencidos ya vacío → entra, y sale del estante
   //
-  // Y el `origen` que se le manda es el del ESTANTE, explícito en el payload:
-  // lo ignora. Sin este freno el renglón se aprueba, Bodega arma la caja, el
-  // sistema la rechaza y la mercadería viaja igual: 8 termómetros terminaron
-  // en Salud 3 sin un solo movimiento en el sistema, y nadie se enteró porque
-  // el pedido igual se cerró como recibido.
-  //
-  // Y cuando lo apartado en el área de vencidos NO se puede distinguir de lo
-  // del estante, no se despacha nada aunque el estante esté lleno.
+  // Y el `origen` que se le manda es el del ESTANTE —el mismo campo que la
+  // pantalla de traslado ofrece a mano— y lo ignora SÓLO en este caso: cuando
+  // las dos filas son indistinguibles. Con fecha lo respeta siempre; ver
+  // `apartadoQueEstorba`.
   //
   // `enVencidos` no es «cuánto hay apartado»: es cuánto puede salir por error,
   // y lo calcula `apartadoQueEstorba` —ahí está medido por qué la condición es
@@ -316,13 +312,17 @@ export function disponibleEnBodega(
   // este freno dejaba sin despachar 32 productos que llevaban meses saliendo
   // bien del estante.
   //
-  // No se topa en lo apartado: se frena del todo. El pedido se calcula sin
-  // mirar esa área, así que llevarse de ahí —aunque el sistema lo acepte— es
-  // mandar a la sala mercadería apartada por vencer o averiada sin que nadie lo
-  // haya decidido. Pedir del área de vencidos existe y es otra cosa: se pide a
-  // propósito, desde el 2026-08-19.
+  // El tope entonces es LO APARTADO, no cero. Frenar del todo dejaba sin
+  // despachar productos que sí se pueden mandar, y lo que de verdad hay que
+  // evitar es el caso caro: pedir más de lo que la fila equivocada aguanta, que
+  // el sistema rechaza entero **después** de que Bodega armó la caja — así
+  // viajaron 8 termómetros a Salud 3 sin un movimiento en el sistema.
+  //
+  // Lo que sale físicamente lo levanta Bodega del estante; lo que puede quedar
+  // torcido es el PAPEL, si el sistema descuenta la fila apartada. Eso se
+  // comprueba después de despachar releyendo el área de vencidos, y se repone.
   const apartado = Number(enVencidos ?? 0);
-  const tope = apartado > 0 ? 0 : existencia;
+  const tope = apartado > 0 ? Math.min(existencia, apartado) : existencia;
   return {
     paquetes: Math.floor(tope / u),
     unidades: tope,

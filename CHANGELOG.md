@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.719.0 — El área de vencidos se comprueba después de despachar, y el freno sólo evita el rechazo
+
+Cierra el caso del termómetro con la forma que pidió el usuario:
+
+> «lo que debería pasar: verificá cuánto hay en vencidos, y dejalo igual después
+> del traslado.»
+
+**Ya no se frena por precaución.** El tope vuelve a ser lo apartado, no cero, y
+sólo actúa donde de verdad hace falta: cuando se piden **más** unidades de las
+que la fila equivocada aguanta, que es cuando el sistema rechaza el envío
+entero **después** de que Bodega armó la caja — así viajaron 8 termómetros a
+Salud 3 sin un movimiento registrado.
+
+**Y lo que sí se hace es comprobar.** Al terminar el despacho se relee el área
+de vencidos, sólo si salió algún renglón en riesgo (en un despacho normal no
+cuesta nada). Si bajó, la línea queda con el aviso:
+
+> «El sistema descontó 1 del ÁREA DE VENCIDOS en vez del estante: había 1
+> apartada de TERMOMETRO DIGITAL WELLPRO y quedan 0. La mercadería salió del
+> estante, así que hay que reponer esa existencia apartada.»
+
+Se avisa en vez de corregir solo: reponerlo son cuatro movimientos en el
+sistema y ninguno debería pasar sin que Bodega lo vea. Y cuando la relectura
+falla se dice —«no se pudo comprobar»—, que no es lo mismo que «no bajó».
+
+**El mensaje del freno también cambió.** «Resolvé esa existencia» no decía nada.
+Ahora dice qué pasa y qué hacer: «hay 1 apartada en el área de vencidos que el
+sistema no distingue de las del estante —ninguna tiene fecha de vencimiento—, y
+por eso rechaza el envío si se piden más de 1. Se pidieron 3. Dá de baja esa
+existencia apartada y el producto vuelve a salir completo.»
+
+Eso es lo concreto: la unidad **averiada** no debería seguir contando como
+existencia. El área de vencidos guarda averías además de próximos a vencer, así
+que la condición no se limpia sola — pero un termómetro roto tampoco tiene por
+qué figurar como algo que se puede despachar.
+
+El aviso se SUMA al que ya tuviera la línea (el lote que no era el reservado, por
+ejemplo), no lo pisa.
+
 ## v2.718.0 — Envíos: candado en los tres pasos, continuación automática, cancelar e historial
 
 Lo que quedaba abierto de la auditoría del circuito.

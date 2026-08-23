@@ -718,8 +718,9 @@ Deno.serve(async (req) => {
           ok: false, codigo: "SIN_EXISTENCIA",
           error: hay.desdeVencidos > 0
             ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área `
-              + `de vencidos que no se distinguen de las del estante —ninguna tiene fecha de vencimiento—, así `
-              + `que la salida puede llevarse la apartada. Resolvé esa existencia, o pedila desde el área de vencidos.`
+              + `de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de `
+              + `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. Se pidieron `
+              + `${l.cantidad}. Dá de baja esa existencia apartada, o pedila desde el área de vencidos.`
             : `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
               + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);

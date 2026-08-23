@@ -995,6 +995,14 @@ Deno.serve(async (req) => {
 
       let hechas = 0, fallidas = 0, sinTiempo = false;
 
+      // Los renglones que salieron de un producto con existencia apartada
+      // INDISTINGUIBLE. Al final de la corrida se relee el área de vencidos y
+      // se comprueba que no haya bajado: si bajó, el sistema descontó la fila
+      // equivocada y hay que reponerla. Ver `apartadoQueEstorba`.
+      const conRiesgo: {
+        id: string; clave: string; producto: string; pid: number; antes: number; avisoPrevio: string;
+      }[] = [];
+
       for (;;) {
         if (Date.now() - arranque > presupuesto) { sinTiempo = true; break; }
 
@@ -1073,10 +1081,10 @@ Deno.serve(async (req) => {
                 // «No hay» se leería como que el estante está vacío, y no lo
                 // está: lo que pasa es que la salida se lleva primero lo
                 // apartado, y un pedido no debe llevarse eso.
-                ? `No se puede despachar: hay ${hay.desdeVencidos} `
-                  + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos que no se distinguen `
-                  + `de las del estante —ninguna tiene fecha de vencimiento—, así que la salida puede llevarse `
-                  + `la apartada. Resolvé esa existencia y volvé a despachar.`
+                ? `De ${it.nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el `
+                  + `área de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de `
+                  + `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. Se pidieron `
+                  + `${ln.cantidad}. Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
                 : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
             );
             continue;
@@ -1202,6 +1210,15 @@ Deno.serve(async (req) => {
           }
 
           hechas++;
+          if (hay.desdeVencidos > 0) {
+            conRiesgo.push({
+              id: String(ln.id), clave: String(ln.clave), producto: it.nombre,
+              pid: Number(ln.erp_product_id), antes: hay.desdeVencidos,
+              // Lo que ya se anotó al despachar —el lote que no era el
+              // reservado, por ejemplo—: el aviso se SUMA, no se pisa.
+              avisoPrevio: avisos.length ? avisos.join(" · ") : "",
+            });
+          }
           // El producto YA SALIÓ del estante de Bodega. Esta fila es la única
           // prueba de que salió y del número con el que se puede recibir: si no
           // se escribe, el traslado existe en el sistema y no existe para el
@@ -1234,6 +1251,45 @@ Deno.serve(async (req) => {
                 + `(${candidatos.join(", ") || "ninguno"}). Buscar «${ln.clave}» en el concepto.`,
             }).eq("id", ln.id),
             `el despacho de ${ln.clave} (el producto YA salió de Bodega, traslado ${idTraslado ?? "sin identificar"})`,
+          );
+        }
+      }
+
+      // ── Que el área de vencidos quede como estaba ──────────────────────
+      //
+      // El sistema puede descontar la fila apartada en vez de la del estante
+      // cuando las dos son indistinguibles (mismo producto, mismo lote, misma
+      // presentación y ninguna con fecha). Lo que sale físicamente lo levanta
+      // Bodega del estante, así que lo que queda torcido es el PAPEL: el área
+      // de vencidos pierde una unidad que sigue estando en su caja.
+      //
+      // Se relee UNA vez, y sólo si algún renglón de riesgo salió: en un
+      // despacho normal esto no cuesta nada. Y se AVISA en vez de corregir
+      // solo: reponerlo son cuatro movimientos en el sistema y ninguno debería
+      // pasar sin que Bodega lo vea.
+      if (conRiesgo.length && ubicVencidos) {
+        const despues = await leerUbicacion(cookie, erpOrigen, ubicVencidos);
+        // Sin lectura no se inventa un veredicto: quien mire la tarjeta tiene
+        // que poder distinguir «no bajó» de «no se pudo comprobar».
+        for (const r of conRiesgo) {
+          const ahora = despues ? (despues.unidades.get(r.pid) ?? 0) : null;
+          const nota = ahora === null
+            ? `No se pudo comprobar el área de vencidos después de despachar. Había ${r.antes} `
+              + `apartada${r.antes === 1 ? "" : "s"} de ${r.producto}; conviene mirarlo.`
+            : ahora < r.antes
+            ? `El sistema descontó ${r.antes - ahora} del ÁREA DE VENCIDOS en vez del estante: `
+              + `había ${r.antes} apartada${r.antes === 1 ? "" : "s"} de ${r.producto} y quedan ${ahora}. `
+              + `La mercadería salió del estante, así que hay que reponer esa existencia apartada.`
+            : null;
+          if (!nota) continue;
+          await anotar(
+            admin.from("pedido_traslado_linea")
+              .update({
+                aviso: [r.avisoPrevio, nota].filter(Boolean).join(" · "),
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", r.id),
+            `el aviso del área de vencidos de ${r.clave}`,
           );
         }
       }
@@ -1371,10 +1427,10 @@ Deno.serve(async (req) => {
             // así que «no tiene existencia» ganaría siempre y diría justo lo
             // contrario de lo que pasa — el estante puede estar lleno.
             detalle: hay.desdeVencidos > 0
-              ? `No se puede despachar: hay ${hay.desdeVencidos} `
-                + `apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos que no se distinguen de `
-                + `las del estante —ninguna tiene fecha de vencimiento—, así que la salida puede llevarse la `
-                + `apartada. Resolvé esa existencia y volvé a despachar.`
+              ? `Hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos `
+                + `que el sistema no distingue de las del estante —ninguna tiene fecha de vencimiento—, y por `
+                + `eso rechaza el envío si se piden más de ${hay.paquetes}. El pedido lleva ${it.cantidad}. `
+                + `Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
               : hay.unidades <= 0
               ? "Ya no tiene existencia en bodega."
               : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,

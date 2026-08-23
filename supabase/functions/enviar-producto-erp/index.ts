@@ -392,8 +392,9 @@ Deno.serve(async (req) => {
           await fallar(
             hay.desdeVencidos > 0
               ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el ` +
-                `área de vencidos que no se distinguen de las del estante —ninguna tiene fecha de ` +
-                `vencimiento—, así que el envío puede llevarse la apartada. Resolvé esa existencia primero.`
+                `área de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de ` +
+                `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. El envío lleva ` +
+                `${l.cantidad}. Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
               : `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
                 `el envío lleva ${l.cantidad}.`,
           );
@@ -520,6 +521,10 @@ Deno.serve(async (req) => {
               regulado: f.regulado,
               erp_ubicacion_origen: ubicOrigen,
               por: actor.id, por_nombre: actor.name,
+              // Lo que tardó ESTE renglón. Es el dato con el que el tope se va
+              // a revisar contra las corridas propias del envío, en vez de
+              // contra las del pedido de Bodega, que es de donde salió el 20.
+              ms: Date.now() - arranqueRenglon,
             },
             updated_at: new Date().toISOString(),
           }).eq("id", l.id),

@@ -148,13 +148,14 @@ describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', ()
     const conLotes = { regulado: true, existencia: 10, presentaciones: [], encontrado: true, vence: '',
                        lotes: [{ id: '1', numero: 'A', vence: '', stock: 50 }] };
 
-    // Con algo apartado NO sale nada, aunque el estante esté lleno: un pedido
-    // no debe llevarse mercadería apartada por vencer, y no hay forma de
-    // decirle al sistema que descargue del estante.
-    it('el caso real: 26 en el estante y 1 apartado no dejan pasar nada', () => {
+    // El tope es lo apartado: 1 pasa —y después se comprueba que el área de
+    // vencidos no haya bajado—, 2 no, porque el sistema rechaza el envío entero
+    // DESPUÉS de que Bodega armó la caja, y ahí la mercadería viaja sin
+    // registrarse.
+    it('el caso real: con 26 en el estante y 1 apartado, pasa 1 y no 2', () => {
         const hay = disponibleEnBodega(sinLote, 1, 26, 1);
-        expect(hay.paquetes).toBe(0);
-        expect(hay.desdeVencidos).toBe(1);   // cuántas están frenando, para poder decirlo
+        expect(hay.paquetes).toBe(1);
+        expect(hay.desdeVencidos).toBe(1);   // cuántas hay apartadas, para poder decirlo
     });
 
     it('con el área de vencidos vacía el techo vuelve a ser el estante', () => {
@@ -163,18 +164,18 @@ describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', ()
         expect(disponibleEnBodega(sinLote, 1, 26, null).paquetes).toBe(26);
     });
 
-    // Una sola apartada frena las 300 del estante. Es a propósito: el techo no
-    // es «cuánto acepta el sistema» sino «de dónde sale», y sale de vencidos.
-    it('una apartada frena todo el estante, no lo recorta', () => {
-        expect(disponibleEnBodega(sinLote, 1, 300, 1).paquetes).toBe(0);
-        expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(0);
+    // Nunca más de lo apartado (el sistema rechazaría) ni más de lo que hay en
+    // el estante (no habría qué levantar).
+    it('se toma el MENOR de los dos', () => {
+        expect(disponibleEnBodega(sinLote, 1, 300, 1).paquetes).toBe(1);
+        expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(2);
     });
 
-    // `unidades` en cero es lo que hace que un mensaje que pregunte primero por
-    // «no hay existencia» diga justo lo contrario de lo que pasa.
-    it('con algo apartado las unidades quedan en cero aunque el estante esté lleno', () => {
+    // El factor se aplica DESPUÉS del tope: 3 apartadas en cajas de 5 no
+    // completan ni una caja, así que no sale ninguna.
+    it('el factor se aplica sobre el tope, no sobre el estante', () => {
         expect(disponibleEnBodega(sinLote, 5, 26, 3).paquetes).toBe(0);
-        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(0);
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(3);
         expect(disponibleEnBodega(sinLote, 5, 26, 3).desdeVencidos).toBe(3);
     });
 

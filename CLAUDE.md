@@ -729,6 +729,15 @@ falle claro en vez de moverse solo y producir un "error de CORS" que parece otra
 cosa. Para compilar sin pisar el `dist/` de otra sesión: `OUT_DIR=dist-<nombre>
 npm run build`.
 
+**Y esas carpetas se limpian solas.** Una por sesión y nada las borraba: el
+2026-08-23 había **45 carpetas y 1.5 GB**, la más vieja del 1 de agosto. Hoy el
+`prebuild` corre `limpiar-dist.mjs --auto`, que borra las `dist-*` sin tocar
+hace 3+ días. Nunca toca `dist`/`dist-staging`, ni el `OUT_DIR` en curso, ni una
+que nombre un proceso vivo — borrarle el `dist/` a una sesión que está haciendo
+QA le deja la pantalla en 404 sin explicación. La edad sale del **contenido** y
+no del directorio: `vite build` reescribe adentro y el mtime del padre queda
+viejo. A mano: `npm run limpiar:dist` lista, `-- --borrar` borra.
+
 **El hook de pre-commit** (`.githooks/pre-commit`, se habilita una vez por clon con
 `npm run hooks:install`) cubre el caso mecánico: **bloquea el commit si un archivo
 está preparado y además modificado después de prepararlo** — señal de que alguien

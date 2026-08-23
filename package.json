@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:staging": "vite --mode staging",
-    "prebuild": "node scripts/publicar-agente.mjs",
+    "prebuild": "node scripts/publicar-agente.mjs && node scripts/limpiar-dist.mjs --auto",
     "agente:publicar": "node scripts/publicar-agente.mjs",
     "build": "vite build --outDir ${OUT_DIR:-dist}",
     "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
@@ -29,6 +29,7 @@
     "hooks:install": "git config core.hooksPath .githooks",
     "version:bump": "node scripts/version-bump.mjs",
     "worktree": "bash scripts/worktree.sh",
+    "limpiar:dist": "node scripts/limpiar-dist.mjs",
     "verificar:libros": "node scripts/verificar-libros.mjs",
     "gate:permisos": "node scripts/permissions-gate.mjs",
     "fichas:diaria": "echo \"La corrida diaria ahora vive en Supabase (cron sincronizar-fichas-clientes-2130-sv). Para dispararla a mano, invocar la edge function.\"",

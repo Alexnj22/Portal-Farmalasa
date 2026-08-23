@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.720.2 — Las carpetas de compilación de cada sesión se limpian solas
+
+La regla de trabajo en paralelo dice compilar a un directorio propio
+(`OUT_DIR=dist-<nombre> npm run build`) para no pisar el `dist/` de otra sesión.
+Nadie las borraba al terminar: había **45 carpetas y 1.5 GB**, una por cada tema
+tocado desde el 1 de agosto (`dist-cortes`, `dist-minmax`, `dist-impresion`…).
+Se borraron 40 —1,374 MB— y ahora el `prebuild` corre `limpiar-dist.mjs --auto`
+para que no vuelva a acumularse.
+
+Los cuatro frenos, porque borrar el `dist/` equivocado no da error sino un 404
+sin explicación en la pantalla de quien está haciendo QA: no toca
+`dist`/`dist-staging` (son destinos por defecto, no de una sesión), ni el
+`OUT_DIR` de la compilación en curso, ni nada tocado hace menos de 3 días, ni
+una carpeta que aparezca en los argumentos de un proceso vivo.
+
+La edad se mide por el **contenido**, no por el directorio: `vite build`
+reescribe adentro y el mtime del padre puede quedar viejo — medirlo ahí habría
+borrado carpetas en uso.
+
+A mano: `npm run limpiar:dist` lista sin borrar, `-- --borrar` ejecuta.
+
 ## v2.720.1 — La planilla usaba la tabla de renta anterior a la reforma
 
 Nómina no tenía **ni una prueba**. Al escribirlas apareció esto.

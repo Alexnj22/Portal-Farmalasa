@@ -21,6 +21,113 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.717.1 — Buscar por código en Mín·Máx lanzaba error
+
+Verificación del trabajo de eficiencia de estos días. Salieron **dos defectos**,
+uno de ellos vivo en producción desde ayer.
+
+**1 · Buscar un código de barras en Mín·Máx tiraba error.** Un paréntesis de más
+hacía que la comparación se interpretara contra una subconsulta en vez de contra
+una lista, y la base rechazaba la consulta. Sólo se disparaba al buscar algo que
+*parece* un código y que además no daba resultados por nombre — o sea que buscar
+«amoxicilina» siempre anduvo bien y el error esperaba a que alguien escaneara.
+Verificado: código real → 1 resultado, código inventado → 0, por nombre → 20.
+
+**2 · El buscador global de existencias tenía un orden sin desempatar.** El mismo
+producto y el mismo lote, uno en bodega y otro en el área de vencidos, empataban
+en **todas** las claves de orden, así que cuál salía primero lo decidía la base y
+no la consulta. Medido: **21 grupos de renglones** están hoy en esa situación.
+Ahora lo bueno va primero y lo vencido al final, por la misma razón por la que el
+Conteo separó las dos áreas.
+
+### Lo que NO se rompió
+
+Se comparó la versión vieja contra la nueva de Ventas > Productos, fila por fila,
+en ocho escenarios:
+
+| caso | filas antes | filas ahora | perdidos | números distintos |
+|---|---:|---:|---:|---:|
+| mes · sin filtros | 2.432 | 2.432 | 0 | 0 |
+| mes · una sala | 2.060 | 2.060 | 0 | 0 |
+| año · sin filtros | 3.824 | 3.824 | 0 | 0 |
+| año · una sala | 2.626 | 2.626 | 0 | 0 |
+| año · acetaminofen | 9 | **21** | 0 | 0 |
+| año · amoxicilina | 7 | **22** | 0 | 0 |
+| mes · gel | 51 | 51 | 0 | 0 |
+| mes · sala + jeringa | 11 | 11 | 0 | 0 |
+
+**Cero productos perdidos y cero números distintos en los ocho.** El neto total
+sin filtros es idéntico al centavo ($151.598,80). Donde hay más productos es el
+efecto buscado: el principio activo entró a la búsqueda, así que «acetaminofen»
+encuentra también CETRAM y CETRADOL.
+
+Y las otras tres funciones tocadas devuelven exactamente lo mismo que antes para
+búsquedas por nombre (15 comprobaciones, la única diferencia es el empate del
+punto 2, que era el defecto).
+
+### Lo que se ganó
+
+| caso | antes | ahora | |
+|---|---:|---:|---|
+| año · búsqueda | 3.829 ms | **325 ms** | 11,8× |
+| año · sala + búsqueda | 888 ms | **284 ms** | 3,1× |
+| mes · búsqueda | 904 ms | **269 ms** | 3,4× |
+| mes · sala + búsqueda | 361 ms | **249 ms** | 1,4× |
+| año · sin filtros | 628 ms | 575 ms | igual |
+| mes · sin filtros | 349 ms | 336 ms | igual |
+
+Sin búsqueda no cambia, y es lo correcto: ese camino nunca recorría el texto de
+la factura. **La ganancia está entera en buscar**, que es donde estaba el
+problema.
+
+## v2.717.0 — Envíos: candado en los tres pasos, continuación automática, cancelar e historial
+
+Lo que quedaba abierto de la auditoría del circuito.
+
+**El candado dejó de ser sólo del despacho.** Protegía el paso que saca el
+producto y los otros dos estaban a la intemperie: el aviso les llega a TODOS los
+que pueden contestar en la sala de destino, así que dos personas apretando a la
+vez mandaban a recibir el mismo movimiento y **el producto entraba dos veces al
+inventario**. La guarda que había —preguntarle al listado si el traslado sigue
+esperando— reusa la cola hasta 20 segundos: achicaba la ventana, no la cerraba.
+Ahora hay un candado por paso (despachar, decidir, recibir la devolución), y son
+tres y no uno para que la sala de destino pueda contestar mientras la de origen
+reintenta un despacho.
+
+**Un renglón que salió sin número ya no cuelga el envío.** Cuando el sistema no
+deja distinguir cuál movimiento es el propio, la línea se quedaba `enviada` para
+siempre: la cabecera nunca cerraba, el aviso de vuelta no salía y la tarjeta
+seguía pidiendo una decisión que ya se había tomado. Pasa a `error`, que es lo
+que significa de verdad — hay que mirarla a mano — y guarda la decisión igual.
+
+**Lo que quedó a medias se retoma solo.** Dos crons nuevos:
+
+- `continuar-envios`, cada 10 minutos, retoma un despacho que se cortó por
+  tiempo. Antes la única salida era que alguien entrara a la tarjeta y apretara,
+  con parte del envío ya fuera de la sala: es el mismo hueco que costó los 6
+  renglones del pedido 120. Firma con **quien armó el envío**, no con una cuenta
+  de máquina, y no elige qué renglones salen: manda el envío y la función lo
+  resuelve. Una línea en `error` nunca se reintenta sola.
+- `avisar-envios-sin-decidir`, una vez al día, le recuerda a la sala de destino
+  el envío que lleva dos días sin contestar. Mientras tanto el producto no está
+  en ninguna de las dos salas y nadie lo puede vender. Avisa a los 2 días y otra
+  vez a los 5, no todos los días: un aviso que se repite se aprende a ignorar.
+
+**Se puede cancelar un envío que no salió**, con su motivo. Antes se quedaba en
+la lista para siempre y la única salida era despacharlo; una lista con basura
+que no se puede limpiar se deja de mirar entera. En cuanto un renglón salió,
+esto rebota: el producto está fuera de la sala y lo contesta la otra.
+
+**Y el historial de envíos aparece.** `get_envios_historial` estaba escrita
+desde el primer día y no la llamaba nadie, así que un envío desaparecía al
+cerrarse — con él, el único registro de qué devolvió una sala y por qué. Va en
+su propia tabla bajo Historial, con columnas propias: un envío no tiene UN
+desenlace sino uno por renglón.
+
+De paso, las tarjetas de envío dicen **cuánto llevan** esperando, en rojo pasadas
+24 horas, y el gate de eficiencia aprendió a vigilar crons de SQL puro (los que
+no llaman a ninguna función se le escapaban del cruce contra producción).
+
 ## v2.716.1 — El freno mira si la fila apartada se puede distinguir, no si existe
 
 Corrige el diagnóstico de v2.714.0 y v2.714.2. Los dos partían de que **la

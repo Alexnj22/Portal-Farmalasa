@@ -75,6 +75,31 @@ export async function fetchCredenciales(ids) {
 }
 
 /**
+ * Los datos de dinero de un empleado: sueldo base, banco y número de cuenta.
+ *
+ * Van por RPC y no con la fila por el MISMO motivo que el código de carné:
+ * `employees_safe` los publicaba a cualquiera que pudiera leer la vista, y el
+ * módulo `staff_salary` —que la pantalla de Permisos deja prender y apagar— no
+ * gateaba nada. Era una llave sin cerradura.
+ *
+ * **Sin la llave devuelve VACÍO, no error.** Es deliberado: quien no puede ver
+ * salarios abre el expediente igual y ve un guión donde va el monto. Lanzar
+ * convertiría «no te toca» en «se rompió», que es peor y además le dice al
+ * navegador que ahí hay algo.
+ *
+ * Se piden TODOS de una en el arranque y no de a uno: Nómina calcula la
+ * planilla sobre la lista completa, así que pedirlos por expediente obligaría a
+ * una llamada por persona justo cuando más se necesitan juntos.
+ */
+export async function fetchSalarios(ids) {
+    const unicos = [...new Set((ids || []).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.rpc('get_employee_salarios', { p_ids: unicos });
+    if (error) { console.error('employees: fetchSalarios failed:', error.message); return new Map(); }
+    return new Map((data || []).map((r) => [r.employee_id, r]));
+}
+
+/**
  * ¿Este código de carné está libre?
  *
  * La comprobación vivía en el navegador, cruzando contra la lista de empleados

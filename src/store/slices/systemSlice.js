@@ -8,7 +8,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
-import { codigoDeCarneLibre } from '../../data/employees';
+import { fetchSalarios, codigoDeCarneLibre } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
@@ -371,6 +371,35 @@ export const createSystemSlice = (set, get) => ({
                                     if (e.photo_url) e.photo = photoMap.get(e.photo_url) || e.photo_url;
                                 });
                             } catch { /* fallback: photo queda con la URL cruda */ }
+
+                            // Los datos de dinero ya NO vienen con la fila: salieron de
+                            // `employees_safe` el 2026-08-23 porque el módulo que decía
+                            // gatearlos no gateaba nada. Se piden aparte y el SERVIDOR
+                            // decide — sin la llave la respuesta viene vacía, así que acá
+                            // no hay que consultar ningún permiso.
+                            //
+                            // Se fusionan en el store en vez de pedirse en cada pantalla
+                            // para no tocar los ocho sitios que leen `base_salary`
+                            // (Nómina, la boleta, el expediente, la novedad, la
+                            // recontratación). Para quien no tiene la llave quedan en
+                            // `null`, que es lo que esos sitios ya saben mostrar.
+                            try {
+                                const salarios = await fetchSalarios(mappedEmployees.map(e => e.id));
+                                if (salarios.size) {
+                                    mappedEmployees.forEach(e => {
+                                        const s = salarios.get(e.id);
+                                        if (s) {
+                                            e.base_salary   = s.base_salary;
+                                            e.bank_name     = s.bank_name;
+                                            e.account_number = s.account_number;
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                // Que falle la consulta de salarios NO puede dejar al portal
+                                // sin empleados: se sigue con la lista, sin los montos.
+                                console.warn('fetchBoot: no se pudieron traer los salarios:', e?.message || e);
+                            }
 
                             set({ employees: mappedEmployees });
                             persistEmployees(mappedEmployees);

@@ -68,13 +68,29 @@ const GATEADAS_EN_LA_BASE = {
 //
 // Un gate rojo permanente enseña a ignorar el gate; uno que esconde el hallazgo
 // enseña que no había hallazgo. Esto es lo único que no hace ninguna de las dos.
-const PENDIENTES = {
-  staff_salary:
-    'Decisión del usuario 2026-08-03: dejarlo por ahora. Es el hueco más serio del '
-    + 'informe — la pantalla ofrece un control de "datos sensibles" que no existe en '
-    + 'ninguna capa, y el salario viaja al navegador de cualquiera que abra el '
-    + 'expediente. Al resolverlo: o se gatea (frontend + server-side) o se borra.',
-};
+//
+// ── `staff_salary` salió de acá el 2026-08-23 ──────────────────────────────
+// Estuvo veinte días. Se cerró en las dos capas, como pedía su propia nota:
+//
+//   · SERVIDOR — `base_salary`, `bank_name` y `account_number` salieron de la
+//     vista `employees_safe` y viven detrás de `get_employee_salarios`, que
+//     comprueba el módulo y respeta su alcance. Sin la llave devuelve VACÍO, no
+//     error: «no te toca» no puede parecer «se rompió».
+//   · PANTALLA — la sección de dinero del expediente estaba gateada por
+//     `canEdit`, o sea por poder EDITAR la ficha. Ahora la gatea su propio
+//     módulo.
+//
+// Y la medición corrigió al informe que lo levantó. Decía «el salario viaja al
+// navegador de cualquiera que abra el expediente»: cierto en la letra, engañoso
+// en el fondo. Los CUATRO cargos que podían abrir un expediente eran
+// exactamente los cuatro que tenían la llave, así que no se le escapaba a
+// nadie. Lo que fallaba era otra cosa y peor de sostener: la protección era una
+// COINCIDENCIA DE CONFIGURACIÓN. El día que alguien le diera `staff_detail` a
+// una jefatura de sala —que es justo lo que la pantalla de Permisos invita a
+// hacer, con `staff_salary` apagado al lado— el sueldo viajaba igual.
+//
+// Se arregló ahora justamente porque hoy no le quitaba el dato a nadie.
+const PENDIENTES = {};
 
 // Módulos declarados `comingSoon`: el menú los muestra apagados y nadie los
 // consulta todavía. No son deuda.

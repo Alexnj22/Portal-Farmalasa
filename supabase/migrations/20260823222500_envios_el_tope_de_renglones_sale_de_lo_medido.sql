@@ -31,6 +31,13 @@ SET lock_timeout = '5s';
 -- ⚠️ El número se revisa con datos, nunca a ojo: cada renglón despachado guarda
 -- su `ms` en `envio_linea.detalle`, así que dentro de unas semanas el envío
 -- podrá contestar esto con sus propias mediciones en vez de las del pedido.
+--
+-- ── Nota de archivo (2026-08-23) ────────────────────────────────────────────
+-- Este archivo se RECUPERÓ del registro de producción
+-- (`supabase_migrations.schema_migrations`) durante la auditoría del portal.
+-- `apply_migration` la escribió en el servidor y el archivo local nunca se
+-- guardó — es la deriva exacta que `npm run gate:migrations -- --remote` vigila,
+-- y fue el único hallazgo de ese gate ese día. El SQL es idéntico al aplicado.
 CREATE OR REPLACE FUNCTION public.tope_renglones_envio()
  RETURNS integer LANGUAGE sql IMMUTABLE
  SET search_path TO 'public', 'extensions'

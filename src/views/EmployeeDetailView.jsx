@@ -46,6 +46,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
+    // La sección de dinero del expediente estaba gateada por `canEdit`, o sea
+    // por poder EDITAR la ficha — no por el módulo que existe para eso. Con
+    // `staff_salary` sin gatear nada, la llave de la pantalla de Permisos era
+    // decorativa y quien podía editar veía el sueldo tuviera o no la llave.
+    // Desde el 2026-08-23 el dato tampoco VIAJA sin permiso: salió de
+    // `employees_safe` y vive detrás de `get_employee_salarios`.
+    const puedeVerSalario = hasPermission('staff_salary', 'can_view');
     // UN solo permiso para los DOS papeles — corrección del usuario el
     // 2026-08-20: «los que pueden imprimir carné solo es admin». Antes la
     // reimpresión del plástico colgaba de `kiosk_pin`, que tiene otra lista de
@@ -1010,7 +1017,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'payroll' && (
                                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                         
-                                        {canEdit && (
+                                        {puedeVerSalario && (
                                             <div>
                                                 <div className="flex justify-between items-center mb-5">
                                                     <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
@@ -1020,7 +1027,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="p-5 bg-gradient-to-br from-success/10 to-surface-card rounded-3xl border border-success/30 shadow-sm">
                                                         <p className="text-caption font-black uppercase tracking-widest text-success/70 mb-1">Salario Base Contractual</p>
-                                                        <p className="text-2xl font-black text-success-text tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
+                                                        {/* Un guión y no `$0.00`: cero es un SUELDO, y decirlo cuando el
+                                                            dato falta es afirmar algo que nadie escribió. */}
+                                                        <p className="text-2xl font-black text-success-text tracking-tight">
+                                                            {(emp.salary || emp.base_salary) ? `$${emp.salary || emp.base_salary}` : '—'}
+                                                        </p>
                                                     </div>
                                                     <div data-surface="card" className="p-5 flex flex-col justify-center">
                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Depósito de Planilla</p>

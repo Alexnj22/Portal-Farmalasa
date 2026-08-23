@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.720.0 — El salario deja de viajar con la ficha
+
+`staff_salary` era **una llave sin cerradura**. El módulo existía en la pantalla
+de Permisos, se podía prender y apagar, y no gateaba nada: ni en el navegador ni
+en el servidor. Lo levantó `gate:permisos` el 3 de agosto como «hallazgo abierto
+por decisión» y llevaba veinte días así.
+
+**La medición corrigió al informe que lo levantó.** La nota del gate decía «el
+salario viaja al navegador de cualquiera que abra el expediente». Cierto en la
+letra, engañoso en el fondo: los CUATRO cargos que podían abrir un expediente
+—Administrador, Jefe/a de Talento Humano, QA/Testing y Supervisor/a de Ventas—
+eran exactamente los cuatro que tenían la llave. **No se le escapaba a nadie.**
+
+Lo que fallaba era otra cosa y peor de sostener: la protección era una
+**coincidencia de configuración**, no una regla. El día que alguien le diera
+`staff_detail` a una jefatura de sala —que es justo lo que la pantalla de
+Permisos invita a hacer, con `staff_salary` apagado al lado— el sueldo viajaba
+igual y el interruptor que decía controlarlo no hacía nada. Se arregló ahora
+justamente porque hoy no le quita el dato a nadie.
+
+**En el servidor.** `base_salary`, `bank_name` y `account_number` salieron de la
+vista `employees_safe` (83 → 80 columnas) y viven detrás de
+`get_employee_salarios`, que comprueba el módulo y respeta su alcance. Sin la
+llave devuelve **vacío, no error**: «no te toca» no puede parecer «se rompió».
+
+Es el mismo movimiento que ya se le había hecho al código de carné, que ES la
+contraseña del portal: publicarlo en la vista significaba que cualquier empleado
+con sesión leía el de todos. El patrón estaba resuelto y este dato no lo seguía.
+
+**En la pantalla.** La sección de dinero del expediente estaba gateada por
+`canEdit` — o sea por poder EDITAR la ficha, no por el módulo que existe para
+eso. Ahora la gatea `staff_salary`. Y donde decía **`$0.00`** cuando falta el
+dato ahora dice `—`: cero es un sueldo, y afirmarlo cuando nadie lo escribió es
+inventar un número.
+
+**Lo que no se tocó, y por qué.** `dui`, `afp_number` e `isss_number` se quedan
+en la vista. Están en `SENSITIVE_FIELDS` del navegador, pero son identidad
+previsional y no «salarios e ingresos», que es lo que este módulo dice gatear.
+Bajo qué llave van es otra decisión.
+
+Probado primero en el branch `staging` y verificado en producción: la vista
+quedó sin los tres campos, `authenticated` conserva el SELECT —el login resuelve
+el usuario contra esta vista—, las 49 fichas siguen visibles, `anon` no puede
+ejecutar la función, y la puerta devuelve cero filas sin sesión válida.
+
+**Y se recuperó una migración huérfana.** `20260823222500` (el tope de renglones
+de un envío) estaba aplicada en producción y su archivo local nunca se guardó —
+la deriva exacta que `gate:migrations --remote` vigila, y su único hallazgo del
+día. El SQL se recuperó del registro de prod. Hoy los archivos y el registro
+coinciden: 534 migraciones.
+
 ## v2.719.3 — El Inicio y Traslados dejan de bajar lo que nadie abre
 
 `npm run gate:bundle` estaba **en rojo** y lo destapó la auditoría del 23-ago:

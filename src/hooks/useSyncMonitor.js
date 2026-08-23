@@ -48,7 +48,7 @@ export function useSyncMonitor() {
           const title = `Inventario sin actualizar · ${sucursal}`;
           const body  = mensajeAmigable(
             row.error_msg,
-            'El ERP no entregó el inventario de esta sucursal.',
+            'No se pudo traer el inventario de esta sucursal.',
           );
           showToast(title, body, 'error');
           fireBrowserNotif(`Farmalasa · ${title}`, body, `sync-fail-${row.id}`);

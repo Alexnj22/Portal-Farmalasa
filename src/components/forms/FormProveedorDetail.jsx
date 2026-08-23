@@ -240,7 +240,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             // está escrito para una persona y nombra a la otra ficha — que es
             // lo único accionable. Con el traductor genérico se vería "Ya
             // existe un registro con esos datos", cierto e inútil.
-            setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pudo guardar el match ERP'));
+            setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pudo guardar la vinculación'));
         } finally {
             setSavingSupplier(false);
         }

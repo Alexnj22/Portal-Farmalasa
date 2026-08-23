@@ -206,7 +206,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         setSyncConfirm(false);
         setIsSyncing(true);
         setProgress(0);
-        setLog('Calculando bloques mensuales...');
+        setLog('Preparando los meses a recargar…');
 
         const todayStr = new Date().toISOString().split('T')[0];
         const chunksToSync = generateChunks("2025-01-01", todayStr, 30);
@@ -214,7 +214,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 
         for (let i = 0; i < chunksToSync.length; i++) {
             const chunk = chunksToSync[i];
-            setLog(`Descargando: ${chunk.label} (${chunk.i} al ${chunk.f})...`);
+            setLog(`Trayendo ${chunk.label} (${chunk.i} al ${chunk.f})…`);
 
             try {
                 const payload = {
@@ -233,10 +233,10 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 }
 
                 successCount++;
-                setLog(`✅ ${chunk.label} completado (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
+                setLog(`✅ ${chunk.label} listo (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
             } catch (err) {
                 console.error(`Error en bloque ${chunk.label}:`, err);
-                setLog(`❌ Falló el bloque ${chunk.label}. Pausando proceso.`);
+                setLog(`❌ Falló ${chunk.label}. Se detiene acá.`);
                 break;
             }
 
@@ -247,7 +247,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         }
 
         setIsSyncing(false);
-        setLog(`🎉 Volcado Express finalizado. ${successCount}/${chunksToSync.length} meses sincronizados.`);
+        setLog(`🎉 Listo. Se recargaron ${successCount} de ${chunksToSync.length} meses.`);
         if (onSyncComplete) onSyncComplete();
     };
 
@@ -270,11 +270,11 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             <div className="flex justify-between items-center gap-4">
                 <div>
                     <h4 className="text-content font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
-                        <Zap size={14} className="text-warning-text" /> Motor de Sincronización WFM
+                        <Zap size={14} className="text-warning-text" /> Recargar el histórico de ventas
                     </h4>
-                    <p className="text-content-3 font-bold text-caption mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
+                    <p className="text-content-3 font-bold text-caption mt-1">Vuelve a traer las ventas de esta sala desde enero de 2025, mes por mes.</p>
                 </div>
-                <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}</Button>
+                <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Recargando ${progress}%` : 'Recargar'}</Button>
             </div>
 
             <Notice tone="warning">
@@ -284,7 +284,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             {isSyncing && (
                 <div className="w-full bg-surface-card-hover h-2.5 rounded-full overflow-hidden shadow-inner"
                      role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}
-                     aria-label="Progreso de la sincronización histórica">
+                     aria-label="Progreso de la recarga">
                     <div className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-[var(--dur-slow)]" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
@@ -292,7 +292,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             {syncConfirm && (
                 <ConfirmModal
                     isOpen={syncConfirm}
-                    title="Iniciar descarga histórica"
+                    title="Recargar el histórico"
                     message={`Se descargarán las ventas de ${liveBranch?.name ?? 'la sucursal'} desde enero de 2025, en bloques mensuales para mayor velocidad. Puede tardar varios minutos.`}
                     onClose={() => setSyncConfirm(false)}
                     onConfirm={runHistoricalSync}
@@ -500,7 +500,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <div data-surface="dropdown" className="absolute top-full right-0 mt-2 w-72 p-4 opacity-0 invisible group-hover/wfm:opacity-100 focus-within:opacity-100 group-hover/wfm:visible transition-all duration-[var(--dur-slow)] z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
-                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-border-card pb-1">Desglose de Horas Hombre (WFM)</p>
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-border-card pb-1">Desglose de horas trabajadas</p>
                                         <p className="text-caption font-bold text-content-3 mb-1.5 flex justify-between items-center">
                                             <span>Seguridad (Mín. {MIN_CONCURRENT_STAFF} por turno):</span> <span className="text-content font-black">{baseStaffHours} hrs</span>
                                         </p>
@@ -573,8 +573,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         className="ml-1 z-sidebar animate-in zoom-in-95"
                         activo={aiMode}
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        etiqueta="Diagnóstico Inteligente WFM"
-                        etiquetaActiva="Cerrar Diagnóstico WFM"
+                        etiqueta="Diagnóstico de personal"
+                        etiquetaActiva="Cerrar el diagnóstico"
                     />}
                 </div>
             </div>
@@ -605,7 +605,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     </div>
                                 </div>
 
-                                <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico WFM Inteligente</h2>
+                                <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico de personal</h2>
                                 <p className="text-sm font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
 
                                 {isGeneratingAi ? (
@@ -686,8 +686,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <BarChart3 size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Inteligencia WFM Activa</h4>
-                                            <p className="text-caption font-bold text-content-3 mt-1 uppercase tracking-widest">Algoritmo predictivo leyendo Supabase</p>
+                                            <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Análisis en vivo</h4>
+                                            <p className="text-caption font-bold text-content-3 mt-1 uppercase tracking-widest">Las horas de la sala, al momento</p>
                                         </div>
                                     </div>
 

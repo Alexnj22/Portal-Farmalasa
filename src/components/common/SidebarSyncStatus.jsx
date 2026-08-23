@@ -73,7 +73,7 @@ export default function SidebarSyncStatus() {
             ? <AlertTriangle size={10} className="text-danger" />
             : <CheckCircle2  size={10} className={allGood ? 'text-success' : dimIconCls} />
           }
-          <span className={`text-micro font-semibold uppercase tracking-wider ${labelCls}`}>Sync</span>
+          <span className={`text-micro font-semibold uppercase tracking-wider ${labelCls}`}>Datos</span>
         </div>
         {/* Dots row */}
         <div className="flex items-center justify-center gap-[3px] flex-wrap">

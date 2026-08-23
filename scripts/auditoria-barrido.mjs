@@ -159,8 +159,10 @@ const CATEGORIAS = [
         id: 'texto-del-sistema-de-origen',
         eje: 'ux',
         titulo: 'La pantalla nombra el sistema de origen o la jerga de la tubería',
-        ve: 'Un literal de texto que ve el usuario y dice ERP, «sincronizar», «sync» o «resync». '
-          + 'La regla del usuario, corregida dos veces: que todo parezca que sale del portal.',
+        ve: 'Un literal de texto que ve el usuario y nombra un sistema (ERP, WFM, Supabase, '
+          + 'PostgREST, SheetJS) o la jerga de la tubería («sincronizar», «sync», «inyección», '
+          + '«volcado»). La regla del usuario, corregida dos veces: que todo parezca que sale '
+          + 'del portal.',
         noVe: 'El identificador que SÍ se queda (`erp_id`, `ERP_ORDER`, `matchErpFilter`) — se '
             + 'filtran. Pero tampoco ve el texto que se arma por variable, ni el que vive en la '
             + 'base. Grepear no alcanza: la verificación real es abrir la vista.',
@@ -176,14 +178,28 @@ const CATEGORIAS = [
             // desaparecía junto con las clases de Tailwind. Un filtro que apaga el
             // hallazgo junto con el ruido es peor que no filtrar: deja el número
             // más chico y más falso.
+            // `console.*` no lo lee nadie desde el portal, y el argumento de un
+            // `invoke()` es el nombre de una función del servidor, no una
+            // pantalla. Los cinco últimos hallazgos de esta categoría eran de
+            // esos dos tipos.
+            if (/\bconsole\.(log|warn|error|info|debug)\s*\(/.test(linea)) return false;
             const limpia = linea
+                .replace(/\.(invoke|functions\.invoke)\s*\([^)]*\)/g, '')
                 .replace(/className=\{[^}]*\}/g, 'className={}')
                 .replace(/className="[^"]*"/g, 'className=""')
                 .replace(/\.(channel|from|rpc|getItem|setItem|removeItem|querySelector|getAttribute|setAttribute|addEventListener|includes|startsWith|endsWith|split|join|replace|match|test)\s*\([^)]*\)/g, '');
             const textos = [...limpia.matchAll(/(?:>|["'`])\s*([^"'`<>{}]{4,90}?)\s*(?:<|["'`])/g)].map(m => m[1]);
+            // El vocabulario arrancó en «ERP + sincronizar» y por eso dio 14 cuando
+            // había 21: no conocía WFM. Seis textos visibles lo nombraban —uno
+            // decía «Algoritmo predictivo leyendo Supabase» a la cara del
+            // usuario— y el detector los dejó pasar sin un solo aviso. Un
+            // detector con el vocabulario incompleto no falla: da un número
+            // menor, que se lee como buena noticia.
             return textos.some(t =>
-                /\bERP\b/.test(t) || /\bsincroniz|\bresync\b/i.test(t) || /\bsync\b/i.test(t)
-            ) && !/erp_[a-z]|_erp\b|ERP_[A-Z]|erpId|matchErp|syncKey|sync_|data-/.test(limpia);
+                /\b(ERP|WFM|SheetJS|PostgREST|Supabase)\b/.test(t)
+                || /\bsincroniz|\bresync\b|\binyecci[oó]n\b|\bvolcado\b/i.test(t)
+                || /\bsync\b/i.test(t)
+            ) && !/erp_[a-z]|_erp\b|ERP_[A-Z]|erpId|matchErp|syncKey|sync_|wfm_|_wfm|WFM_|data-/.test(limpia);
         },
     },
 ];

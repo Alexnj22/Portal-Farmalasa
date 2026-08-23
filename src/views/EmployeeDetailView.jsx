@@ -292,7 +292,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (employeesStatus !== 'ready') {
             useToastStore.getState().showToast(
                 'Cargando datos completos…',
-                'Espera un momento y vuelve a intentar — se están terminando de sincronizar los datos del empleado.',
+                'Espera un momento y vuelve a intentar — se están terminando de guardar los datos del empleado.',
                 'info'
             );
             return;

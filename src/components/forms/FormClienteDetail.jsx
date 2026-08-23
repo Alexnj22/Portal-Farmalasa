@@ -137,8 +137,8 @@ function PanelActividad({ actividad, facturas, bitacora }) {
                                     aviso de "sin enviar" quedaba encendido para
                                     siempre sobre algo que ya estaba decidido. */}
                                 {h.descartado_at
-                                    ? <Badge size="sm" variant="neutral">Descartado: el ERP ya tenía otro valor</Badge>
-                                    : !h.erp_synced_at && <Badge size="sm" variant="warning">Sin enviar al ERP</Badge>}
+                                    ? <Badge size="sm" variant="neutral">Descartado: ya había otro valor</Badge>
+                                    : !h.erp_synced_at && <Badge size="sm" variant="warning">Sin aplicar</Badge>}
                             </div>
                             <p className="text-caption text-content-3 mt-0.5 break-words">
                                 <span className="line-through">{h.valor_anterior || '(vacío)'}</span>
@@ -270,7 +270,7 @@ const FormClienteDetail = ({ formData }) => {
             const n = Object.keys(cambios).length;
             useToastStore.getState().showToast(
                 'Ficha actualizada',
-                `${n} campo${n !== 1 ? 's' : ''} guardado${n !== 1 ? 's' : ''}. Enviando al ERP…`,
+                `${n} campo${n !== 1 ? 's' : ''} guardado${n !== 1 ? 's' : ''}. Aplicando el cambio…`,
                 'success');
             setPideConfirmacion(false);
             formData?.onSaved?.();
@@ -283,10 +283,10 @@ const FormClienteDetail = ({ formData }) => {
             const r = await pushClienteAlErp(id);
             if (r?.empujado) {
                 useToastStore.getState().showToast(
-                    'Enviado al ERP', `Se actualizó la ficha ${r.erp_id} en el ERP.`, 'success');
+                    'Cambio aplicado', `Se actualizó la ficha ${r.erp_id}.`, 'success');
             } else {
                 useToastStore.getState().showToast(
-                    'Guardado, pendiente de enviar al ERP',
+                    'Guardado, falta aplicarlo',
                     r?.rechazo || r?.motivo || r?.error || 'Se reintenta en el próximo guardado.',
                     'warning');
             }
@@ -322,7 +322,7 @@ const FormClienteDetail = ({ formData }) => {
     // lo que la ficha realmente tiene, en vez de aparecer vacío y empujar a
     // reemplazarlo por otro distrito.
     if (form.distrito && !catalogoDistritos.includes(form.distrito)) {
-        distritoOpts.unshift({ value: form.distrito, label: `${form.distrito} (del ERP)` });
+        distritoOpts.unshift({ value: form.distrito, label: `${form.distrito} (como está en la ficha)` });
     }
 
     return (
@@ -348,7 +348,7 @@ const FormClienteDetail = ({ formData }) => {
             {cliente.nombre_corrupto && (
                 <Notice variant="danger" icon={AlertTriangle}>
                     El nombre tiene la codificación dañada (se importó leyendo mal las
-                    tildes). Corrígelo a mano para que la ficha coincida con la del ERP.
+                    tildes). Corrígelo a mano para que la ficha quede bien escrita.
                 </Notice>
             )}
 
@@ -538,8 +538,8 @@ const FormClienteDetail = ({ formData }) => {
                                 </p>
                                 <div className="flex items-center gap-2 h-10">
                                     {cliente.erp_id
-                                        ? <Badge variant="success" icon={Building2}>ERP {cliente.erp_id}</Badge>
-                                        : <Badge variant="neutral">Sin portar del ERP</Badge>}
+                                        ? <Badge variant="success" icon={Building2}>Ficha {cliente.erp_id}</Badge>
+                                        : <Badge variant="neutral">Sin número de ficha</Badge>}
                                 </div>
                             </div>
                             <div className="sm:col-span-2">
@@ -551,7 +551,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
                                     rows={3}
                                     readOnly={!editable}
-                                    placeholder="Notas internas del portal (no viajan al ERP)"
+                                    placeholder="Notas internas (no salen del portal)"
                                 />
                             </div>
                         </div>

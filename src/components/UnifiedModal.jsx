@@ -384,7 +384,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             .from(NOMBRE_DEL_BUCKET)
                             .upload(filePath, docData.file, { upsert: true });
 
-                        if (uploadError) throw new Error(uploadError.message || "Supabase rechazó la subida del archivo.");
+                        if (uploadError) throw new Error(uploadError.message || "No se pudo subir el archivo.");
 
                         const { data: publicUrlData } = supabase.storage
                             .from(NOMBRE_DEL_BUCKET)

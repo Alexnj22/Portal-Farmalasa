@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.719.2 — El portal deja de nombrar el sistema de origen
+
+Treinta y dos textos que ve el usuario nombraban un sistema del que nadie sabe
+nada. La regla está escrita y el usuario la corrigió **dos veces en persona** —
+«ERP no saben qué es, no lo pongas; que todo parezca que sale del portal»— y aun
+así el barrido de la auditoría los encontró vivos en diez archivos.
+
+Los peores no eran los del ERP. En el expediente de una sucursal, el panel que
+recarga el histórico de ventas se llamaba **«Motor de Sincronización WFM»**, su
+botón decía **«Ejecutar Inyección»**, al terminar anunciaba **«🎉 Volcado
+Express finalizado»**, y un subtítulo informaba que el portal usa un
+**«algoritmo predictivo leyendo Supabase»**. Hoy ese panel dice «Recargar el
+histórico de ventas», el botón dice «Recargar» y al terminar dice cuántos meses
+se recargaron.
+
+El resto, en términos del negocio: «Sin enviar al ERP» → **Sin aplicar**; «Sin
+portar del ERP» → **Sin número de ficha**; «No se pudo guardar el match ERP» →
+**No se pudo guardar la vinculación**; «Sincronizar» → **Buscar nuevas**;
+«Código sin sincronizar» → **Código sin registrar**; «Supabase rechazó la subida
+del archivo» → **No se pudo subir el archivo**. Y el rótulo **«Sync»** del menú
+lateral, que lo ve todo el mundo todos los días, ahora dice **«Datos»**.
+
+Los comentarios del código conservan la trazabilidad: ahí sirve y no lo ve nadie
+que use el portal.
+
+**El detector tenía el vocabulario incompleto, y por eso el número era chico.**
+Buscaba «ERP» y «sincronizar», así que reportó 14 cuando había 21: no conocía
+«WFM», y seis textos visibles lo nombraban. Un detector al que le falta una
+palabra no falla — devuelve un número menor, que se lee como buena noticia.
+Ahora también busca WFM, Supabase, PostgREST, SheetJS, «inyección» y «volcado»,
+y descarta `console.*` y los argumentos de `invoke()`, que no los lee nadie.
+
+**Verificado contra el bundle, no contra el fuente.** Grepear `src/` no alcanza
+—la mitad de estos textos viven en `aria-label`, `title` y `placeholder`— así
+que los trece textos viejos se buscaron en `dist/` después de compilar: cero
+coincidencias, y los nuevos sí están. Es lo que el usuario realmente descarga.
+
+Queda pendiente y es una decisión, no un arreglo: el módulo **«Salud de syncs»**
+se llama así en el menú y en la pantalla de Permisos.
+
 ## v2.719.1 — Un envío admite hasta 20 productos, y el número sale de medir
 
 El tope **ya existía**: el despacho vive 110 segundos y lo que no salió en ese

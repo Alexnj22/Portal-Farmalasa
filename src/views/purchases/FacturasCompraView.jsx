@@ -336,7 +336,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         if (state === 'loading') return <span className="text-micro text-content-3 whitespace-nowrap">Analizando…</span>;
         if (state === 'no_code') return <Button variant="ghost" onClick={(e) => { e.stopPropagation(); detect(); }}>Sin código, reintentar</Button>;
         if (state === 'error') return <LiquidTooltip content={result.error}><span className="text-micro text-danger-text whitespace-nowrap">Error al detectar</span></LiquidTooltip>;
-        if (state === 'not_found') return <LiquidTooltip content={`Código completo: ${result.code}`}><span className="text-micro text-content-3 whitespace-nowrap">Código sin sincronizar</span></LiquidTooltip>;
+        if (state === 'not_found') return <LiquidTooltip content={`Código completo: ${result.code}`}><span className="text-micro text-content-3 whitespace-nowrap">Código sin registrar</span></LiquidTooltip>;
         return (
             <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'el documento'}`}</Button>
         );
@@ -967,8 +967,8 @@ function TabDocumentos({
                         ...(canEdit ? [{
                             key: 'sincronizar', icon: RefreshCw,
                             label: syncing
-                                ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando')
-                                : 'Sincronizar',
+                                ? (syncProgress ? `Buscando (tanda ${syncProgress.batch})` : 'Buscando')
+                                : 'Buscar nuevas',
                             // El rótulo del clúster dice QUÉ trae, no cómo: la tanda
                             // en curso cambiaría de ancho en cada paso, y en 60px no
                             // entra ninguna de las tres variantes.
@@ -1462,13 +1462,13 @@ export default function FacturasCompraView({ openModal }) {
             }
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: totalInserted, batches: batch });
             useToastStore.getState().showToast(
-                'Sincronización completa',
+                'Búsqueda completa',
                 `${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`,
                 'success',
             );
             bumpRefresh();
         } catch (e) {
-            useToastStore.getState().showToast('Error al sincronizar', mensajeAmigable(e), 'error');
+            useToastStore.getState().showToast('No se pudieron buscar', mensajeAmigable(e), 'error');
         } finally {
             setSyncing(false);
             setSyncProgress(null);

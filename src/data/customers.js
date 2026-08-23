@@ -71,7 +71,7 @@ const ERRORES = {
     ES_MOSTRADOR:                 'Es un cliente genérico del mostrador, no una persona: no lleva ficha fiscal.',
     NOMBRE_VACIO:                 'El nombre no puede quedar vacío.',
     NOMBRE_DUPLICADO:             'Ya existe otra ficha con ese nombre. Búscala y edita esa.',
-    CATEGORIA_INVALIDA:           'Esa categoría no es una de las seis del ERP.',
+    CATEGORIA_INVALIDA:           'Esa categoría no es una de las seis válidas.',
     RETENCION_INVALIDA:           'La retención va de 0 a 100.',
     GEO_INCOHERENTE:              'El departamento, el municipio y el distrito no se corresponden.',
     DUI_INVALIDO:                 'El DUI no pasa el dígito verificador. Revisa los números.',

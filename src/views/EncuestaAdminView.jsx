@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import useBorrador from '../hooks/useBorrador';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { SkeletonText, EmptyState} from '../components/common/StateViews';
@@ -300,6 +301,45 @@ export default function EncuestaAdminView() {
         setSfFechaFin(s.fecha_fin || ''); setSfError('');
     };
 
+    /* ── La encuesta a medio definir se guarda sola ──────────────────────────
+     *
+     * Son once campos: el título, el año, el tipo, el estado, la descripción, si
+     * es anónima, si se comparten los resultados, a quién alcanza y las dos
+     * fechas. La sesión se cierra sola por inactividad y todo eso se perdía.
+     *
+     * **Sólo mientras se CREA** (`editingSurvey` en nulo): editando una que ya
+     * existe, la fila de la base es la verdad, y un borrador viejo repoblándola
+     * podría cambiarle el alcance o las fechas a una encuesta que ya está
+     * contestándose. */
+    const creandoEncuesta = !editingSurvey?.id;
+    const { recuperado: borrador, descartar: descartarBorrador } = useBorrador(
+        'encuesta_nueva',
+        { sfNombre, sfAño, sfTipo, sfEstado, sfDescripcion, sfAnonima,
+          sfCompartir, sfScope, sfScopeIds, sfFechaInicio, sfFechaFin },
+        { activo: creandoEncuesta },
+    );
+
+    const repuestoEncuesta = useRef(false);
+    useEffect(() => {
+        if (!creandoEncuesta) { repuestoEncuesta.current = false; return; }
+        if (repuestoEncuesta.current || !borrador) return;
+        repuestoEncuesta.current = true;
+        // Repone la definición UNA vez. No hay cascada: el pestillo ya se cerró.
+        /* eslint-disable react-hooks/set-state-in-effect */
+        if (borrador.sfNombre) setSfNombre(borrador.sfNombre);
+        if (borrador.sfAño) setSfAño(borrador.sfAño);
+        if (borrador.sfTipo) setSfTipo(borrador.sfTipo);
+        if (borrador.sfEstado) setSfEstado(borrador.sfEstado);
+        if (borrador.sfDescripcion) setSfDescripcion(borrador.sfDescripcion);
+        if (borrador.sfAnonima != null) setSfAnonima(!!borrador.sfAnonima);
+        if (borrador.sfCompartir != null) setSfCompartir(!!borrador.sfCompartir);
+        if (borrador.sfScope) setSfScope(borrador.sfScope);
+        if (Array.isArray(borrador.sfScopeIds)) setSfScopeIds(borrador.sfScopeIds);
+        if (borrador.sfFechaInicio) setSfFechaInicio(borrador.sfFechaInicio);
+        if (borrador.sfFechaFin) setSfFechaFin(borrador.sfFechaFin);
+        /* eslint-enable react-hooks/set-state-in-effect */
+    }, [creandoEncuesta, borrador]);
+
     const handleSaveSurvey = async () => {
         if (!sfNombre.trim()) { setSfError('El título de la encuesta es obligatorio.'); return; }
         setSfError('');
@@ -322,6 +362,7 @@ export default function EncuestaAdminView() {
             await appendAuditLog('ENCUESTA_CREADA', null, { nombre: payload.nombre });
             showToast('Creado', 'Encuesta creada.', 'success');
         }
+        descartarBorrador();   // la encuesta existe: el borrador ya no sirve
         setSavingSurvey(false);
         resetSurveyForm();
         loadSurveys();

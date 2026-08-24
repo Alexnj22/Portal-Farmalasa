@@ -119,6 +119,20 @@ const EXCEPCIONES = {
     'recuperarlo podría pisar un cambio POSTERIOR hecho desde otra pantalla. ' +
     'Verificado el 2026-08-24.',
 
+  'src/views/pedidos/RecepcionModal.jsx':
+    'Lo que ya se hizo NO se pierde: cada hoja confirmada se escribe al servidor ' +
+    'en el momento (`updatePedidoSucursalStatus` con `hojas_recibidas`), así que ' +
+    'una sesión cortada deja el pedido en el punto exacto donde iba. ' +
+    'Lo que queda en memoria es la hoja EN CURSO, y ahí un borrador sería peor ' +
+    'que la pérdida: sus cinco mapas por renglón —cantidad, presentación, nota, ' +
+    'si tiene problema y cuánto— son un CONTEO FÍSICO. Reponerlos de ayer y que ' +
+    'alguien apriete «confirmar» es dar por recibida mercadería contra números ' +
+    'que no contó en esta sesión, y la recepción es justamente el momento en que ' +
+    'el portal deja de creerle al papel y le cree a la sala. ' +
+    'Es el mismo argumento escrito para `composicionTraslado` («quien la ve no ' +
+    'sabe si la armó él»), sólo que acá el dato es existencia que entra al ' +
+    'inventario. Verificado el 2026-08-24.',
+
   'src/views/DashboardView.jsx':
     'No es un formulario. Sus 12 controles son ONCE selectores de sucursal —uno ' +
     'por widget: turnos, ventas, anulaciones, min/max, movimientos, facturas, ' +

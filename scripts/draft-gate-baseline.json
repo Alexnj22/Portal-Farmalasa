@@ -3,7 +3,6 @@
   "motivo": "Deuda del día que se escribió el gate. Sólo baja. Ver scripts/draft-gate.mjs. NOTA: src/components/bitacoras/CompletarRenglon.jsx quedó FUERA a propósito — es la pantalla que motivó el gate y era trabajo en curso el día que se escribió, así que se deja como hallazgo vivo en vez de nacer perdonado.",
   "umbral": 6,
   "deuda": [
-    "src/components/bolsas/SalidaDeBolsa.jsx",
     "src/components/forms/BranchTabGeneral.jsx",
     "src/components/forms/BranchTabInmueble.jsx",
     "src/components/forms/BranchTabLegal.jsx",
@@ -13,10 +12,8 @@
     "src/components/forms/FormNursingRegents.jsx",
     "src/components/forms/FormProveedorDetail.jsx",
     "src/components/forms/FormRehireEmployee.jsx",
-    "src/views/EncuestaAdminView.jsx",
     "src/views/FacturacionView.jsx",
     "src/views/dashboard/WidgetAnnulmentRequest.jsx",
-    "src/views/pedidos/RecepcionModal.jsx",
     "src/views/purchases/ProveedoresView.jsx"
   ]
 }

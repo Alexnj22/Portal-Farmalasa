@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, useRef } from 'react';
+import useBorrador from '../../hooks/useBorrador';
 import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
@@ -156,6 +157,37 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     const [vale, setVale] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
+
+    /* ── La salida a medio escribir se guarda sola ───────────────────────────
+     *
+     * Registrar una salida es elegir el motivo, escribir el monto, la entidad,
+     * el número de boleta y una nota — y cada motivo pide lo suyo. La sesión de
+     * los cargos de sala se cierra sola a los 5 minutos, así que un formulario a
+     * medio llenar se perdía entero.
+     *
+     * **La foto NO entra.** Es un `File` sin subir: no se serializa, y guardar
+     * su nombre sin el contenido prometería un comprobante que al recuperar no
+     * está — justo el dato que administración usa para dar la salida por buena.
+     * Tampoco entra la LECTURA de esa foto, que se deriva de ella.
+     *
+     * El paso tampoco se guarda: se vuelve a «FORMULARIO» a propósito. Reponer
+     * a alguien en la pantalla de confirmación sobre datos que no revisó en esta
+     * sesión es pedirle que confirme a ciegas un movimiento de dinero. */
+    const { recuperado, descartar } = useBorrador(
+        'salida_de_bolsa', { tipo, monto, entidad, boleta, nota }, { activo: abierto },
+    );
+
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!abierto) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        if (recuperado.tipo) setTipo(recuperado.tipo);
+        if (recuperado.monto) setMonto(recuperado.monto);
+        if (recuperado.entidad) setEntidad(recuperado.entidad);
+        if (recuperado.boleta) setBoleta(recuperado.boleta);
+        if (recuperado.nota) setNota(recuperado.nota);
+    }, [abierto, recuperado]);
 
     useEffect(() => {
         if (!abierto) return;
@@ -594,6 +626,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             // propósito: es auditoría, y la salida ya ocurrió en la realidad.
             if (lectura && !lectura.error) guardarLecturaDeBoleta(data.id, lectura);
 
+            // El dinero ya salió: el borrador se descarta ACÁ, antes de cerrar.
+            descartar();
             showToast?.('Salida registrada', `${data.folio} · ${formatMoney(n)}`, 'success');
             onHecho?.(data, eleccion.repartos);
             onClose?.();
@@ -604,7 +638,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             setGuardando(false);
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
-        persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose]);
+        persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose, descartar]);
 
     const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
 

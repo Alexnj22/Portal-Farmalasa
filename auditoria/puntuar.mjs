@@ -346,7 +346,11 @@ function puntuar(area) {
     const anonMios = [...abiertos, ...higiene];
     ev.seguridad = { pct: tope(98 - higiene.length * 2 - abiertos.length * 25, 55),
         evidencia: '0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · '
-                 + '3 funciones anon abiertas a mano y verificadas: las tres se defienden solas',
+                 + '3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · '
+                 + 'barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, '
+                 + 'clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron '
+                 + 'cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra '
+                 + 'toda la empresa. Lo vigila gate:migrations por estado final de cada función.',
         hallazgos: anonMios };
 
     // ── resiliencia ─────────────────────────────────────────────────────────

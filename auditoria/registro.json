@@ -24,7 +24,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -111,7 +111,7 @@
         },
         "seguridad": {
           "pct": 86,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
             "kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
@@ -209,7 +209,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -292,7 +292,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -386,7 +386,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea"
           ]
@@ -483,7 +483,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -564,7 +564,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "holidays y shifts: legibles por anon con USING(true), sin motivo escrito"
           ]
@@ -651,7 +651,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -738,7 +738,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar"
           ]
@@ -830,7 +830,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -918,7 +918,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado"
           ]
@@ -1020,7 +1020,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1108,7 +1108,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1193,7 +1193,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1279,7 +1279,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1372,7 +1372,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1467,7 +1467,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1555,7 +1555,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -1640,7 +1640,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger"
           ]
@@ -1739,7 +1739,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger"
           ]
@@ -1830,7 +1830,7 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada"
           ]
@@ -1926,7 +1926,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -2013,7 +2013,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {
@@ -2100,7 +2100,7 @@
         },
         "seguridad": {
           "pct": 92,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": [
             "canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
             "confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
@@ -2197,7 +2197,7 @@
         },
         "seguridad": {
           "pct": 98,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
           "hallazgos": []
         },
         "resiliencia": {

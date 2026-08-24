@@ -445,6 +445,31 @@ async function fastBackfill(
   const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
   const percMap  = columnaPorNumero(libroCsv, 3, 21);
   const selloMap = columnaPorNumero(libroCsv, 3, 22);
+  // ── Y el sello también tiene que ser de UNA sola compra ──────────────────
+  // La guarda de abajo pregunta «¿este número trae un solo sello?». Faltaba la
+  // pregunta al revés: «¿este sello es de un solo número?». Sin ella, un sello
+  // que el libro repite bajo dos documentos distintos se le pega a los dos.
+  //
+  // Medido el 2026-08-24 en producción: **siete pares de compras comparten
+  // sello, y en DOS los proveedores son distintos** — COFARSAL $465.96 con
+  // FARMA VALUE $38.33 (12-jun), y COFARSAL $663.94 con LETERAGO $125.82
+  // (21-jul). Un sello de Hacienda identifica UN documento, así que en cada par
+  // uno de los dos lo tiene mal. Los montos son distintos, o sea que no es la
+  // misma compra cargada dos veces: son dos compras reales con un sello
+  // prestado.
+  //
+  // Se descarta por el mismo criterio que ya usa la guarda de al lado: **un
+  // sello equivocado es peor que ninguno**. No se sabe de cuál de las dos es,
+  // así que no va en ninguna.
+  const numerosPorSello = new Map<string, Set<string>>();
+  for (const [numero, sellos] of selloMap) {
+    for (const sello of sellos) {
+      if (!numerosPorSello.has(sello)) numerosPorSello.set(sello, new Set());
+      numerosPorSello.get(sello)!.add(numero);
+    }
+  }
+  const selloAmbiguo = (sello: string | null | undefined) =>
+    !!sello && (numerosPorSello.get(sello)?.size ?? 0) > 1;
   // C1b (H22): la columna 4 es el NIT del emisor y la 5 su nombre. Mismo
   // archivo, dos índices más — sirven para completar la ficha del proveedor
   // cuando no lo tiene, o crearla cuando ni existe (C8).
@@ -503,10 +528,11 @@ async function fastBackfill(
       documento_numero: numero || null,
       percepcion_iva:   fino ? fino.p : Number([...(percMap.get(n)  ?? ['0'])][0] || 0),
       retencion_iva:    fino ? fino.r : Number([...(retenMap.get(n) ?? ['0'])][0] || 0),
-      // Ambiguo = ese número de documento trae más de un sello en el archivo, y
-      // entonces no se sabe cuál es de esta compra. Se deja NULL: un sello
-      // equivocado es peor que ninguno.
+      // Ambiguo en los DOS sentidos: ese número trae más de un sello, o ese
+      // sello aparece bajo más de un número. Cualquiera de las dos deja sin
+      // saber de quién es, y un sello equivocado es peor que ninguno.
       sello_recibido:   (selloMap.get(n)?.size ?? 0) === 1
+                          && !selloAmbiguo([...(selloMap.get(n) ?? [])][0])
                           ? selloValido([...(selloMap.get(n) ?? [])][0])
                           : null,
       updated_at:       new Date().toISOString(),

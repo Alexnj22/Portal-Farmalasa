@@ -13,7 +13,6 @@
     "src/components/forms/FormNursingRegents.jsx",
     "src/components/forms/FormProveedorDetail.jsx",
     "src/components/forms/FormRehireEmployee.jsx",
-    "src/components/practicantes/PracticanteModal.jsx",
     "src/views/CotizacionesView.jsx",
     "src/views/DashboardView.jsx",
     "src/views/EncuestaAdminView.jsx",

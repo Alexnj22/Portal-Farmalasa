@@ -63,7 +63,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "38 de 56 módulo(s) de lógica (.js) del área nombrados por alguna prueba (68%) · 1748 pruebas en 112 archivos, todas verdes",
+          "evidencia": "38 de 57 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 1748 pruebas en 112 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -387,12 +387,11 @@
           ]
         },
         "resiliencia": {
-          "pct": 83,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
+          "pct": 87,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 2 formulario(s) largo(s) sin borrador",
           "hallazgos": [
             "formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
-            "formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
-            "formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx"
+            "formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx"
           ]
         },
         "observabilidad": {
@@ -443,7 +442,6 @@
         "[seguridad] dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
-        "[resiliencia] formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -1172,9 +1170,11 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": [
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+          ]
         },
         "movil": {
           "pct": 95,
@@ -1204,7 +1204,7 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1212,6 +1212,7 @@
         "[flujo] dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala",
         "[flujo] falta probar las bolsas en sala",
         "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [

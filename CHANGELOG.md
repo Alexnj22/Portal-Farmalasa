@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.738.3 — El alta de un practicante se guarda sola
+
+Son dieciocho controles: la persona, su institución, su tutor, el supervisor, las
+fechas y las horas requeridas. La sesión se cierra sola por inactividad —5
+minutos en los cargos de sala— y hasta ahora todo eso se perdía sin dejar rastro.
+
+**Sólo en el ALTA.** Editando a alguien que ya existe, la fila de la base es la
+verdad: un borrador viejo repoblando una edición pisaría datos ya guardados con
+lo que alguien tecleó y abandonó hace horas.
+
+Y a diferencia del alta de empleado, acá el DUI no se excluye del borrador: este
+formulario no lleva sueldo, banco ni PIN, así que lo que se guarda es lo mismo
+que ya está a la vista en la pantalla, sin credenciales.
+
+Deuda de borradores: **20 → 19**.
+
+── Lo que NO se hizo, y por qué ────────────────────────────────────────────
+
+Los dos que siguen por tamaño —`FormClienteDetail` (16 controles) y
+`FormProveedorDetail` (17)— **no son altas: editan un registro que ya existe**, y
+los dos tienen un diff pendiente que sí se puede perder. Ponerles borrador
+significa decidir si un borrador viejo puede repoblar un registro vivo, y en el
+caso del cliente ese registro es la **ficha fiscal que se declara a Hacienda**.
+No es una decisión mecánica, así que quedan en el baseline con esto escrito en
+vez de resueltos a medias.
+
+`FormNovedad` (16) sí es un alta —de un evento de empleado— pero su estado vive
+en `UnifiedModal`, un modal de 900 líneas con doce tipos y otros tantos caminos
+de guardado. Merece su propio commit, no un injerto al pasar.
+
 ## v2.738.2 — El borrador del alta se llevaba el DUI y el sueldo al disco
 
 Al empezar a saldar los 24 formularios largos sin borrador, el primero que se

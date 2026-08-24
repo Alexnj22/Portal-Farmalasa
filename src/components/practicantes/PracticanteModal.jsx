@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import useBorrador from '../../hooks/useBorrador';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { GraduationCap, X, Check, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
@@ -111,6 +112,31 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
         } : emptyForm);
     }, [isOpen, practicante]);
 
+    /* ── El alta de un practicante se guarda sola ────────────────────────────
+     *
+     * Son diecisiete campos: la persona, su institución, su tutor, el
+     * supervisor, las fechas y las horas. La sesión se cierra sola por
+     * inactividad —5 minutos en los cargos de sala— y hasta ahora todo eso se
+     * perdía sin dejar rastro.
+     *
+     * **Sólo en el ALTA.** Editando a alguien que ya existe, la fila de la base
+     * es la verdad: un borrador viejo repoblando una edición pisaría datos ya
+     * guardados con lo que alguien tecleó y abandonó hace horas.
+     *
+     * El DUI no se excluye acá —a diferencia del alta de empleado— porque este
+     * formulario no lleva sueldo, banco ni PIN: lo que se guarda es lo mismo que
+     * ya está a la vista en la pantalla, sin credenciales. */
+    const esAlta = isOpen && !practicante;
+    const { recuperado, descartar } = useBorrador('alta_practicante', form, { activo: esAlta });
+
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!esAlta) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        setForm(f => ({ ...f, ...recuperado }));
+    }, [esAlta, recuperado]);
+
     const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
     const handleChange = (e) => set(e.target.name, e.target.value);
 
@@ -179,6 +205,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 await createPracticante(payload);
                 showToast('Practicante registrado', `${payload.first_names} ${payload.last_names}`, 'success');
             }
+            descartar();   // se guardó de verdad: el borrador ya no sirve
             onSaved?.();
             handleClose();
         } catch (err) {

@@ -131,7 +131,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                     MÁS de lo que se contó. Su nota es obligatoria — dinero que
                     entra sin decir de dónde es dinero que aparece de la nada, y
                     el servidor también lo rechaza. */}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                         <label htmlFor="dep-aporte" className="text-caption font-bold text-content-2">
                             Entra de afuera <span className="font-normal text-content-3">(opcional)</span>

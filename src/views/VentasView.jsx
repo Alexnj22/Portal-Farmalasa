@@ -1638,7 +1638,7 @@ function VentasPorVendedor({ porVendedor, porSucursal, branches, employees, filt
                     {lista.length} {lista.length === 1 ? 'vendedor' : 'vendedores'}
                 </span>
             </div>
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {visibles.map((v, ci) => {
                     const emp   = employees?.find(e => e.code === v.cod_vendedor);
                     const rotulo = SPECIAL_CODES[v.cod_vendedor]

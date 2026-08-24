@@ -258,7 +258,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                             )}
                         </header>
 
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {(area.franjas || []).map((f) => (
                                 <Casilla key={f.clave} franja={f} area={area}
                                     puedeAnotar={puedeAnotar} cerrado={cerrado}
@@ -271,7 +271,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                                 <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5 pt-1">
                                     <Sparkles size={13} /> Limpieza y orden
                                 </p>
-                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                     {area.limpiezas.map((t) => (
                                         <CasillaLimpieza key={t.clave} turno={t} area={area}
                                             puedeAnotar={puedeAnotar} cerrado={cerrado}
@@ -299,7 +299,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                                     </span>
                                     <h3 className="text-body font-black text-content">{area.nombre}</h3>
                                 </header>
-                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                     {(area.limpiezas || []).map((t) => (
                                         <CasillaLimpieza key={t.clave} turno={t} area={area}
                                             puedeAnotar={puedeAnotar} cerrado={cerrado}

@@ -82,7 +82,7 @@ export default function GraficasHistorico({ datos, umbralMedio = 95, umbralTotal
     const peor = datos.reduce((a, b) => (b.pct < a.pct ? b : a));
 
     return (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {/* ── 1. Cumplimiento ─────────────────────────────────────────── */}
             <div data-surface="card" className="p-5">
                 <p className="text-caption font-black uppercase tracking-widest text-content-3">

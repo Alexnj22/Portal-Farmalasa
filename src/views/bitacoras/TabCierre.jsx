@@ -220,7 +220,7 @@ export default function TabCierre({ branchId, fechaVista }) {
                             firmar. El servicio sanitario además tiene ítems
                             propios en la guía (2.15 y 2.16). */}
                         {(resumen.limpieza_por_area || []).length > 1 && (
-                            <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 {resumen.limpieza_por_area.map(a => (
                                     <div key={a.area_id} data-surface="card" className="p-3 flex items-center justify-between gap-3">
                                         <div className="min-w-0">
@@ -251,7 +251,7 @@ export default function TabCierre({ branchId, fechaVista }) {
                     {(resumen.por_area || []).length > 0 && (
                         <section className="space-y-2">
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-content-3">Por área</h4>
-                            <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 {resumen.por_area.map(a => (
                                     <div key={a.area_id} data-surface="card" className="p-3 flex items-center justify-between gap-3">
                                         <div className="min-w-0">

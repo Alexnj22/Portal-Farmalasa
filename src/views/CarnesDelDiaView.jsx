@@ -207,7 +207,7 @@ const CarnesDelDiaView = () => {
                             lee como una tabla, y hay que recorrerla con el dedo
                             para saber a quién le estás imprimiendo. */}
                         {candidatos.length > 0 && (
-                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                 {candidatos.map(e => (
                                     <div key={e.id} data-surface="card" className="p-4 flex flex-col gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
@@ -286,7 +286,7 @@ const CarnesDelDiaView = () => {
                                             {g.sala} · {g.items.length}
                                         </p>
                                     )}
-                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                         {g.items.map(c => (
                                             <div key={c.id} data-surface="card" className="p-4 flex flex-col gap-3">
                                                 <div className="flex items-center gap-3 min-w-0">

@@ -247,7 +247,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 />
             )}
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {loading
                     ? [1, 2, 3, 4, 5, 6].map((i) => (
                         <div key={i} data-surface="card" className="p-5"><SkeletonText lines={4} /></div>

@@ -154,7 +154,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 )}
             </div>
 
-            <div className="grid gap-2 xl:grid-cols-2 items-start">
+            <div className="grid grid-cols-1 gap-2 xl:grid-cols-2 items-start">
             {visibleItems.map(item => {
                 const et      = ERROR_TIPO_LABEL[item.error_tipo];
                 const res     = item.resolucion_status;

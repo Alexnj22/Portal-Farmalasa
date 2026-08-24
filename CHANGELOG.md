@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.3 — Las 23 rejillas que faltaba declarar
+
+Cierre de la deuda que dejó v2.737.1: las **23 rejillas responsivas** que
+declaraban `md:grid-cols-2` sin declarar la de abajo. Ahora todas dicen
+`grid-cols-1`.
+
+── Y lo primero es que NINGUNA estaba rota ───────────────────────────────────
+
+Se midieron las doce rutas y pestañas donde viven, en WebKit iPhone 13 contra
+producción: **0 con la pista más ancha que su caja**, y ningún desplazamiento
+horizontal que no fuera un carrusel a propósito. O sea que eran deuda latente,
+no defectos vivos. Se declaran igual porque el día que el contenido cambie —un
+nombre de producto más largo, una columna nueva— la pista crece sola y en
+silencio, que es exactamente como apareció el de traslados.
+
+── El instrumento MINTIÓ dos veces antes de servir ───────────────────────────
+
+Y esto es lo que hay que retener, porque el cero llegó primero y era falso:
+
+1. **Primera medición: «0 rejillas se pasan» sobre rutas sin abrir su
+   pestaña.** Casi todas viven detrás de una, así que el cero era «no miré», no
+   «no hay». Con las pestañas puestas, el detector pasó a ver de 12 a 18
+   rejillas por ruta.
+2. **Segunda: el testigo no cazaba la regresión.** Se le inyectó a una rejilla
+   un hijo de 200 caracteres sin cortes y la pista no se movió — porque la
+   rejilla elegida YA tenía `grid-cols-1`, y con `minmax(0,1fr)` la pista nunca
+   crece: el que se sale es el hijo. El testigo medía una rejilla arreglada y
+   concluía que el detector estaba ciego.
+3. **Y aun corrigiendo eso, seguía sin cazarla**: el testigo colgaba del primer
+   ítem, que suele traer `min-w-0` o `overflow-hidden` y se come el ancho antes
+   de que la pista se entere. Recién como **hijo directo de la rejilla** —o sea
+   como un ítem más— la pista saltó de **262 px a 2,109**.
+
+Con el testigo en verde, el cero de las doce rutas ya significa algo. Sin él,
+esta entrada habría dicho «medido, todo bien» sobre un instrumento que no podía
+ver el defecto que vino a buscar.
+
 ## v2.743.2 — El registro deja de regenerar las dos etiquetas corregidas
 
 La corrección de v2.743.1 estaba escrita **sólo en el registro**, y el registro

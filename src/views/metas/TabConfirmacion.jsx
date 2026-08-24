@@ -552,7 +552,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
 
     if (loading) {
         return (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} data-surface="card" className="p-5"><SkeletonText lines={5} /></div>)}
             </div>
         );
@@ -593,7 +593,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             )}
                         />
                     ) : (
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                             {pendientesActual.map((r) => <FilaMeta key={r.id} r={r} />)}
                         </div>
                     )}
@@ -648,7 +648,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         />
                     )
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {delMesSig.map((r) => <FilaMeta key={r.id} r={r} />)}
                     </div>
                 )}

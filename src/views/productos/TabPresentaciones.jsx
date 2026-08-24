@@ -363,7 +363,7 @@ function PanelProductos({ tipo, total }) {
             {visibles.length === 0 ? (
                 <p className="text-body-sm font-bold text-content-3 py-4">Sin resultados en esta presentación.</p>
             ) : (
-                <ul className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
                     {visibles.map(p => (
                         <li key={`${p.product_id}-${p.factor}`} data-surface="card"
                             className="border-divider px-3 py-2 flex items-start gap-2.5">

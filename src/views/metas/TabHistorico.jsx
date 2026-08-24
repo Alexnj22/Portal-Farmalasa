@@ -20,7 +20,7 @@ const GraficasHistorico = lazy(() => import('./GraficasHistorico'));
 // con su título, su línea de resumen y el área del dibujo de 210px. Sin esto la
 // tabla saltaría hacia abajo cuando las gráficas aparecen.
 const EsqueletoGraficas = () => (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {[0, 1].map((i) => (
             <div key={i} data-surface="card" className="p-5">
                 <Skeleton w="40%" h={10} />

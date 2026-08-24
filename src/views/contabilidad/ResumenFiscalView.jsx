@@ -224,7 +224,7 @@ export default function ResumenFiscalView() {
                 )}
 
                 {!loading && datos && (
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div data-surface="card" className="rounded-2xl border border-divider p-5">
                             <div className="flex items-center gap-2 mb-2">
                                 <Landmark size={16} className="text-content-3" />

@@ -206,7 +206,7 @@ const ImpresionView = () => {
                     alineada, y si la barra negra sale pareja de un extremo al otro.
                 </Notice>
 
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="space-y-4">
                         {/* La comprobación va antes que el botón de imprimir: dice
                             si este equipo puede imprimir directo SIN gastar papel,
@@ -268,7 +268,7 @@ const ImpresionView = () => {
                                 ventana y sin preguntar el papel. Funciona en las computadoras de las
                                 salas, que son las que tienen la ticketera conectada.
                             </p>
-                            <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                                 <div>
                                     <label className="text-label font-bold text-content-2 mb-1 block">
                                         Sistema de esta computadora

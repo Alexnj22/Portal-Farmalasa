@@ -439,7 +439,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 </span>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <SeccionTicket titulo="Con tiquete"        datos={sec.tiquete} />
                 <SeccionTicket titulo="Con factura"        datos={sec.factura} />
                 <SeccionTicket titulo="Con crédito fiscal" datos={sec.ccf} />
@@ -718,7 +718,7 @@ export default function CorteZView() {
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
                 {loading ? (
-                    <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         {[0, 1].map(i => (
                             <div key={i} data-surface="card" className="h-64 animate-pulse" />
                         ))}
@@ -739,7 +739,7 @@ export default function CorteZView() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         {filas.map(f => (
                             <TarjetaSucursal
                                 key={`${f.branch_id}-${f.periodo}`}

@@ -51,7 +51,14 @@ function brutoDe(e) {
 // diferencia entre «construido» y «funciona», que es de lo que trata todo esto.
 function pctDe(e) {
     if (!e?.ejes) return 0;
-    return e.sello_sala ? 100 : Math.min(brutoDe(e), TOPE_SIN_SELLO);
+    const bruto = brutoDe(e);
+    // El sello completa el 95 → 100, pero SÓLO mientras los ejes lo sigan
+    // sosteniendo. Sin la segunda condición, un área sellada valía 100 aunque
+    // después le bajaran un eje a 40 — lo cazó
+    // `auditoriaGate.test.js › rechaza un pct escrito a mano`, que es
+    // exactamente para lo que esa prueba existe. Un candado que protege algo
+    // que ya no se cumple es peor que no tener candado, porque da confianza.
+    return (e.sello_sala && bruto >= TOPE_SIN_SELLO) ? 100 : Math.min(bruto, TOPE_SIN_SELLO);
 }
 
 // El estado se DERIVA, nunca se escribe a mano. Escribirlo a mano es cómo un

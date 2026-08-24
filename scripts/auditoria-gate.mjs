@@ -226,7 +226,13 @@ export function calcularPct(entrada) {
     // real en sala— es lo que completa el resto: no es un sumando que se pueda
     // compensar desde el escritorio. Tiene que decir lo MISMO que `pctDe` del
     // CLI; si divergen, el gate rechaza un `pct` que el propio CLI escribió.
-    return entrada.sello_sala ? 100 : Math.min(bruto, TOPE_SIN_SELLO);
+    // El sello completa el 95 → 100, pero SÓLO mientras los ejes lo sigan
+    // sosteniendo. Sin la segunda condición, un área sellada valía 100 aunque
+    // después le bajaran un eje a 40 — lo cazó
+    // `auditoriaGate.test.js › rechaza un pct escrito a mano`, que es
+    // exactamente para lo que esa prueba existe. Un candado que protege algo
+    // que ya no se cumple es peor que no tener candado, porque da confianza.
+    return (entrada.sello_sala && bruto >= TOPE_SIN_SELLO) ? 100 : Math.min(bruto, TOPE_SIN_SELLO);
 }
 
 function verificarRegistro() {

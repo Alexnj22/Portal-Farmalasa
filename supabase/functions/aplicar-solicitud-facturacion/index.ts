@@ -292,6 +292,110 @@ Deno.serve(async (req) => {
       // estaba terminado.
       const avisos: string[] = [];
       const yaInvalidada = String(factura.estado ?? "").toUpperCase() === "DTE INVALIDADO EN MH";
+      let interno: { motivo?: string; instruccion?: string } | null = null;
+
+      // ── 0 · Lo que Hacienda todavía no tiene se le manda ANTES de anular ──
+      //
+      // Una venta que ocurrió tiene que quedar documentada ante Hacienda antes
+      // de invalidarse. Anular sin transmitir deja el correlativo **sin ningún
+      // documento fiscal**: la operación existió y se rescindió, y el evento de
+      // invalidación es justamente lo que documenta la rescisión — sin sello no
+      // hay a qué aplicárselo y el número queda en el aire.
+      //
+      // **El orden no es negociable.** Una vez anulada en el sistema de origen,
+      // el documento original ya no se puede transmitir: la única puerta por la
+      // que ese documento puede entrar se cierra para siempre. Por eso esto va
+      // antes del paso 1 y no se puede reparar después.
+      //
+      // Regla del usuario, 2026-08-24, sobre `0000061286_COF` de La Popular. El
+      // comentario de arriba cuenta ese caso como si estuviera resuelto: se
+      // aprobó 87 segundos después de facturarse, el sistema la anuló, y el
+      // paso ante Hacienda no encontró nada que invalidar. Se cerró como «nunca
+      // se transmitió» — que era cierto, y era **el problema**, no la solución.
+      // Hubo que invalidarla a mano.
+      //
+      // Se delega en `regularizar-dte` con alcance «una» en vez de mandar el
+      // documento acá: esa función ya hace el ciclo entero —transmitir, y si
+      // Hacienda rechaza, corregir la ficha y reintentar—. Un segundo envío
+      // escrito acá sería un segundo ciclo que se desincroniza, y el que se
+      // queda viejo es siempre el que se saltea la corrección.
+      if (!estaAnulada(factura.estado)) {
+        const { data: previa, error: previaErr } = await admin
+          .from("sales_invoices").select("recibido_mh").eq("id", factura.id).maybeSingle();
+        if (previaErr) throw previaErr;   // no se anula sobre una lectura que falló
+
+        if (!selloValido(previa?.recibido_mh)) {
+          const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+          if (!secreto)
+            return json({
+              ok: false,
+              error: "No está configurado el secreto para transmitir a Hacienda; no se anula.",
+            }, 500);
+
+          // El corte a 120s falla hacia el lado seguro: si la cadena no termina
+          // a tiempo, `r` queda en null, no aparece sello, y esto devuelve 409
+          // sin anular. La factura queda igual que antes y la solicitud sigue
+          // pendiente — nunca al revés, que sería anular sobre un envío del que
+          // no se supo el final.
+          const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },
+            body: JSON.stringify({ alcance: "una", invoice_id: factura.id }),
+            signal: AbortSignal.timeout(120_000),
+          }).then((x) => x.json()).catch(() => null);
+
+          // ¿Entró? Se cree al SELLO, no al `ok`. Un informe de éxito es un
+          // informe; el sello de 40 caracteres es el hecho. Se mira en la
+          // respuesta y, por si el espejo llegó primero, también en la tabla.
+          type Fila = { invoice_id?: number; sello?: string | null };
+          const selloDicho = (r?.detalle as Fila[] | undefined)
+            ?.find((d) => Number(d?.invoice_id) === Number(factura.id))?.sello;
+          // El error NO se descarta: una lectura fallida no es «no tiene sello».
+          // Se anota y se sigue por el lado seguro —sin sello, o sea sin
+          // anular—, que es lo contrario de dar por bueno un null que en
+          // realidad fue un fallo de red.
+          const { data: post, error: postErr } = await admin
+            .from("sales_invoices").select("recibido_mh").eq("id", factura.id).maybeSingle();
+          if (postErr) console.error(`relectura del sello (factura ${factura.id}):`, postErr.message);
+
+          if (selloValido(selloDicho) || selloValido(post?.recibido_mh)) {
+            avisos.push("Se transmitió a Hacienda antes de anular.");
+          } else if (r?.excluida) {
+            // Ya hay una decisión escrita de no transmitir este documento.
+            avisos.push("No se transmite a Hacienda por decisión escrita.");
+          } else {
+            // No entró. Antes de frenar, se le pregunta a la base si éste es el
+            // caso que NUNCA va a entrar —el crédito fiscal emitido a quien no
+            // es contribuyente—: ahí la transmisión es imposible por definición
+            // y frenar la anulación dejaría la solicitud trabada para siempre.
+            // Acá el error ES la respuesta —la función lanza cuando el caso no
+            // encaja, con el freno que se negó en el mensaje—, pero igual se
+            // anota: sin eso, un caso que DEBERÍA haber encajado y no encajó por
+            // otra cosa (permiso, red) se ve idéntico a uno que nunca aplicó.
+            const { data: cerrado, error: intErr } = await admin
+              .rpc("marcar_solventado_internamente",
+                   { p_invoice_id: factura.id, p_actor: aprobador.name });
+            if (intErr) console.error(`marcar_solventado_internamente (paso 0, factura ${factura.id}):`, intErr.message);
+            if (cerrado?.ok) {
+              interno = cerrado;
+              avisos.push(String(cerrado.motivo ?? ""));
+            } else {
+              // Hacienda la rechazó y la corrección no alcanzó. **No se anula.**
+              // La solicitud sigue PENDIENTE con el motivo a la vista, que es
+              // exactamente lo que hay que ver: el documento todavía puede
+              // entrar, y anularlo ahora lo impediría para siempre.
+              const motivo = (r?.detalle as { error?: string }[] | undefined)?.[0]?.error
+                ?? r?.error ?? "Hacienda no aceptó el documento.";
+              return json({
+                ok: false,
+                codigo: "NO_ENTRO_A_HACIENDA",
+                error: `Esta venta todavía no llegó a Hacienda y no se puede anular ` +
+                       `hasta que entre: ${motivo}`,
+              }, 409);
+            }
+          }
+        }
+      }
 
       // 1 · Anular en el sistema, sólo si sigue viva.
       let anuladaAhora = false;
@@ -324,9 +428,12 @@ Deno.serve(async (req) => {
       const llegoAHacienda = Boolean(fresca?.codigo_generacion) || selloValido(fresca?.recibido_mh);
 
       let mh: Awaited<ReturnType<typeof enviarDteAlMH>> | null = null;
-      let interno: { motivo?: string; instruccion?: string } | null = null;
       if (yaInvalidada) {
         avisos.push("Ya estaba invalidada ante Hacienda: no se volvió a enviar.");
+      } else if (interno) {
+        // El paso 0 ya resolvió que este documento no se le manda a Hacienda:
+        // nunca lo recibió y nunca lo va a recibir. Intentar la invalidación
+        // sería pedirle que invalide algo que no tiene.
       } else {
         // Se INTENTA siempre, aunque el espejo diga que nunca se transmitió: el
         // que sabe es el sistema de origen, y saltarse una invalidación que sí

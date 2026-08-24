@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.723.0 — No se anula lo que Hacienda todavía no recibió
+
+Dos cosas, y la segunda salió de mirar por qué la primera hacía falta.
+
+### 1 · Primero Hacienda, después la anulación
+
+Una venta que ocurrió tiene que quedar documentada ante Hacienda **antes** de
+invalidarse. Anular sin transmitir deja el correlativo sin ningún documento
+fiscal: la operación existió y se rescindió, y el evento de invalidación es
+justamente lo que documenta la rescisión — sin sello no hay a qué aplicárselo.
+
+**Y el orden no se puede reparar después.** Una vez anulada en el sistema, el
+documento original ya no se transmite: la única puerta por la que puede entrar se
+cierra para siempre.
+
+Pasó con `0000061286_COF` de La Popular: se aprobó 87 segundos después de
+facturarse, el sistema la anuló, y el paso ante Hacienda no encontró nada que
+invalidar. Se cerró como «nunca se transmitió» — que era cierto, y era **el
+problema**, no la solución. Hubo que invalidarla a mano.
+
+Ahora, si la factura no tiene sello, se transmite antes de anular. El envío se
+delega en `regularizar-dte` con alcance «una», que ya hace el ciclo entero
+—transmitir, y si Hacienda rechaza, corregir la ficha y reintentar—: un segundo
+envío escrito aparte sería un segundo ciclo que se desincroniza, y el que se
+queda viejo es siempre el que se saltea la corrección.
+
+Si aun así no entra, **no se anula**: la solicitud sigue pendiente con el motivo a
+la vista. La única excepción es el caso de v2.722.0 —el crédito fiscal a quien no
+es contribuyente—, que no puede entrar por definición, y ahí la base lo dice. El
+corte por tiempo también falla hacia ese lado: sin respuesta, no se anula.
+
+### 2 · Cinco noches corrigiendo nada, en silencio
+
+Buscando por qué el barrido de las 22:30 no destrababa lo pendiente, apareció un
+callejón sin salida que no decía nada.
+
+Cuando Hacienda rechaza la ubicación de una ficha, la corrida le pone la
+ubicación por defecto. Si la ficha **ya estaba** en esa ubicación, no se escribe
+nada — correcto — y se contaba como `ya_estaban`. Pero sobre un rechazo eso no es
+un no-op: significa que Hacienda rechazó la ubicación **y no queda nada que
+probar**. El barrido anotaba «la corrección de fichas no cambió nada» y se iba a
+dormir, todas las noches, sin una línea que dijera que había un documento
+trabado.
+
+Medido: `0000065095_COF` (Salud 2, 20-ago) llevaba **cinco noches** rebotando con
+«[receptor.direccion.distrito] VALOR NO ES PERMITIDO», con su ficha ya en
+Chalatenango / Chalatenango Sur / CHALATENANGO.
+
+Ahora eso se publica en «Por revisar» con el motivo escrito, como ya se hacía
+unas ramas más arriba para el contribuyente. Un silencio se lee igual que un
+éxito.
+
 ## v2.722.0 — Un crédito fiscal a quien no es contribuyente se cierra en el portal, no ante Hacienda
 
 Una sala factura un CCF a alguien que no está inscrito en IVA. Hacienda lo

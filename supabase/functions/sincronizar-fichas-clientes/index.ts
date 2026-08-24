@@ -458,6 +458,37 @@ Deno.serve(async (req) => {
             // Ya estaba en el destino: no se escribe ni se anota. Una corrección
             // que no ocurrió ensucia el freno — mañana parecería que se intentó.
             res.ya_estaban++;
+
+            // ── Pero si vino de un RECHAZO, callarse es el defecto ─────────
+            //
+            // «Ya estaba en el destino» sobre un rechazo significa que Hacienda
+            // rechazó la ubicación **y la ubicación ya es la por defecto**: el
+            // circuito se quedó sin nada que probar. No es un no-op, es un
+            // callejón sin salida — y hasta hoy no lo decía nadie.
+            //
+            // Medido el 2026-08-24: `0000065095_COF` (Salud 2, 20-ago) llevaba
+            // CINCO noches rebotando con «[receptor.direccion.distrito] VALOR
+            // NO ES PERMITIDO». Su ficha ya estaba en Chalatenango / Chalatenango
+            // Sur / CHALATENANGO, así que `ponerUbicacion` no cambiaba nada,
+            // `corregidas` daba 0 y el barrido anotaba «la corrección de fichas
+            // no cambió nada» y se iba a dormir. Todas las noches lo mismo, sin
+            // una sola línea que dijera que había un documento trabado.
+            //
+            // Es el mismo defecto que ya se cerró para el contribuyente unas
+            // ramas más arriba (`distrito_rechazado_con_valor`): ahí se dice, y
+            // acá se contaba. Un silencio se lee igual que un éxito.
+            if (c.origen === "rechazo") {
+              aRevisar.push({
+                erp_id: erpId, name: c.name, motivo: "ubicacion_rechazada_sin_alternativa",
+                detalle: `Hacienda rechazó la ubicación de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
+                         `y su ficha YA está en la ubicación por defecto ` +
+                         `(${UBICACION_DEFECTO.departamento} / ${UBICACION_DEFECTO.municipio} / ` +
+                         `${UBICACION_DEFECTO.distrito}). El portal no tiene otra cosa que ` +
+                         `probar: hay que revisar la dirección a mano.`,
+                datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
+              });
+              res.a_revisar++;
+            }
           } else if (esRechazoPorDuplicado(u.motivo)) { aRevisarDuplicado(c, erpId, u.motivo); }
           else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
         } else if (!ficha.campos.distrito) {

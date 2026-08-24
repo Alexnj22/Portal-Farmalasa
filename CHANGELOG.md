@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.4 — El botón más largo perdía su ícono, recortado
+
+Reportado con una captura: los tres botones del panel de Traslados se veían de
+anchos distintos y al del medio le faltaba el ícono.
+
+**El ícono no faltaba: estaba cortado.** Los tres llevaban `w-full` dentro de una
+fila, así que las tres pedían el 100% y se repartían el sobrante **en proporción
+a su texto** — de ahí los anchos distintos. Al más largo lo apretaba tanto que
+`Button` —que lleva `overflow-hidden` y `whitespace-nowrap`, y centra su
+contenido— le recortaba el ícono por el borde izquierdo.
+
+`w-full` está bien **apilados**, que es como salen en el teléfono: tres blancos
+del ancho entero, que es lo que el pulgar acierta sin mirar (DESIGN.md, hoja
+móvil). En la fila de escritorio va `sm:w-auto`, y `flex-wrap` los baja de
+renglón antes de apretarlos.
+
+El defecto era sólo de este panel: las demás vistas usan `sm:flex-row` como
+contenedor de layout, no como fila de botones.
+
 ## v2.735.3 — Bolsas: las etapas se pliegan y recibir te lleva al conteo
 
 *«que las secciones sean plegables, asi solo se ve lo que mas interesa. por

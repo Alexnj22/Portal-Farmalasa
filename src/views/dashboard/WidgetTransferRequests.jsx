@@ -137,26 +137,37 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 de pendientes no se encuentra el día que la lista está larga.
                 `primary` y ancho completo: es LA acción de esta pantalla, y en
                 secundario se leía como una fila más del listado. */}
-            {/* Las DOS cosas que se pueden empezar desde acá, juntas y arriba.
-                Confirmar escaneando faltaba: vivía sólo en la vista de
-                Traslados, y quien recibe una bolsa trabaja en el tablero — o
-                sea que la acción estaba donde no se la busca. En una fila
-                cuando entran; apiladas en el teléfono. */}
-            <div className="shrink-0 flex flex-col sm:flex-row gap-2">
+            {/* Las tres cosas que se pueden EMPEZAR desde acá, juntas y arriba.
+                La principal va primera (§ hoja móvil): queda arriba en el
+                teléfono, lejos del borde.
+
+                ── `w-full` SÓLO apiladas, nunca en la fila ──────────────────
+                En el teléfono se apilan y ahí `w-full` es lo correcto: tres
+                blancos del ancho entero, que es lo que el pulgar acierta sin
+                mirar. En la fila de escritorio, en cambio, `w-full` hace que las
+                tres pidan el 100% y se repartan el sobrante **en proporción a su
+                texto**: quedan de anchos distintos, y a la más larga la aprieta
+                tanto que `Button` —que lleva `overflow-hidden` y
+                `whitespace-nowrap`— le RECORTA el ícono. Se veía como un botón
+                al que le falta el ícono; en realidad estaba cortado.
+
+                `sm:w-auto` las deja del tamaño de su contenido, y `flex-wrap`
+                las baja de renglón antes de apretarlas. */}
+            <div className="shrink-0 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                 {puedeEnviar && (
                     <Button variant="primary" icon={Send}
-                        className="min-h-[var(--tap-min)] w-full"
+                        className="min-h-[var(--tap-min)] w-full sm:w-auto"
                         onClick={() => setAbrirEnvio(true)}>
                         Enviar producto a otra sala
                     </Button>
                 )}
                 <Button variant="secondary" icon={ScanLine}
-                    className="min-h-[var(--tap-min)] w-full"
+                    className="min-h-[var(--tap-min)] w-full sm:w-auto"
                     onClick={() => setAbrirEscaneo(true)}>
                     Confirmar escaneando el ticket
                 </Button>
                 <Button variant="secondary" icon={Truck}
-                    className="min-h-[var(--tap-min)] w-full"
+                    className="min-h-[var(--tap-min)] w-full sm:w-auto"
                     onClick={() => setAbrirRetiro(true)}>
                     Lo que llevas
                 </Button>

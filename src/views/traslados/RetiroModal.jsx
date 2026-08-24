@@ -209,9 +209,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-2xl"
-            closeOnEsc={!ocupado} surface={null} ariaLabel="Recorrido de retiro">
+            closeOnEsc={!ocupado} surface={null} ariaLabel="Llevar bolsas a otra sala">
             <CuerpoDialogo
-                titulo="Lo que llevas"
+                titulo="Llevar bolsas a otra sala"
                 subtitulo={salaActual?.nombre
                     ? `Estás en ${salaActual.nombre} · pasa el lector por cada ticket`
                     : 'Pasa el lector por el ticket de cada bolsa que cargues'}

@@ -116,9 +116,9 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
 
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-lg"
-            closeOnEsc={!ocupado} surface={null} ariaLabel="Confirmar la llegada escaneando el ticket">
+            closeOnEsc={!ocupado} surface={null} ariaLabel="Recibir traslado escaneando el ticket">
             <CuerpoDialogo
-                titulo="Confirmar lo que llegó"
+                titulo="Recibir traslado"
                 subtitulo="Pasa el lector por el código del ticket de la bolsa"
                 icono={ScanLine}
                 anchoEscritorio="max-w-lg"

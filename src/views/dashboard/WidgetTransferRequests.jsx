@@ -152,7 +152,24 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 al que le falta el ícono; en realidad estaba cortado.
 
                 `sm:w-auto` las deja del tamaño de su contenido, y `flex-wrap`
-                las baja de renglón antes de apretarlas. */}
+                las baja de renglón antes de apretarlas.
+
+                ── Los tres rótulos, corregidos por el usuario (2026-08-24) ──
+                Los tres dicen ahora QUÉ MOVIMIENTO es, y ninguno nombra el
+                mecanismo:
+
+                  · **sale de tu sala** → «Enviar producto a otra sala»
+                  · **llega a tu sala** → «Recibir traslado»
+                  · **va en tus manos** → «Llevar bolsas a otra sala»
+
+                «Confirmar escaneando el ticket» nombraba el gesto y no el
+                hecho: quien tiene la bolsa enfrente busca *recibirla*, y que
+                sea escaneando ya lo dice el ícono. «Lo que llevas» directamente
+                no se entendía —reportado así— porque describía un estado en vez
+                de una acción, en una fila donde los otros dos son verbos. Los
+                tres rótulos van en el mismo molde a propósito: leídos juntos,
+                la diferencia entre ellos es la DIRECCIÓN del producto, que es
+                justo lo que hay que elegir. */}
             <div className="shrink-0 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                 {puedeEnviar && (
                     <Button variant="primary" icon={Send}
@@ -164,12 +181,12 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 <Button variant="secondary" icon={ScanLine}
                     className="min-h-[var(--tap-min)] w-full sm:w-auto"
                     onClick={() => setAbrirEscaneo(true)}>
-                    Confirmar escaneando el ticket
+                    Recibir traslado
                 </Button>
                 <Button variant="secondary" icon={Truck}
                     className="min-h-[var(--tap-min)] w-full sm:w-auto"
                     onClick={() => setAbrirRetiro(true)}>
-                    Lo que llevas
+                    Llevar bolsas a otra sala
                 </Button>
             </div>
 

@@ -455,13 +455,13 @@ export default function TrasladosView() {
                         {
                             key: 'escanear',
                             icon: ScanLine,
-                            label: 'Confirmar escaneando',
+                            label: 'Recibir traslado',
                             onClick: () => setAbrirEscaneo(true),
                         },
                         {
                             key: 'retiro',
                             icon: Truck,
-                            label: 'Lo que llevas',
+                            label: 'Llevar bolsas a otra sala',
                             onClick: () => setAbrirRetiro(true),
                         },
                     ] : []}>

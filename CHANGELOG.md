@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.737.3 — Los tres botones de traslados dicen que movimiento son
+
+> «el de confirmar, que solo diga Recibir traslado (con el icono de codigo), lo
+> que llevas no lo entiendo, mejora el texto.»
+
+Los tres botones del modal de Traslados decían tres cosas distintas: uno el
+movimiento, otro el gesto, y el tercero un estado. Ahora los tres dicen **qué
+movimiento es**, y la diferencia entre ellos es la dirección del producto —que
+es justo lo que hay que elegir al mirarlos:
+
+| antes | ahora | qué es |
+|---|---|---|
+| Enviar producto a otra sala | *(igual)* | **sale** de tu sala |
+| Confirmar escaneando el ticket | **Recibir traslado** | **llega** a tu sala |
+| Lo que llevas | **Llevar bolsas a otra sala** | va **en tus manos** entre las dos |
+
+«Confirmar escaneando el ticket» nombraba el gesto y no el hecho: quien tiene la
+bolsa enfrente busca *recibirla*, y que sea escaneando ya lo dice el ícono, que
+se queda. «Lo que llevas» no se entendía —así se reportó— porque describía un
+estado en una fila donde los otros dos son verbos.
+
+El rótulo cambia también en la barra de la vista `/traslados` y en el título de
+los dos diálogos, para que el botón y la pantalla que abre digan lo mismo.
+
 ## v2.737.2 — Las 25 áreas llegan a 95 en pruebas
 
 Cierra el eje de pruebas de la auditoría: **las 25 áreas del portal tienen

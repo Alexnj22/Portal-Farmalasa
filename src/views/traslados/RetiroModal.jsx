@@ -148,7 +148,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     // teclear de memoria y no hay presencia que probar; lo único que hacía el
     // candado era tirar en silencio la lectura de un lector sin sufijo Enter.
     // La firma de abajo —ésa sí es un carné— lo conserva.
-    const { teclas, diagnostico } = useCapturaDeCarne(
+    const { teclas, diagnostico, eventos } = useCapturaDeCarne(
         abierto && !conCamara && !pidiendoFirma && !ocupado, escanear,
         { aceptarTecleado: true, sinEnter: true },
     );
@@ -259,7 +259,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                             {/* Qué mandó el lector, cuando no alcanzó. Mismo
                                 instrumento que en «Recibir traslado» — y el
                                 mismo componente, no una copia. */}
-                            <LecturaQueNoEntro d={diagnostico} />
+                            <LecturaQueNoEntro d={diagnostico} eventos={eventos} />
                         </div>
                     )}
 

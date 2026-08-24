@@ -122,3 +122,51 @@ describe('la captura del lector', () => {
         expect(alLeer).not.toHaveBeenCalled();
     });
 });
+
+describe('la cuenta cruda de teclas', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('cuenta TODA tecla, incluso las que ningún filtro deja pasar', () => {
+        // Es la afirmación que cierra el caso: si acá sale 0 después de
+        // escanear, el navegador no está recibiendo nada y el problema deja de
+        // ser del portal. Por eso se cuenta antes de cualquier filtro.
+        const { result } = renderHook(() =>
+            useCapturaDeCarne(true, vi.fn(), { aceptarTecleado: true, sinEnter: true }));
+
+        escanear([
+            { key: 'Escape' },
+            { key: 'Shift', code: 'ShiftLeft' },
+            { key: 'Unidentified', code: 'Lang1' },
+            { key: '7' },
+        ]);
+
+        expect(result.current.eventos).toBe(4);
+    });
+
+    it('lee un lector que PEGA el código en vez de teclearlo', () => {
+        const alLeer = vi.fn();
+        renderHook(() => useCapturaDeCarne(true, alLeer, { aceptarTecleado: true, sinEnter: true }));
+
+        act(() => {
+            const e = new Event('paste', { bubbles: true });
+            e.clipboardData = { getData: () => '  32278 ' };
+            document.dispatchEvent(e);
+        });
+
+        expect(alLeer).toHaveBeenCalledWith('32278');
+    });
+
+    it('un pegado NO vale donde el código es una credencial', () => {
+        const alLeer = vi.fn();
+        renderHook(() => useCapturaDeCarne(true, alLeer));   // sin `aceptarTecleado`
+
+        act(() => {
+            const e = new Event('paste', { bubbles: true });
+            e.clipboardData = { getData: () => 'ABCD1234' };
+            document.dispatchEvent(e);
+        });
+
+        expect(alLeer).not.toHaveBeenCalled();
+    });
+});

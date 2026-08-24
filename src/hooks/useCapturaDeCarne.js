@@ -82,6 +82,13 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
      * distintos. Es contabilidad de eventos, no del contenido: el `texto` sólo
      * se guarda donde el código no es una credencial (`aceptarTecleado`). */
     const [diagnostico, setDiagnostico] = useState(null);
+    /* TODA tecla que llegó desde que se armó la captura, sin filtrar nada.
+     *
+     * Es la afirmación que faltaba. `diagnostico` sólo existe cuando hubo una
+     * ráfaga que no entró; cuando **no llega nada** no se dibujaba nada, y una
+     * pantalla en blanco no distingue «el lector no mandó» de «el aviso no
+     * anda». Un cero que se ve es un dato; un cero que no se ve, no. */
+    const [eventos, setEventos] = useState(0);
 
     const bufferRef = useRef('');
     const ultimaRef = useRef(0);
@@ -141,6 +148,10 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
         };
 
         const alTeclear = (e) => {
+            // Se cuenta ANTES de cualquier filtro: la pregunta que contesta es
+            // «¿este equipo le está mandando teclas al navegador?», y para eso
+            // un Escape o un modificador valen igual que un dígito.
+            setEventos(n => n + 1);
             if (e.key === 'Escape') return;
             const ahora = Date.now();
             const hueco = ahora - ultimaRef.current;
@@ -204,12 +215,35 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
 
             armarFin();
         };
+        /* El lector que PEGA en vez de teclear.
+         *
+         * Existe: hay lectores —y utilitarios de lector— configurados para
+         * dejar el código en el portapapeles y simular un pegado. Eso no llega
+         * como una ráfaga de teclas, así que el detector de arriba no lo ve.
+         *
+         * Va sólo donde un código tecleado vale (`aceptarTecleado`): un pegado
+         * no prueba que nadie estuviera presente, que es justo lo que un carné
+         * tiene que probar. */
+        const alPegar = (e) => {
+            if (!aceptarTecleado) return;
+            const texto = (e.clipboardData?.getData('text') ?? '').trim();
+            setEventos(n => n + 1);
+            if (texto.length < MINIMO_DE_TECLAS) return;
+            clearTimeout(timerRef.current);
+            bufferRef.current = '';
+            setTeclas(0);
+            anotar(texto, false, true, null);
+            alLeerRef.current?.(texto);
+        };
+
         document.addEventListener('keydown', alTeclear, { capture: true });
+        document.addEventListener('paste', alPegar, { capture: true });
         return () => {
             document.removeEventListener('keydown', alTeclear, { capture: true });
+            document.removeEventListener('paste', alPegar, { capture: true });
             clearTimeout(timerRef.current);
         };
     }, [activo, aceptarTecleado, sinEnter]);
 
-    return { teclas, manual, limpiar, diagnostico };
+    return { teclas, manual, limpiar, diagnostico, eventos };
 }

@@ -17,8 +17,29 @@ import Notice from '../../components/common/Notice';
  *
  * `d` es el `diagnostico` que devuelve ese hook.
  */
-export default function LecturaQueNoEntro({ d }) {
-    if (!d) return null;
+export default function LecturaQueNoEntro({ d, eventos = 0 }) {
+    /* ── El CERO también se dibuja, y ésa es la mitad que faltaba ──────────
+     * Sin esta rama, «no llegó ninguna tecla» se veía como una pantalla en
+     * blanco — o sea, exactamente igual que un aviso que no funciona o que una
+     * versión vieja sin desplegar. Un cero que se ve es una afirmación
+     * verificable; un cero que no se ve no dice nada.
+     *
+     * Y es la afirmación que cierra el caso: si acá dice 0 después de escanear,
+     * el navegador no está recibiendo NADA y el problema ya no es del portal. */
+    if (!d && eventos === 0) {
+        return (
+            <p className="text-micro text-content-3 text-center">
+                Todavía no llegó ninguna tecla a esta pantalla.
+            </p>
+        );
+    }
+    if (!d) {
+        return (
+            <p className="text-micro text-content-3 text-center">
+                Llegaron {eventos} {eventos === 1 ? 'tecla' : 'teclas'}, y ninguna formó un código.
+            </p>
+        );
+    }
 
     // El caso más informativo va primero: teclas que SÍ llegaron y que el
     // navegador no supo convertir en caracteres. Prueba que el lector manda y
@@ -32,7 +53,13 @@ export default function LecturaQueNoEntro({ d }) {
             </Notice>
         );
     }
-    if (d.teclas === 0) return null;   // nada que contar
+    if (d.teclas === 0) {
+        return (
+            <p className="text-micro text-content-3 text-center">
+                Llegaron {eventos} {eventos === 1 ? 'tecla' : 'teclas'}, y ninguna formó un código.
+            </p>
+        );
+    }
 
     const partes = [
         `${d.teclas} ${d.teclas === 1 ? 'tecla' : 'teclas'}`,

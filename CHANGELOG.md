@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.739.4 — La salida de bolsa y la encuesta se guardan solas
+
+**La salida de efectivo.** Registrarla es elegir el motivo, el monto, la entidad,
+el número de boleta y una nota — y cada motivo pide lo suyo. La sesión de los
+cargos de sala se cierra a los 5 minutos y el formulario se perdía entero.
+
+Dos cosas quedan FUERA del borrador a propósito. **La foto del comprobante**: es
+un `File` sin subir, no se serializa, y guardar su nombre sin el contenido
+prometería un comprobante que al recuperar no está — justo el dato con el que
+administración da la salida por buena. Y **el paso**: se vuelve siempre al
+formulario, porque reponer a alguien en la pantalla de confirmación sobre datos
+que no revisó en esta sesión es pedirle que confirme a ciegas un movimiento de
+dinero.
+
+**La encuesta de clima**, sólo mientras se crea: editando una que ya existe, un
+borrador viejo podría cambiarle el alcance o las fechas a una encuesta que ya se
+está contestando.
+
+── Y una tercera que NO lleva borrador, con el motivo escrito ──────────────
+
+**La recepción de un pedido.** Lo que ya se hizo no se pierde: cada hoja
+confirmada se escribe al servidor en el momento, así que una sesión cortada deja
+el pedido en el punto exacto donde iba. Lo que queda en memoria es la hoja EN
+CURSO, y ahí un borrador sería **peor** que la pérdida: sus cinco mapas por
+renglón —cantidad, presentación, nota, si tiene problema y cuánto— son un
+**conteo físico**. Reponerlos de ayer y que alguien apriete «confirmar» es dar
+por recibida mercadería contra números que no contó, y la recepción es justamente
+el momento en que el portal deja de creerle al papel y le cree a la sala.
+
+Es el mismo argumento ya escrito para `composicionTraslado` —«quien la ve no sabe
+si la armó él»— sólo que acá el dato es existencia que entra al inventario.
+
+Deuda de borradores: **15 → 12**.
+
+## v2.739.3 — El cero se ve, y el lector que pega en vez de teclear
+
+> «en el telefono funciona al activar la camara, pero en la computadora de
+> escritorio con el lector no funciona.»
+
+Dos cosas: **la afirmación que faltaba**, y un camino más que sí existe.
+
+── Un cero que no se ve no dice nada ─────────────────────────────────────────
+
+El diagnóstico de v2.738.1 sólo se dibujaba cuando había una ráfaga que no
+entró. Cuando **no llega nada** no se dibujaba nada — o sea que «no llegó
+ninguna tecla» se veía exactamente igual que «el aviso no funciona» o que «esta
+computadora todavía tiene la versión vieja». Tres cosas distintas, una sola
+pantalla en blanco.
+
+Ahora las dos pantallas del ticket dicen siempre en qué están, incluso sin
+escanear: **«Todavía no llegó ninguna tecla a esta pantalla.»** El contador va
+antes de todo filtro —cuenta un Escape o un Shift igual que un dígito—, porque
+la pregunta que contesta no es «¿el código es válido?» sino **«¿este equipo le
+está mandando teclas al navegador?»**.
+
+Con eso, si después de escanear sigue diciendo que no llegó ninguna tecla, el
+navegador no está recibiendo nada y el problema deja de estar en el portal.
+
+── El lector que PEGA en vez de teclear ──────────────────────────────────────
+
+Existe: hay lectores y utilitarios de lector configurados para dejar el código
+en el portapapeles y simular un pegado. Eso no llega como ráfaga de teclas, así
+que el detector no lo veía. Se agregó ese camino — y **sólo donde un código
+tecleado vale**: un pegado no prueba que nadie estuviera presente, que es
+justamente lo que un carné tiene que probar.
+
+**Verificado en el navegador contra producción**: las dos pantallas muestran el
+cero sin escanear, y un pegado de `99998` sale a buscar el ticket y contesta.
+Tres pruebas nuevas (10 en total), verificadas rompiendo el código: contar
+después del filtro de Escape rompe una, y quitar el camino del pegado rompe
+otra.
+
 ## v2.739.2 — El depósito ofrecía llevar al banco 32 mil dólares que ya no están
 
 Encontrado midiendo producción a los minutos de publicar v2.739.0, no leyendo el

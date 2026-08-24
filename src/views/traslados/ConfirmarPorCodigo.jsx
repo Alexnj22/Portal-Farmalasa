@@ -72,7 +72,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     // que teclea con un hueco de más de 80ms entre caracteres. En las dos
     // formas el diálogo se quedaba en «Esperando el código del ticket» sin
     // decir nada, y la cámara del teléfono leía el mismo papel a la primera.
-    const { teclas, diagnostico } = useCapturaDeCarne(
+    const { teclas, diagnostico, eventos } = useCapturaDeCarne(
         abierto && !hallado && !listo && !conCamara, buscar,
         { aceptarTecleado: true, sinEnter: true },
     );
@@ -164,7 +164,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                                 lector no funciona» y «el lector no manda nada»
                                 se ven idénticos, que son dos problemas con dos
                                 arreglos distintos y en dos sitios distintos. */}
-                            {diagnostico && <LecturaQueNoEntro d={diagnostico} />}
+                            <LecturaQueNoEntro d={diagnostico} eventos={eventos} />
                             <Button variant="secondary" icon={Camera} onClick={() => setConCamara(true)}>
                                 Usar la cámara
                             </Button>

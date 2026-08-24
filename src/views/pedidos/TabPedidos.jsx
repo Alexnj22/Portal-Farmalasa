@@ -23,7 +23,7 @@ import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -314,11 +314,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                             // La sala de ESTA tarjeta — ver el bloque de Recepción más abajo.
                             const sucDeLaTarjeta = row.erp_sucursal_id ?? erpSucursalId;
 
-                            const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
+                            // Preparar y despachar son de la SALA — `puedePrepararse` /
+                            // `puedeDespacharse` (./tabpedidos/helpers), que es donde están
+                            // probadas y por qué.
+                            const canIniciar       = canActuar && !isBranch && puedePrepararse(row);
                             const canPausar        = canActuar && !isBranch && stage === 'preparando';
                             const canReanudar      = canActuar && !isBranch && stage === 'pausado';
                             // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
-                            const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
+                            const canMarcarEnRuta  = canActuar && !isBranch && puedeDespacharse(row);
 
                             const creator      = row.created_by               ? empMap.get(row.created_by)               : null;
                             const iniciador    = row.iniciado_por             ? empMap.get(row.iniciado_por)             : null;
@@ -343,6 +346,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
+                            // Anular SÍ es del pedido —se anula entero, no una sala— así que
+                            // acá `pedido_status` es lo correcto: si alguna sala ya salió, el
+                            // pedido no se anula. Es la única de estas guardas que se queda.
                             const canAnular = canActuar && !isBranch
                                 && row.pedido_status === 'confirmado'
                                 && !(pedidoStageMap.get(row.pedido_id)?.anyFinalized);

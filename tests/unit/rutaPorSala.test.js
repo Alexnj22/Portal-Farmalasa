@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agruparPorRuta, claveParada, getBranchStage, estadoDeLaSala } from '../../src/views/pedidos/tabpedidos/helpers';
+import { agruparPorRuta, claveParada, getBranchStage, estadoDeLaSala, puedePrepararse, puedeDespacharse } from '../../src/views/pedidos/tabpedidos/helpers';
 
 // El caso real, tal como estaba en producción el 2026-08-24.
 //
@@ -115,5 +115,32 @@ describe('el estado que pinta una tarjeta es el de su sala', () => {
 
     it('un pedido anulado manda sobre todo', () => {
         expect(estadoDeLaSala({ ...SALUD_1, pedido_status: 'anulado' })).toBe('anulado');
+    });
+});
+
+// `canIniciar` y `canMarcarEnRuta` (TabPedidos) son `stage === … && estadoSala
+// === 'confirmado'`. Antes pedían `pedido_status === 'confirmado'`, y con eso
+// Salud 2 quedó SIN el botón «Iniciar»: la primera sala que salía ponía el
+// PEDIDO en «enviado» y dejaba a las demás sin forma de empezar a prepararse.
+// La base nunca lo impidió — `update_pedido_sucursal_lifecycle` mira la fila de
+// la sala y ni consulta el estado del pedido.
+describe('la sala que no salió puede prepararse y despacharse', () => {
+    // Se importan, NO se reescriben acá: la primera versión de esta prueba
+    // copiaba la expresión y pasaba en verde con el defecto puesto.
+    const puedeIniciar   = puedePrepararse;
+    const puedeCrearRuta = puedeDespacharse;
+
+    it('«Iniciar» aparece aunque el pedido ya vaya en ruta por otra sala', () => {
+        expect(puedeIniciar(SALUD_2)).toBe(true);
+    });
+
+    it('y «Crear ruta» aparece cuando termina de prepararse', () => {
+        const lista = { ...SALUD_2, iniciado_at: '2026-08-24T20:00:00Z', finalizado_at: '2026-08-24T20:40:00Z' };
+        expect(puedeCrearRuta(lista)).toBe(true);
+    });
+
+    it('pero no se puede iniciar dos veces la que ya salió', () => {
+        expect(puedeIniciar(SALUD_1)).toBe(false);
+        expect(puedeCrearRuta(SALUD_1)).toBe(false);
     });
 });

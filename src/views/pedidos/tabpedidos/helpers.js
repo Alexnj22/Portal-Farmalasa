@@ -138,6 +138,25 @@ export function hayRecepcionPendiente({ enviadoAt = null, pedidoStatus, pendient
     return (reenviosHistorial ?? []).some(c => c.sent_at && !c.arrived_at);
 }
 
+// Las dos guardas de preparación de una SALA. Viven acá, exportadas, y no
+// escritas dentro del JSX: una prueba que copia la expresión en vez de
+// importarla no prueba nada — se escribió así primero y pasaba en verde con el
+// defecto puesto.
+//
+// Piden `estadoDeLaSala` y no `pedido_status`: en un pedido de varias salas, la
+// primera que salía ponía el PEDIDO en «enviado» y dejaba a las demás sin
+// botón. Salud 2 del pedido 137 (2026-08-24) quedó sin «Iniciar», o sea sin
+// forma de empezar a prepararse nunca. La base nunca lo impidió:
+// `update_pedido_sucursal_lifecycle` mira la fila de la sala y ni consulta el
+// estado del pedido — era una traba puesta sólo en la pantalla.
+export function puedePrepararse(row) {
+    return getBranchStage(row) === 'sin_iniciar' && estadoDeLaSala(row) === 'confirmado';
+}
+
+export function puedeDespacharse(row) {
+    return getBranchStage(row) === 'preparado' && estadoDeLaSala(row) === 'confirmado';
+}
+
 // Qué rótulo lleva la tarjeta de una sala. La tarjeta es de la SALA, así que no
 // puede pintar el estado del PEDIDO: en el pedido 137 del 2026-08-24, con
 // Salud 1 despachada y Salud 2 todavía en Bodega, las dos decían «En ruta».

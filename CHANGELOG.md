@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.5 — La sala que no salió puede prepararse
+
+Continuación de v2.742.3, y el mismo defecto en el lugar que faltaba: **Salud 2
+no tenía botón «Iniciar»**. La tarjeta ya decía la verdad —«Por despachar», fuera
+de la ruta— pero no se podía empezar a preparar, o sea que el pedido de esa sala
+quedaba muerto.
+
+`canIniciar` y `canMarcarEnRuta` pedían `pedido_status === 'confirmado'`, y ese
+estado es del PEDIDO: la primera sala que sale lo pone en «enviado» y deja a las
+demás sin botón. **La base nunca lo impidió** —
+`update_pedido_sucursal_lifecycle` mira la fila de la sala y ni consulta el
+estado del pedido—, así que era una traba puesta sólo en la pantalla.
+
+Las dos guardas pasaron a `puedePrepararse` / `puedeDespacharse`, exportadas
+desde `tabpedidos/helpers.js`. **`Anular` se queda como está**: anular es del
+pedido entero, así que ahí `pedido_status` es lo correcto.
+
+**Lo que NO se tocó, y por qué.** La sección de diferencias y el badge «Difs.
+pendientes» también cuelgan de `pedido_status === 'parcial'`. Parece el mismo
+caso y no lo es: `receive_pedido_sucursal` pone el pedido en «parcial» pero
+**no** marca `diferencias_reportadas_at` en la sala, así que cambiarlo por el
+dato de la sala escondería la sección justo en la ventana en que la sala tiene
+la diferencia. Es otra decisión y necesita su propio dato — queda anotado, no
+adivinado.
+
+**Y la primera prueba de esto estaba mal.** Copiaba la expresión de la guarda en
+vez de importarla: pasaba en verde con el defecto puesto. Reescrita contra las
+funciones reales, la regresión cae (2 fallos).
+
 ## v2.742.4 — Anular una bolsa devuelve su efectivo a la del día
 
 Reportado desde Salud 1: *«se habían confirmado 2 cortes, así que el último

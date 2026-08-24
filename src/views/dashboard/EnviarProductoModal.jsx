@@ -372,6 +372,16 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * lee como un defecto en vez de como la regla que es. */
     const soloSobrante = motivosPosibles.length === 1 && motivosPosibles[0] === 'Baja rotación';
 
+    /* Qué motivos quedaron afuera por ir sólo hacia Bodega. Se CALCULA en vez de
+     * escribirse: el mismo aviso escrito a mano decía «y si es por vencimiento,
+     * va a Bodega» y se quedó viejo el día que se agregó «Retiro del mercado» —
+     * un texto no falla nunca, sólo deja de ser cierto. Es la misma cuenta que
+     * hace el mensaje del servidor, y por el mismo motivo. */
+    const soloHaciaBodega = useMemo(
+        () => motivosEnvioPorDireccion(false, true).filter(m => !motivosPosibles.includes(m)),
+        [motivosPosibles],
+    );
+
     /* El motivo elegido antes del destino —o traído del borrador— puede no
      * valer en la dirección que quedó. Se limpia en vez de mandarlo: el
      * servidor lo rebota igual, y descubrirlo al apretar es tarde. */
@@ -910,7 +920,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                             {soloSobrante && (
                                 <p className="text-micro text-content-3 font-medium leading-snug px-1 mt-1">
                                     Entre salas sólo se manda lo que sobra. Si {NOMBRE_SALA[Number(destino)] ?? 'la otra sala'}{' '}
-                                    lo necesita, tiene que pedirlo; y si es por vencimiento, va a Bodega.
+                                    lo necesita, tiene que pedirlo
+                                    {soloHaciaBodega.length > 0 && (
+                                        <>; y lo que es {soloHaciaBodega.map(m => `«${m}»`).join(' o ')} va a Bodega</>
+                                    )}.
                                 </p>
                             )}
                             </div>
@@ -937,6 +950,8 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                     ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
                                     : motivo === 'Baja rotación'
                                     ? 'Ej.: no se ha vendido en dos meses y ocupa el estante'
+                                    : motivo === 'Retiro del mercado'
+                                    ? 'Ej.: lo pidió Bodega, el proveedor retira el lote 4471'
                                     : 'Explica por qué mandas este producto'}
                             />
                         </div>

@@ -44,6 +44,7 @@ export const MOTIVOS_ENVIO = [
     'Próximo a vencer',
     'Baja rotación',
     'Producto nuevo',
+    'Retiro del mercado',
 ];
 
 /**
@@ -63,11 +64,21 @@ export const MOTIVOS_ENVIO = [
  * | Baja rotación | sí | sí | **sí** |
  * | Próximo a vencer | sí | sí | no |
  * | Producto nuevo | no | sí | no |
+ * | Retiro del mercado | sí | no | no |
  *
  * Un producto que no rota en Salud 1 y sí en Salud 3 no gana nada dando la
  * vuelta por Bodega. Uno próximo a vencer sí, porque ahí la pregunta no es «¿a
  * quién le sirve?» sino «¿quién se hace cargo?». Y uno nuevo sólo puede salir
  * de donde entró la compra.
+ *
+ * El **retiro del mercado** —el proveedor retira un lote por un error, o lo
+ * ordena la SRS— es el caso más cerrado de los cuatro: sólo viaja HACIA Bodega.
+ * Un retiro se consolida en un solo lugar para juntarlo, contarlo y devolverlo;
+ * repartirlo entre salas sería repartir el problema, y de Bodega hacia una sala
+ * sería devolver a la venta algo que se retiró. Sin este motivo, una sala tenía
+ * que rotularlo «Baja rotación» —lo contrario de lo que pasó, porque no se movió
+ * por sobrar sino porque no puede seguir vendiéndose— y el día que alguien
+ * preguntara en qué salas quedó ese lote, no habría forma de saberlo.
  *
  * **Y no queda por dónde colar una solicitud disfrazada**, que es lo que se
  * defiende desde el principio: entre salas el único motivo es «Baja rotación»,
@@ -75,7 +86,7 @@ export const MOTIVOS_ENVIO = [
  * eso está la solicitud, donde el otro lado decide ANTES de que el producto
  * salga.
  *
- * «Baja rotación» está en las TRES listas, y de eso depende algo que no se ve:
+ * «Baja rotación» está en las tres listas, y de eso depende algo que no se ve:
  * una composición que saca de Bodega y de una sala a la vez sale como dos
  * envíos con el MISMO motivo, así que el modal ofrece la intersección — y
  * gracias a esto nunca queda vacía.
@@ -84,7 +95,7 @@ export const MOTIVOS_ENVIO = [
  * apretar es peor que uno que nunca se ofreció.
  */
 export function motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) {
-    if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación'];
+    if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación', 'Retiro del mercado'];
     if (origenEsBodega)  return ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
     return ['Baja rotación'];
 }

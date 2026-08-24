@@ -9,6 +9,8 @@
 //   2. «bodega si debe poder mandar corto vence, de hecho, hasta tiene la
 //      posibilidad de una sucursal solicitar un producto del area de vencidos.»
 //   3. «pero si es por baja rotacion, si debe poder enviarse a otra sucursal.»
+//   4. «agreguemos el motivo de, cuando bodega pide un producto por retiro del
+//      proveedor por un error o por algo de la SRS. asi las salas lo mandan.»
 //
 // Las dos primeras versiones pusieron el freno en la DIRECCIÓN —«sólo Bodega le
 // manda a una sala»— y encima le colgaron una tabla de motivos: dos reglas para
@@ -37,8 +39,10 @@ const DE_BODEGA   = () => motivosEnvioPorDireccion(true,  false);  // Bodega →
 const ENTRE_SALAS = () => motivosEnvioPorDireccion(false, false);  // sala → sala
 
 describe('los motivos del envío', () => {
-    it('son TRES: uno por cada uso, y ninguno abierto', () => {
-        expect(MOTIVOS_ENVIO).toEqual(['Próximo a vencer', 'Baja rotación', 'Producto nuevo']);
+    it('son CUATRO, y ninguno abierto', () => {
+        expect(MOTIVOS_ENVIO).toEqual([
+            'Próximo a vencer', 'Baja rotación', 'Producto nuevo', 'Retiro del mercado',
+        ]);
     });
 
     it('ya no ofrece las etiquetas con las que se mandaba cualquier cosa', () => {
@@ -80,7 +84,17 @@ describe('la tabla de direcciones, que es la única regla', () => {
         expect(ENTRE_SALAS()).not.toContain('Próximo a vencer');
     });
 
-    it('«Baja rotación» vale en las TRES, y de eso depende la composición', () => {
+    it('el retiro del mercado SÓLO viaja hacia Bodega', () => {
+        // Un retiro se consolida en un solo lugar: hay que juntarlo, contarlo y
+        // devolverlo. Repartirlo entre salas sería repartir el problema, y de
+        // Bodega hacia una sala sería devolver a la venta algo que se retiró.
+        // Es el motivo más cerrado de los cuatro, y a propósito.
+        expect(A_BODEGA()).toContain('Retiro del mercado');
+        expect(DE_BODEGA()).not.toContain('Retiro del mercado');
+        expect(ENTRE_SALAS()).not.toContain('Retiro del mercado');
+    });
+
+    it('«Baja rotación» vale en las tres direcciones, y de eso depende la composición', () => {
         // Una composición que saca de Bodega y de una sala a la vez sale como
         // dos envíos con el MISMO motivo, así que el modal ofrece la
         // intersección. Si «Baja rotación» dejara de estar en alguna, esa

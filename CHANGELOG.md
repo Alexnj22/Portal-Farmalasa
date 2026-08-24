@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.737.0 — El retiro del mercado es su propio motivo
+
+> «agreguemos el motivo de, cuando bodega pide un producto por retiro del
+> proveedor por un error o por algo de la SRS. asi las salas lo mandan.»
+
+**Sin este motivo, una sala que devuelve un lote retirado tenía que rotularlo
+«Baja rotación»** —lo único que valía para sacárselo de encima— y eso es
+exactamente lo contrario de lo que pasó: el producto no se movió porque sobrara,
+se movió porque **no puede seguir vendiéndose**. El rótulo es el dato con el que
+después se mira el circuito, y un retiro escondido dentro de «Baja rotación» no
+se puede encontrar el día que alguien pregunte «¿en qué salas quedó producto de
+ese lote?».
+
+**Y sólo viaja hacia Bodega.** Un retiro se consolida en un solo lugar: hay que
+juntarlo, contarlo y devolverlo o darlo de baja. Mandarlo a otra sala sería
+repartir el problema, y de Bodega hacia una sala sería devolver a la venta algo
+que se retiró. Es el motivo más cerrado de los cuatro, a propósito.
+
+| motivo | a Bodega | de Bodega a una sala | entre salas |
+|---|---|---|---|
+| Baja rotación | sí | sí | sí |
+| Próximo a vencer | sí | sí | no |
+| Producto nuevo | no | sí | no |
+| **Retiro del mercado** | **sí** | no | no |
+
+**El nombre cubre las dos causas** que dio el usuario —el proveedor retira un
+lote por un error, o lo ordena la SRS— porque quien elige en la pantalla no
+siempre sabe cuál de las dos lo originó. Cuál fue va en el motivo escrito, que
+es obligatorio.
+
+### Y el aviso de «entre salas» se quedó viejo en el acto
+
+Minutos después de agregarlo, el rechazo de un envío entre salas seguía diciendo
+*«y si es por vencimiento, mándalo a Bodega»* cuando ya había **dos** motivos
+que sólo van hacia Bodega. El texto no falló —un texto no falla nunca— sólo dejó
+de ser cierto, y quien lo leyera creería que un retiro no tiene a dónde ir.
+
+Es la misma familia que una lista de opciones escrita a mano contra la tabla:
+dos sitios que dicen lo mismo y sólo uno se actualiza. Ahora **la frase sale de
+la tabla** —nombra los motivos que valen entre salas y, por diferencia, los que
+hay que mandar a Bodega—, en el servidor y en la pantalla. El día que se agregue
+o se mueva un motivo, el texto se corrige solo.
+
+Migraciones `20260824162739` y `20260824162848`, verificadas contra producción
+con los siete casos de la tabla insertados y revertidos en la misma transacción.
+
 ## v2.736.1 — Bolsas: los totales del conteo se leen de un vistazo
 
 *«aun no veo tan claro la informacion, se ve pequeno, no tiene peso, no veo la

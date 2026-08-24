@@ -1,7 +1,7 @@
 // Bloque 6.A — capa de datos, entidad "notifications". Extraído de
 // notificationsSlice.js: 5 llamadas supabase.from(). La escritura de
-// nuevas notificaciones SIEMPRE pasa por los RPC notify_employees/
-// notify_branch (ver src/utils/notify.js) — este módulo solo cubre
+// nuevas notificaciones SIEMPRE pasa por los RPC avisar_a_empleados/
+// avisar_a_sucursal (ver src/utils/notify.js) — este módulo solo cubre
 // lectura/marcado-como-leído/borrado del lado del destinatario.
 import { supabase } from '../supabaseClient';
 

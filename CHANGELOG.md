@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.5 — El canal de avisos volvió: el navegador entra por una puerta angosta
+
+Aprobar un ajuste de Min/Max avisó «no se pudo enviar el aviso». La aprobación
+sí se aplicó; lo que no salió fue el aviso a quien lo propuso.
+
+La causa estaba a doce horas de distancia. La migración
+`20260824035829_el_revoke_que_se_olvidaba_de_authenticated` cerró siete
+funciones que `authenticated` podía ejecutar por la puerta de atrás, y de dos de
+ellas escribió «verificado que el navegador no las llama ni una vez». De
+`notify_employees` y `notify_branch` no era cierto: las llama `src/utils/notify.js`,
+con 18 llamadas en 8 archivos —solicitudes, Min/Max, pedidos, rutas, vacaciones—.
+Desde las 03:58 UTC toda esa rama devolvía **403 permission denied**. Medido a
+las 15:30 UTC: **9 avisos perdidos** en menos de doce horas, de cuatro equipos
+distintos.
+
+Se enteró el mismo día por el `enviar()` de `notify.js`, que al agotar los
+reintentos le dice a quien hizo la acción que el aviso no salió. El `catch` que
+sólo escribía en la consola —el que se cambió el 2026-08-01— habría dejado esto
+vivo semanas.
+
+**No se revierte el revoke**: el agujero que cerró es real —`notify_employees`
+acepta título, cuerpo, enlace y push arbitrarios contra cualquier lista de
+empleados—. **Y la guarda tampoco puede ir adentro**, que era la salida obvia:
+esa función la llaman también disparadores que corren DENTRO de la misma
+petición del navegador, con el mismo JWT, así que desde adentro las dos son
+indistinguibles y la lista blanca del portal apagaría avisos que hoy funcionan,
+en silencio.
+
+La puerta angosta va afuera. El primitivo queda cerrado y el navegador entra por
+`avisar_a_empleados` / `avisar_a_sucursal`: exigen un empleado resuelto, un tipo
+de la lista que el portal realmente emite, y a lo sumo 10 destinatarios (el
+portal manda a UNA persona por aviso). Un tipo nuevo hay que declararlo en la
+función — que haya que hacerlo es el punto.
+
+Verificado contra producción con una sesión `authenticated` real: la llamada
+válida pasa, el tipo fuera de la lista y los 11 destinatarios frenan con
+FORBIDDEN, y el primitivo directo sigue dando «permission denied».
+
 ## v2.731.4 — Las 25 áreas ya tienen documento propio
 
 Cierra el eje de documentación de la auditoría. Faltaban seis, y son las que

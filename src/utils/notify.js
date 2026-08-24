@@ -25,6 +25,23 @@ import { useToastStore } from '../store/toastStore';
 // a QUIEN HIZO LA ACCIÓN — el único que puede levantar el teléfono y contarlo
 // por otro medio. Un aviso que no salió y que nadie sabe que no salió es peor
 // que no tener aviso.
+// ── Por qué el navegador entra por `avisar_*` y no por `notify_*` (2026-08-24) ─
+// `notify_employees` acepta título, cuerpo, enlace y `push` arbitrarios contra
+// cualquier lista de empleados: abierta a `authenticated`, cualquier sesión
+// podía escribirle a toda la empresa con el portal como remitente. El
+// 2026-08-24 se le revocó el EXECUTE — y con eso murió el canal del navegador,
+// que la llamaba desde acá: 403 durante doce horas y nueve avisos perdidos.
+//
+// La guarda NO puede ir adentro de `notify_employees`: la llaman también
+// disparadores que corren DENTRO de la misma petición del navegador, con el
+// mismo JWT, así que desde adentro las dos son indistinguibles y la lista
+// blanca del portal apagaría avisos que hoy funcionan.
+//
+// Por eso el primitivo queda cerrado y el navegador entra por una puerta
+// angosta: `avisar_a_empleados` / `avisar_a_sucursal` exigen un empleado, un
+// tipo de la lista del portal y —la de empleados— a lo sumo 10 destinatarios.
+// **Un tipo nuevo hay que declararlo en la función**, o el aviso rebota con
+// FORBIDDEN. Ver `supabase/migrations/20260824145659_*.sql`.
 const REINTENTOS = 3;
 const ESPERA_BASE_MS = 700;
 
@@ -86,7 +103,7 @@ const enviar = async (rpc, params, titulo) => {
 export const notifyEmployees = async (recipientIds, { type, title, body = '', link = null, metadata = {}, push = false, branchId = null }) => {
     const ids = (recipientIds || []).filter(Boolean).map(String);
     if (!ids.length) return 0;
-    return enviar('notify_employees', {
+    return enviar('avisar_a_empleados', {
         p_recipients: ids,
         p_type: type,
         p_title: title,
@@ -105,7 +122,7 @@ export const notifyEmployees = async (recipientIds, { type, title, body = '', li
  */
 export const notifyBranch = async (branchId, { type, title, body = '', link = null, metadata = {}, push = false }) => {
     if (branchId == null) return 0;
-    return enviar('notify_branch', {
+    return enviar('avisar_a_sucursal', {
         p_branch_id: Number(branchId),
         p_type: type,
         p_title: title,

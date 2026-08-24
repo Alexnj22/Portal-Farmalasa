@@ -7,8 +7,10 @@ import {
 // ============================================================================
 // 🔔 NOTIFICACIONES — mensajes automáticos 1-a-1 (sistema → empleado)
 // AVISO = humano→muchos (announcements) · NOTIFICACIÓN = sistema→ti (esta tabla)
-// La escritura SIEMPRE pasa por los RPC notify_employees / notify_branch
-// (SECURITY DEFINER) — ver src/utils/notify.js. RLS: solo el destinatario lee.
+// La escritura SIEMPRE pasa por los RPC avisar_a_empleados / avisar_a_sucursal
+// (SECURITY DEFINER) — ver src/utils/notify.js. Los `notify_*` que delegan están
+// cerrados a `authenticated`: sólo los llaman crons, edge functions con
+// service_role y disparadores. RLS: solo el destinatario lee.
 // ============================================================================
 
 export const createNotificationsSlice = (set, get) => ({

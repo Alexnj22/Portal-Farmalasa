@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.736.0 — Entre salas sí se manda, pero sólo por baja rotación
+
+**El freno estaba en el lugar equivocado, y lo destapó probarlo en pantalla.** El
+usuario abrió el formulario desde una cuenta de sala y encontró el destino fijo
+en Bodega:
+
+> «pero si es por baja rotacion, si debe poder enviarse a otra sucursal.»
+
+Las dos versiones anteriores del mismo día pusieron el freno en la **dirección**
+—«sólo Bodega le manda a una sala»— y encima le colgaron una tabla de motivos:
+dos reglas para una sola pregunta. Por eso esta tercera respuesta no entraba en
+ninguna de las dos. **No existe una dirección que sea buena o mala en sí misma:
+lo que decide es el motivo, y la dirección es una consecuencia suya.**
+
+Queda **una** regla, y la dirección sale de ella:
+
+| motivo | a Bodega | de Bodega a una sala | entre salas |
+|---|---|---|---|
+| Baja rotación | sí | sí | **sí** |
+| Próximo a vencer | sí | sí | no |
+| Producto nuevo | no | sí | no |
+
+Un producto que no rota en Salud 1 y sí en Salud 3 no gana nada dando la vuelta
+por Bodega. Uno próximo a vencer sí, porque ahí la pregunta no es «¿a quién le
+sirve?» sino «¿quién se hace cargo?». Y uno nuevo sólo puede salir de donde
+entró la compra.
+
+**Y sigue sin haber por dónde colar una solicitud disfrazada**, que es lo que se
+defendía desde el principio: entre salas el único motivo es «Baja rotación», o
+sea *me sobra*. «Te lo mando porque lo necesitás» no tiene etiqueta — para eso
+está la solicitud, donde el otro lado decide **antes** de que el producto salga.
+Lo que se abrió no es una puerta nueva: es la mitad legítima de la que se había
+cerrado de más.
+
+**En la pantalla**, el destino vuelve a ofrecer todas las salas y lo que cambia
+según los extremos es qué **motivos** aparecen. Elegida otra sala, el único es
+«Baja rotación», con la línea que dice por qué: *«Entre salas sólo se manda lo
+que sobra. Si Salud 3 lo necesita, tiene que pedirlo; y si es por vencimiento,
+va a Bodega.»* Un desplegable con una sola opción y sin explicación se lee como
+un defecto, no como una regla.
+
+Y los motivos que se ofrecen son la **intersección** sobre las salas de origen
+presentes, no la lista de una sola: una composición sale como un envío por sala
+de origen con el mismo motivo, así que uno que no valga para uno de los orígenes
+haría rebotar ese envío y no los otros — media composición mandada, que es peor
+que ninguna. Nunca queda vacía porque «Baja rotación» está en las tres listas.
+
+`motivos_envio_por_destino(boolean)` se **elimina** y la reemplaza
+`motivos_envio_por_direccion(boolean, boolean)`: con el destino solo, «de Bodega
+a una sala» y «entre salas» eran el mismo caso. La vieja no se deja al lado —una
+firma viva es una que alguien va a llamar, y las dos no contestan lo mismo—.
+
+Migración `20260824162147`, verificada contra producción con los **ocho** casos
+de la tabla insertados y revertidos en la misma transacción.
+
 ## v2.735.9 — El gate de eficiencia acusaba al cron de algo que no hizo
 
 Cerrando la sesión de auditoría, `npm run gate:eficiencia` se puso **rojo** por

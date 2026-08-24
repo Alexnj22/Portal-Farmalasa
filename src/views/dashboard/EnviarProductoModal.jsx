@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { buscarInventarioGlobalV2 } from '../../data/inventory';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearEnvio, despacharEnvio, direccionValida, ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDestino, TOPE_RENGLONES_ENVIO } from '../../data/envios';
+import { crearEnvio, despacharEnvio, ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDireccion, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
@@ -238,11 +238,14 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         // eso el servidor lo rebota recién al apretar «Transferir».
         : String(origen.erp) === String(destino)
             ? `${origen.nombre} es la sala a la que va el envío.`
-        // Y la dirección: una sala no le manda a otra. Se dice acá, con el
-        // renglón todavía sin agregar, y no al apretar «Transferir» con la caja
-        // armada — ver `direccionValida`.
-        : destino && !direccionValida(origen.erp, destino)
-            ? `${origen.nombre} no le manda producto a ${NOMBRE_SALA[Number(destino)] ?? 'esa sala'}: eso se pide. Lo que ya no necesita va a Bodega.`
+        // Y si el motivo ya está elegido, que valga para ESTA sala de origen.
+        // Puede no valer: una composición saca de varias salas y el motivo es
+        // uno solo — de Bodega se puede mandar un producto nuevo, de una sala
+        // no. Se dice con el renglón todavía sin agregar, y no al apretar
+        // «Transferir» con la caja armada.
+        : destino && motivo && !motivosEnvioPorDireccion(
+              Number(origen.erp) === ERP_BODEGA, Number(destino) === ERP_BODEGA).includes(motivo)
+            ? `«${motivo}» no vale para lo que sale de ${origen.nombre}.`
         : null;
 
     const agregar = useCallback(() => {
@@ -319,33 +322,25 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         return [...porClave.values()].filter(a => a.unidades > a.existencia);
     }, [renglones, miErp]);
 
-    /* A dónde puede ir, y acá es donde se aplica la dirección.
+    /* A dónde puede ir. Cualquiera menos la propia; con alcance sobre todas se
+     * ofrecen TODAS —quien manda no tiene una sala en este sentido— y lo que
+     * impide mandarse algo a sí misma es el freno por renglón.
      *
-     * Desde una sala el único destino es Bodega; desde Bodega, cualquier sala.
-     * Con alcance sobre todas se ofrecen las DOS direcciones —quien manda no
-     * tiene una sala en este sentido y arma envíos de cualquier origen—, y lo
-     * que comprueba que la dirección cierre es el freno por renglón, igual que
-     * el que impide mandarse algo a sí misma. */
+     * El destino NO se recorta por la regla del circuito. Entre el 2026-08-24 y
+     * ese mismo día lo estuvo —desde una sala el único destino era Bodega— y el
+     * usuario lo encontró probándolo: *«pero si es por baja rotacion, si debe
+     * poder enviarse a otra sucursal»*. Recortar acá era poner la regla dos
+     * veces, y la de más adentro estaba mal. Hoy toda dirección se puede
+     * elegir; lo que cambia según los extremos es QUÉ MOTIVOS se ofrecen. */
     const salasDestino = useMemo(
         () => Object.entries(NOMBRE_SALA)
-            .filter(([erp]) => {
-                if (Number(erp) === Number(miErp)) return alcanceTodo;
-                if (alcanceTodo) return true;
-                return soyBodega ? Number(erp) !== ERP_BODEGA : Number(erp) === ERP_BODEGA;
-            })
+            .filter(([erp]) => alcanceTodo || Number(erp) !== Number(miErp))
             .map(([erp, nombre]) => ({ value: erp, label: nombre })),
-        [miErp, alcanceTodo, soyBodega],
+        [miErp, alcanceTodo],
     );
 
-    /* Un solo destino posible no es una pregunta: es un dato. Se elige solo
-     * —el caso de toda sala que no es Bodega— y el porqué se dice abajo del
-     * campo, que es donde alguien lo va a leer. */
-    useEffect(() => {
-        if (salasDestino.length === 1 && !destino) setDestino(String(salasDestino[0].value));
-    }, [salasDestino, destino]);
-
-    /* Y un destino que venía del borrador puede haber dejado de ser posible
-     * —cambió el cargo, cambió la regla—. Un valor que la lista ya no ofrece se
+    /* Un destino que venía del borrador puede haber dejado de ser posible
+     * —cambió el cargo, cambió de sala—. Un valor que la lista ya no ofrece se
      * queda pegado en el estado y sale a rebotar al servidor. */
     useEffect(() => {
         if (destino && !salasDestino.some(x => String(x.value) === String(destino))) setDestino('');
@@ -353,15 +348,29 @@ export default function EnviarProductoModal({ onClose, onListo }) {
 
     const destinoEsBodega = Number(destino) === ERP_BODEGA;
 
-    /* Qué motivos valen en ESTA dirección. Los tres existen, pero ninguno vale
-     * en las dos: hacia Bodega va lo que una sala se saca de encima, hacia una
-     * sala va lo que Bodega reparte. De ahí caen solas las otras dos reglas
-     * —«Producto nuevo» sólo sale de Bodega, «Próximo a vencer» sólo llega a
-     * Bodega— sin escribirlas aparte. */
-    const motivosPosibles = useMemo(
-        () => (destino ? motivosEnvioPorDestino(destinoEsBodega) : MOTIVOS_ENVIO),
-        [destino, destinoEsBodega],
-    );
+    /* Qué motivos valen entre los extremos de ESTE envío.
+     *
+     * Es la intersección sobre las salas de origen presentes, no la lista de
+     * una sola: una composición sale como UN envío por sala de origen y el
+     * motivo es el mismo para todos, así que un motivo que no valga para uno de
+     * los orígenes haría rebotar ese envío y no los otros — media composición
+     * mandada, que es peor que ninguna.
+     *
+     * Nunca queda vacía porque «Baja rotación» está en las tres listas. */
+    const motivosPosibles = useMemo(() => {
+        if (!destino) return MOTIVOS_ENVIO;
+        const origenes = renglones.length
+            ? [...new Set(renglones.map(r => Number(r.origen_erp ?? miErp) === ERP_BODEGA))]
+            : [soyBodega];
+        return origenes
+            .map(esBodega => motivosEnvioPorDireccion(esBodega, destinoEsBodega))
+            .reduce((a, b) => a.filter(m => b.includes(m)));
+    }, [destino, destinoEsBodega, renglones, miErp, soyBodega]);
+
+    /* Y si lo único que queda es «Baja rotación», decir por qué. Es el caso de
+     * sala a sala, y sin la explicación el desplegable con una sola opción se
+     * lee como un defecto en vez de como la regla que es. */
+    const soloSobrante = motivosPosibles.length === 1 && motivosPosibles[0] === 'Baja rotación';
 
     /* El motivo elegido antes del destino —o traído del borrador— puede no
      * valer en la dirección que quedó. Se limpia en vez de mandarlo: el
@@ -375,16 +384,6 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * se elige ese mismo destino. */
     const chocanConElDestino = useMemo(
         () => renglones.filter(r => destino && String(r.origen_erp ?? miErp) === String(destino)),
-        [renglones, destino, miErp],
-    );
-
-    /* Y los que quedaron apuntando en la dirección equivocada. Mismo caso que
-     * el de arriba y por el mismo orden: se agrega el renglón y DESPUÉS se
-     * elige un destino con el que ya no cierra. */
-    const chocanConLaDireccion = useMemo(
-        () => (destino
-            ? renglones.filter(r => !direccionValida(r.origen_erp ?? miErp, destino))
-            : []),
         [renglones, destino, miErp],
     );
 
@@ -403,7 +402,6 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
-        : chocanConLaDireccion.length > 0 ? 'Hay producto que sale de una sala hacia otra sala, y eso se pide.'
         : !motivo ? 'Elige el motivo.'
         // Cuatro letras es el mismo piso que cobra la base: menos que eso no
         // explica nada, y que se rebote recién al apretar sería peor.
@@ -870,15 +868,6 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                             </p>
                         )}
 
-                        {chocanConLaDireccion.length > 0 && (
-                            <p className="text-micro font-semibold text-danger-text leading-snug px-1">
-                                {chocanConLaDireccion.length === 1
-                                    ? `${chocanConLaDireccion[0].descripcion} sale de una sala hacia otra sala.`
-                                    : `${chocanConLaDireccion.length} productos salen de una sala hacia otra sala.`}
-                                {' '}Eso se pide, no se manda: lo que ya no necesitas va a Bodega.
-                            </p>
-                        )}
-
                         {excesos.map(x => (
                             <p key={`${x.nombre}|${x.sala}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
                                 Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y{' '}
@@ -901,18 +890,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 options={salasDestino}
                                 placeholder="¿A qué sala va?"
                                 ariaLabel="Sala de destino"
-                                disabled={salasDestino.length === 1}
                             />
-                            {/* El porqué, donde alguien lo va a leer. Un campo
-                                con una sola opción sin explicación se lee como
-                                un defecto; con esta línea se lee como la regla
-                                que es, y dice a dónde ir en su lugar. */}
-                            {salasDestino.length === 1 && (
-                                <p className="text-micro text-content-3 font-medium leading-snug px-1 mt-1">
-                                    Desde tu sala el producto va a Bodega, y Bodega decide a quién le toca.
-                                    Si otra sala lo necesita, tiene que pedirlo.
-                                </p>
-                            )}
                             </div>
                             <div>
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Motivo</p>
@@ -924,6 +902,17 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 ariaLabel="Motivo del envío"
                                 disabled={!destino}
                             />
+                            {/* El porqué, donde alguien lo va a leer. Un
+                                desplegable con una sola opción y sin
+                                explicación se lee como un defecto en vez de
+                                como la regla que es — y esta línea además dice
+                                a dónde ir en su lugar. */}
+                            {soloSobrante && (
+                                <p className="text-micro text-content-3 font-medium leading-snug px-1 mt-1">
+                                    Entre salas sólo se manda lo que sobra. Si {NOMBRE_SALA[Number(destino)] ?? 'la otra sala'}{' '}
+                                    lo necesita, tiene que pedirlo; y si es por vencimiento, va a Bodega.
+                                </p>
+                            )}
                             </div>
                             {/* ── El motivo escrito, SIEMPRE ────────────────
                                 Pedido del usuario: era «Detalle (opcional)» y

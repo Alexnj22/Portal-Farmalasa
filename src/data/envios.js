@@ -47,50 +47,46 @@ export const MOTIVOS_ENVIO = [
 ];
 
 /**
- * Y cuáles valen según a dónde va. Espejo de `motivos_envio_por_destino()`.
+ * Y cuáles valen entre estos dos extremos. Espejo de
+ * `motivos_envio_por_direccion()`.
  *
- * La dirección es el control, no el motivo suelto: sólo Bodega le manda a una
- * sala, así que hacia Bodega va lo que una sala se saca de encima y hacia una
- * sala va lo que Bodega reparte. De esa tabla caen solas las otras dos reglas
- * —«Producto nuevo» sólo sale de Bodega, «Próximo a vencer» sólo llega a
- * Bodega— sin escribirlas aparte.
+ * **Es la ÚNICA regla del circuito.** La dirección no se decide aparte: sale de
+ * acá. Las dos versiones anteriores del 2026-08-24 tenían un freno de dirección
+ * —«sólo Bodega le manda a una sala»— MÁS una tabla de motivos, o sea dos
+ * reglas para una sola pregunta, y por eso la tercera respuesta del usuario no
+ * entraba: *«pero si es por baja rotacion, si debe poder enviarse a otra
+ * sucursal»*. No hay direcciones buenas y malas en sí mismas; lo que decide es
+ * el motivo, y la dirección es una consecuencia suya.
+ *
+ * | motivo | a Bodega | de Bodega a una sala | entre salas |
+ * |---|---|---|---|
+ * | Baja rotación | sí | sí | **sí** |
+ * | Próximo a vencer | sí | sí | no |
+ * | Producto nuevo | no | sí | no |
+ *
+ * Un producto que no rota en Salud 1 y sí en Salud 3 no gana nada dando la
+ * vuelta por Bodega. Uno próximo a vencer sí, porque ahí la pregunta no es «¿a
+ * quién le sirve?» sino «¿quién se hace cargo?». Y uno nuevo sólo puede salir
+ * de donde entró la compra.
+ *
+ * **Y no queda por dónde colar una solicitud disfrazada**, que es lo que se
+ * defiende desde el principio: entre salas el único motivo es «Baja rotación»,
+ * o sea *me sobra*. «Te lo mando porque lo necesitás» no tiene etiqueta — para
+ * eso está la solicitud, donde el otro lado decide ANTES de que el producto
+ * salga.
+ *
+ * «Baja rotación» está en las TRES listas, y de eso depende algo que no se ve:
+ * una composición que saca de Bodega y de una sala a la vez sale como dos
+ * envíos con el MISMO motivo, así que el modal ofrece la intersección — y
+ * gracias a esto nunca queda vacía.
  *
  * Se pregunta ANTES de ofrecer: un motivo que se ofrece y después rebota al
  * apretar es peor que uno que nunca se ofreció.
  */
-export function motivosEnvioPorDestino(destinoEsBodega) {
-    return destinoEsBodega
-        // Hacia Bodega: lo que una sala se saca de encima. «Producto nuevo» no
-        // entra acá, y de eso —y sólo de eso— sale la regla de que un producto
-        // nuevo únicamente puede salir de Bodega.
-        ? ['Próximo a vencer', 'Baja rotación']
-        // Hacia una sala: sólo puede venir de Bodega, y es reparto. El corto
-        // vence entra desde el 2026-08-24, por corrección del usuario: una sala
-        // ya puede PEDIR del área de vencidos de Bodega, así que negarle a
-        // Bodega el mismo viaje cuando ella lo ofrece no defendía nada — sólo
-        // obligaba a rotularlo «Baja rotación», que es mentira.
-        : ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
-}
-
-/**
- * ¿Esta dirección es un envío, o es una solicitud disfrazada?
- *
- * Sólo Bodega le manda producto a una sala. Una sala que le empuja a otra está
- * decidiendo por ella: el producto sale ANTES de que nadie del otro lado opine,
- * así que «te lo mando porque lo necesitás» llega en caja y sin respuesta.
- * Cuando la otra sala de verdad lo necesita, lo PIDE, y ahí quien lo tiene
- * decide antes de que se mueva nada.
- *
- * Lo de baja rotación sigue llegando a otra sala, en dos tramos: sala → Bodega,
- * y Bodega reparte. Es un tramo más a propósito — la que reparte es la que ve
- * las siete salas.
- *
- * Vive acá y no en el modal porque la cobra también el servidor
- * (`validar_envio_producto`) y porque así se puede probar sin montar la
- * pantalla; el modal la usa para no OFRECER lo que va a rebotar.
- */
-export function direccionValida(origenErp, destinoErp) {
-    return Number(origenErp) === ERP_BODEGA || Number(destinoErp) === ERP_BODEGA;
+export function motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) {
+    if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación'];
+    if (origenEsBodega)  return ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
+    return ['Baja rotación'];
 }
 
 /**

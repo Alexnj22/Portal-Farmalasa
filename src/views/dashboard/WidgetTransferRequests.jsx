@@ -158,9 +158,9 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 Los tres dicen ahora QUÉ MOVIMIENTO es, y ninguno nombra el
                 mecanismo:
 
-                  · **sale de tu sala** → «Enviar producto a otra sala»
+                  · **sale de tu sala** → «Enviar producto»
                   · **llega a tu sala** → «Recibir traslado»
-                  · **va en tus manos** → «Llevar bolsas a otra sala»
+                  · **va en tus manos** → «Llevar productos»
 
                 «Confirmar escaneando el ticket» nombraba el gesto y no el
                 hecho: quien tiene la bolsa enfrente busca *recibirla*, y que
@@ -169,13 +169,20 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 de una acción, en una fila donde los otros dos son verbos. Los
                 tres rótulos van en el mismo molde a propósito: leídos juntos,
                 la diferencia entre ellos es la DIRECCIÓN del producto, que es
-                justo lo que hay que elegir. */}
+                justo lo que hay que elegir.
+
+                Y van CORTOS —dos palabras cada uno, segunda corrección del
+                usuario el mismo día—: el «a otra sala» que arrastraban dos de
+                los tres no distinguía nada, porque los tres botones son de
+                mover producto ENTRE salas. Lo que sí distingue es el verbo, y
+                una cola de tres palabras repetida lo empuja hacia la derecha
+                justo donde menos ancho hay. */}
             <div className="shrink-0 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                 {puedeEnviar && (
                     <Button variant="primary" icon={Send}
                         className="min-h-[var(--tap-min)] w-full sm:w-auto"
                         onClick={() => setAbrirEnvio(true)}>
-                        Enviar producto a otra sala
+                        Enviar producto
                     </Button>
                 )}
                 <Button variant="secondary" icon={ScanLine}
@@ -186,7 +193,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 <Button variant="secondary" icon={Truck}
                     className="min-h-[var(--tap-min)] w-full sm:w-auto"
                     onClick={() => setAbrirRetiro(true)}>
-                    Llevar bolsas a otra sala
+                    Llevar productos
                 </Button>
             </div>
 

@@ -461,7 +461,7 @@ export default function TrasladosView() {
                         {
                             key: 'retiro',
                             icon: Truck,
-                            label: 'Llevar bolsas a otra sala',
+                            label: 'Llevar productos',
                             onClick: () => setAbrirRetiro(true),
                         },
                     ] : []}>
@@ -526,7 +526,7 @@ export default function TrasladosView() {
                             <Button variant="secondary" icon={Send}
                                 className="min-h-[var(--tap-min)]"
                                 onClick={() => setAbrirEnvio(true)}>
-                                Enviar producto a otra sala
+                                Enviar producto
                             </Button>
                         </div>
                     )}

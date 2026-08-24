@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.737.4 — Los tres botones de traslados, en dos palabras
+
+> «enviar producto, que sea el primero. y el ultimo como Llevar productos.»
+
+Los tres quedan en dos palabras, y la fila se lee de un vistazo:
+
+| antes (v2.737.3) | ahora |
+|---|---|
+| Enviar producto a otra sala | **Enviar producto** |
+| Recibir traslado | *(igual)* |
+| Llevar bolsas a otra sala | **Llevar productos** |
+
+**El «a otra sala» no distinguía nada**: los tres botones son de mover producto
+entre salas, así que esa cola estaba en dos de los tres diciendo lo mismo. Lo
+que los diferencia es el verbo — y tres palabras de relleno lo empujan hacia la
+derecha justo donde menos ancho hay.
+
+Cambia también el rótulo de la barra de `/traslados`, el botón de la pestaña
+«Envíos» y el título del diálogo del recorrido.
+
 ## v2.737.3 — Los tres botones de traslados dicen que movimiento son
 
 > «el de confirmar, que solo diga Recibir traslado (con el icono de codigo), lo

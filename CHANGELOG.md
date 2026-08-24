@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.0 — Reimprimir el ticket de un traslado
+
+> «¿hay alguna forma de reimprimir una solicitud / traslado ante un error de
+> impresión? así como las bolsas de efectivo» · y su condición: **«solo debe
+> poder imprimir»**.
+
+No la había — y un comentario del código ya la prometía («si el papel no sale,
+se reimprime desde la tarjeta») sin que nadie la hubiera construido.
+
+── Sólo imprime ──────────────────────────────────────────────────────────────
+
+No anula el papel anterior, no marca nada y no pide motivo. Lo que se está
+arreglando es **una impresora, no un hecho del negocio**: un ticket que salió
+ilegible no cambió nada de lo que pasó con el producto.
+
+── El papel se REARMA, no estaba guardado ────────────────────────────────────
+
+No hay copia del ticket en ninguna parte, y no hace falta: todo lo que dice
+quedó en `metadata.erp_traslado` cuando el despacho entró — número, quién
+despachó, la hora y el detalle de lo que viajó. Guardar además el papel armado
+sería una segunda verdad que puede divergir de la primera.
+
+**Y se arma desde `detalle`, no desde `items`.** Ésa es la parte que se
+equivoca en silencio: `items` es lo que se PIDIÓ, y un despacho puede salir
+recortado. Un ticket reimpreso desde lo pedido diría más de lo que hay en la
+bolsa — y como quien la abre le cree al papel, la diferencia se reportaría como
+faltante. Seis pruebas nuevas lo anclan contra un `metadata` **copiado de
+producción** (traslado 33092), incluida una que arma el papel por los dos
+caminos —el del despacho y el de la reimpresión— y los compara enteros.
+
+── Dónde está el botón, y por qué en dos lugares ─────────────────────────────
+
+| dónde | a quién le sirve |
+|---|---|
+| Detalle de un traslado «En camino» | la sala que RECIBE, y supervisión |
+| «Llevar productos» → «acá quedan N esperando salir» | **la sala que despachó**, que es la que tiene la bolsa enfrente |
+
+El segundo hacía falta porque «En camino» filtra por destino: una vez que tu
+sala despacha, el traslado desaparece de tu portal hasta que la otra lo recibe.
+
+Y esa lista **ahora se carga con tu sala al abrir**, no sólo después de un
+escaneo. Antes salía de `salaActual`, que se aprende escaneando — o sea que para
+ver la lista había que escanear, y la bolsa cuyo ticket no salió es justamente
+la que no se puede escanear. Un candado que se abría con la llave que estaba
+adentro.
+
+── Un hueco propio, cazado por el gate ───────────────────────────────────────
+
+`gate:design` levantó un `try/finally` sin `catch` en la acción nueva: con la
+red caída, la pantalla quedaba igual que antes de apretar y quien está parado
+ahí lo vuelve a apretar — dos papeles iguales pegados a una bolsa. Es el mismo
+hueco que la firma del carné de esa pantalla ya tenía tapado.
+
 ## v2.741.0 — La avería es motivo de envío a Bodega y va con foto
 
 Pedido: *«en los traslados a bodega, que tambien este el motivo de averia, y que

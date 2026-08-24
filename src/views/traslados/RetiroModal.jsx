@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { Camera, PackageCheck, ScanLine, Truck, UserCheck } from 'lucide-react';
+import { Camera, PackageCheck, Printer, ScanLine, Truck, UserCheck } from 'lucide-react';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import Button from '../../components/common/Button';
@@ -7,7 +7,7 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
-import { fetchTrasladoPorCodigo } from '../../data/traslados';
+import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '../../data/traslados';
 import { fetchEmployeeByKioskPin } from '../../data/pedidos';
 import {
     fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, soltarBulto, cerrarRetiro,
@@ -15,6 +15,9 @@ import {
 } from '../../data/retiros';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
+import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
+import { reimprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 /* La bitácora de la custodia.
@@ -63,6 +66,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     const [conCamara, setConCamara] = useState(false);
     // La bolsa que espera la firma de quien entrega.
     const [pidiendoFirma, setPidiendoFirma] = useState(null);   // { requestId, origen }
+    const { user } = useAuth();
+    const miBranch = user?.branchId ?? user?.branch_id ?? null;
+    const [imprimiendo, setImprimiendo] = useState(null);   // request_id en curso
 
     const recargar = useCallback(async (branchId = null) => {
         const { retiro: r } = await fetchRetiroAbierto();
@@ -80,13 +86,20 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         setCargando(false);
     }, []);
 
+    /* Al abrir se pregunta por la sala PROPIA, no por «ninguna».
+     *
+     * `salaActual` sale del último escaneo, así que hasta ahora la lista de «acá
+     * quedan N esperando salir» no existía hasta escanear algo. Eso deja afuera
+     * justo al caso que la necesita: la bolsa cuyo ticket NO salió no se puede
+     * escanear, y sin escanearla no aparecía la lista desde donde reimprimirlo.
+     * Un candado que se abre con la llave que está adentro. */
     useEffect(() => {
         if (!abierto) return;
-        recargar(salaActual?.id ?? null);
+        recargar(salaActual?.id ?? miBranch ?? null);
         // `salaActual` a propósito fuera: recargar al cambiar de sala lo hace
         // quien la cambia, y ponerlo acá volvería a consultar en cada render.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [abierto, recargar]);
+    }, [abierto, recargar, miBranch]);
 
     /** Un código leído: se resuelve, se carga, y se aprende dónde estamos. */
     const escanear = useCallback(async (codigo, entregoId = null) => {
@@ -173,6 +186,53 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     }, [pidiendoFirma, escanear]);
 
     useCapturaDeCarne(abierto && Boolean(pidiendoFirma) && !ocupado, leerFirma);
+
+    /** El MISMO ticket otra vez, cuando el papel no sirvió.
+     *
+     * Sólo imprime (condición del usuario): no anula el anterior, no marca nada
+     * y no pide motivo. Lo que se arregla es una impresora, no un hecho del
+     * negocio — un ticket ilegible no cambió nada de lo que pasó con el producto.
+     *
+     * El nombre de quien pidió se resuelve con el mismo respaldo que las
+     * tarjetas: quien pide un traslado es por definición de OTRA sala, así que
+     * el maestro de personal no lo trae y sin el respaldo el papel saldría sin
+     * el renglón «Pide» — o sea, distinto del original. */
+    const volverAImprimir = useCallback(async (requestId) => {
+        setImprimiendo(requestId); setError(''); setAviso('');
+        try {
+            const { fila } = await fetchTrasladoParaImprimir(requestId);
+            if (!fila?.metadata) { setError('No se pudo leer ese traslado.'); return; }
+
+            const idPide = fila.employee_id;
+            const st = useStaff.getState();
+            const cache = idPide ? await st.resolverPersonasDeSolicitudes([idPide]) : {};
+            const pide = idPide
+                ? (buscadorDePersonas(st.employees)(idPide)?.name
+                    ?? cache?.[String(idPide)]?.name ?? null)
+                : null;
+
+            const r = await reimprimirTicketDeTraslado({
+                metadata: fila.metadata,
+                pide,
+                sala: miBranch,
+                familia: fila.type === 'INVENTORY_TRANSFER_PUSH' ? 'envio' : 'solicitud',
+            });
+            // `ok` es RECIBIDO por la caja, nunca «salió papel»: lo que contesta
+            // el programa de la caja es opaco, y prometer en pantalla lo que no
+            // se sabe manda a alguien a buscar un papel que no está.
+            if (r?.ok) setAviso('El ticket se mandó a la impresora.');
+            else setError(`No se pudo imprimir: ${r?.detalle ?? 'sin detalle'}`);
+        } catch (e) {
+            // Sin este `catch`, una red caída deja la pantalla igual que antes
+            // de apretar: quien está parado ahí lo vuelve a apretar creyendo que
+            // no entró, y termina con dos papeles iguales pegados a una bolsa.
+            // El `finally` sólo apaga el reloj y no dice nada. Es el mismo
+            // hueco que `leerFirma` acá abajo ya tenía tapado.
+            setError(mensajeAmigable(e, 'No se pudo imprimir el ticket.'));
+        } finally {
+            setImprimiendo(null);
+        }
+    }, [miBranch]);
 
     const bultos = useMemo(() => retiro?.bultos ?? [], [retiro]);
 
@@ -286,11 +346,47 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     {/* Lo que queda esperando SALIR de acá — la alerta que evita
                         el olvido, y llega cuando todavía se puede hacer algo. */}
                     {pendientes.length > 0 && (
-                        <Notice variant="warning">
-                            Acá quedan <strong>{pendientes.length}</strong> esperando salir
-                            {pendientes.some(p => p.destino) && `, para ${[...new Set(pendientes.map(p => p.destino).filter(Boolean))].join(', ')}`}.
-                            Escanea su ticket si te las llevas.
-                        </Notice>
+                        <div className="flex flex-col gap-2">
+                            <Notice variant="warning">
+                                Acá quedan <strong>{pendientes.length}</strong> esperando salir
+                                {pendientes.some(p => p.destino) && `, para ${[...new Set(pendientes.map(p => p.destino).filter(Boolean))].join(', ')}`}.
+                                Escanea su ticket si te las llevas.
+                            </Notice>
+                            {/* ── Y cada una con su ticket a mano ──────────────
+                                Acá es donde tiene que estar el botón de volver a
+                                imprimirlo: son las bolsas que están FÍSICAMENTE
+                                en esta sala esperando salir, o sea exactamente
+                                aquéllas cuyo papel alguien puede necesitar otra
+                                vez. Una bolsa cuyo ticket no salió no se puede
+                                escanear, así que el camino no podía depender de
+                                escanearla. */}
+                            {pendientes.map(p => (
+                                <div key={p.request_id} data-surface="card"
+                                    className="px-3 py-2 flex items-center gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-body-sm font-bold text-content-1 truncate">
+                                            {p.origen ?? '?'} → {p.destino ?? '?'}
+                                        </p>
+                                        <p className="text-micro text-content-3 truncate">
+                                            {(p.items ?? []).map(i => i?.descripcion).filter(Boolean).join(', ') || 'Sin detalle'}
+                                        </p>
+                                    </div>
+                                    {/* Sin número no hay código de barras, y un
+                                        ticket sin barras no es el mismo papel:
+                                        ese traslado se confirma a mano, que es
+                                        lo que ya decía el original. */}
+                                    {p.codigo && (
+                                        <Button variant="secondary" size="sm" icon={Printer}
+                                            title="Volver a imprimir el ticket"
+                                            loading={imprimiendo === p.request_id}
+                                            disabled={ocupado || imprimiendo === p.request_id}
+                                            onClick={() => volverAImprimir(p.request_id)}>
+                                            Ticket
+                                        </Button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     )}
 
                     {/* El manifiesto */}

@@ -331,6 +331,30 @@ export async function fetchTrasladoPorCodigo(codigo) {
 }
 
 /**
+ * La fila entera de un traslado, para volver a armar su ticket.
+ *
+ * El papel no se guarda en ninguna parte y no hace falta: todo lo que dice
+ * quedó en `metadata` cuando el despacho entró. Lo que esta consulta trae es
+ * eso — más `employee_id`, que es quien pidió, porque el ticket lleva su nombre
+ * y una reimpresión que lo omita ya no es el mismo papel.
+ *
+ * El RLS alcanza: deja ver un traslado a las salas de sus dos puntas, y quien
+ * reimprime tiene la bolsa enfrente, o sea que es una de ellas.
+ */
+export async function fetchTrasladoParaImprimir(requestId) {
+    const { data, error } = await supabase
+        .from('approval_requests')
+        .select('id, type, employee_id, metadata')
+        .eq('id', requestId)
+        .maybeSingle();
+    if (error) {
+        console.error('traslados: fetchTrasladoParaImprimir failed:', error.message);
+        return { fila: null, error };
+    }
+    return { fila: data ?? null, error: null };
+}
+
+/**
  * Si la sala de origen todavía puede, y quién más podría.
  *
  * Se pregunta al ABRIR la lista y no al apretar el botón: entre que alguien

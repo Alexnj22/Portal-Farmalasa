@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, Clock, Loader2, PackageCheck, Truck } from 'lucide-react';
+import { ArrowLeftRight, Clock, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -18,7 +18,7 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
-import { imprimirTicketDeTraslado, loQueVaEnLaBolsa } from '../../utils/imprimirTraslado';
+import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '../../utils/imprimirTraslado';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
@@ -854,6 +854,33 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                          ocupado, error, onRecibir, onCerrar }) {
     const meta = fila.metadata ?? {};
     const renglones = renglonesDe(meta);
+    const { user } = useAuth();
+    const [imprimiendo, setImprimiendo] = useState(false);
+    const [avisoPapel, setAvisoPapel] = useState('');
+
+    /* Volver a sacar el MISMO papel, y nada más (pedido del usuario: «solo debe
+     * poder imprimir»). No anula el anterior ni deja marca: lo que se está
+     * arreglando es una impresora, no un hecho del negocio — un ticket que no
+     * salió legible no cambia nada de lo que pasó con el producto.
+     *
+     * La caja es la de QUIEN REIMPRIME, no la del despacho: el papel lo levanta
+     * quien aprieta el botón. */
+    const volverAImprimir = async () => {
+        setImprimiendo(true); setAvisoPapel('');
+        const r = await reimprimirTicketDeTraslado({
+            metadata: meta,
+            pide: quienPidio?.name ?? null,
+            sala: user?.branchId ?? user?.branch_id ?? null,
+        });
+        setImprimiendo(false);
+        setAvisoPapel(r?.ok
+            // `ok` significa RECIBIDO por la caja, nunca «salió papel»: la
+            // respuesta del programa de la caja es opaca y prometer en pantalla
+            // lo que no se sabe es peor que no decir nada.
+            ? 'El ticket se mandó a la impresora.'
+            : `No se pudo imprimir: ${r?.detalle ?? 'sin detalle'}`);
+    };
+
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-lg"
             zClass="z-toast" closeOnEsc={!ocupado} surface={null}
@@ -868,6 +895,15 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                     <Button icon={PackageCheck} loading={ocupado} disabled={ocupado} onClick={onRecibir}>
                         {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
                     </Button>
+                    {/* Sólo con número: sin él no hay código de barras, así que
+                        el papel no sería el mismo — y ese traslado se confirma a
+                        mano, que es lo que ya decía el ticket original. */}
+                    {meta?.erp_traslado?.id_traslado && (
+                        <Button variant="secondary" icon={Printer} loading={imprimiendo}
+                            disabled={ocupado || imprimiendo} onClick={volverAImprimir}>
+                            {imprimiendo ? 'Imprimiendo…' : 'Imprimir el ticket'}
+                        </Button>
+                    )}
                     <Button variant="secondary" disabled={ocupado} onClick={onCerrar}>Cerrar</Button>
                 </>}>
                 <div className="flex flex-col gap-3 text-left">
@@ -926,6 +962,9 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                             cuando={salio} apunte={cuantoTardo(fila.created_at, salio)} tono="warning" />
                     </div>
 
+                    {avisoPapel && (
+                        <p className="text-label text-content-2 font-medium">{avisoPapel}</p>
+                    )}
                     {error && <p className="text-label text-danger-text font-medium">{error}</p>}
                 </div>
             </CuerpoDialogo>

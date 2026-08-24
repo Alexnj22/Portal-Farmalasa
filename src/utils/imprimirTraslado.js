@@ -71,3 +71,73 @@ export function loQueVaEnLaBolsa(items = [], aceptadas = []) {
     }
     return aceptadas.map(a => renglon(items[a.i]?.descripcion, a.cantidad));
 }
+
+/**
+ * El MISMO ticket otra vez, cuando el papel no sirvió.
+ *
+ * Pedido del usuario (2026-08-24) después de que un ticket saliera demasiado
+ * claro para el lector: «¿hay alguna forma de reimprimir una solicitud /
+ * traslado ante un error de impresión?». Y con una condición suya: **sólo
+ * imprimir**. No anula el papel anterior, no marca nada, no pide un motivo —
+ * porque lo que se está arreglando es una impresora, no un hecho del negocio.
+ *
+ * ── Se REARMA, no se guarda ────────────────────────────────────────────────
+ * No hay copia del ticket en ninguna parte, y no hace falta: todo lo que el
+ * papel dice quedó en `metadata.erp_traslado` cuando el despacho entró —número,
+ * quién despachó, la hora, y el `detalle` de lo que REALMENTE viajó—. Guardar
+ * además el papel armado sería una segunda verdad que puede divergir de la
+ * primera.
+ *
+ * **`detalle` y no `items`**: `items` es lo que se PIDIÓ, y un despacho puede
+ * salir recortado. Un ticket reimpreso desde lo pedido diría más de lo que hay
+ * en la bolsa, y como quien la abre le cree al papel, la diferencia se reporta
+ * como faltante. `loQueVaEnLaBolsa` queda de respaldo para las filas viejas que
+ * no traen `detalle`.
+ *
+ * @param metadata  el `metadata` de la fila (`approval_requests`)
+ * @param pide      nombre de quien pidió — el papel lo lleva y tiene que decir
+ *                  lo mismo que la primera vez
+ * @param sala      a qué caja va. Es la de QUIEN REIMPRIME, no la del despacho:
+ *                  quien aprieta el botón es quien va a levantar el papel.
+ */
+export function datosDelTicketGuardado(metadata, { pide = null, familia = 'solicitud' } = {}) {
+    const erp = metadata?.erp_traslado ?? {};
+    // Sin número no hay código de barras, y un ticket de traslado sin barras no
+    // se puede confirmar escaneando — o sea que no sería el mismo papel. Se
+    // devuelve `null` para que el llamador lo DIGA: el original ya avisaba
+    // «SIN NUMERO», y ese traslado se confirma a mano.
+    if (!erp.id_traslado) return null;
+
+    /* `detalle` y NO `items`, y ésta es la parte que se puede equivocar en
+     * silencio: `items` es lo que se PIDIÓ, y un despacho puede salir
+     * recortado. Un ticket reimpreso desde lo pedido diría más de lo que hay en
+     * la bolsa — y como quien la abre le cree al papel, la diferencia se
+     * reporta como faltante. `loQueVaEnLaBolsa` queda de respaldo para las
+     * filas viejas que no traen `detalle`. */
+    const deDetalle = Array.isArray(erp.detalle)
+        ? erp.detalle.map(d => ({ nombre: d?.descripcion, cantidad: d?.cantidad }))
+        : [];
+
+    return {
+        familia,
+        aplicado: {
+            id_traslado: erp.id_traslado,
+            by_name: erp.by_name,
+            por_respaldo: erp.por_respaldo === true,
+            at: erp.at,
+        },
+        origen: metadata?.origen_branch_name,
+        destino: metadata?.branch_name,
+        pide,
+        items: deDetalle.length ? deDetalle : loQueVaEnLaBolsa(metadata?.items ?? []),
+        motivo: metadata?.motivo,
+    };
+}
+
+export async function reimprimirTicketDeTraslado({ metadata, pide, sala, familia = 'solicitud' }) {
+    const datos = datosDelTicketGuardado(metadata, { pide, familia });
+    if (!datos) {
+        return { ok: false, detalle: 'Ese traslado no tiene número: su ticket se confirma a mano.' };
+    }
+    return imprimirTicketDeTraslado({ sala, ...datos });
+}

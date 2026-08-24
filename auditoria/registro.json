@@ -62,8 +62,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 80,
-          "evidencia": "23 de 56 módulo(s) de lógica (.js) del área nombrados por alguna prueba (41%) · 1565 pruebas en 102 archivos, todas verdes",
+          "pct": 85,
+          "evidencia": "28 de 56 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -157,7 +157,7 @@
         },
         "pruebas": {
           "pct": 87,
-          "evidencia": "9 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (53%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "9 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (53%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -248,7 +248,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -335,7 +335,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "4 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -429,7 +429,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -514,7 +514,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -596,7 +596,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -680,7 +680,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -766,7 +766,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "5 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -853,7 +853,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "7 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -943,7 +943,7 @@
         },
         "pruebas": {
           "pct": 85,
-          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1035,7 +1035,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "1 de 1 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "1 de 1 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1120,7 +1120,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1205,7 +1205,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "7 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1295,7 +1295,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "8 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "8 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1386,7 +1386,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1476,7 +1476,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (86%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "6 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (86%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1562,7 +1562,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1654,7 +1654,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1748,7 +1748,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "6 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1843,7 +1843,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "4 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1935,7 +1935,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2022,7 +2022,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2115,7 +2115,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "3 de 3 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "3 de 3 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2204,7 +2204,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 1565 pruebas en 102 archivos, todas verdes",
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 1606 pruebas en 104 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {

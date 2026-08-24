@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.6 — 39 pruebas: la pestaña en la dirección y las constantes del portal
+
+**La pestaña activa vive en la dirección.** Una en `useState` se pierde con
+cualquier recarga, y como no falla nada no se reporta como bug sino como «la
+pantalla se movió sola» — medido el 2026-08-20: de las 29 vistas con pestañas, 9
+lo hacían bien y 20 no. Queda anclada la parte que se olvida al copiar el bloque
+a mano: **la validación contra las pestañas realmente visibles**. Sin ella, un
+`?tab=loquesea` —o una pestaña que el permiso del usuario no incluye— deja la
+vista pintando el vacío. Más que un clic empuje al historial y una CORRECCIÓN
+reemplace (empujarla deja a «atrás» rebotando contra la misma corrección), y que
+cambiar de pestaña **no se lleve el filtro, la página ni el período** que ya
+estaban en la dirección.
+
+**Las constantes de sala.** Las tres numeraciones que no se deducen entre sí, y
+que la equivocada apunta a otra sala **sin dar error**: anclado que ninguna
+coincida entre portal y origen, que ningún código corto se repita —«S5» es Salud
+5, y armarlo con el id se lo daría a La Popular—, y que la ubicación de
+inventario sea una tercera. También el orden del negocio: La Popular primero,
+Bodega al final, que no es el numérico.
+
+**Lo que NO se guarda en el navegador.** `localStorage` sobrevive al cierre de
+sesión y lo lee cualquiera que se siente en esa computadora: anclado que el caché
+de empleados no se lleve el PIN, el DUI, el sueldo ni la cuenta bancaria, que de
+las marcaciones sólo queden las de 24 horas, y que un `localStorage` lleno no
+rompa el arranque.
+
+Un hallazgo menor, anclado como está: **`safeJsonParse(null, [])` devuelve `null`,
+no el respaldo** — `JSON.parse(null)` no lanza. Es justo lo que
+`localStorage.getItem` entrega cuando la clave no existe, así que «no hay nada»
+y «hay basura» se contestan distinto. Los llamadores del repo encadenan `|| []`,
+así que hoy no hace daño; queda escrito para que se sepa antes de confiar en el
+segundo argumento.
+
+Plataforma sube a 85 en pruebas. Promedio del portal: **94%**, con 1.606 pruebas
+en 104 archivos.
+
 ## v2.735.5 — 57 pruebas: el kiosco sin conexión, las sesiones y el carné de papel
 
 **La ventana de gracia** reemplazó a un caché que guardaba los PIN de los

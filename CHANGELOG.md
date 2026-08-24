@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.1 — 48 pruebas para el chasis: paginar, borrador, teclado, buscar y exportar
+
+Sigue el eje de pruebas. Cinco piezas que atraviesan todo el portal y no tenían
+ninguna, elegidas todas por el mismo criterio: **protegen contra un fallo mudo**.
+
+**`fetchAllRows`** es la respuesta del portal al tope de 1000 de PostgREST, que
+corta sin avisar. Queda anclado el borde que hace mudo a ese tope: **exactamente
+1.000 filas obliga a una vuelta más**, porque una página llena no prueba que no
+haya más — parar ahí ES el bug que el helper evita. Y que si falla la primera
+página devuelva `null` y no una lista vacía, que se vería idéntica a «no hay
+nada».
+
+**El borrador** es lo único que hay entre un formulario largo y la sesión que se
+cierra sola a los 5 minutos. Anclados los dos bordes de las 24 horas, que un
+borrador vencido se limpie solo, y que uno corrupto no reviente la pantalla.
+
+**`clickable`** da contrato de teclado a lo que no es un `<button>`. La primera
+versión no devolvía el `onClick` y el migrador que la aplicó reemplazó el
+`onClick={fn}` de cada sitio por el spread: **34 controles quedaron alcanzables
+con teclado y MUERTOS con mouse**, y no lo detectó el build, ni el lint, ni el
+gate. Ahora eso es una prueba, junto con la guarda que impide que el Enter de un
+control interno dispare además la acción del contenedor.
+
+**El aviso de entorno** se deriva de la URL de Supabase, no de una bandera: una
+bandera se olvida al armar un `.env` nuevo y olvidarla significa creer que estás
+en pruebas mientras escribís en producción. Queda anclado que una URL **rota o
+ausente enciende el aviso en vez de apagarlo** — ante la duda, el falso positivo.
+
+**Buscar y exportar.** Que «grav 500» encuentre «GRAVOL 500MG X 8» y que
+«cotrimoxazol» encuentre «CO-TRIMOXAZOL». Y los tres bytes invisibles del CSV,
+que son una decisión y no un default: el BOM (sin él Excel en es-SV lee `PEÑA`
+como `PEÃ‘A`), el CRLF (con LF el diff marca todas las líneas como distintas) y
+**que el archivo NO termine con salto de línea** — el reflejo natural agrega una
+fila vacía que Excel lee como una fila más, y en un libro fiscal una fila en
+blanco es una fila del libro.
+
+Un hallazgo menor, anclado como está: `normSearch(null)` devuelve la cadena
+«null», porque el default de parámetro sólo cubre `undefined`. Hoy no hace daño
+—quien busca escribe en un input y `tokenMatch` ya pasa `f ?? ''`— pero si algún
+día se le pasa `null` directo, el término sería la palabra «null».
+
+Plataforma sube a 80 en pruebas; el promedio del portal sigue en 93%.
+
 ## v2.733.0 — El aviso de la bolsa que lleva días encima de alguien
 
 Cierra el circuito del recorrido. Un retiro **no se puede cerrar con bultos sin

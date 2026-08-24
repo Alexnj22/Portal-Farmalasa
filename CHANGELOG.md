@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.2 — Una consulta se puede encarecer sola
+
+15 pruebas más para el eje de pruebas, y una lección que no estaba escrita en
+ninguna otra prueba del repo.
+
+El selector de sucursal de Inventario pedía las últimas 30 filas de
+`inventory_sync_log` **sin filtrar**, y para un `ORDER BY synced_at` a secas no
+hay índice que sirva: el plan real era un **Parallel Seq Scan de 775.868 filas
+para devolver 30**. Medido en producción: media 2.099 ms, pico 7.818 ms, cada vez
+que alguien abría Inventario — y se llevaba los DOS workers paralelos de la
+instancia, así que mientras corría el resto de la base iba en un solo hilo.
+
+**Nadie lo rompió.** La tabla crece 10.080 filas por día (7 salas × cada minuto)
+y ese día tocó su techo de retención de 90 días: se encareció ~1% por día durante
+tres meses hasta cruzar la línea. Por eso el filtro queda anclado — quitarlo no
+rompe nada hoy y vuelve a costar siete segundos dentro de tres meses.
+
+Con él: la distinción entre `is_vencidos` (dónde está apartado) y
+`fecha_vencimiento` (cuándo caduca), que contadas al revés dan siempre el número
+ya resuelto; que sin sala pedida NO se agregue un `eq(..., null)`, que devolvería
+cero filas y se leería como «no hay vencidos»; que la franja de aviso del portal
+apagada **no borre el texto que tenía**; y que de qué tabla sale la solicitud de
+un aviso lo diga el aviso y no el id.
+
+Inventario llega a 95 en pruebas; Productos y Sistema suben.
+
 ## v2.733.1 — 48 pruebas para el chasis: paginar, borrador, teclado, buscar y exportar
 
 Sigue el eje de pruebas. Cinco piezas que atraviesan todo el portal y no tenían

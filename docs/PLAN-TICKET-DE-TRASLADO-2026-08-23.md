@@ -634,34 +634,70 @@ mismo es el responsable. O si de Salud 1 retira algo de ahí mismo para Salud 2.
 O sea la regla es una sola: **si el retirador pertenece a la sala que entrega, no
 hay segunda firma, porque sería la suya.**
 
-### ⚠️ La sala que entrega NO es `origen_branch_name`
+### El respaldo: la bolsa NO se muda, la firma sí
 
-Es la trampa de todo este diseño, y ya está medida: **53 traslados que dicen
-«Bodega» los despachó S3**, y 3 más del área de vencidos. Cuando una sala está
-cerrada, la cubre su respaldo y **la bolsa está en el mostrador de la otra**.
+**Corregido por el usuario el 2026-08-24.** Este plan decía que con
+`por_respaldo` la bolsa está en el mostrador de la sala que cubre. **Es al
+revés:** Salud 3 entra a Bodega —están a cuatro metros, es el mismo edificio— y
+despacha desde ahí; la bolsa se queda **en Bodega**.
 
-Entonces, para decidir si hace falta la segunda firma, lo que manda es dónde está
-FÍSICAMENTE la bolsa:
+O sea que hay que leer los dos campos por lo que cada uno dice, y no son lo
+mismo:
+
+| dato | qué significa | de dónde sale |
+|---|---|---|
+| **dónde está la bolsa** | el lugar físico al que hay que ir | `origen_branch_name` — siempre |
+| **quién despachó** | quién puede firmar la entrega | `metadata.erp_traslado.by_sala` (código, ej. `"S3"`) |
+
+Medido: **53 traslados que dicen «Bodega» los despachó S3**, y 3 más del área de
+vencidos.
+
+**Consecuencia para la segunda firma:** quien entrega es quien está ahí con
+acceso al lugar, que con la sala cerrada es la gente del respaldo. Así que la
+validación NO es «¿pertenece a la sala de origen?» sino la que ya usa la policy:
+**pertenece a la sala de origen, o la cubre ahora mismo** —
+`salas_que_cubre_ahora`. Escribir una versión propia de esa regla acá es
+garantizar que el día que cambie un horario, una de las dos deje de coincidir.
+
+Y la excepción del usuario se lee con la misma vara: **no hay segunda firma
+cuando el retirador pertenece a la sala que entrega, o la cubre** — porque sería
+su propia firma.
+
+### Las tres decisiones, cerradas el 2026-08-24
+
+**1 · La custodia va en su propia tabla, no en el `metadata`.** Decisión pedida
+al asistente. Tres motivos, y el tercero es el que manda:
+
+  · Un retiro es **una entidad con vida propia** —una persona, un recorrido,
+    muchas bolsas—, no un atributo de una bolsa. En el `metadata` de cada
+    solicitud habría que reconstruirlo juntando filas sueltas.
+  · La custodia **cambia de manos** y eso es historial, no un valor actual.
+  · Las preguntas que hay que contestar son **entre filas**: «¿qué lleva
+    Francisco encima?», «¿qué lleva más de 3 días sin entregar?». Con el dato
+    adentro de un `jsonb` por solicitud, las dos son un barrido de la tabla
+    entera — que es exactamente el problema que ya obligó a escribir
+    `get_traslados_por_recibir` como función.
 
 ```
-sala que entrega = por_respaldo ? metadata.erp_traslado.by_sala : origen_branch_id
+retiros
+  id, retirador_id, abierto_at, cerrado_at (null = en curso), created_at
+  -- un solo retiro abierto por persona
+
+retiro_bultos
+  id, retiro_id, request_id, origen_branch_id,
+  cargado_at, entrego_id (null cuando firma el propio retirador),
+  entregado_at (null = todavía encima)
+  -- una bolsa no puede estar en dos retiros a la vez mientras no se entregue
 ```
 
-`by_sala` viene como código (`"S3"`), no como id de sala: hay que traducirlo con
-`ERP_CODIGOS` de `constants/erp.js`. Usar `origen_branch_name` haría que un
-traslado entregado por Salud 3 pida la firma de alguien de Bodega —que a esa hora
-está cerrada— y el retiro se trabaría sin que nadie entienda por qué.
+Las dos con RLS y policy explícita, `entrego_id` con su índice, y la de bultos
+con FK a `approval_requests`.
 
-Con Salud 3 y Bodega a cuatro metros, en la práctica la persona está ahí al lado;
-lo que importa es que el portal **le pida el carné a quien de verdad puede
-firmar**.
+**2 · El aviso a los 3 días.** Una bolsa que lleva 3 días encima de alguien sin
+entregarse dispara aviso. Falta definir a quién le llega —el retirador, la sala
+que espera, o supervisión— y eso se resuelve al construirlo.
 
-### Lo que queda por decidir
-
-- Dónde vive el estado en tránsito: una clave nueva en el `metadata`
-  (`retiro: { by, by_name, at, sala, entrego, entrego_name }`) o su propia tabla.
-  Una tabla permite el historial de varios intentos; el `metadata` es más barato
-  y es donde ya viven los otros dos estados.
-- Cuántos días en tránsito disparan el aviso, y a quién.
-- Si el retirador puede cerrar un retiro sin entregar todo (y qué pasa con lo que
-  le sobró encima).
+**3 · El retiro NO se puede cerrar con cosas encima.** «Si lo sobró se debe
+entregar.» Un retiro con bultos sin entregar queda **abierto**, y por eso el
+aviso de 3 días no es opcional: es lo único que impide que quede abierto para
+siempre.

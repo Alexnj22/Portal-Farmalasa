@@ -1118,3 +1118,29 @@ Hoy la tabla arranca el 2025-05-01 y **no falta ningún par en 500 días**.
 ⚠️ El agujero se puede volver a abrir: el cron sigue con 365 días. Si aparece
 otra brecha vieja, la salida es la misma — medir el borrado, y llamar con un
 rango que la cubra.
+
+### 8.19 El rebase no podía funcionar, y el motivo es el propio flujo de trabajo
+
+Con el permiso concedido, el rebase del entorno de pruebas se corrió dos veces.
+Las dos terminaron en **`MIGRATIONS_FAILED`**, y avanzó **8 de 130**.
+
+El estado no dice por qué. Buscándolo apareció esto: **nueve migraciones existen
+sólo en el branch** — ocho del 12 de agosto y una del 14. No están en producción
+con ese número.
+
+No es un descuido de nadie. Es **la consecuencia esperable del flujo que este
+mismo repo prescribe**: CLAUDE.md manda probar el DDL de tablas calientes en el
+branch antes que en prod, y con razón. Pero al reaplicar después en producción,
+`apply_migration` genera una versión nueva — así que la fila del branch queda
+huérfana. Con nueve de ésas, la historia del branch deja de ser un prefijo de la
+de prod y el rebase no tiene por dónde entrar.
+
+> **La herramienta de arreglo estaba deshabilitada por el uso correcto de la
+> herramienta que la necesitaba.** Y nadie lo sabía porque nadie había rebaseado
+> nunca.
+
+Queda escrito en CLAUDE.md junto a la instrucción que lo causa, que es donde
+sirve. Ponerlo al día exige **rehacer el branch** — con su costo explícito:
+se pierden la corrida de fechas y los permisos de la cuenta de pruebas (los dos
+se rehacen con sus scripts), y **cambia el ref**, así que hay que rehacer
+`.env.staging`.

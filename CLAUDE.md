@@ -239,9 +239,27 @@ se leían como defectos del portal y ninguna lo era.
 
 **Antes de creerle a una medición hecha contra el branch, comparar** —
 `node scripts/entorno-pruebas/comparar_con_produccion.mjs` dice cómo y qué
-significa una diferencia. Para ponerlo al día se lo **rehace**, y eso borra los
-datos sembrados y la corrida de fechas: es una decisión de quien esté trabajando,
-no algo que convenga automatizar.
+significa una diferencia.
+
+⚠️ **Y el `rebase` NO lo va a arreglar, por culpa de este mismo flujo de
+trabajo.** Probar el DDL en el branch antes que en prod —que es lo que esta
+sección manda hacer, y con razón— deja en su `schema_migrations` filas que
+producción nunca tuvo con ese número: al reaplicar en prod, `apply_migration`
+genera una versión nueva. Medido el 2026-08-24: **nueve migraciones existen sólo
+en el branch** (ocho del 12-ago y una del 14). Con eso su historia deja de ser un
+prefijo de la de prod, y `rebase_branch` falla con `MIGRATIONS_FAILED` sin decir
+por qué — se probó dos veces y avanzó 8 de 130.
+
+O sea que la deriva **no es un descuido**: es la consecuencia esperable de usar
+el branch para lo que existe. Lo que faltaba era saberlo.
+
+**Ponerlo al día = rehacerlo.** Borrar y crear de nuevo: sale con el esquema
+completo y sembrado por las tres migraciones de semilla. El costo es real y hay
+que tenerlo presente: se pierde la corrida de fechas (se vuelve a correr con
+`correr_fechas.sql`), se pierden los permisos de la cuenta de pruebas (ídem con
+`permisos_de_la_cuenta_de_pruebas.sql`) y **cambia el ref**, así que hay que
+rehacer `.env.staging`. Es una decisión de quien esté trabajando, no algo que
+convenga automatizar.
 
 **Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
 final de este archivo): `npm run dev:staging`.

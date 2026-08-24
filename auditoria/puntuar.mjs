@@ -85,12 +85,20 @@ const SERVIDOR = {
     // olvidó de las tablas — que es por donde quedaron tres.
     anon_tablas: ['branches', 'holidays', 'shifts'],
 
-    // `SET search_path` faltante (regla 4 del hardening).
-    search_path_mutable: ['es_telefono_sv_valido', 'customer_ficha_estado', 'es_cliente_mostrador'],
+    // `SET search_path` faltante (regla 4 del hardening). CERRADO el 2026-08-24:
+    // las tres eran IMMUTABLE, INVOKER y puras, y ninguna estaba en un CHECK ni
+    // en un índice — así que el riesgo era bajo. Se arreglaron igual porque una
+    // regla que se cumple «casi siempre» deja de ser una regla, y porque las
+    // llaman ocho funciones, entre ellas las que deciden qué ficha se corrige
+    // antes de transmitir a Hacienda.
+    search_path_mutable: [],
 
-    // RLS encendido y CERO policies: nadie puede leerla ni escribirla salvo por
-    // una función DEFINER. Puede ser deliberado; no está escrito en ningún lado.
-    rls_sin_policy: ['identidad_vales'],
+    // `identidad_vales` NO era un hallazgo: es defensa en profundidad y estaba
+    // bien hecha. `authenticated` no tiene GRANT —sólo postgres y service_role—
+    // así que el navegador no la alcanza, y cinco funciones DEFINER son el único
+    // acceso. El RLS sin policies es la segunda cerradura. Lo único que faltaba
+    // era que estuviera ESCRITO, y desde el 2026-08-24 lo está (COMMENT ON TABLE).
+    rls_sin_policy: [],
 
     // El incidente del 2026-07-08 (auth_* sin envolver en `(SELECT …)`): CERO.
     // La regla se sostiene en las 176 tablas. Es el mejor número de la auditoría.
@@ -103,20 +111,35 @@ const SERVIDOR = {
     sin_pk: 0,
     vistas_sin_security_invoker: 0,
 
-    // FKs sin índice que NO son columnas de auditoría. La regla exceptúa
-    // `*_por`/`created_by` en tablas pequeñas; éstas no entran en la excepción.
-    fk_sin_indice_reales: {
-        pedidos: ['pedido_traslado_linea.erp_sucursal_id (2.5 MB)', 'pedido_apoyo.employee_id',
-                  'pedido_recepcion_extras.erp_product_id', 'pedido_recepcion_firmas.employee_id',
-                  'pedido_items.confirmado_suc_por + rechazado_por (17 MB — la tabla NO es pequeña)'],
-        'cortes-efectivo': ['cortes_caja_eventos.employee_id'],
-        acceso: ['intentos_identidad.branch_id'],
-        horarios: ['schedule_coverage.home_branch_id'],
-        impresion: ['cola_impresion.dispositivo'],
-    },
+    // ── Las «FKs sin índice» eran un hallazgo MÍO, no del portal ───────────
+    // Medido el 2026-08-24 y quedó vacío. De 291 FKs, 236 tienen índice usable.
+    // De las 55 restantes:
+    //
+    //   · `pedido_traslado_linea.erp_sucursal_id` SÍ tiene índice — uno
+    //     compuesto que mi consulta no detectaba porque sólo miraba el prefijo.
+    //     El EXPLAIN entra por índice en 0,158 ms.
+    //   · Las demás son columnas de auditoría (`*_por`, `created_by`) que la
+    //     regla del hardening exceptúa explícitamente, y encima casi siempre
+    //     nulas: `pedido_items.confirmado_suc_por` tiene SEIS valores no nulos
+    //     de 49.042, y `rechazado_por` tiene CERO.
+    //
+    // Crear un índice sobre una columna con seis valores de cuarenta y nueve mil
+    // sería exactamente el índice muerto que esta misma auditoría decidió no
+    // borrar por falta de evidencia. No hay trabajo que hacer acá.
+    fk_sin_indice_reales: {},
 
-    // Índices que nunca se usaron y pesan >200 kB: se mantienen en cada
-    // escritura y no aceleran ninguna lectura. ~8 MB de índice muerto.
+    // ── «Índices muertos»: la medición NO alcanza para decidir ─────────────
+    // Se midieron con `idx_scan = 0`, pero el servidor arrancó hace TRES DÍAS
+    // (2026-08-20) y las estadísticas cuentan desde ahí. Este portal tiene
+    // procesos MENSUALES —cierre de período, libros IVA, corte Z,
+    // auto-calculate-minmax— y un índice que sólo se usa el día 1 se ve
+    // exactamente igual que uno muerto.
+    //
+    // Se dejan anotados con su peso, y NO se borran: volver a medirlos después
+    // del cierre del 1 de septiembre es lo único que convierte este cero en una
+    // decisión. La evidencia más fuerte es la de `products` —17,1 millones de
+    // lecturas de la tabla y cero usos de sus dos índices trigram— pero ni esa
+    // basta si esos índices sirven a una búsqueda que nadie hizo en tres días.
     indices_muertos: {
         inventario: ['idx_igmv_desc_trgm (1976 kB)', 'idx_igmv_desc_norm_trgm (1976 kB)',
                      'idx_conteo_items_source_sync_key (768 kB)', 'idx_mv_stock_analysis_sucursal (224 kB)'],

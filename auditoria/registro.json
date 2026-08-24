@@ -69,7 +69,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "15 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "16 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -115,12 +115,9 @@
           "hallazgos": []
         },
         "bd": {
-          "pct": 83,
+          "pct": 98,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
-          "hallazgos": [
-            "FK sin índice: intentos_identidad.branch_id",
-            "identidad_vales: RLS encendido y CERO policies"
-          ]
+          "hallazgos": []
         },
         "seguridad": {
           "pct": 86,
@@ -180,7 +177,7 @@
           "hallazgos": []
         }
       },
-      "pct": 87,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -188,8 +185,6 @@
         "[flujo] falta que el papel conteste qué simbología lee el lector",
         "[flujo] falta prueba en vivo del candado doble",
         "[flujo] carné: turno y sala definido y sin implementar",
-        "[bd] FK sin índice: intentos_identidad.branch_id",
-        "[bd] identidad_vales: RLS encendido y CERO policies",
         "[seguridad] kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[seguridad] kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[seguridad] kiosco_bitacora(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
@@ -603,11 +598,9 @@
           "hallazgos": []
         },
         "bd": {
-          "pct": 93,
+          "pct": 98,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
-          "hallazgos": [
-            "FK sin índice: schedule_coverage.home_branch_id"
-          ]
+          "hallazgos": []
         },
         "seguridad": {
           "pct": 96,
@@ -671,7 +664,6 @@
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
-        "[bd] FK sin índice: schedule_coverage.home_branch_id",
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[observabilidad] src/data/schedules.js",
         "[observabilidad] src/data/vacationPlans.js",
@@ -1267,11 +1259,9 @@
           "hallazgos": []
         },
         "bd": {
-          "pct": 93,
+          "pct": 98,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
-          "hallazgos": [
-            "FK sin índice: cortes_caja_eventos.employee_id"
-          ]
+          "hallazgos": []
         },
         "seguridad": {
           "pct": 98,
@@ -1331,7 +1321,6 @@
         "[flujo] falta probar en sala",
         "[flujo] el −$621.17 falso de Salud 1 sin explicar",
         "[flujo] falta probar las bolsas en sala",
-        "[bd] FK sin índice: cortes_caja_eventos.employee_id",
         "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
@@ -1363,13 +1352,9 @@
           ]
         },
         "seguridad": {
-          "pct": 92,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas",
-          "hallazgos": [
-            "es_telefono_sv_valido(): sin SET search_path — viola la regla 4 del hardening",
-            "customer_ficha_estado(): sin SET search_path — viola la regla 4 del hardening",
-            "es_cliente_mostrador(): sin SET search_path — viola la regla 4 del hardening"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 78,
@@ -1425,14 +1410,11 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[bd] índice nunca usado: idx_customers_erp_id (968 kB)",
-        "[seguridad] es_telefono_sv_valido(): sin SET search_path — viola la regla 4 del hardening",
-        "[seguridad] customer_ficha_estado(): sin SET search_path — viola la regla 4 del hardening",
-        "[seguridad] es_cliente_mostrador(): sin SET search_path — viola la regla 4 del hardening",
         "[resiliencia] submit-sin-freno: src/views/CotizacionesView.jsx:1101",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/CotizacionesView.jsx",
@@ -1754,15 +1736,9 @@
           "hallazgos": []
         },
         "bd": {
-          "pct": 73,
+          "pct": 98,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
-          "hallazgos": [
-            "FK sin índice: pedido_traslado_linea.erp_sucursal_id (2.5 MB)",
-            "FK sin índice: pedido_apoyo.employee_id",
-            "FK sin índice: pedido_recepcion_extras.erp_product_id",
-            "FK sin índice: pedido_recepcion_firmas.employee_id",
-            "FK sin índice: pedido_items.confirmado_suc_por + rechazado_por (17 MB — la tabla NO es pequeña)"
-          ]
+          "hallazgos": []
         },
         "seguridad": {
           "pct": 96,
@@ -1825,7 +1801,7 @@
           "hallazgos": []
         }
       },
-      "pct": 86,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1833,11 +1809,6 @@
         "[flujo] falta que alguien confirme el lote que llegó — que es lo legal",
         "[flujo] falta una ruta real (conductor = creador)",
         "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
-        "[bd] FK sin índice: pedido_traslado_linea.erp_sucursal_id (2.5 MB)",
-        "[bd] FK sin índice: pedido_apoyo.employee_id",
-        "[bd] FK sin índice: pedido_recepcion_extras.erp_product_id",
-        "[bd] FK sin índice: pedido_recepcion_firmas.employee_id",
-        "[bd] FK sin índice: pedido_items.confirmado_suc_por + rechazado_por (17 MB — la tabla NO es pequeña)",
         "[seguridad] notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger",
         "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:817",
         "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:828",
@@ -2260,11 +2231,9 @@
           "hallazgos": []
         },
         "bd": {
-          "pct": 93,
+          "pct": 98,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
-          "hallazgos": [
-            "FK sin índice: cola_impresion.dispositivo"
-          ]
+          "hallazgos": []
         },
         "seguridad": {
           "pct": 92,
@@ -2330,7 +2299,6 @@
         "[flujo] el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)",
         "[flujo] falta medir el ancho del rollo",
         "[flujo] sigue sin probarse en otra sala",
-        "[bd] FK sin índice: cola_impresion.dispositivo",
         "[seguridad] canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
         "[seguridad] confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",

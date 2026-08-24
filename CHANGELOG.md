@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.8 — Bolsas: el conteo se cuadra por día, por sucursal y en total
+
+*«podemos mejorar el conteo? que aparezca cuanto es por dia, y el total de la
+sucursal y el total del conteo»*.
+
+Los dos totales de arriba ya estaban; **el que faltaba es el del día**, y es el
+que se usa: a administración le llegan las bolsas en tandas por día, y contra el
+papel se cuadra «lo del martes», no «lo de Salud 3». Es además el mismo corte
+que ya usa el diálogo de entrega, que pregunta por DÍAS y no por bolsas — así
+que la sala manda por día y ahora administración cuenta por día.
+
+Quedan tres niveles, y cada uno pesa distinto para que la jerarquía se lea sin
+leer los rótulos:
+
+| | ejemplo |
+|---|---|
+| la etapa | **Por contar · 6 bolsas · $3,161.57** |
+| la sucursal | SALUD 3 · 3 bolsas · **$733.97** |
+| el día | Ayer · 2 bolsas · $702.30 |
+
+Con un solo día su cuenta sería la de la sucursal palabra por palabra, así que
+ahí queda el rótulo del día y se calla la cifra: repetir el mismo número dos
+renglones seguidos no informa, enseña a no leer ninguno de los dos.
+
+Y el botón de recibir por sucursal decía «Recibir la» —así, colgando— cuando la
+sala tenía una sola bolsa. Ahora dice «Recibir», o «Recibir las 3».
+
 ## v2.735.7 — Bodega también manda corto vence, y el cron que retomaba envíos estaba muerto
 
 ### La casilla que quedó vacía por omisión

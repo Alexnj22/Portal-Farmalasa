@@ -102,6 +102,21 @@ const diasDesde = (f) => Math.max(0, Math.round(
 
 const DIAS_DE_ALARMA = 4;
 
+/* «Hoy» / «Ayer» y si no la fecha corta. Es el MISMO rótulo que usa el diálogo
+ * de entrega para agrupar por día — dos formas distintas de nombrar el mismo día
+ * en dos pantallas del mismo circuito obligan a traducir mentalmente. */
+const correrDia = (fecha, dias) => {
+    const d = new Date(`${fecha}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + dias);
+    return d.toISOString().slice(0, 10);
+};
+const rotularDia = (fecha) => {
+    const hoy = hoySV();
+    if (fecha === hoy) return 'Hoy';
+    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    return fechaCorta(fecha);
+};
+
 /* ── Qué etapa se ve abierta, y por qué se recuerda ─────────────────────────
  *
  * «que las secciones sean plegables, asi solo se ve lo que mas interesa. por
@@ -409,9 +424,16 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                         {titulo}
                     </button>
                 </h3>
+                {/* Los TRES totales de la pantalla, de mayor a menor: éste es el
+                    de la etapa entera. Va con más peso que su cuenta de bolsas
+                    porque es la cifra contra la que se cuadra el trabajo del
+                    día — el número de bolsas dice cuánto falta hacer, el monto
+                    dice cuánto dinero hay en juego. */}
                 <span className="text-caption text-content-3 tabular-nums">
                     {total} {total === 1 ? 'bolsa' : 'bolsas'}
-                    {verMontos && total > 0 && ` · ${formatMoney(montoTotal)}`}
+                    {verMontos && total > 0 && (
+                        <> · <b className="text-label font-bold text-content">{formatMoney(montoTotal)}</b></>
+                    )}
                 </span>
             </div>
             {!plegada && ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
@@ -430,16 +452,48 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                 {g.nombre}
                             </h4>
                             <span className="flex items-baseline gap-2 shrink-0">
-                                <span className="text-micro text-content-3 tabular-nums">
+                                {/* El segundo de los tres totales: el de la sucursal.
+                                    Baja un escalón de peso respecto al de la etapa y
+                                    sube uno respecto al del día, para que la jerarquía
+                                    se lea sin leer los rótulos. */}
+                                <span className="text-caption text-content-3 tabular-nums">
                                     {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
-                                    {verMontos && ` · ${formatMoney(suma(g.lista))}`}
+                                    {verMontos && (
+                                        <> · <b className="font-bold text-content-2">{formatMoney(suma(g.lista))}</b></>
+                                    )}
                                 </span>
                                 {accionDeGrupo?.(g)}
                             </span>
                         </div>
-                        <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
-                            {g.lista.map((b) => b.nodo)}
-                        </div>
+                        {/* Un renglón por día, con lo suyo. El día sale igual con
+                            uno solo: saber de qué día es lo que se está contando
+                            nunca sobra, y es lo primero que se pregunta quien
+                            tiene la bolsa en la mano. */}
+                        {(g.dias ?? [{ fecha: null, lista: g.lista }]).map((d) => (
+                            <div key={d.fecha ?? 'todo'} className="space-y-1.5">
+                                {d.fecha && (
+                                    <div className="flex items-baseline justify-between gap-3 px-1">
+                                        <span className="text-caption font-semibold text-content-2">
+                                            {rotularDia(d.fecha)}
+                                        </span>
+                                        {/* Con un solo día, su cuenta SERÍA la de la sala,
+                                            palabra por palabra. Repetir la misma cifra dos
+                                            renglones seguidos no informa: enseña a no leer
+                                            ninguna de las dos. Queda el rótulo del día, que
+                                            sí dice algo que la sala no dice. */}
+                                        {(g.dias?.length ?? 1) > 1 && (
+                                            <span className="text-micro text-content-3 tabular-nums">
+                                                {d.lista.length} {d.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                                {verMontos && ` · ${formatMoney(suma(d.lista))}`}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+                                    {d.lista.map((b) => b.nodo)}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ))}
         </section>
@@ -762,11 +816,31 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             if (!porSala.has(b.branch_id)) porSala.set(b.branch_id, []);
             porSala.get(b.branch_id).push({ ...b, nodo });
         }
-        return [...porSala.entries()].map(([branchId, sub]) => ({
-            branchId,
-            nombre: nombreSala[branchId] || `Sucursal ${branchId}`,
-            lista: sub,
-        }));
+        /* Y dentro de cada sala, por DÍA.
+         *
+         * «que aparezca cuanto es por dia, y el total de la sucursal y el total
+         * del conteo» (usuario, 2026-08-24). Los dos totales de arriba ya
+         * estaban; el que faltaba es el del día, y es el que se usa: a
+         * administración le llegan las bolsas en tandas por día, y lo que se
+         * cuadra contra el papel es «lo del martes».
+         *
+         * Es el mismo corte que usa el diálogo de entrega, que pregunta por
+         * DÍAS y no por bolsas — o sea que la sala manda por día y ahora
+         * administración cuenta por día. El `Map` conserva el orden que ya
+         * traía la lista (la etapa la ordenó antes), así que no se reordena. */
+        return [...porSala.entries()].map(([branchId, sub]) => {
+            const porDia = new Map();
+            for (const b of sub) {
+                if (!porDia.has(b.fecha)) porDia.set(b.fecha, []);
+                porDia.get(b.fecha).push(b);
+            }
+            return {
+                branchId,
+                nombre: nombreSala[branchId] || `Sucursal ${branchId}`,
+                lista: sub,
+                dias: [...porDia.entries()].map(([fecha, deEseDia]) => ({ fecha, lista: deEseDia })),
+            };
+        });
     }, [nombreSala, personas, elegidas, alternar, setAbierta, verMontos]);
 
     // ── Las dos acciones, publicadas a la píldora de la vista ───────────────
@@ -1048,7 +1122,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                     <Button variant="secondary" size="sm" icon={Inbox}
                         loading={ocupado === 'recibir'}
                         onClick={() => recibir(g.lista)}>
-                        Recibir {g.lista.length === 1 ? 'la' : `las ${g.lista.length}`}
+                        {g.lista.length === 1 ? 'Recibir' : `Recibir las ${g.lista.length}`}
                     </Button>
                 ) : null}
                 verMontos={verMontos}

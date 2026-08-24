@@ -69,7 +69,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "14 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "15 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -267,11 +267,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 75,
@@ -279,15 +277,14 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[observabilidad] src/data/permissions.js",
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área"
+        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
       ],
       "verificaciones": [
         {
@@ -565,11 +562,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 55,
@@ -579,14 +574,13 @@
           ]
         }
       },
-      "pct": 88,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[observabilidad] src/data/attendanceAudit.js",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -755,11 +749,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 55,
@@ -769,7 +761,7 @@
           ]
         }
       },
-      "pct": 88,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -778,7 +770,6 @@
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -948,11 +939,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 55,
@@ -962,7 +951,7 @@
           ]
         }
       },
-      "pct": 84,
+      "pct": 85,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -973,7 +962,6 @@
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1048,11 +1036,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 55,
@@ -1062,7 +1048,7 @@
           ]
         }
       },
-      "pct": 86,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1074,7 +1060,6 @@
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1240,11 +1225,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 75,
@@ -1252,14 +1235,13 @@
           "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/views/metas/GastoModal.jsx",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área"
+        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
       ],
       "verificaciones": [
         {
@@ -2233,11 +2215,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 75,
@@ -2245,7 +2225,7 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2254,8 +2234,7 @@
         "[observabilidad] src/data/bitacoras.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área"
+        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
       ],
       "verificaciones": [
         {
@@ -2431,11 +2410,9 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 40,
-          "evidencia": "0 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
-          "hallazgos": [
-            "ninguna prueba nombra un archivo de esta área"
-          ]
+          "pct": 62,
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "hallazgos": []
         },
         "doc": {
           "pct": 55,
@@ -2445,7 +2422,7 @@
           ]
         }
       },
-      "pct": 86,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2456,7 +2433,6 @@
         "[observabilidad] src/data/orphanObjects.js",
         "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
         "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
-        "[pruebas] ninguna prueba nombra un archivo de esta área",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [

@@ -1,6 +1,6 @@
 # Auditoría completa del portal — 2026-08-23
 
-**Promedio: 88%.** Veinticinco áreas, doce ejes cada una. Ninguna área congelada
+**Promedio: 89%.** Veinticinco áreas, doce ejes cada una. Ninguna área congelada
 todavía, y eso es a propósito: el sello lo pone una corrida real en sala, no una
 medición.
 
@@ -109,29 +109,29 @@ la confusión entre «construido» y «funciona» que el sello viene a evitar.
   ──────────────────────────────────────────────────────────────────────────────────────────────────
   Plataforma y chasis              92       89   95   98   98   79   83   95   85   95   95   95   95
   Cortes de caja y bolsas de efect 92       77   95   93   98   91   92   98   85   95   95   95   85
+  Metas y cumplimiento             91       95   95   98   98   91   92   98   85   95   95   62   75
   Inventario, conteo y ventas perd 91       95   95   86   98   95   83   95   85   95   95   76   75
   Min · Máx                        91       83   95   98   98   95   83   98   85   95   95   76   95
-  Metas y cumplimiento             90       95   95   98   98   91   92   98   85   95   95   40   75
+  Permisos, cargos y candado de mó 90       95   95   98   98   95   83   86   85   95   95   62   75
+  Asistencia y marcaciones         90       95   95   98   98   95   83   98   85   95   95   62   55
+  Nómina y bonificaciones          90       95   95   98   98   91   83   95   85   95   95   62   55
   Libros fiscales y cierre de perí 90       77   95   98   98   95   92   98   85   95   95   62   95
   Tablero de inicio                89       89   95   98   98   83   83   89   85   95   95   76   55
   Solicitudes y aprobaciones       89       95   95   98   96   91   83   89   85   95   95   69   55
   Traslados entre salas            89       65   95   98   96   95   74   98   85   95   95   95   85
+  Bitácoras reguladas (SRS)        89       83   95   98   98   95   83   95   85   95   95   62   75
   Impresión en ticketera           89       77   95   93   92   95   92   98   85   95   83   76   75
-  Asistencia y marcaciones         88       95   95   98   98   95   83   98   85   95   95   40   55
   Horarios, turnos y vacaciones    88       95   95   93   96   95   74   77   85   95   95   69   55
-  Nómina y bonificaciones          88       95   95   98   98   91   83   95   85   95   95   40   55
+  Sucursales                       88       95   95   98   96   79   92   83   85   95   95   62   55
   Ventas                           88       77   95   92   98   95   92   92   85   95   95   62   55
   Facturación, DTE y clientes      88       95   95   95   92   78   74   92   85   95   95   62   95
   Productos, presentaciones y labo 88       95   95   89   98   91   65   83   85   95   95   76   55
-  Bitácoras reguladas (SRS)        88       83   95   98   98   95   83   95   85   95   95   40   75
+  Sistema, salud y auditoría gener 88       83   95   98   98   85   83   98   85   95   95   62   55
   Acceso, identidad y kiosco       87       71   95   83   86   95   92   95   85   95   95   69   95
-  Sucursales                       86       95   95   98   96   79   92   83   85   95   95   40   55
   Pedidos a sucursales             86       71   95   73   96   81   74   74   85   95   95   95   95
   Compras y cuentas por pagar      86       71   95   98   96   83   74   98   85   89   95   62   85
-  Sistema, salud y auditoría gener 86       83   95   98   98   85   83   98   85   95   95   40   55
-  Permisos, cargos y candado de mó 85       89   95   98   73   95   83   86   85   95   95   40   75
-  Avisos, notificaciones y encuest 84       89   95   98   98   91   74   59   85   95   95   40   55
-  Personal y expediente            82       89   95   98   73   64   74   71   85   95   95   69   55
+  Personal y expediente            85       89   95   98   96   64   74   71   85   95   95   69   55
+  Avisos, notificaciones y encuest 85       89   95   98   98   91   74   59   85   95   95   62   55
 ```
 
 Los números salen de `auditoria/puntuar.mjs`, que tiene las reglas del cálculo
@@ -595,3 +595,49 @@ Es la cuarta vez en el día que el hallazgo estaba en la medición y no en el
 portal. Vale la pena decirlo así de claro: **de los seis problemas que esta
 auditoría encontró en sus propios instrumentos, ninguno se habría notado mirando
 el número.** Todos aparecieron al abrir tres casos a mano.
+
+
+### 7.8 Las ocho áreas sin pruebas — cubiertas (v2.720.1 y v2.721.0)
+
+El eje más flojo del portal era **pruebas**: ocho de las veinticinco áreas no
+tenían un solo archivo que las nombrara. Hoy las ocho lo tienen. **93 pruebas
+nuevas en 7 archivos**; la suite pasó de 689 a 793.
+
+La pregunta al escribirlas no fue «cómo subo el número» sino **qué se rompe en
+silencio si nadie mira** — que es la única forma de que una prueba valga algo.
+
+**Y encontró un defecto de dinero.** La planilla usaba la tabla de retención de
+renta **anterior al Decreto Ejecutivo No. 10 de 2025**, y además le faltaban las
+cuotas fijas de cada tramo. Con base gravada de $275,00 —el mínimo exento
+exacto— retenía **$10,57 a alguien que por ley no paga nada**.
+
+No le pasó a nadie: no había ni un período de planilla, ni una entrada, ni un
+empleado con sueldo cargado. Era un defecto latente esperando la primera corrida,
+que es exactamente lo que una prueba tiene que atrapar — la nómina no avisa
+cuando paga mal, y **ninguno de los doce gates podía verlo, porque ninguno sabe
+qué dice la ley**.
+
+**Y una corrección a esta misma auditoría.** Las primeras lecturas de tamaño de
+tabla decían «46 entradas de planilla, 1 período». Eran `reltuples`, la
+estimación del planificador, no un conteo — un `count(*)` dio cero y cero. Mi
+propia consulta llamaba a esa columna `filas_aprox` y aun así cité el número como
+si fuera exacto. Cambió la severidad del hallazgo entero: de «se le retiene de
+más a 49 personas» a «hay un defecto esperando la primera corrida».
+
+**Dos hallazgos quedaron anotados y sin cambiar**, porque tocarlos mueve lo que
+ve el usuario:
+
+- El cálculo de tardanza está **duplicado** entre la vista y
+  `consolidate-timesheets`. Hoy coinciden —comprobado sobre las 429 filas— pero
+  son dos copias de la misma regla.
+- `ts?.late_minutes || (recálculo)`: con `late_minutes` en **0** —«puntual», y
+  hoy lo son las 429— el `||` descarta el timesheet y recalcula.
+
+**`conteo_ver_sistema` es la única de las 156 llaves fuera del canon §7-bis.** Se
+ancló como excepción con motivo: renombrarla exige migración (9 filas otorgadas y
+una función de Postgres) y no arregla ningún comportamiento.
+
+**Tres de estas pruebas nacieron mal**, y es el mismo patrón de todo el día: la
+de continuidad de tramos exigía una forma que la ley no tiene, y la de
+`localStorage` espiaba el prototipo cuando jsdom expone los métodos en la
+instancia. Las dos «fallaron» contra código correcto.

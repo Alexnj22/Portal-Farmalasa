@@ -352,7 +352,12 @@ function puntuar(area) {
         // `carga-diferida.spec.js` no nombra archivos de `src/` —abre rutas—, así
         // que el detector por importaciones no la ve. Se declara a mano: es la
         // única prueba que verifica que lo diferido vuelve.
-        + (['tablero', 'traslados', 'inventario'].includes(area.id) ? 1 : 0);
+        + (['tablero', 'traslados', 'inventario'].includes(area.id) ? 1 : 0)
+        // `registroDePermisos.test.js` importa de `src/constants/`, que el
+        // detector sí ve. Las demás de la tanda del 2026-08-23 también — se
+        // dejan que las cuente solo, para que el día que alguien borre una el
+        // puntaje baje sin que haya que acordarse de esta lista.
+        ;
     ev.pruebas = { pct: tope(t === 0 ? 40 : Math.min(95, 55 + t * 7), 40),
         evidencia: `${t} archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes`,
         hallazgos: t === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };

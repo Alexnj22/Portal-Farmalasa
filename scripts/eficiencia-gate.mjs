@@ -406,8 +406,17 @@ if (!SOLO_LOCAL) {
      * donde nadie lo espera se pueda ver igual: acotar el fallo no es lo mismo
      * que dejar de mirar. */
     const salientes = canal.consultar(`
-      SELECT count(*) FILTER (WHERE status_code NOT BETWEEN 200 AND 299
-                                 OR status_code IS NULL)            AS no_ok,
+      -- no_ok cuenta sólo lo que RECIBIÓ una respuesta con código malo. El
+      -- "status_code IS NULL" estaba adentro y hacía que una llamada colgada
+      -- disparara DOS chequeos por el mismo evento: el suyo y éste. Peor, el
+      -- mensaje de éste dice "un 401 acá significa que una función volvió a
+      -- quedar con verify_jwt" — o sea que un tropiezo de DNS se leía como un
+      -- fallo de autenticación que nunca existió, y mandaba a revisar el lugar
+      -- equivocado. Las que no respondieron ya las cuenta "colgadas".
+      -- (Sin backticks a propósito: esto vive dentro de un template literal de
+      -- JavaScript y un backtick lo cierra en silencio.)
+      SELECT count(*) FILTER (WHERE status_code IS NOT NULL
+                                AND status_code NOT BETWEEN 200 AND 299) AS no_ok,
              count(*) FILTER (WHERE status_code BETWEEN 201 AND 299) AS otros_2xx,
              count(*) FILTER (WHERE timed_out) AS colgadas,
              count(*) AS total,
@@ -574,8 +583,36 @@ if (!SOLO_LOCAL) {
                 + 'Un 401 acá significa que una función volvió a quedar con verify_jwt y el cron '
                 + 'está fallando ANTES de ejecutar una línea — ya pasó tres veces. Un 5xx suelto '
                 + 'puede ser el reinicio de Postgres: cruzar contra pg_postmaster_start_time().');
+    // ── Colgadas: por TASA, no por tropiezo ─────────────────────────────────
+    // Acá había tolerancia cero, y el 2026-08-24 puso el gate en rojo por UNA
+    // llamada de 1.931 (0,052%). Mirada de cerca era un fallo de DNS —55.001 ms
+    // enteros resolviendo el nombre, 0 en handshake y 0 en la petición—, o sea
+    // que la llamada nunca llegó a ninguna función. No es un defecto del portal:
+    // es la red.
+    //
+    // Y el propio gate ya tiene escrito el criterio correcto para los crons: «se
+    // mide por TASA, no por tropiezo — un `job startup timeout` suelto es un
+    // aviso, el 5% es rojo». Esto es lo mismo un piso más abajo, y quedaba
+    // inconsistente.
+    //
+    // ⚠️ El umbral NO se sube para que calle. Está en 1% —veinte veces el
+    // tropiezo medido y cinco veces más estricto que la regla de los crons— y el
+    // conteo se imprime SIEMPRE, así que una sola colgada se sigue viendo aunque
+    // no bloquee. Si sube de ahí, es que algo se rompió de verdad.
+    //
+    // Lo que NO se relaja es el «fuera de 2xx»: un 401 significa que una función
+    // volvió a quedar con `verify_jwt` y el cron falla ANTES de ejecutar una
+    // línea. Eso es sistemático desde el primer caso, nunca ruido.
+    const TASA_COLGADAS_MAX = 1;
+    const pctColgadas = Number(s.total ?? 0) > 0
+      ? (100 * Number(s.colgadas ?? 0)) / Number(s.total) : 0;
     if (Number(s.colgadas ?? 0) > 0)
-      fallos.push(`hay ${s.colgadas} llamada(s) saliente(s) que se colgaron hasta el plazo.`);
+      console.log(gris(`      colgadas: ${pctColgadas.toFixed(3)}% de ${s.total} `
+                     + `(tope ${TASA_COLGADAS_MAX}%) — un fallo de DNS no llega a la función`));
+    if (pctColgadas > TASA_COLGADAS_MAX)
+      fallos.push(`${s.colgadas} de ${s.total} llamadas salientes se colgaron hasta el plazo `
+                + `(${pctColgadas.toFixed(2)}%, tope ${TASA_COLGADAS_MAX}%). `
+                + 'A esta tasa ya no es la red: mirar si una función quedó sin responder.');
 
     // Cuánto se disparó de verdad, contra lo declarado.
     /* Los disparos REALES incluyen los que la condición horaria del propio cron

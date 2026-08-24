@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { buscarInventarioGlobalV2 } from '../../data/inventory';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearEnvio, despacharEnvio, MOTIVOS_ENVIO, TOPE_RENGLONES_ENVIO } from '../../data/envios';
+import { crearEnvio, despacharEnvio, direccionValida, ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDestino, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
@@ -74,6 +74,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * cualquier origen para quien tiene alcance ALL, y lo rebota para quien no.
      * Acá sólo se deja de esconder la pregunta. */
     const alcanceTodo = getScope('traslados') === 'ALL';
+
+    /* Y si quien arma el envío ES Bodega. Cambia la dirección entera: Bodega es
+     * la única que le manda producto a una sala. */
+    const soyBodega = Number(miErp) === ERP_BODEGA;
 
     const [pestana, setPestana] = useState('agregar');
     const [termino, setTermino] = useState('');
@@ -234,6 +238,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         // eso el servidor lo rebota recién al apretar «Transferir».
         : String(origen.erp) === String(destino)
             ? `${origen.nombre} es la sala a la que va el envío.`
+        // Y la dirección: una sala no le manda a otra. Se dice acá, con el
+        // renglón todavía sin agregar, y no al apretar «Transferir» con la caja
+        // armada — ver `direccionValida`.
+        : destino && !direccionValida(origen.erp, destino)
+            ? `${origen.nombre} no le manda producto a ${NOMBRE_SALA[Number(destino)] ?? 'esa sala'}: eso se pide. Lo que ya no necesita va a Bodega.`
         : null;
 
     const agregar = useCallback(() => {
@@ -310,22 +319,72 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         return [...porClave.values()].filter(a => a.unidades > a.existencia);
     }, [renglones, miErp]);
 
-    /* A dónde puede ir. Sin alcance sobre todas, cualquiera menos la propia.
-     * Con alcance se ofrecen TODAS —quien manda no tiene una sala en este
-     * sentido— y lo que impide mandarse algo a sí misma es el freno por
-     * renglón: origen y destino no pueden ser la misma sala. */
+    /* A dónde puede ir, y acá es donde se aplica la dirección.
+     *
+     * Desde una sala el único destino es Bodega; desde Bodega, cualquier sala.
+     * Con alcance sobre todas se ofrecen las DOS direcciones —quien manda no
+     * tiene una sala en este sentido y arma envíos de cualquier origen—, y lo
+     * que comprueba que la dirección cierre es el freno por renglón, igual que
+     * el que impide mandarse algo a sí misma. */
     const salasDestino = useMemo(
         () => Object.entries(NOMBRE_SALA)
-            .filter(([erp]) => alcanceTodo || Number(erp) !== Number(miErp))
+            .filter(([erp]) => {
+                if (Number(erp) === Number(miErp)) return alcanceTodo;
+                if (alcanceTodo) return true;
+                return soyBodega ? Number(erp) !== ERP_BODEGA : Number(erp) === ERP_BODEGA;
+            })
             .map(([erp, nombre]) => ({ value: erp, label: nombre })),
-        [miErp, alcanceTodo],
+        [miErp, alcanceTodo, soyBodega],
     );
+
+    /* Un solo destino posible no es una pregunta: es un dato. Se elige solo
+     * —el caso de toda sala que no es Bodega— y el porqué se dice abajo del
+     * campo, que es donde alguien lo va a leer. */
+    useEffect(() => {
+        if (salasDestino.length === 1 && !destino) setDestino(String(salasDestino[0].value));
+    }, [salasDestino, destino]);
+
+    /* Y un destino que venía del borrador puede haber dejado de ser posible
+     * —cambió el cargo, cambió la regla—. Un valor que la lista ya no ofrece se
+     * queda pegado en el estado y sale a rebotar al servidor. */
+    useEffect(() => {
+        if (destino && !salasDestino.some(x => String(x.value) === String(destino))) setDestino('');
+    }, [salasDestino, destino]);
+
+    const destinoEsBodega = Number(destino) === ERP_BODEGA;
+
+    /* Qué motivos valen en ESTA dirección. Los tres existen, pero ninguno vale
+     * en las dos: hacia Bodega va lo que una sala se saca de encima, hacia una
+     * sala va lo que Bodega reparte. De ahí caen solas las otras dos reglas
+     * —«Producto nuevo» sólo sale de Bodega, «Próximo a vencer» sólo llega a
+     * Bodega— sin escribirlas aparte. */
+    const motivosPosibles = useMemo(
+        () => (destino ? motivosEnvioPorDestino(destinoEsBodega) : MOTIVOS_ENVIO),
+        [destino, destinoEsBodega],
+    );
+
+    /* El motivo elegido antes del destino —o traído del borrador— puede no
+     * valer en la dirección que quedó. Se limpia en vez de mandarlo: el
+     * servidor lo rebota igual, y descubrirlo al apretar es tarde. */
+    useEffect(() => {
+        if (motivo && !motivosPosibles.includes(motivo)) setMotivo('');
+    }, [motivosPosibles, motivo]);
 
     /* Los renglones que quedaron apuntando a la sala a la que va el envío.
      * Puede pasar al revés del freno de arriba: se agrega el renglón y DESPUÉS
      * se elige ese mismo destino. */
     const chocanConElDestino = useMemo(
         () => renglones.filter(r => destino && String(r.origen_erp ?? miErp) === String(destino)),
+        [renglones, destino, miErp],
+    );
+
+    /* Y los que quedaron apuntando en la dirección equivocada. Mismo caso que
+     * el de arriba y por el mismo orden: se agrega el renglón y DESPUÉS se
+     * elige un destino con el que ya no cierra. */
+    const chocanConLaDireccion = useMemo(
+        () => (destino
+            ? renglones.filter(r => !direccionValida(r.origen_erp ?? miErp, destino))
+            : []),
         [renglones, destino, miErp],
     );
 
@@ -344,6 +403,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
+        : chocanConLaDireccion.length > 0 ? 'Hay producto que sale de una sala hacia otra sala, y eso se pide.'
         : !motivo ? 'Elige el motivo.'
         // Cuatro letras es el mismo piso que cobra la base: menos que eso no
         // explica nada, y que se rebote recién al apretar sería peor.
@@ -810,6 +870,15 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                             </p>
                         )}
 
+                        {chocanConLaDireccion.length > 0 && (
+                            <p className="text-micro font-semibold text-danger-text leading-snug px-1">
+                                {chocanConLaDireccion.length === 1
+                                    ? `${chocanConLaDireccion[0].descripcion} sale de una sala hacia otra sala.`
+                                    : `${chocanConLaDireccion.length} productos salen de una sala hacia otra sala.`}
+                                {' '}Eso se pide, no se manda: lo que ya no necesitas va a Bodega.
+                            </p>
+                        )}
+
                         {excesos.map(x => (
                             <p key={`${x.nombre}|${x.sala}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
                                 Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y{' '}
@@ -832,16 +901,28 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 options={salasDestino}
                                 placeholder="¿A qué sala va?"
                                 ariaLabel="Sala de destino"
+                                disabled={salasDestino.length === 1}
                             />
+                            {/* El porqué, donde alguien lo va a leer. Un campo
+                                con una sola opción sin explicación se lee como
+                                un defecto; con esta línea se lee como la regla
+                                que es, y dice a dónde ir en su lugar. */}
+                            {salasDestino.length === 1 && (
+                                <p className="text-micro text-content-3 font-medium leading-snug px-1 mt-1">
+                                    Desde tu sala el producto va a Bodega, y Bodega decide a quién le toca.
+                                    Si otra sala lo necesita, tiene que pedirlo.
+                                </p>
+                            )}
                             </div>
                             <div>
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Motivo</p>
                             <LiquidSelect
                                 value={motivo}
                                 onChange={v => setMotivo(String(v ?? ''))}
-                                options={MOTIVOS_ENVIO.map(m => ({ value: m, label: m }))}
-                                placeholder="¿Por qué se lo mandas?"
+                                options={motivosPosibles.map(m => ({ value: m, label: m }))}
+                                placeholder={destino ? '¿Por qué se lo mandas?' : 'Elige primero la sala'}
                                 ariaLabel="Motivo del envío"
+                                disabled={!destino}
                             />
                             </div>
                             {/* ── El motivo escrito, SIEMPRE ────────────────
@@ -862,10 +943,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 placeholder={motivo === 'Próximo a vencer'
-                                    ? 'Ej.: vence en octubre y acá no rota, allá se vende'
+                                    ? 'Ej.: vence en octubre y acá no rota, que lo reubiquen'
                                     : motivo === 'Producto nuevo'
                                     ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
-                                    : 'Explica por qué esta sala lo necesita más que la tuya'}
+                                    : motivo === 'Baja rotación'
+                                    ? 'Ej.: no se ha vendido en dos meses y ocupa el estante'
+                                    : 'Explica por qué mandas este producto'}
                             />
                         </div>
                     </div>

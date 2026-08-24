@@ -21,20 +21,69 @@ import { supabase } from '../supabaseClient';
 // destino— ni habla con el sistema de origen: sus credenciales viven en un
 // secreto y quien las tiene puede mover inventario de cualquier sala.
 
+/** Qué sucursal es Bodega. La que MANDA es `erp_sucursal_map.es_bodega`; acá
+ *  está para poder ofrecer sólo lo posible sin una consulta, igual que el resto
+ *  de las constantes espejo de este archivo. */
+export const ERP_BODEGA = 6;
+
 /**
- * Los motivos por los que una sala manda producto a otra.
+ * Los tres motivos por los que se empuja producto, y nada más.
  *
  * La lista vive TAMBIÉN en la base (`motivos_envio()`), que es la que manda: si
  * se agrega uno acá sin agregarlo allá, el envío rebota — a propósito. Está
  * repetida para poder ofrecerla sin una consulta, no para decidir.
+ *
+ * Eran CINCO hasta el 2026-08-24, y dos de ellas —«Lo pidieron» y «Otro»— eran
+ * exactamente la puerta por la que una sala mandaba lo que quisiera a donde
+ * quisiera. «Lo pidieron» ya tiene camino propio: la solicitud, donde el otro
+ * lado decide ANTES de que el producto salga. «Sobrestock» se fue con ellas
+ * porque nombra lo mismo que «Baja rotación», y dos nombres para una cosa
+ * terminan queriendo decir cosas distintas.
  */
 export const MOTIVOS_ENVIO = [
-    'Producto nuevo',
     'Próximo a vencer',
-    'Sobrestock',
-    'Lo pidieron',
-    'Otro',
+    'Baja rotación',
+    'Producto nuevo',
 ];
+
+/**
+ * Y cuáles valen según a dónde va. Espejo de `motivos_envio_por_destino()`.
+ *
+ * La dirección es el control, no el motivo suelto: sólo Bodega le manda a una
+ * sala, así que hacia Bodega va lo que una sala se saca de encima y hacia una
+ * sala va lo que Bodega reparte. De esa tabla caen solas las otras dos reglas
+ * —«Producto nuevo» sólo sale de Bodega, «Próximo a vencer» sólo llega a
+ * Bodega— sin escribirlas aparte.
+ *
+ * Se pregunta ANTES de ofrecer: un motivo que se ofrece y después rebota al
+ * apretar es peor que uno que nunca se ofreció.
+ */
+export function motivosEnvioPorDestino(destinoEsBodega) {
+    return destinoEsBodega
+        ? ['Próximo a vencer', 'Baja rotación']
+        : ['Producto nuevo', 'Baja rotación'];
+}
+
+/**
+ * ¿Esta dirección es un envío, o es una solicitud disfrazada?
+ *
+ * Sólo Bodega le manda producto a una sala. Una sala que le empuja a otra está
+ * decidiendo por ella: el producto sale ANTES de que nadie del otro lado opine,
+ * así que «te lo mando porque lo necesitás» llega en caja y sin respuesta.
+ * Cuando la otra sala de verdad lo necesita, lo PIDE, y ahí quien lo tiene
+ * decide antes de que se mueva nada.
+ *
+ * Lo de baja rotación sigue llegando a otra sala, en dos tramos: sala → Bodega,
+ * y Bodega reparte. Es un tramo más a propósito — la que reparte es la que ve
+ * las siete salas.
+ *
+ * Vive acá y no en el modal porque la cobra también el servidor
+ * (`validar_envio_producto`) y porque así se puede probar sin montar la
+ * pantalla; el modal la usa para no OFRECER lo que va a rebotar.
+ */
+export function direccionValida(origenErp, destinoErp) {
+    return Number(origenErp) === ERP_BODEGA || Number(destinoErp) === ERP_BODEGA;
+}
 
 /**
  * Y los motivos por los que la sala de destino devuelve un renglón.

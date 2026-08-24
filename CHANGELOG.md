@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.0 — Un envío tiene tres motivos y una dirección: sólo Bodega le manda a una sala
+
+**La pregunta fue: cómo evitar que las salas usen el envío en vez de la
+solicitud.** Y la puerta abierta no era un umbral mal puesto: eran **dos
+etiquetas**. La lista de motivos traía «Lo pidieron» y «Otro», y con cualquiera
+de las dos una sala mandaba lo que quisiera a donde quisiera — con 21
+Dependientes de Farmacia habilitados. «Lo pidieron» ya tenía camino propio: la
+solicitud, que es donde el otro lado decide **antes** de que el producto salga.
+
+**Quedan tres motivos, uno por cada uso reconocido**, y ninguno vale en las dos
+direcciones:
+
+| origen | destino | motivos |
+|---|---|---|
+| una sala | **Bodega** | Próximo a vencer · Baja rotación |
+| **Bodega** | una sala | Producto nuevo · Baja rotación |
+| una sala | otra sala | **ninguno** — eso es una solicitud |
+
+«Producto nuevo» sólo sale de Bodega y «Próximo a vencer» sólo llega a Bodega:
+las dos caen solas de esa tabla, sin escribirlas aparte. «Sobrestock» se fue con
+las otras dos porque nombra lo mismo que «Baja rotación», y dos nombres para una
+cosa terminan queriendo decir cosas distintas.
+
+**Una sala que le empuja producto a otra está decidiendo por ella.** El producto
+sale ANTES de que nadie del otro lado opine, así que «te lo mando porque lo
+necesitás» es una suposición que llega en caja. Lo de baja rotación sigue
+llegando a otra sala, pero en dos tramos —sala → Bodega → sala—, y es a
+propósito: la que reparte es la que ve las siete salas.
+
+**Se descartó comprobar el motivo contra el dato, y por una razón medida.** La
+primera versión exigía que el lote venciera de verdad y que el producto no rotara
+de verdad; la fecha de vencimiento **falta en la mayoría del inventario** — en
+Salud 1, 1.157 de 1.898 productos con existencia no tienen fecha en ningún lote.
+Un candado sobre un dato que falta no frena al que abusa: frena al que tiene
+razón, y le enseña a elegir el motivo que sí pasa. Ahí el dato queda mintiendo,
+que es peor que no tenerlo. Por eso el control es de **forma** y no de grado.
+
+**Y la pantalla no ofrece lo que va a rebotar.** Desde una sala el destino es
+Bodega y se elige solo, con el porqué escrito debajo del campo («Si otra sala lo
+necesita, tiene que pedirlo»); el motivo aparece recién con el destino puesto, y
+sólo con los dos que valen en esa dirección. El freno salta al **agregar el
+renglón**, no al apretar «Transferir» con la caja armada: quien arma ocho
+renglones y descubre al final que no puede aprende a buscarle la vuelta, no a
+pedir.
+
+Se aprieta **hoy** porque en producción hay cero envíos —el circuito se
+construyó el 22-ago y no lo usó nadie—: cambiar la regla antes de que exista la
+costumbre cuesta una migración; hacerlo después es quitarle a la gente algo que
+ya usa.
+
+Migración `20260824155553`. La regla la cobra `validar_envio_producto` y la
+comparten pantalla y servidor vía `motivos_envio_por_destino()`. Verificado
+contra producción con los seis casos de la tabla, insertados y revertidos en la
+misma transacción: los cuatro que deben fallar fallan con su mensaje propio y
+los dos legítimos pasan. `tests/unit/direccionDelEnvio.test.js` ancla el espejo
+del navegador con las 30 combinaciones sala→sala.
+
 ## v2.734.2 — 41 pruebas: la ruta, las reglas de despacho y la recepción
 
 **El aviso de salida** existe porque hasta el 2026-08-14 **tres caminos ponían

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
 import {
     construirTicketDeTraslado, salaQueDespacha, SIMBOLOGIA_DEL_TRASLADO, FAMILIAS,
+    BARRAS_DEL_TRASLADO,
 } from '../../src/utils/trasladoTicket';
 
 // El ancla es un traslado REAL: el 32274 del 2026-08-23, Salud 2 -> Salud 1,
@@ -50,8 +51,34 @@ describe('el ticket de traslado', () => {
     // teclear» es exactamente el cambio bienintencionado que hay que frenar.
     it('pone el número en las barras y NUNCA escrito debajo', () => {
         const t = base();
-        expect(t.codigos).toEqual([{ valor: '32274', simbologia: SIMBOLOGIA_DEL_TRASLADO }]);
+        expect(t.codigos).toEqual([
+            { valor: '32274', simbologia: SIMBOLOGIA_DEL_TRASLADO, ...BARRAS_DEL_TRASLADO },
+        ]);
         expect(t.codigos[0]).not.toHaveProperty('leyenda');
+    });
+
+    /* El módulo no puede subir a 6 «porque se ve mejor»: CODE128-B gasta
+     * `11n + 35` módulos, el rollo imprime 576 puntos, y a módulo 6 un número de
+     * SEIS dígitos pide 606 y no entra. Se partiría el día que el contador cruce
+     * el 99999 —hoy va por 32278— sin aviso y sobre papel ya impreso. Esto ancla
+     * la cuenta, no el gusto. */
+    it('las barras entran en el rollo hasta con siete dígitos', () => {
+        const PUNTOS_DEL_ROLLO = 576;
+        const anchoEnPuntos = (digitos) => (11 * digitos + 35) * BARRAS_DEL_TRASLADO.modulo;
+        expect(anchoEnPuntos(5)).toBeLessThanOrEqual(PUNTOS_DEL_ROLLO);
+        expect(anchoEnPuntos(6)).toBeLessThanOrEqual(PUNTOS_DEL_ROLLO);
+        expect(anchoEnPuntos(7)).toBeLessThanOrEqual(PUNTOS_DEL_ROLLO);
+        // Y que sea de verdad más grande que el valor por defecto del rollo.
+        expect(BARRAS_DEL_TRASLADO.modulo).toBeGreaterThan(2);
+        expect(BARRAS_DEL_TRASLADO.alto).toBeGreaterThan(80);
+    });
+
+    // Van al final del papel: quien pasa el lector las encuentra en el borde y
+    // no en medio de la tabla de productos.
+    it('las barras salen DESPUES de la tabla de productos', () => {
+        const t = base();
+        const cuerpo = seccionesParaElPrograma(t).cuerpo;
+        expect(cuerpo.indexOf('\x1dk')).toBeGreaterThan(cuerpo.indexOf('FOSFOCIL'));
     });
 
     // El renglón «SALUD 2 -> SALUD 1» repetía lo que dicen «De:» y «Para:» dos

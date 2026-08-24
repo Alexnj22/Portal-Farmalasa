@@ -44,6 +44,34 @@ import { soloAscii, recortar, selloCorto } from './ticketCampos';
 export const SIMBOLOGIA_DEL_TRASLADO = 'CODE128';
 
 /**
+ * Las barras van GRANDES, y el número sale de la cuenta, no del ojo.
+ *
+ * Pedido del usuario (2026-08-24): «que sea más grande como el del carné
+ * temporal para una lectura más fácil». El carné en etiqueta llena 75 mm de
+ * ancho; en el rollo, el módulo por defecto —2 puntos— deja un código de cinco
+ * dígitos en unos **22 mm**, o sea un tercio del papel. Un blanco chico se lee
+ * mal justo cuando peor conviene: con el papel pegado con cinta a una bolsa y
+ * alguien apurado.
+ *
+ * ── Cuánto se puede agrandar sin que se parta ──────────────────────────────
+ * CODE128-B gasta 11 módulos por carácter, más 11 de arranque, 11 de control y
+ * 13 de cierre — o sea `11n + 35`. A 203 ppp un punto son 0.125 mm, y el rollo
+ * de 80 mm imprime sobre **576 puntos** (~72 mm).
+ *
+ * | dígitos | módulos | a módulo 5 | ¿entra en 576? |
+ * |---:|---:|---:|---|
+ * | 5 (hoy: 32278) | 90 | 450 pt · 56 mm | sí |
+ * | 6 (cuando pase 99999) | 101 | 505 pt · 63 mm | sí |
+ * | 7 | 112 | 560 pt · 70 mm | sí, al filo |
+ *
+ * **Módulo 5 y no 6** por la fila que todavía no existe: a 6 puntos, un número
+ * de seis dígitos pide 606 puntos y **no entra**. Se partiría el día que el
+ * contador cruce el 99999 — sin aviso, y sobre papel que ya salió. El alto sí
+ * es libre: 120 puntos son 15 mm, y ahí lo único que cuesta es rollo.
+ */
+export const BARRAS_DEL_TRASLADO = { alto: 120, modulo: 5 };
+
+/**
  * Las dos familias que mueven producto entre salas, y por qué el papel las
  * distingue.
  *
@@ -175,7 +203,7 @@ export function construirTicketDeTraslado({
          * quién, cuándo y qué lleva), que es exactamente el camino que describe
          * el aviso de «SIN NUMERO». */
         codigos: numero
-            ? [{ valor: numero, simbologia: SIMBOLOGIA_DEL_TRASLADO }]
+            ? [{ valor: numero, simbologia: SIMBOLOGIA_DEL_TRASLADO, ...BARRAS_DEL_TRASLADO }]
             : [],
         items: items.length ? {
             columnas: [{ label: 'PRODUCTO' }, { label: 'CANT', alinear: 'der' }],

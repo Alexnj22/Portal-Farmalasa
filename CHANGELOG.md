@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.730.4 — Las barras del traslado van al final y grandes
+
+Pedido del usuario: «pasa el código de barras para el final, y que sea más
+grande como el del carné temporal para una lectura más fácil».
+
+**Al final.** Quien pasa el lector ya no tiene que buscar las barras en medio del
+papel: las encuentra en el borde. No cambia ningún otro ticket — hoy **ninguno
+lleva códigos Y tabla a la vez** (el carné y la hoja de prueba tienen códigos sin
+items; la bolsa y el vale al revés), así que el único que se mueve es éste.
+
+**Y grandes: módulo 5 en vez de 2, alto 120 puntos en vez de 80.** Un código de
+cinco dígitos pasa de ~22 mm a **56 mm** de los 72 útiles del rollo, y de 10 mm
+a 15 mm de alto. Un blanco chico se lee mal justo cuando peor conviene: con el
+papel pegado a una bolsa y alguien apurado.
+
+**El módulo es 5 y no 6 por una fila que todavía no existe.** CODE128-B gasta
+`11n + 35` módulos y el rollo imprime 576 puntos: a módulo 6, un número de SEIS
+dígitos pide 606 y no entra. Se partiría el día que el contador cruce el 99999
+—hoy va por 32278— sin aviso y sobre papel ya impreso. La cuenta quedó anclada
+en una prueba que verifica 5, 6 y 7 dígitos, no en un comentario.
+
+De paso, `codigoDeBarrasParaElRollo` acepta ahora `alto` y `modulo` por código,
+con los valores de siempre por defecto: no todos los códigos se leen en las
+mismas condiciones, y el carné no cambia.
+
 ## v2.730.3 — El ticket repetía el recorrido y traía el número escrito
 
 Tres correcciones del usuario después de ver el papel dibujado, y una de ellas

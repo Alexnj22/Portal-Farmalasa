@@ -605,8 +605,14 @@ export const SIMBOLOGIAS = ['CODE128', 'CODE39'];
 // un CODE128 de 8 caracteres mide ~35 mm y un CODE39 ~62 mm: los dos entran en
 // el rollo de 80 mm de las salas, y el CODE39 con poco margen — si sale
 // partido, lo que baja es este número, no el alto.
-const BARRAS_ALTO   = '\x50';   // 80 puntos
-const BARRAS_MODULO = '\x02';   // 2 puntos por módulo
+//
+// **Son el valor por DEFECTO, no el único.** Cada código puede pedir el suyo
+// (`alto` y `modulo`), porque no todos se leen en las mismas condiciones: el
+// carné se pasa despacio y a la vista, y el de una bolsa se lee de apuro y a
+// veces con el papel pegado con cinta. La cuenta para no pasarse del rollo está
+// en `trasladoTicket`, que es quien pide el grande.
+const BARRAS_ALTO   = 0x50;   // 80 puntos
+const BARRAS_MODULO = 0x02;   // 2 puntos por módulo
 
 /**
  * **El valor NO se imprime debajo de las barras. Nunca.**
@@ -638,10 +644,16 @@ const HRI_APAGADO   = '\x00';
  * lleva un carné. Un valor con otra cosa adentro no se imprime a medias: se
  * recorta acá, donde todavía se puede ver, en vez de salir mudo en el papel.
  */
-function codigoDeBarrasParaElRollo({ valor, simbologia = 'CODE128' }) {
+function codigoDeBarrasParaElRollo({
+    valor, simbologia = 'CODE128', alto = BARRAS_ALTO, modulo = BARRAS_MODULO,
+}) {
     const limpio = limpiarValorDeBarras(valor);
     if (!limpio) return '';
-    const ajustes = `${GS}h${BARRAS_ALTO}${GS}w${BARRAS_MODULO}${GS}H${HRI_APAGADO}`;
+    // Los dos van como BYTE, no como número: `GS h n` y `GS w n` esperan un
+    // carácter. Y se acotan a lo que la impresora admite —un valor fuera de
+    // rango no da error: imprime cualquier cosa o se traga el trabajo.
+    const byte = (n, min, max) => String.fromCharCode(Math.max(min, Math.min(max, Number(n) | 0)));
+    const ajustes = `${GS}h${byte(alto, 1, 255)}${GS}w${byte(modulo, 2, 6)}${GS}H${HRI_APAGADO}`;
     const comando = simbologia === 'CODE39'
         ? `${GS}k\x04${limpio}\x00`
         : `${GS}k\x49${String.fromCharCode(limpio.length + 2)}{B${limpio}`;
@@ -852,15 +864,6 @@ export function seccionesParaElPrograma(ticket) {
             b.monoespaciado ?? '',
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
         ].filter(Boolean)),
-        // Los códigos de barras, cada uno con su valor ya impreso debajo por la
-        // propia impresora (`GS H 2`) y su leyenda en el renglón siguiente. El
-        // comando NO lleva `\n` adelante: viaja pegado al renglón que le toca,
-        // por lo mismo que los cambios de letra (un código solo se lleva un
-        // renglón de rollo).
-        ...codigos.flatMap(c => [
-            codigoDeBarrasParaElRollo(c),
-            ...(c.leyenda ? [c.leyenda] : []),
-        ].filter(Boolean)),
         ...(items ? [
             IZQUIERDA + encabezadoDeItems(items.columnas),
             regla(),
@@ -893,6 +896,26 @@ export function seccionesParaElPrograma(ticket) {
                 + dosColumnas(r, v, COLUMNAS_TICKET.normal)
                 + (destacado ? LETRA_NORMAL : '')),
         ] : []),
+        /* Los códigos de barras van AL FINAL, después de la tabla (pedido del
+         * usuario, 2026-08-24: «pasa el código de barras para el final»).
+         *
+         * No cambia ningún ticket de los que ya existen: hoy **ninguno lleva
+         * códigos Y tabla a la vez** —el carné y la hoja de prueba tienen
+         * códigos y no tienen items; la bolsa y el vale al revés—, así que el
+         * único que se mueve es el del traslado, que es el que lo pidió.
+         *
+         * Y ahí abajo es donde sirve: quien pasa el lector no tiene que buscar
+         * las barras en medio del papel, las encuentra en el borde. La leyenda
+         * queda soportada por si algún día un código la necesita — el del
+         * traslado NO la manda, a propósito.
+         *
+         * El comando NO lleva `\n` adelante: viaja pegado al renglón que le
+         * toca, por lo mismo que los cambios de letra (un código solo se
+         * llevaría un renglón de rollo). */
+        ...codigos.flatMap(c => [
+            codigoDeBarrasParaElRollo(c),
+            ...(c.leyenda ? [c.leyenda] : []),
+        ].filter(Boolean)),
     ].join('\n') + '\n';
 
     return {

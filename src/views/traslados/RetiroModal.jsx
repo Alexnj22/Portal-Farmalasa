@@ -15,6 +15,7 @@ import {
 } from '../../data/retiros';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 /* La bitácora de la custodia.
  *
@@ -147,7 +148,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     // teclear de memoria y no hay presencia que probar; lo único que hacía el
     // candado era tirar en silencio la lectura de un lector sin sufijo Enter.
     // La firma de abajo —ésa sí es un carné— lo conserva.
-    const { teclas } = useCapturaDeCarne(
+    const { teclas, diagnostico } = useCapturaDeCarne(
         abierto && !conCamara && !pidiendoFirma && !ocupado, escanear,
         { aceptarTecleado: true, sinEnter: true },
     );
@@ -235,13 +236,30 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                             {teclas > 0 && ' Leyendo…'}
                         </Notice>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <ScanLine size={18} className="text-chart-1-text shrink-0" />
-                            <p className="text-body-sm text-content-2 flex-1">
-                                {ocupado ? 'Leyendo…' : 'Esperando el ticket de la próxima bolsa'}
-                            </p>
-                            <Button variant="secondary" icon={Camera} disabled={ocupado}
-                                onClick={() => setConCamara(true)}>Cámara</Button>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                                <ScanLine size={18} className="text-chart-1-text shrink-0" />
+                                {/* `teclas` ANTES que `ocupado`, y ése era el
+                                    problema: este renglón sólo miraba `ocupado`,
+                                    que no se enciende hasta que sale la consulta.
+                                    O sea que mientras el lector teclea la
+                                    pantalla no se movía **ni cuando la lectura
+                                    entraba bien** — y con eso, «no cambia nada al
+                                    escanear» no distinguía un lector mudo de uno
+                                    que anda. Se probó acá y la prueba no podía
+                                    contestar. */}
+                                <p className="text-body-sm text-content-2 flex-1">
+                                    {teclas > 0 ? 'Leyendo…'
+                                        : ocupado ? 'Buscando el ticket…'
+                                            : 'Esperando el ticket de la próxima bolsa'}
+                                </p>
+                                <Button variant="secondary" icon={Camera} disabled={ocupado}
+                                    onClick={() => setConCamara(true)}>Cámara</Button>
+                            </div>
+                            {/* Qué mandó el lector, cuando no alcanzó. Mismo
+                                instrumento que en «Recibir traslado» — y el
+                                mismo componente, no una copia. */}
+                            <LecturaQueNoEntro d={diagnostico} />
                         </div>
                     )}
 

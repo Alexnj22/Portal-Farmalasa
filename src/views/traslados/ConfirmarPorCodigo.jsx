@@ -9,6 +9,7 @@ import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '../../data/traslados';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fmtCuando } from './trasladoTexto';
+import LecturaQueNoEntro from './LecturaQueNoEntro';
 
 // La cámara pesa y sólo hace falta si alguien la pide: el camino normal es el
 // lector de la sala, que teclea. Regla de las librerías pesadas de CLAUDE.md.
@@ -45,45 +46,6 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  * escrito en ninguna parte del papel —va sólo adentro de las barras— así que
  * nadie puede teclearlo de memoria, y no hay presencia que probar.
  */
-/**
- * Lo que mandó el lector, en cristiano, cuando la lectura no entró.
- *
- * Es un instrumento, no un adorno: cada renglón separa dos hipótesis que desde
- * afuera se ven idénticas —la pantalla quieta— y que se arreglan en lugares
- * distintos. Sin él, lo único que se puede decir es «no funciona».
- */
-function LecturaQueNoEntro({ d }) {
-    // El caso más informativo va primero: teclas que SÍ llegaron y que el
-    // navegador no supo convertir en caracteres. Prueba que el lector manda y
-    // que el problema es de lectura, no de conexión.
-    if (d.teclas === 0 && d.ignoradas > 0) {
-        return (
-            <Notice variant="warning">
-                El lector mandó <strong>{d.ignoradas}</strong> {d.ignoradas === 1 ? 'tecla' : 'teclas'} que
-                esta computadora no pudo interpretar. Suele arreglarse cambiándole
-                el idioma de teclado al lector, o su modo de emulación.
-            </Notice>
-        );
-    }
-    if (d.teclas === 0) return null;   // nada que contar
-
-    const partes = [
-        `${d.teclas} ${d.teclas === 1 ? 'tecla' : 'teclas'}`,
-        `hueco máximo ${d.huecoMax} ms`,
-        d.conEnter ? 'terminó con Enter' : 'terminó sin Enter',
-    ];
-    if (d.ignoradas > 0) partes.push(`${d.ignoradas} sin interpretar`);
-
-    return (
-        <Notice variant="warning">
-            Llegó una lectura y no se pudo usar: {partes.join(' · ')}
-            {d.texto ? <> → «<strong>{d.texto}</strong>»</> : null}.
-            {d.motivo === 'corta' && ' Son muy pocas para ser un código de ticket.'}
-            {d.motivo === 'tecleada' && ' Vino demasiado lenta para ser un escaneo.'}
-        </Notice>
-    );
-}
-
 export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [buscando, setBuscando] = useState(false);
     const [ocupado,  setOcupado]  = useState(false);

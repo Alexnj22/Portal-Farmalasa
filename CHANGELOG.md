@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.738.4 — El recorrido tambien dice si el lector mando algo
+
+> «la pantalla no cambia en nada al escanear» — con una captura de **Llevar
+> productos**, no de Recibir traslado.
+
+**La prueba se hizo en la pantalla que no podía contestarla.** El escáner sí
+estaba armado ahí, pero el renglón «Esperando el ticket de la próxima bolsa»
+sólo miraba `ocupado`, que no se enciende hasta que sale la consulta al
+servidor. O sea que **mientras el lector teclea, esa pantalla no se movía ni
+cuando la lectura entraba bien**. «No cambia nada al escanear» no distinguía un
+lector mudo de uno que anda.
+
+Ahora el recorrido mira las teclas —«Leyendo…» en cuanto llega la primera— y
+muestra el mismo diagnóstico que «Recibir traslado». El componente se mudó a
+`LecturaQueNoEntro.jsx` y lo usan los dos: un instrumento que se corrige en una
+sola de las dos pantallas es peor que ninguno, porque el día que digan cosas
+distintas sobre el mismo lector, la medición pasa a ser la fuente del
+desconcierto.
+
+**Verificado en el navegador contra producción**, no sólo con pruebas de unidad
+— las tres salidas, disparando ráfagas de teclas reales sobre el diálogo:
+
+| lo que se mandó | lo que dijo la pantalla |
+|---|---|
+| 2 teclas | «2 teclas · hueco máximo 0 ms · terminó sin Enter → «12». Son muy pocas para ser un código de ticket.» |
+| 5 teclas ilegibles | «El lector mandó 5 teclas que esta computadora no pudo interpretar.» |
+| 5 teclas, **sin Enter** | salió a buscar el ticket y contestó — o sea que el camino de v2.737.1 funciona de punta a punta |
+
 ## v2.738.3 — El alta de un practicante se guarda sola
 
 Son dieciocho controles: la persona, su institución, su tutor, el supervisor, las

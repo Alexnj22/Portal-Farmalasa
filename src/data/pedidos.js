@@ -1,3 +1,9 @@
+// Lo escrito sobre este módulo:
+//   · `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`  — qué pasa cuando lo despachado
+//     no coincide con lo recibido: la sala propone, bodega contesta, supervisión
+//     desempata. Diseñado entero; parte construido.
+//   · `docs/INCIDENTE-RECEPCION-2026-08-14.md`  — la recepción de La Popular,
+//     escrita el mismo día. Es el modo de falla real de esta capa.
 // Bloque 6.A — capa de datos, entidad "pedidos". Extraído de
 // TabPedidos.jsx: 45 llamadas supabase.from() distintas, consolidadas
 // en funciones nombradas por forma de query real (varias eran

@@ -214,7 +214,7 @@ export const AREAS = [
         tablas: ['attendance', 'timesheets', 'overtime_bank'],
         edge: ['consolidate-timesheets'],
         crons: ['consolidate-timesheets-daily'],
-        docs: [],
+        docs: ['docs/ASISTENCIA-COMO-SE-CUENTA-EL-TIEMPO-2026-08-24.md'],
     },
     {
         id: 'horarios',

@@ -1,3 +1,8 @@
+// Lo escrito sobre este módulo:
+//   · `docs/CONTABILIDAD-ALCANCE-2026-08-01.md` — qué cubre el portal en materia
+//     contable y qué no. Contesta antes de que alguien lo pregunte de nuevo.
+//   · `docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md` — leer una foto de
+//     papel: la boleta está construida, la receta está medida y no.
 // Bloque 6.A — capa de datos, entidad "compras" (recepciones de bodega
 // desde el ERP). Extraído de ComprasView.jsx: 5 llamadas supabase.from().
 import { supabase } from '../supabaseClient';

@@ -63,12 +63,12 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "26 de 132 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "26 de 132 archivo(s) del área nombrados por alguna prueba (20%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos: DESIGN.md, CLAUDE.md, docs/CHECKLIST-VISTA-NUEVA.md",
+          "evidencia": "3 documento(s) vivos, 2 con cuerpo (≥120 líneas), 3 citado(s) desde el código: DESIGN.md, CLAUDE.md, docs/CHECKLIST-VISTA-NUEVA.md",
           "hallazgos": []
         }
       },
@@ -157,12 +157,12 @@
         },
         "pruebas": {
           "pct": 60,
-          "evidencia": "3 de 36 archivo(s) del área nombrados por alguna prueba (8%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 36 archivo(s) del área nombrados por alguna prueba (8%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -248,16 +248,16 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "2 de 10 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "2 de 10 archivo(s) del área nombrados por alguna prueba (20%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 75,
-          "evidencia": "1 documento(s) vivos: docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md",
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md",
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -335,14 +335,14 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "3 de 27 archivo(s) del área nombrados por alguna prueba (11%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 27 archivo(s) del área nombrados por alguna prueba (11%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -356,7 +356,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -432,14 +432,14 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "3 de 26 archivo(s) del área nombrados por alguna prueba (12%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 26 archivo(s) del área nombrados por alguna prueba (12%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -455,7 +455,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -519,24 +519,21 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 75,
-          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "pct": 85,
+          "evidencia": "2 de 4 archivo(s) del área nombrados por alguna prueba (50%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
-          "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/ASISTENCIA-COMO-SE-CUENTA-EL-TIEMPO-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 93,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -605,14 +602,14 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "2 de 17 archivo(s) del área nombrados por alguna prueba (12%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "2 de 17 archivo(s) del área nombrados por alguna prueba (12%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -623,7 +620,7 @@
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -692,14 +689,14 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -710,7 +707,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -781,14 +778,14 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "2 de 14 archivo(s) del área nombrados por alguna prueba (14%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "2 de 14 archivo(s) del área nombrados por alguna prueba (14%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -800,7 +797,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -871,14 +868,14 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "3 de 15 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 15 archivo(s) del área nombrados por alguna prueba (20%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -890,7 +887,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/EncuestaAdminView.jsx",
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -964,14 +961,14 @@
         },
         "pruebas": {
           "pct": 58,
-          "evidencia": "1 de 23 archivo(s) del área nombrados por alguna prueba (4%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 23 archivo(s) del área nombrados por alguna prueba (4%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -986,7 +983,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -1059,14 +1056,14 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 3 archivo(s) del área nombrados por alguna prueba (67%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "2 de 3 archivo(s) del área nombrados por alguna prueba (67%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -1080,7 +1077,7 @@
         "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -1147,16 +1144,16 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 75,
-          "evidencia": "1 documento(s) vivos: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md",
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md",
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1232,12 +1229,12 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "7 de 20 archivo(s) del área nombrados por alguna prueba (35%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "7 de 20 archivo(s) del área nombrados por alguna prueba (35%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 85,
-          "evidencia": "2 documento(s) vivos: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md",
+          "pct": 95,
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md",
           "hallazgos": []
         }
       },
@@ -1322,12 +1319,12 @@
         },
         "pruebas": {
           "pct": 68,
-          "evidencia": "4 de 19 archivo(s) del área nombrados por alguna prueba (21%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "4 de 19 archivo(s) del área nombrados por alguna prueba (21%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/RETOMAR-CLIENTES-2026-08-01.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/RETOMAR-CLIENTES-2026-08-01.md",
           "hallazgos": []
         }
       },
@@ -1413,14 +1410,14 @@
         },
         "pruebas": {
           "pct": 70,
-          "evidencia": "3 de 12 archivo(s) del área nombrados por alguna prueba (25%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 12 archivo(s) del área nombrados por alguna prueba (25%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -1434,7 +1431,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/productos/TabCatalogo.jsx",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {
@@ -1506,16 +1503,16 @@
         },
         "pruebas": {
           "pct": 73,
-          "evidencia": "5 de 17 archivo(s) del área nombrados por alguna prueba (29%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "5 de 17 archivo(s) del área nombrados por alguna prueba (29%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 75,
-          "evidencia": "1 documento(s) vivos: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md",
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md",
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1592,12 +1589,12 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "3 de 20 archivo(s) del área nombrados por alguna prueba (15%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "3 de 20 archivo(s) del área nombrados por alguna prueba (15%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
           "hallazgos": []
         }
       },
@@ -1684,12 +1681,12 @@
         },
         "pruebas": {
           "pct": 65,
-          "evidencia": "7 de 44 archivo(s) del área nombrados por alguna prueba (16%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "7 de 44 archivo(s) del área nombrados por alguna prueba (16%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/PRUEBA-TRASLADO-2026-08-11.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/PRUEBA-TRASLADO-2026-08-11.md",
           "hallazgos": []
         }
       },
@@ -1778,12 +1775,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 9 archivo(s) del área nombrados por alguna prueba (78%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "7 de 10 archivo(s) del área nombrados por alguna prueba (70%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 85,
-          "evidencia": "2 documento(s) vivos: docs/RETOMAR-TRASLADOS-2026-08-06.md, docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
+          "pct": 95,
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/RETOMAR-TRASLADOS-2026-08-06.md, docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
           "hallazgos": []
         }
       },
@@ -1873,12 +1870,12 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 85,
-          "evidencia": "2 documento(s) vivos: docs/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
+          "pct": 95,
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
           "hallazgos": []
         }
       },
@@ -1965,12 +1962,12 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "2 de 13 archivo(s) del área nombrados por alguna prueba (15%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "2 de 13 archivo(s) del área nombrados por alguna prueba (15%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "5 documento(s) vivos: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
+          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
           "hallazgos": []
         }
       },
@@ -2052,16 +2049,16 @@
         },
         "pruebas": {
           "pct": 60,
-          "evidencia": "1 de 13 archivo(s) del área nombrados por alguna prueba (8%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 13 archivo(s) del área nombrados por alguna prueba (8%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 75,
-          "evidencia": "1 documento(s) vivos: docs/PLAN-BITACORAS-SRS-2026-08-16.md",
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PLAN-BITACORAS-SRS-2026-08-16.md",
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2145,16 +2142,16 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 75,
-          "evidencia": "1 documento(s) vivos: docs/IMPRESION-EN-TICKETERA-2026-08-13.md",
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/IMPRESION-EN-TICKETERA-2026-08-13.md",
           "hallazgos": []
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2234,14 +2231,14 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 15 archivo(s) del área nombrados por alguna prueba (7%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "evidencia": "1 de 15 archivo(s) del área nombrados por alguna prueba (7%) · 1079 pruebas en 77 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 55,
-          "evidencia": "0 documento(s) vivos: (ninguno)",
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
           "hallazgos": [
-            "el área no tiene ni un documento propio en docs/"
+            "el área no tiene un documento propio con cuerpo en docs/"
           ]
         }
       },
@@ -2252,7 +2249,7 @@
         "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
         "[flujo] auditoría DTE proveedores: H5b y D",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene ni un documento propio en docs/"
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
       ],
       "verificaciones": [
         {

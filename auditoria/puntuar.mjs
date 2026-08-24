@@ -295,6 +295,18 @@ const porArea = id => ({
 const ARCHIVOS_SRC = execSync("git ls-files 'src/**'", { cwd: RAIZ })
     .toString().trim().split('\n').filter(f => /\.(js|jsx)$/.test(f));
 
+// El texto de todo lo versionado, leído UNA vez: el eje de documentación
+// pregunta si algún archivo NOMBRA al documento del área, y hacerlo por área
+// serían 25 pasadas sobre el repo entero.
+// Sólo el CÓDIGO y los dos archivos que se cargan siempre. Que un documento
+// cite a otro no ayuda a nadie: la pregunta es si quien abre el módulo se
+// entera de que existe algo escrito, y ahí `docs/**` citándose entre sí
+// contesta que sí a todo — con `docs/**` adentro, las 14 áreas con documento
+// daban las 14 por citadas, incluidas las tres que no tienen un solo cartel.
+const FUENTES_TXT = execSync("git ls-files 'src/**' 'supabase/**' 'scripts/**' 'tests/**' 'CLAUDE.md' 'DESIGN.md'", { cwd: RAIZ })
+    .toString().trim().split('\n')
+    .map(f => { try { return fs.readFileSync(path.join(RAIZ, f), 'utf8'); } catch { return ''; } });
+
 const cubiertosPorArea = {};
 const pruebasPorArea = {};
 for (const dir of ['tests/unit', 'tests/e2e']) {
@@ -508,10 +520,35 @@ function puntuar(area) {
         hallazgos: cubiertos.size === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };
 
     // ── doc ─────────────────────────────────────────────────────────────────
+    // Documentación: se mide la PRESENCIA y el ALCANCE, nunca la cantidad.
+    //
+    // La regla vieja era `65 + docs × 10`, o sea que el camino al 95 era escribir
+    // TRES documentos. Es el mismo defecto que ya se corrigió en el eje de
+    // pruebas —contar archivos premia partir uno bueno en dos— y acá era peor,
+    // porque un documento se parte sin siquiera reescribirlo.
+    //
+    // Las dos preguntas que sí importan, y ninguna se responde partiendo un
+    // archivo:
+    //   1. ¿el área tiene un documento propio con algo adentro? (≥120 líneas:
+    //      medido, los 24 documentos vivos del repo lo cruzan salvo dos, y los
+    //      dos que no son listas de tareas, no explicaciones)
+    //   2. ¿se puede LLEGAR a él desde el código del área? Un documento que no
+    //      se cita desde ningún archivo es un documento que nadie encuentra el
+    //      día que toca el módulo — y es la costumbre que ya tiene el repo
+    //      («ver docs/X» aparece en CLAUDE.md por todos lados). Hoy fallan
+    //      cuatro áreas con documentos vivos: inventario, pedidos y compras
+    //      tienen dónde leer y ningún cartel que lo diga.
     const vivos = area.docs.filter(d => fs.existsSync(path.join(RAIZ, d)));
-    ev.doc = { pct: tope(vivos.length ? Math.min(95, 65 + vivos.length * 10) : 55, 45),
-        evidencia: `${vivos.length} documento(s) vivos: ${vivos.join(', ') || '(ninguno)'}`,
-        hallazgos: vivos.length ? [] : ['el área no tiene ni un documento propio en docs/'] };
+    const gordos = vivos.filter(d => fs.readFileSync(path.join(RAIZ, d), 'utf8').split('\n').length >= 120);
+    const citados = vivos.filter(d => FUENTES_TXT.some(t => t.includes(d.replace(/^docs\//, ''))));
+    ev.doc = { pct: tope(55 + (gordos.length ? 25 : 0) + (citados.length ? 15 : 0), 45),
+        evidencia: `${vivos.length} documento(s) vivos, ${gordos.length} con cuerpo (≥120 líneas), `
+            + `${citados.length} citado(s) desde el código: ${vivos.join(', ') || '(ninguno)'}`,
+        hallazgos: [
+            ...(gordos.length ? [] : ['el área no tiene un documento propio con cuerpo en docs/']),
+            ...(vivos.length && !citados.length
+                ? ['tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo'] : []),
+        ] };
 
     // Lint que sobrevive
     for (const [id, ls] of Object.entries(LINT)) if (id === area.id) ev.vista.hallazgos.push(...ls);

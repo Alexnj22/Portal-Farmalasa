@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.2 — Asistencia: el tiempo se cuenta con pruebas y queda escrito
+
+Sigue la auditoría del portal. Asistencia era una de las áreas sin una sola
+prueba sobre sus bordes de quincena y sin un documento propio, y es de las que
+menos perdona: lo que sale de ahí se paga.
+
+**Los diez cálculos salieron de la vista.** `getCurrentQuincenaStart`,
+`getQuincenaEnd`, `prevQuincena`, `nextQuincena`, `getMondayOfCurrentWeek`, las
+dos de hora y las tres de procedencia vivían sin exportar dentro de un archivo
+de 1.497 líneas, así que no había forma de probarlas. Ahora están en
+`src/views/asistencia/quincena.js`, que es lo que el propio archivo ya había
+hecho con sus tres hermanas de `data/attendanceAudit.js`. Sin cambio de
+comportamiento: la vista las importa.
+
+**16 pruebas nuevas** anclan lo que se rompe solo: el día 16 a la medianoche de
+El Salvador todavía es la primera quincena (leerlo en otra hora movería un turno
+de período), el último día del mes se PREGUNTA y no se supone —28, 29, 30 y 31
+son todos posibles, y febrero de un bisiesto está incluido—, el domingo
+pertenece a la semana que ya pasó, las 12:00 se escriben «12» y nunca «00», y un
+horario `HH:MM` no lleva huso: «08:00» son las ocho en la sala, no un instante.
+Además el recorrido de ida y vuelta por 24 quincenas seguidas, que es lo que
+delataría un borde torcido en un solo mes.
+
+**Y queda escrito**: `docs/ASISTENCIA-COMO-SE-CUENTA-EL-TIEMPO-2026-08-24.md`
+cuenta cómo una marcación se vuelve horas de planilla — el reparto nocturno del
+Art. 168 segmento por segmento, la salida que nadie marcó, por qué a quien marca
+sin horario publicado igual se le consolida (41 de 49 empleados la semana del
+17-ago), y las tres ramas del cruce de medianoche que hoy nunca se ejecutan y el
+día que se cree ese turno evitan facturar mal una quincena.
+
+**El eje de documentación de la auditoría medía la cantidad equivocada.** Era
+`65 + documentos × 10`, o sea que el camino al 95 era escribir tres documentos —
+el mismo defecto que ya se había corregido en el eje de pruebas, y acá peor,
+porque un documento se parte sin reescribirlo. Ahora pregunta dos cosas que no
+se responden partiendo un archivo: si el documento tiene cuerpo, y si se puede
+llegar a él **desde el código**. Eso destapó tres áreas con documentación viva y
+ningún cartel que la nombrara: Inventario, Pedidos y Compras ya lo tienen.
+
 ## v2.731.1 — La acción de escanear estaba donde no se la busca
 
 Tres reportes del usuario sobre dónde vive el botón de confirmar por escaneo.

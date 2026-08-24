@@ -4,6 +4,11 @@
 // reutilizan funciones ya definidas en data/employees.js y data/requests.js
 // (mismo query exacto): updateAttendancePunch, updateEmployee,
 // updateApprovalRequest.
+// Lo escrito sobre este módulo:
+// `docs/ASISTENCIA-COMO-SE-CUENTA-EL-TIEMPO-2026-08-24.md` — cómo una marcación
+// se convierte en horas de planilla: el huso, el reparto nocturno del Art. 168,
+// la salida que nadie marcó y las tres ramas del cruce de medianoche que hoy
+// nunca se ejecutan.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 

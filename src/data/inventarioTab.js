@@ -1,3 +1,6 @@
+// Lo escrito sobre este módulo: `docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md`
+// — el widget de ajuste, que es el cuarto de la familia que EJECUTA el cambio
+// en el sistema de origen en vez de pedirlo. Leerlo antes de tocar el ajuste.
 // Bloque 6.A — capa de datos para TabInventario.jsx (vista de
 // inventario por sucursal en Productos). 7 llamadas supabase.from()
 // (una reutiliza fetchLaboratoriosBasic de data/laboratorios.js, mismo

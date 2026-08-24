@@ -1369,3 +1369,39 @@ repo pero la función corre la versión vieja, así que el defecto sigue produci
 pares (el séptimo apareció el 1 de agosto). Y las cuatro filas ya escritas siguen
 con un sello que en cada par le pertenece a una sola de las dos. Las dos cosas son
 escrituras a producción y esperan decisión.
+
+### 8.25 Los sellos de sala: qué hay medido y por qué ninguna área llega
+
+Se revisó la memoria buscando lo que **de verdad corrió en sala**, con fecha y
+dato. Hay tres corridas reales, y son buenas:
+
+| qué | cuándo | evidencia medida |
+|---|---|---|
+| Cola de impresión de sala | 19-ago | Salud 4 imprimió su prueba y **seis bolsas seguidas, todas entre 0.5 y 1.9 s** — contra 8 documentos en toda su historia hasta esa mañana |
+| Devolución de pedido, punta a punta | 17-ago | Pedido 116 de La Popular, traslado 29456, vale `6a83760255054`. Salió de la sala 14:58:42, entró a bodega 14:58:46 — **4 segundos**. Pidió Andy Mancia, confirmó Josue Guevara |
+| Traslado de pedido | 11-ago | Pedido #96, Salud 2: **476 productos verificados en 38 segundos**, 463 líneas, 157 con lote controlado, 13 hallazgos |
+
+**Y ninguna de las tres alcanza para sellar su área, por tres motivos distintos
+que conviene no mezclar:**
+
+1. **Impresión** — la cola funciona, pero la corrida del 19-ago también midió que
+   **el camino directo NO saca papel en la caja de Salud 4**, y sigue sin probarse
+   en otra sala. Una corrida que descubre un defecto no es una corrida que
+   valida: es media validación y un hallazgo nuevo.
+2. **Pedidos** — la devolución corrió de verdad, pero el área tiene abiertos el
+   brazo del sobrante, el cron de 3 días, la confirmación del lote que llegó
+   —que es la parte legal— y una ruta real con conductor.
+3. **Traslados** — el #96 fue **simulacro**, por decisión explícita del usuario
+   («NO hacer traslados reales todavía»). Un simulacro mide el mecanismo, no el
+   circuito.
+
+Contando lo que la memoria declara pendiente: **diecinueve frases que empiezan
+con «falta»**, y casi todas son «falta que alguien lo haga en una sala».
+
+> Por eso el sello es un TOPE y no un sumando. Si fuera un sumando, un área
+> podría compensar la falta de prueba real con puntaje de otro lado — que es
+> exactamente la confusión entre «construido» y «funciona». Hoy las 25 áreas
+> están donde corresponde: **construidas y sin sellar.**
+
+Lo que esta revisión sí deja es la lista de **qué le falta a cada una para
+sellarse**, que es más útil que un sello puesto de apuro.

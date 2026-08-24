@@ -261,6 +261,55 @@ export const TELEFONO_DEFECTO = "23010013";
 export const telefonoValido = (tel: string | null | undefined): boolean =>
   /^\d{8}$/.test(String(tel ?? "").replace(/\D/g, ""));
 
+/**
+ * ¿Esto tiene forma de correo?
+ *
+ * OJO CON PARA QUÉ SIRVE: **no** decide si el correo de una ficha está bien.
+ * Eso lo decide Hacienda, y su criterio es el único que importa — hubo un
+ * rechazo de `receptor/correo` sobre una dirección que este patrón da por
+ * buena. Se usa sólo para saber si un ARREGLO produjo algo con forma de correo
+ * antes de escribirlo. Confundir las dos cosas sería volver a poner nuestro
+ * juicio por encima del de quien rechaza.
+ */
+export const correoValido = (c: string | null | undefined): boolean =>
+  /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/
+    .test(String(c ?? "").trim());
+
+/**
+ * Deshace errores de TIPEO en un correo. Nunca inventa uno.
+ *
+ * Regla del usuario, 2026-08-24: «si no es .com y le han puesto .con o hay
+ * espacios, lo corriges». La lista es corta a propósito y cada arreglo tiene
+ * una causa evidente — un correo inventado es un dato de contacto falso, que es
+ * exactamente el motivo por el que un DUI que no cumple se BORRA en vez de
+ * reemplazarse. Acá vale lo mismo: se arregla lo que se puede leer como un
+ * error de dedo, y lo demás no se toca.
+ *
+ * Devuelve el corregido y qué se le hizo. Si no había nada que arreglar,
+ * devuelve el mismo valor y `arreglos` vacío — y ESO es la señal de que el
+ * problema no es de tipeo y hay que decidir otra cosa.
+ */
+export function repararCorreo(raw: string | null | undefined): { valor: string; arreglos: string[] } {
+  const original = String(raw ?? "");
+  let v = original;
+  const arreglos: string[] = [];
+
+  // Los espacios —incluidos los de adentro— nunca son parte de un correo.
+  if (/\s/.test(v)) { v = v.replace(/\s+/g, ""); arreglos.push("se le quitaron espacios"); }
+
+  // Puntuación pegada al final: sobra siempre.
+  if (/[.,;:]+$/.test(v)) { v = v.replace(/[.,;:]+$/, ""); arreglos.push("se le quitó la puntuación del final"); }
+
+  // La coma donde va el punto del dominio. Sólo en esa posición: una coma en
+  // otro lado no se sabe qué quiso ser.
+  if (/,[A-Za-z]{2,}$/.test(v)) { v = v.replace(/,([A-Za-z]{2,})$/, ".$1"); arreglos.push("la coma del dominio pasó a punto"); }
+
+  // El clásico. `.co` NO entra: es el dominio de Colombia y es válido.
+  if (/\.con$/i.test(v)) { v = v.replace(/\.con$/i, ".com"); arreglos.push("«.con» pasó a «.com»"); }
+
+  return { valor: v, arreglos };
+}
+
 /** Puerto de `dui_valido` de bloque.py (a su vez de src/utils/duiUtils.js). */
 export function duiValido(dui: string | null | undefined): boolean | null {
   if (!dui || !dui.trim()) return null;              // vacío: no opina

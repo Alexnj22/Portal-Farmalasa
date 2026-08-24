@@ -21,6 +21,85 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.724.0 — El correo era un espacio al final, y «Por revisar» llevaba 17 días mudo
+
+Cuatro facturas sin sello, y **tres causas distintas**. Ninguna era «el circuito
+no está construido»: estaba construido y tenía tres agujeros, los tres mudos.
+
+### 1 · El correo es el SEXTO campo, y repitió el defecto del teléfono
+
+`clasificar_observacion_mh` clasifica «Campo #/receptor/correo no cumple el
+formato requerido» como accionable, con `campo_ficha = email`. Pero la lista de
+`fichas_para_corregir_dte()` —«qué campos sabe corregir la corrida»— no lo
+tenía. La ficha nunca llegaba a candidata: bien clasificada, marcada accionable,
+e **invisible para el proceso hecho para arreglarla**.
+
+Es palabra por palabra lo que el comentario de esa misma función ya advertía
+sobre el teléfono el 16-ago. La advertencia estaba escrita y el defecto volvió a
+pasar igual, en el campo siguiente.
+
+La regla del correo (usuario, 24-ago): primero se intenta arreglar el TIPEO
+—espacios, «.con» por «.com»—, porque conservar el correo de la persona es mejor
+que borrarlo. Si no hay tipeo que arreglar, contribuyente → hay que pedírselo a
+la sala (su crédito fiscal lo exige); consumidor u otra categoría → se borra, que
+es la regla del DUI y no la del teléfono: inventarle un correo sería un dato de
+contacto falso, y en su documento no hace falta que exista.
+
+**Lo que Hacienda rechazaba era un espacio al final.** `"doradeahernandez@gmail.com "`
+y `"JMGMPERSONAL28@GMAIL.COM "`. Dos facturas de Salud 1, una de ellas rebotando
+desde el 20-ago con 4 intentos.
+
+### 2 · `ubicacion` era un comodín que tapaba campos que nadie había tocado
+
+El freno `ya_corregido` —«esto ya se corrigió y Hacienda lo volvió a rechazar, no
+lo reintentes»— comparaba `k.campo IN (rc.campo_ficha, 'ubicacion')`. Ese
+`'ubicacion'` suelto cubre a los tres campos de domicilio, que es correcto, y de
+paso cubría al DUI, al teléfono y al correo, que no lo es.
+
+TOBIAS GALDAMEZ RAUDA tenía UNA corrección: la ubicación, el 23-ago a las 03:30.
+Una hora después Hacienda rechazó su factura por el CORREO, y el freno decía «ya
+se corrigió» — al correo no lo había tocado nadie. Un freno que se dispara sobre
+un campo que nunca se intentó no protege de un bucle: esconde el caso, y encima
+lo describe mal.
+
+### 3 · «Por revisar» rechazaba al único proceso que le escribe
+
+El más caro de los tres. `upsert_clientes_por_revisar` exige
+`auth_can_edit_any('clientes')`, y quien la llama es la corrida nocturna, que
+corre con `service_role` y no tiene sesión ni empleado. La función lanzaba «sin
+permiso», la Edge Function hacía `console.error` y seguía.
+
+Cada dato que el circuito no puede arreglar solo se anunciaba a una tabla que
+rechazaba la escritura, y el motivo terminaba en un log que no lee nadie. El
+contador decía `a_revisar: N` y en la tabla no entraba nada: **el número y la
+pantalla decían cosas distintas y ninguna de las dos fallaba.**
+
+150 filas, la más nueva del **7 de agosto**. Diecisiete días de hallazgos
+perdidos. Al arreglarlo, la primera fila nueva en 17 días fue exactamente la
+factura que quedaba: el sistema se niega a guardar la ficha de JOSE MARDOQUEO
+—«Ya se registro un cliente con estos datos!»— porque hay dos con el mismo
+nombre. Eso lo decide una persona, y ahora por fin se ve.
+
+Y para que no vuelva a mentir en silencio, la respuesta de la corrida trae
+`a_revisar_no_guardados`: cuántos se detectaron y cuántos no llegaron.
+
+### 4 · El callejón sin salida de la ubicación
+
+Cuando Hacienda rechaza la ubicación y la ficha **ya está** en la de por
+defecto, no se escribe nada —correcto— y se contaba como `ya_estaban`. Sobre un
+rechazo eso no es un no-op: es que no queda nada que probar. Ahora se publica en
+«Por revisar», como ya se hacía para el contribuyente.
+
+### El resultado, medido
+
+Corrida real: **3 de las 4 entraron con sello.** La cuarta es la de la ficha
+duplicada, que ya está publicada esperando una decisión humana.
+
+**Falta:** el aviso a la sucursal cuando el correo de un contribuyente no se
+puede arreglar solo, y dónde escribe la sala la respuesta para reenviar. Hoy ese
+caso se publica en «Por revisar» —deja de ser silencioso— pero no manda el aviso
+ni tiene formulario. No hay ningún caso así ahora mismo.
+
 ## v2.723.2 — El eje móvil, destrabado
 
 Cierra el trabajo del barrido. El eje `movil` sube de **85 a 92** en las 25 áreas

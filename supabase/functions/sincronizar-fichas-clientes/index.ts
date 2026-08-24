@@ -3,6 +3,7 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvo
 import {
   login, leerFicha, idClienteDeFactura, escribirCampo, escribirCampos,
   ponerUbicacion, duiValido, telefonoValido, TELEFONO_DEFECTO, filaPortal,
+  correoValido, repararCorreo,
   type Ficha,
 } from "../_shared/erp-clientes.ts";
 import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
@@ -207,6 +208,7 @@ Deno.serve(async (req) => {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
       ubicacion_por_defecto: 0, dui_borrado: 0, telefono_puesto: 0,
+      correo_reparado: 0, correo_borrado: 0, correo_pedido_a_la_sala: 0,
       solo_espejo: 0, ya_estaban: 0,
       sin_numero_no_resuelto: 0, numero_resuelto: 0, filas_a_espejar: 0,
       espejo_rechazado: 0,
@@ -364,6 +366,93 @@ Deno.serve(async (req) => {
             datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
           });
           res.a_revisar++;
+        } else if (c.campo === "email") {
+          // ── El correo del receptor ───────────────────────────────────────
+          //
+          // Regla del usuario, 2026-08-24: «si no es .com y le han puesto .con
+          // o hay espacios, lo corriges; si aun así no pasa y es contribuyente,
+          // envías una notificación a la sucursal de la venta solicitando el
+          // correo correcto […]; pero si es consumidor u otro tipo, elimina el
+          // correo».
+          //
+          // Va ANTES que el reparto por alcance a propósito: la regla está
+          // dicha en términos de «contribuyente / todo lo demás», así que un
+          // contribuyente con el correo rechazado tiene que caer acá y no en la
+          // rama de `solo_distrito`, que lo reportaría como un problema de
+          // distrito — un rótulo equivocado sobre un caso real.
+          //
+          // Y el orden interno importa: primero se INTENTA arreglar el tipeo,
+          // porque conservar el correo de la persona es mejor que borrarlo. Sólo
+          // cuando no hay nada que arreglar se decide entre pedirlo y borrarlo.
+          const antes = ficha.campos.correo ?? "";
+          const { valor, arreglos } = repararCorreo(antes);
+          const esContribuyente = c.alcance_escritura === "solo_distrito";
+
+          if (arreglos.length && valor !== antes && correoValido(valor)) {
+            // Se pudo leer como error de dedo. Se escribe y decide Hacienda:
+            // el reenvío de esta misma noche trae la respuesta.
+            const w = await escribirCampos(cookie, erpId, { correo: valor });
+            if (w.ok) {
+              res.correo_reparado++;
+              correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "email",
+                                  antes, despues: valor, motivo: "correo_reparado" });
+              detalle.push({ ficha: c.name, accion: "correo reparado", antes, despues: valor, arreglos });
+            } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+            else { res.fallidas++; detalle.push({ ficha: c.name, accion: "correo", error: w.motivo }); }
+          } else if (esContribuyente) {
+            // A un contribuyente NO se le borra el correo: su crédito fiscal lo
+            // exige, así que dejarlo vacío cambia un rechazo por otro. El dato
+            // hay que averiguarlo, y quien puede es la sala que hizo la venta.
+            //
+            // ⚠️ PENDIENTE: hoy esto lo PUBLICA para que se vea y deja de ser
+            // silencioso, pero todavía no manda el aviso a la sucursal ni tiene
+            // dónde escribir la respuesta para reenviar solo. Eso es el resto
+            // de la regla del usuario y está sin construir — no hay ningún caso
+            // así hoy (los dos rechazos de correo vivos son de consumidores).
+            aRevisar.push({
+              erp_id: erpId, name: c.name, motivo: "correo_pedido_a_la_sala",
+              detalle: `Hacienda rechazó el correo de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
+                       `y no es un error de tipeo que se pueda arreglar solo ` +
+                       `(dice «${antes || "(vacío)"}»). Como es contribuyente su documento ` +
+                       `EXIGE un correo, así que no se puede borrar: hay que pedirle el ` +
+                       `correcto a la sala que hizo la venta.`,
+              datos: { customer_id: c.customer_id, campo: "email", correo_actual: antes,
+                       motivo_mh: c.motivo_mh },
+            });
+            res.a_revisar++;
+            res.correo_pedido_a_la_sala++;
+          } else {
+            // Consumidor u otra categoría: en su documento el correo es
+            // opcional, así que se borra. Es la regla del DUI y no la del
+            // teléfono — inventarle un correo sería un dato de contacto falso,
+            // y acá no hace falta que exista para que el documento entre.
+            if (antes) {
+              const w = await escribirCampos(cookie, erpId, { correo: "" });
+              if (w.ok) {
+                res.correo_borrado++;
+                // El espejo no propaga borrados (`coalesce` en
+                // `aplicar_espejo_erp`), así que este lo propagamos nosotros —
+                // igual que el del DUI, y por el mismo motivo.
+                await admin.from("customers").update({ email: null }).eq("id", c.customer_id);
+                correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "email",
+                                    antes, despues: "", motivo: "correo_invalido" });
+                detalle.push({ ficha: c.name, accion: "correo borrado", antes });
+              } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+              else { res.fallidas++; detalle.push({ ficha: c.name, accion: "correo", error: w.motivo }); }
+            } else {
+              // Hacienda se queja del correo y en la ficha no hay ninguno. No
+              // hay nada que borrar y tampoco es un no-op: se dice, en vez de
+              // desaparecer contando `ya_estaban`.
+              aRevisar.push({
+                erp_id: erpId, name: c.name, motivo: "correo_rechazado_sin_valor",
+                detalle: `Hacienda rechazó el correo de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
+                         `pero su ficha no tiene ninguno. El dato malo está en otro lado: ` +
+                         `hay que mirar el documento a mano.`,
+                datos: { customer_id: c.customer_id, campo: "email", motivo_mh: c.motivo_mh },
+              });
+              res.a_revisar++;
+            }
+          }
         } else if (c.alcance_escritura === "ninguno") {
           // Extranjero, o una categoría que nadie decidió todavía: sólo espejo.
           res.solo_espejo++;
@@ -503,9 +592,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Y si esto falla, se DICE en la respuesta ───────────────────────────
+    //
+    // Acá el error iba a `console.error` y nada más. Entre el 7 y el 24 de
+    // agosto la función se negó a escribir en TODAS las corridas —exigía un
+    // permiso que `service_role` no tiene— y el resultado seguía informando
+    // `a_revisar: N` como si hubieran entrado. Diecisiete días en que el
+    // contador y la pantalla decían cosas distintas y ninguna de las dos
+    // fallaba.
+    //
+    // La guarda ya está arreglada del lado de la base. Esto es para que, si
+    // vuelve a romperse por otro motivo, el número no siga mintiendo: `a_revisar`
+    // dice cuántos se detectaron y `a_revisar_no_guardados` cuántos no llegaron.
+    let aRevisarNoGuardados = 0;
     if (aRevisar.length) {
       const { error } = await admin.rpc("upsert_clientes_por_revisar", { p_filas: aRevisar });
-      if (error) console.error("upsert_clientes_por_revisar:", error.message);
+      if (error) {
+        console.error("upsert_clientes_por_revisar:", error.message);
+        aRevisarNoGuardados = aRevisar.length;
+      }
     }
     // Lo corregido se anota SIEMPRE, y antes que nada: es lo que hace de freno
     // la próxima vez. Sin este registro, un rechazo que vuelve mañana se lee
@@ -554,11 +659,12 @@ Deno.serve(async (req) => {
       user_name: actor,
       source: esCron ? "SYSTEM" : "ADMIN_PANEL",
       severity: (res.fallidas > 0 || res.cortada_por_tiempo) ? "WARNING" : "INFO",
-      details: { ...res, candidatos: lista.length, detalle },
+      details: { ...res, candidatos: lista.length, a_revisar_no_guardados: aRevisarNoGuardados, detalle },
     });
     if (auditErr) console.error("audit_logs:", auditErr.message);
 
-    return json({ ok: true, candidatos: lista.length, ...res, detalle });
+    return json({ ok: true, candidatos: lista.length, ...res,
+                  a_revisar_no_guardados: aRevisarNoGuardados, detalle });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

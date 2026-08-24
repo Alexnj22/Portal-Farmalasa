@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.725.2 — El pedido del correo al contribuyente le llega a alguien
+
+Cierra la mitad que faltaba de la regla del correo (v2.724.0): cuando el correo
+de un **contribuyente** no se puede reparar solo, no se le borra —su crédito
+fiscal lo exige— así que hay que pedirlo. Antes eso se publicaba en «Por
+revisar» y nadie se enteraba.
+
+**El «reenviar» del final de la regla no hizo falta construirlo.** En cuanto
+alguien arregla el correo en Clientes, `pushClienteAlErp` lo manda a la ficha del
+sistema de origen —que es la que viaja a Hacienda— y el barrido de las 22:30
+retransmite toda factura sin sello, sin preguntar por qué quedó sin él. El lazo
+ya se cerraba solo; lo único que faltaba era el aviso.
+
+**A quién se le avisa, y por qué a dos.** A la sala que hizo la venta, porque
+tuvo al cliente enfrente. Y a quien puede editar la ficha, porque —medido— las
+salas **no pueden**: `clientes.can_edit` lo tienen Administrador, Gerente
+General, Jefe/a de Talento Humano y Supervisor/a de Ventas, y ningún cargo de
+sala. Avisarle sólo a la sala sería pedirle que resuelva algo que el portal no le
+deja hacer, y un aviso que no se puede atender enseña a ignorar los avisos.
+
+La sucursal sale de la **factura que Hacienda rechazó**, no de una «sucursal del
+cliente» — que no existe: un cliente compra en varias salas. Y no se repite
+mientras el aviso siga sin leer: la corrida vuelve a detectar el caso todas las
+noches, y un aviso por persona por noche sobre lo mismo es cómo se entrena a
+alguien a no mirar la campana.
+
+### La primera versión no le llegaba a nadie
+
+Filtraba `e.status = 'ACTIVE'`. El estado de un empleado es **`ACTIVO`** — la
+columna sólo admite ACTIVO / INACTIVO / BAJA / LIQUIDADO / SUSPENDIDO. La
+función devolvía `ok: true, avisados: 0` y no insertaba una sola fila.
+
+Es el mismo defecto que esta misma tanda vino a arreglar en `clientes_por_revisar`
+—17 días recibiendo nada con el contador diciendo que sí—, cometido de nuevo dos
+horas después. Lo cazó probarla contra el caso real antes de darla por buena, que
+es lo único que la habría cazado. Hoy cero destinatarios devuelve `ok: false`:
+no es un éxito, es un pedido que no le llegó a nadie.
+
+Probado en producción contra `0000065095_COF` de Salud 2: **11 destinatarios**,
+y la prueba se deshizo sin dejar avisos reales.
+
+### Y el reparador de correos queda anclado
+
+`tests/unit/repararCorreo.test.js`, 12 casos. Incluye el que importa: los dos
+correos que Hacienda rechazó **pasan `correoValido`** una vez sin el espacio del
+final, porque esa función hace `trim()`. Ésa es la prueba de por qué la decisión
+la manda el rechazo y no nuestro regex — si la rama preguntara «¿es válido?» en
+vez de «¿el rechazo lo dice?», las dos facturas seguirían trabadas.
+
 ## v2.725.1 — El barrido queda en cero — y seis de ocho acusados no eran nada
 
 **Dos botones de ruta se podían apretar dos veces.** «Iniciar» escribe el estado

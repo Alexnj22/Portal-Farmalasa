@@ -404,11 +404,23 @@ Deno.serve(async (req) => {
             // exige, así que dejarlo vacío cambia un rechazo por otro. El dato
             // hay que averiguarlo, y quien puede es la sala que hizo la venta.
             //
-            // ⚠️ PENDIENTE: hoy esto lo PUBLICA para que se vea y deja de ser
-            // silencioso, pero todavía no manda el aviso a la sucursal ni tiene
-            // dónde escribir la respuesta para reenviar solo. Eso es el resto
-            // de la regla del usuario y está sin construir — no hay ningún caso
-            // así hoy (los dos rechazos de correo vivos son de consumidores).
+            // Y se AVISA. `pedir_correo_a_la_sala` resuelve la sucursal desde
+            // la factura que Hacienda rechazó —no desde una «sucursal del
+            // cliente», que no existe: un cliente compra en varias salas— y
+            // notifica a esa sala más a quien puede editar la ficha, porque hoy
+            // las salas no tienen `clientes.can_edit`. No repite el aviso
+            // mientras siga sin leerse.
+            //
+            // El «reenviar» del final de la regla no hizo falta construirlo: en
+            // cuanto alguien arregla el correo en Clientes, `pushClienteAlErp`
+            // lo manda a la ficha del sistema de origen y el barrido de las
+            // 22:30 retransmite toda factura sin sello. El lazo ya se cerraba
+            // solo; lo único que faltaba era que alguien se enterara.
+            const { error: avisoErr } = await admin
+              .rpc("pedir_correo_a_la_sala",
+                   { p_customer_id: c.customer_id, p_motivo_mh: c.motivo_mh });
+            if (avisoErr) console.error(`pedir_correo_a_la_sala (${c.customer_id}):`, avisoErr.message);
+
             aRevisar.push({
               erp_id: erpId, name: c.name, motivo: "correo_pedido_a_la_sala",
               detalle: `Hacienda rechazó el correo de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +

@@ -330,7 +330,15 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             }
             const extra = await pg.evaluate(() => {
                 const vw = document.documentElement.clientWidth;
-                const tablas = [...document.querySelectorAll('table')];
+                // `data-tabla="matriz"` sale del conteo: hay tablas que en el
+                // teléfono SE QUEDAN tabla porque no son una lista de registros
+                // —un calendario semanal es personas × días— y no hay «una fila
+                // = un registro» que convertir en ficha. La marca va en el DOM y
+                // con su motivo escrito al lado, igual que `movil={false}` en
+                // `DataTable`: una excepción sin motivo es deuda disfrazada, y un
+                // hallazgo que aparece en cada corrida y nunca se arregla es como
+                // se aprende a ignorar un informe.
+                const tablas = [...document.querySelectorAll('table:not([data-tabla="matriz"])')];
                 const fichas = [...document.querySelectorAll('button[data-surface="card"], div[data-surface="card"]')]
                     .filter(e => e.firstElementChild?.classList?.contains('justify-between')).length;
                 const anchas = tablas.filter(t => t.getBoundingClientRect().width > vw + 1).length;

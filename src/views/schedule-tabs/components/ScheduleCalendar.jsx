@@ -708,7 +708,22 @@ const ScheduleCalendar = memo(({
     return (
         <div className="w-full relative z-base shrink-0 mt-4">
             <div id="schedule-table-scroll" className="overflow-x-auto hide-scrollbar pb-10 px-2 pt-4" style={{ overflowAnchor: 'none' }}>
-                <table className="w-full text-left border-separate border-spacing-y-2 border-spacing-x-1 min-w-full relative">
+                {/* ── Esta tabla se queda tabla en el teléfono, a propósito ──
+                    El canon (DESIGN.md §32.8) manda que una lista de registros
+                    caiga a fichas en el teléfono. Ésta NO es una lista de
+                    registros: es una MATRIZ —personas por días de la semana— y
+                    una matriz no tiene «una fila = un registro» que convertir.
+                    Partirla en fichas obligaría a repetir el nombre de la
+                    persona siete veces y perdería lo único que el calendario
+                    sirve para ver: la semana completa de un vistazo.
+
+                    Vive dentro de un `overflow-x-auto`, así que se arrastra de
+                    lado y no desborda la página. `data-tabla="matriz"` lo
+                    declara para el barrido: sin esa marca lo reporta como «cayó
+                    a la tabla» en cada corrida, y un hallazgo que aparece
+                    siempre y nunca se arregla es como se aprende a ignorar un
+                    informe. */}
+                <table data-tabla="matriz" className="w-full text-left border-separate border-spacing-y-2 border-spacing-x-1 min-w-full relative">
                     <thead className="relative z-sidebar-desktop">
                         <tr>
                             <th className="p-0 sticky left-0 z-dropdown min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">

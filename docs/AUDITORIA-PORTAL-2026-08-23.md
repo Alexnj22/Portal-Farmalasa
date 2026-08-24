@@ -641,3 +641,65 @@ una función de Postgres) y no arregla ningún comportamiento.
 de continuidad de tramos exigía una forma que la ley no tiene, y la de
 `localStorage` espiaba el prototipo cuando jsdom expone los métodos en la
 instancia. Las dos «fallaron» contra código correcto.
+
+
+---
+
+## 8. La segunda jornada — 2026-08-24
+
+### 8.1 Lo que salió de `audit_logs`, que nadie estaba mirando
+
+Buscando qué áreas se usan de verdad apareció esto: **92 errores de render en
+producción en 45 días, de siete personas**, el último ayer. Ningún gate los mira.
+
+Todos de la misma familia, con cuatro caras: «Importing a module script failed»,
+«Failed to fetch dynamically imported module: …/DashboardView-C2-ismpz.js»,
+«undefined is not an object (evaluating 'k._result.default')» y «Cannot read
+properties of undefined (reading 'default')».
+
+Es una versión vieja pidiendo piezas de una versión que ya se fue. **No es un
+defecto de esa pantalla.** El portal ya lo manejaba con `vite:preloadError` desde
+julio, pero los dos mensajes más frecuentes son de **WebKit**, donde ese evento
+no llega — así que en iPhone y Safari la recarga nunca ocurría. Cerrado en
+v2.721.1 con el `ErrorBoundary` como segunda red.
+
+### 8.2 Cuatro de los cinco hallazgos de base de datos eran míos
+
+| lo que dije | lo que resultó |
+|---|---|
+| «5 FKs sin índice» | **236 de 291 tienen índice.** Una lo tenía compuesto y mi consulta sólo miraba el prefijo. Las demás son columnas de auditoría que la regla exceptúa, y casi siempre nulas: `pedido_items.confirmado_suc_por` tiene **6 valores de 49,042**. |
+| «`identidad_vales` sin policies» | **Está bien cerrada a propósito.** `authenticated` no tiene GRANT; cinco funciones DEFINER son el único acceso. El RLS es la segunda cerradura. Faltaba que estuviera escrito. |
+| «10 índices muertos, 8 MB» | **No se puede decidir.** El servidor arrancó hace 3 días y este portal tiene procesos mensuales. Un índice que sólo se usa el día 1 se ve idéntico a uno muerto. No se borró nada. |
+| «3 funciones sin `search_path`» | **Real.** Cerrado. Hoy el portal tiene **cero** funciones sin `search_path` fijo. |
+
+### 8.3 El eje móvil: no era falta de datos, era el instrumento
+
+El plan era sembrar el entorno de pruebas. Medir primero cambió el diagnóstico
+dos veces:
+
+1. **No faltaban datos.** El branch tiene 5,111 facturas, 163 cortes y 2,436
+   existencias — pero **todos del 15 de agosto**. Las vistas filtran por hoy o
+   por el mes en curso, así que la pantalla es un `EmptyState` correcto. Se
+   escribió una herramienta que corre las fechas (con guarda para que no pueda
+   ejecutarse en producción). Subió de 13 a 15 rutas medidas.
+2. **Quince de 54 seguía sin cerrar.** `minmax` pinta **1 tabla, 50 filas, 110
+   botones y 4,159 caracteres** —está llena— y el barrido la contaba como vacía.
+   Su selector de ficha ya no reconoce lo que el portal pinta.
+
+**El detector va por su tercera versión, y la que funcionó salió de MEDIR:** una
+ruta sin acceso da exactamente **779 caracteres**; una con contenido pasa de
+4,000. El corte va en 1,100.
+
+Y ahora **separa las dos causas**, que son dos trabajos distintos: «sin acceso
+con esta cuenta» se arregla dando el módulo, «sin datos» se arregla sembrando.
+Antes las 38 se informaban juntas y no se podía decidir ninguna.
+
+### 8.4 La corrección sobre los sellos
+
+Lo que propuse al cerrar la primera jornada estaba mal: **poner un sello hoy no
+congelaría ninguna área.** El sello levanta el tope de 95, pero el puntaje sigue
+limitado por los doce ejes — la mejor área llegaría a **92%, no a 100**.
+
+El cuello de botella es uno solo y es el mismo para las 25: el eje `movil`. Por
+eso destrabarlo era el trabajo, y no registrar sellos que no habrían cambiado
+nada.

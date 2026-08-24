@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.723.1 — El barrido con permisos destapó dos defectos móviles
+
+El barrido móvil pasó de medir **13 rutas de 54 a medir 27**, y con eso
+aparecieron dos defectos que llevaban escondidos detrás de un cero.
+
+**Cómo se llegó ahí, en tres pasos y con dos diagnósticos equivocados en el
+camino:**
+
+1. Se corrieron las fechas del entorno de pruebas —los datos eran todos del 15 de
+   agosto y las vistas filtran por hoy—. Subió de 13 a 15. **Poco.**
+2. Se midió por qué seguía trabado, y el diagnóstico cambió: `minmax` pinta 1
+   tabla, 50 filas, 110 botones y 4.159 caracteres —está llena— y el barrido la
+   contaba como vacía. **Su detector estaba mal**, no el entorno.
+3. Se le dieron a la cuenta de pruebas los 26 módulos que le faltaban. **19 de
+   las 54 rutas devolvían «sin acceso»**: el barrido no medía la pantalla, medía
+   el cartel. Subió a 27 y las «sin acceso» quedaron en cero.
+
+**Los dos defectos, los dos verificados:**
+
+- **Sucursales**: el botón «Horario (Hoy)» medía **310×43 px**, a un píxel del
+  blanco de dedo. Le faltaba `min-h-[var(--tap-min)]`.
+- **Horarios**: el calendario semanal pinta una tabla de 1.054 px en una pantalla
+  de 390. **Se queda tabla, y ahora está declarado**: es una MATRIZ —personas por
+  días— y no una lista de registros, así que no hay «una fila = un registro» que
+  convertir en ficha. Partirla obligaría a repetir el nombre siete veces y
+  perdería lo único que el calendario sirve para ver. Vive dentro de un
+  `overflow-x-auto`, así que se arrastra de lado y no desborda la página.
+
+`data-tabla="matriz"` la saca del conteo del barrido, con el motivo escrito al
+lado — igual que la prop que hace lo mismo en `DataTable`. Sin esa marca el
+barrido la reporta en cada corrida, y **un hallazgo que aparece siempre y nunca
+se arregla es como se aprende a ignorar un informe**.
+
+**Y una advertencia sobre cómo NO verificarlo.** Al comprobar los blancos de dedo
+usé Chromium con la ventana a 390 px, y me devolvió una lista larguísima que
+incluía elementos con el token puesto. Era falsa: `--tap-min` vale **0 en
+escritorio** y sólo toma su valor bajo el media query de puntero grueso. Achicar
+la ventana no alcanza — hay que emular un dispositivo táctil, que es lo que el
+barrido ya hace.
+
 ## v2.723.0 — No se anula lo que Hacienda todavía no recibió
 
 Dos cosas, y la segunda salió de mirar por qué la primera hacía falta.

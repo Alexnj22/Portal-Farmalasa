@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { clearDraft, loadDraft, saveDraft } from '../utils/draftUtils';
+import { clearDraft, loadDraft, loadDraftTime, saveDraft } from '../utils/draftUtils';
 
 /**
  * Un formulario largo se guarda solo.
@@ -44,7 +44,10 @@ import { clearDraft, loadDraft, saveDraft } from '../utils/draftUtils';
  *                objeto con al menos una clave con valor. Sin esto, un
  *                formulario recién abierto guardaría su forma vacía y la
  *                pantalla creería que hay borrador.
- * @returns {{ recuperado: any, descartar: () => void, hayBorrador: boolean }}
+ * @returns {{ recuperado: any, cuando: number|null, descartar: () => void, hayBorrador: boolean }}
+ *   · `cuando` — cuándo se guardó, en milisegundos. Un formulario que OFRECE
+ *     recuperar lo necesita: lo que decide a una persona no es «hay un
+ *     borrador», es «hay uno de hace diez minutos».
  */
 export default function useBorrador(clave, valor, opciones = {}) {
     const { retardoMs = 800, activo = true, vale = tieneAlgo } = opciones;
@@ -53,6 +56,7 @@ export default function useBorrador(clave, valor, opciones = {}) {
     // por clave: releerlo en cada render devolvería lo que este mismo hook
     // acaba de escribir, y «lo de antes» dejaría de existir.
     const [recuperado, setRecuperado] = useState(() => (clave ? loadDraft(clave) : null));
+    const [cuando, setCuando] = useState(() => (clave ? loadDraftTime(clave) : null));
     // La clave anterior se guarda en ESTADO y no en un `ref`: leer un ref
     // durante el render no está permitido, y el patrón que React documenta para
     // «recalcular algo cuando una prop cambia» es justamente éste — se
@@ -62,6 +66,7 @@ export default function useBorrador(clave, valor, opciones = {}) {
     if (claveLeida !== clave) {
         setClaveLeida(clave);
         setRecuperado(clave ? loadDraft(clave) : null);
+        setCuando(clave ? loadDraftTime(clave) : null);
     }
 
     const primera = useRef(true);
@@ -81,9 +86,10 @@ export default function useBorrador(clave, valor, opciones = {}) {
     const descartar = useCallback(() => {
         if (clave) clearDraft(clave);
         setRecuperado(null);
+        setCuando(null);
     }, [clave]);
 
-    return { recuperado, descartar, hayBorrador: recuperado != null };
+    return { recuperado, cuando, descartar, hayBorrador: recuperado != null };
 }
 
 /** ¿Hay algo escrito? Un objeto con todas sus claves vacías no cuenta. */

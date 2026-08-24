@@ -149,6 +149,42 @@ const EXCEPCIONES = {
     'Es la misma forma que `PedirTrasladoModal`: el detector cuenta por archivo ' +
     'y el estado no vive en el archivo que cuenta. Verificado el 2026-08-24.',
 
+  // ── Las cuatro pestañas de la ficha de sucursal ──────────────────────────
+  // Mismo caso que `FormNovedad`, con una vuelta más: acá el estado no vive un
+  // piso arriba sino DOS. `BranchTab*` recibe `formData`/`setFormData` de
+  // `FormSucursal`, que a su vez los recibe de `UnifiedModal`, que los toma de
+  // `App.jsx`. El detector cuenta controles por archivo, así que ve cuatro
+  // formularios largos donde hay UNO solo repartido en pestañas.
+  //
+  // Y hay una diferencia real con las altas, que es la que hizo falta resolver:
+  // esto EDITA un registro que ya existe. `UnifiedModal` tenía escrito, con
+  // razón, que ahí «la fila de la base es la verdad» y por eso no reponía. Lo
+  // que se agregó el 2026-08-24 es el camino del medio: guarda con la clave
+  // `sucursal_<id>` y al reabrir OFRECE recuperar (`AvisoDeBorrador`) en vez de
+  // reponer solo. Así no se pierde lo escrito cuando la sesión se cierra a los
+  // 5 minutos, y tampoco se puede pisar en silencio lo que otro cambió.
+  'src/components/forms/BranchTabGeneral.jsx':
+    'Su borrador vive DOS pisos arriba: recibe `formData`/`setFormData` de ' +
+    '`FormSucursal`, que los recibe de `UnifiedModal`. Ahí se guarda con la ' +
+    'clave `sucursal_<id>` —una por sucursal y no una por pestaña, porque quien ' +
+    'empezó por «Inmueble» y siguió por «Legal» escribió UN formulario— y al ' +
+    'reabrir se OFRECE recuperar en vez de reponer solo, que es lo que evita ' +
+    'pisar un cambio hecho desde otra pantalla. Verificado el 2026-08-24.',
+
+  'src/components/forms/BranchTabInmueble.jsx':
+    'Pestaña de la ficha de sucursal, sin estado propio. Ver ' +
+    '`BranchTabGeneral.jsx`: el borrador vive en `UnifiedModal` con la clave ' +
+    '`sucursal_<id>` y se OFRECE, no se repone. Verificado el 2026-08-24.',
+
+  'src/components/forms/BranchTabLegal.jsx':
+    'Pestaña de la ficha de sucursal, sin estado propio. Ver ' +
+    '`BranchTabGeneral.jsx`. Verificado el 2026-08-24.',
+
+  'src/components/forms/FormNursingRegents.jsx':
+    'Pestaña de la ficha de sucursal (los regentes de enfermería de esa sala), ' +
+    'sin estado propio: cero `useState` en todo el archivo. Ver ' +
+    '`BranchTabGeneral.jsx`. Verificado el 2026-08-24.',
+
   'src/components/forms/FormRehireEmployee.jsx':
     'Mismo caso que `FormNovedad`: no tiene estado propio. Su borrador vive en ' +
     '`UnifiedModal` con la clave `recontratacion_<id de la persona>` — la clave ' +

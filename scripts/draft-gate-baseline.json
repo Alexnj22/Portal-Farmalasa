@@ -1,14 +1,10 @@
 {
-  "generado": "2026-08-17",
-  "motivo": "Deuda del día que se escribió el gate. Sólo baja. Ver scripts/draft-gate.mjs. NOTA: src/components/bitacoras/CompletarRenglon.jsx quedó FUERA a propósito — es la pantalla que motivó el gate y era trabajo en curso el día que se escribió, así que se deja como hallazgo vivo en vez de nacer perdonado.",
-  "umbral": 6,
-  "deuda": [
-    "src/components/forms/BranchTabGeneral.jsx",
-    "src/components/forms/BranchTabInmueble.jsx",
-    "src/components/forms/BranchTabLegal.jsx",
-    "src/components/forms/FormClienteDetail.jsx",
-    "src/components/forms/FormEditPayrollEntry.jsx",
-    "src/components/forms/FormNursingRegents.jsx",
-    "src/components/forms/FormProveedorDetail.jsx"
-  ]
+ "generado": "2026-08-17",
+ "motivo": "Deuda del día que se escribió el gate. Sólo baja. Ver scripts/draft-gate.mjs. NOTA: src/components/bitacoras/CompletarRenglon.jsx quedó FUERA a propósito — es la pantalla que motivó el gate y era trabajo en curso el día que se escribió, así que se deja como hallazgo vivo en vez de nacer perdonado. · 2026-08-24: salen las cuatro pestañas de la ficha de sucursal (BranchTabGeneral/Inmueble/Legal y FormNursingRegents). No eran cuatro formularios sino UNO repartido en pestañas, y su borrador vive dos pisos arriba, en UnifiedModal, con la clave sucursal_<id>. Como EDITA un registro existente, se OFRECE recuperar en vez de reponer solo.",
+ "umbral": 6,
+ "deuda": [
+  "src/components/forms/FormClienteDetail.jsx",
+  "src/components/forms/FormEditPayrollEntry.jsx",
+  "src/components/forms/FormProveedorDetail.jsx"
+ ]
 }

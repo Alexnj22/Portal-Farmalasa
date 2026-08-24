@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
@@ -17,6 +17,7 @@ import { buscarCargo } from '../utils/roles';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from '../data/constants';
 import { clearDraft } from '../utils/draftUtils';
 import useBorrador from '../hooks/useBorrador';
+import AvisoDeBorrador from './common/AvisoDeBorrador';
 import { SENSITIVE_FIELDS } from '../store/utils';
 
 // -------------------------
@@ -136,10 +137,26 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
      * salario lleva el monto y `localStorage` sobrevive al cierre de sesión.
      * Es la misma regla que el alta de empleado. */
     const idSujeto = formData?.employeeId ?? formData?.id ?? null;
+    /* La ficha de sucursal es larga y se EDITA, así que va por el otro camino:
+     * guarda igual, pero al reabrir OFRECE recuperar en vez de reponer sola
+     * (`AvisoDeBorrador`). El razonamiento de arriba —«la fila de la base es la
+     * verdad»— sigue siendo correcto y por eso no se toca: reponer sobre un
+     * registro vivo puede escribir datos viejos encima de lo que otra persona
+     * cambió en el medio. Lo que no hacía falta era, además, PERDER lo escrito
+     * cuando la sesión se cierra sola a los 5 minutos.
+     *
+     * Las seis pestañas comparten un `formData` que vive en `App.jsx`, así que
+     * la clave es una sola por sucursal y no una por pestaña: quien empezó por
+     * «Inmueble» y siguió por «Legal» escribió UN formulario. */
     const claveBorrador =
         (type === 'newEvent' && !formData?._editingEventId && idSujeto) ? `novedad_${idSujeto}`
       : (type === 'rehireEmployee' && idSujeto)                        ? `recontratacion_${idSujeto}`
+      : (BRANCH_ACTIONS.has(type) && idSujeto)                         ? `sucursal_${idSujeto}`
       : null;
+
+    // Editar OFRECE; dar de alta REPONE. Es la única diferencia entre los dos
+    // caminos, y es la que decide si se puede pisar algo.
+    const borradorSeOfrece = BRANCH_ACTIONS.has(type);
 
     const borradorSeguro = useMemo(() => {
         if (!claveBorrador || !formData) return null;
@@ -150,19 +167,44 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         return limpio;
     }, [claveBorrador, formData]);
 
-    const { recuperado: borrador, descartar: descartarBorrador } =
+    const { recuperado: borrador, cuando: borradorCuando, descartar: descartarBorrador } =
         useBorrador(claveBorrador, borradorSeguro, { activo: isOpen && !!claveBorrador });
+    const [ofrecido, setOfrecido] = useState(null);
 
     const repuesto = useRef(null);
     useEffect(() => {
         if (!isOpen || !claveBorrador) { repuesto.current = null; return; }
         if (repuesto.current === claveBorrador || !borrador) return;
         repuesto.current = claveBorrador;
+        // El que se OFRECE no se aplica acá: espera a que alguien lo acepte.
+        if (borradorSeOfrece) return;
         // Lo abierto MANDA sobre lo guardado: quien abrió el modal eligió a la
         // persona y, en una novedad, a veces también el tipo. El borrador sólo
         // rellena lo que la apertura no trajo.
         setFormData(prev => ({ ...borrador, ...prev }));
-    }, [isOpen, claveBorrador, borrador, setFormData]);
+    }, [isOpen, claveBorrador, borrador, borradorSeOfrece, setFormData]);
+
+    // Al cerrar el modal —o al abrir el de OTRA sucursal— el ofrecimiento
+    // vuelve a estar en pie: si no, tomar una decisión en una ficha la daría por
+    // tomada en la siguiente.
+    useEffect(() => { setOfrecido(null); }, [claveBorrador, isOpen]);
+
+    /* Aceptar el ofrecimiento. Se aplica con la MISMA regla que la reposición
+     * automática —lo abierto manda sobre lo guardado— para que las dos hagan lo
+     * mismo con los campos que la apertura ya trajo (el id de la sucursal, por
+     * ejemplo, que no puede venir de un borrador). */
+    const recuperarBorrador = useCallback(() => {
+        if (borrador) setFormData(prev => ({ ...borrador, ...prev }));
+        setOfrecido('recuperado');
+    }, [borrador, setFormData]);
+
+    const descartarOfrecimiento = useCallback(() => {
+        descartarBorrador();
+        setOfrecido('descartado');
+    }, [descartarBorrador]);
+
+    // Se ofrece una vez por apertura, y sólo si hay algo que ofrecer.
+    const hayQueOfrecer = borradorSeOfrece && !!borrador && !ofrecido;
     // Quién está dando de alta: su sucursal decide por qué ticketera sale el
     // carné de papel (se entrega en mano, así que sale donde está esa persona).
     const { user: quienEmite } = useAuth();
@@ -559,6 +601,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 }
 
+                // La ficha quedó guardada, así que el borrador ya no sirve.
+                // DESPUÉS del `await` y dentro del `try`, igual que en el
+                // guardado de una novedad: si el guardado falla, lo escrito
+                // tiene que seguir ahí — que es justamente para lo que existe.
+                descartarBorrador();
                 onClose();
             } catch (err) {
                 console.error("Error al guardar la sucursal:", err);
@@ -950,6 +997,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
                                 <p className="text-label font-bold uppercase tracking-wide leading-tight">{validationError}</p>
                             </div>
+                        )}
+
+                        {hayQueOfrecer && (
+                            <AvisoDeBorrador
+                                className="mb-4"
+                                cuando={borradorCuando}
+                                onRecuperar={recuperarBorrador}
+                                onDescartar={descartarOfrecimiento}
+                            />
                         )}
 
                         <form id="unified-modal-form" onSubmit={handleLocalSubmit} className={`flex-1 flex flex-col relative w-full pb-4 ${fillHeight ? 'min-h-0' : ''}`}>

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.746.0 — La ficha de sucursal guarda borrador y OFRECE recuperarlo
+
+El portal cierra la sesión sola cuando nadie usa la pantalla, y **los de sala
+están en 5 minutos**. La ficha de sucursal son seis pestañas y decenas de
+campos: hasta hoy, si la sesión se cerraba en el medio, lo escrito se perdía
+entero y sin dejar rastro.
+
+**Por qué no se había hecho, y por qué esa razón era correcta.** `UnifiedModal`
+encendió el borrador sólo para los dos tipos que son un ALTA, y dejó anotado el
+motivo de no hacerlo al editar:
+
+> «NO cuando se está EDITANDO una ya registrada: ahí la fila de la base es la
+> verdad.»
+
+Eso se sostiene y por eso no se tocó. Reponer un borrador sobre un registro vivo
+puede escribir datos viejos encima de lo que otra persona cambió en el medio, y
+**nadie lo notaría** — no falla nada, sólo queda mal el dato.
+
+**Lo que faltaba era el camino del medio: guardar sin reponer.** La ficha guarda
+mientras se escribe y, al reabrirla, **pregunta**: «Quedaron cambios sin guardar
+de hace 12 minutos», con «Recuperar» y «Descartar». La fila de la base sigue
+siendo la verdad hasta que alguien decida otra cosa **a la vista de las dos**,
+que es distinto de que el formulario decida solo.
+
+Tres detalles que hacen que funcione:
+
+- **la hora va siempre.** Lo que decide a una persona no es «hay un borrador»,
+  es «hay uno de hace diez minutos» — sin eso, aceptar es una apuesta. `loadDraft`
+  se comía el `ts` a propósito (quien repuebla no lo necesita), así que se agregó
+  `loadDraftTime` y el hook devuelve `cuando`. En minutos y horas mientras eso
+  signifique algo, y recién después la hora del reloj: a las nueve de la mañana,
+  «hace 14 horas» obliga a hacer la cuenta para entender que fue anoche;
+- **una clave por sucursal, no una por pestaña.** Quien empezó por «Inmueble» y
+  siguió por «Legal» escribió UN formulario. Y la clave lleva el id, porque una
+  clave única ofrecería la ficha de una sala sobre otra;
+- **se descarta al guardar bien**, después del `await` y dentro del `try`: si el
+  guardado falla, lo escrito tiene que seguir ahí — que es justamente para lo que
+  existe.
+
+**Y de paso se corrigió una clasificación del gate.** `gate:borradores` contaba
+cuatro formularios largos sin borrador (`BranchTabGeneral`, `Inmueble`, `Legal` y
+`FormNursingRegents`) donde hay **uno solo repartido en pestañas**: ninguno tiene
+estado propio y el `formData` vive dos pisos más arriba. Es la misma forma que ya
+tenían declarada `FormNovedad` y `FormRehireEmployee`, sólo que a estas cuatro no
+se les había aplicado. Quedan como excepción con su motivo escrito, y la deuda
+baja de **7 a 3**.
+
+El eje de resiliencia de Sucursales pasa de **79 a 95** — era el más bajo del
+portal después de «flujo». Quedan tres formularios, y esos sí tienen estado
+propio: cliente, proveedor y una entrada de planilla.
+
+16 pruebas nuevas.
+
 ## v2.745.0 — Bodega manda desde su área de vencidos
 
 Reportado con la pantalla delante: *«en los traslados desde bodega, no puedo

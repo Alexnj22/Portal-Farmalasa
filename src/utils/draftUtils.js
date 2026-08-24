@@ -15,6 +15,26 @@ export function loadDraft(key) {
     } catch { return null; }
 }
 
+/**
+ * Cuándo se guardó el borrador, en milisegundos, o `null` si no hay.
+ *
+ * `loadDraft` se come el `ts` a propósito —quien repuebla no lo necesita— pero
+ * un formulario que OFRECE recuperar en vez de reponer solo sí: lo que decide a
+ * una persona no es «hay un borrador», es «hay uno de hace diez minutos». Sin la
+ * hora, aceptar es una apuesta.
+ *
+ * Comparte la caducidad de 24 h: si ya venció, contesta `null` como `loadDraft`.
+ */
+export function loadDraftTime(key) {
+    try {
+        const raw = localStorage.getItem(PREFIX + key);
+        if (!raw) return null;
+        const { ts } = JSON.parse(raw);
+        if (!ts || Date.now() - ts > 86_400_000) return null;
+        return ts;
+    } catch { return null; }
+}
+
 export function clearDraft(key) {
     try { localStorage.removeItem(PREFIX + key); } catch { /* localStorage no disponible (privado/cuota) */ }
 }

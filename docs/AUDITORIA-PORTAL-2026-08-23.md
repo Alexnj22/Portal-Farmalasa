@@ -1250,3 +1250,39 @@ pasar de ahí**. Corregido en la semilla.
 Los tres se descubrieron por lo mismo: **nadie había ejercitado nunca el camino
 de reconstrucción.** Un procedimiento de recuperación que nunca se corre no es un
 procedimiento, es una intención.
+
+### 8.22 El cierre fiscal entra al control de versiones
+
+Las dos tablas y las siete funciones quedaron capturadas en
+`20260824050000_el_cierre_fiscal_entra_al_control_de_versiones.sql`, y la
+migración se registró en producción **sin ejecutar nada**: los nueve objetos ya
+existían, así que lo que faltaba era el registro, no los objetos.
+
+**Las definiciones las generó el propio Postgres** (`pg_get_functiondef`) en vez
+de retipearse: son 22 kB, y copiarlos a mano arriesga una divergencia silenciosa
+entre lo que el historial dice y lo que la base tiene — que es exactamente el
+defecto que la migración viene a cerrar.
+
+**La prueba de que sirve fue rebasear el entorno de pruebas, donde no existían.**
+Volvieron a aparecer solas: 2 tablas, 7 funciones, sus policies, sus permisos y
+sus comentarios, construidos por el historial.
+
+**Y esa prueba encontró algo que la lectura no habría encontrado.** En producción
+`calc_credito_declarable` la ejecuta **sólo `service_role`**; en la base
+reconstruida quedó también para `authenticated`. La causa: Supabase concede
+EXECUTE por defecto a `anon, authenticated, service_role` sobre toda función
+nueva, así que un `REVOKE … FROM PUBLIC, anon` —el patrón que usa todo el repo—
+**deja a `authenticated` adentro por la puerta de atrás**.
+
+No es cosmético: esa función es SECURITY DEFINER y no chequea permisos adentro
+(es un cálculo puro), de modo que en la base reconstruida cualquier sesión
+autenticada podía pedir el crédito fiscal declarable del período. Corregido en la
+migración y en el branch.
+
+> **Media captura habría sido peor que ninguna**: el primer registro se escribió
+> con los `REVOKE` y sin los `GRANT`, lo que en una reconstrucción habría dejado
+> las siete funciones revocadas y sin conceder — o sea el módulo muerto. Se
+> detectó contándolas.
+
+`gate:migrations --remote`: **546 archivos locales, 546 filas en prod, sin
+deriva.**

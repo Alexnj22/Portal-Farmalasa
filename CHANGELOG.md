@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.729.0 — El ticket que reemplaza el tirro de la bolsa
+
+**Nada cambia todavía en pantalla: este commit deja el papel armado y probado,
+sin enchufar.** El módulo no lo importa nadie, así que una sala que despacha un
+traslado hoy hace exactamente lo que hacía ayer.
+
+Hasta hoy, una bolsa que viaja entre salas lleva una cinta escrita a mano con el
+origen y el destino. `construirTicketDeTraslado` arma el papel que la reemplaza:
+quién pide, quién envía, de dónde a dónde, qué lleva, y el número del traslado
+como código de barras — que es lo que después va a dejar confirmar, al retirar,
+que no se quedó ninguna bolsa.
+
+**El número no hubo que inventarlo.** `metadata.erp_traslado.id_traslado` ya
+existe, son cinco dígitos y es UNA sola secuencia compartida con los pedidos
+(medido: 28480–32205 contra 29441–32278). Puede venir en `null` —el despacho
+entra igual y se queda sin número—: ahí el ticket sale sin barras y **lo dice**,
+porque un papel mudo se lee como una impresora que falló y se reimprime para
+nada.
+
+**El papel dice SOLICITUD o ENVIO**, y no es cosmética: una solicitud la pidió
+alguien de esa sala y la está esperando; un envío le llega de sorpresa. Por lo
+mismo, el renglón «Pide» no se imprime vacío en un envío — un rótulo con la nada
+al lado se lee como un dato que se perdió.
+
+**De qué sala sale la bolsa no es siempre la sala del producto.** Cuando está
+cerrada, la despacha su sala de respaldo, y entonces la bolsa está en el
+mostrador de la otra: medido el 2026-08-24, **53 de los 191 traslados que salen
+de Bodega** son así. `salaQueDespacha` resuelve cuál nombrar — y es también la
+que tiene que recibir el trabajo de impresión, porque en la otra caja nadie lo
+va a levantar.
+
+Sin encabezado de empresa: es un papel interno y serían cuatro renglones que no
+le sirven a nadie.
+
+**Las pruebas se verificaron rompiendo el código a propósito**, y la primera
+tanda estaba ciega: `recortar` ya pliega a ASCII por dentro, así que quitarle el
+`soloAscii` al nombre del producto no hacía fallar nada. El detector sólo
+ensuciaba dos campos, los dos recortados. Hoy mete acentos en todos, y
+desarmarle el plegado al título o a un bloque lo hace fallar. Se quitó de paso
+el `soloAscii` redundante: envolver algo que ya pliega hace creer que no lo hace.
+
 ## v2.728.0 — El barrido mide las 54 rutas: el chasis dice dónde empieza la vista
 
 **54 de 54 rutas medidas. 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0

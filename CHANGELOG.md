@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.1 — La acción de escanear estaba donde no se la busca
+
+Tres reportes del usuario sobre dónde vive el botón de confirmar por escaneo.
+
+**En la vista de Traslados va en la píldora de filtros (§17), no como botón
+suelto** arriba de la lista: es una acción DE LA VISTA y el canon las junta
+todas ahí. Y en «En camino» la píldora se pinta **aunque no haya filtro que
+ofrecer** — antes sólo aparecía con alcance de todas las salas, o sea que justo
+el usuario de una sola sala, que es el que recibe, se quedaba sin barra y sin
+acción.
+
+**En el panel del widget no estaba.** Vivía sólo en la vista de Traslados, y
+quien recibe una bolsa trabaja en el tablero: la acción estaba donde no se la
+busca. Ahora las dos cosas que se pueden EMPEZAR desde ahí —enviar producto y
+confirmar escaneando— van juntas y arriba, en una fila que se apila en el
+teléfono.
+
+**En la baldosa plegada NO se puso, y no es un olvido:** la baldosa entera es un
+`<button>`, así que meterle botones adentro anida controles interactivos —HTML
+inválido y un problema real de lector de pantalla— y su caja de 120px ya tiene
+antecedentes de desbordarse por una línea de más. Las dos acciones quedan a un
+toque, dentro del panel.
+
 ## v2.731.0 — Confirmar la llegada escaneando el ticket
 
 Reemplaza a la firma a lápiz que traía el papel hasta v2.730.3. Pedido del

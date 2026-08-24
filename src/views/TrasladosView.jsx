@@ -423,6 +423,7 @@ export default function TrasladosView() {
 
     const enHistorial = activeTab === 'historial';
     const enEnvios    = activeTab === 'envios';
+    const enRecibir   = activeTab === 'recibir';
     const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0)
         + (enHistorial && !enSemanaActual ? 1 : 0);
     const limpiarTodo = () => { setSala(''); setTipo(''); setSemana(semanaActual); };
@@ -439,9 +440,20 @@ export default function TrasladosView() {
                 ancho del cuerpo y deja de leerse como píldora: se ve como una
                 barra vacía con un desplegable en la esquina, que fue lo
                 reportado — «el filter pill no es canónico». */}
-            {(alcanceTodas || enHistorial) && !enEnvios && (
+            {/* En «En camino» la barra se pinta AUNQUE no haya filtro que
+                ofrecer: ahí vive la acción de confirmar escaneando, y una vista
+                con alcance de una sola sala no tiene filtro de sucursal — o sea
+                que justo el usuario de sala, que es el que recibe, se quedaba
+                sin la barra y sin la acción. */}
+            {(alcanceTodas || enHistorial || enRecibir) && !enEnvios && (
               <div className="flex justify-end px-4 md:px-5 pt-4">
-                <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}>
+                <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}
+                    acciones={enRecibir ? [{
+                        key: 'escanear',
+                        icon: ScanLine,
+                        label: 'Confirmar escaneando',
+                        onClick: () => setAbrirEscaneo(true),
+                    }] : []}>
                     {alcanceTodas && (
                         <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                             <FilterBar.Sucursal value={sala || null} onChange={v => setSala(v || '')} options={salaOpts} />
@@ -740,19 +752,10 @@ export default function TrasladosView() {
                 <div className="p-4 md:p-5 flex flex-col gap-3">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
-                    {/* Confirmar escaneando el ticket que trae la bolsa.
-                        Va ARRIBA de la lista y no dentro de cada tarjeta: quien
-                        recibe llega con la bolsa en la mano y el papel en la
-                        otra, y no sabe —ni tiene por qué— cuál de las tarjetas
-                        de la lista le corresponde. El código lo dice. */}
-                    <div>
-                        <Button variant="secondary" icon={ScanLine}
-                            className="min-h-[var(--tap-min)]"
-                            onClick={() => setAbrirEscaneo(true)}>
-                            Confirmar escaneando el ticket
-                        </Button>
-                    </div>
-
+                    {/* La acción vive en la píldora de filtros (§17), no como
+                        botón suelto arriba de la lista: es una acción DE LA
+                        VISTA, y el canon las junta todas ahí. Acá sólo queda el
+                        diálogo. */}
                     {abrirEscaneo && (
                         <Suspense fallback={null}>
                             <ConfirmarPorCodigo

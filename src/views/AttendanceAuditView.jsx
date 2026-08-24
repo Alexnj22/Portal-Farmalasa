@@ -38,6 +38,9 @@ import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
+         isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
+    from './asistencia/quincena';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -83,56 +86,9 @@ function getRoleOrder(role) {
 }
 
 
-// ── Timezone helpers ──────────────────────────────────────────────────────────
-function getMondayOfCurrentWeek() {
-  const cst = new Date(new Date().getTime() - 6 * 3600000);
-  cst.setUTCDate(cst.getUTCDate() - (cst.getUTCDay() + 6) % 7);
-  return cst.toISOString().slice(0, 10);
-}
-// `getCSTDateStr`, `buildCSTDate` y `minutosDeTardanza` viven en
-// `data/attendanceAudit.js`: son matemática pura y acá no se podían probar.
-function fmtTimeCSTStr(isoStr) {
-  if (!isoStr) return '–';
-  const d = new Date(new Date(isoStr).getTime() - 6 * 3600000);
-  const h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${String(h % 12 || 12).padStart(2,'0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
-}
-function formatTime12h(t) {
-  if (!t) return '–';
-  let [h, m] = t.split(':'); h = parseInt(h, 10);
-  return `${String(h % 12 || 12).padStart(2,'0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
-}
-function isEditedPunch(p) { return !!(p.details?.manualAudit || p.details?.editedBy || p.details?.auditedByName); }
-function isAutoPunch(p)   { return !!(p.details?.autoInserted); }
-function isPendingPunch(p){ return !!(p.details?.pendingHRReview && !p.details?.autoInserted); }
-
-// ── Quincena helpers ──────────────────────────────────────────────────────────
-function getCurrentQuincenaStart() {
-  const cst = new Date(new Date().getTime() - 6 * 3600000);
-  const y = cst.getUTCFullYear(), m = String(cst.getUTCMonth() + 1).padStart(2, '0');
-  const d = cst.getUTCDate();
-  return `${y}-${m}-${d <= 15 ? '01' : '16'}`;
-}
-function getQuincenaEnd(start) {
-  const d = new Date(start + 'T12:00:00Z');
-  if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-15`;
-  const lastDay = new Date(d.getUTCFullYear(), d.getUTCMonth() + 1, 0).getDate();
-  return `${start.slice(0, 7)}-${String(lastDay).padStart(2, '0')}`;
-}
-function prevQuincena(start) {
-  const d = new Date(start + 'T12:00:00Z');
-  if (d.getUTCDate() === 1) {
-    const prev = new Date(d.getUTCFullYear(), d.getUTCMonth() - 1, 16);
-    return prev.toISOString().slice(0, 10);
-  }
-  return `${start.slice(0, 7)}-01`;
-}
-function nextQuincena(start) {
-  const d = new Date(start + 'T12:00:00Z');
-  if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-16`;
-  const nxt = new Date(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
-  return nxt.toISOString().slice(0, 10);
-}
+// Las horas y los bordes de la quincena viven en `asistencia/quincena.js`, con
+// sus tres hermanas de `data/attendanceAudit.js`: es matemática pura y adentro
+// de esta vista de 1.497 líneas no se podía probar.
 
 // ── Branch sort ───────────────────────────────────────────────────────────────
 function getBranchSortKey(name, id) {

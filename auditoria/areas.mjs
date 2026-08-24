@@ -209,7 +209,7 @@ export const AREAS = [
         rutas: ['/monitor', '/audit'],
         archivos: [
             'src/views/AttendanceMonitorView.jsx', 'src/views/AttendanceAuditView.jsx',
-            'src/data/attendanceAudit.js',
+            'src/data/attendanceAudit.js', 'src/views/asistencia/quincena.js',
         ],
         tablas: ['attendance', 'timesheets', 'overtime_bank'],
         edge: ['consolidate-timesheets'],

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, CheckCircle2, Send } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, ScanLine, Send } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
@@ -39,6 +39,7 @@ import { fetchEnviosVivos, momentoDelEnvio } from '../../data/envios';
 // Ya no pide nada: recibe las dos listas que la baldosa trajo al montarse, así
 // que abrir el modal muestra el contenido en vez de un esqueleto.
 function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
+    const [abrirEscaneo, setAbrirEscaneo] = useState(false);
     const { hasPermission, getScope, user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
@@ -135,12 +136,34 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 de pendientes no se encuentra el día que la lista está larga.
                 `primary` y ancho completo: es LA acción de esta pantalla, y en
                 secundario se leía como una fila más del listado. */}
-            {puedeEnviar && (
-                <Button variant="primary" icon={Send}
-                    className="shrink-0 min-h-[var(--tap-min)] w-full"
-                    onClick={() => setAbrirEnvio(true)}>
-                    Enviar producto a otra sala
+            {/* Las DOS cosas que se pueden empezar desde acá, juntas y arriba.
+                Confirmar escaneando faltaba: vivía sólo en la vista de
+                Traslados, y quien recibe una bolsa trabaja en el tablero — o
+                sea que la acción estaba donde no se la busca. En una fila
+                cuando entran; apiladas en el teléfono. */}
+            <div className="shrink-0 flex flex-col sm:flex-row gap-2">
+                {puedeEnviar && (
+                    <Button variant="primary" icon={Send}
+                        className="min-h-[var(--tap-min)] w-full"
+                        onClick={() => setAbrirEnvio(true)}>
+                        Enviar producto a otra sala
+                    </Button>
+                )}
+                <Button variant="secondary" icon={ScanLine}
+                    className="min-h-[var(--tap-min)] w-full"
+                    onClick={() => setAbrirEscaneo(true)}>
+                    Confirmar escaneando el ticket
                 </Button>
+            </div>
+
+            {abrirEscaneo && (
+                <Suspense fallback={null}>
+                    <ConfirmarPorCodigo
+                        abierto
+                        onCerrar={() => setAbrirEscaneo(false)}
+                        onHecho={onCambio}
+                    />
+                </Suspense>
             )}
 
             {abrirEnvio && (
@@ -319,6 +342,7 @@ const FilaEnvioEnCamino = lazy(() =>
 const FilaDevolucionPorRecibir = lazy(() =>
     import('../traslados/FilasEnvio').then(m => ({ default: m.FilaDevolucionPorRecibir })));
 const EnviarProductoModal = lazy(() => import('./EnviarProductoModal'));
+const ConfirmarPorCodigo  = lazy(() => import('../traslados/ConfirmarPorCodigo'));
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 //

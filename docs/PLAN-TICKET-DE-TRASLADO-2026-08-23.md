@@ -550,3 +550,118 @@ objetivo es gastar menos papel, el número que falta medir es ése.
   exige la base — con 14 escaneos al día, la salida razonable es permitir marcar
   «cargado» sin resolver y reconciliar después, o decir que sin señal no
   funciona).
+
+
+---
+
+## El retiro — diseño cerrado con el usuario el 2026-08-24
+
+Reemplaza al «retiro» del plan original: es más simple de usar y más exigente de
+construir, porque introduce un estado que el circuito no tenía.
+
+### Francisco no elige nada
+
+> «que él no tenga que seleccionar en qué sala está, que el código de barras lo
+> diga ya, así cuando escanea, sólo se va llenando con los productos /
+> solicitudes y traslados.»
+
+Cada ticket ya sabe de dónde sale y a dónde va, así que **el primer escaneo dice
+dónde está parado**. No hay selector de sala, no hay configuración, y no se puede
+elegir mal.
+
+Y como el manifiesto se arma escaneando, el portal sabe **qué lleva encima**. De
+ahí sale solo lo que se pidió al llegar a cada sucursal:
+
+- **qué dejar** = lo que trae con destino a esa sala
+- **qué recoger** = lo que esa sala tiene pendiente de salir
+
+### La ubicación avisa, el escaneo decide
+
+**Medido el 2026-08-24, y es lo que cierra la discusión:**
+
+| par de salas | metros |
+|---|---:|
+| **Salud 3 ↔ Bodega** | **4** |
+| Salud 1 ↔ Salud 2 | 319 |
+| todos los demás | 2.827 o más |
+
+Salud 3 y Bodega **son el mismo edificio**. Ningún GPS los separa —la precisión
+buena de un teléfono son 5-20 m— y no es un par cualquiera: Bodega es el 55% de
+los traslados y Salud 3 es su sala de respaldo.
+
+Así que **la ubicación no puede decidir en qué sala está nadie**. Sirve para lo
+que sí hace bien: avisar *antes* de bajar del vehículo, mientras se acerca. Si
+esa pista confunde Salud 3 con Bodega no rompe nada, porque el escaneo corrige.
+
+Y **funciona hoy, en la web**: `RutaMapModal` ya usa
+`navigator.geolocation.watchPosition` en producción para el mapa de rutas. Lo
+que necesita la app nativa es la ubicación **de fondo** (pantalla apagada), que
+no es el caso de alguien con el teléfono en la mano.
+
+### El estado nuevo: en tránsito, con nombre
+
+> «que quede en tránsito con Francisco, ya en responsabilidad de quien escanea y
+> se lleva el producto.»
+
+Hoy el circuito tiene dos estados —despachado (`erp_traslado`) y recibido
+(`erp_recibido`)— y entre los dos la bolsa no tiene dueño. El retiro agrega el
+tercero: **entre que sale y llega, hay una persona responsable con nombre.**
+
+Consecuencias que hay que construir con él, no después:
+
+- La sala de destino tiene que **ver de quién viene**, no sólo que está en
+  camino.
+- Una bolsa en tránsito que nadie entrega **se queda así para siempre** si nadie
+  la vigila. Necesita edad y aviso, igual que el descarte que vuelve.
+- Recibir **cierra la custodia**. Y una bolsa que nunca se retiró se sigue
+  pudiendo recibir: es el caso de la sala vecina, donde alguien la cruza
+  caminando. **El retiro es opcional; la custodia existe sólo si alguien la
+  tomó.**
+
+### Quién entrega: dos personas, salvo cuando son la misma
+
+> «debemos tener a alguien responsable que me los entrega, así que en el modal de
+> escanear tickets, que se escanee el responsable de entregar de esa sucursal.»
+
+Al llegar a una sala, **alguien de esa sala escanea su carné una vez** —no una
+por ticket— y con eso queda registrado quién entregó. Después Francisco escanea
+las bolsas.
+
+**La excepción, dicha por el usuario:** no aplica cuando quien retira ES de la
+sala que entrega. «Si Francisco, que es de Bodega, retira algo de Bodega, él
+mismo es el responsable. O si de Salud 1 retira algo de ahí mismo para Salud 2.»
+
+O sea la regla es una sola: **si el retirador pertenece a la sala que entrega, no
+hay segunda firma, porque sería la suya.**
+
+### ⚠️ La sala que entrega NO es `origen_branch_name`
+
+Es la trampa de todo este diseño, y ya está medida: **53 traslados que dicen
+«Bodega» los despachó S3**, y 3 más del área de vencidos. Cuando una sala está
+cerrada, la cubre su respaldo y **la bolsa está en el mostrador de la otra**.
+
+Entonces, para decidir si hace falta la segunda firma, lo que manda es dónde está
+FÍSICAMENTE la bolsa:
+
+```
+sala que entrega = por_respaldo ? metadata.erp_traslado.by_sala : origen_branch_id
+```
+
+`by_sala` viene como código (`"S3"`), no como id de sala: hay que traducirlo con
+`ERP_CODIGOS` de `constants/erp.js`. Usar `origen_branch_name` haría que un
+traslado entregado por Salud 3 pida la firma de alguien de Bodega —que a esa hora
+está cerrada— y el retiro se trabaría sin que nadie entienda por qué.
+
+Con Salud 3 y Bodega a cuatro metros, en la práctica la persona está ahí al lado;
+lo que importa es que el portal **le pida el carné a quien de verdad puede
+firmar**.
+
+### Lo que queda por decidir
+
+- Dónde vive el estado en tránsito: una clave nueva en el `metadata`
+  (`retiro: { by, by_name, at, sala, entrego, entrego_name }`) o su propia tabla.
+  Una tabla permite el historial de varios intentos; el `metadata` es más barato
+  y es donde ya viven los otros dos estados.
+- Cuántos días en tránsito disparan el aviso, y a quién.
+- Si el retirador puede cerrar un retiro sin entregar todo (y qué pasa con lo que
+  le sobró encima).

@@ -3,7 +3,7 @@ import { Ban, PackageCheck, CornerUpLeft } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import { ChipPersona } from '../solicitudes/PersonasSolicitud';
-import { fmtFechaLarga, resumenItems } from './trasladoTexto';
+import { fmtFechaLarga, piezasDe, renglonesDe, resumenItems } from './trasladoTexto';
 
 /**
  * El historial de traslados, en TARJETAS y agrupado.
@@ -41,6 +41,40 @@ import { fmtFechaLarga, resumenItems } from './trasladoTexto';
 /** El desenlace de un traslado cerrado, que es lo que corta el segundo nivel. */
 const esRechazado = (f) => f.status === 'REJECTED';
 
+/* Cuántos productos se nombran antes de resumir el resto.
+ *
+ * Con varios renglones, `resumenItems` decía «3 productos · 12 unidades» y
+ * nada más — reportado por el usuario: «cuando la solicitud son varios
+ * productos, ¿cómo se ven?». La respuesta era: no se ven. Un historial que no
+ * dice QUÉ se movió no contesta la pregunta por la que uno lo abre.
+ *
+ * Tres, y no todos: un traslado de doce renglones estiraría su tarjeta al
+ * cuádruple de las de al lado, y en una rejilla que iguala alturas eso estira
+ * la fila entera. El resto se cuenta. */
+const PRODUCTOS_EN_TARJETA = 3;
+
+/** Los renglones de un traslado de varios productos, en compacto. */
+function Renglones({ renglones }) {
+    const deMas = renglones.length - PRODUCTOS_EN_TARJETA;
+    return (
+        <div className="flex flex-col gap-0.5">
+            {renglones.slice(0, PRODUCTOS_EN_TARJETA).map(r => (
+                <p key={r.idx} className="flex items-baseline justify-between gap-2 text-label text-content-2">
+                    <span className="min-w-0 truncate" title={r.nombre}>{r.nombre}</span>
+                    <span className="shrink-0 tabular-nums font-bold text-content-2">
+                        {r.cantidad}{r.presentacion ? ` ${r.presentacion}` : ''}
+                    </span>
+                </p>
+            ))}
+            {deMas > 0 && (
+                <p className="text-micro font-bold text-brand-text">
+                    +{deMas} {deMas === 1 ? 'producto más' : 'productos más'}
+                </p>
+            )}
+        </div>
+    );
+}
+
 /**
  * Un traslado cerrado.
  *
@@ -49,6 +83,18 @@ const esRechazado = (f) => f.status === 'REJECTED';
  * ficha del teléfono; acá no hay dónde abrir, así que si un dato no se dibuja,
  * no existe. Y el que más se escondía era el MOTIVO, que es justamente lo que
  * uno viene a leer en un historial.
+ *
+ * ── Compacta, y de dónde salió el alto (2026-08-24) ────────────────────────
+ * Pedido del usuario: «¿puedes hacer más compactas las cards?». Lo que sobraba
+ * eran los rótulos: PIDIÓ y DESPACHÓ vivían en dos columnas con su versalita,
+ * su cara, su nombre y su fecha — seis renglones para decir quién y cuándo.
+ *
+ * Ahora es UNO: las dos caras con la flecha entre ellas, en el mismo sentido
+ * que el recorrido de arriba —**de quien despachó a quien pidió**, igual que
+ * «Bodega → Salud 3»—, y a la derecha la fecha del cierre. La flecha dice el
+ * rol, así que los rótulos no hacen falta; los nombres se quedan porque un
+ * archivo se consulta para saber QUIÉN, y una cara sola no se cita en una
+ * conversación.
  */
 export function TarjetaHistorial({ fila, personaPor }) {
     const m = fila.metadata ?? {};
@@ -56,22 +102,29 @@ export function TarjetaHistorial({ fila, personaPor }) {
     const motivo = rechazado
         ? [m.rejection_reason, m.sugerencia].filter(Boolean).join(' — ')
         : (fila.note || '');
+    const renglones = renglonesDe(m);
+    const piezas = piezasDe(m);
+    const pidio  = personaPor?.(fila.employee_id);
+    const resolvio = personaPor?.(fila.approver_id);
 
     return (
-        <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2.5 h-full">
-            <div className="flex items-start gap-2.5">
+        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full">
+            <div className="flex items-start gap-2">
                 {rechazado
-                    ? <Ban size={15} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                    : <PackageCheck size={15} className="text-success-text shrink-0 mt-0.5" strokeWidth={2.5} />}
+                    ? <Ban size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                    : <PackageCheck size={14} className="text-success-text shrink-0 mt-0.5" strokeWidth={2.5} />}
                 <div className="flex-1 min-w-0">
-                    {/* El ancla: qué producto. `line-clamp-2` y no `truncate`
-                        porque dos productos se distinguen por el final —la
-                        presentación—, y cortados en una línea quedan idénticos. */}
+                    {/* Con UN producto el título es su nombre y la cantidad va
+                        al costado; con varios es la cuenta, y los nombres
+                        cuelgan abajo. Así el renglón de arriba dice siempre lo
+                        mismo —qué es esto— sin repetir la cantidad dos veces. */}
                     <p className="text-body-sm font-black text-content leading-snug line-clamp-2"
                         title={resumenItems(m)}>
-                        {resumenItems(m)}
+                        {renglones.length > 1
+                            ? `${renglones.length} productos · ${m.total_unidades ?? 0} unidades`
+                            : (piezas ? `${piezas.numero} ${piezas.unidad} · ${piezas.nombre}` : resumenItems(m))}
                     </p>
-                    <p className="mt-1 text-label font-bold text-content-2 truncate">
+                    <p className="text-label font-bold text-content-2 truncate">
                         {m.origen_branch_name ?? '—'}
                         <span className="text-content-3 font-medium"> → </span>
                         {m.branch_name ?? '—'}
@@ -82,41 +135,44 @@ export function TarjetaHistorial({ fila, personaPor }) {
                 </Badge>
             </div>
 
-            {/* El motivo, entero. Era la columna que se escondía por debajo de
-                `lg` y la que contesta la única pregunta que un historial tiene
-                que contestar cuando alguien viene a preguntar. */}
+            {/* Qué se movió, cuando fue más de una cosa. Sin esto la tarjeta
+                decía «3 productos» y no cuáles. */}
+            {renglones.length > 1 && <Renglones renglones={renglones} />}
+
+            {/* El motivo. Era la columna que se escondía por debajo de `lg` y la
+                que contesta la única pregunta que un historial tiene que
+                contestar cuando alguien viene a preguntar. */}
             {motivo && (
-                <p className="text-label text-content-2 leading-snug line-clamp-3" title={motivo}>
+                <p className="text-label text-content-2 leading-snug line-clamp-2" title={motivo}>
                     {motivo}
                 </p>
             )}
 
-            {/* Las dos puntas del circuito, con su fecha: quién pidió y cuándo,
-                quién decidió y cuándo. Sin las dos fechas no hay forma de saber
-                cuánto tardó, que es la otra mitad de lo que un historial dice. */}
-            <div className="mt-auto pt-2.5 border-t border-divider grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="min-w-0">
-                    <p className="text-micro font-black uppercase tracking-widest text-content-3">Pidió</p>
-                    <ChipPersona persona={personaPor?.(fila.employee_id)} vacio="Sin registro" />
-                    <p className="text-micro text-content-3 tabular-nums mt-0.5">
-                        {fmtFechaLarga(fila.created_at)}
-                    </p>
-                </div>
-                <div className="min-w-0">
-                    <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                        {rechazado ? 'Rechazó' : 'Despachó'}
-                    </p>
-                    <ChipPersona persona={personaPor?.(fila.approver_id)} vacio="Sin registro" />
-                    <p className="text-micro text-content-3 tabular-nums mt-0.5">
-                        {fmtFechaLarga(fila.updated_at ?? fila.created_at)}
-                    </p>
-                </div>
+            {/* Las dos puntas del circuito en UN renglón. La flecha va en el
+                mismo sentido que el recorrido de arriba —de quien despachó a
+                quien pidió—, así que dice el rol sin necesidad de rótulos. */}
+            <div className="mt-auto pt-2 border-t border-divider flex items-center justify-between gap-2 min-w-0">
+                {/* `role="img"` + `aria-label` y NO `title`: las dos caras con
+                    la flecha son un DIBUJO del circuito, no prosa con ayuda al
+                    pasar el ratón — y un `title` en un span no interactivo no
+                    llega al lector de pantalla ni al teléfono (§15.10). Mismo
+                    tratamiento que la tarjeta de «En camino». */}
+                <span className="flex items-center gap-1.5 min-w-0" role="img"
+                    aria-label={[resolvio?.name && `Despachó ${resolvio.name}`,
+                                 pidio?.name && `pidió ${pidio.name}`].filter(Boolean).join(', ')}>
+                    <ChipPersona persona={resolvio} vacio="Sin registro" />
+                    <span className="text-content-3 text-micro shrink-0">→</span>
+                    <ChipPersona persona={pidio} vacio="Sin registro" />
+                </span>
+                <span className="text-micro text-content-3 tabular-nums shrink-0">
+                    {fmtFechaLarga(fila.updated_at ?? fila.created_at)}
+                </span>
             </div>
         </div>
     );
 }
 
-/** Un envío cerrado — otra pregunta, así que otra tarjeta. */
+/** Un envío cerrado — otra pregunta, así que otra tarjeta. Y el mismo compacto. */
 export function TarjetaEnvioCerrado({ envio }) {
     const lineas = envio.lineas ?? [];
     const acept = lineas.filter(l => l.estado === 'aceptada').length;
@@ -126,18 +182,18 @@ export function TarjetaEnvioCerrado({ envio }) {
         .map(l => `${l.descripcion ?? l.erp_product_id} (${l.motivo_rechazo ?? 'sin motivo'})`);
 
     return (
-        <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2.5 h-full">
-            <div className="flex items-start gap-2.5">
+        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full">
+            <div className="flex items-start gap-2">
                 {devue > 0
-                    ? <CornerUpLeft size={15} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                    : <PackageCheck size={15} className="text-success-text shrink-0 mt-0.5" strokeWidth={2.5} />}
+                    ? <CornerUpLeft size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                    : <PackageCheck size={14} className="text-success-text shrink-0 mt-0.5" strokeWidth={2.5} />}
                 <div className="flex-1 min-w-0">
                     <p className="text-body-sm font-black text-content leading-snug truncate">
                         {envio.origen_branch_name ?? '—'}
                         <span className="text-content-3 font-medium"> → </span>
                         {envio.branch_name ?? '—'}
                     </p>
-                    <p className="mt-1 text-label text-content-2 line-clamp-2" title={envio.reason ?? ''}>
+                    <p className="text-label text-content-2 line-clamp-2" title={envio.reason ?? ''}>
                         <span className="font-bold">{envio.motivo_tipo ?? '—'}</span>
                         {envio.reason && envio.reason !== envio.motivo_tipo ? ` · ${envio.reason}` : ''}
                     </p>
@@ -146,7 +202,8 @@ export function TarjetaEnvioCerrado({ envio }) {
                     desenlace sino uno por renglón —la sala se quedó tres y
                     devolvió dos—, y por eso este número no se puede resumir en
                     una palabra ni sirve para agrupar. */}
-                <span className="text-label font-bold whitespace-nowrap shrink-0">
+                <span className="text-label font-bold whitespace-nowrap shrink-0" role="img"
+                    aria-label={`${acept} se quedaron, ${devue} volvieron`}>
                     <span className="text-success-text">{acept}</span>
                     <span className="text-content-3"> / </span>
                     <span className={devue > 0 ? 'text-danger-text' : 'text-content-3'}>{devue}</span>
@@ -154,14 +211,14 @@ export function TarjetaEnvioCerrado({ envio }) {
             </div>
 
             {devueltas.length > 0 && (
-                <p className="text-label text-content-2 leading-snug line-clamp-3"
+                <p className="text-label text-content-2 leading-snug line-clamp-2"
                     title={devueltas.join('; ')}>
                     <span className="font-black uppercase tracking-widest text-micro text-content-3">Devuelto </span>
                     {devueltas.join('; ')}
                 </p>
             )}
 
-            <p className="mt-auto pt-2.5 border-t border-divider text-micro text-content-3 tabular-nums">
+            <p className="mt-auto pt-2 border-t border-divider text-micro text-content-3 tabular-nums">
                 {fmtFechaLarga(envio.updated_at ?? envio.created_at)}
             </p>
         </div>
@@ -181,7 +238,7 @@ function Titulo({ children, cuenta, tono = 'text-content-2' }) {
 /* `grid-cols-1` explícito: sin la pista base, en el teléfono la implícita es
  * `auto` y se dimensiona al contenido, no al contenedor — la rejilla se sale de
  * lado. Ver `feedback_una_rejilla_sin_pista_base_se_dimensiona_al_contenido`. */
-const REJILLA = 'grid grid-cols-1 gap-2.5 xl:grid-cols-2';
+const REJILLA = 'grid grid-cols-1 gap-2 xl:grid-cols-2';
 
 /** Los dos bloques del desenlace, dentro de una sucursal o del todo. */
 function PorDesenlace({ filas, personaPor }) {

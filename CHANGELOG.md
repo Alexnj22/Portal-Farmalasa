@@ -21,6 +21,91 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.744.3 — Nueve tarjetas a mano menos: un campo, dos chips y un envoltorio que sobraba
+
+El ratchet baja de **48 a 39**, y con esto **ningún área del portal queda ya
+frenada por su eje de vista** — las seis más bajas lo están por «flujo», que son
+los pendientes de probar en sala.
+
+Otra vez lo interesante no es el número: de los nueve, **sólo tres eran
+realmente una tarjeta**. Los otros seis eran otra cosa, y migrarlos como tarjeta
+habría sido dibujar mal.
+
+**Uno era un envoltorio que sobraba entero.** En «Programar entrega», el selector
+de hora venía envuelto en un `<div>` con fondo, borde y radio de tarjeta — pero
+`TimePicker12` ya emite `data-surface="input"` en su propia raíz. O sea que había
+**una superficie dibujada encima de otra**: doble borde y doble fondo sobre un
+control que ya traía el suyo. Se quitó el envoltorio.
+
+**Dos eran campos, no tarjetas.** Los envoltorios de `LiquidDatePicker` (en esa
+misma pantalla y en Anuncios) sí hacen falta —ese componente no trae superficie
+propia para su disparador, por eso todos sus llamadores lo envuelven— pero como
+lo que son: `data-surface="input"`, que por §3 *se aclara al apuntar* en vez de
+levantarse, porque un hueco no se levanta.
+
+**Y tres eran cajas anidadas dentro de otra tarjeta**, con el mismo defecto que
+la tanda anterior: `bg-surface-card` sobre `bg-surface-card`, distinguiéndose
+sólo por el borde. Son los chips de presentación de Ventas, la caja de
+Cotizaciones y el agrupador de los botones de zoom de Roles. El criterio no se
+inventó acá: estaba escrito en `RolesView.jsx` desde antes — *«El pie NO es una
+tarjeta: es una franja DENTRO de la tarjeta del rol. Darle `data-surface="card"`
+anidaba una tarjeta en otra […] Superficie de realce + relleno suave»*.
+
+Las tres que sí eran tarjetas: el esqueleto de carga del carril de Ventas (que
+ahora usa la misma superficie que el `StatCard` al que reemplaza), la fila de
+proveedor de Política de vencimiento y la tarjeta de Ventas perdidas.
+
+Queda una sin tocar a propósito: la de Política de vencimiento con tinte
+`chart-9`, porque no existe un `data-tono` para ese color y migrarla obligaría a
+pelearle la especificidad al atributo.
+
+## v2.744.2 — El historial dice que productos, y las cards ocupan la mitad
+
+> «cuando la solicitud son varios productos de traslado, ¿cómo se ven?» ·
+> «¿puedes hacer más compactas las cards?»
+
+── La primera pregunta tenía una respuesta mala: NO se veían ─────────────────
+
+Con más de un renglón, la tarjeta decía **«3 productos · 12 unidades»** y nada
+más. Ningún nombre. Un historial que no dice QUÉ se movió no contesta la
+pregunta por la que uno lo abre — y el defecto venía heredado de la tabla, donde
+esa misma línea era el contenido de la columna «Producto».
+
+Ahora los nombra, hasta tres, con su cantidad y presentación a la derecha, y
+cuenta el resto («+2 productos más»). Tres y no todos porque un traslado de doce
+renglones estiraría su tarjeta al cuádruple de las de al lado, y en una rejilla
+que iguala alturas eso estira la fila entera.
+
+── Y las tarjetas ocupan la mitad ────────────────────────────────────────────
+
+Lo que sobraba eran los rótulos. PIDIÓ y DESPACHÓ vivían en dos columnas, cada
+una con su versalita, su cara, su nombre y su fecha: **seis renglones para decir
+quién y cuándo**.
+
+Ahora es uno solo — las dos caras con la flecha entre ellas, en el mismo sentido
+que el recorrido de arriba (**de quien despachó a quien pidió**, igual que
+«Bodega → Salud 3»), y la fecha del cierre a la derecha. La flecha dice el rol,
+así que los rótulos no hacían falta; los nombres se quedan, porque un archivo se
+consulta para saber QUIÉN y una cara sola no se cita en una conversación.
+
+**Medido contra producción:** alto medio **134 px**, mínimo 75. En una pantalla
+de 1280 entran ahora **seis tarjetas donde antes entraban cuatro**, y en el
+teléfono el desplazamiento horizontal sigue en cero.
+
+── Dos defectos propios, uno de ellos serio ──────────────────────────────────
+
+1. **El badge decía «Recibido» en las dos ramas.** Un rechazo se habría mostrado
+   como recibido — el peor error posible en un historial, porque el dato falso
+   se lee como cierto y no hay nada que lo delate. Salió de un reemplazo
+   automático mal escrito y lo cacé releyendo, no probando: ninguna prueba lo
+   miraba.
+2. **`gate:design` levantó dos `title` en `<span>` no interactivos.** Van con
+   `role="img"` + `aria-label` (§15.10): un `title` ahí no llega al lector de
+   pantalla ni al teléfono, que es donde más se mira esta lista.
+
+De paso, el ratchet de `tarjeta-a-mano` baja de **48 a 39**: las tarjetas nuevas
+usan la superficie canónica y reemplazaron a las que no.
+
 ## v2.744.1 — El registro se recalcula, y el rojo de eficiencia era un pico
 
 Dos pendientes que quedaron de las tandas anteriores, verificados los dos.

@@ -407,6 +407,19 @@ function Resolver({ bolsa, ocupado, onResolver }) {
  */
 function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo,
     vacio, verMontos, plegada = false, onPlegar, anclaRef }) {
+    /* El desglose por día de TODA la etapa: junta los días de las seis salas.
+     * Del más reciente al más viejo, que es como se pregunta («¿y lo de hoy?»).
+     * Es una vuelta sobre lo que ya está agrupado, no una consulta más. */
+    const porFecha = new Map();
+    for (const g of grupos) {
+        for (const d of (g.dias ?? [])) {
+            if (!porFecha.has(d.fecha)) porFecha.set(d.fecha, { fecha: d.fecha, lista: [] });
+            porFecha.get(d.fecha).lista.push(...d.lista);
+        }
+    }
+    const resumenPorDia = [...porFecha.values()]
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+
     return (
         <section className="space-y-2" ref={anclaRef}>
             {/* El encabezado ENTERO pliega, y el conteo se queda visible al
@@ -437,6 +450,55 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                 </span>
             </div>
             {!plegada && ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
+
+            {/* ── La franja de totales ────────────────────────────────────────
+                «aun no veo tan claro la informacion, se ve pequeno, no tiene
+                peso, no veo la venta diaria total y la venta del total de las
+                bolsas» (usuario, 2026-08-24).
+
+                Los números ESTABAN —en el encabezado, en el de cada sala, en el
+                de cada día— y los tres vivían en texto de 11px, gris, alineado a
+                la derecha. Un dato que hay que buscar no está puesto: quien
+                cuenta dinero necesita leer de un vistazo cuánto tiene que
+                cuadrar, y eso no se lee en una nota al pie.
+
+                Acá va el total de la etapa a 26px y el desglose por día a 18px,
+                los dos en negrita y con cifras alineadas. El desglose es de la
+                ETAPA entera, no de una sala: es la pregunta de quien tiene las
+                bolsas de todas las salas sobre la mesa.
+
+                Sin `bolsas_ver_montos` no hay franja — no es que se muestre
+                vacía: sin cifras no queda nada que mostrar. */}
+            {!plegada && verMontos && total > 0 && (
+                <div data-surface="card"
+                    className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 px-4 py-3">
+                    <div>
+                        <div className="text-display font-black tabular-nums text-content leading-none">
+                            {formatMoney(montoTotal)}
+                        </div>
+                        <div className="text-caption text-content-2 mt-1.5">
+                            en {total} {total === 1 ? 'bolsa' : 'bolsas'}
+                        </div>
+                    </div>
+                    {resumenPorDia.length > 1 && (
+                        <div className="flex flex-wrap gap-x-8 gap-y-3">
+                            {resumenPorDia.map((d) => (
+                                <div key={d.fecha}>
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                        {rotularDia(d.fecha)}
+                                    </div>
+                                    <div className="text-title-sm font-bold tabular-nums text-content mt-0.5">
+                                        {formatMoney(suma(d.lista))}
+                                    </div>
+                                    <div className="text-micro text-content-3 tabular-nums">
+                                        {d.lista.length} {d.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
             {!plegada && accion}
             {plegada ? null : total === 0
                 ? <EmptyState linea icon={Icon} title={vacio} />
@@ -456,10 +518,10 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                     Baja un escalón de peso respecto al de la etapa y
                                     sube uno respecto al del día, para que la jerarquía
                                     se lea sin leer los rótulos. */}
-                                <span className="text-caption text-content-3 tabular-nums">
+                                <span className="text-caption text-content-3 tabular-nums shrink-0">
                                     {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
                                     {verMontos && (
-                                        <> · <b className="font-bold text-content-2">{formatMoney(suma(g.lista))}</b></>
+                                        <> · <b className="text-body-xl font-bold text-content">{formatMoney(suma(g.lista))}</b></>
                                     )}
                                 </span>
                                 {accionDeGrupo?.(g)}
@@ -473,18 +535,20 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                             <div key={d.fecha ?? 'todo'} className="space-y-1.5">
                                 {d.fecha && (
                                     <div className="flex items-baseline justify-between gap-3 px-1">
-                                        <span className="text-caption font-semibold text-content-2">
+                                        <span className="text-subtitle font-bold text-content-2">
                                             {rotularDia(d.fecha)}
                                         </span>
-                                        {/* Con un solo día, su cuenta SERÍA la de la sala,
-                                            palabra por palabra. Repetir la misma cifra dos
-                                            renglones seguidos no informa: enseña a no leer
-                                            ninguna de las dos. Queda el rótulo del día, que
-                                            sí dice algo que la sala no dice. */}
+                                        {/* Con un solo día su cuenta sería la de la sala,
+                                            palabra por palabra, así que ahí se calla: repetir
+                                            la misma cifra dos renglones seguidos enseña a no
+                                            leer ninguna de las dos. Cuando SÍ dice algo
+                                            distinto, se dice con tamaño de leerse. */}
                                         {(g.dias?.length ?? 1) > 1 && (
-                                            <span className="text-micro text-content-3 tabular-nums">
+                                            <span className="text-caption text-content-3 tabular-nums shrink-0">
                                                 {d.lista.length} {d.lista.length === 1 ? 'bolsa' : 'bolsas'}
-                                                {verMontos && ` · ${formatMoney(suma(d.lista))}`}
+                                                {verMontos && (
+                                                    <> · <b className="font-bold text-content-2">{formatMoney(suma(d.lista))}</b></>
+                                                )}
                                             </span>
                                         )}
                                     </div>

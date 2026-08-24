@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.736.1 — Bolsas: los totales del conteo se leen de un vistazo
+
+*«aun no veo tan claro la informacion, se ve pequeno, no tiene peso, no veo la
+venta diaria total y la venta del total de las bolsas»*.
+
+Los números **estaban** — en el encabezado de la etapa, en el de cada sucursal y
+en el de cada día — y los tres vivían en texto de 11px, gris, alineado a la
+derecha. Un dato que hay que buscar no está puesto: quien cuenta dinero necesita
+leer de un vistazo cuánto tiene que cuadrar, y eso no se lee en una nota al pie.
+
+Cada etapa abre ahora con una franja de totales: **el total a 26px** con su
+cuenta de bolsas debajo, y a la derecha **el desglose por día a 18px** — el de
+la etapa entera, juntando las seis salas, que es la pregunta de quien tiene las
+bolsas de todas sobre la mesa.
+
+```
+$3,161.57                         HOY          AYER
+en 6 bolsas                  $1,958.02    $1,203.55
+                               3 bolsas      3 bolsas
+```
+
+Y adentro, los otros dos totales subieron con él: el de la **sucursal** pasó a
+16px en negrita sobre tinta plena, y el rótulo del **día** a 15px. La jerarquía
+se lee ahora sin leer los rótulos: 26 → 18 → 16 → 15.
+
+El desglose por día sale sólo cuando hay más de uno: con un solo día repetiría
+el total grande que tiene al lado.
+
 ## v2.736.0 — Entre salas sí se manda, pero sólo por baja rotación
 
 **El freno estaba en el lugar equivocado, y lo destapó probarlo en pantalla.** El

@@ -1195,3 +1195,58 @@ casos el `documento_numero` es, literalmente, el propio sello recortado.
 Queda abierto y mejor descrito de lo que estaba: de «6 pares comparten sello» a
 «dos sellos están en la compra equivocada, y acá está por dónde puede haber
 pasado».
+
+### 8.21 Rehacer el entorno de pruebas destapó que el historial no se puede reproducir
+
+El branch nuevo se creó, y **falló igual que el viejo**. Eso descartó la
+hipótesis cómoda —«el branch estaba sucio»— y dejó la incómoda: **la historia de
+migraciones no se puede replicar sobre una base vacía**. Se detuvo en la
+**331 de 543**.
+
+La causa es de manual y estaba a la vista:
+
+```sql
+SELECT cron.unschedule('cortes-caja-1min');
+```
+
+`cron.unschedule` **lanza** si el trabajo no existe. En producción existe —porque
+alguien lo creó antes— así que la migración pasa y nadie se entera. En una base
+vacía aborta, y con ella **las 212 migraciones que venían después**.
+
+Y el trabajo que faltaba, `cortes-caja-1min`, **ninguna migración lo crea**: se
+programó en producción a mano, y una migración posterior lo dio por hecho.
+
+> Esto no es un problema del entorno de pruebas. Es que **el historial no se
+> puede reproducir**, que es exactamente lo que hace falta el día que haya que
+> reconstruir la base desde cero.
+
+De nueve usos de `cron.unschedule`, **cinco ya tenían la guarda correcta** —el
+patrón estaba en el repo— y una vive dentro de una función (corre al llamarla, no
+al replicar). Las tres que faltaban quedaron con
+`WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = …)`, y `gate:migrations`
+lo vigila desde ahora, probado con una regresión que caza la mala y deja pasar la
+guardada.
+
+**Y hay un módulo entero fuera del control de versiones.** Con el branch ya al
+día (545 migraciones, la misma versión máxima que prod), la comparación de
+objetos dejó **dos tablas y siete funciones que existen sólo en producción**, y
+las nueve son del mismo lugar:
+
+| | |
+|---|---|
+| tablas | `contabilidad_config`, `periodos_fiscales` |
+| funciones | `cerrar_periodo_fiscal`, `reabrir_periodo_fiscal`, `get_periodo_fiscal`, `get_periodos_fiscales`, `calc_credito_declarable`, `get_clasificacion_fiscal_pendiente`, `resolver_clasificacion_pendiente` |
+
+**El cierre de período fiscal —lo que usa el contador para cerrar el mes— existe
+sólo en producción.** Una reconstrucción no lo tendría, y nadie lo sabía porque
+nunca se había intentado reconstruir.
+
+**Un tercer hallazgo, más chico y del mismo tipo:** la semilla creaba la cuenta
+de pruebas sin `must_change_password: false`, y el portal exige que sea
+explícitamente `false` (`null` cuenta como «tiene que cambiarla»). O sea que la
+reconstrucción entraba bien y **aterrizaba en «Cambiá tu contraseña» sin poder
+pasar de ahí**. Corregido en la semilla.
+
+Los tres se descubrieron por lo mismo: **nadie había ejercitado nunca el camino
+de reconstrucción.** Un procedimiento de recuperación que nunca se corre no es un
+procedimiento, es una intención.

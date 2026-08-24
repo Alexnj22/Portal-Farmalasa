@@ -68,7 +68,14 @@ BEGIN
     extensions.crypt('pruebas2026', extensions.gen_salt('bf')),
     now(), now(), now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
-    jsonb_build_object('code', '9001'),
+    -- `must_change_password: false` es OBLIGATORIO y se olvidó hasta el
+    -- 2026-08-24. Sin él la clave queda en `null`, y `AuthContext` exige que sea
+    -- explícitamente `false` (`meta?.must_change_password !== false` da true con
+    -- `null`): la cuenta entra bien pero aterriza en «Cambiá tu contraseña —
+    -- primer acceso» y no pasa de ahí. O sea que **una reconstrucción del
+    -- entorno de pruebas no quedaba usable**, y sólo se notó al rehacer el
+    -- branch por primera vez desde que existe esta semilla.
+    jsonb_build_object('code', '9001', 'must_change_password', false),
     '', '', '', '', '', '', '', ''
   );
 

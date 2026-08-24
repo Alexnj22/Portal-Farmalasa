@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, CheckCircle2, ScanLine, Send } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, ScanLine, Send, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
@@ -40,6 +40,7 @@ import { fetchEnviosVivos, momentoDelEnvio } from '../../data/envios';
 // que abrir el modal muestra el contenido en vez de un esqueleto.
 function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
     const [abrirEscaneo, setAbrirEscaneo] = useState(false);
+    const [abrirRetiro,  setAbrirRetiro]  = useState(false);
     const { hasPermission, getScope, user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
@@ -154,7 +155,18 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     onClick={() => setAbrirEscaneo(true)}>
                     Confirmar escaneando el ticket
                 </Button>
+                <Button variant="secondary" icon={Truck}
+                    className="min-h-[var(--tap-min)] w-full"
+                    onClick={() => setAbrirRetiro(true)}>
+                    Lo que llevas
+                </Button>
             </div>
+
+            {abrirRetiro && (
+                <Suspense fallback={null}>
+                    <RetiroModal abierto onCerrar={() => setAbrirRetiro(false)} onCambio={onCambio} />
+                </Suspense>
+            )}
 
             {abrirEscaneo && (
                 <Suspense fallback={null}>
@@ -343,6 +355,7 @@ const FilaDevolucionPorRecibir = lazy(() =>
     import('../traslados/FilasEnvio').then(m => ({ default: m.FilaDevolucionPorRecibir })));
 const EnviarProductoModal = lazy(() => import('./EnviarProductoModal'));
 const ConfirmarPorCodigo  = lazy(() => import('../traslados/ConfirmarPorCodigo'));
+const RetiroModal         = lazy(() => import('../traslados/RetiroModal'));
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 //

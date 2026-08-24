@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, ScanLine, Send } from 'lucide-react';
+import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, ScanLine, Send, Truck } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -30,6 +30,7 @@ import { ChipPersona } from './solicitudes/PersonasSolicitud';
    hacen falta cuando alguien va a confirmar una llegada, no al abrir la
    pantalla. */
 const ConfirmarPorCodigo = lazy(() => import('./traslados/ConfirmarPorCodigo'));
+const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
@@ -216,6 +217,8 @@ export default function TrasladosView() {
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     /* El diálogo que confirma una llegada escaneando el ticket de la bolsa. */
     const [abrirEscaneo, setAbrirEscaneo] = useState(false);
+    /* El recorrido: escanear lo que uno se lleva y responder por ello. */
+    const [abrirRetiro,  setAbrirRetiro]  = useState(false);
     const [error,        setError]        = useState('');
     /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
      * contestaron no están en `porRecibir` —esa lista es de lo que ya salió—,
@@ -448,12 +451,20 @@ export default function TrasladosView() {
             {(alcanceTodas || enHistorial || enRecibir) && !enEnvios && (
               <div className="flex justify-end px-4 md:px-5 pt-4">
                 <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}
-                    acciones={enRecibir ? [{
-                        key: 'escanear',
-                        icon: ScanLine,
-                        label: 'Confirmar escaneando',
-                        onClick: () => setAbrirEscaneo(true),
-                    }] : []}>
+                    acciones={enRecibir ? [
+                        {
+                            key: 'escanear',
+                            icon: ScanLine,
+                            label: 'Confirmar escaneando',
+                            onClick: () => setAbrirEscaneo(true),
+                        },
+                        {
+                            key: 'retiro',
+                            icon: Truck,
+                            label: 'Lo que llevas',
+                            onClick: () => setAbrirRetiro(true),
+                        },
+                    ] : []}>
                     {alcanceTodas && (
                         <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                             <FilterBar.Sucursal value={sala || null} onChange={v => setSala(v || '')} options={salaOpts} />
@@ -762,6 +773,16 @@ export default function TrasladosView() {
                                 abierto
                                 onCerrar={() => setAbrirEscaneo(false)}
                                 onHecho={cargar}
+                            />
+                        </Suspense>
+                    )}
+
+                    {abrirRetiro && (
+                        <Suspense fallback={null}>
+                            <RetiroModal
+                                abierto
+                                onCerrar={() => setAbrirRetiro(false)}
+                                onCambio={cargar}
                             />
                         </Suspense>
                     )}

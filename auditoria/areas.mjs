@@ -543,6 +543,7 @@ export const AREAS = [
         archivos: [
             'src/views/TrasladosView.jsx', 'src/views/traslados/',
             'src/data/traslados.js', 'src/data/envios.js', 'src/data/trasladoSwitch.js',
+            'src/data/retiros.js',
             'src/store/composicionTraslado.js',
         ],
         tablas: ['envio_linea', 'traslado_interruptor'],

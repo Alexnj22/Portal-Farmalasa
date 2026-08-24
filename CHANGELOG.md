@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.732.1 — El código del recorrido, que quedó fuera de su propia entrada
+
+Sin cambios de comportamiento respecto de v2.732.0: **es el código que aquella
+entrada describe.**
+
+Otra sesión barrió el árbol y se llevó en su commit el `version.js` y el
+`CHANGELOG.md` de v2.732.0 —la entrada del recorrido— sin los archivos que la
+implementan, que todavía se estaban escribiendo. O sea que durante unos minutos
+el changelog anunciaba una función que no existía en el código.
+
+Es exactamente el modo de falla que CLAUDE.md describe en «hay OTRAS sesiones
+trabajando en este mismo árbol», visto desde el otro lado: no se pierde trabajo
+—lo commiteado se recupera— pero un commit ajeno puede llevarse media
+funcionalidad y dejar el repo diciendo algo que todavía no es cierto.
+
 ## v2.732.0 — El recorrido: quien carga las bolsas responde por ellas
 
 El circuito tenía DOS estados —despachada y recibida— y entre los dos la bolsa

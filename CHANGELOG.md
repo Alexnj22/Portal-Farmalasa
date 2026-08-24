@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.738.1 — El lector que manda teclas sin nombre, y una pantalla que dice que llego
+
+> «el escaner con el lector aun no funciona, con la camara si.»
+
+El arreglo anterior (v2.737.1) cerró **una** de las formas de perder una ráfaga
+—la que muere sin Enter— y el reporte sobrevivió. Así que esta entrega hace dos
+cosas: cierra la otra forma conocida, y **hace visible lo que llega**, para que
+el próximo escaneo sea un dato y no otra hipótesis.
+
+── El lector que manda teclas sin nombre ─────────────────────────────────────
+
+`e.key` es lo normal y mide un carácter. Pero hay lectores —y capas de
+emulación de teclado— que entregan `key: 'Unidentified'` y dejan la identidad
+sólo en `e.code`. El filtro era `if (e.key.length !== 1) return;`, o sea que esa
+ráfaga se descartaba **entera, tecla por tecla y sin dejar rastro**: en pantalla
+se ve idéntico a un lector desenchufado.
+
+Ahora, cuando `key` no sirve, el carácter sale de `e.code` — y el respaldo es
+estrecho a propósito (`Digit`, `Numpad`, `Key`) para que un modificador no se
+convierta en letra: `ShiftLeft` no coincide con ninguno.
+
+── Y si aun así no entra, la pantalla lo dice ────────────────────────────────
+
+«No funciona» abarca por lo menos tres cosas que se arreglan en lugares
+distintos, y desde afuera las tres se ven igual: la pantalla quieta. El diálogo
+de **Recibir traslado** muestra ahora qué pasó con la última lectura que no
+entró:
+
+- **«mandó N teclas que esta computadora no pudo interpretar»** — el lector sí
+  manda; hay que mirarle el idioma de teclado o el modo de emulación.
+- **«N teclas · hueco máximo X ms · terminó sin Enter → "32278"»** — llegó
+  completa y se puede ver el número leído.
+- **nada en absoluto** — el lector no está mandando teclas a esa pantalla.
+
+El texto leído sólo se guarda donde el código **no** es una credencial. En las
+pantallas de carné el diagnóstico cuenta teclas y huecos, nunca el contenido.
+
+Siete pruebas nuevas (`tests/unit/capturaDelLector.test.js`), **verificadas
+rompiendo el código**: sin el respaldo de `code` fallan 2, y sin el cierre de
+ráfaga en las teclas ilegibles falla la que cuenta el caso que más importa.
+
 ## v2.738.0 — Contar una bolsa la anota; cerrarlas es confirmar el conteo entero
 
 *«al confirmar una bolsa pasa a confirmado de un solo? debe pasar hasta que se

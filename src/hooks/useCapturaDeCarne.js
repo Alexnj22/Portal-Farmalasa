@@ -49,18 +49,47 @@ const FIN_DE_RAFAGA_MS = 500;
 // es un carné.
 const MINIMO_DE_TECLAS = 3;
 
+/**
+ * El carácter de una tecla, incluso cuando el lector no lo dice.
+ *
+ * `e.key` es lo normal y mide 1. Pero hay lectores —y capas de emulación de
+ * teclado— que entregan `key: 'Unidentified'` y dejan la identidad sólo en
+ * `e.code`: con el filtro `e.key.length !== 1` a secas, esa ráfaga se descarta
+ * **entera y sin dejar rastro**, que se ve exactamente igual que un lector que
+ * no manda nada.
+ *
+ * El respaldo es deliberadamente estrecho —`Digit`, `Numpad` y `Key`— para no
+ * convertir en carácter a un modificador: `ShiftLeft` no coincide con ninguno.
+ */
+function caracterDe(e) {
+    if (typeof e.key === 'string' && e.key.length === 1) return e.key;
+    const c = e.code || '';
+    if (/^(Digit|Numpad)\d$/.test(c)) return c.slice(-1);
+    if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+    return null;
+}
+
 export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
     const { aceptarTecleado = false, sinEnter = false } = opciones;
     // Cuántas teclas lleva la ráfaga en curso: es lo que se dibuja como puntos,
     // y por eso es estado y no un ref. El código NUNCA se pinta.
     const [teclas, setTeclas] = useState(0);
     const [manual, setManual] = useState(false);
+    /* Qué llegó en la última ráfaga, para PODER MIRARLO.
+     *
+     * Sin esto, «el lector no funciona» y «el lector no manda nada» se ven
+     * idénticos en pantalla, y las dos hipótesis se arreglan en lugares
+     * distintos. Es contabilidad de eventos, no del contenido: el `texto` sólo
+     * se guarda donde el código no es una credencial (`aceptarTecleado`). */
+    const [diagnostico, setDiagnostico] = useState(null);
 
     const bufferRef = useRef('');
     const ultimaRef = useRef(0);
     const timerRef = useRef(null);
     const manualRef = useRef(false);
     const alLeerRef = useRef(alLeer);
+    const huecoMaxRef = useRef(0);
+    const ignoradasRef = useRef(0);
 
     useEffect(() => { alLeerRef.current = alLeer; });
 
@@ -75,43 +104,17 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
 
     useEffect(() => {
         if (!activo) return undefined;
-        const alTeclear = (e) => {
-            if (e.key === 'Escape') return;
-            const ahora = Date.now();
-            const hueco = ahora - ultimaRef.current;
-            ultimaRef.current = ahora;
+        /** Lo que llegó, dicho en números — se pinta donde haya dónde mirarlo. */
+        const anotar = (leido, conEnter, entregado, motivo) => setDiagnostico({
+            teclas: leido.length,
+            huecoMax: Math.round(huecoMaxRef.current),
+            ignoradas: ignoradasRef.current,
+            conEnter, entregado, motivo,
+            texto: aceptarTecleado ? leido : null,
+        });
 
-            if (e.key === 'Enter') {
-                const leido = bufferRef.current;
-                bufferRef.current = '';
-                setTeclas(0);
-                clearTimeout(timerRef.current);
-                if (leido.length >= MINIMO_DE_TECLAS && (aceptarTecleado || !manualRef.current)) {
-                    // Una lectura aceptada borra el aviso de «tecleado»: es la
-                    // prueba de que ahora sí entró por el lector. Si la ráfaga
-                    // venía marcada como manual el aviso se queda, que es lo
-                    // que explica por qué no pasó nada.
-                    setManual(false);
-                    alLeerRef.current?.(leido);
-                }
-                manualRef.current = false;
-                return;
-            }
-            if (e.key.length !== 1) return;
-
-            if (bufferRef.current.length > 0 && hueco > GAP_HUMANO_MS) {
-                // Hueco humano en mitad de la ráfaga: se descarta lo leído y se
-                // arranca de nuevo desde esta tecla.
-                manualRef.current = true;
-                setManual(true);
-                bufferRef.current = e.key;
-                setTeclas(1);
-            } else {
-                if (bufferRef.current.length === 0) manualRef.current = false;
-                bufferRef.current += e.key;
-                setTeclas(bufferRef.current.length);
-            }
-
+        /** El plazo que cierra la ráfaga cuando dejan de llegar teclas. */
+        const armarFin = () => {
             clearTimeout(timerRef.current);
             timerRef.current = setTimeout(() => {
                 /* La ráfaga murió sin Enter. Con `sinEnter` se entrega igual
@@ -120,13 +123,86 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
                  * él se olvida, para que el próximo escaneo no arranque con la
                  * mitad del anterior pegada adelante. */
                 const leido = bufferRef.current;
+                const tecleada = manualRef.current;
                 const valia = leido.length >= MINIMO_DE_TECLAS
-                    && (aceptarTecleado || !manualRef.current);
+                    && (aceptarTecleado || !tecleada);
+                const entregado = sinEnter && valia;
                 bufferRef.current = '';
                 manualRef.current = false;
                 setTeclas(0);
-                if (sinEnter && valia) { setManual(false); alLeerRef.current?.(leido); }
+                anotar(leido, false, entregado,
+                    entregado ? null
+                        : (leido.length < MINIMO_DE_TECLAS ? 'corta'
+                            : (!sinEnter ? 'sin-enter' : 'tecleada')));
+                huecoMaxRef.current = 0;
+                ignoradasRef.current = 0;
+                if (entregado) { setManual(false); alLeerRef.current?.(leido); }
             }, FIN_DE_RAFAGA_MS);
+        };
+
+        const alTeclear = (e) => {
+            if (e.key === 'Escape') return;
+            const ahora = Date.now();
+            const hueco = ahora - ultimaRef.current;
+            ultimaRef.current = ahora;
+
+            if (e.key === 'Enter') {
+                const leido = bufferRef.current;
+                const tecleada = manualRef.current;
+                bufferRef.current = '';
+                setTeclas(0);
+                clearTimeout(timerRef.current);
+                const entregado = leido.length >= MINIMO_DE_TECLAS
+                    && (aceptarTecleado || !tecleada);
+                anotar(leido, true, entregado,
+                    entregado ? null : (leido.length < MINIMO_DE_TECLAS ? 'corta' : 'tecleada'));
+                if (entregado) {
+                    // Una lectura aceptada borra el aviso de «tecleado»: es la
+                    // prueba de que ahora sí entró por el lector. Si la ráfaga
+                    // venía marcada como manual el aviso se queda, que es lo
+                    // que explica por qué no pasó nada.
+                    setManual(false);
+                    alLeerRef.current?.(leido);
+                }
+                manualRef.current = false;
+                huecoMaxRef.current = 0;
+                ignoradasRef.current = 0;
+                return;
+            }
+
+            const car = caracterDe(e);
+            if (car === null) {
+                // Una tecla que llegó y no se pudo convertir en carácter. Se
+                // CUENTA en vez de desaparecer: si son muchas, el lector sí está
+                // mandando y el problema es cómo se lee, no que no mande.
+                //
+                // Y arma el fin de ráfaga IGUAL. Si no, un lector que manda sólo
+                // teclas ilegibles no dejaría ni un diagnóstico —el plazo sólo
+                // se armaba al aceptar un carácter—, que es justo el caso que
+                // esta cuenta existe para delatar.
+                ignoradasRef.current += 1;
+                armarFin();
+                return;
+            }
+
+            if (bufferRef.current.length > 0) {
+                huecoMaxRef.current = Math.max(huecoMaxRef.current, hueco);
+            }
+
+            if (bufferRef.current.length > 0 && hueco > GAP_HUMANO_MS) {
+                // Hueco humano en mitad de la ráfaga: se descarta lo leído y se
+                // arranca de nuevo desde esta tecla.
+                manualRef.current = true;
+                setManual(true);
+                bufferRef.current = car;
+                setTeclas(1);
+            } else {
+                if (bufferRef.current.length === 0) manualRef.current = false;
+                bufferRef.current += car;
+                setTeclas(bufferRef.current.length);
+            }
+
+            armarFin();
         };
         document.addEventListener('keydown', alTeclear, { capture: true });
         return () => {
@@ -135,5 +211,5 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
         };
     }, [activo, aceptarTecleado, sinEnter]);
 
-    return { teclas, manual, limpiar };
+    return { teclas, manual, limpiar, diagnostico };
 }

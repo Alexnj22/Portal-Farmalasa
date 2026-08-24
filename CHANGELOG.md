@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.6 — 54 pruebas: la bandeja, la capa fiscal y la de compras
+
+**La bandeja de solicitudes** (22, con cinco catálogos de sala). Se prueba por lo
+que ya le pasó TRES veces: un filtro del navegador más angosto que el RLS la dejó
+vacía, y cero filas se ve idéntico a «no hay solicitudes». Quedan anclados que
+pagine, que el orden sea total, que «sólo míos» sean **dos** cosas —lo que mandé
+y lo que me toca contestar como compañero—, y que el recorte por sala **no pueda
+descartar los traslados**: es el único tipo donde quien pide y quien contesta
+están en salas distintas, y con el filtro a secas Bodega veía 0 de 4. Más: la
+disponibilidad se PREGUNTA en vez de leer la tabla, y «quién es admin» sale de
+`system_role` y no de una columna que no existe — la que dejaba solicitudes sin
+aprobador.
+
+**La capa fiscal** (16). El cierre de período resuelve sus cuatro frenos en la
+base, y lo declarado nace en `null` porque **«no se sabe» no es «coincide»** —
+aunque un cero sí se manda, que es un dato. Reabrir exige motivo y va por
+función: sin eso, un período mal cerrado se corrige con un UPDATE a mano y la
+cadena del remanente se rompe en silencio. El Corte Z trae los dos lados **en la
+misma fila** con la diferencia ya calculada, porque armar el cotejo en el
+frontend es donde se cuela comparar contra la columna equivocada. Y el libro de
+compras declarable **no recibe sucursal, y no es un olvido**: se presenta por NRC
+y los documentos que llegaron por correo no tienen sucursal guardada — aceptar el
+parámetro haría que pedir una sala omitiera cientos de CCF sin avisar.
+
+**La capa de compras** (16). `compra_pagos` y `compra_pago_aplicado` no tienen
+policy de escritura **a propósito**: un INSERT suelto podría aplicar a una
+factura más de lo que se le debe, y ese error no se ve hasta que el saldo no
+cuadra contra el banco. Y el monto del pago **es la suma de lo aplicado**, no un
+número aparte, así no puede existir un pago de $500 repartido en $300. La deuda
+se cuenta desde la fecha del DTE y no desde la compra registrada, que es lo que
+hace aparecer las facturas que llegaron por correo y nadie registró.
+
+Solicitudes, Min·Máx, Horarios y Libros fiscales llegan a 95 en pruebas.
+
 ## v2.733.5 — El recorrido nunca sabía en qué sala estabas
 
 Ocho correcciones de una revisión de código sobre lo de ayer. La primera es la

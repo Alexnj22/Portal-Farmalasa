@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.5 — la foto del daño se abre sin salir del portal
+
+La miniatura de `EvidenciaFotos` era un `<a target="_blank">`. Mirar la foto
+sacaba a quien estaba decidiendo **fuera del portal**, y la pantalla que dejaba
+atrás no es una lista: es un formulario a medio contestar —qué renglón se queda
+y cuál se devuelve— que sólo vive en memoria. Volver de la pestaña de la foto es
+un viaje de ida y vuelta por el navegador que en el teléfono ni siquiera es
+obvio. La foto es la evidencia **para** esa decisión, así que ahora se abre sin
+soltarla, con `PhotoLightbox`, que es el visor canónico desde la auditoría del
+2026-07-29. Alcanza a los dos consumidores: la avería de un envío y el descarte
+por daño de una solicitud.
+
+**Y ahí apareció el defecto que ya estaba vivo.** El visor no se apila en
+`dialogosAbiertos` —no es un `ModalShell`, es un portal suelto—, así que para la
+pila el diálogo de atrás seguía siendo el tope y su `Escape` seguía armado. Una
+sola tecla cerraba **los dos**: la foto y el formulario debajo, que es
+exactamente lo que no se puede perder. `ModalShell` escucha en `window` y el
+visor en `document`, o sea un escalón antes en el burbujeo: `stopPropagation`
+lo corta ahí. Corregido en el canónico, así que también arregla el comprobante
+de una salida de bolsa, que tenía el mismo problema desde que se escribió.
+
+**Un botón de menos donde no atajaba nada.** La tarjeta de «te enviaron» ofrecía
+«Aceptar todo» siempre. Con **un** renglón ese botón y su «Me la quedo» producen
+el mismo estado exacto, así que quedaban tres botones para una decisión de dos
+caminos. Ahora aparece sólo con dos renglones o más. No se toca la regla de al
+lado —nada viene marcado de antemano y «Confirmar» sigue siendo el único que
+escribe—: ésa es la que impide que confirmar sin mirar acepte la caja entera.
+
 ## v2.743.4 — Diecisiete tarjetas a mano menos, y cuatro no eran tarjetas
 
 El ratchet de `tarjeta-a-mano` baja de **65 a 48**. Lo que vale la pena anotar no

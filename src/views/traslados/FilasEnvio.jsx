@@ -275,10 +275,19 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
             </p>
 
             <div className="flex items-center gap-1.5">
-                <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
-                    onClick={aceptarTodo} disabled={enviando}>
-                    Aceptar todo
-                </Button>
+                {/* El atajo sólo existe cuando hay algo que atajar. Con UN
+                    renglón, «Aceptar todo» y su «Me la quedo» producen el mismo
+                    estado exacto —`aceptarTodo()` sobre un único elemento— y la
+                    tarjeta terminaba con TRES botones para una decisión que es
+                    de dos caminos. Reportado sobre una avería de un producto.
+                    No se toca la regla de al lado: nada viene marcado y
+                    «Confirmar» sigue siendo el único que escribe. */}
+                {pendientes.length > 1 && (
+                    <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
+                        onClick={aceptarTodo} disabled={enviando}>
+                        Aceptar todo
+                    </Button>
+                )}
                 <Button size="sm" variant="primary" icon={enviando ? Loader2 : Check}
                     className="min-h-[var(--tap-min)] flex-1"
                     onClick={confirmar} disabled={!completa || enviando}>

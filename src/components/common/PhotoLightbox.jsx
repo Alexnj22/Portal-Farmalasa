@@ -15,10 +15,24 @@ import Button from './Button';
 // `alt` es obligatorio a propósito: la foto es el contenido acá, no decoración.
 // Las tres versiones traían `alt=""`, que para una imagen que el usuario abrió
 // deliberadamente es justo lo contrario de lo que corresponde.
+//
+// ── Por qué el Escape se DETIENE acá (2026-08-24) ─────────────────────────
+// El visor se abre a menudo DENTRO de un diálogo —el comprobante de una salida
+// de bolsa, la foto del daño de un envío—, y no se apila en `dialogosAbiertos`
+// porque no es un `ModalShell`: es un portal suelto. Entonces para la pila el
+// diálogo de atrás sigue siendo el tope, y su `Escape` sigue vivo. Sin frenar
+// el evento, una sola tecla cerraba los DOS: la foto y el formulario a medio
+// contestar que había debajo, que es justo lo que no se puede perder.
+// `ModalShell` escucha en `window` y esto en `document`, o sea un escalón antes
+// en el burbujeo: `stopPropagation` lo corta ahí y el de atrás ni se entera.
 export default function PhotoLightbox({ src, alt, onClose, zClass = 'z-flyout' }) {
     useEffect(() => {
         if (!src) return;
-        const handler = e => { if (e.key === 'Escape') onClose?.(); };
+        const handler = e => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            onClose?.();
+        };
         document.addEventListener('keydown', handler);
         return () => document.removeEventListener('keydown', handler);
     }, [src, onClose]);

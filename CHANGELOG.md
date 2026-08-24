@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.2 — El registro deja de regenerar las dos etiquetas corregidas
+
+La corrección de v2.743.1 estaba escrita **sólo en el registro**, y el registro
+se regenera: `auditoria/puntuar.mjs` es quien fabrica las etiquetas, así que la
+próxima corrida habría vuelto a escribir «índice nunca usado» y la comparación
+del latido con el churn de `inventory`. Una corrección que la herramienta
+deshace sola no es una corrección.
+
+Las dos quedan en la fuente, con la medición al lado, y el peso de los índices
+baja de 3 a 1 por índice. **No se bajó para que calle**: se bajó porque el
+hallazgo dejó de ser accionable — pasó de «índice inútil, borrarlo» a «esta
+ventana de cuatro días no alcanza para juzgarlo», que es deuda de medición y no
+de la base. Lo que los cierra es volver a medirlos con una ventana larga.
+
+También se cierra el hallazgo que v2.743.0 resolvió («`dui`, `afp_number` e
+`isss_number` siguen en `employees_safe`»), con la decisión que le faltaba
+escrita en su lugar: van bajo `staff_detail`, y uno siempre ve lo suyo. El eje de
+seguridad de Personal pasa de 96 a 98.
+
+Y `src/views/bolsas/CircuitoDeBolsas.jsx`, que llegó sin área, queda mapeado al
+área de cortes y bolsas. Un archivo sin área no entra en ningún porcentaje: el
+portal diría estar auditado sobre un denominador que ya no es el suyo.
+
 ## v2.743.1 — Dos hallazgos de la auditoría medían bien y concluían mal
 
 Ninguno de los dos era un defecto del portal, y en uno de ellos la acción que la

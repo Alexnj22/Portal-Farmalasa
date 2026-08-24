@@ -385,7 +385,7 @@ export const AREAS = [
         modulos: ['cortes_caja', 'bolsas', 'bolsas_conteo', 'bolsas_ver_montos', 'bolsas_ver_cards'],
         rutas: ['/cortes'],
         archivos: [
-            'src/views/CortesView.jsx', 'src/views/cortes/',
+            'src/views/CortesView.jsx', 'src/views/cortes/', 'src/views/bolsas/',
             'src/components/cortes/', 'src/components/bolsas/',
             'src/data/cortes.js', 'src/data/bolsas.js',
             'src/hooks/useCerrarBolsa.js', 'src/hooks/useResolverCorte.js', 'src/hooks/useCortesDeAvisos.js',

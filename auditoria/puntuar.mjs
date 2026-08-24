@@ -135,11 +135,30 @@ const SERVIDOR = {
     // auto-calculate-minmax— y un índice que sólo se usa el día 1 se ve
     // exactamente igual que uno muerto.
     //
-    // Se dejan anotados con su peso, y NO se borran: volver a medirlos después
-    // del cierre del 1 de septiembre es lo único que convierte este cero en una
-    // decisión. La evidencia más fuerte es la de `products` —17,1 millones de
-    // lecturas de la tabla y cero usos de sus dos índices trigram— pero ni esa
-    // basta si esos índices sirven a una búsqueda que nadie hizo en tres días.
+    // ⚠️ MEDIDO el 2026-08-24, y el resultado da vuelta el hallazgo. La duda que
+    // este comentario ya tenía anotada —«ni esa basta si esos índices sirven a
+    // una búsqueda que nadie hizo en tres días»— resultó ser exactamente el
+    // caso, y se comprobó de tres maneras:
+    //
+    //   · `pg_postmaster_start_time()` daba **4 días y 1 hora**. La ventana no es
+    //     «siempre»: empieza en el último arranque;
+    //   · el planificador SÍ entra por ellos — `EXPLAIN (COSTS OFF)` sobre
+    //     `inventory_grouped_mv WHERE descripcion_norm ILIKE '%amoxi%'` usa
+    //     `idx_igmv_desc_norm_trgm`;
+    //   · el contador funciona: se leyó en 0, se hizo UNA búsqueda real, volvió
+    //     a leerse en **1**.
+    //
+    // O sea que el cero no dice «este índice no acelera nada»: dice «en esta
+    // ventana nadie ejecutó esa consulta», que es un dato sobre el USO del
+    // portal. Y la acción que la etiqueta vieja insinuaba habría hecho daño —
+    // borrar el trigram deja al buscador de inventario haciendo un barrido
+    // completo la próxima vez que alguien lo abra.
+    //
+    // Por eso el peso bajó de 3 a 1: **no es deuda de la base, es una medición
+    // que esta ventana no alcanza a hacer.** No se bajó para que calle — se
+    // bajó porque el hallazgo dejó de ser accionable, que es distinto. Siguen
+    // anotados, y lo que los cierra es volver a medirlos con una ventana larga
+    // (o registrar el `idx_scan` antes y después de un mes de uso real).
     indices_muertos: {
         inventario: ['idx_igmv_desc_trgm (1976 kB)', 'idx_igmv_desc_norm_trgm (1976 kB)',
                      'idx_conteo_items_source_sync_key (768 kB)', 'idx_mv_stock_analysis_sucursal (224 kB)'],
@@ -150,8 +169,19 @@ const SERVIDOR = {
     },
 
     // Escrituras sin inserción por hora, del gate de eficiencia. 402/h sobre SEIS
-    // filas es el latido de las cajas de impresión reescribiendo su fila entera.
-    churn: { impresion: '402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones' },
+    // filas es el latido de las cajas de impresión.
+    //
+    // ⚠️ MEDIDO el 2026-08-24: el número es exacto y la conclusión estaba al
+    // revés. Son **100% HOT** (37.299 updates, 37.299 HOT), o sea que ninguna de
+    // esas escrituras rehace una entrada de índice — que es justamente la parte
+    // cara—, y la tabla entera pesa **152 kB** con sus 3 índices. Ponerlo junto
+    // al churn de `inventory` (935 M de updates sobre 24 K filas con **0% HOT**,
+    // que agotó el Disk IO budget) es comparar dos cosas que sólo se parecen en
+    // la forma de la frase.
+    //
+    // Lo único real que queda son **628 autovacuums en 4 días** sobre 6 filas,
+    // que se arregla subiéndole el `autovacuum_vacuum_scale_factor` a esa tabla.
+    churn: { impresion: '402 escrituras/h sobre 6 filas de impresion_dispositivos — es el latido de las 6 cajas, y es 100% HOT (no rehace índices): 152 kB en total, nada que ver con el churn de inventory' },
 };
 
 // ── Gates: corridos el 2026-08-23 ───────────────────────────────────────────
@@ -348,9 +378,9 @@ function puntuar(area) {
     const fks = SERVIDOR.fk_sin_indice_reales[area.id] || [];
     const idxm = SERVIDOR.indices_muertos[area.id] || [];
     const sinPolicy = area.tablas.filter(t => SERVIDOR.rls_sin_policy.includes(t));
-    ev.bd = { pct: tope(98 - fks.length * 5 - idxm.length * 3 - sinPolicy.length * 10, 50),
+    ev.bd = { pct: tope(98 - fks.length * 5 - idxm.length * 1 - sinPolicy.length * 10, 50),
         evidencia: '0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local',
-        hallazgos: [...fks.map(x => `FK sin índice: ${x}`), ...idxm.map(x => `índice nunca usado: ${x}`),
+        hallazgos: [...fks.map(x => `FK sin índice: ${x}`), ...idxm.map(x => `índice sin lecturas en la ventana de 4 días: ${x}`),
                     ...sinPolicy.map(t => `${t}: RLS encendido y CERO policies`)] };
 
     // ── seguridad ───────────────────────────────────────────────────────────
@@ -375,8 +405,20 @@ function puntuar(area) {
     // Queda anotado lo que NO se movió, para que no se pierda: `dui`,
     // `afp_number` e `isss_number` siguen en la vista. Son identidad previsional
     // y no «salarios e ingresos» —que es lo que ese módulo dice gatear— así que
-    // bajo qué llave van es otra decisión, no un olvido.
-    if (area.id === 'personal') higiene.push('dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea');
+    // bajo qué llave van era otra decisión.
+    //
+    // CERRADO el 2026-08-24 (v2.743.0, migración 20260824213242). La decisión que
+    // faltaba: van bajo `staff_detail`, que es el módulo que gobierna ver la
+    // ficha de alguien. `dui`, `alt_identity_document`, `isss_number` y
+    // `afp_number` salieron de `employees_safe` y viven detrás de
+    // `get_employee_identidad` — con una asimetría frente al sueldo: **uno
+    // siempre ve lo suyo**, porque esconderle a alguien su propio documento no
+    // protege a nadie y rompe «Mi perfil». Se hizo ahora porque era barato: 4
+    // DUI cargados y cero ISSS o AFP sobre 49 filas.
+    //
+    // En el mismo commit viaja `dui_disponible`, porque el aviso de DUI repetido
+    // cruzaba contra el padrón cargado y sin el campo ahí habría dicho «no hay
+    // duplicado» SIEMPRE — el mismo modo de falla que tuvo el código de carné.
     const anonMios = [...abiertos, ...higiene];
     ev.seguridad = { pct: tope(98 - higiene.length * 2 - abiertos.length * 25, 55),
         evidencia: '0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · '

@@ -80,6 +80,14 @@ const CRONS = [
           + 'corrida, antes eran 13 (un ingreso + un cambio de sala por cada listado).',
   },
   {
+    job: 'avisar-bultos-viejos-daily', slug: 'avisar-bultos-viejos', cadencia: '0 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: sólo lee la base y escribe avisos. Una vez al '
+          + 'día porque lo que vigila —una bolsa que lleva días encima de alguien— se mueve en '
+          + 'días, no en minutos. Su antiduplicado lleva los días adentro del check_key, así que '
+          + 'el aviso vuelve una vez por día que pasa en vez de sonar una sola vez y callarse.',
+  },
+  {
     job: 'barrer-traslados-recibidos', slug: 'barrer-traslados-recibidos', cadencia: '0 12-23,0-3 * * *',
     corridasDia: 16, sistema: 13,
     motivo: 'Un ingreso + un cambio de sala y una lectura de cola por cada sala con tarjetas '

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.0 — El aviso de la bolsa que lleva días encima de alguien
+
+Cierra el circuito del recorrido. Un retiro **no se puede cerrar con bultos sin
+entregar** —«si lo sobró se debe entregar»— y esa regla, sola, no cierra nada:
+deja el recorrido abierto para siempre y a nadie enterado. Este es el otro lado.
+
+**Se avisa a los dos, y por motivos distintos.** Al retirador, porque la bolsa
+está encima suyo y es el único que puede resolverlo. Y a la sala de destino,
+porque es la que la espera y la única que va a reclamar. Avisarle sólo al primero
+es contarle a quien ya lo sabe.
+
+**El antiduplicado lleva los días adentro** del `check_key`, así que el aviso
+vuelve una vez por día que pasa. Una alarma que suena una vez y se calla se
+pierde entre lo del día; una que suena en cada corrida es ruido que se aprende a
+ignorar.
+
+Cero peticiones al sistema de origen: sólo lee la base y escribe avisos. Queda
+declarado en el manifiesto de `gate:eficiencia` con su costo.
+
+Dos cosas que se cazaron **antes** de que el cron corriera, midiendo en vez de
+suponer:
+
+- **`employees` no tiene `is_active`**, tiene `status text` con `'ACTIVO'`. Un
+  `.eq('is_active', true)` no habría fallado: habría devuelto cero filas **en
+  silencio**, y el aviso habría salido sólo para el retirador durante semanas.
+  Es la regla de «el tipo de la columna manda, no el nombre».
+- **La función quedó desplegada con `verify_jwt: true`** y el secreto del cron no
+  es un JWT: la primera invocación de prueba devolvió **401 antes de ejecutar una
+  línea**, que es exactamente el modo de falla que CLAUDE.md dice que ya pasó tres
+  veces. Redesplegada con `--no-verify-jwt` y verificada: 200.
+
 ## v2.732.2 — 49 pruebas para el período, el nombre corto y seis capas de lectura
 
 Sigue el eje de pruebas de la auditoría. Todo sobre módulos que no tenían

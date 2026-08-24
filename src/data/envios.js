@@ -60,8 +60,16 @@ export const MOTIVOS_ENVIO = [
  */
 export function motivosEnvioPorDestino(destinoEsBodega) {
     return destinoEsBodega
+        // Hacia Bodega: lo que una sala se saca de encima. «Producto nuevo» no
+        // entra acá, y de eso —y sólo de eso— sale la regla de que un producto
+        // nuevo únicamente puede salir de Bodega.
         ? ['Próximo a vencer', 'Baja rotación']
-        : ['Producto nuevo', 'Baja rotación'];
+        // Hacia una sala: sólo puede venir de Bodega, y es reparto. El corto
+        // vence entra desde el 2026-08-24, por corrección del usuario: una sala
+        // ya puede PEDIR del área de vencidos de Bodega, así que negarle a
+        // Bodega el mismo viaje cuando ella lo ofrece no defendía nada — sólo
+        // obligaba a rotularlo «Baja rotación», que es mentira.
+        : ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
 }
 
 /**

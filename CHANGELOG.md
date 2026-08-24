@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.7 — Bodega también manda corto vence, y el cron que retomaba envíos estaba muerto
+
+### La casilla que quedó vacía por omisión
+
+La tabla de dirección de v2.735.0 salió de las tres frases del usuario, y una de
+sus casillas quedó vacía sin que nadie la decidiera: **«Próximo a vencer» sólo
+valía hacia Bodega.** Corregido:
+
+> «bodega si debe poder mandar corto vence, de hecho, hasta tiene la posibilidad
+> de una sucursal solicitar un producto del area de vencidos.»
+
+Bodega tiene **57 productos venciendo dentro de 90 días**. Para empujarle uno a
+la sala que lo vende rápido habría tenido que rotularlo «Baja rotación», que es
+mentira — y un motivo que obliga a mentir es peor que no tener el motivo, porque
+el rótulo es el dato con el que después se mira el circuito entero. El argumento
+del usuario cierra solo: una sala ya puede **pedir** del área de vencidos de
+Bodega (v2.666.0), así que negar el mismo viaje cuando Bodega lo **ofrece** no
+defendía nada.
+
+**El freno que importa no se tocó**: sólo Bodega le manda a una sala. Lo que se
+abrió es un motivo dentro de una dirección que ya estaba permitida, no una
+dirección nueva. Y «Producto nuevo» sigue saliendo sólo de Bodega, porque esa
+regla cae de la otra casilla.
+
+⚠️ **Lo que esto NO hace:** enviar desde el *área de vencidos* de Bodega. El
+despacho sale del estante de operación y el área apartada hoy sólo se lee, para
+descontarla del tope. Bodega puede mandar corto vence de lo que tiene en el
+estante, no de lo que ya apartó.
+
+### Y el cron que retomaba envíos llevaba dos días muerto
+
+`gate:eficiencia` reportaba **un** 401 entre 3.931 llamadas, y la primera lectura
+—«1 en 4.000, un tropiezo»— era exactamente la equivocada. Perseguirlo destapó
+una cadena de tres eslabones donde **ninguno da error por su cuenta**:
+
+1. El secreto `anon_key` del Vault vale hoy `sb_publishable_…` —46 caracteres,
+   sin puntos—: es el formato **nuevo** de clave publicable de Supabase, que no
+   es un JWT.
+2. `cron_auth_headers()` lo pone en `Authorization: Bearer …`.
+3. `enviar-producto-erp` estaba desplegada con `verify_jwt: true`, así que la
+   puerta de entrada lo miraba **antes** que la función y contestaba
+   `401 UNAUTHORIZED_INVALID_JWT_FORMAT`.
+
+O sea que **`continuar-envios` estaba muerto** — el cron que retoma un despacho
+cortado por tiempo, que es el que existe justamente para que no quede media caja
+fuera de la sala— y fallaba antes de ejecutar una línea. Es el modo de falla que
+el CLAUDE.md ya documentaba y que había pasado tres veces.
+
+**No se veía porque casi nunca llamaba.** `envios_por_continuar(10)` devuelve
+filas sólo cuando hay un despacho a medias, y todavía no hubo un envío real. El
+día que hiciera falta, no habría estado. Un solo 401 en 24 horas era el síntoma
+completo de un cron 100% roto, porque el cron casi no corre.
+
+**Arreglado redesplegando con `--no-verify-jwt`** (versión 12), que es lo que
+manda la regla: el flag depende de quién la llama, y a ésta la llaman las dos —el
+navegador y el cron—. Igual que su gemela `trasladar-pedido-erp`, la función
+valida sola. Verificado en producción: anónima, con un `Bearer` inventado y con
+un `x-cron-secret` falso, las tres dan **401 propio**; y el camino exacto del
+cron —`net.http_post` con `cron_auth_headers()`— ahora llega a la función y
+contesta `400 Falta el envío` en vez del 401 de la puerta.
+
+Queda anotado en el `COMMENT` de `cron_auth_headers()` que su `Authorization` no
+es un JWT, porque es una trampa para el próximo cron que la use.
+
+**Y el otro hallazgo del gate era ruido**: las «escrituras sin inserción» a
+2.085/h contra un tope de 1.240 no volvieron a aparecer en la lectura siguiente
+— la tasa se mide entre dos corridas y la ventana anterior había sido corta.
+
+Migraciones `20260824160758` y `20260824161146`.
+
 ## v2.735.6 — 39 pruebas: la pestaña en la dirección y las constantes del portal
 
 **La pestaña activa vive en la dirección.** Una en `useState` se pierde con

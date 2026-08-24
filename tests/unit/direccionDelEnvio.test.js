@@ -43,14 +43,29 @@ describe('los motivos del envío', () => {
         }
     });
 
-    it('ninguno vale en las dos direcciones', () => {
-        const haciaBodega = motivosEnvioPorDestino(true);
-        const haciaSala   = motivosEnvioPorDestino(false);
-        // «Producto nuevo» sólo sale de Bodega; «Próximo a vencer» sólo llega.
-        expect(haciaBodega).toEqual(['Próximo a vencer', 'Baja rotación']);
-        expect(haciaSala).toEqual(['Producto nuevo', 'Baja rotación']);
-        expect(haciaBodega).not.toContain('Producto nuevo');
-        expect(haciaSala).not.toContain('Próximo a vencer');
+    it('«Producto nuevo» sólo sale de Bodega', () => {
+        // La regla no está escrita aparte: cae de que el motivo no exista hacia
+        // Bodega. Si alguien lo agrega ahí, un producto nuevo podría «salir» de
+        // una sala, y esta prueba es lo único que lo dice.
+        expect(motivosEnvioPorDestino(true)).not.toContain('Producto nuevo');
+        expect(motivosEnvioPorDestino(false)).toContain('Producto nuevo');
+    });
+
+    it('el corto vence viaja en las DOS direcciones', () => {
+        // Corregido por el usuario el 2026-08-24: la primera versión lo dejaba
+        // sólo hacia Bodega, y con eso Bodega —57 productos venciendo en 90
+        // días— tenía que rotular «Baja rotación» para empujarle uno a la sala
+        // que lo vende rápido. Un motivo que obliga a mentir es peor que no
+        // tenerlo: el rótulo es el dato con el que se mira el circuito después.
+        // Y una sala ya puede PEDIR del área de vencidos, así que negar el
+        // mismo viaje cuando Bodega lo ofrece no defendía nada.
+        expect(motivosEnvioPorDestino(true)).toContain('Próximo a vencer');
+        expect(motivosEnvioPorDestino(false)).toContain('Próximo a vencer');
+    });
+
+    it('la lista de cada dirección es exactamente la esperada', () => {
+        expect(motivosEnvioPorDestino(true)).toEqual(['Próximo a vencer', 'Baja rotación']);
+        expect(motivosEnvioPorDestino(false)).toEqual(['Producto nuevo', 'Baja rotación', 'Próximo a vencer']);
     });
 
     it('y entre las dos direcciones cubren los tres, sin inventar ninguno', () => {

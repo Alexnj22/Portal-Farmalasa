@@ -1,0 +1,35 @@
+-- `cron_auth_headers()` manda un Authorization que NO es un JWT, y hay que
+-- decirlo donde alguien lo va a leer.
+--
+-- Encontrado el 2026-08-24 persiguiendo el único 401 que reportaba
+-- `gate:eficiencia`. La cadena era ésta, y ninguno de los eslabones da error
+-- por su cuenta:
+--
+--   1. El secreto `anon_key` del Vault vale hoy `sb_publishable_…` — 46
+--      caracteres, sin puntos. Es el formato NUEVO de clave publicable de
+--      Supabase, que **no es un JWT**.
+--   2. `cron_auth_headers()` lo pone en `Authorization: Bearer …`.
+--   3. `enviar-producto-erp` estaba desplegada con `verify_jwt: true`, así que
+--      la puerta de entrada lo miraba antes que la función y contestaba
+--      `401 UNAUTHORIZED_INVALID_JWT_FORMAT`.
+--
+-- O sea que el cron `continuar-envios` —el que retoma un despacho que cortó por
+-- tiempo y dejó media caja fuera de la sala— estaba MUERTO, y fallaba **antes
+-- de ejecutar una línea**. Es exactamente el modo de falla que describe el
+-- CLAUDE.md y que ya había pasado tres veces.
+--
+-- No se notó porque `envios_por_continuar(10)` casi nunca devuelve filas: sin
+-- envíos reales todavía, el cron no llegaba a llamar. El día que hubiera hecho
+-- falta, no habría estado.
+--
+-- **El arreglo fue redesplegar la función con `--no-verify-jwt`**, que es lo
+-- que manda la regla: el flag depende de QUIÉN la llama, y a ésta la llaman las
+-- dos —el navegador y el cron—. Igual que su gemela `trasladar-pedido-erp`, la
+-- función valida sola: `checkCronSecret` para el cron, `requireActiveEmployeeUser`
+-- para la persona, y 401 propio si no pasa ninguno. Verificado: anónima, con un
+-- Bearer inventado y con un `x-cron-secret` falso, las tres dan 401.
+--
+-- Lo que queda acá es el aviso, porque el `Authorization` de esta función sigue
+-- sin ser un JWT y eso es una trampa para el próximo cron que la use.
+COMMENT ON FUNCTION public.cron_auth_headers() IS
+  'Cabeceras para que un cron llame a una edge function. OJO: el Authorization NO es un JWT — desde el cambio de formato de claves de Supabase, el secreto anon_key del Vault vale sb_publishable_… (46 caracteres, sin puntos). Quien autentica de verdad es x-cron-secret, que la función comprueba con checkCronSecret. Por eso la función destino TIENE que estar desplegada con --no-verify-jwt: con verify_jwt encendido, la puerta de entrada rechaza el Authorization con 401 UNAUTHORIZED_INVALID_JWT_FORMAT antes de que la función ejecute una línea. Costó que continuar-envios estuviera muerto sin que nada lo dijera (2026-08-24). Ver la migración cron_auth_headers_dice_que_su_authorization_no_es_un_jwt.';

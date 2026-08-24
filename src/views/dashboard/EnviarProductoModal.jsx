@@ -943,7 +943,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 placeholder={motivo === 'Próximo a vencer'
-                                    ? 'Ej.: vence en octubre y acá no rota, que lo reubiquen'
+                                    ? 'Ej.: vence en octubre y acá no va a salir, allá se vende'
                                     : motivo === 'Producto nuevo'
                                     ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
                                     : motivo === 'Baja rotación'

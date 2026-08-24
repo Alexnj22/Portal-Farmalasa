@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.6 — El entry baja 17 kB: la campana y las baldosas del dinero se difieren
+
+`gate:bundle` llevaba tiempo en rojo por el **ENTRY** —lo que todo el mundo se
+baja en frío y **después de cada despliegue**— y nadie sabía de qué. Medido con
+el sourcemap del propio build: **303 kB gzip, 556 módulos**, y ahí adentro
+`NotificationBell` con 83 kB de fuente propia más todo lo que arrastra por poder
+DECIDIR desde la campana — el diagnóstico de cortes (27.6), la capa de datos de
+bolsas (26.1), la de solicitudes (21.1) y sus hooks.
+
+Eso lo bajaba cada persona en cada arranque, para un panel que se abre al hacer
+clic. Ahora la campana es `lazy` con un hueco del tamaño del botón, así que el
+encabezado no salta: **303 → 286 kB**.
+
+**El peso no desaparece, se mueve** — y eso hubo que atenderlo, no taparlo. Al
+salir del entry, esos módulos caen en cada vista que los usa: el Inicio pasaba a
+102 kB contra su techo de 99. Se difirieron sus dos baldosas del dinero
+(`WidgetCortesSala` y `WidgetBolsasSala`), que arrastran justo esos módulos y
+sólo se dibujan para quien tiene el permiso: **el Inicio quedó en 85 kB**, muy
+por debajo.
+
+`ConteoDetailView` sí subió 1 kB (67 → 68) y **ese techo se subió a mano, con su
+motivo escrito** en `_motivos`: lo que le entró no es código nuevo sino chunks de
+UI compartidos que antes vivían en el entry. El trato queda anotado ahí — 17 kB
+menos para todos en cada arranque en frío, contra 1 kB más en una ruta que se
+cachea tras la primera visita.
+
+**Verificado contra el build de producción, con sesión**: la campana aparece,
+abre y su panel duplica el contenido de la página; el Inicio pinta las dos
+baldosas diferidas; cero errores de consola. Las 1,770 pruebas en verde.
+
+Dos veces mintió la medición antes de acertar, y las dos quedaron en el camino:
+la primera sonda buscaba la campana por un `aria-label` inventado (decía «no
+está» sobre una campana que sí estaba), y la segunda entraba a `/home`, que **no
+existe** — todo lo que «verificó» del Inicio era una página 404 con el menú al
+lado. La ruta es `/overview`.
+
 ## v2.742.5 — La sala que no salió puede prepararse
 
 Continuación de v2.742.3, y el mismo defecto en el lugar que faltaba: **Salud 2

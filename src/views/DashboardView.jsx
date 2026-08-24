@@ -57,8 +57,19 @@ import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
-import WidgetCortesSala from './dashboard/WidgetCortesSala';
-import WidgetBolsasSala from './dashboard/WidgetBolsasSala';
+/* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
+ *
+ * Arrastran el diagnóstico de cortes y la capa de datos de bolsas —los dos
+ * módulos más pesados de este circuito— y sólo se dibujan para quien tiene el
+ * permiso y con la baldosa acomodada en su tablero. Se difieren al pasar la
+ * campana a `lazy` (2026-08-24): esos módulos salieron del cierre del entry y
+ * caían enteros acá, dejando el Inicio en 102 kB contra un techo de 99.
+ *
+ * Sin `Suspense` propio: `WidgetCard` ya vive dentro del que envuelve al
+ * tablero, y una baldosa que aparece un instante después no corre nada — cada
+ * una tiene su lugar reservado por la rejilla. */
+const WidgetCortesSala = lazy(() => import('./dashboard/WidgetCortesSala'));
+const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.

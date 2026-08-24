@@ -22,7 +22,21 @@ import { useToastStore } from '../../store/toastStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
 import { useThemeSync } from '../../hooks/useThemeSync';
-import NotificationBell from '../common/NotificationBell';
+/* ── La campana se baja DESPUÉS del primer pintado ──────────────────────────
+ *
+ * Medido el 2026-08-24: sacarla del cierre estático baja el ENTRY de 303 a
+ * 286 kB gzip. No es la campana sola —son 83 kB de fuente— sino todo lo que
+ * arrastra por poder DECIDIR desde ahí: el diagnóstico de cortes, la capa de
+ * datos de bolsas, la de solicitudes y sus hooks. Eso lo bajaba cada persona en
+ * cada arranque en frío y tras cada despliegue, para un panel que se abre al
+ * hacer clic.
+ *
+ * El hueco se reserva con un cuadro del tamaño del botón, así que el encabezado
+ * no salta cuando llega: lo que se difiere es el peso, no el lugar. */
+const NotificationBell = React.lazy(() => import('../common/NotificationBell'));
+
+/** El sitio que la campana va a ocupar, para que nada se corra al llegar. */
+const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="true" />;
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
 import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
@@ -1313,7 +1327,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     leía como un buscador de CONTENIDO de la vista, que es
                                     otra cosa y vive dentro de cada pantalla. Sigue estando
                                     en el menú lateral, que es su lugar. */}
-                                <NotificationBell variant="mobile" />
+                                <React.Suspense fallback={<HuecoDeCampana />}>
+                                    <NotificationBell variant="mobile" />
+                                </React.Suspense>
                                 <div className="relative w-11 h-11">
                                     <Link to="/profile" aria-label="Mi perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
@@ -1356,7 +1372,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[max(0px,calc(1rem+var(--sa-bottom)-var(--alto-barra-flotante,0px)))] lg:pb-4 lg:pr-2 pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+var(--sa-bottom))]' : ''}`}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-bell-desktop hidden lg:block">
-                                <NotificationBell variant="desktop" />
+                                <React.Suspense fallback={<HuecoDeCampana />}>
+                                    <NotificationBell variant="desktop" />
+                                </React.Suspense>
                             </div>
                         )}
                         {/* La orientación entra en la `key` sólo con el interruptor

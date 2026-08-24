@@ -214,11 +214,18 @@ Deno.serve(async (req) => {
     const codigoDeBranch = (b: unknown) => porBranch.get(Number(b))?.codigo ?? null;
 
     /* La ubicación sale del MAPA, nunca del navegador: es de qué estante sale el
-     * producto. Y siempre la de trabajo — el área de próximos a vencer de
-     * Bodega es un origen válido para una solicitud (desde el 2026-08-19) y
-     * todavía no para un envío: habría que ofrecerla en la pantalla y medir la
-     * existencia contra ella, que es lo que hace `v_inventario_disponible_
-     * vencidos`. Se anota acá para que quien lo agregue sepa dónde. */
+     * producto, y leerla mal no da error — saca de otro estante, o sea otro
+     * lote y otra existencia.
+     *
+     * Cuál de los dos lo dice `origen_vencidos`, que el trigger ya validó:
+     * contra que esa sala TENGA área de vencidos y contra
+     * `v_inventario_disponible_vencidos`. Desde el 2026-08-24 Bodega puede
+     * mandar de ahí — antes acá decía «y siempre la de trabajo», y eso dejaba a
+     * Bodega sin poder empujar justo lo que más urge mover.
+     *
+     * El DESTINO no cambia nunca: lo que entra a una sala entra a su estante de
+     * trabajo, aunque haya salido del área de vencidos de Bodega. Una sala que
+     * recibe algo próximo a vencer lo pone a la venta — que es el punto. */
     const ubicacionDe = (
       m: { inv_ubicaciones?: unknown } | null | undefined,
       vencidos = false,
@@ -227,8 +234,16 @@ Deno.serve(async (req) => {
         ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
         : []).find((u) => Boolean(u.isVencidos) === vencidos)?.id ?? 0,
     );
-    const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen));
+    const origenVencidos = meta.origen_vencidos === true;
+    const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen), origenVencidos);
     const ubicDestino = ubicacionDe(porSucursal.get(erpDestino));
+
+    /* Y qué decir cuando no hay ubicación. Son DOS cosas distintas —la sala no
+     * está mapeada, o está mapeada y no tiene área de vencidos— y decir la
+     * genérica manda a buscar el problema al lugar equivocado. */
+    const sinUbicacionOrigen = origenVencidos
+      ? `La sala que envía (${erpOrigen}) no tiene área de vencidos.`
+      : `No se conoce la ubicación de la sala que envía (${erpOrigen}).`;
 
     const { dato: lineasRaw, roto: lineasRoto } = await leerBien<Linea[]>(
       admin.from("envio_linea")
@@ -273,7 +288,7 @@ Deno.serve(async (req) => {
       if (sol.status !== "PENDING")
         return json({ ok: false, error: `Este envío ya está ${sol.status}.` }, 409);
       if (!ubicOrigen)
-        return json({ ok: false, error: `No se conoce la ubicación de la sala que envía (${erpOrigen}).` }, 422);
+        return json({ ok: false, error: sinUbicacionOrigen }, 422);
       if (!(await puedeObrarPor(branchOrigen)))
         return json({ ok: false, error: "Este envío lo despacha la sala de la que sale el producto." }, 403);
 
@@ -326,9 +341,13 @@ Deno.serve(async (req) => {
       // descarga de ahí primero y no pasa al estante, así que es la otra mitad
       // del tope (ver `disponibleEnBodega`). Hoy sólo Bodega tiene esa segunda
       // ubicación y una sala nunca la tiene, así que esta lectura no se paga en
-      // el camino normal — pero el día que Bodega envíe por acá, el freno ya
-      // está.
-      const ubicVencidos = ubicacionDe(porSucursal.get(erpOrigen), true);
+      // el camino normal.
+      //
+      // Y NO se lee cuando el envío ya sale de ahí: esa mercadería es
+      // justamente la que se quiere mandar, así que no hay nada que frenar —
+      // frenarla contra sí misma daría un tope de cero. Mismo criterio que el
+      // despacho de la solicitud.
+      const ubicVencidos = origenVencidos ? 0 : ubicacionDe(porSucursal.get(erpOrigen), true);
       const lecturaVencidos = ubicVencidos
         ? await leerUbicacion(cookie, erpOrigen, ubicVencidos)
         : null;
@@ -438,7 +457,13 @@ Deno.serve(async (req) => {
          * del portal— y por qué. El producto, el origen y el destino ya están
          * en su propia pantalla. */
         const { concepto } = armarConcepto(
-          `${clave} ENVIA ${yo} MOTIVO ${String(meta.motivo_tipo ?? "").toUpperCase()}`,
+          `${clave} ENVIA ${yo} MOTIVO ${String(meta.motivo_tipo ?? "").toUpperCase()}`
+          // De qué ÁREA salió, cuando no es la de siempre. El listado del
+          // sistema muestra origen y destino como SUCURSALES, así que dos
+          // envíos de Bodega se ven idénticos aunque uno haya salido del
+          // estante de próximos a vencer. Es el único sitio donde ese dato
+          // queda del lado del sistema de origen.
+          + (origenVencidos ? " AREA VENCIDOS" : ""),
         );
 
         const total = reparto.renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
@@ -953,8 +978,12 @@ Deno.serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════════
     // RECIBIR LA DEVOLUCIÓN · de vuelta en la sala que envió
     // ══════════════════════════════════════════════════════════════════════
+    // La devolución vuelve al estante DEL QUE SALIÓ —`destino: ubicOrigen` más
+    // abajo—, así que lo que se mandó del área de vencidos regresa ahí y no al
+    // estante de operación. Si volviera al de operación, el área quedaría corta
+    // en el papel y el estante largo, sin que nadie moviera una caja.
     if (!ubicOrigen)
-      return json({ ok: false, error: `No se conoce la ubicación de tu sala (${erpOrigen}).` }, 422);
+      return json({ ok: false, error: sinUbicacionOrigen }, 422);
     if (!(await puedeObrarPor(branchOrigen)))
       return json({ ok: false, error: "La devolución la recibe la sala de la que salió el producto." }, 403);
 

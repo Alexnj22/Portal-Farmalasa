@@ -35,11 +35,19 @@ const ESTADO_ROTULO = {
     devuelta_recibida: 'de vuelta en tu sala',
 };
 
-/** El recorrido, siempre en el mismo sentido. */
+/** El recorrido, siempre en el mismo sentido.
+ *
+ * Y de qué ESTANTE salió cuando no es el de siempre: dos envíos de Bodega se
+ * ven idénticos si sólo se nombra la sala, y uno que sale del área donde se
+ * aparta lo próximo a vencer tiene que decirlo — es lo que explica por qué
+ * llegó y qué hay que mirar al abrir la caja. Sale de un booleano y no del
+ * nombre de la sala: un rótulo no es una clave, y ese nombre además se busca. */
 function Recorrido({ envio }) {
     return (
         <span className="truncate">
-            {envio?.origen_branch_name ?? 'otra sala'} → {envio?.branch_name ?? 'destino'}
+            {envio?.origen_branch_name ?? 'otra sala'}
+            {envio?.origen_vencidos ? ' · Área de Vencidos' : ''}
+            {' → '}{envio?.branch_name ?? 'destino'}
         </span>
     );
 }

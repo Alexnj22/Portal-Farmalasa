@@ -44,6 +44,25 @@ const MIN_LETRAS = 3;
 const NOMBRE_SALA = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
 const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
+/**
+ * De qué ESTANTE sale el producto, dicho con una sola cadena.
+ *
+ * Bodega tiene dos —el de operación y el área donde aparta lo próximo a
+ * vencer— y desde el 2026-08-24 de los dos se puede mandar. El
+ * `erp_sucursal_id` dejó de alcanzar como identidad, porque las dos filas
+ * traen el 6: todo lo que elige, compara o agrupa por origen usa ESTA clave.
+ *
+ * Es la misma de `PedirTrasladoModal`, y a propósito: son los dos lados del
+ * mismo viaje, y dos claves distintas para el mismo estante obligarían a
+ * aprender que son el mismo.
+ */
+const claveOrigen = (erp, vencidos) => (vencidos ? `${erp}:V` : String(erp ?? ''));
+
+/** Cómo se nombra cada estante. El sufijo es el que ya usa `get_donde_hay` del
+ *  otro lado del viaje, así que quien pide y quien manda leen lo mismo. */
+const nombreEstante = (erp, vencidos) =>
+    `${NOMBRE_SALA[erp] ?? `Sucursal ${erp}`}${vencidos ? ' · Área de Vencidos' : ''}`;
+
 const fmtVence = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
     : 'sin fecha';
@@ -85,7 +104,9 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     const [buscando, setBuscando] = useState(false);
     const [resultados, setResultados] = useState(null);
     const [elegido, setElegido] = useState(null);
-    const [origenErp, setOrigenErp] = useState(null);
+    // La CLAVE del estante, nunca el id de sala: Bodega tiene dos y el 6 no
+    // distingue de cuál sale el producto.
+    const [origenClave, setOrigenClave] = useState(null);
     const [presentaciones, setPresentaciones] = useState([]);
     const [presIdx, setPresIdx] = useState('0');
     const [cantidad, setCantidad] = useState('1');
@@ -129,10 +150,15 @@ export default function EnviarProductoModal({ onClose, onListo }) {
 
     /* ── El buscador ──────────────────────────────────────────────────────
      * Sale de la misma búsqueda que la consulta de inventario y se recorta a MI
-     * sala: lo que otra sala tenga no se puede mandar desde acá. Y se descarta
-     * el área de próximos a vencer de Bodega — de ahí todavía no se envía (el
-     * despacho sale del estante de operación), así que ofrecerlo produciría un
-     * envío que rebota al apretar. */
+     * sala: lo que otra sala tenga no se puede mandar desde acá.
+     *
+     * Y trae los DOS estantes. Hasta el 2026-08-24 el área de próximos a vencer
+     * de Bodega se descartaba acá —«de ahí todavía no se envía»— y eso dejaba a
+     * Bodega sin poder mandar justamente lo que más urge mover. Reportado así:
+     * «bodega si debe de poder enviar a una sucursal productos del area de
+     * vencidos. y no sale». Una sala ya podía PEDIR de esa área desde el
+     * 2026-08-19; lo que faltaba era el mismo viaje ofrecido desde Bodega, y
+     * negarlo no defendía nada. */
     useEffect(() => {
         const q = termino.trim();
         // Sin alcance sobre todas hace falta una sala propia: sin ella no hay de
@@ -149,35 +175,49 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                  * justamente la pregunta que faltaba. */
                 const porProducto = new Map();
                 for (const f of filas ?? []) {
-                    if (f.is_vencidos) continue;   // ese estante todavía no es origen
                     if (!alcanceTodo && Number(f.erp_sucursal_id) !== Number(miErp)) continue;
                     if (!NOMBRE_SALA[Number(f.erp_sucursal_id)]) continue;
                     if (!porProducto.has(f.erp_product_id)) {
                         porProducto.set(f.erp_product_id, {
                             erp_product_id: f.erp_product_id,
                             descripcion: f.descripcion,
-                            porSala: new Map(),
+                            porEstante: new Map(),
                         });
                     }
                     const p = porProducto.get(f.erp_product_id);
                     const erp = Number(f.erp_sucursal_id);
-                    if (!p.porSala.has(erp)) p.porSala.set(erp, []);
-                    p.porSala.get(erp).push(f);
+                    /* Por ESTANTE y no por sala. Los lotes del área de vencidos
+                       y los del estante de operación son existencias distintas y
+                       el despacho entra por ubicaciones distintas: sumarlos bajo
+                       el mismo 6 ofrecería un total que ninguna de las dos
+                       ubicaciones puede entregar, y el sistema lo rechazaría con
+                       la caja ya armada. */
+                    const clave = claveOrigen(erp, Boolean(f.is_vencidos));
+                    if (!p.porEstante.has(clave)) {
+                        p.porEstante.set(clave, { erp, vencidos: Boolean(f.is_vencidos), filas: [] });
+                    }
+                    p.porEstante.get(clave).filas.push(f);
                 }
                 setResultados([...porProducto.values()].map(p => ({
                     erp_product_id: p.erp_product_id,
                     descripcion: p.descripcion,
-                    // Ordenadas por existencia: la que más tiene es la que puede
-                    // ceder sin quedarse corta, igual que al pedir.
-                    salas: [...p.porSala.entries()]
-                        .map(([erp, filas]) => ({
-                            erp,
-                            nombre: NOMBRE_SALA[erp] ?? `Sucursal ${erp}`,
-                            unidades: sumaUnidades(filas),
-                            lotes: lotesEnUnidades(filas),
+                    // El estante de operación primero y el área de vencidos
+                    // después; dentro de cada uno, el que más tiene —es el que
+                    // puede ceder sin quedarse corto—. Mismo orden con el que
+                    // `get_donde_hay` los ofrece del otro lado del viaje.
+                    salas: [...p.porEstante.values()]
+                        .map(x => ({
+                            clave: claveOrigen(x.erp, x.vencidos),
+                            erp: x.erp,
+                            vencidos: x.vencidos,
+                            nombre: nombreEstante(x.erp, x.vencidos),
+                            unidades: sumaUnidades(x.filas),
+                            lotes: lotesEnUnidades(x.filas),
                         }))
                         .filter(x => x.unidades > 0)
-                        .sort((a, b) => b.unidades - a.unidades),
+                        .sort((a, b) => (a.vencidos === b.vencidos
+                            ? b.unidades - a.unidades
+                            : (a.vencidos ? 1 : -1))),
                 })).filter(p => p.salas.length > 0));
                 setBuscando(false);
             }).catch(() => { if (!cancelado) { setResultados([]); setBuscando(false); } });
@@ -200,16 +240,23 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         return () => { cancelado = true; };
     }, [elegido?.erp_product_id]);
 
-    /* De qué sala sale el producto en curso. Se elige sola —la propia si tiene,
-     * y si no la que más tiene—, pero se puede cambiar: con alcance sobre todas,
-     * cuál sala cede el producto es una decisión, no un dato. */
+    /* De qué estante sale el producto en curso. Se elige solo —el de operación
+     * de la sala propia si lo tiene, y si no el primero de la lista—, pero se
+     * puede cambiar: con alcance sobre todas, de dónde sale el producto es una
+     * decisión, no un dato.
+     *
+     * La búsqueda de la sala propia excluye el área de vencidos a propósito:
+     * mandar corto vence es una decisión y tiene que haberse tomado, no
+     * heredarse de que el estante de operación estaba en cero. Si es lo único
+     * que hay, queda elegido igual —va primero en la lista— pero con su aviso
+     * abajo. */
     useEffect(() => {
-        if (!elegido) { setOrigenErp(null); return; }
-        const propia = elegido.salas.find(x => Number(x.erp) === Number(miErp));
-        setOrigenErp(String((propia ?? elegido.salas[0]).erp));
+        if (!elegido) { setOrigenClave(null); return; }
+        const propia = elegido.salas.find(x => Number(x.erp) === Number(miErp) && !x.vencidos);
+        setOrigenClave((propia ?? elegido.salas[0]).clave);
     }, [elegido, miErp]);
 
-    const origen = elegido?.salas?.find(x => String(x.erp) === String(origenErp)) ?? null;
+    const origen = elegido?.salas?.find(x => x.clave === origenClave) ?? null;
 
     const pres = presentaciones[Number(presIdx)] ?? null;
     const unidadesPedidas = (Number(cantidad) || 0) * (Number(pres?.factor) || 0);
@@ -261,6 +308,12 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             // porque una composición puede sacar producto de varias salas, y al
             // mandar sale un envío por cada una.
             origen_erp: Number(origen.erp),
+            // Y de qué ESTANTE de esa sala. Viaja con el renglón porque el
+            // despacho entra por una ubicación distinta según cuál sea, y
+            // porque una composición puede sacar del estante de operación de
+            // Bodega y de su área de vencidos a la vez: son dos envíos.
+            origen_vencidos: Boolean(origen.vencidos),
+            origen_clave: origen.clave,
             origen_nombre: origen.nombre,
             presentacion_tipo: pres.tipo,
             factor: Number(pres.factor),
@@ -309,12 +362,14 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * dos renglones válidos y un envío imposible, y eso hoy sólo se descubría
      * al apretar. */
     const excesos = useMemo(() => {
-        // Por producto Y SALA: el mismo producto sacado de dos salas distintas
-        // son dos existencias distintas, y sumarlas inventaría un exceso donde
-        // no lo hay.
+        // Por producto Y ESTANTE: el mismo producto sacado de dos estantes
+        // distintos son dos existencias distintas, y sumarlas inventaría un
+        // exceso donde no lo hay. Vale para dos salas y vale para los dos
+        // estantes de Bodega.
         const porClave = new Map();
         for (const r of renglones) {
-            const clave = `${r.erp_product_id}|${r.origen_erp ?? miErp}`;
+            const clave = `${r.erp_product_id}|${r.origen_clave
+                ?? claveOrigen(r.origen_erp ?? miErp, r.origen_vencidos)}`;
             const a = porClave.get(clave) ?? {
                 unidades: 0, existencia: r.existencia ?? 0,
                 nombre: r.descripcion, sala: r.origen_nombre ?? NOMBRE_SALA[miErp] ?? 'tu sala',
@@ -421,7 +476,8 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * decir de dónde sale cada renglón y si el pie habla de un envío o de
      * varios. */
     const variosOrigenes = useMemo(
-        () => new Set(renglones.map(r => Number(r.origen_erp ?? miErp))).size > 1,
+        () => new Set(renglones.map(r => r.origen_clave
+            ?? claveOrigen(r.origen_erp ?? miErp, r.origen_vencidos))).size > 1,
         [renglones, miErp],
     );
 
@@ -480,11 +536,19 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             const porOrigen = new Map();
             for (const r of renglones) {
                 const erp = Number(r.origen_erp ?? miErp);
-                if (!porOrigen.has(erp)) porOrigen.set(erp, []);
-                porOrigen.get(erp).push(r);
+                /* Y por ESTANTE, no sólo por sala: el de operación de Bodega y
+                 * su área de vencidos son dos ubicaciones del sistema y el
+                 * despacho entra por una sola. Un envío que mezclara las dos
+                 * sacaría todo de la que nombre el metadata —o sea, de la que
+                 * no es— y el sistema lo rechazaría con la caja ya armada. */
+                const clave = r.origen_clave ?? claveOrigen(erp, r.origen_vencidos);
+                if (!porOrigen.has(clave)) {
+                    porOrigen.set(clave, { erp, vencidos: Boolean(r.origen_vencidos), grupo: [] });
+                }
+                porOrigen.get(clave).grupo.push(r);
             }
 
-            const filas = [...porOrigen.entries()].map(([erpOrigen, grupo]) => ({
+            const filas = [...porOrigen.values()].map(({ erp: erpOrigen, vencidos, grupo }) => ({
                 employee_id: user?.id,
                 type: 'INVENTORY_TRANSFER_PUSH',
                 status: 'PENDING',
@@ -499,6 +563,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                     ...(evidencia.length ? { evidencia_urls: evidencia } : {}),
                     // La sala que ENVÍA: la del renglón, no la de quien arma.
                     origen_erp_sucursal_id: erpOrigen,
+                    /* Y de qué estante suyo. Sólo cuando es el área de
+                       vencidos: la clave ausente significa el estante de
+                       operación, que es como la leen el trigger y la función
+                       que despacha. */
+                    ...(vencidos ? { origen_vencidos: true } : {}),
                     origen_branch_name: grupo[0].origen_nombre
                         ?? NOMBRE_SALA[erpOrigen]
                         ?? user?.branchName ?? user?.branch_name ?? '',
@@ -546,7 +615,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             await appendAuditLog('ENVIO_A_OTRA_SALA', String(miBranch ?? ''), {
                 envios: creados.map(x => x.id),
                 sala: NOMBRE_SALA[erpDestino] ?? erpDestino,
-                desde: [...porOrigen.keys()].map(erp => NOMBRE_SALA[erp] ?? erp),
+                desde: [...porOrigen.values()].map(o => nombreEstante(o.erp, o.vencidos)),
                 productos: renglones.length,
                 unidades: renglones.reduce((s, x) => s + x.unidades, 0),
                 motivo,
@@ -559,7 +628,7 @@ export default function EnviarProductoModal({ onClose, onListo }) {
             setFotos([]);
             setResultado({
                 sala: NOMBRE_SALA[erpDestino] ?? '',
-                desde: [...porOrigen.keys()].map(erp => NOMBRE_SALA[erp] ?? `Sucursal ${erp}`),
+                desde: [...porOrigen.values()].map(o => nombreEstante(o.erp, o.vencidos)),
                 total: renglones.length,
                 enviadas,
                 fallos,
@@ -771,15 +840,36 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sale de</p>
                                         <LiquidSelect
                                             clearable={false}
-                                            value={String(origenErp ?? '')}
-                                            onChange={v => setOrigenErp(String(v ?? ''))}
+                                            value={String(origenClave ?? '')}
+                                            onChange={v => setOrigenClave(String(v ?? ''))}
                                             options={elegido.salas.map(x => ({
-                                                value: String(x.erp),
+                                                value: x.clave,
                                                 label: `${x.nombre} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}`,
                                             }))}
-                                            ariaLabel="Sala de la que sale el producto"
+                                            ariaLabel="Estante del que sale el producto"
                                         />
                                     </div>
+                                )}
+
+                                {/* ── Y si sale del área de vencidos ────────────
+                                    El rótulo del desplegable ya lo dice, pero se
+                                    lee al elegir y después se deja de mirar; acá
+                                    queda a la vista mientras se decide la
+                                    cantidad, que es el momento en que importa.
+                                    Es el mismo aviso que da la pantalla de pedir,
+                                    y por el mismo motivo: en esa área Bodega
+                                    aparta lo próximo a vencer, así que hay lotes
+                                    con poca vida y también los hay ya vencidos.
+
+                                    Dice qué mirar y no opina: cuál lote es cuál
+                                    se ve abajo en «Sale de», con su fecha. Frenar
+                                    el envío no es de esta pantalla — quien lo
+                                    arma tiene la caja delante. */}
+                                {origen?.vencidos && (
+                                    <p className="text-micro font-semibold text-warning-text leading-snug px-1">
+                                        Sale del área donde se aparta lo próximo a vencer. Revisa abajo la
+                                        fecha de cada lote antes de mandarlo.
+                                    </p>
                                 )}
 
                                 <div className="flex flex-wrap items-end gap-2">
@@ -860,10 +950,14 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                                         <p className="text-micro font-semibold text-content-2 mt-0.5 truncate">
                                                             {r.cantidad} × {r.presentacion_tipo}
                                                             {' · '}{r.unidades} {r.unidades === 1 ? 'unidad' : 'unidades'}
-                                                            {/* De qué sala sale, sólo cuando el envío
-                                                                saca de más de una: con una sola es un
-                                                                dato que se repite en cada renglón. */}
-                                                            {variosOrigenes && r.origen_nombre ? ` · desde ${r.origen_nombre}` : ''}
+                                                            {/* De qué estante sale, cuando el envío saca
+                                                                de más de uno: con uno solo es un dato que
+                                                                se repite en cada renglón. Y SIEMPRE que
+                                                                salga del área de vencidos, aunque sea el
+                                                                único origen: es lo que un envío de corto
+                                                                vence tiene que decir de sí mismo. */}
+                                                            {(variosOrigenes || r.origen_vencidos) && r.origen_nombre
+                                                                ? ` · desde ${r.origen_nombre}` : ''}
                                                         </p>
                                                     )}
                                                 </div>

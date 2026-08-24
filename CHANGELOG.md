@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.745.0 — Bodega manda desde su área de vencidos
+
+Reportado con la pantalla delante: *«en los traslados desde bodega, no puedo
+mandar de la bodega de vencidos. bodega si debe de poder enviar a una sucursal
+productos del area de vencidos. y no sale.»*
+
+«Y no sale» era literal. El desplegable **«Sale de»** ofrecía *Bodega · 1
+unidad* y nada más, porque el buscador del envío descartaba el área de próximos
+a vencer con una línea: `if (f.is_vencidos) continue`. Ahí Bodega tiene hoy
+**77 productos y 512 unidades** apartadas — justamente lo que más urge mover, y
+lo único que no se podía mandar.
+
+Lo que faltaba estaba **escrito desde esa misma mañana**, al pie de la
+migración que abrió «Próximo a vencer» de Bodega hacia una sala: «LO QUE ESTO
+NO HACE: enviar DESDE el área de vencidos … Abrirlo es otra pieza: la ubicación
+de vencidos como origen en la edge function, su rama en
+`validar_envio_producto` y el filtro `is_vencidos` del buscador del modal.» Son
+exactamente esas tres, y esta versión las cierra.
+
+**El origen dejó de ser una sala y pasó a ser un ESTANTE.** El número de
+sucursal ya no alcanza como identidad —los dos estantes de Bodega traen el 6—,
+así que el modal usa la misma clave que la pantalla de pedir (`6` y `6:V`) para
+elegir, agrupar y contar: el desplegable, los excesos por producto, y el corte
+que parte una composición en **un envío por estante**. Mezclar los dos en un
+envío sacaría todo de la ubicación que nombre el metadata, o sea de la que no
+es, y el sistema lo rechazaría con la caja ya armada.
+
+**El área de vencidos no se elige sola.** Aunque el estante de operación esté
+en cero, queda elegido el de operación: mandar corto vence es una decisión y
+tiene que haberse tomado. Cuando sí se elige, la pantalla avisa qué mirar
+—«revisa la fecha de cada lote»— y el renglón dice de dónde sale aunque sea el
+único origen. La tarjeta del envío lo repite del otro lado: **Bodega · Área de
+Vencidos → Salud 3**, para que quien abre la caja sepa por qué le llegó.
+
+**Y la existencia se mide contra el estante que el envío nombra.** Medir el área
+de vencidos contra `v_inventario_disponible` —que filtra `is_vencidos = false`—
+devuelve 0 y rebota el envío entero sobre mercadería que está ahí. Es el mismo
+error que se corrigió del otro lado del viaje el 19-ago, en
+`validar_solicitud_traslado`. El despacho descarga de la ubicación 2 y no de la
+1, el concepto del sistema lleva `AREA VENCIDOS` —única forma de distinguir dos
+envíos de Bodega en su listado, que sólo muestra sucursales— y una devolución
+vuelve al estante del que salió, no al de operación.
+
+**Lo que NO cambió, y es donde estaba el riesgo.** La regla de dirección sigue
+siendo una sola y sigue siendo el motivo: sólo Bodega le manda a una sala, y
+«Próximo a vencer» ya valía en esa dirección. El área de vencidos es un
+**estante** de Bodega, no una dirección nueva — y por eso tampoco se le recorta
+la lista de motivos: hacerlo vaciaría la intersección de una composición que
+saque de ahí y de una sala a la vez, y esa intersección nunca puede quedar
+vacía.
+
+Falta la primera corrida real contra inventario.
+
 ## v2.744.3 — Nueve tarjetas a mano menos: un campo, dos chips y un envoltorio que sobraba
 
 El ratchet baja de **48 a 34**, y con esto **ningún área del portal queda ya

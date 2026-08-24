@@ -247,13 +247,13 @@ const EmployeeProfileView = ({ openModal }) => {
         <div data-surface="card" className="flex items-center h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
             {/* Info chips */}
             {emp.phone && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
+                <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card-hover border border-border-card rounded-2xl">
                     <Phone size={11} className="text-content-3 shrink-0" />
                     <span className="text-label font-bold text-content-2 whitespace-nowrap">{emp.phone}</span>
                 </div>
             )}
             {emp.dui && (
-                <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
+                <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-surface-card-hover border border-border-card rounded-2xl">
                     <CreditCard size={11} className="text-content-3 shrink-0" />
                     <span className="text-label font-bold text-content-2 whitespace-nowrap">{emp.dui}</span>
                 </div>

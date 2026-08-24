@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.4 — Diecisiete tarjetas a mano menos, y cuatro no eran tarjetas
+
+El ratchet de `tarjeta-a-mano` baja de **65 a 48**. Lo que vale la pena anotar no
+es el número: es que **seis de los diecisiete casos no se arreglaban migrándolos**,
+y aplicar el reemplazo mecánico habría empeorado la pantalla.
+
+**Cuatro eran cajas de ícono, no tarjetas.** En el expediente del empleado, los
+recuadros del correo, el celular, el documento y la sucursal son `p-2.5` con un
+ícono de 16px adentro — y viven **dentro** de una tarjeta que ya tiene
+`data-surface="card"`. Darles el atributo habría anidado una tarjeta en otra, que
+es justo lo que §1.5 aplana, y les habría dado el lift de tarjeta al pasar el
+mouse. El arreglo correcto era decir lo que la caja **es**: `size-9` (que son los
+mismos 36px exactos que daba el padding) y centrado por grilla. Así sale del
+detector por la señal correcta —«tiene tamaño fijo»— y no por una excepción.
+
+**Y cuatro eran chips o baldosas anidadas**, con un defecto visual que la
+migración habría tapado en vez de arreglar: usaban `bg-surface-card` **dentro de
+una tarjeta con ese mismo fondo**, así que sólo se distinguían por el borde.
+Ahora usan `bg-surface-card-hover`, que es la superficie de realce y difiere en
+los cuatro temas. Es lo que el detector ya excluía a propósito («es OTRO token:
+la superficie de realce, no la de tarjeta»), sólo que nadie lo estaba usando.
+
+Las otras once sí eran tarjetas contenedoras y se migraron: los bloques de la
+encuesta, sus baldosas de estadística, el contenedor de turnos del expediente.
+
+Queda pendiente recalcular `auditoria/registro.json` — ahora mismo el árbol de
+trabajo tiene un renombrado a medias de otra sesión (`TabBolsas.jsx` borrado,
+`src/views/bolsas/` sin preparar) y el barrido no puede leer un archivo que ya no
+está. El gate sigue en verde porque lee el registro guardado; el número de ese
+eje se actualiza en cuanto el árbol se estabilice.
+
 ## v2.743.3 — Las 23 rejillas que faltaba declarar
 
 Cierre de la deuda que dejó v2.737.1: las **23 rejillas responsivas** que

@@ -563,7 +563,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="w-full space-y-3">
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                            <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
@@ -571,7 +571,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors relative">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
+                                            <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.phone || 'No registrado'}</p>
@@ -584,7 +584,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
+                                            <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.dui || 'No registrado'}</p>
@@ -592,7 +592,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
+                                            <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{branch ? branch.name : SIN_ASIGNAR}</p>
@@ -1051,7 +1051,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 </h3>
                                             </div>
                                             
-                                            <div className="bg-surface-card border border-border-card rounded-modal overflow-hidden shadow-sm">
+                                            <div data-surface="card" className="overflow-hidden">
                                                 <div className="grid grid-cols-1 divide-y divide-divider">
                                                     {scheduleData.map((dia, idx) => {
                                                         const isToday = dia.day === todayName; 

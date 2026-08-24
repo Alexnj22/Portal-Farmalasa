@@ -98,7 +98,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                             )}
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2 pt-1">
-                                    <div className="bg-surface-card border border-border-card rounded-xl p-2">
+                                    <div className="bg-surface-card-hover border border-border-card rounded-xl p-2">
                                         <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-label font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
@@ -478,7 +478,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                         )}
                                         {(meta.myShift || meta.targetShift) && (
                                             <div className="grid grid-cols-2 gap-2 pt-0.5">
-                                                <div className="bg-surface-card border border-border-card rounded-xl p-2.5">
+                                                <div className="bg-surface-card-hover border border-border-card rounded-xl p-2.5">
                                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-body-sm font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>

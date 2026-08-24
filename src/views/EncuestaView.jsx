@@ -653,7 +653,7 @@ export default function EncuestaView() {
                     <div className="space-y-5">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-surface-card shadow-sm">
+                                <div key={i} data-surface="card" className="flex items-center gap-3 px-4 py-3">
                                     <div className="w-8 h-8 skeleton rounded-lg shrink-0" />
                                     <div className="space-y-1.5 flex-1">
                                         <div className="h-5 w-10 skeleton rounded-full" />
@@ -685,7 +685,7 @@ export default function EncuestaView() {
                                 { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-chart-8 to-chart-8/70' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-chart-9 to-success' },
                             ].map(({ label, value, sub, Icon, grad }) => (
-                                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-surface-card shadow-sm">
+                                <div key={label} data-surface="card" className="flex items-center gap-3 px-4 py-3">
                                     <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                                         <Icon size={14} className="text-white" />
                                     </div>
@@ -897,7 +897,7 @@ export default function EncuestaView() {
                                 : null;
 
                             return (
-                                <div key={bloque.id} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
+                                <div key={bloque.id} data-surface="card" className="overflow-hidden">
                                     {/* Header */}
                                     <ListRow
                                         density="lg"
@@ -1314,7 +1314,7 @@ export default function EncuestaView() {
                                                     {isExpanded && (
                                                         <tr className="bg-chart-1/10">
                                                             <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
-                                                                <div className="bg-surface-card rounded-2xl border border-divider shadow-sm overflow-hidden mt-1">
+                                                                <div data-surface="card" className="overflow-hidden mt-1">
                                                                     {BLOQUES.map(bloque => {
                                                                         const bqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
                                                                         if (!bqs.length) return null;

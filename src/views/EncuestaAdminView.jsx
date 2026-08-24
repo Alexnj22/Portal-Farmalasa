@@ -713,7 +713,7 @@ export default function EncuestaAdminView() {
                                         return (
                                             <div className="mt-2 space-y-2">
                                                 {selectedEmps.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-surface-card rounded-2xl border border-border-card">
+                                                    <div data-surface="card" className="flex flex-wrap gap-1.5 p-2.5">
                                                         {selectedEmps.map(e => {
                                                             const fn = shortEmployeeName(e);
                                                             return (
@@ -1236,7 +1236,7 @@ export default function EncuestaAdminView() {
                                                                                                         const gqs = preguntas.filter(p => p.bloque_id === null && p.tipo !== 'sucursal');
                                                                                                         if (!gqs.length) return null;
                                                                                                         return (
-                                                                                                            <div className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
+                                                                                                            <div data-surface="card" className="overflow-hidden">
                                                                                                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-border-card bg-surface-card-hover/40">
                                                                                                                     <div className="w-5 h-5 rounded flex items-center justify-center text-micro font-black text-white shrink-0 bg-content-3">G</div>
                                                                                                                     <span className="text-label font-black text-content-2">Datos Generales</span>
@@ -1267,7 +1267,7 @@ export default function EncuestaAdminView() {
                                                                                                         const barCls = BAR_COLORS[bloque.color] || 'bg-content-3';
                                                                                                         const bsc = blockScore(row.responses || [], bloque.indices || [], invertedIndices);
                                                                                                         return (
-                                                                                                            <div key={bloque.id} className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
+                                                                                                            <div key={bloque.id} data-surface="card" className="overflow-hidden">
                                                                                                                 <div className={`flex items-center justify-between px-4 py-2 border-b border-border-card ${barCls} bg-opacity-10`}>
                                                                                                                     <div className="flex items-center gap-2">
                                                                                                                         <div className={`w-5 h-5 rounded flex items-center justify-center text-micro font-black text-white shrink-0 ${barCls}`}>
@@ -1326,7 +1326,7 @@ export default function EncuestaAdminView() {
                                                                                                         );
                                                                                                     })}
                                                                                                     {row.comentario && (
-                                                                                                        <div className="rounded-xl border border-border-card bg-surface-card px-4 py-3">
+                                                                                                        <div data-surface="card" className="px-4 py-3">
                                                                                                             <p className="text-micro font-black uppercase tracking-wider text-content-2 mb-1">Comentario</p>
                                                                                                             <p className="text-body-sm text-content-2 leading-relaxed">{row.comentario}</p>
                                                                                                         </div>

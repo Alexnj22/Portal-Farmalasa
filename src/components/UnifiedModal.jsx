@@ -16,6 +16,8 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from '../data/constants';
 import { clearDraft } from '../utils/draftUtils';
+import useBorrador from '../hooks/useBorrador';
+import { SENSITIVE_FIELDS } from '../store/utils';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -113,6 +115,54 @@ const getEmployeeValidationError = (formData, type) => {
 };
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
+
+    /* ── Los dos ALTAS de este modal se guardan solas ────────────────────────
+     *
+     * `formData` vive en `App.jsx` y lo comparten los doce tipos de este modal,
+     * así que el borrador se enciende ACÁ, que es donde se sabe cuál es el tipo.
+     *
+     * Sólo dos lo llevan, y los dos son un ALTA:
+     *   · `newEvent` — una novedad del empleado (traslado, ascenso, incapacidad,
+     *     permiso, salida…). NO cuando se está EDITANDO una ya registrada
+     *     (`_editingEventId`): ahí la fila de la base es la verdad.
+     *   · `rehireEmployee` — la recontratación.
+     *
+     * **La clave lleva el id de la persona.** Los dos modales abren con la ficha
+     * de alguien: una clave única repoblaría la novedad de Ana sobre el
+     * expediente de Luis, y eso escribe un evento en el legajo equivocado.
+     *
+     * Lo que NO se guarda: el archivo adjunto (`file`) —un `File` no se
+     * serializa— y los campos de `SENSITIVE_FIELDS`, porque una novedad de
+     * salario lleva el monto y `localStorage` sobrevive al cierre de sesión.
+     * Es la misma regla que el alta de empleado. */
+    const idSujeto = formData?.employeeId ?? formData?.id ?? null;
+    const claveBorrador =
+        (type === 'newEvent' && !formData?._editingEventId && idSujeto) ? `novedad_${idSujeto}`
+      : (type === 'rehireEmployee' && idSujeto)                        ? `recontratacion_${idSujeto}`
+      : null;
+
+    const borradorSeguro = useMemo(() => {
+        if (!claveBorrador || !formData) return null;
+        const limpio = { ...formData };
+        delete limpio.file;
+        delete limpio.photoPreview;
+        for (const campo of SENSITIVE_FIELDS) delete limpio[campo];
+        return limpio;
+    }, [claveBorrador, formData]);
+
+    const { recuperado: borrador, descartar: descartarBorrador } =
+        useBorrador(claveBorrador, borradorSeguro, { activo: isOpen && !!claveBorrador });
+
+    const repuesto = useRef(null);
+    useEffect(() => {
+        if (!isOpen || !claveBorrador) { repuesto.current = null; return; }
+        if (repuesto.current === claveBorrador || !borrador) return;
+        repuesto.current = claveBorrador;
+        // Lo abierto MANDA sobre lo guardado: quien abrió el modal eligió a la
+        // persona y, en una novedad, a veces también el tipo. El borrador sólo
+        // rellena lo que la apertura no trajo.
+        setFormData(prev => ({ ...borrador, ...prev }));
+    }, [isOpen, claveBorrador, borrador, setFormData]);
     // Quién está dando de alta: su sucursal decide por qué ticketera sale el
     // carné de papel (se entrega en mano, así que sale donde está esa persona).
     const { user: quienEmite } = useAuth();
@@ -703,6 +753,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 });
                 const { showToast } = useToastStore.getState();
                 if (showToast) showToast("Recontratación Registrada", `${formData.name} ha sido recontratado/a exitosamente.`, "success");
+                descartarBorrador();   // la recontratación existe: el borrador ya no sirve
                 onClose();
             } catch (err) {
                 setValidationError(mensajeAmigable(err, "Error al procesar la recontratación."));
@@ -774,6 +825,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 await handleSubmit(e);
+                // El evento quedó registrado. Se descarta DESPUÉS del `await` y
+                // no antes: si el guardado falla, lo escrito tiene que seguir ahí.
+                descartarBorrador();
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
             } catch (err) {
                 const msg = (err?.message || "Ocurrió un error inesperado.")

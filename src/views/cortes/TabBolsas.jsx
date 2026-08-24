@@ -39,6 +39,10 @@ const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBols
  * confirmado un conteo. */
 const DepositoAlBanco = lazy(() => import('../../components/bolsas/DepositoAlBanco'));
 
+/* Y el archivo de los depósitos: arrastra `DataTable`, y sólo se mira cuando
+ * alguien va a cuadrar contra el banco. */
+const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlBanco'));
+
 /**
  * El proceso entero de una bolsa de efectivo, en una pantalla.
  *
@@ -143,7 +147,7 @@ const rotularDia = (fecha) => {
  * pantalla de dinero no se puede quedar en blanco por una preferencia.
  */
 const CLAVE_PLEGADO = 'bolsas:etapas-cerradas';
-const CERRADAS_LA_PRIMERA_VEZ = ['contadas'];
+const CERRADAS_LA_PRIMERA_VEZ = ['contadas', 'depositos'];
 
 function usePlegado() {
     const [cerradas, setCerradas] = useState(() => {
@@ -1405,6 +1409,22 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             />
 
             </>)}
+
+            {/* ── El archivo de los depósitos ──────────────────────────────
+                Va al final y ARRANCA CERRADO, igual que «Contadas» y por lo
+                mismo: es historia, y a esta pantalla se entra a mover dinero,
+                no a revisarla. Se abre cuando hay que cuadrar contra el banco.
+
+                Detrás de `bolsas_ver_montos` va la sección ENTERA y no sólo las
+                cifras: «DEP-260824-1, 8 bolsas» sin montos no contesta ninguna
+                de las preguntas por las que existe. */}
+            {alcanceTodos && verMontos && (
+                <Suspense fallback={null}>
+                    <DepositosAlBanco desde={desde} hasta={hasta} nombreSala={nombreSala}
+                        plegada={cerradas.has('depositos')}
+                        onPlegar={() => plegar('depositos')} />
+                </Suspense>
+            )}
 
             </>)}
 

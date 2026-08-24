@@ -282,6 +282,21 @@ export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = nu
     });
 }
 
+/**
+ * Los depósitos de un período, con sus bolsas adentro.
+ *
+ * Vienen en UNA llamada y no una por fila: son ~10 bolsas por depósito y ~30
+ * depósitos al mes. Sin permiso el servidor devuelve `null` —no una lista
+ * vacía—, así que acá se distingue «no puedo verlos» de «no hay ninguno».
+ */
+export async function fetchDepositos({ desde, hasta } = {}) {
+    const { data, error } = await supabase.rpc('get_depositos', {
+        p_desde: desde || null, p_hasta: hasta || null,
+    });
+    if (error) { console.error('bolsas: fetchDepositos failed:', error.message); return []; }
+    return data || [];
+}
+
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */
 export function resolverDiferenciaBolsa(id, via, causa) {
     return supabase.rpc('resolver_diferencia_bolsa', { p_id: id, p_via: via, p_causa: causa });

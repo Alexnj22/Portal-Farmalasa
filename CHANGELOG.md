@@ -21,6 +21,75 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.740.0 — Los depósitos al banco se pueden mirar
+
+El depósito quedaba guardado entero desde v2.739.0 —folio, fecha, lo contado, lo
+que entró de afuera, lo que fue al banco, el remanente y las tres personas— y no
+había ninguna pantalla que lo mostrara. Para saber cuánto se depositó el lunes
+había que acordarse de una bolsa de ese día, abrirla, leer su bitácora, encontrar
+«Depositada en el banco · DEP-260819-1»… y aun así **no ver el monto**. La cuenta
+completa sólo estaba en la base.
+
+Un registro que no se puede mirar no sirve para aquello por lo que se guardó:
+cuadrar contra el estado de cuenta del banco, seguirle la pista al remanente, y
+darse cuenta de que un día se depositó de menos.
+
+Ahora hay una sección al final de la pestaña con la lista —depósito, fecha, al
+banco, remanente, bolsas— y cada fila abre su detalle: **la misma cuenta que se
+vio al cerrarlo, en el mismo orden**, más de dónde salió lo que entró de afuera,
+quién entregó el remanente y a quién, y las bolsas que se fueron adentro con su
+sala, su día y su monto. Que se lea igual acá que allá es lo que permite volver a
+seguir la cuenta meses después.
+
+Tres decisiones:
+
+- **Arranca cerrada**, igual que «Contadas» y por lo mismo: es historia, y a esta
+  pantalla se entra a mover dinero, no a revisarla. Cerrada **no pide nada** al
+  servidor.
+- **La sección entera va detrás de `bolsas_ver_montos`, no sólo sus cifras.** Un
+  depósito sin montos no es una fila incompleta: es una fila que no dice nada.
+  Distinto de la lista de bolsas, donde el folio y el día alcanzan para moverlas
+  físicamente.
+- **Una sola llamada, con las bolsas anidadas.** Son ~10 por depósito y ~30
+  depósitos al mes: 300 filas que caben de sobra en un `json`, contra una
+  consulta por cada fila que alguien toca.
+
+`get_depositos` es DEFINER con guarda explícita —necesita resolver nombres, y el
+maestro de personal esconde a los cargos `is_su`— y devuelve **NULL sin permiso,
+no una lista vacía**, para que el navegador distinga «no puedo verlos» de «no hay
+ninguno». Migración `20260824190310`.
+
+## v2.739.7 — Las dos novedades del expediente se guardan solas
+
+Los dos únicos ALTAS que quedaban en la deuda de borradores viven dentro de
+`UnifiedModal`: la **novedad de un empleado** (traslado, ascenso, incapacidad,
+permiso, salida…) y la **recontratación**. Ninguno de los dos formularios tiene
+estado propio —reciben `formData` de `App.jsx`, que lo comparte entre los doce
+tipos de ese modal—, así que el borrador se enciende donde se sabe cuál es el
+tipo: en `UnifiedModal`.
+
+**La clave lleva el id de la persona**, y eso no es un detalle: los dos modales
+abren con la ficha de alguien, así que una clave única repoblaría la novedad de
+Ana sobre el expediente de Luis — o sea, escribiría un evento en el legajo
+equivocado.
+
+Sólo al CREAR. Editando una novedad ya registrada, la fila de la base es la
+verdad. Y lo abierto MANDA sobre lo guardado: quien abrió el modal eligió a la
+persona y a veces el tipo; el borrador sólo rellena lo que la apertura no trajo.
+
+Fuera del borrador quedan el archivo adjunto —un `File` no se serializa— y los
+campos de `SENSITIVE_FIELDS`, porque **una novedad de salario lleva el monto** y
+`localStorage` sobrevive al cierre de sesión. Misma regla que el alta de empleado.
+
+El descarte va DESPUÉS del `await` del guardado, no antes: si el guardado falla,
+lo escrito tiene que seguir ahí.
+
+Deuda de borradores: **9 → 7**. Los siete que quedan **editan un registro que ya
+existe** —la ficha fiscal de un cliente, el expediente legal de una sucursal, una
+entrada de planilla, la ficha de un proveedor— y comparten una sola pregunta sin
+responder: si un borrador viejo puede repoblar un registro vivo. No es una
+decisión mecánica y no se toma de paso.
+
 ## v2.739.6 — Cinco de los 24 no eran deuda, y el gate ahora lo dice
 
 Al saldar la deuda de borradores, **cinco de los 24 hallazgos originales

@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import {
-    AlertTriangle, Banknote, CalendarDays, CheckCircle2, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
+    AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -101,6 +101,61 @@ const diasDesde = (f) => Math.max(0, Math.round(
 ));
 
 const DIAS_DE_ALARMA = 4;
+
+/* ── Qué etapa se ve abierta, y por qué se recuerda ─────────────────────────
+ *
+ * «que las secciones sean plegables, asi solo se ve lo que mas interesa. por
+ * ejemplo contadas no lo necesito ver» (usuario, 2026-08-24).
+ *
+ * «Contadas» arranca cerrada porque es el ARCHIVO: crece sin techo y nadie
+ * entra a esta pantalla a mirarlo. Las tres pendientes arrancan abiertas — son
+ * trabajo por hacer, y una etapa con trabajo escondida detrás de un chevron es
+ * exactamente cómo una bolsa se queda tres días sin que nadie la vea.
+ *
+ * Se guarda en el navegador y NO en la dirección, a diferencia de la pestaña
+ * activa (`usePestanaEnUrl`). Son dos cosas distintas: la pestaña es a dónde
+ * fuiste —se comparte con un enlace y se pierde al recargar—, y esto es cómo te
+ * gusta ver la pantalla, que es de esta persona y de este equipo. Pegarlo a la
+ * URL obligaría a que un enlace compartido impusiera el gusto de quien lo mandó.
+ *
+ * Cada lectura y cada escritura va en `try`: en una ventana privada, o con el
+ * navegador configurado para bloquear datos de sitio, el acceso LANZA — y una
+ * pantalla de dinero no se puede quedar en blanco por una preferencia.
+ */
+const CLAVE_PLEGADO = 'bolsas:etapas-cerradas';
+const CERRADAS_LA_PRIMERA_VEZ = ['contadas'];
+
+function usePlegado() {
+    const [cerradas, setCerradas] = useState(() => {
+        try {
+            const guardado = localStorage.getItem(CLAVE_PLEGADO);
+            if (guardado) return new Set(JSON.parse(guardado));
+        } catch { /* sin almacenamiento: se usa el default y no se guarda */ }
+        return new Set(CERRADAS_LA_PRIMERA_VEZ);
+    });
+
+    const guardar = (n) => {
+        try { localStorage.setItem(CLAVE_PLEGADO, JSON.stringify([...n])); } catch { /* ídem */ }
+        return n;
+    };
+
+    const alternar = useCallback((clave) => setCerradas((s) => {
+        const n = new Set(s);
+        if (n.has(clave)) n.delete(clave); else n.add(clave);
+        return guardar(n);
+    }), []);
+
+    /* Abrir a la fuerza: lo usa la recepción para que las bolsas que acaban de
+     * pasar a «Por contar» no aterricen dentro de una sección cerrada. */
+    const abrir = useCallback((clave) => setCerradas((s) => {
+        if (!s.has(clave)) return s;
+        const n = new Set(s);
+        n.delete(clave);
+        return guardar(n);
+    }), []);
+
+    return { cerradas, alternar, abrir };
+}
 
 // Una sola referencia vacía: devolver `[]` en cada render haría que el carril de
 // la vista se creyera cambiado siempre.
@@ -335,22 +390,33 @@ function Resolver({ bolsa, ocupado, onResolver }) {
  * de qué sala es lo que se está mirando nunca sobra — que es justo lo que se
  * pierde cuando alguien deja filtrada una sala y se olvida.
  */
-function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo, vacio, verMontos }) {
+function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo,
+    vacio, verMontos, plegada = false, onPlegar, anclaRef }) {
     return (
-        <section className="space-y-2">
+        <section className="space-y-2" ref={anclaRef}>
+            {/* El encabezado ENTERO pliega, y el conteo se queda visible al
+                cerrar: es lo que hace que una sección cerrada siga informando —
+                «Contadas · 12 bolsas» sin las doce tarjetas. Si el número
+                desapareciera con el contenido, cerrar sería esconder. */}
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
-                <h3 className="text-label font-bold text-content flex items-center gap-2">
-                    <Icon size={15} className="text-content-3" />
-                    {titulo}
+                <h3 className="text-label font-bold text-content">
+                    <button type="button" onClick={onPlegar} aria-expanded={!plegada}
+                        className="flex items-center gap-2 min-h-[var(--tap-min)] text-left
+                                   hover:text-content-2 transition-colors">
+                        {plegada ? <ChevronDown size={14} className="text-content-3 shrink-0" />
+                            : <ChevronUp size={14} className="text-content-3 shrink-0" />}
+                        <Icon size={15} className="text-content-3" />
+                        {titulo}
+                    </button>
                 </h3>
                 <span className="text-caption text-content-3 tabular-nums">
                     {total} {total === 1 ? 'bolsa' : 'bolsas'}
                     {verMontos && total > 0 && ` · ${formatMoney(montoTotal)}`}
                 </span>
             </div>
-            {ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
-            {accion}
-            {total === 0
+            {!plegada && ayuda && <p className="text-caption text-content-3 px-1">{ayuda}</p>}
+            {!plegada && accion}
+            {plegada ? null : total === 0
                 ? <EmptyState linea icon={Icon} title={vacio} />
                 : grupos.map((g) => (
                     <div key={g.branchId} className="space-y-1.5">
@@ -410,6 +476,10 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      * no puede depender del período (ver `fetchBolsasConDiferencia`), y para una
      * sala son lo único que vuelve después de entregar. */
     const [diferencias, setDiferencias] = useState([]);
+    const { cerradas, alternar: plegar, abrir: abrirEtapa } = usePlegado();
+    // Dónde está «Por contar», para llevar ahí a quien acaba de recibir.
+    const anclaPorContar = useRef(null);
+    const anclaContadas = useRef(null);
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
      * contra ESTO y no contra `Date.now()` en el render: leer el reloj mientras
      * se dibuja hace que dos renders del mismo estado den resultados distintos
@@ -628,9 +698,27 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      */
     const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
 
-    const recibir = useCallback((lista) => correr('recibir',
-        () => recibirBolsas(lista.map((b) => b.id)),
-        lista.length === 1 ? 'Recepción confirmada' : `Recepción de ${lista.length} bolsas confirmada`), [correr]);
+    /* Confirmar la recepción MUEVE la bolsa de sección: sale de «Esperando
+     * recepción» y aparece en «Por contar», que está más abajo y —desde que las
+     * etapas se pliegan— puede estar cerrada. Sin esto, apretar el botón se ve
+     * como que las bolsas se borraron.
+     *
+     * Así que la recepción abre «Por contar», lleva la pantalla hasta ahí y lo
+     * dice en el aviso. El `requestAnimationFrame` espera al render que abre la
+     * sección; el ancla es la sección y no una tarjeta, porque la recarga aún no
+     * terminó y las tarjetas todavía no están. */
+    const recibir = useCallback(async (lista) => {
+        const ok = await correr('recibir',
+            () => recibirBolsas(lista.map((b) => b.id)),
+            lista.length === 1
+                ? 'Recepción confirmada · ya está en «Por contar»'
+                : `Recepción de ${lista.length} bolsas confirmada · ya están en «Por contar»`);
+        if (!ok) return;
+        abrirEtapa('porContar');
+        requestAnimationFrame(() => {
+            anclaPorContar.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }, [correr, abrirEtapa]);
 
     const contar = useCallback((bolsa, monto) => correr(`contar-${bolsa.id}`,
         () => contarBolsa(bolsa.id, monto, saldoDe(bolsa)),
@@ -780,15 +868,30 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 </Notice>
             )}
 
+            {/* El aviso decía «están abajo, en Contadas» — y desde que las etapas
+                se pliegan, «Contadas» arranca CERRADA. Un aviso que manda a un
+                sitio que no se ve es peor que no tenerlo, así que trae el botón
+                que lo abre y lleva hasta ahí. */}
             {alcanceTodos && sinResolver.length > 0 && (
-                <Notice variant="danger" icon={AlertTriangle}>
+                <Notice variant="danger" icon={AlertTriangle}
+                    action={(
+                        <Button variant="secondary" size="sm" icon={Scale}
+                            onClick={() => {
+                                abrirEtapa('contadas');
+                                requestAnimationFrame(() => {
+                                    anclaContadas.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                });
+                            }}>
+                            Ver
+                        </Button>
+                    )}>
                     <span className="font-bold">
                         {sinResolver.length === 1
                             ? 'Hay una bolsa contada que no cuadró y sigue sin resolver'
                             : `Hay ${sinResolver.length} bolsas contadas que no cuadraron y siguen sin resolver`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Están abajo, en «Contadas».
+                        Están en «Contadas», al final de la pantalla.
                     </span>
                 </Notice>
             )}
@@ -886,6 +989,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 })}
                 total={enSala.length} montoTotal={suma(enSala)}
                 verMontos={verMontos}
+                plegada={cerradas.has('enSala')} onPlegar={() => plegar('enSala')}
                 vacio={pendientesFuera.length ? "Sin efectivo esperando en las salas en estas fechas" : "Sin efectivo esperando en las salas"}
             />
 
@@ -948,6 +1052,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                     </Button>
                 ) : null}
                 verMontos={verMontos}
+                plegada={cerradas.has('enCamino')} onPlegar={() => plegar('enCamino')}
                 vacio={pendientesFuera.length ? "Nada en camino en estas fechas" : "Nada en camino"}
             />
 
@@ -963,6 +1068,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 })}
                 total={porContar.length} montoTotal={suma(porContar)}
                 verMontos={verMontos}
+                plegada={cerradas.has('porContar')} onPlegar={() => plegar('porContar')}
+                anclaRef={anclaPorContar}
                 vacio={pendientesFuera.length ? "Nada pendiente de contar en estas fechas" : "Nada pendiente de contar"}
             />
 
@@ -1007,6 +1114,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 })}
                 total={contadas.length} montoTotal={suma(contadas)}
                 verMontos={verMontos}
+                plegada={cerradas.has('contadas')} onPlegar={() => plegar('contadas')}
+                anclaRef={anclaContadas}
                 vacio="Sin bolsas contadas en estas fechas"
             />
 

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.3 — Bolsas: las etapas se pliegan y recibir te lleva al conteo
+
+*«que las secciones sean plegables, asi solo se ve lo que mas interesa. por
+ejemplo contadas no lo necesito ver»*.
+
+Las cuatro etapas de `/cortes?tab=bolsas` pliegan desde su encabezado, y **el
+conteo se queda visible al cerrar**: «Contadas · 12 bolsas · $8,400» sin las doce
+tarjetas. Si el número desapareciera con el contenido, cerrar sería esconder.
+
+**«Contadas» arranca cerrada** porque es el archivo: crece sin techo y nadie
+entra acá a mirarlo. Las tres pendientes arrancan abiertas — son trabajo por
+hacer, y una etapa con trabajo detrás de un chevron es exactamente cómo una
+bolsa se queda tres días sin que nadie la vea.
+
+Se recuerda **en el navegador y no en la dirección**, a diferencia de la pestaña
+activa. Son dos cosas distintas: la pestaña es a dónde fuiste —se comparte con un
+enlace—, y esto es cómo te gusta ver la pantalla. Pegarlo a la URL haría que un
+enlace compartido impusiera el gusto de quien lo mandó. Cada lectura y cada
+escritura va en `try`: en una ventana privada el acceso lanza, y una pantalla de
+dinero no se puede quedar en blanco por una preferencia.
+
+**Y confirmar la recepción ya no parece que borrara las bolsas.** La pregunta
+era literal: al confirmar, la bolsa sale de «Esperando recepción» y aparece en
+«Por contar», más abajo — y ahora esa sección puede estar cerrada. Así que
+recibir **abre «Por contar», lleva la pantalla hasta ahí, y el aviso lo dice**:
+«Recepción de 3 bolsas confirmada · ya están en "Por contar"».
+
+Por lo mismo, el aviso rojo de las diferencias sin resolver dejó de decir «están
+abajo, en Contadas» a secas —esa sección arranca cerrada— y trae el botón que la
+abre y lleva hasta ella.
+
 ## v2.735.2 — 53 pruebas: el canal de avisos, el expediente y el personal mínimo
 
 **El canal de avisos** (21). La regla que lo ordena todo: *un aviso que no salió,
@@ -54,37 +85,6 @@ sólo se mueva al cruzar las 44 horas de una persona: 138 h y 149 h dan las mism
 no está corriendo.
 
 Personal y Avisos llegan a 95 en pruebas. Promedio del portal: **94%**.
-
-## v2.735.1 — Bolsas: las etapas se pliegan y recibir te lleva al conteo
-
-*«que las secciones sean plegables, asi solo se ve lo que mas interesa. por
-ejemplo contadas no lo necesito ver»*.
-
-Las cuatro etapas de `/cortes?tab=bolsas` pliegan desde su encabezado, y **el
-conteo se queda visible al cerrar**: «Contadas · 12 bolsas · $8,400» sin las doce
-tarjetas. Si el número desapareciera con el contenido, cerrar sería esconder.
-
-**«Contadas» arranca cerrada** porque es el archivo: crece sin techo y nadie
-entra acá a mirarlo. Las tres pendientes arrancan abiertas — son trabajo por
-hacer, y una etapa con trabajo detrás de un chevron es exactamente cómo una
-bolsa se queda tres días sin que nadie la vea.
-
-Se recuerda **en el navegador y no en la dirección**, a diferencia de la pestaña
-activa. Son dos cosas distintas: la pestaña es a dónde fuiste —se comparte con un
-enlace—, y esto es cómo te gusta ver la pantalla. Pegarlo a la URL haría que un
-enlace compartido impusiera el gusto de quien lo mandó. Cada lectura y cada
-escritura va en `try`: en una ventana privada el acceso lanza, y una pantalla de
-dinero no se puede quedar en blanco por una preferencia.
-
-**Y confirmar la recepción ya no parece que borrara las bolsas.** La pregunta
-era literal: al confirmar, la bolsa sale de «Esperando recepción» y aparece en
-«Por contar», más abajo — y ahora esa sección puede estar cerrada. Así que
-recibir **abre «Por contar», lleva la pantalla hasta ahí, y el aviso lo dice**:
-«Recepción de 3 bolsas confirmada · ya están en "Por contar"».
-
-Por lo mismo, el aviso rojo de las diferencias sin resolver dejó de decir «están
-abajo, en Contadas» a secas —esa sección arranca cerrada— y trae el botón que la
-abre y lleva hasta ella.
 
 ## v2.735.0 — Un envío tiene tres motivos y una dirección: sólo Bodega le manda a una sala
 

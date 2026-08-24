@@ -87,7 +87,19 @@ export const EmptyState = memo(({
     linea = false,
     className = '',
 }) => (linea ? (
-    <div className={`flex items-center justify-center gap-2.5 px-4 py-5 text-center
+    // ── `data-vacio`: que la pantalla DIGA que está vacía ───────────────────
+    // Sin esto, cualquier medición tiene que ADIVINAR si una vista sin datos
+    // está vacía, cargando o rota — y las dos formas de adivinar fallaron. Se
+    // probó contando texto: `branches` con ocho sucursales da 508 caracteres y
+    // `sesiones` sin nada da 506, porque `content-visibility: auto` deja fuera
+    // de `innerText` lo que no se pintó. Se probó contando elementos con
+    // superficie de tarjeta: `sesiones` pinta fichas de persona que no la usan,
+    // así que una vista CON datos quedaba por debajo del corte.
+    //
+    // Un atributo no cambia un pixel y convierte la pregunta en una respuesta.
+    // Es lo mismo que `data-destino` hizo por las fichas: en tiempo de render el
+    // portal sí sabe qué está mostrando, y decirlo cuesta menos que inferirlo.
+    <div data-vacio className={`flex items-center justify-center gap-2.5 px-4 py-5 text-center
         animate-in fade-in duration-[var(--dur-lento)] ${className}`}>
         <Icon size={16} strokeWidth={2} className={`shrink-0 ${iconClass}`} />
         <div className="min-w-0">
@@ -97,7 +109,7 @@ export const EmptyState = memo(({
         {action && <div className="shrink-0">{action}</div>}
     </div>
 ) : (
-    <div className={`flex flex-col items-center justify-center ${compact ? 'min-h-[200px]' : 'min-h-[400px]'}
+    <div data-vacio className={`flex flex-col items-center justify-center ${compact ? 'min-h-[200px]' : 'min-h-[400px]'}
         animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${className}`}>
         <div className="relative group flex flex-col items-center text-center">
             <div className={`absolute top-2 ${compact ? 'w-20 h-20' : 'w-28 h-28'} rounded-full blur-[40px] opacity-30 ${glowClass}`} />
@@ -129,7 +141,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
 
     if (variant === 'route') {
         return (
-            <div className={`fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header ${className}`}>
+            <div data-cargando className={`fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header ${className}`}>
                 <div data-surface="card" className="relative px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
                     {spinner}
                     <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">
@@ -141,14 +153,14 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     }
     if (variant === 'inline') {
         return (
-            <span className={`inline-flex items-center gap-2 text-content-3 ${className}`}>
+            <span data-cargando className={`inline-flex items-center gap-2 text-content-3 ${className}`}>
                 {spinner}
                 {label && <span className="text-body-sm font-bold">{label}</span>}
             </span>
         );
     }
     return (
-        <div className={`w-full h-full min-h-[160px] flex flex-col items-center justify-center gap-3 ${className}`}>
+        <div data-cargando className={`w-full h-full min-h-[160px] flex flex-col items-center justify-center gap-3 ${className}`}>
             {spinner}
             {label && (
                 <span className="text-caption font-bold uppercase tracking-widest text-content-3">{label}</span>

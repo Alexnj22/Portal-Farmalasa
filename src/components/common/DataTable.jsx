@@ -398,7 +398,7 @@ export function DataTable({
 
               {/* Empty */}
               {isEmpty && (
-                <tr>
+                <tr data-vacio>
                   <td colSpan={columns.length} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       {empty.icon && (
@@ -469,7 +469,12 @@ function FichaEsqueleto({ i, pulse }) {
 // pantalla donde no hay ninguna columna que deslizar.
 function VacioMovil({ empty, tk }) {
   return (
-    <div data-surface="card" className="w-full px-4 py-14 rounded-card">
+    // `data-vacio`, igual que en `EmptyState`: la mayoría de las vistas del
+    // portal no arman su vacío a mano, se lo pasan a `DataTable` por la prop
+    // `empty`. Si la marca viviera sólo en `EmptyState`, una medición externa
+    // vería mudas a Clientes, Cotizaciones y quince más — que están bien y sí
+    // dicen que no hay nada.
+    <div data-vacio data-surface="card" className="w-full px-4 py-14 rounded-card">
       <div className="flex flex-col items-center gap-3 text-center">
         {empty.icon && <empty.icon size={32} strokeWidth={1.5} className={tk.emptyIcon} />}
         <p className={`text-body font-bold ${tk.emptyText}`}>{empty.message}</p>

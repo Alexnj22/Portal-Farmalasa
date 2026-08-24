@@ -534,13 +534,13 @@ filas. Se le apuntó al archivo nuevo y se confirmó a mano que sigue en 3.
 
 ## 8. Lo que sigue, actualizado
 
-1. **`staff_salary`** — el único hallazgo grave, y sigue abierto porque tiene dos
-   salidas legítimas y la decisión no es técnica.
-2. **Correr el barrido móvil de 54 rutas.** Sigue siendo lo de mayor rendimiento:
-   un eje topado en las 25 áreas a la vez, que una sola corrida desbloquea.
+*(Esta lista es de la primera jornada. La vigente está al final, en §8.11.)*
+
+1. ~~**`staff_salary`**~~ — cerrado en v2.720.0.
+2. ~~**Correr el barrido móvil de 54 rutas.**~~ — corre; de 13 rutas medidas a 31.
 3. **Poner los primeros sellos de sala.**
-4. **Las ocho áreas sin ninguna prueba.**
-5. **La migración `20260823222500`**, que vive en producción y no en el repo.
+4. ~~**Las ocho áreas sin ninguna prueba.**~~ — cubiertas en v2.720.1 y v2.721.0.
+5. ~~**La migración `20260823222500`**~~ — recuperada de prod y commiteada.
 
 
 ### 7.6 `staff_salary` — el único hallazgo grave, cerrado (v2.720.0)
@@ -777,3 +777,126 @@ instrumento y no en el portal** — y la primera cuya causa es una propiedad de 
 que el portal usa *bien*. Un instrumento no sólo se equivoca por tener el
 umbral mal puesto: se equivoca por medir una magnitud que el sujeto tenía
 motivos legítimos para no exponer.
+
+### 8.8 La bitácora: 27 acusaciones vagas, 26 huecos reales, 0 al cerrar
+
+El detector de observabilidad decía **27** y estaba haciendo la pregunta mal.
+Acusaba a cualquier archivo de `src/data/` que escribiera sin nombrar
+`appendAuditLog` — o sea a la capa de datos entera, que es una capa fina donde la
+bitácora **no se escribe nunca**: se escribe en quien orquesta la acción, la
+vista o el slice.
+
+Un detector que acusa a 27 archivos por diseño no se lee. Se apaga.
+
+Se rehízo para seguir la **cadena de llamada**, y para seguir además los **alias
+de los imports**. Ese segundo detalle no es cosmético: `practicantesSlice.js`
+importa `updatePracticante as updatePracticanteData`, así que buscando el nombre
+suelto la coincidencia caía en el componente —que llama a la acción del store,
+que se llama igual— y el slice, **que sí audita**, quedaba invisible. Dos falsos
+positivos que además señalaban el archivo equivocado para arreglarlos.
+
+Medido así fueron **26 acciones reales**, y las 26 quedaron cerradas:
+
+| dónde | qué no dejaba rastro |
+|---|---|
+| Planilla | crear el período, **aprobarlo**, **darlo por pagado**, recalcular, canjear horas |
+| Vacaciones | crear, editar fechas, cambiar estado, confirmar, cancelar |
+| Mín·Máx | cambiar la configuración — reescribe el mínimo y máximo de **18,364 filas** |
+| Turnos | crear, editar, archivar, restaurar — de ahí sale el minuto de tardanza |
+| Horarios | poner y quitar una cobertura entre salas |
+| Traslados | **rechazar** un pedido de otra sala |
+| Cotizaciones | crear, editar y anular un precio ofrecido por escrito |
+| Bitácoras SRS | reconfigurar un área — cambia lo que el regente firma al cerrar el mes |
+| Productos | marcar un producto como sin principio activo |
+| Inventario | reportar una venta perdida |
+
+Dos exenciones, **por tabla y no por nombre de función**: el tema elegido y las
+notificaciones propias. Escribir el estado de uno mismo no le pasa nada a nadie
+más, y anotarlo llenaría la bitácora del ruido que taparía justo lo que existe
+para encontrar. Por tabla porque el nombre lo cambia cualquiera; la tabla es el
+dato.
+
+### 8.9 Seis de ocho acusados no eran nada
+
+De los ocho `submit-sin-freno` que quedaban, **seis no eran defectos**: cuatro
+copiaban al portapapeles, uno generaba un código candidato y otro leía renglones
+para imprimir. Apretar «Copiar» dos veces copia dos veces.
+
+Los dos reales eran los mismos dos: **iniciar y completar una ruta**. «Iniciar»
+escribe el estado y manda un aviso de salida **a cada sala de la ruta** — ese
+aviso ya se fue y no se puede retirar.
+
+Seis de ocho falsos es exactamente el número con el que una categoría se termina
+apagando. Ahora se le pide la señal que separa las dos clases: **que el manejador
+llame a algo que escriba**. La convención del repo lo hace posible — en
+`src/data/` los que leen se llaman `fetch*` y los que escriben empiezan por el
+verbo.
+
+Y el último hallazgo de copy también era del detector: el botón del libro de
+compras se llama `key: 'sincronizar'` y **en pantalla dice «Buscar nuevas»**. El
+texto ya estaba bien y el detector señalaba la palabra que tiene que quedarse.
+Ahora descarta `key`/`slug`/`testId`, pero **no** `value` ni `name`: la regla «un
+rótulo no es una clave» avisa que hay catálogos donde el `value` ES el texto que
+se muestra, y filtrarlos haría el número más chico a costa de clasificar mal por
+construcción.
+
+**Barrido de auditoría: 38 hallazgos → 0.**
+
+### 8.10 La pantalla dice qué está mostrando, y son TRES estados
+
+El detector de «esta ruta no tenía nada que medir» iba por su cuarta versión y
+las cuatro adivinaban. Las dos últimas fallaron por el mismo motivo — medían un
+**proxy** en vez del hecho:
+
+| versión | qué contaba | dónde se rompió |
+|---|---|---|
+| v3 | caracteres de texto | `branches` con 8 salas da **508**; `sesiones` sin nada da **506** |
+| v4 | elementos con superficie de tarjeta | `sesiones` pinta fichas que no usan ese token |
+
+Se dejó de adivinar. `EmptyState` estampa **`data-vacio`** y `LoadingState`
+estampa **`data-cargando`**: un atributo no cambia un pixel y convierte la
+pregunta en una respuesta. Es lo mismo que `data-destino` hizo por las fichas —
+en tiempo de render el portal **sí sabe** qué está mostrando.
+
+Y con eso el barrido pasó a distinguir **tres** causas, que siempre fueron tres y
+tienen tres arreglos distintos:
+
+- **sin datos y lo dice** → la pantalla está bien; se arregla sembrando.
+- **seguía cargando** → no es un problema del dato; se sube la espera o se mira
+  por qué tarda.
+- **sin resolver** → ni contenido reconocible ni un vacío canónico. Hay que
+  abrirlas una por una.
+
+Antes las tres se informaban juntas bajo «sin datos», así que la tercera no se
+podía ver.
+
+**Y esa tercera no es lo que primero se escribió.** La línea decía «pantallas que
+no explican qué pasa» y prometía doce defectos. Se abrieron tres a mano y las tres
+eran cosas distintas, ninguna eso:
+
+| ruta | qué era realmente |
+|---|---|
+| `corte-z` | **sí explica** —«el mes en curso todavía no se cierra»— pero escrito a mano, fuera de los dos componentes canónicos |
+| `my-requests` | es una **redirección**: no tiene contenido propio y nunca lo va a tener |
+| `sesiones` | **tiene datos** (dos fichas) y usa `EmptyState` bien; queda bajo el corte de contenido |
+
+Una de tres era un hallazgo suave. Doce defectos en un informe que tiene, como
+mucho, unos pocos es cómo un informe se deja de leer — así que la categoría pasó
+a llamarse **«sin resolver»**, que es lo que de verdad significa.
+
+**Y la primera versión de esa idea estaba mal por el otro lado.** Se hizo que
+`data-vacio` VETARA cualquier otra señal, con el argumento de que una pantalla
+diciendo «acá no hay nada» gana sobre cualquier proxy. En la corrida siguiente el
+**tablero, con TRECE fichas pintadas, se contó como vacío** — porque uno solo de
+sus widgets no tenía datos. Un vacío dentro de un widget no es la pantalla
+diciendo que está vacía: es un rincón diciéndolo de sí mismo, y desde afuera los
+dos se ven igual. Hoy el contenido manda y los atributos sólo explican **por qué**
+no lo hay.
+
+**Y la marca estaba en el camino menos transitado.** Con `data-vacio` sólo en
+`EmptyState`, el barrido veía **mudas a diecisiete rutas que están bien**:
+Clientes, Cotizaciones, Libros de IVA y catorce más no arman su vacío a mano — se
+lo pasan a `DataTable` por la prop `empty`, y `DataTable` lo pinta con marcado
+propio. Ahora lo estampan las dos, en sus dos formas (la tabla de escritorio y la
+hoja del teléfono), y hay pruebas que lo anclan: si alguien las quita, falla algo
+en vez de volverse ciego el barrido en silencio.

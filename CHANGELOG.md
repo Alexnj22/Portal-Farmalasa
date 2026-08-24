@@ -21,54 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.725.2 — El pedido del correo al contribuyente le llega a alguien
+## v2.726.0 — La pantalla dice si está vacía o cargando, en vez de dejar que se adivine
 
-Cierra la mitad que faltaba de la regla del correo (v2.724.0): cuando el correo
-de un **contribuyente** no se puede reparar solo, no se le borra —su crédito
-fiscal lo exige— así que hay que pedirlo. Antes eso se publicaba en «Por
-revisar» y nadie se enteraba.
+`EmptyState` estampa **`data-vacio`** y `LoadingState` estampa
+**`data-cargando`** — en las dos formas de cada uno, y también en las dos que
+pinta `DataTable` (la tabla de escritorio y la hoja del teléfono). Un atributo no
+cambia un pixel y no lo ve nadie que use el portal.
 
-**El «reenviar» del final de la regla no hizo falta construirlo.** En cuanto
-alguien arregla el correo en Clientes, `pushClienteAlErp` lo manda a la ficha del
-sistema de origen —que es la que viaja a Hacienda— y el barrido de las 22:30
-retransmite toda factura sin sello, sin preguntar por qué quedó sin él. El lazo
-ya se cerraba solo; lo único que faltaba era el aviso.
+**Por qué hacía falta.** El barrido móvil llevaba cuatro versiones tratando de
+adivinar si una ruta tenía algo que medir, y las dos últimas fallaron por el
+mismo motivo: medían un **proxy** en vez del hecho.
 
-**A quién se le avisa, y por qué a dos.** A la sala que hizo la venta, porque
-tuvo al cliente enfrente. Y a quien puede editar la ficha, porque —medido— las
-salas **no pueden**: `clientes.can_edit` lo tienen Administrador, Gerente
-General, Jefe/a de Talento Humano y Supervisor/a de Ventas, y ningún cargo de
-sala. Avisarle sólo a la sala sería pedirle que resuelva algo que el portal no le
-deja hacer, y un aviso que no se puede atender enseña a ignorar los avisos.
+| versión | qué contaba | dónde se rompió |
+|---|---|---|
+| contaba texto | caracteres de `innerText` | `branches` con **8 sucursales da 508**; `sesiones` sin nada da **506** |
+| contaba tarjetas | elementos con superficie de tarjeta | `sesiones` pinta fichas que no usan ese token |
 
-La sucursal sale de la **factura que Hacienda rechazó**, no de una «sucursal del
-cliente» — que no existe: un cliente compra en varias salas. Y no se repite
-mientras el aviso siga sin leer: la corrida vuelve a detectar el caso todas las
-noches, y un aviso por persona por noche sobre lo mismo es cómo se entrena a
-alguien a no mirar la campana.
+La causa del primero es que **`innerText` devuelve sólo texto renderizado**, y
+`BranchCard` lleva `content-visibility: auto` a propósito para no renderizar lo
+que está fuera de la pantalla. Dos caracteres separaban una pantalla llena de una
+vacía.
 
-### La primera versión no le llegaba a nadie
+Ahora son **tres estados y no dos**, que es lo que siempre fueron: *vacía y lo
+dice*, *seguía cargando* y *sin resolver*. Antes las tres se informaban juntas
+bajo «sin datos» y no se podía decidir ninguna. Hoy: **31 rutas medidas de 54, 11
+sin datos con la pantalla en orden, 12 sin resolver.**
 
-Filtraba `e.status = 'ACTIVE'`. El estado de un empleado es **`ACTIVO`** — la
-columna sólo admite ACTIVO / INACTIVO / BAJA / LIQUIDADO / SUSPENDIDO. La
-función devolvía `ok: true, avisados: 0` y no insertaba una sola fila.
+**Tres cosas costaron una corrida cada una y quedan escritas donde se necesitan:**
 
-Es el mismo defecto que esta misma tanda vino a arreglar en `clientes_por_revisar`
-—17 días recibiendo nada con el contador diciendo que sí—, cometido de nuevo dos
-horas después. Lo cazó probarla contra el caso real antes de darla por buena, que
-es lo único que la habría cazado. Hoy cero destinatarios devuelve `ok: false`:
-no es un éxito, es un pedido que no le llegó a nadie.
+1. La marca va en el camino **más transitado**, no sólo en el canónico. Con
+   `data-vacio` sólo en `EmptyState`, diecisiete rutas que están bien salían como
+   defectuosas: no arman su vacío a mano, se lo pasan a `DataTable`.
+2. El atributo **clasifica, no veta**. El primer intento dejó que ganara sobre
+   todo lo demás y el **tablero, con trece fichas pintadas, se contó como
+   vacío** — porque uno de sus widgets no tenía datos.
+3. **La categoría se llamaba mal.** Decía «pantallas que no explican qué pasa» y
+   prometía doce defectos. Se abrieron tres a mano: `corte-z` **sí explica**
+   (sólo que fuera de los componentes canónicos), `my-requests` es una
+   **redirección** sin contenido propio, y `sesiones` **tiene datos**. Una de
+   tres era un hallazgo, y suave. Pasó a llamarse «sin resolver».
 
-Probado en producción contra `0000065095_COF` de Salud 2: **11 destinatarios**,
-y la prueba se deshizo sin dejar avisos reales.
-
-### Y el reparador de correos queda anclado
-
-`tests/unit/repararCorreo.test.js`, 12 casos. Incluye el que importa: los dos
-correos que Hacienda rechazó **pasan `correoValido`** una vez sin el espacio del
-final, porque esa función hace `trim()`. Ésa es la prueba de por qué la decisión
-la manda el rechazo y no nuestro regex — si la rama preguntara «¿es válido?» en
-vez de «¿el rechazo lo dice?», las dos facturas seguirían trabadas.
+Todo anclado en `tests/unit/estadosDeLaPantalla.test.jsx` (10 pruebas): si alguien
+quita los atributos, falla algo — en vez de volverse ciego el barrido en silencio.
 
 ## v2.725.1 — El barrido queda en cero — y seis de ocho acusados no eran nada
 

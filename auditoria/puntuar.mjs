@@ -379,8 +379,12 @@ function puntuar(area) {
     // teléfono. Un gate que no pudo medir no puede dar verde.
     ev.movil = { pct: 93,
         evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, '
-                 + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).',
-        hallazgos: ['23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono'] };
+                 + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). '
+                 + 'Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) '
+                 + 'y 12 quedan sin resolver.',
+        hallazgos: ['11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono',
+                    '12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, '
+                    + '1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en

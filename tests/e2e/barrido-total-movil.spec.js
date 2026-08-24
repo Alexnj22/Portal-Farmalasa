@@ -399,11 +399,40 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 // La cuenta que NO depende de que el navegador haya pintado.
                 const superficies = document.querySelectorAll('[data-surface], [class*="bg-surface-card"]').length;
                 const sinAcceso = /sin acceso|no ten[eé]s permiso|acceso denegado|no ten[ée]s acceso/i.test(texto);
+                // ── v5: se le PREGUNTA a la pantalla ────────────────────────
+                // Las dos versiones anteriores adivinaban, y las dos fallaron por
+                // el mismo motivo — medían un proxy en vez del hecho:
+                //
+                //   v3 contaba texto. `branches` con ocho sucursales da 508
+                //      caracteres y `sesiones` sin nada da 506, porque
+                //      `content-visibility: auto` deja fuera de `innerText` lo
+                //      que el navegador no pintó.
+                //   v4 contaba elementos con superficie de tarjeta. `sesiones`
+                //      pinta fichas de persona que no usan ese token, así que
+                //      una vista CON datos quedaba por debajo del corte.
+                //
+                // Desde v2.725.2 `EmptyState` estampa `data-vacio` y
+                // `LoadingState` estampa `data-cargando`. Ahora son TRES estados
+                // y no dos, que es lo que siempre fueron: cargando no es vacío, y
+                // confundirlos hacía que una vista lenta se contara como medida.
+                const cargando = document.querySelectorAll('[data-cargando]').length > 0;
+                const diceVacio = document.querySelectorAll('[data-vacio]').length > 0;
+                // Ninguno de los dos VETA, y eso costó una corrida: el primer
+                // intento dejaba que `data-vacio` ganara sobre todo lo demás, y
+                // el tablero —con TRECE fichas pintadas— se contó como vacío
+                // porque UNO de sus widgets no tenía nada. Un vacío dentro de un
+                // widget no es la pantalla diciendo que está vacía; es un rincón
+                // de la pantalla diciéndolo de sí mismo, y desde afuera los dos
+                // se ven igual.
+                //
+                // Así que el contenido manda, y los dos atributos sirven para
+                // explicar POR QUÉ no hay contenido, que es lo que no se podía
+                // saber antes.
                 const conContenido = superficies >= 60 || todasLasTablas.length > 0 || filas > 0
                                      || fichas > 0 || texto.length >= 1100;
                 return { tablas: tablas.length, fichas, tablasAnchas: anchas, superficies,
                          reventó: /ALGO SALIÓ MAL/.test(texto),
-                         sinAcceso,
+                         sinAcceso, cargando, diceVacio,
                          sinDatos: sinAcceso || !conContenido,
                          vacia: !conContenido };
             });
@@ -591,9 +620,40 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 console.log(`    · ${negadas.length} SIN ACCESO con esta cuenta — se arregla dándole el módulo:`);
                 console.log(`      ${negadas.map(v => v.ruta).join(', ')}`);
             }
-            if (vacias.length) {
-                console.log(`    · ${vacias.length} SIN DATOS en este entorno — se arregla sembrando o corriendo fechas:`);
-                console.log(`      ${vacias.map(v => v.ruta).join(', ')}`);
+            // Tres causas, tres arreglos distintos. Meterlas en una sola línea
+            // ya costó una corrida: «sin datos» y «no terminó de cargar» no se
+            // arreglan igual, y la segunda ni siquiera es un problema del dato.
+            const declarada = vacias.filter(v => v.diceVacio);
+            const lenta     = vacias.filter(v => !v.diceVacio && v.cargando);
+            const muda      = vacias.filter(v => !v.diceVacio && !v.cargando);
+            if (declarada.length) {
+                console.log(`    · ${declarada.length} SIN DATOS y lo DICEN (la pantalla está bien) — se arregla sembrando o corriendo fechas:`);
+                console.log(`      ${declarada.map(v => v.ruta).join(', ')}`);
+            }
+            if (lenta.length) {
+                console.log(`    · ${lenta.length} seguían CARGANDO al medirlas — subir la espera o mirar por qué tardan:`);
+                console.log(`      ${lenta.map(v => v.ruta).join(', ')}`);
+            }
+            if (muda.length) {
+                // ── «Sin resolver», NO «mudas» ──────────────────────────────
+                // La primera versión de esta línea decía «pantallas que no
+                // explican qué pasa». Se abrieron tres a mano y las tres eran
+                // cosas distintas, ninguna eso:
+                //
+                //   · `corte-z` SÍ explica —«el mes en curso todavía no se
+                //     cierra»— pero escrito a mano, fuera de los dos
+                //     componentes canónicos, así que no estampa `data-vacio`;
+                //   · `my-requests` es una REDIRECCIÓN a otra ruta: no tiene
+                //     contenido propio y nunca lo va a tener;
+                //   · `sesiones` TIENE datos —dos fichas de persona— y usa
+                //     `EmptyState` bien; queda abajo del corte de contenido.
+                //
+                // Una de tres era un hallazgo suave. Llamarlas «mudas» habría
+                // puesto doce defectos en un informe que tiene, como mucho,
+                // unos pocos — y un informe que exagera se deja de leer.
+                console.log(`    ? ${muda.length} SIN RESOLVER: ni contenido reconocible ni un vacío canónico. Hay que abrirlas una por una:`);
+                console.log(`      ${muda.map(v => v.ruta).join(', ')}`);
+                console.log(`      (causas vistas: vacío escrito a mano · ruta que redirige · contenido real bajo el corte)`);
             }
         }
         console.log('  ruta'.padEnd(26) + 'tablas fichas desbP salen dedo zoom acuse imposib perdido');

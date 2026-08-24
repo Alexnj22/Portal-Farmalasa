@@ -44,6 +44,8 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { abrirCanal } from './lib/canal-supabase.mjs';
+import { clasificarSalientes } from './lib/salientes.mjs';
+
 
 const BASELINE_FILE = 'scripts/eficiencia-gate-baseline.json';
 /* La lectura anterior NO va en el baseline, aunque ahí nació.
@@ -440,6 +442,9 @@ if (!SOLO_LOCAL) {
 
     const porNombre = new Map(crons.map(c => [c.jobname, c]));
     const declarados = new Set(CRONS.map(c => c.job));
+    // Cuántas corridas de cron fallaron en la ventana. Lo usa B3 para no acusar
+    // a los crons de algo que no hicieron — ver el comentario de allá.
+    let corridasFallidas = 0;
 
     // B1 · Un cron que nadie declaró
     for (const c of crons) {
@@ -473,6 +478,7 @@ if (!SOLO_LOCAL) {
        * tiene que ser rojo es lo SOSTENIDO: una función que quedó con el JWT
        * puesto falla el 100% de las veces, no el 0,07%. */
       const tasa = Number(p.corridas) ? Number(p.fallidas) / Number(p.corridas) : 0;
+      corridasFallidas += Number(p.fallidas) || 0;
       if (Number(p.fallidas) > 0 && tasa > 0.05)
         fallos.push(`el cron ${d.job} falló en ${p.fallidas} de ${p.corridas} corridas `
                   + `(${(tasa * 100).toFixed(1)}%): ${p.ultimo_fallo ?? 'sin mensaje'}`);
@@ -586,11 +592,12 @@ if (!SOLO_LOCAL) {
               + (Number(s.otros_2xx ?? 0) > 0 ? gris(`  ·  2xx que no son 200: ${s.otros_2xx} (aceptado: el modo de fondo responde 202)`) : '')
               + `  ·  colgadas por plazo: ${s.colgadas ?? '?'}`);
     if (s.desglose_malos) console.log(gris(`      ${s.desglose_malos}`));
-    if (Number(s.no_ok ?? 0) > 0)
-      fallos.push(`hay ${s.no_ok} llamada(s) saliente(s) fuera de 2xx (${s.desglose_malos}). `
-                + 'Un 401 acá significa que una función volvió a quedar con verify_jwt y el cron '
-                + 'está fallando ANTES de ejecutar una línea — ya pasó tres veces. Un 5xx suelto '
-                + 'puede ser el reinicio de Postgres: cruzar contra pg_postmaster_start_time().');
+    const veredicto = clasificarSalientes({
+      noOk: Number(s.no_ok ?? 0), total: Number(s.total ?? 0),
+      corridasFallidas, desglose: s.desglose_malos,
+    });
+    if (veredicto.nivel === 'rojo')  fallos.push(veredicto.mensaje);
+    if (veredicto.nivel === 'aviso') avisos.push(veredicto.mensaje);
     // ── Colgadas: por TASA, no por tropiezo ─────────────────────────────────
     // Acá había tolerancia cero, y el 2026-08-24 puso el gate en rojo por UNA
     // llamada de 1.931 (0,052%). Mirada de cerca era un fallo de DNS —55.001 ms
@@ -681,3 +688,4 @@ if (fallos.length) {
   process.exit(1);
 }
 console.log(`\n${verde('  ✓ gate:eficiencia en verde')}\n`);
+

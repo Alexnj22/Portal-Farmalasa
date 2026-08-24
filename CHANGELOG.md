@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.9 — El gate de eficiencia acusaba al cron de algo que no hizo
+
+Cerrando la sesión de auditoría, `npm run gate:eficiencia` se puso **rojo** por
+DOS llamadas salientes de 4.106: un 401 `UNAUTHORIZED_INVALID_JWT_FORMAT` y un
+400 `{"ok":false,"error":"Falta el envío."}`. Su mensaje afirmaba que «una
+función volvió a quedar con verify_jwt y el cron está fallando ANTES de ejecutar
+una línea».
+
+**Se midió: las 33 corridas de cron de esas dos ventanas terminaron `succeeded`,
+y en 24 horas no falló ninguna.** El gate mandaba a redesplegar funciones que
+estaban bien — la misma receta equivocada que ya se había corregido en el cuadre
+de ventas, donde el aviso decía «resincronizar» sobre un caso en el que
+resincronizar no servía de nada.
+
+La causa es que **`net._http_response` guarda TODA salida de `pg_net`**, no sólo
+la de los crons: una prueba desde el navegador, un barrido a mano o una función
+que validó su entrada y contestó 400 caen ahí igual. Y ese 400 era literalmente
+eso: una función rechazando una entrada incompleta, que es lo que tiene que
+hacer.
+
+**Ahora se cruza con lo único que responde la pregunta de verdad: ¿le falló una
+corrida a algún cron?** Si sí, sigue siendo rojo y el mensaje del JWT vale. Si
+no, es un aviso con el desglose a la vista — acotar el fallo no es dejar de
+mirar. Y queda un techo por TASA (1%, el mismo que las colgadas) para que una
+inundación vuelva a ser roja aunque los crons la sobrevivan. **El umbral no se
+subió: se cambió la pregunta.**
+
+**Y la regla se probó.** 11 pruebas anclan la regresión que tiene que cazar —un
+cron con el JWT puesto sigue siendo rojo, y alcanza UNA corrida fallida—, que el
+aviso no mande a redesplegar nada, y los dos bordes exactos del 1%.
+
+Para poder probarla hubo que sacarla a `scripts/lib/salientes.mjs`: importar el
+gate ejecutaba el gate **entero contra producción** —medido, 13,84 s de «import»
+en una prueba unitaria, y encima necesitaba red—. Una prueba que sale a
+producción para comprobar una cuenta de tres líneas es una prueba que alguien va
+a terminar salteando.
+
 ## v2.735.8 — Bolsas: el conteo se cuadra por día, por sucursal y en total
 
 *«podemos mejorar el conteo? que aparezca cuanto es por dia, y el total de la

@@ -9,7 +9,18 @@ SET lock_timeout = '5s';
 -- Un cron que dispara peticiones al sistema y que el vigilante no puede
 -- descubrir es exactamente el que no debe existir. El `http_post` vuelve al
 -- comando, donde se ve.
-SELECT cron.unschedule('continuar-envios');
+-- ── Con guarda, porque `cron.unschedule` LANZA si el trabajo no existe ──────
+-- Descubierto el 2026-08-24 al rehacer el entorno de pruebas: la creación del
+-- branch replica la historia completa sobre una base vacía y se detuvo acá. El
+-- trabajo `continuar-envios` no existe en una base nueva, así que esta línea aborta y
+-- **toda la historia posterior deja de poder reproducirse** — 212 migraciones
+-- que ya no llegan. No es sólo el branch: es que el historial no es replicable,
+-- que es lo que uno necesita el día que hay que reconstruir.
+--
+-- El patrón correcto ya se usaba en cinco migraciones de este mismo repo; a
+-- ésta le faltaba. Hoy lo vigila `gate:migrations`.
+SELECT cron.unschedule('continuar-envios')
+  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'continuar-envios');
 
 SELECT cron.schedule('continuar-envios', '*/10 * * * *', $cron$
   -- Una llamada POR ENVÍO: cada despacho abre su propia sesión contra el

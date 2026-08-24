@@ -32,7 +32,7 @@
 import { execSync } from 'node:child_process';
 
 const PROD = 'sacecdkdmsdvgqnrsett';
-const PRUEBAS = 'cbnjplmnfmfsambavjce';
+const PRUEBAS = 'qvctarsqvlhbzgvwbbbt';
 
 const CONSULTA = `select
   (select count(*) from supabase_migrations.schema_migrations) as migraciones,

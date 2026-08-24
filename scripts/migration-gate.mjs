@@ -30,7 +30,7 @@
  * pre-commit usa `--hook`, así que esto no bloquea ningún commit.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, renameSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, readFileSync } from 'node:fs';
 
 const DIR = 'supabase/migrations';
 const LEGACY = 'supabase/migrations-legacy';
@@ -157,6 +157,42 @@ for (const archivo of sqls(LEGACY) ?? []) {
     err(`${LEGACY}/${archivo} es post-baseline y está archivado`,
       ['Va en supabase/migrations/. Esto ya pasó una vez: un archivo recién escrito por',
        'otra sesión casi quedó archivado como "historia previa" mientras se creaba.']);
+  }
+}
+
+// ── 5.bis. `cron.unschedule` sin guarda: rompe la REPRODUCCIÓN ─────────────────
+// `cron.unschedule(nombre)` LANZA si el trabajo no existe. En producción existe
+// —porque alguien lo creó antes— así que la migración pasa y nadie se entera.
+// En una base VACÍA no existe, la migración aborta, y con ella se cae todo lo
+// que venía después.
+//
+// Medido el 2026-08-24 al rehacer el entorno de pruebas: la creación del branch
+// replica la historia sobre una base limpia y **se detuvo en la migración 331 de
+// 543**. Las 212 restantes no llegaron. El trabajo que faltaba era
+// `cortes-caja-1min`, que **ninguna migración crea**: se programó en producción
+// a mano y una migración posterior dio por hecho que estaba.
+//
+// Y no es un problema del entorno de pruebas: es que el historial no se puede
+// reproducir, que es exactamente lo que hace falta el día que haya que
+// reconstruir la base desde cero.
+//
+// El patrón correcto ya se usaba en cinco migraciones de este mismo repo:
+//
+//     SELECT cron.unschedule('x') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'x');
+//
+// No mira el `PERFORM cron.unschedule(...)` que vive DENTRO del cuerpo de una
+// función: eso corre cuando alguien la llama, no cuando se replica el historial.
+for (const archivo of locales) {
+  const texto = readFileSync(`${DIR}/${archivo}`, 'utf8');
+  const sinComentarios = texto.replace(/^\s*--.*$/gm, '');
+  for (const m of sinComentarios.matchAll(/\bSELECT\s+cron\.unschedule\s*\(\s*'([^']+)'\s*\)([\s\S]{0,160}?);/g)) {
+    const cola = m[2] || '';
+    if (/WHERE\s+EXISTS/i.test(cola)) continue;
+    err(`${DIR}/${archivo}: cron.unschedule('${m[1]}') sin guarda`,
+      ['`cron.unschedule` LANZA si el trabajo no existe. En una base vacía aborta la',
+       'migración y todas las que vienen después dejan de aplicarse — el historial',
+       'deja de poder reproducirse. Envolvelo:',
+       `  SELECT cron.unschedule('${m[1]}') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = '${m[1]}');`]);
   }
 }
 

@@ -4,7 +4,18 @@ SET lock_timeout = '5s';
 -- La venta llega al portal en menos de un minuto; que el renglon tarde cinco
 -- mas rompe el «lo completo ahora que me acuerdo». El barrido es barato: sobre
 -- 3 dias es un indice y un NOT EXISTS, y cuando no hay nada nuevo no escribe.
-SELECT cron.unschedule('bitacora-dispensaciones-5min');
+-- ── Con guarda, porque `cron.unschedule` LANZA si el trabajo no existe ──────
+-- Descubierto el 2026-08-24 al rehacer el entorno de pruebas: la creación del
+-- branch replica la historia completa sobre una base vacía y se detuvo acá. El
+-- trabajo `bitacora-dispensaciones-5min` no existe en una base nueva, así que esta línea aborta y
+-- **toda la historia posterior deja de poder reproducirse** — 212 migraciones
+-- que ya no llegan. No es sólo el branch: es que el historial no es replicable,
+-- que es lo que uno necesita el día que hay que reconstruir.
+--
+-- El patrón correcto ya se usaba en cinco migraciones de este mismo repo; a
+-- ésta le faltaba. Hoy lo vigila `gate:migrations`.
+SELECT cron.unschedule('bitacora-dispensaciones-5min')
+  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'bitacora-dispensaciones-5min');
 
 SELECT cron.schedule(
     'bitacora-dispensaciones-1min',

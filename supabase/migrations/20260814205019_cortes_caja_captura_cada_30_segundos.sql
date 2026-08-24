@@ -18,7 +18,18 @@ SET lock_timeout = '5s';
 -- Dos corridas encimadas no hacen daño y eso ya estaba resuelto en la función:
 -- cada una hace su propio login (sesión propia, sin cruce de sucursal) y el
 -- INSERT va con `ignoreDuplicates`.
-SELECT cron.unschedule('cortes-caja-1min');
+-- ── Con guarda, porque `cron.unschedule` LANZA si el trabajo no existe ──────
+-- Descubierto el 2026-08-24 al rehacer el entorno de pruebas: la creación del
+-- branch replica la historia completa sobre una base vacía y se detuvo acá. El
+-- trabajo `cortes-caja-1min` no existe en una base nueva, así que esta línea aborta y
+-- **toda la historia posterior deja de poder reproducirse** — 212 migraciones
+-- que ya no llegan. No es sólo el branch: es que el historial no es replicable,
+-- que es lo que uno necesita el día que hay que reconstruir.
+--
+-- El patrón correcto ya se usaba en cinco migraciones de este mismo repo; a
+-- ésta le faltaba. Hoy lo vigila `gate:migrations`.
+SELECT cron.unschedule('cortes-caja-1min')
+  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cortes-caja-1min');
 
 SELECT cron.schedule('cortes-caja-30s', '30 seconds', $job$
   SELECT net.http_post(

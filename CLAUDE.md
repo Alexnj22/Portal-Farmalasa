@@ -209,16 +209,34 @@ considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
 **Probar primero en staging.** Existe un branch de Supabase dedicado para esto:
-**`cbnjplmnfmfsambavjce`** (nombre `staging`, persistente). Para DDL sobre las
-tablas calientes listadas arriba, aplicar primero ahí con `apply_migration`
-apuntando a ese `project_id`, confirmar que no rompe nada, y solo entonces
-aplicar a prod. Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2
-(secretos de Vault en `cron.job.command`) — ambos sin incidentes.
+**`qvctarsqvlhbzgvwbbbt`** (nombre `staging`, persistente). Para DDL sobre las
+tablas calientes listadas arriba, probarlo ahí primero, confirmar que no rompe
+nada, y sólo entonces aplicar a prod. Ya se usó así para 0B.8 (RPC
+`verify_kiosk_device`) y 0B.2 (secretos de Vault en `cron.job.command`) — ambos
+sin incidentes.
 
-⚠️ **El ref cambia cada vez que se rehace el branch.** El de julio
-(`ewcmerxqjvludtgskuin`) está borrado; si encontrás ese en un doc, es viejo. El
-vigente sale de `supabase branches list` o del `VITE_SUPABASE_URL` de
-`.env.staging`. Trae datos de muestra, cero PII.
+🔴 **En el branch se prueba con `execute_sql`, NUNCA con `apply_migration`.** Los
+dos ejecutan el mismo SQL; la diferencia es que `apply_migration` además escribe
+una fila en el `schema_migrations` del branch — y esa fila producción **nunca la
+va a tener con ese número**, porque al aplicarla de verdad `apply_migration`
+genera una versión nueva.
+
+Con nueve de esas filas huérfanas (medido el 2026-08-24) la historia del branch
+deja de ser un prefijo de la de prod y **`rebase_branch` queda muerto para
+siempre**: falla con `MIGRATIONS_FAILED` y no dice por qué. Fue exactamente lo
+que pasó — 130 migraciones de atraso que sólo se pudieron cerrar rehaciendo el
+branch entero.
+
+O sea: **la herramienta que mantiene el branch al día se rompe por usar mal la
+herramienta que lo mantiene útil.** `execute_sql` prueba igual de bien y no deja
+rastro; si la prueba ensucia el esquema, se limpia a mano o se rehace el branch,
+que es barato cuando no hay que rescatar nada.
+
+⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van tres: el de julio
+(`ewcmerxqjvludtgskuin`) y el de agosto (`cbnjplmnfmfsambavjce`) están borrados —
+si encontrás alguno de esos en un doc, es viejo. El vigente sale de
+`supabase branches list` o del `VITE_SUPABASE_URL` de `.env.staging`. Trae datos
+de muestra, cero PII.
 
 ⚠️ **Su esquema NO se mantiene solo al día, y creer que sí ya costó una tanda de
 mediciones.** Acá decía «idéntico al de prod, verificado por huella md5 de

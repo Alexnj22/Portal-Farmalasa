@@ -1,6 +1,40 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
+import { anotar } from '../../utils/cajaNegra';
+
+/**
+ * ¿Este error es «el chunk no cargó» y no «el código falló»?
+ *
+ * Tras publicar una versión, los archivos con hash viejo dejan de existir. Quien
+ * tenía la pestaña abierta y navega a otra vista pide un archivo que ya no está,
+ * y `React.lazy` revienta. No es un defecto de esa pantalla: es una versión
+ * vieja pidiendo piezas de una versión que se fue.
+ *
+ * `main.jsx` ya escucha `vite:preloadError` y recarga. Esto es la SEGUNDA red, y
+ * hace falta porque ese evento no cubre todos los casos — medido en los registros
+ * de producción del portal: 92 errores de render en 45 días, de SIETE personas, y
+ * los recientes son todos de esta familia. Los dos mensajes más frecuentes
+ * («Importing a module script failed», «undefined is not an object (evaluating
+ * 'k._result.default')») son de WebKit, donde el evento de Vite no siempre llega.
+ *
+ * `_result.default` es el interno de `React.lazy`, y explica por qué hace falta
+ * RECARGAR y no reintentar: `lazy` **cachea el rechazo**. Aunque el archivo
+ * vuelva a estar disponible, ese componente sigue fallando hasta que la página
+ * se recarga entera.
+ */
+const ES_CHUNK_QUE_NO_CARGO = [
+    /Failed to fetch dynamically imported module/i,
+    /error loading dynamically imported module/i,
+    /Importing a module script failed/i,          // WebKit
+    /_result\.default/,                            // el interno de React.lazy
+    /Cannot read propert(y|ies) of undefined \(reading 'default'\)/i,
+    /is not a valid JavaScript MIME type/i,        // el SPA fallback devolviendo index.html
+    /ChunkLoadError/,
+];
+
+const CLAVE_RECARGA = 'chunk_reload_at';
+const VENTANA_MS = 30_000;
 
 export default class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -14,15 +48,44 @@ export default class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, info) {
         console.error('[ErrorBoundary]', error, info);
+        const mensaje = error?.message || 'Error desconocido';
+
+        // El guard de 30 s se comparte con `main.jsx` a propósito, con la MISMA
+        // clave: son dos caminos hacia la misma recarga, y dos ventanas
+        // independientes se turnarían para recargar en bucle.
+        const esDeCarga = ES_CHUNK_QUE_NO_CARGO.some((r) => r.test(mensaje));
+        let recargando = false;
+        if (esDeCarga) {
+            try {
+                const ultima = Number(sessionStorage.getItem(CLAVE_RECARGA) || 0);
+                recargando = Date.now() - ultima > VENTANA_MS;
+                if (recargando) sessionStorage.setItem(CLAVE_RECARGA, String(Date.now()));
+            } catch { recargando = false; }   // sin sessionStorage no se recarga: mejor la pantalla de error que un bucle
+        }
+
         try {
             const { appendAuditLog } = useStaffStore.getState();
             if (appendAuditLog) {
                 appendAuditLog('ERROR_RENDER', null, {
-                    message: error?.message || 'Error desconocido',
+                    message: mensaje,
                     stack: info?.componentStack?.slice(0, 500),
+                    // Se anota SIEMPRE, recargue o no. El caso que NO recarga es
+                    // el peor —dentro de la ventana, la vista nunca aparece— y
+                    // sin esto se ve igual que el que sí se resolvió.
+                    chunk: esDeCarga || undefined,
+                    recargando: esDeCarga ? recargando : undefined,
                 });
             }
         } catch { /* best-effort: no debe romper el error boundary si el audit log falla */ }
+
+        if (esDeCarga) {
+            try { anotar('chunk-no-cargo', { origen: 'error-boundary', recargando }); } catch { /* */ }
+            // Fuera del ciclo de render de React: recargar desde
+            // `componentDidCatch` mientras React todavía está montando el árbol
+            // de error deja avisos en consola y en algunos navegadores cancela
+            // la navegación a medias.
+            if (recargando) setTimeout(() => window.location.reload(), 0);
+        }
     }
 
     render() {

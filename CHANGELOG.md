@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.721.1 — La pantalla ya no revienta cuando el chunk viejo desapareció
+
+**92 errores de render en producción en 45 días, de siete personas**, y el último
+fue ayer. Salió de mirar `audit_logs` buscando qué áreas se usan de verdad — no
+lo buscaba nadie.
+
+Los recientes son todos de la misma familia y dicen lo mismo con cuatro caras:
+«Importing a module script failed», «Failed to fetch dynamically imported module:
+…/DashboardView-C2-ismpz.js», «undefined is not an object (evaluating
+'k._result.default')» y «Cannot read properties of undefined (reading
+'default')».
+
+Es una versión vieja pidiendo piezas de una versión que ya se fue. Al publicar,
+los archivos con hash viejo dejan de existir; quien tenía la pestaña abierta
+navega a otra vista, pide un archivo que no está, y `React.lazy` revienta. **No
+es un defecto de esa pantalla.** Le pasó a una persona de sala el 21 de agosto.
+
+**El portal ya lo manejaba, y no alcanzaba.** `main.jsx` escucha
+`vite:preloadError` y recarga desde julio. Pero los dos mensajes más frecuentes
+son de **WebKit**, donde ese evento no siempre llega — así que en iPhone y Safari
+la recarga nunca ocurría y quedaba la pantalla de error.
+
+Ahora el `ErrorBoundary` es la segunda red: reconoce esa familia de errores y
+recarga, con el **mismo** guard de 30 segundos y la **misma** clave de
+`sessionStorage` que `main.jsx` — dos claves distintas se turnarían para recargar
+y el portal entraría en bucle.
+
+**Por qué recargar y no reintentar:** `_result.default` es el interno de
+`React.lazy`, y `lazy` **cachea el rechazo**. Aunque el archivo vuelva a estar
+disponible, ese componente sigue fallando hasta que la página se recarga entera.
+
+**Diecinueve pruebas, y la mitad son del lado que NO debe disparar.** Un falso
+positivo acá recarga sobre un error de código real: la pantalla parpadea, vuelve
+a fallar, y el defecto original queda escondido detrás del bucle. La prueba
+distingue leer `'default'` —React.lazy— de leer `'defaultValue'`, que es código de
+la aplicación; de esa sola palabra depende si el portal recarga o muestra el
+error. Los cuatro mensajes reconocidos son los mensajes REALES sacados de los
+registros de producción, no inventados.
+
+Llega justo después de mover cinco piezas más a `lazy()` en v2.719.3 — o sea que
+la superficie de este problema acababa de crecer.
+
 ## v2.721.0 — Las ocho áreas sin pruebas dejan de estarlo
 
 La auditoría del 23-ago encontró que el eje más flojo del portal era **pruebas**:

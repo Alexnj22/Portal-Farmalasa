@@ -16,6 +16,7 @@ import SearchInput from '../../components/common/SearchInput';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import useBorrador from '../../hooks/useBorrador';
 import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario,
@@ -345,6 +346,39 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
     useEffect(() => { volver(); }, [erpSucursalId, volver]);
 
+    /* ── El ajuste se guarda solo mientras se arma ───────────────────────────
+     *
+     * Es el formulario más largo del tablero: la operación, los renglones con su
+     * presentación y su lote, la causa y el motivo escrito. Armar un descarte de
+     * varios productos son minutos, y la sesión de los cargos de sala se cierra
+     * sola a los 5 minutos — hasta ahora se perdía entero, sin dejar rastro.
+     *
+     * La clave lleva la SALA adentro: el mismo widget sirve a varias, y un
+     * borrador de Salud 4 repoblando el ajuste de Bodega cargaría producto en la
+     * sala equivocada.
+     *
+     * **Las fotos NO entran.** Son `File` sin subir: no se pueden serializar, y
+     * guardar sus nombres sin el contenido sería prometer algo que al recuperar
+     * no está. Se vuelven a adjuntar. */
+    const claveBorrador = erpSucursalId ? `ajuste_inv_${erpSucursalId}` : null;
+    const { recuperado, descartar } = useBorrador(
+        claveBorrador, { opKey, lineas, causa, motivo, pestana }, { activo: !!opKey },
+    );
+
+    // Se repone al elegir la operación, y sólo si el borrador es de ESA misma
+    // operación: reponer los renglones de un descarte dentro de una carga
+    // mezclaría dos movimientos distintos.
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!opKey) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado || recuperado.opKey !== opKey) return;
+        repuesto.current = true;
+        if (Array.isArray(recuperado.lineas) && recuperado.lineas.length) setLineas(recuperado.lineas);
+        if (recuperado.causa) setCausa(recuperado.causa);
+        if (recuperado.motivo) setMotivo(recuperado.motivo);
+        if (recuperado.pestana) setPestana(recuperado.pestana);
+    }, [opKey, recuperado]);
+
     // ── El buscador, para TODAS las operaciones ───────────────────────────
     // Hasta el 2026-08-07 «Descargar por vencimiento» no tenía buscador: armaba
     // sola la lista de lo que vencía en la sala, con un plazo para acotarla.
@@ -607,6 +641,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
             // El aviso lo crea el trigger junto con la fila. Mandarlo desde acá
             // sería la llamada aparte que este módulo ya perdió una vez.
+            // La solicitud ya existe: el borrador se descarta ACÁ y no dentro
+            // del `setTimeout`, que es sólo el retardo de la animación — si la
+            // pantalla se cerrara en esos 2,8 s, el borrador quedaría vivo y
+            // reaparecería ofreciendo armar de nuevo algo ya enviado.
+            descartar();
             setListo(true);
             setTimeout(() => { setListo(false); volver(); onHecho?.(); }, 2800);
         } catch (e) {

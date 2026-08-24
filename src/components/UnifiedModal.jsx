@@ -15,6 +15,7 @@ import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from '../data/constants';
+import { clearDraft } from '../utils/draftUtils';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -336,7 +337,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     }
                 }
 
-                localStorage.removeItem('wfm_employee_draft');
+                // El borrador del alta se limpia por el canónico: escrito a
+                // mano quedaría apuntando a una clave que ya nadie escribe, y
+                // el borrador sobreviviría al alta ofreciéndose de nuevo.
+                clearDraft('alta_empleado');
                 onClose();
             } catch (err) {
                 console.error("Error guardando empleado:", err);

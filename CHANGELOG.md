@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.738.2 — El borrador del alta se llevaba el DUI y el sueldo al disco
+
+Al empezar a saldar los 24 formularios largos sin borrador, el primero que se
+abrió resultó no ser eso: **`EmployeeFormModal` SÍ tenía borrador**, escrito a
+mano con `localStorage` directo, y por eso el gate —que busca el canónico— lo
+reportaba como si no lo tuviera.
+
+Lo que sí tenía era peor. Guardaba `formData` **entero** —sólo quitaba el archivo
+y la miniatura—, así que el **DUI, el ISSS, el AFP, el sueldo base, el banco, la
+cuenta y el PIN del carné** quedaban en `localStorage`, en claro, en la
+computadora de quien estuviera dando de alta a alguien. Son exactamente los siete
+campos de `SENSITIVE_FIELDS`, la lista que existe para eso y que
+`persistEmployees` **sí** respeta al cachear el padrón: el mismo repo tenía las
+dos reglas en direcciones opuestas. Y `localStorage` sobrevive al cierre de
+sesión — lo lee cualquiera que se siente después en esa máquina.
+
+Ahora pasa por el canónico y sin esos campos. De paso gana el vencimiento a 24 h
+que la versión a mano no tenía: un borrador de hace un mes seguía ahí,
+ofreciéndose para restaurar.
+
+**`useBorrador`** es el hook nuevo, y existe por lo que este proyecto ya midió de
+las reglas que cada llamador tiene que repetir: el `buscador` de `FilterBar` lo
+pasaba 1 de 22 vistas, la pestaña en la URL la guardaban 9 de 29, y `saveDraft`
+estaba disponible desde hacía meses con 24 formularios sin usarlo. Las dos
+trampas que resuelve —y que son justo las que se saltan al escribirlo a mano—
+quedan ancladas en 17 pruebas: **el primer guardado no puede dispararse al
+montar** (abrir un formulario vacío borraría el borrador que había) y **lo
+recuperado es lo de ANTES** (releerlo devolvería lo que el propio hook acaba de
+escribir).
+
+Aplicado a tres formularios más: el **gasto de metas** (siete controles y una
+fila por sala), la **solicitud de personal** y el **ajuste de inventario** del
+tablero — el más largo de los tres, con sus renglones, su causa y su motivo. En
+los dos últimos las fotos y el archivo adjunto **no entran a propósito**: un
+`File` no se serializa, y guardar su nombre sin el contenido sería prometer algo
+que al recuperar no está.
+
+**Y el gate no reconocía el hook**, que era un agujero con forma de acierto: un
+formulario que lo usara bien salía marcado como deuda, y la forma de callarlo
+habría sido agregarle un `saveDraft` redundante al lado — el gate empujando a
+duplicar justo lo que el hook vino a centralizar.
+
+Deuda de borradores: **24 → 20**.
+
 ## v2.738.1 — El lector que manda teclas sin nombre, y una pantalla que dice que llego
 
 > «el escaner con el lector aun no funciona, con la camara si.»

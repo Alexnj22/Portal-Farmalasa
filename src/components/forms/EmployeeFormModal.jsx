@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import useBorrador from '../../hooks/useBorrador';
+import { loadDraft, clearDraft } from '../../utils/draftUtils';
+import { SENSITIVE_FIELDS } from '../../store/utils';
+
+// La clave del borrador del alta. Una sola, porque el alta es una sola: dos
+// pestañas dando de alta a dos personas a la vez no es un caso real, y una
+// clave por sesión dejaría borradores que nadie vuelve a ver.
+const CLAVE_BORRADOR = 'alta_empleado';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
@@ -346,32 +354,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         const checkDraft = () => {
             if (isEditMode) return;
-            const draftStr = localStorage.getItem('wfm_employee_draft');
-            if (draftStr && !formData?.id) {
-                try {
-                    const parsed = JSON.parse(draftStr);
-                    const draftDuiClean = parsed.dui ? parsed.dui.replace(/\D/g, '') : '';
-                    
-                    // Comprobamos si el empleado del borrador ya está guardado en el sistema
-                    const isAlreadySaved = employees.some(emp => {
-                        const empDuiClean = emp.dui ? emp.dui.replace(/\D/g, '') : '';
-                        const isSameDui = draftDuiClean && empDuiClean === draftDuiClean;
-                        const isSameName = (parsed.first_names && parsed.last_names) && 
-                                           (emp.first_names?.trim().toLowerCase() === parsed.first_names?.trim().toLowerCase() && 
-                                            emp.last_names?.trim().toLowerCase() === parsed.last_names?.trim().toLowerCase());
-                        return isSameDui || isSameName;
-                    });
+            const parsed = loadDraft(CLAVE_BORRADOR);
+            if (parsed && !formData?.id) {
+                // ¿La persona del borrador ya está guardada? Entonces el
+                // borrador es basura y ofrecerlo sólo confunde.
+                //
+                // El DUI ya NO viaja en el borrador (es un campo sensible), así
+                // que la comparación queda por NOMBRE. Es más floja, y es el
+                // precio aceptado: el caso que resuelve —alguien que completó
+                // el alta y vuelve a abrir— se reconoce igual por nombre y
+                // apellido, y el costo de fallar es ofrecer un botón de más, no
+                // perder un dato.
+                const isAlreadySaved = employees.some(emp =>
+                    (parsed.first_names && parsed.last_names)
+                    && emp.first_names?.trim().toLowerCase() === parsed.first_names?.trim().toLowerCase()
+                    && emp.last_names?.trim().toLowerCase() === parsed.last_names?.trim().toLowerCase());
 
-                    if (isAlreadySaved) {
-                        // El usuario ya se guardó, destruimos el borrador
-                        localStorage.removeItem('wfm_employee_draft');
-                        setHasDraft(false);
-                    } else if (parsed.first_names || parsed.last_names || parsed.dui) {
-                        setHasDraft(true);
-                    }
-                } catch (e) {
-                    console.error("Error validando borrador:", e);
-                }
+                if (isAlreadySaved) { clearDraft(CLAVE_BORRADOR); setHasDraft(false); }
+                else if (parsed.first_names || parsed.last_names) setHasDraft(true);
             }
         };
 
@@ -407,29 +407,48 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => {
-        if (isEditMode) return;
-        if (!formData?.id && (formData?.first_names || formData?.last_names || formData?.dui)) {
-            const dataToSave = { ...formData };
-            delete dataToSave.file; 
-            delete dataToSave.photoPreview; 
-            localStorage.setItem('wfm_employee_draft', JSON.stringify(dataToSave));
-        }
+    /* ── El borrador NO se lleva la credencial ni el dinero (2026-08-24) ────
+     *
+     * Esto guardaba `formData` ENTERO —sólo quitaba el archivo y la miniatura—,
+     * o sea que el DUI, el ISSS, el AFP, el sueldo base, el banco, la cuenta y
+     * el PIN del carné quedaban en `localStorage`, en claro, en la computadora
+     * de quien estuviera dando de alta a alguien. Son exactamente los siete
+     * campos de `SENSITIVE_FIELDS`, la lista que existe para eso y que
+     * `persistEmployees` sí respeta al cachear el padrón: el MISMO repo tenía
+     * las dos reglas en direcciones opuestas.
+     *
+     * Y `localStorage` sobrevive al cierre de sesión: lo lee cualquiera que se
+     * siente después en esa máquina.
+     *
+     * Al pasar por `draftUtils` gana además el vencimiento a 24 h que la
+     * versión a mano no tenía — un borrador de hace un mes seguía ahí,
+     * ofreciéndose para restaurar. */
+    const borradorSeguro = useMemo(() => {
+        if (isEditMode || formData?.id) return null;
+        if (!(formData?.first_names || formData?.last_names || formData?.dui)) return null;
+        const limpio = { ...formData };
+        delete limpio.file;
+        delete limpio.photoPreview;
+        for (const campo of SENSITIVE_FIELDS) delete limpio[campo];
+        return limpio;
     }, [formData, isEditMode]);
 
+    const { descartar: descartarBorrador } = useBorrador(
+        CLAVE_BORRADOR, borradorSeguro, { activo: !isEditMode && !formData?.id },
+    );
+
     const restoreDraft = () => {
-        try {
-            const draftStr = localStorage.getItem('wfm_employee_draft');
-            if (draftStr) {
-                const parsed = JSON.parse(draftStr);
-                setFormData(prev => ({ ...prev, ...parsed }));
-                setHasDraft(false);
-            }
-        } catch(e) { console.error("Error leyendo borrador", e); }
+        const parsed = loadDraft(CLAVE_BORRADOR);
+        if (!parsed) { setHasDraft(false); return; }
+        // El DUI y los datos de dinero NO están en el borrador a propósito
+        // (ver arriba): se vuelven a escribir, que es el precio de no dejarlos
+        // en el disco de una computadora compartida.
+        setFormData(prev => ({ ...prev, ...parsed }));
+        setHasDraft(false);
     };
 
     const discardDraft = () => {
-        localStorage.removeItem('wfm_employee_draft');
+        descartarBorrador();
         setHasDraft(false);
     };
 

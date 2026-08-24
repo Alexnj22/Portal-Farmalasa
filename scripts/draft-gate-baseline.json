@@ -7,7 +7,6 @@
     "src/components/forms/BranchTabGeneral.jsx",
     "src/components/forms/BranchTabInmueble.jsx",
     "src/components/forms/BranchTabLegal.jsx",
-    "src/components/forms/EmployeeFormModal.jsx",
     "src/components/forms/FormClienteDetail.jsx",
     "src/components/forms/FormEditPayrollEntry.jsx",
     "src/components/forms/FormNovedad.jsx",
@@ -20,12 +19,9 @@
     "src/views/EncuestaAdminView.jsx",
     "src/views/FacturacionView.jsx",
     "src/views/dashboard/WidgetAnnulmentRequest.jsx",
-    "src/views/dashboard/WidgetInventoryMovement.jsx",
-    "src/views/metas/GastoModal.jsx",
     "src/views/pedidos/RecepcionModal.jsx",
     "src/views/productos/TabCatalogo.jsx",
     "src/views/purchases/CuentasPorPagarView.jsx",
-    "src/views/purchases/ProveedoresView.jsx",
-    "src/views/solicitudes/ModalNuevaPersonal.jsx"
+    "src/views/purchases/ProveedoresView.jsx"
   ]
 }

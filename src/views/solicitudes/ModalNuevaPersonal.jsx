@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import useBorrador from '../../hooks/useBorrador';
 import {
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Stethoscope, Coffee,
     ClipboardList, Send, X, AlertCircle, AlertTriangle, Info, Clock, CalendarDays,
@@ -123,6 +124,42 @@ export default function ModalNuevaPersonal({
     // agregarlo después de quitarlo.
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [tipoAbierto,   setTipoAbierto]   = useState(true);
+
+    /* ── La solicitud se guarda sola mientras se escribe ────────────────────
+     *
+     * Una solicitud de vacaciones o de permiso lleva fechas, un motivo escrito
+     * y a veces un archivo. La sesión de los cargos de sala se cierra sola a
+     * los 5 minutos, y hasta ahora todo eso se perdía sin dejar rastro.
+     *
+     * **El archivo NO entra**: un `File` no se puede serializar, y guardar su
+     * nombre sin el contenido sería prometer algo que al recuperar no está.
+     * Vuelve a adjuntarse, que es un clic. */
+    const { recuperado, descartar } = useBorrador(
+        'solicitud_personal', { empleadoId, tipo, payload, nota }, { activo: open },
+    );
+
+    // Se repone al ABRIR: el modal nace vacío, así que no hay nada que pisar.
+    //
+    // El pestillo es un `ref` y no estado: no se pinta, y como estado dispararía
+    // un render de más por apertura además de caer bajo
+    // `react-hooks/set-state-in-effect`.
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!open) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        // El sujeto lo puede fijar quien abre el modal (`sujetoId`): en ese caso
+        // manda él, no el borrador — si no, abrir la solicitud de una persona
+        // podría repoblarla con OTRA.
+        // Repone el formulario UNA vez al abrir. No hay cascada: el pestillo
+        // `repuesto` ya se cerró arriba, así que la segunda pasada sale antes.
+        /* eslint-disable react-hooks/set-state-in-effect */
+        if (!sujetoId && recuperado.empleadoId) setEmpleadoId(recuperado.empleadoId);
+        if (recuperado.tipo) setTipo(recuperado.tipo);
+        if (recuperado.payload) setPayload(recuperado.payload);
+        if (recuperado.nota) setNota(recuperado.nota);
+        /* eslint-enable react-hooks/set-state-in-effect */
+    }, [open, recuperado, sujetoId]);
 
     const sujeto = useMemo(
         () => (empleados || []).find(e => String(e.id) === String(empleadoId)) ?? null,
@@ -388,6 +425,7 @@ export default function ModalNuevaPersonal({
         if (ok) {
             useToastStore.getState().showToast(
                 'Enviada', `Solicitud de ${REQUEST_TYPES[tipo]?.label} registrada.`, 'success');
+            descartar();   // se envió de verdad: el borrador ya no sirve
             onEnviado?.();
             onClose?.();
         } else {

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useBorrador from '../../hooks/useBorrador';
 import { Receipt, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -35,6 +36,33 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
     const [meses, setMeses] = useState('1');
     const [filas, setFilas] = useState([{ branchId: '', monto: '' }]);
     const [nota, setNota] = useState('');
+
+    /* ── El gasto se guarda solo mientras se escribe ────────────────────────
+     *
+     * Son siete controles —concepto, mes, cuántos meses, la nota y una fila por
+     * sala—, y la sesión de los cargos de sala se cierra sola a los 5 minutos.
+     * Un gasto repartido entre cuatro salas es varios minutos de trabajo que
+     * hoy se perdían enteros, sin dejar rastro y sin que nada fallara. */
+    const { recuperado, descartar } = useBorrador(
+        'meta_gasto', { concepto, ym, meses, filas, nota }, { activo: isOpen },
+    );
+
+    // Se repone al ABRIR, no en cada render: el modal nace vacío, así que no hay
+    // nada que pisar — y hacerlo después sobrescribiría lo que ya se escribió.
+    // El pestillo es un `ref` y no estado: no se pinta, y como estado dispararía
+    // un render de más por apertura.
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!isOpen) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        setConcepto(recuperado.concepto ?? '');
+        setYm(recuperado.ym ?? ymMin);
+        setMeses(recuperado.meses ?? '1');
+        setFilas(Array.isArray(recuperado.filas) && recuperado.filas.length
+            ? recuperado.filas : [{ branchId: '', monto: '' }]);
+        setNota(recuperado.nota ?? '');
+    }, [isOpen, recuperado, ymMin]);
     const [preview, setPreview] = useState(null);
     const [cargandoPreview, setCargandoPreview] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -132,6 +160,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                   + (res?.metas_reabiertas ? `. ${res.metas_reabiertas} meta(s) volvieron a revisión.` : '.'),
                 'success',
             );
+            descartar();   // se guardó de verdad: el borrador ya no sirve
             onSaved?.();
             onClose();
         } catch (err) {

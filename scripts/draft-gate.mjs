@@ -59,7 +59,14 @@ const CONTROLES = [
 const RE_CONTROL = new RegExp(`<(${CONTROLES.join('|')})[\\s/>]`, 'g');
 
 // Un archivo está protegido si usa el canónico del repo.
-const RE_BORRADOR = /\bfrom\s+['"][^'"]*draftUtils['"]|\b(saveDraft|loadDraft)\s*\(/;
+//
+// `useBorrador` entró acá el 2026-08-24, y no reconocerlo era un agujero con
+// forma de acierto: un formulario que lo usa BIEN salía marcado como deuda, y
+// la forma de callar al gate habría sido agregarle un `saveDraft` redundante al
+// lado — o sea, el gate empujando a duplicar justo lo que el hook vino a
+// centralizar. Es el mismo modo de falla que ya se corrigió en `gate:movil`,
+// donde una fila envuelta en `memo()` era una caja cerrada para el detector.
+const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraft|loadDraft|useBorrador)\s*\(/;
 
 /**
  * Excepciones — CADA UNA CON SU MOTIVO ESCRITO.

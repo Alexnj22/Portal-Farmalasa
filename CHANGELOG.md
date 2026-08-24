@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.0 — La identidad previsional sale de la ficha que lee todo el portal
+
+`employees_safe` es la ficha de empleado que lee **todo** el portal —el login
+resuelve el usuario contra ella—, y publicaba el **DUI**, el documento alterno,
+el **ISSS** y el **AFP** de las 47 personas a cualquiera con sesión iniciada.
+
+Eso es peor que el caso del sueldo que salió ayer, y por un motivo que conviene
+tener escrito. Allá la protección existía por una **coincidencia de
+configuración**: los cuatro cargos que abren un expediente resultaban ser los
+cuatro que tenían la llave. Acá no había coincidencia que valga. La policy de
+`employees` deja que **cualquier sesión** lea las filas que no son de un
+superusuario, y el recorte por sucursal lo hace el **navegador** — o sea que no
+protege de nadie que abra la consola.
+
+Los cuatro campos viven ahora detrás de `get_employee_identidad`, con la llave
+`staff_detail` y respetando su alcance. **Y con una asimetría deliberada frente
+al sueldo: uno SIEMPRE ve lo suyo.** «Mi perfil» muestra el documento de la
+propia persona; esconderle a alguien su propio DUI no protege a nadie, rompe una
+pantalla. El servidor resuelve las dos cosas en la misma consulta.
+
+**Se hizo ahora porque es el momento barato.** Medido antes de escribir nada: 4
+DUI cargados y **cero** ISSS o AFP sobre 49 filas. La puerta estaba abierta y
+casi no había nada detrás. Verificado contra producción después de aplicarlo, con
+tres sesiones reales: el Administrador sigue alcanzando las 49 identidades y los
+4 DUI —no perdió nada—, y un Dependiente de Farmacia pasó de ver los 4 a ver
+**sólo el suyo**.
+
+**Lo que se habría roto en silencio, y por eso viaja en el mismo commit.** El
+aviso de «este DUI ya está registrado» cruzaba contra el padrón que el navegador
+ya tenía cargado. Sin el campo ahí, `some()` diría «no hay duplicado»
+**siempre**: no fallaría al comprobar — guardaría, y recién entonces el índice
+único `employees_dui_unique` tiraría un error crudo de Postgres en pantalla. Es
+exactamente el modo de falla que tuvo el código de carné, así que la pregunta la
+contesta el servidor por el mismo camino (`dui_disponible`).
+
+Dos detalles de esa función que no se ven leyendo el SQL:
+
+- **mira todos los estados, no sólo los activos.** `carne_disponible` filtra por
+  `ACTIVO` y está bien —el carné de alguien dado de baja se puede reusar—, pero
+  el índice único no filtra por estado. Copiar aquel filtro diría «libre» sobre
+  un DUI que la base va a rechazar un segundo después;
+- **compara por dígitos.** Para el índice, `01234567-8` y `012345678` conviven;
+  para una persona son el mismo documento. Así que frena un caso más que el
+  índice, que es el lado correcto en el que equivocarse.
+
+El mensaje ya no dice **de quién** es el documento. No es una pérdida: decirlo le
+contaba a quien da de alta que esa persona está en la nómina, y es la misma razón
+por la que `carne_disponible` tampoco lo dice.
+
+Migración `20260824213242`. Verificado antes de aplicar: nada depende de la
+vista (`pg_depend`/`pg_rewrite` vacío), los GRANT se reponen idénticos a los
+medidos, las 80 columnas menos las 4 dan exactamente las 76 nuevas y ninguna de
+más, y los 5 escenarios de permisos se probaron en el entorno de pruebas antes de
+tocar producción. 11 pruebas nuevas.
+
 ## v2.742.6 — El entry baja 17 kB: la campana y las baldosas del dinero se difieren
 
 `gate:bundle` llevaba tiempo en rojo por el **ENTRY** —lo que todo el mundo se

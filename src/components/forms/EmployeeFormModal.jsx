@@ -22,7 +22,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import {
-    codigoDeCarneLibre, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
+    codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
 } from '../../data/employees';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
@@ -892,10 +892,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }
     };
 
-    const isDuiDuplicate = useMemo(() => {
-        if (!formData?.dui || formData.dui.length < 10) return false;
-        return employees.some(emp => emp.dui === formData.dui && String(emp.id) !== String(formData.id));
-    }, [formData?.dui, formData?.id, employees]);
+    // El aviso de DUI repetido lo contesta el SERVIDOR desde el 2026-08-24, cuando
+    // `dui` salió de `employees_safe`. Cruzarlo contra `employees` acá dejó de
+    // funcionar y no de forma ruidosa: el padrón trae el campo sólo para quien
+    // tiene la llave del expediente, así que para el resto `emp.dui` es
+    // `undefined` y `some()` diría «no hay duplicado» siempre.
+    //
+    // Se pregunta con retardo y sólo con el número completo — es una consulta por
+    // tecleo, no por letra. Y la respuesta se descarta si mientras tanto el campo
+    // cambió: sin ese corte, la respuesta lenta de un número viejo pinta el aviso
+    // sobre el número nuevo.
+    const [isDuiDuplicate, setIsDuiDuplicate] = useState(false);
+    useEffect(() => {
+        const dui = formData?.dui;
+        if (!dui || dui.length < 10) { setIsDuiDuplicate(false); return undefined; }
+        let vigente = true;
+        const t = setTimeout(async () => {
+            const libre = await duiDisponible(dui, formData?.id ?? null);
+            if (vigente) setIsDuiDuplicate(libre === false);
+        }, 400);
+        return () => { vigente = false; clearTimeout(t); };
+    }, [formData?.dui, formData?.id]);
 
     const isDuiInvalid = formData?.dui?.length === 10 && !isValidDUIAlgorithm(formData.dui);
     const isDuiIncomplete = !!formData?.dui && formData.dui.length > 0 && formData.dui.length < 10;

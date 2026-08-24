@@ -8,7 +8,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
-import { fetchSalarios, codigoDeCarneLibre } from '../../data/employees';
+import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
@@ -399,6 +399,29 @@ export const createSystemSlice = (set, get) => ({
                                 // Que falle la consulta de salarios NO puede dejar al portal
                                 // sin empleados: se sigue con la lista, sin los montos.
                                 console.warn('fetchBoot: no se pudieron traer los salarios:', e?.message || e);
+                            }
+
+                            // La identidad previsional (DUI, documento alterno, ISSS, AFP)
+                            // salió de la vista el 2026-08-24 y sigue el mismo camino, con
+                            // una diferencia: el servidor devuelve SIEMPRE lo propio,
+                            // aunque quien mira no tenga la llave del expediente. Por eso
+                            // «Mi perfil» sigue mostrando el documento de uno sin consultar
+                            // ningún permiso acá.
+                            try {
+                                const identidades = await fetchIdentidades(mappedEmployees.map(e => e.id));
+                                if (identidades.size) {
+                                    mappedEmployees.forEach(e => {
+                                        const i = identidades.get(e.id);
+                                        if (i) {
+                                            e.dui                   = i.dui;
+                                            e.alt_identity_document = i.alt_identity_document;
+                                            e.isss_number           = i.isss_number;
+                                            e.afp_number            = i.afp_number;
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                console.warn('fetchBoot: no se pudo traer la identidad:', e?.message || e);
                             }
 
                             set({ employees: mappedEmployees });

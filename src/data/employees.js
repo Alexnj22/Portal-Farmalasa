@@ -105,6 +105,52 @@ export async function fetchSalarios(ids) {
 }
 
 /**
+ * La identidad previsional: DUI, documento alterno, ISSS y AFP.
+ *
+ * Salieron de `employees_safe` el 2026-08-24 por el mismo motivo que el sueldo y
+ * que el código de carné, pero con una diferencia que conviene tener presente:
+ * ahí la protección existía por una coincidencia de configuración —los cuatro
+ * cargos que abren un expediente eran los cuatro que tenían la llave—. Acá no
+ * había coincidencia que valga. La policy de `employees` deja que **cualquier
+ * sesión** lea las filas que no son de un superusuario, y el recorte por
+ * sucursal lo hace el NAVEGADOR: el documento de identidad de las 47 personas
+ * viajaba a cualquiera que abriera la consola.
+ *
+ * **Sin la llave devuelve lo PROPIO, no vacío.** Es la diferencia con
+ * `fetchSalarios`: «Mi perfil» muestra el documento de uno mismo, y esconderle a
+ * alguien su propio DUI no protege a nadie — rompe una pantalla. El servidor
+ * resuelve las dos cosas en la misma consulta.
+ */
+export async function fetchIdentidades(ids) {
+    const unicos = [...new Set((ids || []).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.rpc('get_employee_identidad', { p_ids: unicos });
+    if (error) { console.error('employees: fetchIdentidades failed:', error.message); return new Map(); }
+    return new Map((data || []).map((r) => [r.employee_id, r]));
+}
+
+/**
+ * ¿Este DUI está libre?
+ *
+ * Misma historia que el carné: la comprobación cruzaba contra el padrón que el
+ * navegador ya tenía, y sin `dui` ahí no encontraría **nunca** un choque. No
+ * fallaría al comprobar: guardaría, y recién ahí saltaría el índice único de la
+ * base con un error de Postgres en pantalla.
+ *
+ * Devuelve `null` si no se pudo preguntar. Quien la llama distingue los tres
+ * casos: `false` bloquea, `true` deja pasar, `null` deja seguir — porque la red
+ * caída no puede impedir dar de alta a alguien, y el índice único de la base
+ * sigue ahí como última palabra.
+ */
+export async function duiDisponible(dui, excluirId = null) {
+    const { data, error } = await supabase.rpc('dui_disponible', {
+        p_dui: String(dui || ''), p_excluir: excluirId,
+    });
+    if (error) { console.error('employees: duiDisponible failed:', error.message); return null; }
+    return data;
+}
+
+/**
  * ¿Este código de carné está libre?
  *
  * La comprobación vivía en el navegador, cruzando contra la lista de empleados

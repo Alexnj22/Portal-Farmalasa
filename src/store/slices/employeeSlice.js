@@ -4,7 +4,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import {
-    codigoDeCarneLibre,
+    codigoDeCarneLibre, duiDisponible,
     upsertEducationCatalogEntries, insertEmployee, updateEmployee, updateEmployeeReturning,
     fetchEmployeeRosterSchedule, insertEmployeeEventRaw, fetchAttendanceSince,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
@@ -159,7 +159,17 @@ const normalizeEconomicDependents = (arr) => {
 // DUI salvadoreño: formato 00000000-0 + dígito verificador (suma ponderada 9..2
 // mod 10). Mismo algoritmo que isValidDUIAlgorithm en EmployeeFormModal — aquí
 // BLOQUEA el guardado (el modal solo lo señala visualmente).
-const validateDui = (dui, employees, excludeId = null) => {
+// El duplicado ya NO se busca en el padrón cargado. `dui` salió de
+// `employees_safe` el 2026-08-24 —viajaba a cualquier sesión— y un padrón sin
+// ese campo no encontraría jamás un choque: no fallaría al comprobar, guardaría,
+// y el índice único `employees_dui_unique` tiraría un error crudo de Postgres en
+// pantalla. Es exactamente lo que pasó con el código de carné, así que la
+// pregunta la contesta el servidor por el mismo camino.
+//
+// El mensaje ya no dice de quién es el documento. No es una pérdida: decirlo le
+// contaba a quien da de alta que esa persona está en la nómina, que es la misma
+// razón por la que `carne_disponible` tampoco lo dice.
+const validateDui = async (dui, excludeId = null) => {
     if (!dui) return;
     if (!/^\d{8}-\d$/.test(dui)) {
         throw new Error(`El DUI "${dui}" no tiene el formato correcto (00000000-0).`);
@@ -172,10 +182,12 @@ const validateDui = (dui, employees, excludeId = null) => {
     if (calc !== verifier) {
         throw new Error(`El DUI "${dui}" no es válido (dígito verificador incorrecto).`);
     }
-    const dup = employees.find(e =>
-        (excludeId == null || String(e.id) !== String(excludeId)) && e.dui === dui
-    );
-    if (dup) throw new Error(`El DUI "${dui}" ya está registrado a nombre de ${dup.name}.`);
+    // `null` es «no se pudo preguntar» y deja seguir: la red caída no puede
+    // impedir dar de alta a alguien, y el índice único sigue siendo la última
+    // palabra. Sólo un `false` explícito bloquea.
+    if (await duiDisponible(dui, excludeId) === false) {
+        throw new Error(`El DUI "${dui}" ya está registrado a nombre de otra persona.`);
+    }
 };
 
 // Campos OPCIONALES con formato fijo: vacío es válido (queda pendiente y el
@@ -508,7 +520,7 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            validateDui(formData.dui || null, get().employees);
+            await validateDui(formData.dui || null);
             validateOptionalFormats(formData);
 
             const dbPayload = {
@@ -716,7 +728,7 @@ export const createEmployeeSlice = (set, get) => ({
 
             if (dbPayload.dui !== undefined) {
                 dbPayload.dui = String(dbPayload.dui ?? '').trim() || null;
-                validateDui(dbPayload.dui, get().employees, id);
+                await validateDui(dbPayload.dui, id);
             }
             validateOptionalFormats(dbPayload);
 

@@ -11,7 +11,7 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
-    contarBolsa, fetchBolsas, fetchEntrega, fetchPersonasDeBolsas, fetchSaldos,
+    contarBolsa, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
     recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -216,9 +216,20 @@ function Conteo({ bolsa, ocupado, onContar }) {
                 </Button>
                 {/* El camino de un toque es el que va a usarse en casi todas, así
                     que es el botón primario y manda el monto que la pantalla
-                    mostró — el servidor lo recalcula y rechaza si cambió. */}
+                    mostró — el servidor lo recalcula y rechaza si cambió.
+
+                    Y ese monto es el SALDO, nunca `monto_inicial`. Mandaba el
+                    inicial, y en una bolsa con vales adentro los dos no son lo
+                    mismo: «Cuadra» escribía como contado el dinero que se
+                    guardó, contra un esperado que ya tenía restado lo que
+                    salió. O sea que apretar el botón que dice que todo está
+                    bien registraba un SOBRANTE del tamaño de los vales, y
+                    disparaba el aviso «Sobró dinero en una bolsa» a la sala.
+                    Medido el 2026-08-24: S3-1086 va a contarse con $625.48
+                    guardados y $31.67 adentro — el botón habría inventado
+                    $593.81 de sobrante. */}
                 <Button variant="primary" size="sm" icon={CheckCircle2} loading={ocupado}
-                    onClick={() => onContar(bolsa, Number(bolsa.monto_inicial))}>
+                    onClick={() => onContar(bolsa, saldoDe(bolsa))}>
                     Cuadra
                 </Button>
             </div>
@@ -234,7 +245,7 @@ function Conteo({ bolsa, ocupado, onContar }) {
                 aria-label={`Cuanto se conto en la bolsa ${bolsa.folio}`}
                 inputMode="decimal" maskType="DECIMAL"
                 value={valor} onChange={(e) => setValor(e.target.value)}
-                placeholder={String(bolsa.monto_inicial)}
+                placeholder={String(saldoDe(bolsa))}
                 className="w-32"
                 inputClassName="tabular-nums"
             />
@@ -333,7 +344,23 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, v
 }
 
 export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, onMetricas, onAmpliarPeriodo }) {
-    const { hasPermission } = useAuth();
+    const { hasPermission, getScope } = useAuth();
+    /* ── La sala ve SU etapa; el resto del circuito es de administración ──
+     *
+     * «para las salas de venta, solo debe salir en la sala, nada mas. las demas
+     * secciones son para los que tienen alcance todos» (usuario, 2026-08-24).
+     *
+     * Las otras tres etapas describen trabajo que la sala no hace y no puede
+     * hacer: confirmar la recepción y contar el dinero exigen `bolsas_conteo`,
+     * que ningún cargo de sala tiene. Dibujárselas era mostrarle tres bloques
+     * de sólo lectura sobre el efectivo de las otras cinco salas, y enterrar el
+     * único que sí es suyo debajo de ellos.
+     *
+     * El alcance sale de `bolsas` y no de un cargo escrito acá: los cuatro
+     * cargos de sala están en `BRANCH` y los cuatro de administración en `ALL`,
+     * y el día que se cree un cargo nuevo la pantalla lo acompaña sola.
+     * Terminal idéntico al de `auth_module_scope()` en la base. */
+    const alcanceTodos = getScope('bolsas') === 'ALL';
     const puedeEntregar = hasPermission('bolsas', 'can_edit');
     const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
     const verMontos = hasPermission('bolsas_ver_montos');
@@ -342,6 +369,12 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     const empleados = useStaff((st) => st.employees);
 
     const [bolsas, setBolsas] = useState([]);
+    /* El instante de la última lectura. «Entregada hace más de un día» se mide
+     * contra ESTO y no contra `Date.now()` en el render: leer el reloj mientras
+     * se dibuja hace que dos renders del mismo estado den resultados distintos
+     * (`react-hooks/purity`). Y además es más honesto — la antigüedad es contra
+     * los datos que hay en pantalla, que son los de esta lectura. */
+    const [leidoEn, setLeidoEn] = useState(() => Date.now());
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
     const [elegidas, setElegidas] = useState(() => new Set());
@@ -388,17 +421,28 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         // el efectivo que hay adentro.
         const saldos = await fetchSaldos(todas.map((b) => b.id));
         setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        setLeidoEn(Date.now());
         setCargando(false);
         const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por, b.dif_por]);
         const gente = await fetchPersonasDeBolsas(firmas);
         setPersonas(new Map(gente.map((p) => [p.id, p])));
     }, [desde, hasta]);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al entrar y al mover el período
 
     const deLaSala = useMemo(
         () => (sala ? bolsas.filter((b) => String(b.branch_id) === String(sala)) : bolsas),
         [bolsas, sala],
+    );
+
+    /* Con alcance de una sala la pantalla es UNA etapa, así que todo lo que se
+     * cuenta —el vacío, lo que el rango dejó afuera, el aviso— se cuenta sobre
+     * las bolsas que están en la sala y nada más. Filtrar sólo al dibujar
+     * dejaría a un dependiente leyendo «3 bolsas pendientes quedaron fuera de
+     * estas fechas» sin ninguna sección donde pudieran aparecer. */
+    const delAlcance = useMemo(
+        () => (alcanceTodos ? deLaSala : deLaSala.filter((b) => b.estado === 'ABIERTA')),
+        [deLaSala, alcanceTodos],
     );
 
     // ── El período recorta TODA la pantalla, también lo pendiente ────────────
@@ -420,13 +464,13 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     );
 
     const pendientesFuera = useMemo(
-        () => deLaSala.filter((b) => b.estado !== 'CONTADA' && !enRango(b)),
-        [deLaSala, enRango],
+        () => delAlcance.filter((b) => b.estado !== 'CONTADA' && !enRango(b)),
+        [delAlcance, enRango],
     );
 
     const enPantalla = useMemo(
-        () => deLaSala.filter((b) => b.estado === 'CONTADA' || enRango(b)),
-        [deLaSala, enRango],
+        () => delAlcance.filter((b) => b.estado === 'CONTADA' || enRango(b)),
+        [delAlcance, enRango],
     );
 
     // La fecha de la pendiente más vieja que quedó afuera: es hasta dónde tiene
@@ -477,8 +521,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     // una bolsa vieja entregada hace diez minutos no tiene nada de malo.
     const enCaminoViejas = useMemo(
         () => enCamino.filter((b) => b.entregada_at
-            && Date.now() - Date.parse(b.entregada_at) > 24 * 3600_000),
-        [enCamino],
+            && leidoEn - Date.parse(b.entregada_at) > 24 * 3600_000),
+        [enCamino, leidoEn],
     );
 
     const alternar = useCallback((id) => setElegidas((s) => {
@@ -507,35 +551,21 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     }, [showToast, cargar]);
 
     /**
-     * Terminada la entrega sale UN papel: el comprobante que firman quien
-     * entrega y quien se lleva el dinero. Es el que estaba escrito desde el
-     * 15-ago y nunca tuvo de dónde salir.
+     * Entregar NO imprime nada (usuario, 2026-08-24: «al enviar las bolsas de
+     * efectivo, imprime un ticket, eso no debe de pasar. ya queda registrado»).
      *
-     * `soloDirecta`: este papel también sale solo. Si la computadora no tiene
-     * la ticketera no se abre ningún diálogo — se reimprime desde la sala.
+     * Hasta acá salía un comprobante para que lo firmaran la sala y quien se
+     * lleva el dinero. El papel no agregaba nada: la entrega ya queda con su
+     * folio, su hora y las DOS personas —quien entregó y quien retiró, ésta
+     * identificada por su carné contra el servidor—, y la recepción la firma
+     * después administración. Un papel más no prueba nada que el registro no
+     * pruebe mejor, y obliga a la sala a tener ticketera para poder entregar.
+     *
+     * Los papeles que SÍ siguen: la etiqueta de afuera de la bolsa y el vale de
+     * adentro. Esos dos viven en el mundo físico —se pegan y se guardan dentro
+     * de la bolsa— y son contra lo que administración cuenta.
      */
-    const trasLaEntrega = useCallback(async (entrega) => {
-        try {
-            const d = await fetchEntrega(entrega.id);
-            if (d) {
-                const [{ imprimirDocumento }, { construirComprobanteDeEntrega }] = await Promise.all([
-                    import('../../utils/ticketPrint'),
-                    import('../../utils/bolsaComprobante'),
-                ]);
-                await imprimirDocumento(construirComprobanteDeEntrega({
-                    entrega: { folio: d.entrega?.folio, entregado_at: d.entrega?.entregada_at },
-                    sala: d.sala,
-                    bolsas: d.bolsas || [],
-                    entregadoPor: d.entregado_por,
-                    recibidoPor: d.recibido_por,
-                }), { soloDirecta: true, sala: entrega.branch_id });
-            }
-        } catch (err) {
-            // Que no salga el papel no deshace una entrega ya firmada.
-            console.error('bolsas: no se pudo imprimir el comprobante de entrega:', err?.message);
-        }
-        cargar();
-    }, [cargar]);
+    const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
 
     const recibir = useCallback((lista) => correr('recibir',
         () => recibirBolsas(lista.map((b) => b.id)),
@@ -603,7 +633,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             key: 'entregar', icon: Send, label: 'Entregar dinero', rotulo: 'Entregar',
             variant: 'primary', disabled: !enSala.length, onClick: () => setEntregando(true),
         },
-    ] : []), [puedeEntregar, enSala.length]);
+    ] : []), [puedeEntregar, enSala.length, setSacando, setEntregando]);
 
     // ── El carril, publicado a la píldora de la vista ──────────────────────
     // «necesita cards la vista» (usuario, 2026-08-20). Las cuatro cifras son las
@@ -688,7 +718,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 </Notice>
             )}
 
-            {sinResolver.length > 0 && (
+            {alcanceTodos && sinResolver.length > 0 && (
                 <Notice variant="danger" icon={AlertTriangle}>
                     <span className="font-bold">
                         {sinResolver.length === 1
@@ -707,7 +737,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                     title="Sin bolsas en estas fechas"
                     subtitle={pendientesFuera.length
                         ? `${pendientesFuera.length === 1 ? 'La bolsa pendiente que hay está' : `Las ${pendientesFuera.length} bolsas pendientes que hay están`} fuera del rango${verMontos ? ` y suman ${formatMoney(suma(pendientesFuera))}` : ''}.`
-                        : 'Ninguna sala guardó efectivo en este período.'}
+                        : alcanceTodos
+                            ? 'Ninguna sala guardó efectivo en este período.'
+                            : 'Esta sala no guardó efectivo en este período.'}
                     action={onAmpliarPeriodo && masViejaFuera ? (
                         <Button variant="secondary" icon={CalendarDays}
                             onClick={() => onAmpliarPeriodo(masViejaFuera)}>
@@ -746,13 +778,18 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 vacio={pendientesFuera.length ? "Sin efectivo esperando en las salas en estas fechas" : "Sin efectivo esperando en las salas"}
             />
 
+            {/* Las tres etapas siguientes son de ADMINISTRACIÓN: confirmar la
+                recepción y contar el dinero exigen `bolsas_conteo`, y el archivo
+                de contadas es de las seis salas. Con alcance de una sala la
+                pantalla termina en «En la sala». */}
+            {alcanceTodos && (<>
             {/* ── 2. Esperando recepción ──────────────────────────────────
                 Es el estado MÁS riesgoso del circuito —la bolsa no está en la
                 sala ni en administración, la tiene una persona en el camino— y
                 era el único sin alarma: la de los 4 días sólo mira las que están
                 en la sala. Una bolsa entregada que nunca llegó se veía igual que
                 una entregada hace diez minutos. */}
-            {enCaminoViejas.length > 0 && (
+            {alcanceTodos && enCaminoViejas.length > 0 && (
                 <Notice variant="warning" icon={AlertTriangle}>
                     <span className="font-bold">
                         {enCaminoViejas.length === 1
@@ -839,6 +876,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 verMontos={verMontos}
                 vacio="Sin bolsas contadas en estas fechas"
             />
+
+            </>)}
 
             </>)}
 

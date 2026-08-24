@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchBolsas, fetchCortesPorEmbolsar, fetchEntrega, fetchSaldos } from '../../data/bolsas';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
@@ -196,33 +196,11 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
     /**
-     * Terminada la entrega sale UN papel: el comprobante que firman quien
-     * entrega y quien se lleva el dinero. Es el mismo que imprime la pestaña, y
-     * se arma igual — con `soloDirecta`, porque este papel también sale solo: si
-     * esta computadora no tiene la ticketera no se abre ningún diálogo.
+     * Entregar NO imprime nada — ver el mismo comentario en `TabBolsas`. El
+     * comprobante de entrega se quitó el 2026-08-24 por pedido del usuario: la
+     * entrega ya queda registrada con folio, hora y las dos personas.
      */
-    const trasLaEntrega = useCallback(async (entrega) => {
-        try {
-            const d = await fetchEntrega(entrega.id);
-            if (d) {
-                const [{ imprimirDocumento }, { construirComprobanteDeEntrega }] = await Promise.all([
-                    import('../../utils/ticketPrint'),
-                    import('../../utils/bolsaComprobante'),
-                ]);
-                await imprimirDocumento(construirComprobanteDeEntrega({
-                    entrega: { folio: d.entrega?.folio, entregado_at: d.entrega?.entregada_at },
-                    sala: d.sala,
-                    bolsas: d.bolsas || [],
-                    entregadoPor: d.entregado_por,
-                    recibidoPor: d.recibido_por,
-                }), { soloDirecta: true, sala: entrega.branch_id });
-            }
-        } catch (err) {
-            // Que no salga el papel no deshace una entrega ya firmada.
-            console.error('bolsas: no se pudo imprimir el comprobante de entrega:', err?.message);
-        }
-        cargar();
-    }, [cargar]);
+    const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 

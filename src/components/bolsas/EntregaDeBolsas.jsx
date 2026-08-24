@@ -146,12 +146,9 @@ export default function EntregaDeBolsas({
     useEffect(() => {
         if (!abierto) return;
         setDias(new Set(porDia.map((d) => d.fecha)));
-        // El motor de impresión se baja al ABRIR, no después de firmar la
-        // entrega: es un `import()` y tras un despliegue el chunk viejo ya no
-        // está, así que falla y el portal se recarga — con la entrega ya
-        // escrita y sin comprobante. Ver el mismo comentario en `SalidaDeBolsa`.
-        import('../../utils/ticketPrint').catch(() => {});
-        import('../../utils/bolsaComprobante').catch(() => {});
+        // Acá se bajaba el motor de impresión: la entrega terminaba imprimiendo
+        // un comprobante. Se quitó el 2026-08-24 —«ya queda registrado»—, así
+        // que entregar ya no toca la ticketera ni depende de tener una.
         // Sólo al abrir: si siguiera a `porDia`, recargar la lista de fondo
         // volvería a marcar los días que la persona acaba de desmarcar.
         // eslint-disable-next-line react-hooks/exhaustive-deps

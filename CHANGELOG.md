@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.3 — Bolsas: entregar no imprime, la sala ve su etapa y «Cuadra» cuenta el saldo
+
+Tres cosas en `/cortes?tab=bolsas`, las dos primeras pedidas y la tercera
+encontrada al leer el código de la que se pidió.
+
+**Entregar ya no imprime.** Salía un comprobante para que lo firmaran la sala y
+quien retira. *«al enviar las bolsas de efectivo, imprime un ticket, eso no debe
+de pasar. ya queda registrado»* — y es cierto: la entrega guarda folio, hora,
+quién entregó y quién retiró, éste identificado por su carné **contra el
+servidor**. El papel no probaba nada que el registro no probara mejor, y de paso
+obligaba a la sala a tener ticketera para poder entregar el efectivo del día. Se
+quitó de la pestaña y del widget del tablero, junto con el constructor y sus
+pruebas — un armador de papel sin nadie que lo llame es una invitación a
+volverlo a conectar. Los dos papeles que sí siguen son los físicos: la
+**etiqueta** de afuera y el **vale** de adentro, que es contra lo que se cuenta.
+
+**La sala ve una sola etapa.** *«para las salas de venta, solo debe salir en la
+sala, nada mas. las demas secciones son para los que tienen alcance todos»*. Las
+otras tres describen trabajo que la sala no puede hacer —confirmar la recepción
+y contar exigen `bolsas_conteo`, que ningún cargo de sala tiene— y hablan del
+efectivo de las otras cinco salas. El corte sale del alcance del módulo
+`bolsas`, no de una lista de cargos: los cuatro de sala están en `BRANCH` y los
+cuatro de administración en `ALL`, así que un cargo nuevo lo acompaña solo. Y se
+recorta el universo, no sólo el dibujo: si no, un dependiente leería «3 bolsas
+pendientes quedaron fuera de estas fechas» sin ninguna sección donde pudieran
+salir.
+
+**«Cuadra» registraba un sobrante inventado.** El botón mandaba
+`monto_inicial` —lo que se guardó— contra un esperado que ya tenía restado lo
+que salió de la bolsa. En una bolsa con vales adentro no son el mismo número: el
+botón que dice «todo está bien» escribía una diferencia del tamaño de los vales
+y disparaba el aviso «Sobró dinero en una bolsa» a la sala. Medido contra
+producción el 24-ago: **S3-1086** llega a contarse con $625.48 guardados y
+$31.67 adentro — un toque habría inventado **$593.81 de sobrante**. Todavía no
+había pasado; hoy manda el saldo, que es el efectivo que hay que contar.
+
 ## v2.733.2 — Una consulta se puede encarecer sola
 
 15 pruebas más para el eje de pruebas, y una lección que no estaba escrita en

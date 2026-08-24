@@ -10,7 +10,6 @@
 //   · `construirEtiquetaDeBolsa`   — se pega AFUERA. Reemplaza la cinta.
 //   · `construirValeDeSalida`      — queda ADENTRO. Reemplaza el papel escrito
 //                                    a mano cuando se saca dinero.
-//   · `construirComprobanteDeEntrega` — lo firman la sala y quien retira.
 //
 // El diseño completo, en `docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
 //
@@ -54,7 +53,6 @@ const importeDeColumna = (valor) => {
 };
 
 /** «1 bolsa» / «2 bolsas» — un rótulo mal conjugado se lee como un descuido. */
-const plural = (n, singular, muchos) => `${n} ${n === 1 ? singular : muchos}`;
 
 /**
  * La fecha y la hora de El Salvador de un sello de tiempo.
@@ -298,67 +296,16 @@ export function construirValeDeSalida({
     };
 }
 
-/**
- * EL COMPROBANTE DE ENTREGA — lo que firman la sala y quien retira.
+/* EL COMPROBANTE DE ENTREGA se quitó el 2026-08-24.
  *
- * Cierra con tres cifras y no con una, porque una bolsa puede llegar sin un
- * billete adentro y estar perfecta: lo que se entrega es efectivo MAS boletas
- * del banco, y las dos mitades tienen que viajar declaradas.
+ * Entregar imprimía un papel que firmaban la sala y quien retira. El usuario lo
+ * sacó —«ya queda registrado»— y tenía razón: la entrega guarda folio, hora,
+ * quién entregó y quién retiró (identificado por su carné contra el servidor), y
+ * la recepción la firma después administración. El papel no probaba nada que el
+ * registro no probara mejor, y obligaba a la sala a tener ticketera para poder
+ * entregar el efectivo del día.
  *
- * @param {object} entrega  { folio, entregado_at }
- * @param {string} sala
- * @param {Array}  bolsas   [{ folio, fecha, hora, efectivo, vales }]
- * @param {string} entregadoPor
- * @param {string} recibidoPor  quién retira
+ * Los dos papeles que sí siguen viven en el mundo físico: la ETIQUETA que se
+ * pega afuera de la bolsa y el VALE que queda adentro. Ésos son contra lo que
+ * administración cuenta, así que no tienen reemplazo digital.
  */
-export function construirComprobanteDeEntrega({
-    entrega, sala, bolsas = [], entregadoPor, recibidoPor,
-}) {
-    const efectivo = sumar(bolsas, 'efectivo');
-    const vales = sumar(bolsas, 'vales');
-    const conVales = bolsas.filter((b) => Math.abs(Number(b?.vales ?? 0)) >= 0.01).length;
-
-    return {
-        titulo: 'ENTREGA DE BOLSAS',
-        encabezado: encabezadoDeLaEmpresa(),
-        datos: [
-            ['Entrega', recortar(entrega?.folio || '', 24)],
-            ['Sala', recortar(sala || '', 34)],
-            ['Fecha', selloCorto(entrega?.entregado_at)],
-        ],
-        items: {
-            columnas: [
-                { label: 'BOLSA' },
-                { label: 'DEL', alinear: 'der' },
-                { label: 'HORA', alinear: 'der' },
-                // 'EFECTIVO' mide 8 y el campo mide 8: el encabezado se pegaba
-                // a la columna de la izquierda y salia `HORAEFECTIVO`.
-                { label: 'MONTO', alinear: 'der' },
-            ],
-            filas: bolsas.map((b) => [
-                recortar(b.folio || '', ANCHO_MOTIVO),
-                fechaCorta(b.fecha).slice(0, 5),
-                hhmm(b.hora),
-                importeDeColumna(b.efectivo),
-            ]),
-        },
-        totales: [
-            ['BOLSAS', String(bolsas.length)],
-            ['EFECTIVO', formatMoney(efectivo), true],
-            ...(vales >= 0.01
-                ? [[`VALES (en ${plural(conVales, 'bolsa', 'bolsas')})`, formatMoney(vales)]]
-                : []),
-            ['TOTAL SEGUN LOS CORTES', formatMoney(efectivo + vales)],
-        ],
-        // Los dos bloques de firma quedan pegados: lo que los separa es el
-        // rótulo, no un renglón en blanco. La línea de puntos ya es el espacio
-        // para firmar.
-        pie: [
-            `Entrega: ${recortar(entregadoPor || 'Sin registrar', 40)}`,
-            'Firma ______________________',
-            `Recibe: ${recortar(recibidoPor || 'Sin registrar', 40)}`,
-            'Firma ______________________',
-            'Dos copias: una para la sala, una para quien retira.',
-        ],
-    };
-}

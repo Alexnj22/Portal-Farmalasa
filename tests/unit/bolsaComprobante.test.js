@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    construirEtiquetaDeBolsa, construirValeDeSalida, construirComprobanteDeEntrega,
+    construirEtiquetaDeBolsa, construirValeDeSalida,
 } from '../../src/utils/bolsaComprobante';
 import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
 
@@ -40,15 +40,6 @@ const vale = (extra = {}) => construirValeDeSalida({
     registradoAt: '2026-08-15T02:15:00.000Z', ...extra,
 });
 
-const entrega = (extra = {}) => construirComprobanteDeEntrega({
-    entrega: { folio: 'E-S3-260816-1', entregado_at: '2026-08-16T14:20:00.000Z' },
-    sala: 'Salud 3',
-    bolsas: [
-        { folio: 'S3-260814-2', fecha: '2026-08-14', hora: '19:01', efectivo: 366.92, vales: 350 },
-        { folio: 'S3-260815-1', fecha: '2026-08-15', hora: '12:40', efectivo: 512.30, vales: 0 },
-    ],
-    entregadoPor: 'José Riváz Peña', recibidoPor: 'Carlos Menéndez', ...extra,
-});
 
 const cuerpo = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).cuerpo;
 const todoElTexto = (t) => JSON.stringify(seccionesParaElPrograma({ ancho: 80, ...t }));
@@ -67,7 +58,6 @@ describe.each([
     ['la etiqueta de la bolsa', etiqueta],
     ['la etiqueta con salidas', () => etiqueta({ salidas })],
     ['el vale de salida', vale],
-    ['el comprobante de entrega', entrega],
 ])('reglas del rollo — %s', (_nombre, armar) => {
     it('no manda un solo caracter que el rollo no sepa imprimir', () => {
         // Fuera de 0x20–0x7E el papel imprime otra letra, y lo hace en silencio.
@@ -284,36 +274,5 @@ describe('la hora que va en la etiqueta', () => {
         const out = salidasParaEtiqueta(filas);
         expect(out).toHaveLength(1);
         expect(out[0]).toEqual({ fecha: '2026-08-15', hora: '16:23', motivo: 'Remesa', monto: -500 });
-    });
-});
-
-describe('el comprobante de entrega', () => {
-    it('cierra con efectivo, vales y el total que amparan los cortes', () => {
-        expect(entrega().totales).toEqual([
-            ['BOLSAS', '2'],
-            ['EFECTIVO', '$879.22', true],
-            ['VALES (en 1 bolsa)', '$350.00'],
-            ['TOTAL SEGUN LOS CORTES', '$1,229.22'],
-        ]);
-    });
-
-    it('sin vales no imprime el renglon de vales', () => {
-        const limpio = entrega({
-            bolsas: [{ folio: 'S3-260815-1', fecha: '2026-08-15', hora: '12:40', efectivo: 512.30, vales: 0 }],
-        });
-        expect(limpio.totales.map(([r]) => r)).not.toContain('VALES');
-        expect(cuerpo(limpio)).not.toContain('VALES');
-    });
-
-    it('el encabezado de la tabla no se pega a la columna de al lado', () => {
-        // 'EFECTIVO' mide 8 y su campo mide 8: salia `HORAEFECTIVO`, ilegible.
-        const cabecera = renglones(entrega()).find((l) => l.includes('BOLSA') && l.includes('HORA'));
-        expect(cabecera).not.toMatch(/HORA\S/);
-    });
-
-    it('lleva las dos firmas: no es una entrega si la firma uno solo', () => {
-        const texto = pie(entrega());
-        expect(texto).toContain('Entrega: Jose Rivaz Pena');
-        expect(texto).toContain('Recibe: Carlos Menendez');
     });
 });

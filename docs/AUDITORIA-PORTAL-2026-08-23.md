@@ -253,11 +253,28 @@ permisos viejos y sin rastro en ningún lado. La diferencia con los otros
 - **5 llaves foráneas sin índice que no son columnas de auditoría**, más
   `pedido_items` (17 MB) con dos de auditoría — la excepción de la regla dice «en
   tablas pequeñas» y ésa no lo es.
-- **10 índices que nunca se usaron**, ~8 MB. Se mantienen en cada escritura y no
-  aceleran ninguna lectura. Cuatro son de Inventario, tres de Productos.
-- **`impresion_dispositivos`: 402 escrituras por hora sobre SEIS filas**, cero
-  inserciones. Es el latido de las cajas de impresión reescribiendo su fila
-  entera — el patrón que la regla de los syncs prohíbe, en chico.
+- ~~**10 índices que nunca se usaron**, ~8 MB~~ · **Corregido el 2026-08-24: la
+  etiqueta era falsa y la acción que insinuaba habría hecho daño.** «Nunca»
+  afirma tres cosas y dos no se sostienen. `idx_scan` sólo cuenta desde que
+  arrancó el servidor, y medido ese día llevaba **4 días y 1 hora** — así que la
+  ventana es de cuatro días, no «siempre». Y el índice **sí sirve**: un `EXPLAIN`
+  sobre `inventory_grouped_mv` entra por `idx_igmv_desc_norm_trgm`, y el contador
+  pasó de **0 a 1 con una sola búsqueda real**. O sea que el cero no dice «este
+  índice no acelera nada», dice **«en esta ventana nadie ejecutó esa consulta»** —
+  que es un dato sobre el uso del portal, no un defecto de la base. Borrarlos, que
+  es lo que la etiqueta insinuaba, dejaría al buscador de inventario haciendo un
+  barrido completo la próxima vez que alguien lo abra. Quedan anotados como *sin
+  lecturas en la ventana de 4 días*, que es lo que se midió.
+- ~~**`impresion_dispositivos`: 402 escrituras por hora sobre SEIS filas**~~ ·
+  **Corregido el 2026-08-24: el número es cierto y la conclusión no.** Es el
+  latido de las 6 cajas, y son **100% HOT** — o sea que ninguna de esas
+  escrituras rehace una entrada de índice, que es justamente la parte cara. La
+  tabla entera pesa **152 kB** con sus 3 índices. Ponerlo junto al churn de
+  `inventory` —935 M de updates sobre 24 K filas con **0% HOT**, que agotó el
+  Disk IO budget— es comparar dos cosas que sólo se parecen en la forma de la
+  frase. Lo único real que queda es **628 autovacuums en 4 días** sobre 6 filas,
+  que es ruido evitable subiéndole el `autovacuum_vacuum_scale_factor` a esa
+  tabla, y no un defecto.
 - **`cortes-caja-30s` dispara 2878 veces al día y declara 1920.** El manifiesto
   del gate de eficiencia quedó viejo.
 - **45 tablas sin `created_at`**, contra la regla 1 del hardening. Muchas son de

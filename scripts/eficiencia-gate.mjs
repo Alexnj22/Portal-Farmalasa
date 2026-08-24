@@ -569,7 +569,22 @@ if (!SOLO_LOCAL) {
                 + `(tope ${Number(baseline.escriturasInutilesHora).toLocaleString('es')}) `
                 + gris(`· medido contra la lectura de hace ${horasDesde.toFixed(1)} h`));
     }
-    estadoNuevo = { crudo, medidoEn: new Date().toISOString() };
+    /* La lectura anterior se pisa SÓLO si esta corrida logró juzgar.
+     *
+     * Refrescarla siempre tenía una consecuencia que no se ve leyendo el código:
+     * como el pre-commit corre este gate en todo commit que toca una migración,
+     * dos commits seguidos dejan una ventana de un par de minutos — o sea por
+     * debajo del cuarto de hora que la tasa necesita— y el gate pasa de largo
+     * la sección de escrituras. **Da verde por no haber podido medir**, que es
+     * justamente lo que este repo tiene escrito que un gate no puede hacer.
+     *
+     * Conservándola, la ventana CRECE hasta que alcanza para juzgar y recién
+     * ahí se reinicia. El gate converge en vez de volver a empezar. */
+    if (inutilesHora !== null || !prev || crudo < Number(prev.crudo ?? 0))
+      estadoNuevo = { crudo, medidoEn: new Date().toISOString() };
+    else
+      console.log(gris('      (no se pisa la lectura anterior: la ventana sigue creciendo '
+                     + 'hasta que alcance para juzgar)'));
     const horas = Math.max(Number(churn[0]?.horas ?? 1), 1);
     // El desglose por tabla va con la vista LARGA —el acumulado desde que
     // arrancó el servidor— porque sirve para reconocer al culpable, no para

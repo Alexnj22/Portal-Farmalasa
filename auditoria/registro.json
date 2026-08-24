@@ -968,8 +968,8 @@
           "pct": 92,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
           "hallazgos": [
-            "índice nunca usado: idx_psr_sucursal_producto (456 kB)",
-            "índice nunca usado: idx_changelog_branch_detected (392 kB)"
+            "índice sin lecturas en la ventana de 4 días: idx_psr_sucursal_producto (456 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_changelog_branch_detected (392 kB)"
           ]
         },
         "seguridad": {
@@ -1028,8 +1028,8 @@
       "hallazgos": [
         "[flujo] falta verlo en sala (lo que no es venta de productos)",
         "[flujo] hay ventas de gente de Bodega en salas, sin revisar",
-        "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",
-        "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_psr_sucursal_producto (456 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -1219,7 +1219,7 @@
           "pct": 95,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
           "hallazgos": [
-            "índice nunca usado: idx_customers_erp_id (968 kB)"
+            "índice sin lecturas en la ventana de 4 días: idx_customers_erp_id (968 kB)"
           ]
         },
         "seguridad": {
@@ -1278,7 +1278,7 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[bd] índice nunca usado: idx_customers_erp_id (968 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_customers_erp_id (968 kB)",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
@@ -1306,9 +1306,9 @@
           "pct": 89,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
           "hallazgos": [
-            "índice nunca usado: idx_products_pa_trgm (592 kB)",
-            "índice nunca usado: idx_products_pactivo_norm_trgm (592 kB)",
-            "índice nunca usado: idx_product_precios_history_pres (448 kB)"
+            "índice sin lecturas en la ventana de 4 días: idx_products_pa_trgm (592 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_products_pactivo_norm_trgm (592 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_product_precios_history_pres (448 kB)"
           ]
         },
         "seguridad": {
@@ -1365,9 +1365,9 @@
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
-        "[bd] índice nunca usado: idx_products_pa_trgm (592 kB)",
-        "[bd] índice nunca usado: idx_products_pactivo_norm_trgm (592 kB)",
-        "[bd] índice nunca usado: idx_product_precios_history_pres (448 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_products_pa_trgm (592 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_products_pactivo_norm_trgm (592 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_product_precios_history_pres (448 kB)",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -1394,10 +1394,10 @@
           "pct": 86,
           "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
           "hallazgos": [
-            "índice nunca usado: idx_igmv_desc_trgm (1976 kB)",
-            "índice nunca usado: idx_igmv_desc_norm_trgm (1976 kB)",
-            "índice nunca usado: idx_conteo_items_source_sync_key (768 kB)",
-            "índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)"
+            "índice sin lecturas en la ventana de 4 días: idx_igmv_desc_trgm (1976 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_igmv_desc_norm_trgm (1976 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_conteo_items_source_sync_key (768 kB)",
+            "índice sin lecturas en la ventana de 4 días: idx_mv_stock_analysis_sucursal (224 kB)"
           ]
         },
         "seguridad": {
@@ -1454,10 +1454,10 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[bd] índice nunca usado: idx_igmv_desc_trgm (1976 kB)",
-        "[bd] índice nunca usado: idx_igmv_desc_norm_trgm (1976 kB)",
-        "[bd] índice nunca usado: idx_conteo_items_source_sync_key (768 kB)",
-        "[bd] índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_igmv_desc_trgm (1976 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_igmv_desc_norm_trgm (1976 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_conteo_items_source_sync_key (768 kB)",
+        "[bd] índice sin lecturas en la ventana de 4 días: idx_mv_stock_analysis_sucursal (224 kB)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -2068,7 +2068,7 @@
           "pct": 83,
           "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
           "hallazgos": [
-            "402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
+            "402 escrituras/h sobre 6 filas de impresion_dispositivos — es el latido de las 6 cajas, y es 100% HOT (no rehace índices): 152 kB en total, nada que ver con el churn de inventory"
           ]
         },
         "pruebas": {
@@ -2094,7 +2094,7 @@
         "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
+        "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos — es el latido de las 6 cajas, y es 100% HOT (no rehace índices): 152 kB en total, nada que ver con el churn de inventory"
       ],
       "verificaciones": [
         {

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.743.1 — Dos hallazgos de la auditoría medían bien y concluían mal
+
+Ninguno de los dos era un defecto del portal, y en uno de ellos la acción que la
+etiqueta insinuaba **habría hecho daño**.
+
+**«10 índices que nunca se usaron, ~8 MB».** «Nunca» afirma tres cosas y dos no
+se sostienen. `idx_scan` empieza a contar en el último arranque, y medido ese día
+el servidor llevaba **4 días y 1 hora** — así que el dato es «sin lecturas en
+cuatro días», que para una pantalla que se abre de vez en cuando no dice nada. Y
+el índice **sí sirve**: un `EXPLAIN` sobre `inventory_grouped_mv` entra por
+`idx_igmv_desc_norm_trgm`, y el contador pasó de **0 a 1 con una sola búsqueda
+real**. El cero no dice «este índice no acelera nada»: dice «en esta ventana
+nadie ejecutó esa consulta», que es un dato sobre el uso del portal. Borrarlos
+—lo que la etiqueta insinuaba— dejaría al buscador de inventario haciendo un
+barrido completo la próxima vez que alguien lo abra.
+
+**«`impresion_dispositivos`: 402 escrituras/h sobre SEIS filas».** El número es
+exacto; la conclusión, al revés. Son **100% HOT**, o sea que ninguna de esas
+escrituras rehace una entrada de índice —que es justamente la parte cara— y la
+tabla entera pesa **152 kB** con sus 3 índices. Ponerlo junto al churn de
+`inventory` (935 M de updates sobre 24 K filas con **0% HOT**, que agotó el Disk
+IO budget) es comparar dos cosas que sólo se parecen en la forma de la frase. Lo
+único real que queda es **628 autovacuums en 4 días** sobre 6 filas, que se
+arregla subiéndole el `autovacuum_vacuum_scale_factor` a esa tabla.
+
+Con esto van **veintisiete** veces en esta tanda que el hallazgo estaba en cómo
+se leía la medición y no en el portal. Las dos reglas quedaron en memoria, porque
+las dos se rompen solas: al medir un índice hay que traer también cuánto lleva
+encendido el servidor, y al medir escrituras hay que traer `n_tup_hot_upd` y el
+tamaño de la tabla — sin esas columnas el número no se puede interpretar.
+
 ## v2.743.0 — La identidad previsional sale de la ficha que lee todo el portal
 
 `employees_safe` es la ficha de empleado que lee **todo** el portal —el login

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.737.2 — Las 25 áreas llegan a 95 en pruebas
+
+Cierra el eje de pruebas de la auditoría: **las 25 áreas del portal tienen
+cubiertos dos tercios de sus módulos de lógica**. De 834 pruebas al empezar la
+auditoría a **1.724 en 110 archivos**.
+
+**Los archivos privados** (26, con la pila de diálogos). Un bucket privado sirve
+su archivo sólo con URL firmada, y en la base se guarda la formato-pública como
+identificador: olvidarse de firmar no da error, da una imagen rota.
+`inventario-evidencia` era privado desde que nació y **nunca estuvo en la
+lista** — las fotos de un descarte por daño habrían salido rotas el día que
+alguien las pintara, y no lo detectó nadie porque hasta ese día ninguna pantalla
+las mostraba.
+
+**Y al probarlo apareció un defecto real**: la misma foto entraba al lote de
+firmas **una vez por aparición** —tres apariciones, tres caminos en la misma
+petición—. No daba un resultado malo, pero engorda el pedido, y en un listado
+donde la misma persona sale en varias filas eso se multiplica. Al agruparlo hubo
+que agrupar por `bucket/path` **conservando todas las URLs**: el patrón descarta
+la query, así que un `?t=` de cache-buster da la misma clave, y quedarse con la
+primera habría dejado a la otra sin firmar.
+
+**La pila de diálogos**: un diálogo sobre otro está prohibido, y la prohibición
+no se sostiene pidiéndole a cada vista que cierre lo suyo —eso es una regla de
+prosa y hay 18 llamadores—. Anclado que cerrar el de ABAJO primero no descoloque
+al de encima, que es lo que pasaría con un `pop()`.
+
+**Lo que es un PISO, no un techo** (25). **102 de los 194 botones `iconOnly`** no
+tenían nombre accesible, y 77 de esos 102 eran cuatro íconos cuyo significado no
+admite duda; **18 íconos se dibujaban con 2 a 4 colores distintos** —`Download`
+era `success` en Personal y `chart-1` en Facturas de Compra—. Una regla que cada
+llamador tiene que repetir es una regla que la mayoría se salta.
+
+Con ellos, lo que un diálogo sigue mostrando **mientras sale**: el encabezado de
+Conexiones alcanzaba a decir literalmente «undefined conexiones abiertas» con el
+avatar vacío. Anclado que un CERO no cuente como cerrado — el caso que rompen los
+`if (!valor)`.
+
+**El kiosco** (24). El valor escaneado **no se compara en el navegador**: hasta
+esa versión el arranque repartía el código de cada empleado de la sala, y ese
+código es la contraseña del portal de esa persona. Y lo que se BORRA antes de
+anotar —DUI, PIN tecleado, tokens—, porque una credencial dentro de una entrada
+de auditoría queda en texto plano en la tabla que menos se mira y más se
+conserva.
+
+**Las rutas precargadas y el tono** (11). Antes de la precarga, la primera
+entrada a un módulo tardaba **entre 350 y 850 ms** y la segunda 60. Anclado que
+ninguna ruta apunte a un importador que no existe —no rompe nada: simplemente no
+precarga, y la vista abre lenta sin que nadie sepa por qué—, y que sin soporte de
+audio el marcaje no se rompa.
+
+Plataforma y Acceso llegan a 95; el promedio del portal queda en **94%**.
+
 ## v2.737.1 — El modal de traslados en el telefono, y el ticket que el lector de la computadora no entregaba
 
 > «en movil, se ve mal el modal, se desplaza horizontalmente» · «al escanear

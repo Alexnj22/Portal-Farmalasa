@@ -149,6 +149,7 @@ export const clearSignedUrlCache = () => {
 export const signStorageUrls = async (urls, expiresIn = 43200) => {
     const map = new Map();
     const byBucket = new Map();
+    const enLote = new Map();   // clave → { urls, path, clave }
     const firmas = leerFirmas();
     const corte = Date.now() + MARGEN_MS;
     let huboFirmaNueva = false;
@@ -161,8 +162,26 @@ export const signStorageUrls = async (urls, expiresIn = 43200) => {
         const clave = `${m[1]}/${path}`;
         const cacheada = firmas[clave];
         if (cacheada?.url && cacheada.exp > corte) { map.set(u, cacheada.url); continue; }
+        // La guarda de arriba (`map.has(u)`) no alcanza para la repetida: a la
+        // que hay que firmar no se le pone nada en `map` hasta que vuelve la
+        // firma, así que el MISMO archivo entraba al lote una vez por aparición.
+        // Medido al escribir su prueba: tres apariciones, tres caminos en la
+        // misma petición. No daba un resultado malo —vuelve el mismo firmado—
+        // pero engorda el pedido, y en un listado donde la misma persona sale en
+        // varias filas eso se multiplica.
+        //
+        // Se agrupa por `clave` (bucket/path) y NO por la cadena de la URL: dos
+        // URLs distintas pueden apuntar al mismo archivo —el patrón descarta la
+        // query, así que un `?t=123` de cache-buster da la misma clave—. Por eso
+        // se guardan TODAS las urls de esa clave: quedarse con la primera
+        // dejaría a la otra sin firmar y `signPhotosDeep`, que reemplaza sólo lo
+        // que está en el mapa, la pintaría cruda.
+        const yaPedida = enLote.get(clave);
+        if (yaPedida) { yaPedida.urls.push(u); continue; }
+        const item = { urls: [u], path, clave };
+        enLote.set(clave, item);
         if (!byBucket.has(m[1])) byBucket.set(m[1], []);
-        byBucket.get(m[1]).push({ url: u, path, clave });
+        byBucket.get(m[1]).push(item);
     }
 
     for (const [bucket, items] of byBucket) {
@@ -171,14 +190,14 @@ export const signStorageUrls = async (urls, expiresIn = 43200) => {
                 .createSignedUrls(items.map(i => i.path), expiresIn);
             items.forEach((it, i) => {
                 const signed = !error && data?.[i]?.signedUrl ? data[i].signedUrl : null;
-                map.set(it.url, signed || it.url);
+                for (const u of it.urls) map.set(u, signed || u);
                 if (signed) {
                     firmas[it.clave] = { url: signed, exp: Date.now() + expiresIn * 1000 };
                     huboFirmaNueva = true;
                 }
             });
         } catch {
-            items.forEach(it => map.set(it.url, it.url));
+            items.forEach(it => { for (const u of it.urls) map.set(u, u); });
         }
     }
 

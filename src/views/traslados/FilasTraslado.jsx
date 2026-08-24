@@ -16,6 +16,9 @@ import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
+import { buscadorDePersonas } from '../solicitudes/movimientoTexto';
+import { imprimirTicketDeTraslado, loQueVaEnLaBolsa } from '../../utils/imprimirTraslado';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
@@ -138,6 +141,29 @@ function nombreDe(linea, items) {
 }
 
 export function DecisionTraslado({ fila, onHecho }) {
+    /* La sala y el nombre se SACAN de acá, no se reciben como props.
+     *
+     * Este componente lo montan tres pantallas —la tarjeta de Solicitudes, la
+     * campana y la fila de Traslados— y una prop que hace falta para imprimir
+     * sería una prop que dos de las tres se olvidan: el ticket saldría en la
+     * caja equivocada, o sin decir quién pidió, y en ninguno de los dos casos
+     * falla nada visible. Es [[feedback_una_prop_opt_in_es_una_prop_olvidada]]
+     * aplicado antes de cometerlo: `miBranch` ya se pasa así a `FilaPorConfirmar`
+     * y allá SÍ es opcional, porque allá sólo decide un rótulo.
+     *
+     * `miBranch` es la sala de quien está mirando, o sea de quien despacha, o
+     * sea donde está la bolsa. Cuando una sala cubre a otra que está cerrada,
+     * el que confirma es el de la sala que cubre — así que sale correcta por
+     * construcción, sin tener que mirar `por_respaldo`. */
+    const { user } = useAuth();
+    const employees = useStaff(s => s.employees);
+    const meta = fila.metadata ?? {};
+    const miBranch = user?.branchId ?? user?.branch_id ?? null;
+    const quienPide = useMemo(
+        () => buscadorDePersonas(employees)(fila.employee_id)?.name ?? null,
+        [employees, fila.employee_id],
+    );
+
     const [modo,     setModo]     = useState(null);   // null | 'rechazo'
     /* Arranca VACÍO, no en el primer motivo de la lista.
      *
@@ -258,6 +284,42 @@ export function DecisionTraslado({ fila, onHecho }) {
         );
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo despachar.'); return; }
+
+        /* El ticket que va pegado a la bolsa, y que reemplaza al tirro escrito a
+         * mano. Sale DESPUÉS del despacho y no antes, por dos motivos: lleva el
+         * número del traslado, que recién existe cuando el movimiento entró; y
+         * un papel impreso sobre un despacho que después falla manda una bolsa
+         * que nadie va a poder recibir.
+         *
+         * No se espera y no puede fallar el despacho —`imprimirTicketDeTraslado`
+         * no lanza—: para acá el producto YA se movió, así que un problema de
+         * papel no puede mostrarse como si la operación no hubiera salido. Si el
+         * papel no sale, se dice aparte y se reimprime desde la tarjeta.
+         *
+         * La caja es la de QUIEN DESPACHA (`miBranch`), no la sala dueña del
+         * producto: cuando una sala cubre a otra que está cerrada, la bolsa está
+         * en su mostrador y es ahí donde tiene que salir el papel. */
+        imprimirTicketDeTraslado({
+            sala: miBranch,
+            familia: 'solicitud',
+            aplicado: r.aplicado,
+            origen: meta.origen_branch_name,
+            destino: meta.branch_name,
+            pide: quienPide,
+            items: loQueVaEnLaBolsa(items, recortado ? aceptadas : []),
+        }).then((res) => {
+            if (!res?.ok) setError(`Se envió, pero el ticket no salió: ${res?.detalle ?? 'sin detalle'}`);
+        // El `catch` NO sobra aunque `imprimirTicketDeTraslado` prometa no
+        // lanzar: sin él, el día que esa promesa deje de cumplirse —o que este
+        // mismo `then` reviente— queda una rejection sin dueño, que en el
+        // navegador es un error de consola que nadie mira y acá lo destapó la
+        // prueba del papel muerto. La promesa que no se espera se protege en su
+        // sitio, no en la confianza de que el otro lado se porte bien.
+        }).catch((e) => {
+            console.error('ticket de traslado:', e);
+            setError('Se envió, pero el ticket no salió.');
+        });
+
         // Con el desenlace: quien lo abrió desde un aviso necesita saber en qué
         // terminó para apagar el botón con el rótulo correcto. Las listas que ya
         // lo usaban recargan entero y lo ignoran.

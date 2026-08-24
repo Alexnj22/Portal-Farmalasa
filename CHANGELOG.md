@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.730.0 — El ticket sale solo al despachar una solicitud
+
+**Confirmar una solicitud ahora saca el papel por la caja de la sala.** Es el
+ticket de v2.729.0, enchufado: reemplaza al tirro escrito a mano en la bolsa.
+
+**Sale en la caja de QUIEN DESPACHA, no en la del dueño del producto.** Cuando
+una sala cubre a otra que está cerrada, la bolsa está en su mostrador — imprimir
+en la otra caja sería papel que nadie levanta. Y sale correcta sola: quien
+confirma es quien la tiene, así que la sala de la sesión ya es la respuesta y no
+hay que mirar `por_respaldo`.
+
+**El papel lista lo que VIAJA, no lo que se pidió.** Con «enviar lo que hay», un
+ticket que repita las 3 pedidas convierte al papel en el documento que
+contradice a la bolsa — y quien la abre le cree al papel, así que la diferencia
+se reportaría como faltante.
+
+**Un papel que no sale no deshace un despacho que sí entró.** Para cuando se
+imprime, el producto ya se movió: si el ticket falla se avisa aparte, y el
+despacho sigue su curso. La alternativa —un error sobre una operación que salió
+bien— termina en alguien despachando dos veces.
+
+**La sala y el nombre se sacan de la sesión, no se reciben como props.** Esta
+tarjeta la montan tres pantallas, y una prop que hace falta para imprimir es una
+prop que dos de las tres se olvidan: el ticket saldría en la caja equivocada sin
+que falle nada visible.
+
+Las pruebas del despacho parcial crecieron de 9 a 13 y se verificaron rompiendo
+el código: listar lo pedido en vez de lo que viaja, e imprimir en la caja del
+origen registrado, hacen fallar una prueba cada uno. La del papel muerto destapó
+además una promesa sin `catch` en el enganche — el helper promete no lanzar, pero
+el sitio de llamada no puede depender de eso.
+
+Bodega sigue sin ticketera: ahí el papel cae al diálogo del navegador, que es lo
+que `imprimirDocumento` ya hacía sin caja registrada.
+
 ## v2.729.0 — El ticket que reemplaza el tirro de la bolsa
 
 **Nada cambia todavía en pantalla: este commit deja el papel armado y probado,

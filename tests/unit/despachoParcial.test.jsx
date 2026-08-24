@@ -39,6 +39,24 @@ vi.mock('../../src/data/traslados', () => ({
     rechazarTraslado: (...a) => rechazarTraslado(...a),
 }));
 
+// El despacho ahora imprime el ticket que va pegado a la bolsa, así que la
+// tarjeta pide la sesión (para saber en qué caja sale) y el maestro de personal
+// (para decir quién pidió). Se simulan acá y no se agregan como props: si fueran
+// props, las tres pantallas que montan esta tarjeta tendrían que acordarse de
+// pasarlas, y la que se olvide imprime en la caja equivocada sin que falle nada.
+vi.mock('../../src/context/AuthContext', () => ({
+    useAuth: () => ({ user: { branchId: 25 } }),
+}));
+
+const imprimirTicketDeTraslado = vi.fn(async () => ({ ok: true, via: 'cola' }));
+vi.mock('../../src/utils/imprimirTraslado', async (original) => ({
+    // `loQueVaEnLaBolsa` es la de verdad: es justamente lo que hay que
+    // comprobar —que el papel liste lo que VIAJA y no lo que se pidió—, y
+    // simularla dejaría la prueba mirándose a sí misma.
+    ...(await original()),
+    imprimirTicketDeTraslado: (...a) => imprimirTicketDeTraslado(...a),
+}));
+
 const { DecisionTraslado } = await import('../../src/views/traslados/FilasTraslado.jsx');
 
 // Una solicitud de 3 CAJAS de 10, o sea 30 unidades base.
@@ -86,6 +104,7 @@ const casilla = () => screen.getByLabelText(/Cuántos envías de ALOPURINOL/i);
 beforeEach(() => {
     despacharTraslado.mockClear();
     rechazarTraslado.mockClear();
+    imprimirTicketDeTraslado.mockClear();
 });
 
 describe('cuando alcanza todo', () => {
@@ -189,5 +208,73 @@ describe('el tope es lo pedido', () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
         expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null);
+    });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// El ticket que va pegado a la bolsa
+//
+// Reemplaza al tirro escrito a mano. Lo que se prueba acá no es cómo se ve el
+// papel —eso es `trasladoTicket.test.js`— sino las cuatro decisiones del
+// enganche, que son las que se rompen en silencio:
+//
+//  1. Sale en la caja de QUIEN DESPACHA, no en la del dueño del producto.
+//  2. Lista lo que VIAJA, no lo que se pidió.
+//  3. No sale si el despacho no salió.
+//  4. Que el papel falle NO puede deshacer un despacho que sí entró.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('el ticket de la bolsa', () => {
+    it('sale en la caja de quien despacha, y dice que es una solicitud', async () => {
+        disponibilidad = conExistencia(30);
+        await pintar();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
+        });
+        expect(imprimirTicketDeTraslado).toHaveBeenCalledTimes(1);
+        const arg = imprimirTicketDeTraslado.mock.calls[0][0];
+        expect(arg.sala).toBe(25);
+        expect(arg.familia).toBe('solicitud');
+    });
+
+    // La que de verdad importa: con «enviar lo que hay», el papel tiene que
+    // decir 2. Un ticket que repita las 3 pedidas convierte al papel en el
+    // documento que contradice a la bolsa — y quien la abre le cree al papel,
+    // así que la diferencia se reporta como faltante.
+    it('lista lo que VIAJA, no lo que se pidió', async () => {
+        disponibilidad = conExistencia(20);   // alcanza para 2 de las 3 cajas
+        await pintar();
+        await act(async () => {
+            fireEvent.change(screen.getByPlaceholderText('¿Por qué no sale todo?'),
+                { target: { value: 'Se vendió una hace un rato' } });
+        });
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Enviar lo que hay/i }));
+        });
+        expect(imprimirTicketDeTraslado.mock.calls[0][0].items)
+            .toEqual([{ nombre: 'ALOPURINOL 300 MG', cantidad: 2 }]);
+    });
+
+    it('no imprime nada si el despacho no salió', async () => {
+        disponibilidad = conExistencia(30);
+        despacharTraslado.mockImplementationOnce(async () => ({ ok: false, error: 'No se pudo' }));
+        await pintar();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
+        });
+        expect(imprimirTicketDeTraslado).not.toHaveBeenCalled();
+    });
+
+    // Para cuando se imprime, el producto YA se movió. Un fallo de papel que
+    // subiera como excepción mostraría un error sobre una operación que salió
+    // bien, y quien lo vea la va a volver a intentar.
+    it('un papel que no sale no deshace el despacho', async () => {
+        disponibilidad = conExistencia(30);
+        imprimirTicketDeTraslado.mockImplementationOnce(async () => { throw new Error('caja muerta'); });
+        const onHecho = await pintar();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
+        });
+        expect(onHecho).toHaveBeenCalledWith('APPROVED');
     });
 });

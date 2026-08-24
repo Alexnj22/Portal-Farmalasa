@@ -173,7 +173,7 @@ const LaVenta = memo(({ meta, employeesById }) => {
                 </Notice>
             )}
 
-            <div className="rounded-2xl border border-border-card bg-surface-card overflow-hidden">
+            <div data-surface="card" className="overflow-hidden">
                 {/* Cabecera: qué venta y por cuánto */}
                 <div className="px-3 py-2.5 flex items-start gap-2 border-b border-divider">
                     <Receipt size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />

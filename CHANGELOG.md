@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.744.3 — Nueve tarjetas a mano menos: un campo, dos chips y un envoltorio que sobraba
 
-El ratchet baja de **48 a 39**, y con esto **ningún área del portal queda ya
+El ratchet baja de **48 a 34**, y con esto **ningún área del portal queda ya
 frenada por su eje de vista** — las seis más bajas lo están por «flujo», que son
 los pendientes de probar en sala.
 
@@ -51,7 +51,11 @@ inventó acá: estaba escrito en `RolesView.jsx` desde antes — *«El pie NO es
 tarjeta: es una franja DENTRO de la tarjeta del rol. Darle `data-surface="card"`
 anidaba una tarjeta en otra […] Superficie de realce + relleno suave»*.
 
-Las tres que sí eran tarjetas: el esqueleto de carga del carril de Ventas (que
+Y cinco más, todas contenedoras de verdad: los dos estados vacíos de Sucursales
+y Dispositivos, la tarjeta de una venta de solicitud, la fila del conductor al
+crear una ruta y el encabezado de día del calendario de horarios.
+
+Las tres primeras que sí eran tarjetas: el esqueleto de carga del carril de Ventas (que
 ahora usa la misma superficie que el `StatCard` al que reemplaza), la fila de
 proveedor de Política de vencimiento y la tarjeta de Ventas perdidas.
 

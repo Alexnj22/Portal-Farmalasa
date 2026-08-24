@@ -700,7 +700,7 @@ const AnnouncementsView = ({ openModal }) => {
                    </div>
                    
                    <div inert={publishImmediately ? true : undefined} className={`transition-all duration-[var(--dur-slow)] overflow-hidden ${publishImmediately ? 'h-0 opacity-0' : 'h-[60px] opacity-100 mt-2'}`}>
-                       <div className="bg-surface-card rounded-xl px-3 py-2 border border-border-card shadow-sm flex items-center">
+                       <div data-surface="input" className="px-3 py-2 flex items-center">
                           <LiquidDatePicker 
                             value={scheduledDate} 
                             onChange={setScheduledDate} 

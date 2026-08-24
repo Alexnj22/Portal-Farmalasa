@@ -740,7 +740,7 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Fecha</label>
-                            <div className="w-full bg-surface-card border border-border-card rounded-2xl">
+                            <div className="w-full bg-surface-card-hover border border-border-card rounded-2xl">
                                 <LiquidDatePicker value={fecha} onChange={setFecha} />
                             </div>
                         </div>

@@ -68,12 +68,10 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                         Fecha y hora estimada de llegada
                     </label>
                     <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-surface-card border border-divider rounded-xl">
+                        <div data-surface="input" className="flex-1">
                             <LiquidDatePicker value={dateVal} onChange={setDateVal} />
                         </div>
-                        <div className="bg-surface-card border border-divider rounded-xl">
-                            <TimePicker12 value={timeVal} onChange={setTimeVal} />
-                        </div>
+                        <TimePicker12 value={timeVal} onChange={setTimeVal} />
                     </div>
                 </div>
 

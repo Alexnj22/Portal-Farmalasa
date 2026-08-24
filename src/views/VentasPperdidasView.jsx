@@ -186,7 +186,8 @@ export default function VentasPperdidasView() {
                             return (
                                 <div
                                     key={r.id}
-                                    className="rounded-2xl bg-surface-card border border-divider shadow-sm overflow-hidden"
+                                    data-surface="card"
+                                    className="overflow-hidden"
                                 >
                                     {/* Colored top stripe */}
                                     <div className={`h-1 w-full ${activeTab === 'pendiente' ? 'bg-danger' : 'bg-success'}`} />

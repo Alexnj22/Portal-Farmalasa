@@ -862,7 +862,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
-                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
+                        <div key={w} data-surface="card" className="flex items-center gap-2 px-3 py-2">
                             <div className="w-6 h-6 rounded-lg skeleton shrink-0" />
                             <div className="h-3 skeleton" style={{ width: w * 0.45 }} />
                             <div className="h-4 skeleton" style={{ width: w * 0.55 }} />
@@ -2229,7 +2229,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
                                 <div className="flex flex-wrap gap-2">
                                     {r.presentaciones.map(p => (
-                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card border border-divider shadow-sm">
+                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card-hover border border-divider shadow-sm">
                                             <span className="text-label font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
                                             <span className="text-label font-black text-content">{fmtQty(p.cantidad)} u</span>
                                             {p.factor > 1 && (

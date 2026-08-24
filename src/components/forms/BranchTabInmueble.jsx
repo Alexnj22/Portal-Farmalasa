@@ -167,7 +167,7 @@ const BranchTabInmueble = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-10 text-center bg-surface-card rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)]">
+                    <div data-surface="card" className="py-10 text-center">
                         <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <Building2 size={28} strokeWidth={2} />
                         </div>

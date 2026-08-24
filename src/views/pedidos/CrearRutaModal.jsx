@@ -599,7 +599,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             </div>
 
             {/* ── Conductor ─────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-surface-card rounded-xl border border-divider">
+            <div data-surface="card" className="flex items-center gap-2 px-3 py-2">
               {conductorPhoto
                 ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-divider shrink-0" />
                 : <div className="w-6 h-6 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>

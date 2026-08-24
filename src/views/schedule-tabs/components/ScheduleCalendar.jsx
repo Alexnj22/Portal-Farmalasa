@@ -727,7 +727,7 @@ const ScheduleCalendar = memo(({
                     <thead className="relative z-sidebar-desktop">
                         <tr>
                             <th className="p-0 sticky left-0 z-dropdown min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
-                                <div className="bg-surface-card border border-border-card shadow-[var(--shadow-elevation-xs)] rounded-3xl pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-micro font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
+                                <div data-surface="card" className="pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-micro font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
                                     Personal <span className="bg-surface-card px-2 py-0.5 rounded-lg text-content-3 border border-border-card">44H / 1 DESCANSO</span>
                                 </div>
                             </th>

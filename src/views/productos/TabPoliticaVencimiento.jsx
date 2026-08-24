@@ -405,7 +405,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
     }
 
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-card border border-divider shadow-sm">
+        <div data-surface="card" className="flex items-center gap-2.5 px-3 py-2.5">
             <Truck className="w-3.5 h-3.5 text-content-3 flex-shrink-0" />
             <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-semibold text-content-2 truncate flex items-center gap-1.5">

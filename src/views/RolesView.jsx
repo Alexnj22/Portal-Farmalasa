@@ -806,7 +806,7 @@ const RolesView = ({ openModal }) => {
                                 <Button disabled={isExporting} onClick={toggleFullScreen}>{isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span></Button>
 
-                                <div className="ml-auto flex items-center gap-2 bg-surface-card border border-border-card rounded-xl px-2 py-1 shadow-sm">
+                                <div className="ml-auto flex items-center gap-2 bg-surface-card-hover border border-border-card rounded-xl px-2 py-1 shadow-sm">
                                     <Button variant="secondary" onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}>-</Button>
                                     <span className="text-caption font-bold text-content-2 w-8 text-center">{Math.round(zoom * 100)}%</span>
                                     <Button variant="secondary" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>

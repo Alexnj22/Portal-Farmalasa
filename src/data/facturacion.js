@@ -242,6 +242,26 @@ export function fetchInvoiceResolutionIds() {
     return supabase.from('sales_invoice_resolutions').select('invoice_id');
 }
 
+// ── Solventado internamente: lo que NO se tramita ante Hacienda ─────────────
+//
+// Un crédito fiscal emitido a un cliente que no es contribuyente lo rechaza
+// Hacienda SIEMPRE —lo que está mal es el tipo de documento, no un dato de la
+// ficha— y nunca llega a tener sello. Sin sello no hay documento tributario que
+// invalidar: se anula sólo en el sistema y la venta se vuelve a facturar como
+// Consumidor Final. Esa decisión queda escrita en `dte_excluidas_del_barrido`.
+//
+// Se lee para PINTAR el estado, no para deducirlo: el rótulo sale de la tabla
+// que la registra y no de leerle el prefijo al comentario de la resolución. Un
+// texto que empieza con «Solventado internamente» es un rótulo, no la clave —
+// el día que alguien lo escriba distinto, el badge desaparece sin fallar nada.
+//
+// Sin `.limit()`: son las decisiones explícitas de años (2 hoy, 8 al nacer la
+// tabla). Si alguna vez llegara a rozar las mil filas, el problema sería otro.
+export function fetchExcluidasDelBarrido() {
+    return supabase.from('dte_excluidas_del_barrido')
+        .select('invoice_id, motivo, excluida_por, created_at');
+}
+
 // ── WidgetAnnulmentRequest.jsx (2 de sus 7 sitios; los otros 4 son inserts
 // idénticos que reutilizan insertApprovalRequestSilent de data/requests.js,
 // y 1 es búsqueda de clientes en data/customers.js) ─────────────────────────

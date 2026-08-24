@@ -34,6 +34,7 @@ import {
     regularizarDte,
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, countConfirmedMhInvoices,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
+    fetchExcluidasDelBarrido,
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
@@ -557,6 +558,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     const [rows, setRows] = useState([]);
     const [resolved, setResolved] = useState([]);
     const [resolvedIds, setResolvedIds] = useState(new Set());
+    // Las que se cerraron SIN trámite ante Hacienda, por decisión escrita.
+    const [excluidas, setExcluidas] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [solvingId, setSolvingId] = useState(null);
     const [comment, setComment] = useState('');
@@ -575,11 +578,20 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
         setLoading(true);
         // fetchNulaInvoices pagina con fetchAllRows — el backlog de facturas con
         // estado nulo/NULA puede superar el cap de 1000 filas de PostgREST.
-        const [invoicesData, resolutionsRes, historialRes] = await Promise.all([
+        const [invoicesData, resolutionsRes, historialRes, excluidasRes] = await Promise.all([
             fetchNulaInvoices(filterBranch),
             fetchInvoiceResolutionIds(),
             fetchInvoiceResolutionsHistorial('id, invoice_id, comment, resolved_by, resolved_at'),
+            fetchExcluidasDelBarrido(),
         ]);
+
+        // Falla hacia NO pintar el badge: si esta lectura se cae, la fila se ve
+        // como cualquier otra solventada —que es lo que es— en vez de mentir
+        // sobre por qué se cerró.
+        if (excluidasRes.error) {
+            console.error('loadData: fetch dte_excluidas_del_barrido failed:', excluidasRes.error.message);
+        }
+        setExcluidas(new Set((excluidasRes.data || []).map(e => e.invoice_id)));
 
         const resolvedIdSet = new Set((resolutionsRes.data || []).map(r => r.invoice_id));
         const allIds = (historialRes.data || []).map(r => r.invoice_id);
@@ -921,6 +933,13 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <Badge variant="success" uppercase={false}>{inv?.tipo_documento}</Badge>
+                                                {/* «Solventado internamente» no es un matiz del mismo
+                                                    cierre: las demás se cerraron ante Hacienda y ésta
+                                                    NO se le mandó nunca, a propósito. Sin el rótulo,
+                                                    las dos se leen igual en la lista. */}
+                                                {excluidas.has(r.invoice_id) && (
+                                                    <Badge variant="warning" uppercase={false}>Solventado internamente</Badge>
+                                                )}
                                                 {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>

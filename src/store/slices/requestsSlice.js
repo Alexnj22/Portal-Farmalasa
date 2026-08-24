@@ -539,14 +539,26 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
  * Notifica al empleado el resultado de su solicitud vía el canal de
  * notificaciones (campana + push). No lanza error — es no-bloqueante.
  */
-const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote, reqMetadata = {}) => {
+/**
+ * `instruccion` es lo que quien pidió la solicitud tiene que HACER ahora, y no
+ * es lo mismo que la nota de quien decidió: la nota es opcional y la escribe una
+ * persona; la instrucción la produce el circuito y su ausencia deja trabajo sin
+ * terminar. Hoy la única es la del crédito fiscal emitido a quien no es
+ * contribuyente — se anula sólo en el sistema y hay que volver a facturar la
+ * venta como Consumidor Final, porque si no queda sin documento tributario.
+ *
+ * Va en el aviso y no sólo en la pantalla del detalle: quien pidió la anulación
+ * es una sala, y lo que abre es el aviso.
+ */
+const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote, reqMetadata = {}, instruccion = null) => {
     const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
     const isApproved = status === 'APPROVED';
+    const cola = instruccion ? ` ${instruccion}` : '';
     await notifyEmployees([String(employeeId)], {
         type: 'REQUEST_DECIDED',
         title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
         body: isApproved
-            ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
+            ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}${cola}`
             : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
         /* La pantalla depende del TIPO, no del aviso. Acá estaba fijo en
          * `/requests-personales`, así que a quien pidió una anulación o un
@@ -560,6 +572,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
             requestType,
             status,
             approverNote: approverNote || null,
+            instruccion: instruccion || null,
             // Cambio de turno
             targetEmployeeName: reqMetadata.targetEmployeeName || null,
             date: reqMetadata.date || null,
@@ -1054,13 +1067,22 @@ export const createRequestsSlice = (set, get) => ({
 
         if (req.employee?.id) {
             await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
-                approverNote, parseMeta(req.metadata));
+                approverNote, parseMeta(req.metadata), aplicado?.instruccion ?? null);
         }
 
         useToastStore.getState().showToast(
             'Cambio aplicado',
-            `${REQUEST_TYPES[req.type]?.label ?? 'Solicitud'} — ${aplicado?.correlativo ?? ''} actualizada.`,
-            'success',
+            // Cuando la anulación se cerró sin trámite ante Hacienda, el aviso
+            // NO puede decir sólo «actualizada»: lo que hay que saber es que
+            // falta volver a facturar, y este toast es lo primero que se ve.
+            aplicado?.instruccion
+                ? `${aplicado.correlativo ?? ''} — ${aplicado.instruccion}`
+                : `${REQUEST_TYPES[req.type]?.label ?? 'Solicitud'} — ${aplicado?.correlativo ?? ''} actualizada.`,
+            // `info` y no `warning`: `LiquidToast` no conoce ese tipo y caería
+            // al mismo neutro sin decirlo. Un valor que el mapa no tiene se ve
+            // igual que uno que sí — es como se cuelan los rótulos muertos.
+            aplicado?.instruccion ? 'info' : 'success',
+            aplicado?.instruccion ? 8000 : undefined,
         );
         window.dispatchEvent(new CustomEvent('requests-updated'));
         return true;

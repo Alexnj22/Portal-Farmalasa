@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.722.0 — Un crédito fiscal a quien no es contribuyente se cierra en el portal, no ante Hacienda
+
+Una sala factura un CCF a alguien que no está inscrito en IVA. Hacienda lo
+rechaza —el crédito fiscal es el documento ENTRE contribuyentes— y lo va a
+rechazar **siempre**, porque lo que está mal es el TIPO de documento y no un
+dato de la ficha: ninguno de los cinco campos que corrige la corrida nocturna
+(distrito, municipio, departamento, DUI, teléfono) lo arregla.
+
+Quedaban dos cosas trabadas. El documento rebotaba todas las noches, y la
+solicitud de anulación **no se podía aprobar**: el paso ante Hacienda lanzaba,
+la excepción se llevaba por delante el APPROVED, y cada reintento reventaba en
+el mismo punto — la factura anulada y la solicitud pendiente para siempre.
+
+**Un documento sin sello no existe ante Hacienda**, así que no hay nada que
+invalidar: se anula sólo en el sistema, queda escrito por qué no se tramitó, y
+la venta se vuelve a facturar como Consumidor Final (COF), que es el documento
+que correspondía. Decisión del usuario del 23-ago.
+
+Lo hace `marcar_solventado_internamente`, y se niega salvo que el caso sea
+exactamente ése — **cuatro frenos**, porque saca un documento del circuito
+fiscal:
+
+1. **Sin sello válido.** Si Hacienda lo selló, sí hay algo que invalidar y esto
+   sería enterrar un documento vivo. Es el que no se negocia.
+2. **Es un CCF.** Un COF rechazado es otro problema y merece otra decisión.
+3. **El receptor no es contribuyente**, y lo tienen que decir las DOS señales:
+   la categoría de la ficha y la ausencia de NRC. Si se contradicen no se toma
+   el atajo — un desacuerdo entre los dos campos es justo cuando no se quiere
+   una decisión automática.
+4. **Ya está anulada.** Marcar «solventado» una venta VIVA la sacaría de la cola
+   de Hacienda sin haberla anulado: quedaría vigente, sin transmitir, y nadie la
+   volvería a mirar.
+
+La regla vive **entera en la base** y no en la Edge Function: una copia en
+TypeScript sería una copia que se queda vieja, y la que se queda vieja es
+siempre la que abre de más.
+
+**Y lo que falta hacer se dice donde se lee.** Volver a facturar no es un
+detalle: si nadie lo hace, la venta queda sin ningún documento tributario que la
+respalde, que es peor que el error que se vino a corregir. Por eso el aviso a la
+sala, el toast de quien aprueba y el detalle de la solicitud lo dicen aparte de
+los avisos al pie — y en Facturación la fila lleva su propio rótulo, «Solventado
+internamente», para que no se lea igual que una que sí se cerró ante Hacienda.
+Ese rótulo sale de la tabla que registra la decisión, nunca de leerle el prefijo
+al comentario.
+
+`dte_excluidas_del_barrido` sigue **sin policy de INSERT**: la decisión sigue sin
+poder escribirse a mano. La única puerta valida el caso, escribe quién y por qué,
+y deja el rastro en la bitácora.
+
+Aplicado al caso real que lo destapó: `0000000064_CCF` de Salud 2 (23-ago,
+$0.95).
+
 ## v2.721.1 — La pantalla ya no revienta cuando el chunk viejo desapareció
 
 **92 errores de render en producción en 45 días, de siete personas**, y el último

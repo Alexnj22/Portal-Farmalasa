@@ -324,6 +324,7 @@ Deno.serve(async (req) => {
       const llegoAHacienda = Boolean(fresca?.codigo_generacion) || selloValido(fresca?.recibido_mh);
 
       let mh: Awaited<ReturnType<typeof enviarDteAlMH>> | null = null;
+      let interno: { motivo?: string; instruccion?: string } | null = null;
       if (yaInvalidada) {
         avisos.push("Ya estaba invalidada ante Hacienda: no se volvió a enviar.");
       } else {
@@ -337,8 +338,46 @@ Deno.serve(async (req) => {
             anula: true, nombreResp: resp.name, duiResp: dui,
           });
         } catch (e) {
-          if (llegoAHacienda || !esFaltaDeTramite(e)) throw e;
-          avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
+          if (!esFaltaDeTramite(e)) throw e;
+
+          // ── El crédito fiscal emitido a quien no es contribuyente ────────
+          //
+          // Acá el sistema de origen ACABA de decir que Hacienda nunca validó
+          // este documento. Antes de dar el trámite por innecesario se le
+          // pregunta a la base si éste es el caso decidido el 2026-08-23: un
+          // CCF a un cliente sin NRC, que Hacienda rechaza SIEMPRE porque lo
+          // que está mal es el TIPO de documento y no un dato de la ficha —
+          // ninguno de los cinco campos que corrige `sincronizar-fichas-
+          // clientes` lo arregla, así que rebota todas las noches para siempre.
+          //
+          // La regla vive entera en `marcar_solventado_internamente` y NO acá:
+          // es la que decide, la que escribe y la que se niega si el caso no
+          // encaja. Una copia en TypeScript sería una copia que se queda vieja,
+          // y la que se queda vieja es siempre la que abre de más.
+          //
+          // Esto es lo único que faltaba para que la solicitud se pudiera
+          // aprobar: antes la excepción se llevaba por delante el APPROVED, la
+          // factura quedaba anulada y la solicitud PENDIENTE, y cada reintento
+          // reventaba en el mismo punto.
+          const { data: cerrado, error: intErr } = await admin
+            .rpc("marcar_solventado_internamente", {
+              p_invoice_id: factura.id,
+              p_actor: aprobador.name,
+            });
+
+          if (!intErr && cerrado?.ok) {
+            interno = cerrado;
+            avisos.push(String(cerrado.motivo ?? ""));
+          } else if (llegoAHacienda) {
+            // No es el caso decidido y el documento sí llegó a armarse: se
+            // falla como siempre, para que alguien lo mire. El motivo por el
+            // que la base se negó viaja al log — sin él, un caso que debería
+            // haber encajado se ve idéntico a uno que nunca aplicó.
+            if (intErr) console.error("marcar_solventado_internamente:", intErr.message);
+            throw e;
+          } else {
+            avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
+          }
         }
       }
 
@@ -350,6 +389,11 @@ Deno.serve(async (req) => {
         anulada_en_erp_ahora: anuladaAhora,
         hacienda: mh ? { sello: mh.sello, descripcion: mh.descripcion, codigo: mh.codigo, fh: mh.fh } : null,
         sin_tramite_mh: !mh && !yaInvalidada,
+        // Qué tiene que hacer AHORA quien pidió la anulación. Va aparte de los
+        // avisos porque no es una nota al pie: sin volver a facturar, la venta
+        // queda sin ningún documento tributario que la respalde.
+        solventado_internamente: Boolean(interno),
+        instruccion: interno?.instruccion ?? undefined,
         responsable: mh ? { nombre: resp.name, dui } : undefined,
         avisos: avisos.length ? avisos : undefined,
       };

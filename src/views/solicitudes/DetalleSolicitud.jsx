@@ -351,10 +351,22 @@ const BloqueAplicado = ({ req, aplicado }) => {
             ) : (
                 <p className="text-label font-bold text-content">
                     {aplicado.campo === 'anulacion'
-                        ? 'Factura anulada'
+                        ? (aplicado.solventado_internamente
+                            ? 'Factura anulada en el sistema'
+                            : 'Factura anulada')
                         : `${aplicado.de || '—'} → ${aplicado.a || '—'}`}
                     {aplicado.by_name && ` · por ${aplicado.by_name}`}
                 </p>
+            )}
+            {/* Lo que hay que hacer AHORA, y por eso no va con los avisos: un
+                aviso se puede leer y seguir de largo. Acá, si nadie vuelve a
+                facturar, la venta queda sin ningún documento que la respalde —
+                que es peor que el error que se vino a corregir. */}
+            {aplicado.instruccion && (
+                <div className="px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
+                    <p className="text-micro font-black uppercase tracking-widest text-warning mb-1">Falta hacer</p>
+                    <p className="text-body-sm text-warning-text font-bold leading-relaxed">{aplicado.instruccion}</p>
+                </div>
             )}
             {aplicado.hacienda?.sello && (
                 <p className="text-micro text-content-3 font-mono break-all">

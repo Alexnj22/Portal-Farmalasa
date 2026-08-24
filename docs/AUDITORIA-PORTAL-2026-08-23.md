@@ -1144,3 +1144,54 @@ sirve. Ponerlo al día exige **rehacer el branch** — con su costo explícito:
 se pierden la corrida de fechas y los permisos de la cuenta de pruebas (los dos
 se rehacen con sus scripts), y **cambia el ref**, así que hay que rehacer
 `.env.staging`.
+
+### 8.20 Los cuatro hallazgos de datos que quedaban, medidos uno por uno
+
+El eje `flujo` es el que más pesa y el peor puntuado, y casi todos sus hallazgos
+son «falta probarlo en sala» — que es lo que el sello cubre y no se puede cerrar
+desde acá. Pero cuatro eran preguntas de datos con respuesta. Se midieron las
+cuatro contra producción.
+
+**1 · La brecha de mayo/2025 — cerrada.** §8.18.
+
+**2 · El −$621.17 falso de Salud 1 — ya no existe.** `cortes_caja` arranca hoy el
+**2026-08-14** y no hay ninguna fila del 13. Lo que sí apareció midiendo son dos
+diferencias confirmadas y grandes en Salud 3 —**−$970.39** el 17-ago y
+**−$499.50** el 20— y las dos tienen la forma de una decisión, no de un error: se
+recontó dos veces, dio lo mismo, y se confirmó. El proceso funcionando.
+
+**3 · La bitácora de los cortes — existe, y es mejor que la general.**
+`audit_logs` tiene **una** entrada de corte contra **247 resoluciones**, lo que a
+primera vista parecía un agujero grave. No lo es: hay una tabla propia,
+`cortes_caja_eventos`, con **exactamente 247 filas** y más información que una
+entrada genérica (`estado_antes`, `estado_despues`, `motivo`, autor, origen).
+
+> Y eso deja al descubierto un punto ciego real del detector de bitácora: sólo
+> conoce `appendAuditLog`. Una tabla de eventos propia le resulta invisible, igual
+> que una escritura hecha por `.rpc()`. Acá el resultado fue bueno; el detector no
+> tenía cómo saberlo.
+
+**4 · Las compras que comparten sello — son 7, no 6, y dos son graves.** Creció
+una el 1-ago. Cuatro de los siete pares son la misma compra repetida, uno es un
+proveedor con dos documentos, y **dos tienen proveedores DISTINTOS bajo el mismo
+sello**:
+
+| sello | compras |
+|---|---|
+| `2026262C8A5E…ISND` | COFARSAL $465.96 · FARMA VALUE $38.33 (12-jun) |
+| `202618E24BC…D7M` | COFARSAL $663.94 · LETERAGO $125.82 (21-jul) |
+
+Un sello de Hacienda identifica **un** documento. Dos proveedores no pueden
+compartirlo: en cada par, uno de los dos lo tiene mal asignado.
+
+Y hay un hilo del que tirar: `documento_numero` guarda el código de generación
+**cortado a 20 de sus 36 caracteres** (1,037 filas), y ése es el campo por el que
+`backfill-dte-related-docs` y `leer-dte-json` buscan a qué compra pegarle el
+sello. El recorte viene del sistema de origen y ya estaba documentado —no es un
+defecto del portal—, pero **usar una clave recortada para asignar un sello fiscal
+es exactamente la forma de asignárselo al documento equivocado.** En uno de los
+casos el `documento_numero` es, literalmente, el propio sello recortado.
+
+Queda abierto y mejor descrito de lo que estaba: de «6 pares comparten sello» a
+«dos sellos están en la compra equivocada, y acá está por dónde puede haber
+pasado».

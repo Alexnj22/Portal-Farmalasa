@@ -204,11 +204,14 @@ const PENDIENTES = {
     impresion: ['el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)',
                 'falta medir el ancho del rollo',
                 'sigue sin probarse en otra sala'],
-    'cortes-efectivo': ['falta probar en sala', 'el −$621.17 falso de Salud 1 sin explicar',
+    'cortes-efectivo': ['falta probar en sala', 'dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala',
                         'falta probar las bolsas en sala'],
+    // Medido el 2026-08-24: son SIETE pares, no seis (creció uno el 1-ago), y dos
+    // de ellos tienen proveedores DISTINTOS bajo el mismo sello — o sea que uno
+    // de los dos lo tiene mal asignado. Ver §8.20 del informe.
     compras:   ['falta correr el barrido contra los documentos reales',
                 'falta el plazo de los 163 proveedores y el insert al sistema',
-                '6 pares de compras que comparten sello',
+                '7 pares de compras comparten sello; en DOS los proveedores son distintos, así que un sello está en la compra equivocada',
                 'las recetas están medidas (5 reales) y sin construir'],
     fiscal:    ['art.162 retención IVA $48.95 sin resolver', 'art.156 retención renta $262.52 sin marcar',
                 'libros de compras: quedan hallazgos abiertos'],

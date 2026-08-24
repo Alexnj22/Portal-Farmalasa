@@ -1922,6 +1922,53 @@ const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'todos');
 ```
 Pass `searchTerm` down as prop to tab components. Never duplicate local search state.
 
+#### El número de la pestaña — `cuenta` (2026-08-24)
+
+Una pestaña puede llevar `cuenta` (número) y `tono`, y `ViewTabBar` los dibuja
+con **`Contador`** (§16.2, no un `<span>` a mano) dentro de la píldora. En el
+teléfono, donde la fila es un desplegable y no hay dónde colgar una burbuja, el
+número va **pegado al rótulo**: «En la sala · 3».
+
+```jsx
+const TABS = [
+  { key: 'sala',   label: 'En la sala',          icon: Package, cuenta: 3 },
+  { key: 'camino', label: 'Esperando recepción', icon: Send,    cuenta: 2, tono: 'danger' },
+];
+```
+
+`Contador` devuelve `null` en cero, así que una pestaña vacía no dibuja un «0» —
+no hay nada, y eso se dice no dibujando nada. El `tono` por defecto es `brand`
+en la activa y `neutral` en las demás; el llamador lo pisa cuando el número
+además ES una alarma.
+
+**Nació como el PRECIO de partir una pantalla en pestañas, no como adorno.** El
+caso fue Bolsas de efectivo: sus cuatro etapas vivían apiladas y el usuario
+reportó «me estoy perdiendo en los pasos, al tener tantos, me pierdo y no sé
+dónde está qué». Separarlas en pestañas arregla el perderse y **crea** un
+problema nuevo: una pestaña cerrada esconde lo suyo, y ahí lo escondido era
+dinero parado — una bolsa trabada seis días detrás de una pestaña que nadie
+abre, sin error y sin fila de menos visible.
+
+De ahí la regla:
+
+> **Antes de convertir secciones en pestañas, preguntarse qué se pierde al
+> esconderlas. Si la respuesta es «que no se ve que hay trabajo ahí», la pestaña
+> necesita su número — y el número se construye ANTES de partir la pantalla.**
+
+**Y cuenta lo que la pestaña VA A MOSTRAR, filtros incluidos.** Un contador que
+contara el total manda a una pestaña que va a salir vacía, que es peor que no
+tener contador. La consecuencia útil: con un buscador puesto, la fila entera
+contesta **en qué pestaña cayó lo que se buscó** — escribir un folio deja
+`0 · 0 · 1 · 0` y el trabajo de buscar ya está hecho. Por eso el buscador de una
+vista con contadores filtra **todas** las pestañas y no sólo la abierta.
+
+**Lo que el número le cuesta a la medida de la fila:** ninguna. `medirFila` lee
+`fila.scrollWidth` sobre el DOM real, así que la burbuja entra en la cuenta sola
+y el corte a desplegable (`cabeLaFila`) se corre solo. Lo que sí cuesta es el
+cierre estático: `Contador` entra al chunk de `ViewTabBar` — medido, **117
+bytes** gzip, que en `ConteoDetailView` cruzaron un borde de redondeo del
+`bundle-gate` (68.46 → 68.57 kB) y se firmaron en `_motivos`.
+
 #### La pestaña activa vive en la DIRECCIÓN — `usePestanaEnUrl` (2026-08-20)
 
 **Nunca `useState` para la pestaña activa.** El hook canónico es

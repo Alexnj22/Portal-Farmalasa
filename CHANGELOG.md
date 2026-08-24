@@ -21,9 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.734.0 — Bolsas: recibir de un toque, el conteo dice contra qué, y a la sala le vuelve la diferencia
+## v2.734.1 — Bolsas: recibir de un toque, el conteo dice contra qué, y a la sala le vuelve la diferencia
 
-_(pendiente de redactar)_
+Segunda tanda sobre `/cortes?tab=bolsas`, después de que la sala dejara de ver
+las etapas de administración (v2.733.3).
+
+**Recibir ya no es marcar casillas.** Tres caminos, del más usado al más raro:
+llegó todo → un botón; llegó lo de una sala → el botón de su encabezado; faltó
+alguna → las casillas, que es el caso excepcional y era el único que había. El
+botón de «todo» sale sólo con más de una sala en camino, porque con una sería el
+mismo botón dos veces.
+
+**El conteo dice contra qué se cuenta.** «Debe haber $31.67 · 2 vales por
+$593.81 adentro», en la fila, sin abrir el detalle — y al escribir un conteo
+distinto, «(debía haber $31.67)» al lado del campo en vez de dejarlo de marca de
+agua. Es justo la bolsa con vales donde equivocarse cuesta: el dinero que hay
+adentro dejó de ser el que se guardó y nada lo decía en la fila.
+
+**A la sala le vuelve su diferencia.** *«al entregarlos ya no es responsabilidad
+de la sala, solo que les aparezca si se reporta una diferencia encontrada en
+alguna bolsa de efectivo, para buscar solucion»*. Una sección propia, con el
+monto de la diferencia y sin botón de resolver — eso lo decide quien contó.
+
+Va con la cifra aunque la sala no tenga `bolsas_ver_montos`, y es deliberado:
+ese permiso esconde **cuánto efectivo hay en juego**, no **cuánto falta en la
+bolsa propia**. Buscar $8 y buscar $600 son dos búsquedas distintas, y el aviso
+que el servidor le manda a la sala al contar dice esa misma cifra desde el
+15-ago. El saldo de la bolsa sigue sin verse, que es lo que el permiso protege.
+
+**Y «Sin resolver» dejó de depender del período.** Se calculaba sobre la lista de
+contadas, que viene recortada por las fechas de la pantalla: la tarjeta decía
+CERO en cuanto el rango no alcanzaba el día del conteo — al revés de lo que hace
+falta, porque cuanto más vieja es una diferencia sin resolver, más hay que verla.
+Ahora sale de `get_bolsas_con_diferencia()`, sin rango. Es INVOKER a propósito:
+la policy `bolsas_select` ya dice si son las seis salas o sólo la propia, así que
+no hay una segunda definición de «tu sala» que se pueda desincronizar.
 
 ## v2.733.7 — 45 pruebas: la geografía fiscal, el IVA del DTE y la ficha de cliente
 

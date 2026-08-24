@@ -11,7 +11,7 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
-    contarBolsa, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
+    contarBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchPersonasDeBolsas, fetchSaldos,
     recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -198,9 +198,18 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
 }
 
 /** El conteo de UNA bolsa: cuadra de un toque, o se escribe lo que se contó. */
-function Conteo({ bolsa, ocupado, onContar }) {
+/* Antes de contar hay que saber contra qué. La tarjeta muestra la cifra sola y
+ * arriba a la derecha; cuando la bolsa tiene vales adentro eso no alcanza —el
+ * dinero que debe haber ya no es el que se guardó, y quien cuenta necesita
+ * saber cuánto se llevaron los papeles sin abrir el detalle—.
+ *
+ * Va detrás de `bolsas_ver_montos` como toda cifra de esta pantalla. Jefe/a de
+ * Compras cuenta dinero y no ve montos: es una decisión vieja del usuario, no un
+ * descuido, y esto no la cambia. */
+function Conteo({ bolsa, ocupado, onContar, verMontos }) {
     const [abierto, setAbierto] = useState(false);
     const [valor, setValor] = useState('');
+    const vales = Number(bolsa.vales || 0);
 
     const guardar = () => {
         const n = Number(String(valor).replace(',', '.'));
@@ -210,7 +219,19 @@ function Conteo({ bolsa, ocupado, onContar }) {
 
     if (!abierto) {
         return (
-            <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
+            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap w-full">
+                {verMontos && (
+                    <span className="text-caption text-content-2 tabular-nums">
+                        Debe haber <b className="text-content">{formatMoney(saldoDe(bolsa))}</b>
+                        {vales > 0 && (
+                            <span className="text-content-3">
+                                {' '}· {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'}
+                                {' '}por {formatMoney(vales)} adentro
+                            </span>
+                        )}
+                    </span>
+                )}
+                <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
                 <Button variant="secondary" size="sm" icon={Scale} onClick={() => setAbierto(true)}>
                     No cuadra
                 </Button>
@@ -232,13 +253,21 @@ function Conteo({ bolsa, ocupado, onContar }) {
                     onClick={() => onContar(bolsa, saldoDe(bolsa))}>
                     Cuadra
                 </Button>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="flex items-center gap-1.5 flex-wrap w-full">
-            <span className="text-caption text-content-2">Se contaron</span>
+            <span className="text-caption text-content-2">
+                Se contaron
+                {verMontos && (
+                    <span className="text-content-3 tabular-nums">
+                        {' '}(debía haber {formatMoney(saldoDe(bolsa))})
+                    </span>
+                )}
+            </span>
             <PortalInput
                 compact
                 name={`contado-${bolsa.id}`}
@@ -306,7 +335,7 @@ function Resolver({ bolsa, ocupado, onResolver }) {
  * de qué sala es lo que se está mirando nunca sobra — que es justo lo que se
  * pierde cuando alguien deja filtrada una sala y se olvida.
  */
-function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, vacio, verMontos }) {
+function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo, vacio, verMontos }) {
     return (
         <section className="space-y-2">
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
@@ -325,13 +354,21 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, v
                 ? <EmptyState linea icon={Icon} title={vacio} />
                 : grupos.map((g) => (
                     <div key={g.branchId} className="space-y-1.5">
+                        {/* La acción de grupo va en el encabezado de la sala
+                            porque recibir se hace POR SALA: llega el recolector
+                            con las de Salud 3 y se acusan todas juntas. Marcar
+                            casilla por casilla existe para el caso en que
+                            faltó alguna, que es el raro. */}
                         <div className="flex items-baseline justify-between gap-3 px-1">
                             <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                 {g.nombre}
                             </h4>
-                            <span className="text-micro text-content-3 tabular-nums">
-                                {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
-                                {verMontos && ` · ${formatMoney(suma(g.lista))}`}
+                            <span className="flex items-baseline gap-2 shrink-0">
+                                <span className="text-micro text-content-3 tabular-nums">
+                                    {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                    {verMontos && ` · ${formatMoney(suma(g.lista))}`}
+                                </span>
+                                {accionDeGrupo?.(g)}
                             </span>
                         </div>
                         <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
@@ -369,6 +406,10 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     const empleados = useStaff((st) => st.employees);
 
     const [bolsas, setBolsas] = useState([]);
+    /* Las diferencias sin resolver vienen APARTE y sin fechas: son lo único que
+     * no puede depender del período (ver `fetchBolsasConDiferencia`), y para una
+     * sala son lo único que vuelve después de entregar. */
+    const [diferencias, setDiferencias] = useState([]);
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
      * contra ESTO y no contra `Date.now()` en el render: leer el reloj mientras
      * se dibuja hace que dos renders del mismo estado den resultados distintos
@@ -411,16 +452,22 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         // pendientes fuera de estas fechas» necesita saber que existen: son las
         // que el filtro esconde, y esconderlas sin decirlo es justo lo que no
         // puede pasar con dinero esperando en una sala.
-        const [vivas, contadas] = await Promise.all([
+        const [vivas, contadas, conDif] = await Promise.all([
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
+            fetchBolsasConDiferencia(),
         ]);
-        const todas = [...(vivas || []), ...(contadas || [])];
+        // Una diferencia puede estar además dentro del rango: se deduplica por
+        // id para no dibujar la misma bolsa dos veces en «Contadas».
+        const vistas = new Set((contadas || []).map((b) => b.id));
+        const todas = [...(vivas || []), ...(contadas || []),
+            ...(conDif || []).filter((b) => !vistas.has(b.id))];
         // El saldo va pegado a la bolsa desde el principio: si llegara después,
         // la pantalla mostraría por un instante el monto guardado como si fuera
         // el efectivo que hay adentro.
         const saldos = await fetchSaldos(todas.map((b) => b.id));
         setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setLeidoEn(Date.now());
         setCargando(false);
         const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por, b.dif_por]);
@@ -478,7 +525,10 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     // El rango no trajo NADA. Con las cuatro etapas dibujadas eso son cuatro
     // encabezados, cuatro líneas de ayuda y cuatro cajas de «no hay» apiladas —
     // media pantalla explicando un vacío. Se dice una vez.
-    const vacioTotal = enPantalla.length === 0;
+    // Las diferencias sin resolver se dibujan aparte y sin período, así que
+    // una pantalla con diferencias NO está vacía: decir «sin bolsas en estas
+    // fechas» arriba de una bolsa que falta cuadrar es contradecirse.
+    const vacioTotal = enPantalla.length === 0 && !(!alcanceTodos && diferencias.length > 0);
 
     const masViejaFuera = useMemo(
         () => pendientesFuera.reduce((min, b) => (min && min <= b.fecha ? min : b.fecha), null),
@@ -511,9 +561,20 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             || String(b.hora).localeCompare(String(a.hora))),
         [porEstado, nombreSala]);
 
+    /* Sale del servidor y NO de `contadas`, que viene recortada por el período:
+     * una diferencia sin resolver de hace tres semanas desaparecía de la tarjeta
+     * por dejar el rango en «Hoy», y es justo la que más hay que ver. El filtro
+     * de sala es el mismo de la vista; el de alcance lo puso ya la policy. */
     const sinResolver = useMemo(
-        () => contadas.filter((b) => Math.abs(diferenciaDe(b) ?? 0) >= 0.01 && !b.dif_at),
-        [contadas],
+        () => (sala ? diferencias.filter((b) => String(b.branch_id) === String(sala)) : diferencias),
+        [diferencias, sala],
+    );
+
+    // Las que además quedaron fuera del rango: el aviso no puede decir «están
+    // abajo, en Contadas» sobre una bolsa que el período no dibuja.
+    const sinResolverFuera = useMemo(
+        () => sinResolver.filter((b) => !enRango(b)),
+        [sinResolver, enRango],
     );
 
     // Entregadas hace más de un día y todavía sin recibir. Se mide contra
@@ -686,6 +747,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     if (cargando) return <LoadingState label="Buscando las bolsas" />;
 
     const elegidasEnCamino = elegidasDe(enCamino);
+    const gruposEnCamino = new Set(enCamino.map((b) => b.branch_id)).size;
 
     return (
         <div className="space-y-6">
@@ -729,6 +791,55 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                         Están abajo, en «Contadas».
                     </span>
                 </Notice>
+            )}
+
+            {/* ── Lo único que vuelve a la sala después de entregar ──────
+                «al entregarlos ya no es responsabilidad de la sala, solo que
+                les aparezca si se reporta una diferencia encontrada en alguna
+                bolsa de efectivo, para buscar solucion» (usuario, 2026-08-24).
+
+                Va con el MONTO de la diferencia aunque la sala no tenga
+                `bolsas_ver_montos`, y es deliberado: ese permiso esconde cuánto
+                efectivo hay en juego —para no publicar el dinero en sala—, no
+                cuánto falta en la bolsa propia. Buscar $8 y buscar $600 son dos
+                búsquedas distintas, y el aviso que el servidor ya le manda a la
+                sala al contar dice exactamente esa cifra desde el 15-ago. Lo que
+                sigue sin verse es el saldo de la bolsa, que es lo que el permiso
+                protege.
+
+                Sin botón de resolver: eso lo decide quien contó. */}
+            {!alcanceTodos && sinResolver.length > 0 && (
+                <section className="space-y-2">
+                    <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
+                        <h3 className="text-label font-bold text-content flex items-center gap-2">
+                            <Scale size={15} className="text-danger-text" />
+                            Diferencias por resolver
+                        </h3>
+                        <span className="text-caption text-content-3 tabular-nums">
+                            {sinResolver.length} {sinResolver.length === 1 ? 'bolsa' : 'bolsas'}
+                        </span>
+                    </div>
+                    <p className="text-caption text-content-3 px-1">
+                        Administración contó estas bolsas y el dinero no coincidió. Ya
+                        no están en la sala: se muestran para buscar qué pasó.
+                    </p>
+                    <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+                        {sinResolver.map((b) => {
+                            const dif = diferenciaDe(b);
+                            return (
+                                <Bolsa key={b.id} bolsa={b} sala={nombreSala[b.branch_id]}
+                                    personas={personas} onAbrir={setAbierta} verMontos={verMontos}>
+                                    <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
+                                        {dif < 0 ? 'Faltó' : 'Sobró'} {formatMoney(Math.abs(dif))}
+                                    </Badge>
+                                    <span className="text-caption text-content-3">
+                                        Contada el {selloDeTiempo(b.contado_at)}
+                                    </span>
+                                </Bolsa>
+                            );
+                        })}
+                    </div>
+                </section>
             )}
 
             {vacioTotal ? (
@@ -810,13 +921,32 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 ayuda="Ya salieron de la sala. Administración confirma cuántas llegaron, sin contar el dinero todavía."
                 grupos={conNodo(enCamino, { elegible: puedeContar })}
                 total={enCamino.length} montoTotal={suma(enCamino)}
-                accion={puedeContar && elegidasEnCamino.length > 0 && (
+                /* Tres caminos, del más usado al más raro (usuario, 2026-08-24:
+                   «recibir todo de un solo tambien»):
+                     · llegó todo → un botón;
+                     · llegó lo de una sala → el botón de su encabezado;
+                     · faltó alguna → las casillas, que es el caso excepcional.
+                   El de «todo» sólo sale cuando hay más de una sala: con una
+                   sola sería el mismo botón dos veces. */
+                accion={puedeContar && (elegidasEnCamino.length > 0 ? (
                     <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
                         onClick={() => recibir(elegidasEnCamino)}>
                         Confirmar recepción de {elegidasEnCamino.length}
                         {verMontos ? ` · ${formatMoney(suma(elegidasEnCamino))}` : ''}
                     </Button>
-                )}
+                ) : (enCamino.length > 0 && gruposEnCamino > 1 && (
+                    <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
+                        onClick={() => recibir(enCamino)}>
+                        Confirmar las {enCamino.length} que llegaron
+                    </Button>
+                )))}
+                accionDeGrupo={puedeContar ? (g) => (
+                    <Button variant="secondary" size="sm" icon={Inbox}
+                        loading={ocupado === 'recibir'}
+                        onClick={() => recibir(g.lista)}>
+                        Recibir {g.lista.length === 1 ? 'la' : `las ${g.lista.length}`}
+                    </Button>
+                ) : null}
                 verMontos={verMontos}
                 vacio={pendientesFuera.length ? "Nada en camino en estas fechas" : "Nada en camino"}
             />
@@ -828,7 +958,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 ayuda="Recibidas y sin contar. Un toque en «Cuadra» cuando el dinero coincide."
                 grupos={conNodo(porContar, {
                     pie: (b) => (puedeContar ? (
-                        <Conteo bolsa={b} ocupado={ocupado === `contar-${b.id}`} onContar={contar} />
+                        <Conteo bolsa={b} ocupado={ocupado === `contar-${b.id}`} onContar={contar} verMontos={verMontos} />
                     ) : null),
                 })}
                 total={porContar.length} montoTotal={suma(porContar)}
@@ -840,7 +970,10 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             <Etapa
                 icon={ShieldCheck}
                 titulo="Contadas"
-                ayuda={`El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.`}
+                ayuda={`El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.${
+                    sinResolverFuera.length
+                        ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas: una diferencia no se esconde por mover el período.`
+                        : ''}`}
                 grupos={conNodo(contadas, {
                     pie: (b) => {
                         const dif = diferenciaDe(b);

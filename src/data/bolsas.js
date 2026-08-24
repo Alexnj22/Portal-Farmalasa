@@ -204,6 +204,27 @@ export function contarBolsa(id, contado, esperadoVisto) {
     });
 }
 
+/**
+ * Las bolsas contadas que no cuadraron y que nadie resolvió — SIN recorte de
+ * fechas, a propósito.
+ *
+ * «Sin resolver» se calculaba sobre la lista de contadas, que viene recortada
+ * por el período de la pantalla: la tarjeta decía CERO en cuanto el rango no
+ * alcanzaba el día del conteo, que es al revés de lo que hace falta —cuanto más
+ * vieja es una diferencia sin resolver, más hay que verla—.
+ *
+ * Y es lo ÚNICO que vuelve a la sala después de entregar: «al entregarlos ya no
+ * es responsabilidad de la sala, solo que les aparezca si se reporta una
+ * diferencia» (usuario, 2026-08-24). El alcance no se escribe acá: la función es
+ * INVOKER y la policy `bolsas_select` ya decide si son las seis salas o la
+ * propia.
+ */
+export async function fetchBolsasConDiferencia() {
+    const { data, error } = await supabase.rpc('get_bolsas_con_diferencia');
+    if (error) { console.error('bolsas: fetchBolsasConDiferencia failed:', error.message); return []; }
+    return data || [];
+}
+
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */
 export function resolverDiferenciaBolsa(id, via, causa) {
     return supabase.rpc('resolver_diferencia_bolsa', { p_id: id, p_via: via, p_causa: causa });

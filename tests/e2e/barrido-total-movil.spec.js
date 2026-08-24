@@ -417,6 +417,16 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 // confundirlos hacía que una vista lenta se contara como medida.
                 const cargando = document.querySelectorAll('[data-cargando]').length > 0;
                 const diceVacio = document.querySelectorAll('[data-vacio]').length > 0;
+                // Lo que pone LA VISTA, sin el chasis. `GlassViewLayout` estampa
+                // `data-contenido` donde termina el marco y empieza lo suyo
+                // (v2.727.2). Sin eso no hay corte posible: medido el
+                // 2026-08-24, el chasis solo da entre 13 y 24 tarjetas y
+                // `sesiones` —con dos fichas reales— da 16. Contando adentro,
+                // los mismos ocho casos se separan solos.
+                const cajaVista = document.querySelector('[data-contenido]');
+                const propias = cajaVista
+                    ? cajaVista.querySelectorAll('[data-surface], [class*="bg-surface-card"]').length
+                    : 0;
                 // Ninguno de los dos VETA, y eso costó una corrida: el primer
                 // intento dejaba que `data-vacio` ganara sobre todo lo demás, y
                 // el tablero —con TRECE fichas pintadas— se contó como vacío
@@ -428,9 +438,25 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 // Así que el contenido manda, y los dos atributos sirven para
                 // explicar POR QUÉ no hay contenido, que es lo que no se podía
                 // saber antes.
-                const conContenido = superficies >= 60 || todasLasTablas.length > 0 || filas > 0
-                                     || fichas > 0 || texto.length >= 1100;
-                return { tablas: tablas.length, fichas, tablasAnchas: anchas, superficies,
+                // ── Y el modelo cambió, no sólo el número (2026-08-24) ──────
+                // Se persiguió durante cinco versiones un corte que separara «hay
+                // algo que medir» de «no llegué a mirar», y el corte no existía
+                // porque la pregunta estaba mal hecha: **una vista con estado
+                // vacío igual tiene interfaz que medir** — sus filtros, sus
+                // botones y el propio cartel de vacío son blancos de dedo como
+                // cualquier otro. Marcarla «no medida» descartaba pantallas
+                // enteras que sí había que revisar.
+                //
+                // Lo único que de verdad impide medir es que la vista no pinte
+                // NADA suyo: sin acceso, o un chasis solo. Eso ahora se ve
+                // directo, contando dentro de `data-contenido`.
+                //
+                // `data-vacio` y `data-cargando` dejan de decidir si se mide, y
+                // pasan a decir POR QUÉ una vista trae poco — que es para lo que
+                // sirven.
+                const conContenido = propias > 0 || todasLasTablas.length > 0 || filas > 0
+                                     || fichas > 0 || texto.length >= 900;
+                return { tablas: tablas.length, fichas, tablasAnchas: anchas, superficies, propias,
                          reventó: /ALGO SALIÓ MAL/.test(texto),
                          sinAcceso, cargando, diceVacio,
                          sinDatos: sinAcceso || !conContenido,
@@ -623,6 +649,10 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // Tres causas, tres arreglos distintos. Meterlas en una sola línea
             // ya costó una corrida: «sin datos» y «no terminó de cargar» no se
             // arreglan igual, y la segunda ni siquiera es un problema del dato.
+            // Desde v2.727.2 esta lista es MUCHO más corta, y a propósito: sólo
+            // entra la vista que no pintó nada suyo. La que tiene un cartel de
+            // vacío se mide igual — su cartel y sus filtros son blancos de dedo
+            // como cualquier otro.
             const declarada = vacias.filter(v => v.diceVacio);
             const lenta     = vacias.filter(v => !v.diceVacio && v.cargando);
             const muda      = vacias.filter(v => !v.diceVacio && !v.cargando);

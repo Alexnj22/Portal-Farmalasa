@@ -952,3 +952,137 @@ O sea: de doce, **cero defectos del portal** y cuatro casos de vacío escrito
 fuera de los dos componentes canónicos — que es un hallazgo de consistencia, no
 de funcionamiento. Haber llamado «mudas» a las doce habría puesto doce defectos
 en el informe.
+
+### 8.13 Cinco vacíos dibujados a mano, y por qué el sexto se queda
+
+Poner `data-vacio` en `EmptyState` tuvo un efecto que no se buscaba: **cuatro
+vistas siguieron saliendo mudas**. No les faltaba el vacío — lo tenían **copiado
+clase por clase**. El de Solicitudes reproducía el envoltorio entero (`min-h-
+[400px]`, `animate-in fade-in zoom-in-95`, halo de `w-28 h-28` con
+`blur-[40px] opacity-30`, caja de ícono `w-24 h-24 rounded-modal`), y lo único
+que agregaba era el color por estado — que `EmptyState` ya acepta por
+`glowClass`/`iconClass`.
+
+Seis copias en cinco archivos. **Cinco volvieron a la canónica** —Solicitudes,
+Avisos, Mis avisos, Turnos y Encuestas—, prop por prop, así que se ven igual.
+
+**La sexta se queda a mano y eso también es una decisión escrita:** es el único
+vacío *celebratorio* del portal —halo del doble de grande, ícono con degradado y
+sombra de brillo, título de display— y pasarlo al canónico lo apagaría. Lo que sí
+necesitaba era anunciarse.
+
+Por eso el detector nuevo (`vacio-a-mano`) mira **`data-vacio` y no la clase**:
+quien tenga una razón para dibujar el suyo, la declara y sigue siendo medible. Un
+detector que prohibiera la clase habría obligado a elegir entre el canon y el
+diseño; éste sólo exige que la pantalla diga en qué estado está.
+
+### 8.14 El tamaño de la batería se cuenta, no se escribe
+
+La evidencia del eje `pruebas` decía **«687 pruebas en 54 archivos, todas
+verdes»**. Era cierto el día que se tecleó y falso tres tandas después: la
+batería estaba en **834**.
+
+Es la **tercera** vez en esta misma auditoría que aparece el mismo defecto, y las
+tres veces el que se creyó la afirmación fue un instrumento:
+
+| dónde | decía | era |
+|---|---|---|
+| superficie `anon` (CLAUDE.md) | «5 funciones, ninguna otra» | 24 funciones y 3 tablas |
+| entorno de pruebas (CLAUDE.md) | «idéntico a prod, verificado por md5» | 130 migraciones atrás |
+| eje `pruebas` (`puntuar.mjs`) | «687 pruebas» | 834 |
+
+Ahora se cuenta **ejecutando la batería**. Y si no se puede ejecutar, no se
+inventa un número: la evidencia dice *«la batería no se pudo ejecutar acá: el
+tamaño no se midió»* — un instrumento que no pudo medir no puede dar verde.
+
+**Y el primer intento de contarlo también salió mal**, que es la lección de
+segundo orden: `numTotalTestSuites` cuenta bloques `describe`, no archivos, así
+que informó **244 archivos** sobre 64 reales. Un número derivado no es
+automáticamente un número correcto — hay que mirar si el que sale se parece a lo
+que uno sabe.
+
+### 8.15 Una ruta sentada sobre el umbral
+
+Tras convertir los vacíos, cuatro rutas pasaron de «sin resolver» a «sin datos y
+lo dicen» — que era lo esperado. Pero **una ruta que estaba medida dejó de
+estarlo**: `cierre-periodo`.
+
+No había cambiado nada en ella. Medida a mano: **1,124 caracteres**, contra un
+corte de **1,100**. Veinticuatro caracteres.
+
+**Una ruta sentada sobre el umbral no da un resultado: da un resultado distinto
+cada corrida.** Y un instrumento que oscila enseña a no mirarlo, que es la forma
+en que un control se muere sin que nadie lo apague.
+
+El corte bajó a **900**, y el número sale de lo medido: el chasis vacío —marco,
+menú y encabezado, sin nada de contenido— da **779**. Se puede bajar sin riesgo
+precisamente por el trabajo de §8.10 y §8.13: los vacíos ya no dependen de este
+número. Los canónicos declaran `data-vacio` y los dibujados a mano los caza
+`vacio-a-mano`, que está en cero y es bloqueante.
+
+Es la forma general del arreglo que se repitió toda la jornada: **cuando una
+señal positiva existe, el umbral deja de tener que hacer el trabajo difícil.**
+
+### 8.16 El eje móvil, destrabado del todo: 54 de 54
+
+Cinco versiones del detector persiguieron un corte que separara «hay algo que
+medir» de «no llegué a mirar». El corte no existía, y no por falta de tino:
+**la pregunta estaba mal hecha.**
+
+Una vista con estado vacío **igual tiene interfaz que medir**. Sus filtros, sus
+botones y el propio cartel de vacío son blancos de dedo como cualquier otro.
+Marcarla «no medida» descartaba pantallas enteras que sí había que revisar — y
+por eso ninguna versión encontraba el corte: se estaba buscando la frontera
+equivocada.
+
+Lo único que de verdad impide medir es que **la vista no pinte nada suyo**. Eso
+no se podía ver porque el chasis —marco, menú, encabezado, barra de filtros—
+pinta sus propias tarjetas y se mezclaba con las de la vista. Medido: el chasis
+solo da entre 13 y 24, y `sesiones` —con dos fichas de persona reales— da 16. Los
+rangos se solapan y ningún corte los separa.
+
+`GlassViewLayout` ahora estampa **`data-contenido`** donde termina el marco.
+Contando adentro, los mismos casos se separan solos:
+
+| ruta | dentro del contenido | declara vacío | qué es |
+|---|---:|---|---|
+| `overview` | 154 | sí (un widget) | llena |
+| `cierre-periodo` | 18 | no | llena |
+| `libro-compras-completo` | 17 | no | llena |
+| `sesiones` | 5 | no | llena (2 fichas) |
+| `cotizaciones` | 5 | **sí** | vacía |
+| `compras` | 2 | no | una compra |
+| `my-announcements` | 1 | **sí** | vacía |
+
+**Resultado: 54 de 54 rutas medidas. 0 hallazgos, 0 reventadas, 0 tablas en el
+teléfono, 0 desbordes de página, 0 toques perdidos.**
+
+Es el mismo arreglo por tercera vez, y ya es un patrón con nombre: **cuando el
+portal declara lo que sabe, el instrumento deja de adivinar.** `data-destino` en
+la ficha, `data-vacio` y `data-cargando` en los estados, `data-contenido` en el
+chasis. Ninguno cambia un pixel; los tres convierten una inferencia frágil en un
+dato.
+
+El eje `movil` sube a **95** —el tope sin sello de sala— y no a 100: el entorno de
+pruebas sigue 130 migraciones atrás (§8.11), así que lo medido vale para la
+**maqueta**, que no depende del esquema, y no para una vista cuyo dato no llegó a
+cargar.
+
+### 8.17 Un cuelgue que era del taller, no del portal
+
+El barrido empezó a colgarse: 15 minutos contra los 4 que tarda. La ruta donde se
+trababa devolvía **«Navigation interrupted»**, y la consola decía *«Importing a
+module script failed»* — el mismo error que en producción significa «se publicó
+una versión nueva y este archivo ya no existe», y que `ErrorBoundary` responde
+**recargando la página**. Por eso la navegación se interrumpía: el portal se
+estaba recargando solo, correctamente.
+
+La causa no era el portal: era el **servidor de desarrollo con dos horas de vida
+y decenas de ediciones encima**. Su grafo de módulos quedó inconsistente y empezó
+a servir imports que ya no resolvían. Reiniciarlo —y borrar `node_modules/.vite`—
+lo resolvió: la ruta carga y mide 1,124 caracteres.
+
+Queda escrito porque el síntoma es **indistinguible** del defecto real que
+`ErrorBoundary` viene a cubrir, y perseguirlo en el portal habría costado horas.
+Antes de creerle a un fallo de carga de módulo en desarrollo: reiniciar el
+servidor.

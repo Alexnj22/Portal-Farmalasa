@@ -401,6 +401,21 @@ const GlassViewLayout = ({
                         // pena mirar: el clúster flotante, las hojas, los
                         // dropdowns. Una superficie apoyada sobre el fondo no.
                         data-vidrio="no"
+                        // ── `data-contenido`: dónde termina el chasis ────────
+                        // El marco, el menú, el encabezado y la barra de filtros
+                        // pintan tarjetas propias, así que contar tarjetas en
+                        // toda la página no distingue una vista llena de una
+                        // vacía: medido el 2026-08-24, el chasis solo da entre
+                        // 13 y 24, y `sesiones` —con dos fichas de persona
+                        // reales— da 16. Los rangos se solapan y no hay corte
+                        // que los separe.
+                        //
+                        // Este atributo marca dónde empieza lo que la vista
+                        // pone. Contar adentro de él es la diferencia entre
+                        // adivinar y saber, y cuesta un atributo que no cambia
+                        // un pixel — la misma idea que `data-vacio` en el vacío
+                        // canónico y `data-destino` en la ficha.
+                        data-contenido
                         // `lg:min-h-0` SOLO con `fixedScrollMode`, y es la pieza que
                         // hace que ese modo funcione de verdad. Un flex item nace con
                         // `min-height: auto`, o sea que no puede encogerse por debajo de

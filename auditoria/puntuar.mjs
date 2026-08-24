@@ -171,7 +171,7 @@ const GATES = {
     bundle:      { verde: true,  nota: 'VERDE desde v2.719.3. Estaba en rojo: TrasladosView 61 kB (techo 47) y '
                                      + 'DashboardView 100 (techo 99). Hoy el Inicio mide 87 y Traslados entra en su techo, '
                                      + 'difiriendo cinco piezas que sólo aparecen a pedido.' },
-    pruebas:     { verde: true,  nota: '687 pruebas en 54 archivos, todas verdes' },
+    pruebas:     { verde: true,  nota: 'ver RESUMEN_PRUEBAS: se cuenta ejecutando la batería, no se escribe' },
 };
 
 // Áreas señaladas por un gate en rojo. Vacío desde v2.719.3 — se cerró, no se
@@ -232,6 +232,35 @@ const PENDIENTES = {
 // LAS REGLAS
 // ═══════════════════════════════════════════════════════════════════════════
 const barrido = JSON.parse(execSync('node scripts/auditoria-barrido.mjs --json', { cwd: RAIZ, maxBuffer: 1 << 26 }).toString());
+
+// ── El tamaño de la batería se CUENTA, no se escribe ────────────────────────
+// Acá decía «687 pruebas en 54 archivos» — cierto el día que se tecleó, y falso
+// tres tandas después: la batería estaba en 830. Es el mismo defecto que esta
+// auditoría encontró en la superficie `anon` y en el entorno de pruebas, o sea
+// la tercera vez: **una afirmación que nadie vuelve a verificar deja de ser
+// cierta sin avisar**, y las tres veces el que se la creyó fue un instrumento.
+//
+// Se cuenta ejecutando la batería. Si no se puede (sin `node_modules`, sin
+// tiempo), NO se inventa un número: se dice que no se midió — un gate que no
+// pudo medir no puede dar verde.
+const PRUEBAS = (() => {
+    try {
+        const salida = execSync('npx vitest run --reporter=json --silent', {
+            cwd: RAIZ, maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'],
+        }).toString();
+        const j = JSON.parse(salida.slice(salida.indexOf('{')));
+        // `numTotalTestSuites` cuenta bloques `describe`, no archivos: daba 244
+        // sobre 64 archivos reales. El que vale es `testResults`, que trae uno
+        // por archivo.
+        return { total: j.numTotalTests, archivos: j.testResults?.length ?? 0,
+                 verdes: j.numFailedTests === 0 };
+    } catch {
+        return null;
+    }
+})();
+const RESUMEN_PRUEBAS = PRUEBAS
+    ? `${PRUEBAS.total} pruebas en ${PRUEBAS.archivos} archivos, ${PRUEBAS.verdes ? 'todas verdes' : 'CON FALLAS'}`
+    : 'la batería no se pudo ejecutar acá: el tamaño no se midió';
 const design = JSON.parse(execSync('node scripts/design-gate.mjs --json', { cwd: RAIZ, maxBuffer: 1 << 26 }).toString());
 const draft = JSON.parse(fs.readFileSync(path.join(RAIZ, 'scripts/draft-gate-baseline.json'), 'utf8'));
 
@@ -341,9 +370,15 @@ function puntuar(area) {
         hallazgos: h.barrido.filter(x => x.cat === 'escritura-sin-bitacora').map(x => `${x.archivo}: ${x.texto}`) };
 
     // ── vista ───────────────────────────────────────────────────────────────
-    ev.vista = { pct: tope(98 - h.design.length * 3, 55),
-        evidencia: `gate:design en verde · ${h.design.length} hallazgo(s) de tarjeta-a-mano bajo baseline`,
-        hallazgos: h.design.length ? [`${h.design.length} tarjeta(s) escritas a mano en vez de data-surface="card"`] : [] };
+    // `vacio-a-mano` entra acá y no en un eje propio: dibujar la pantalla vacía a
+    // mano es la misma falta que dibujar la tarjeta a mano —se copia el
+    // envoltorio del canónico y se pierde lo que el canónico da gratis—, sólo que
+    // en el otro extremo de la lista.
+    ev.vista = { pct: tope(98 - h.design.length * 3 - n('vacio-a-mano') * 4, 55),
+        evidencia: `gate:design en verde · ${h.design.length} hallazgo(s) de tarjeta-a-mano bajo baseline · `
+                 + `barrido: ${n('vacio-a-mano')} pantalla(s) vacías dibujadas a mano`,
+        hallazgos: [...(h.design.length ? [`${h.design.length} tarjeta(s) escritas a mano en vez de data-surface="card"`] : []),
+                    ...h.barrido.filter(x => x.cat === 'vacio-a-mano').map(x => `vacío a mano: ${x.archivo}:${x.linea}`)] };
 
     // ── movil ───────────────────────────────────────────────────────────────
     // El gate está en 0 en las cinco categorías, pero el gate LEE EL FUENTE y hay
@@ -377,17 +412,29 @@ function puntuar(area) {
     // El eje sube a 93 y no a 100: 23 rutas siguen sin datos en el entorno de
     // pruebas, así que casi la mitad del portal continúa sin medirse en el
     // teléfono. Un gate que no pudo medir no puede dar verde.
-    ev.movil = { pct: 93,
-        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, '
-                 + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). '
-                 + 'Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) '
-                 + 'y 12 quedan sin resolver.',
-        hallazgos: ['11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono',
-                    'las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los '
-                    + 'componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido',
-                    'el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un '
-                    + 'portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó '
-                    + 'a cargar datos'] };
+    // ── 2026-08-24, tarde: el eje se destraba del todo ─────────────────────
+    // Después de cinco versiones persiguiendo un corte que separara «hay algo
+    // que medir» de «no llegué a mirar», resultó que el corte no existía porque
+    // la pregunta estaba mal hecha: **una vista con estado vacío igual tiene
+    // interfaz que medir**. Sus filtros, sus botones y el propio cartel de vacío
+    // son blancos de dedo como cualquier otro, y marcarla «no medida»
+    // descartaba pantallas enteras que sí había que revisar.
+    //
+    // Lo único que de verdad impide medir es que la vista no pinte NADA suyo, y
+    // eso se ve directo desde que `GlassViewLayout` estampa `data-contenido`.
+    // Resultado: **54 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas
+    // en el teléfono, 0 toques perdidos.**
+    //
+    // El eje sube a 95 —el tope sin sello— y NO a 100: el entorno de pruebas
+    // sigue 130 migraciones atrás de producción, así que lo medido vale para la
+    // MAQUETA, que no depende del esquema, y no para una vista cuyo dato no
+    // llegó a cargar.
+    ev.movil = { pct: 95,
+        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, '
+                 + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. '
+                 + 'Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).',
+        hallazgos: ['el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA '
+                    + '(que no depende del esquema) y no para una vista cuyo dato no llegó a cargar'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en
@@ -420,7 +467,7 @@ function puntuar(area) {
         // puntaje baje sin que haya que acordarse de esta lista.
         ;
     ev.pruebas = { pct: tope(t === 0 ? 40 : Math.min(95, 55 + t * 7), 40),
-        evidencia: `${t} archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes`,
+        evidencia: `${t} archivo(s) de prueba nombran archivos de esta área · ${RESUMEN_PRUEBAS}`,
         hallazgos: t === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };
 
     // ── doc ─────────────────────────────────────────────────────────────────

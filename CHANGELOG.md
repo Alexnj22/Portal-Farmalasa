@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.728.0 — El barrido mide las 54 rutas: el chasis dice dónde empieza la vista
+
+**54 de 54 rutas medidas. 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0
+desbordes, 0 toques perdidos.**
+
+Cinco versiones del detector persiguieron un corte que separara «hay algo que
+medir» de «no llegué a mirar». El corte no existía porque **la pregunta estaba
+mal hecha**: una vista con estado vacío igual tiene interfaz que medir — sus
+filtros, sus botones y el propio cartel de vacío son blancos de dedo como
+cualquier otro. Marcarla «no medida» descartaba pantallas enteras que sí había
+que revisar.
+
+Lo único que de verdad impide medir es que la vista **no pinte nada suyo**, y eso
+no se veía porque el chasis pinta sus propias tarjetas: medido, el chasis solo da
+entre 13 y 24 y `sesiones` —con dos fichas reales— da 16. Los rangos se solapan y
+ningún corte los separa.
+
+`GlassViewLayout` estampa ahora **`data-contenido`** donde termina el marco.
+Contando adentro, los casos se separan solos: `overview` 154, `cierre-periodo`
+18, `sesiones` 5, `my-announcements` 1.
+
+Es el mismo arreglo por tercera vez y ya es un patrón: **cuando el portal declara
+lo que sabe, el instrumento deja de adivinar.** `data-destino` en la ficha,
+`data-vacio` y `data-cargando` en los estados, `data-contenido` en el chasis.
+Ninguno cambia un pixel.
+
+**Y un cuelgue que era del taller.** El barrido empezó a tardar 15 minutos en vez
+de 4, trabado en una ruta que devolvía «Importing a module script failed» — el
+mismo error que en producción significa «se publicó una versión nueva» y que el
+portal responde recargando. O sea que se recargaba solo, correctamente. La causa
+era el servidor de desarrollo con dos horas y decenas de ediciones encima:
+reiniciarlo lo resolvió. Queda escrito porque el síntoma es **indistinguible** del
+defecto real.
+
 ## v2.727.2 — El widget se abrió en un navegador, y el tipo de documento se derivó del número de control
 
 ### La baldosa, probada de verdad

@@ -39,18 +39,16 @@
         },
         "vista": {
           "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -65,7 +63,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "17 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "17 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -80,9 +78,7 @@
       "hallazgos": [
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -137,18 +133,16 @@
         },
         "vista": {
           "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -163,7 +157,7 @@
         },
         "pruebas": {
           "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -172,7 +166,7 @@
           "hallazgos": []
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -187,9 +181,7 @@
         "[seguridad] kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[seguridad] kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -232,18 +224,16 @@
         },
         "vista": {
           "pct": 86,
-          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -258,7 +248,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -272,9 +262,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -323,18 +311,16 @@
         },
         "vista": {
           "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -349,7 +335,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -360,7 +346,7 @@
           ]
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -369,9 +355,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetAnnulmentRequest.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -424,18 +408,16 @@
         },
         "vista": {
           "pct": 71,
-          "evidencia": "gate:design en verde · 9 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 9 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "9 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -450,7 +432,7 @@
         },
         "pruebas": {
           "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -472,9 +454,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -518,16 +498,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -542,7 +520,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -557,9 +535,7 @@
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -605,18 +581,16 @@
         },
         "vista": {
           "pct": 77,
-          "evidencia": "gate:design en verde · 7 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 7 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "7 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -631,7 +605,7 @@
         },
         "pruebas": {
           "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -642,15 +616,13 @@
           ]
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -696,18 +668,16 @@
         },
         "vista": {
           "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -722,7 +692,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -739,9 +709,7 @@
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -789,18 +757,16 @@
         },
         "vista": {
           "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -815,7 +781,7 @@
         },
         "pruebas": {
           "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -833,9 +799,7 @@
         "[seguridad] asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar",
         "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -883,18 +847,16 @@
         },
         "vista": {
           "pct": 59,
-          "evidencia": "gate:design en verde · 13 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 13 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "13 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -909,7 +871,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -927,9 +889,7 @@
         "[flujo] push llega a 4 de 59 — la mayoría de los avisos no salen del portal",
         "[resiliencia] formulario largo sin borrador: src/views/EncuestaAdminView.jsx",
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -980,18 +940,16 @@
         },
         "vista": {
           "pct": 86,
-          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1006,7 +964,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1027,9 +985,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabLegal.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1080,18 +1036,16 @@
         },
         "vista": {
           "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1106,7 +1060,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1127,9 +1081,7 @@
         "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",
         "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1175,16 +1127,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1199,7 +1149,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1213,9 +1163,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/views/metas/GastoModal.jsx",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1264,16 +1212,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1288,7 +1234,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1305,9 +1251,7 @@
         "[flujo] el −$621.17 falso de Salud 1 sin explicar",
         "[flujo] falta probar las bolsas en sala",
         "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1356,18 +1300,16 @@
         },
         "vista": {
           "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1382,7 +1324,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1400,9 +1342,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/CotizacionesView.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/FacturacionView.jsx",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1451,18 +1391,16 @@
         },
         "vista": {
           "pct": 83,
-          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "5 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1477,7 +1415,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1497,9 +1435,7 @@
         "[bd] índice nunca usado: idx_product_precios_history_pres (448 kB)",
         "[resiliencia] formulario largo sin borrador: src/views/productos/TabCatalogo.jsx",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1548,18 +1484,16 @@
         },
         "vista": {
           "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1574,7 +1508,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1583,7 +1517,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1592,9 +1526,7 @@
         "[bd] índice nunca usado: idx_conteo_items_source_sync_key (768 kB)",
         "[bd] índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1640,16 +1572,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1664,7 +1594,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1679,9 +1609,7 @@
       "hallazgos": [
         "[flujo] MIN·MAX no lee el factor",
         "[flujo] falta el 1-sep del cron de La Popular",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1733,19 +1661,17 @@
         },
         "vista": {
           "pct": 74,
-          "evidencia": "gate:design en verde · 8 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 8 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
             "tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada"
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1760,7 +1686,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1781,9 +1707,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/pedidos/RecepcionModal.jsx",
         "[vista] 8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1834,16 +1758,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1858,7 +1780,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1877,9 +1799,7 @@
         "[flujo] falta verlo en pantalla (lo confirma la sala)",
         "[flujo] falta probar la sala de respaldo después de las 17:00",
         "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1933,16 +1853,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -1957,7 +1875,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1978,9 +1896,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/purchases/CuentasPorPagarView.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -2027,18 +1943,16 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente"
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -2053,7 +1967,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2070,9 +1984,7 @@
         "[flujo] art.156 retención renta $262.52 sin marcar",
         "[flujo] libros de compras: quedan hallazgos abiertos",
         "[vista] LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -2118,18 +2030,16 @@
         },
         "vista": {
           "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -2144,7 +2054,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2160,9 +2070,7 @@
         "[flujo] falta la consulta al CSSP desde el portal",
         "[flujo] falta el aviso de franja por vencerse",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -2213,18 +2121,16 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
             "tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular"
           ]
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -2241,7 +2147,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2261,9 +2167,7 @@
         "[seguridad] confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
       ],
       "verificaciones": [
@@ -2310,16 +2214,14 @@
         },
         "vista": {
           "pct": 98,
-          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": []
         },
         "movil": {
-          "pct": 93,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
           "hallazgos": [
-            "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
@@ -2334,7 +2236,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 687 pruebas en total, todas verdes",
+          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 834 pruebas en 65 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2351,9 +2253,7 @@
       "hallazgos": [
         "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
         "[flujo] auditoría DTE proveedores: H5b y D",
-        "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [

@@ -31,11 +31,27 @@ const leer = (p, def) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); 
 const escribir = (p, v) => fs.writeFileSync(p, JSON.stringify(v, null, 2) + '\n');
 const morir = m => { console.error(`\n  ✗ ${m}\n`); process.exit(1); };
 
-function pctDe(e) {
+// El puntaje que sale de los doce ejes, sin el sello. Es lo que mide el TRABAJO
+// verificable desde acá.
+function brutoDe(e) {
     if (!e?.ejes) return 0;
     const suma = EJES.reduce((s, eje) => s + ((e.ejes[eje.id]?.pct ?? 0) * eje.peso), 0);
-    const bruto = Math.round(suma / PESO_TOTAL);
-    return e.sello_sala ? bruto : Math.min(bruto, TOPE_SIN_SELLO);
+    return Math.round(suma / PESO_TOTAL);
+}
+
+// ── El sello era inalcanzable, y era un defecto de esta herramienta ──────────
+// `pctDe` topaba en 95 sin sello, y `sellar` exigía llegar a 100. O sea que
+// ningún área podía sellarse NUNCA: para llegar a 100 hacía falta el sello, y
+// para el sello hacía falta llegar a 100. Se descubrió el 2026-08-24 al intentar
+// sellar las tres áreas con corrida real medida.
+//
+// El modelo correcto es el que la regla siempre quiso decir: **los doce ejes en
+// verde valen 95, y el sello —una corrida real en sala— es lo que completa el
+// 100**. No es un sumando que se pueda compensar desde el escritorio; es la
+// diferencia entre «construido» y «funciona», que es de lo que trata todo esto.
+function pctDe(e) {
+    if (!e?.ejes) return 0;
+    return e.sello_sala ? 100 : Math.min(brutoDe(e), TOPE_SIN_SELLO);
 }
 
 // El estado se DERIVA, nunca se escribe a mano. Escribirlo a mano es cómo un
@@ -107,11 +123,16 @@ case 'sellar': {
     const entrada = registro.areas[areaId];
     if (!entrada) morir(`«${areaId}» no está en el registro. Auditala antes de sellarla.`);
 
-    const p = pctDe(entrada);
-    if (p < 100) morir(
-        `«${areaId}» está en ${p}%. No se sella lo que no llegó a 100.\n`
-      + `    Ejes bajos: ${EJES.filter(e => (entrada.ejes?.[e.id]?.pct ?? 0) < 100).map(e => `${e.id}(${entrada.ejes?.[e.id]?.pct ?? 0})`).join(', ')}`
-      + (entrada.sello_sala ? '' : `\n    Y falta el sello de sala: sin una corrida real el tope es ${TOPE_SIN_SELLO}%.`)
+    // Se mide el BRUTO y no el mostrado: el mostrado ya viene topado en 95 por no
+    // tener sello, y compararlo contra 100 era la circularidad de arriba.
+    const p = brutoDe(entrada);
+    if (p < TOPE_SIN_SELLO) morir(
+        `«${areaId}» está en ${p}% y el sello pide ${TOPE_SIN_SELLO}%. Lo que falta se puede medir desde acá.\n`
+      + `    Los que más pesan de lo que falta: `
+      + EJES.map(e => ({ e, p: entrada.ejes?.[e.id]?.pct ?? 0 }))
+           .filter(x => x.p < TOPE_SIN_SELLO)
+           .sort((x, y) => (y.e.peso * (TOPE_SIN_SELLO - y.p)) - (x.e.peso * (TOPE_SIN_SELLO - x.p)))
+           .slice(0, 4).map(x => `${x.e.id}(${x.p}%, peso ${x.e.peso})`).join(', ')
     );
 
     entrada.verificaciones = entrada.verificaciones || [];

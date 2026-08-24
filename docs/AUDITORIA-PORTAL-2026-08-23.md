@@ -1435,3 +1435,58 @@ que ahora es honesto:
 | **Sucursales** | **1 de 23 (4%)** |
 
 La regla vieja ponía a Traslados y a Sucursales casi iguales. Son 78% y 4%.
+
+### 8.27 El sello de sala era inalcanzable — y la investigación del sello de compra corrigió el hallazgo
+
+**Dos cosas cerradas, y las dos empezaron corrigiendo lo que yo mismo había
+escrito.**
+
+#### El sello de sala no se podía poner
+
+Con la decisión de «sellar con lo ya corrido», el intento falló: `pctDe` topaba
+en **95 sin sello**, y `sellar` exigía llegar a **100**. Para llegar a 100 hacía
+falta el sello; para el sello hacía falta llegar a 100. **Ningún área podía
+sellarse nunca**, y no se había notado porque nadie lo había intentado — la misma
+forma de defecto que el historial de migraciones (§8.21).
+
+Corregido al modelo que la regla siempre quiso decir: **los doce ejes en verde
+valen 95, y el sello completa el 100**. `sellar` mide ahora el bruto contra 95, y
+cuando no alcanza dice qué falta ordenado por lo que más pesa:
+
+```
+✗ «impresion» está en 89% y el sello pide 95%.
+  Los que más pesan de lo que falta: pruebas(67%, peso 2), flujo(77%, peso 3),
+  eficiencia(83%, peso 2), doc(75%, peso 1)
+```
+
+Consecuencia práctica: **hoy no se puede sellar ninguna** —la mejor está en 93—
+y eso es correcto. La evidencia de sala existe; lo que falta es el trabajo
+medible desde acá.
+
+#### Cuatro de los siete pares de sello no eran anomalías
+
+Investigando cuál sello es el bueno, el cruce contra los documentos de Hacienda
+corrigió el hallazgo que yo había escrito en §8.20 y §8.24:
+
+| | qué son |
+|---|---|
+| **4 pares** | **La misma compra en dos renglones** — mismo `documento_numero` en ambos. El sello está bien en los dos. No eran anomalías |
+| **2 pares** | **Resueltos**: uno de cada par lleva un sello prestado, y se demostró cuál |
+| **1 par** | Sin resolver: los dos tienen documento real y distinto |
+
+Los dos resueltos, con su prueba:
+
+- **12-jun** — la fila de FARMA VALUE tiene como `documento_numero` **el propio
+  sello recortado a 20 caracteres**, y no existe ningún documento de Hacienda con
+  él. El otro renglón (COFARSAL $465.96) sí tiene su CCF real `D5A8B918…`.
+- **1-ago** — el sello pertenece al documento `1B2A54C5…` de Farmacias Europeas
+  por **$67.40**, que es el otro renglón del par ($68.50). El de $34.25 lo
+  llevaba prestado.
+
+Las dos filas quedaron con el sello en NULL. La tercera necesita leer el JSON del
+DTE, que el portal ya guarda para los dos documentos — es un clic en Compras.
+
+> El número que había escrito —«siete pares comparten sello, dos con proveedores
+> distintos»— contaba como anomalía lo que es el registro normal de una compra
+> partida en dos renglones. **Medir de nuevo lo bajó de siete a tres, y de tres a
+> uno abierto.**

@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-08-23",
+  "recalculado": "2026-08-24",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -63,7 +63,7 @@
         },
         "pruebas": {
           "pct": 66,
-          "evidencia": "25 de 132 archivo(s) del área nombrados por alguna prueba (19%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "25 de 132 archivo(s) del área nombrados por alguna prueba (19%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -157,7 +157,7 @@
         },
         "pruebas": {
           "pct": 60,
-          "evidencia": "3 de 36 archivo(s) del área nombrados por alguna prueba (8%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 36 archivo(s) del área nombrados por alguna prueba (8%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -248,7 +248,7 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "2 de 10 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "2 de 10 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -335,7 +335,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "3 de 27 archivo(s) del área nombrados por alguna prueba (11%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 27 archivo(s) del área nombrados por alguna prueba (11%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -432,7 +432,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "3 de 26 archivo(s) del área nombrados por alguna prueba (12%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 26 archivo(s) del área nombrados por alguna prueba (12%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -520,7 +520,7 @@
         },
         "pruebas": {
           "pct": 75,
-          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -605,7 +605,7 @@
         },
         "pruebas": {
           "pct": 62,
-          "evidencia": "2 de 17 archivo(s) del área nombrados por alguna prueba (12%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "2 de 17 archivo(s) del área nombrados por alguna prueba (12%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -692,7 +692,7 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -781,7 +781,7 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "2 de 14 archivo(s) del área nombrados por alguna prueba (14%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "2 de 14 archivo(s) del área nombrados por alguna prueba (14%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -871,7 +871,7 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "3 de 15 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 15 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -964,7 +964,7 @@
         },
         "pruebas": {
           "pct": 58,
-          "evidencia": "1 de 23 archivo(s) del área nombrados por alguna prueba (4%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 23 archivo(s) del área nombrados por alguna prueba (4%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1059,7 +1059,7 @@
         },
         "pruebas": {
           "pct": 75,
-          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1147,7 +1147,7 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1232,7 +1232,7 @@
         },
         "pruebas": {
           "pct": 76,
-          "evidencia": "7 de 20 archivo(s) del área nombrados por alguna prueba (35%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "7 de 20 archivo(s) del área nombrados por alguna prueba (35%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1322,7 +1322,7 @@
         },
         "pruebas": {
           "pct": 68,
-          "evidencia": "4 de 19 archivo(s) del área nombrados por alguna prueba (21%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "4 de 19 archivo(s) del área nombrados por alguna prueba (21%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1413,7 +1413,7 @@
         },
         "pruebas": {
           "pct": 70,
-          "evidencia": "3 de 12 archivo(s) del área nombrados por alguna prueba (25%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 12 archivo(s) del área nombrados por alguna prueba (25%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1506,7 +1506,7 @@
         },
         "pruebas": {
           "pct": 73,
-          "evidencia": "5 de 17 archivo(s) del área nombrados por alguna prueba (29%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "5 de 17 archivo(s) del área nombrados por alguna prueba (29%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1592,7 +1592,7 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "3 de 20 archivo(s) del área nombrados por alguna prueba (15%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "3 de 20 archivo(s) del área nombrados por alguna prueba (15%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1684,7 +1684,7 @@
         },
         "pruebas": {
           "pct": 65,
-          "evidencia": "7 de 44 archivo(s) del área nombrados por alguna prueba (16%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "7 de 44 archivo(s) del área nombrados por alguna prueba (16%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1778,7 +1778,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 9 archivo(s) del área nombrados por alguna prueba (78%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "7 de 9 archivo(s) del área nombrados por alguna prueba (78%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1873,7 +1873,7 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1965,7 +1965,7 @@
         },
         "pruebas": {
           "pct": 64,
-          "evidencia": "2 de 13 archivo(s) del área nombrados por alguna prueba (15%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "2 de 13 archivo(s) del área nombrados por alguna prueba (15%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2052,7 +2052,7 @@
         },
         "pruebas": {
           "pct": 60,
-          "evidencia": "1 de 13 archivo(s) del área nombrados por alguna prueba (8%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 13 archivo(s) del área nombrados por alguna prueba (8%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2145,7 +2145,7 @@
         },
         "pruebas": {
           "pct": 67,
-          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2234,7 +2234,7 @@
         },
         "pruebas": {
           "pct": 59,
-          "evidencia": "1 de 15 archivo(s) del área nombrados por alguna prueba (7%) · 1038 pruebas en 75 archivos, todas verdes",
+          "evidencia": "1 de 15 archivo(s) del área nombrados por alguna prueba (7%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {

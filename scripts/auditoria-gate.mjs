@@ -222,7 +222,11 @@ export function calcularPct(entrada) {
     // corrida real llegan a 95, nunca a 100. Si fuera un sumando, un área podría
     // compensar la falta de prueba real con puntaje de otro lado — que es
     // exactamente la confusión entre «construido» y «funciona».
-    return entrada.sello_sala ? bruto : Math.min(bruto, TOPE_SIN_SELLO);
+    // Sellada = 100. Los doce ejes en verde valen 95 y el sello —una corrida
+    // real en sala— es lo que completa el resto: no es un sumando que se pueda
+    // compensar desde el escritorio. Tiene que decir lo MISMO que `pctDe` del
+    // CLI; si divergen, el gate rechaza un `pct` que el propio CLI escribió.
+    return entrada.sello_sala ? 100 : Math.min(bruto, TOPE_SIN_SELLO);
 }
 
 function verificarRegistro() {

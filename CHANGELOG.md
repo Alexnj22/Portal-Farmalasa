@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.724.1 — El barrido cuenta estructura, no texto — y el módulo de datos deja de nombrar la tubería
+
+**`branches` pintaba 0 fichas con ocho sucursales cargadas.** Las dos sospechas
+razonables eran falsas —no es una tarjeta a mano, y sus hijos sí usan el
+material canónico— y la causa era una tercera: `BranchCard` lleva
+`content-visibility: auto` para no renderizar lo que está fuera de la pantalla,
+y **el texto de un elemento no renderizado no existe para `innerText`**.
+
+Medido en el teléfono, la vista llena da **508 caracteres** y una vacía da
+**506**. Dos caracteres separaban una pantalla con ocho sucursales de una sin
+nada, y el detector iba por su tercera versión contando exactamente eso.
+
+Ahora cuenta **estructura**, que existe en el DOM aunque no se pinte. El corte
+se midió: 13–24 elementos con superficie de tarjeta en una vista vacía, 166–176
+en una llena; el corte va en 60. **De 25 rutas medidas a 31, con 0 hallazgos en
+todas.**
+
+**Y el módulo «Salud de syncs» pasó a llamarse «Actualización de datos».** Con
+él se fueron «Backup» → *Respaldo*, «Dominio» → *Qué se actualizó*, «Sin
+corridas» → *Sin actualizaciones* y la unidad del paginador. `MinMax` quedó como
+*Min / Max*, que es como se llama ese módulo en todo el resto del portal. Nadie
+que use el portal sabe qué es un sync.
+
+Promedio de la auditoría: **89% → 90%**.
+
 ## v2.724.0 — El correo era un espacio al final, y «Por revisar» llevaba 17 días mudo
 
 Cuatro facturas sin sello, y **tres causas distintas**. Ninguna era «el circuito

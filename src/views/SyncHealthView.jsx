@@ -12,9 +12,9 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 
 const DOMAIN_LABELS = {
     products: 'Productos',
-    minmax: 'MinMax',
+    minmax: 'Min / Max',
     purchases: 'Compras',
-    backup: 'Backup',
+    backup: 'Respaldo',
 };
 
 const TABS = [
@@ -98,12 +98,12 @@ const SyncHealthView = () => {
     );
 
     return (
-        <GlassViewLayout icon={RadioTower} title="Salud de syncs" filtersContent={filtersContent}>
+        <GlassViewLayout icon={RadioTower} title="Actualización de datos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
                 <DataTable
                     columns={[
                         { key: 'checked_at', label: 'Fecha / Hora' },
-                        { key: 'domain', label: 'Dominio' },
+                        { key: 'domain', label: 'Qué se actualizó' },
                         { key: 'scope', label: 'Alcance' },
                         { key: 'status', label: 'Estado' },
                         { key: 'error_msg', label: 'Detalle', hideBelow: 'md' },
@@ -111,8 +111,8 @@ const SyncHealthView = () => {
                     loading={loading}
                     empty={{
                         icon: RadioTower,
-                        message: 'Sin corridas',
-                        subtext: 'Los syncs de este dominio no han corrido desde que se activó este monitoreo.',
+                        message: 'Sin actualizaciones',
+                        subtext: 'Estos datos no se han actualizado desde que empezó este control.',
                     }}
                 >
                     {filasPagina.map((row, i) => {
@@ -163,7 +163,7 @@ const SyncHealthView = () => {
                             pageSize={porPagina}
                             onPageSizeChange={v => { setPorPagina(Number(v)); setPagina(1); }}
                             total={filteredRows.length}
-                            unit="corridas"
+                            unit="actualizaciones"
                         />
                     </div>
                 )}

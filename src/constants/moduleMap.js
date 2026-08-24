@@ -43,7 +43,7 @@ export const MODULE_MAP = {
     ios_test:          { path: '/ios-test',        label: 'Prueba iOS',               icon: Smartphone    },
     impresion:         { path: '/impresion',       label: 'Prueba de impresión',      icon: Printer       },
     carne_temporal:    { path: '/carnes-del-dia',  label: 'Carnés del día',           icon: IdCard        },
-    sync_health:       { path: '/sync-health',     label: 'Salud de syncs',           icon: RadioTower    },
+    sync_health:       { path: '/sync-health',     label: 'Actualización de datos',   icon: RadioTower    },
     sesiones:          { path: '/sesiones',        label: 'Conexiones',               icon: MonitorSmartphone },
     orphan_objects:    { path: '/orphan-objects',  label: 'Objetos huérfanos',        icon: Ghost         },
     maintenance:       { path: '/mantenimiento',  label: 'Mantenimiento',            icon: Wrench        },

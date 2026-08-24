@@ -460,8 +460,12 @@ se lee como buena noticia.** El vocabulario ahora incluye WFM, Supabase,
 PostgREST, SheetJS, «inyección» y «volcado», y descarta `console.*` y los
 argumentos de `invoke()`, que no los lee nadie.
 
-Queda pendiente y es una decisión, no un arreglo: el módulo **«Salud de syncs»**
-se llama así en el menú y en la pantalla de Permisos.
+Y el módulo **«Salud de syncs»** —que nombraba la tubería en el menú, en el
+encabezado, en la pantalla de Permisos y en la miga de pan— pasó a llamarse
+**«Actualización de datos»**. Con él se fueron «Backup» → **Respaldo**,
+«Dominio» → **Qué se actualizó**, «Sin corridas» → **Sin actualizaciones** y la
+unidad del paginador. `MinMax` quedó como **Min / Max**, que es como se llama el
+módulo en todo el resto del portal.
 
 ### 7.2 El `gate:bundle` que estaba en rojo — v2.719.3
 
@@ -537,7 +541,6 @@ filas. Se le apuntó al archivo nuevo y se confirmó a mano que sigue en 3.
 3. **Poner los primeros sellos de sala.**
 4. **Las ocho áreas sin ninguna prueba.**
 5. **La migración `20260823222500`**, que vive en producción y no en el repo.
-6. **El módulo «Salud de syncs»**, que nombra la tubería en el menú.
 
 
 ### 7.6 `staff_salary` — el único hallazgo grave, cerrado (v2.720.0)
@@ -731,3 +734,46 @@ CONTENIDO, y `schedules` —que pinta un calendario entero— pasó a contarse c
 «sin nada que medir». El barrido bajó de 27 rutas a 25 sin que el portal hubiera
 cambiado. Eran dos preguntas distintas usando la misma variable: «¿había algo que
 mirar?» y «¿cayó a tabla algo que debía ser ficha?». Ahora son dos listas.
+
+### 8.7 `content-visibility`: la propiedad que deja el texto sin medir
+
+`branches` pintaba **0 fichas con ocho sucursales cargadas**, el mismo síntoma
+que había costado dos diagnósticos en `minmax`. Las dos sospechas razonables
+resultaron falsas, y la causa era una tercera que no se parece a ninguna:
+
+- ¿Era una **tarjeta a mano** que `gate:design` no ve porque su `className`
+  viene de una variable? **No.** `alertStatus.cardStyles` resuelve a la cadena
+  vacía en sus dos ramas: la raíz de `BranchCard` no lleva superficie ni borde.
+  Es un **envoltorio de maquetación** —`rounded-header`, `overflow-hidden`, flex
+  en columna— y sus hijos sí usan el material canónico. El gate hace bien en no
+  marcarla.
+- ¿Era que el barrido no reconoce sus fichas? **Tampoco**, por lo mismo: no son
+  fichas, es un panel compuesto.
+
+Lo que la escondía es que **`BranchCard` lleva `content-visibility: auto`**, para
+no renderizar lo que está fuera de la pantalla. Y `innerText` devuelve **sólo
+texto renderizado**. Medido en el teléfono:
+
+| ruta | `innerText` | superficies | fichas reales |
+|---|---:|---:|---|
+| `branches` | **508** | **176** | **8** |
+| `sesiones` | 506 | 16 | ninguna |
+
+**Dos caracteres separan una vista llena de una vacía.** El detector iba por su
+tercera versión, todas basadas en contar texto, y ninguna podía funcionar para
+la mitad del portal que usa esa propiedad por rendimiento.
+
+La v4 cuenta **estructura**, que existe en el DOM aunque no se pinte: elementos
+con superficie de tarjeta, con corte en 60 —tres veces el chasis vacío medido
+(13–24) y menos de la mitad de la vista con datos más pobre (166)—. El texto se
+conserva como señal adicional, pero ya no manda solo.
+
+**Resultado: de 25 rutas medidas a 31, con 0 hallazgos en todas.** Y la
+regresión que costó descubrirlo queda anclada en el comentario del detector, con
+los números medidos, para que la v5 no vuelva a contar caracteres.
+
+**Es la decimocuarta vez en esta auditoría que el hallazgo estaba en el
+instrumento y no en el portal** — y la primera cuya causa es una propiedad de CSS
+que el portal usa *bien*. Un instrumento no sólo se equivoca por tener el
+umbral mal puesto: se equivoca por medir una magnitud que el sujeto tenía
+motivos legítimos para no exponer.

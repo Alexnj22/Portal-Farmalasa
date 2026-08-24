@@ -364,24 +364,48 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 //     `justify-between`) ya no reconoce lo que el portal pinta.
                 //     Un detector con el selector viejo no encuentra menos:
                 //     informa que no había nada que mirar.
-                // v3, la de acá: se MIDIÓ el chasis vacío. Una ruta sin acceso
-                //     —`branches`, `schedules` con la cuenta de pruebas— da 779
-                //     caracteres y 17 botones: es el marco, el menú y el
-                //     encabezado, sin contenido. Con contenido real se pasa de
-                //     los 4.000. El corte va en 1.100, holgado sobre el chasis y
-                //     muy por debajo de cualquier vista con datos.
+                // v3: se MIDIÓ el chasis vacío —779 caracteres— y el corte se
+                //     puso en 1.100. Anduvo para las vistas que pintan texto, y
+                //     falla para las que NO lo pintan, que es la mitad del
+                //     portal.
+                // v4, la de acá: el texto se cambió por ESTRUCTURA, y el motivo
+                //     es una propiedad de CSS que el portal usa a propósito.
+                //     `BranchCard` lleva `content-visibility: auto` para no
+                //     renderizar lo que está fuera de la pantalla — y
+                //     `innerText` devuelve **sólo texto renderizado**. Medido el
+                //     2026-08-24 en el teléfono: `branches` tiene 8 fichas, 129
+                //     botones y 176 elementos con superficie de tarjeta, y su
+                //     `innerText` da **508 caracteres**. `sesiones`, que llega
+                //     sin una sola fila, da **506**. Dos caracteres separan una
+                //     vista llena de una vacía: el texto no puede ser el
+                //     instrumento.
+                //
+                //     Lo que sí se ve es la estructura, porque el DOM existe
+                //     aunque no se pinte. Medido en las mismas ocho rutas:
+                //
+                //       llenas   overview 166 · branches 176
+                //       vacías   cotizaciones 13 · sesiones 16 · corte-z 21
+                //
+                //     El corte va en 60: tres veces el chasis vacío y menos de
+                //     la mitad de la vista con datos más pobre. El texto se
+                //     conserva como señal ADICIONAL —una vista puede pintar
+                //     mucho texto y ninguna tarjeta— pero ya no manda solo.
                 //
                 // Y se distingue «no tengo permiso» de «no hay datos», porque son
                 // dos arreglos distintos: uno se resuelve dándole el módulo a la
                 // cuenta de pruebas y el otro sembrando.
                 const texto = document.body.innerText.trim();
                 const filas = document.querySelectorAll('tbody tr, [role="row"], li[data-fila]').length;
+                // La cuenta que NO depende de que el navegador haya pintado.
+                const superficies = document.querySelectorAll('[data-surface], [class*="bg-surface-card"]').length;
                 const sinAcceso = /sin acceso|no ten[eé]s permiso|acceso denegado|no ten[ée]s acceso/i.test(texto);
-                return { tablas: tablas.length, fichas, tablasAnchas: anchas,
+                const conContenido = superficies >= 60 || todasLasTablas.length > 0 || filas > 0
+                                     || fichas > 0 || texto.length >= 1100;
+                return { tablas: tablas.length, fichas, tablasAnchas: anchas, superficies,
                          reventó: /ALGO SALIÓ MAL/.test(texto),
                          sinAcceso,
-                         sinDatos: sinAcceso || (texto.length < 1100 && fichas === 0 && todasLasTablas.length === 0 && filas === 0),
-                         vacia: texto.length < 1100 };
+                         sinDatos: sinAcceso || !conContenido,
+                         vacia: !conContenido };
             });
             if (extra.reventó) extra.error = [...new Set(errores)].slice(0, 3);
             informe.push({ ruta: etiqueta, ...m.totales, desbordePagina: m.desbordePagina,

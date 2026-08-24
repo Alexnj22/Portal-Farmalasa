@@ -350,14 +350,23 @@ function puntuar(area) {
     // Con eso aparecieron DOS defectos reales que llevaban escondidos detrás de
     // un cero, y los dos quedaron cerrados en v2.723.1.
     //
-    // El eje sube a 92 y no a 100: 29 rutas siguen sin datos en el entorno de
-    // pruebas, así que la mitad larga del portal continúa sin medirse en el
-    // teléfono. Un gate que no pudo medir no puede dar verde — pero tampoco
-    // corresponde el 85 de cuando no se sabía nada.
-    ev.movil = { pct: 92,
-        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, '
+    // ── Y un cuarto diagnóstico equivocado, el más fino (2026-08-24) ───────
+    // `branches` seguía dando 0 fichas con ocho sucursales cargadas. No era una
+    // tarjeta a mano ni un selector viejo: `BranchCard` lleva
+    // `content-visibility: auto` —para no renderizar lo que está fuera de la
+    // pantalla— y `innerText` devuelve SÓLO texto renderizado. Medido: la vista
+    // llena da 508 caracteres y una vacía da 506. Dos caracteres.
+    //
+    // El detector pasó a contar ESTRUCTURA, que existe aunque no se pinte, y
+    // subió de 25 rutas medidas a 31 — todas con 0 hallazgos.
+    //
+    // El eje sube a 93 y no a 100: 23 rutas siguen sin datos en el entorno de
+    // pruebas, así que casi la mitad del portal continúa sin medirse en el
+    // teléfono. Un gate que no pudo medir no puede dar verde.
+    ev.movil = { pct: 93,
+        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, '
                  + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).',
-        hallazgos: ['29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono'] };
+        hallazgos: ['23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en

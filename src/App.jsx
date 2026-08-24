@@ -861,7 +861,7 @@ const ROUTE_TITLES = {
     '/permissions':       'Permisos de acceso',
     '/auditview':         'Auditoría de sistema',
     '/mantenimiento':     'Mantenimiento',
-    '/sync-health':       'Salud de syncs',
+    '/sync-health':       'Actualización de datos',
     '/sesiones':          'Conexiones',
     '/orphan-objects':    'Objetos huérfanos',
     '/ios-test':          'Vista de prueba iOS',

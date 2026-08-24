@@ -496,7 +496,7 @@ const GRUPOS_CRUDOS = [
             // columnas, un nombre largo y una barra de control del cabezal, para
             // saber qué ancho tiene la ticketera y si imprime parejo.
             { key: 'impresion',    label: 'Prueba de impresión',    desc: 'Imprime una hoja de prueba en la ticketera para medir el ancho del rollo y verificar la alineación de las columnas', icon: Printer, hasApprove: false },
-            { key: 'sync_health',  label: 'Salud de syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
+            { key: 'sync_health',  label: 'Actualización de datos', desc: 'Historial de cuándo se actualizaron productos, Min/Max, compras y respaldos, y aviso cuando alguna falla', icon: RadioTower, hasApprove: false },
             { key: 'orphan_objects', label: 'Objetos huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
             // Ver a qué hora y desde dónde se conecta cada persona es dato
             // sensible: se reparte con cuidado. `can_edit` es el que cierra.

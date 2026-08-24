@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { CalendarDays, CheckCircle2, Clock, Landmark, Package, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -15,7 +15,14 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
-import TabBolsas from './cortes/TabBolsas';
+/* La pestaña de bolsas se baja al ABRIRLA, no al entrar a Cortes.
+ *
+ * Venía estática y ya pesaba: son 1,486 líneas con cuatro etapas, el conteo, el
+ * depósito y su archivo. Quien entra a Cortes de caja entra a los CORTES —esa es
+ * la pestaña por defecto— y se llevaba de arrastre todo el circuito del dinero
+ * sin abrirlo. Lo obliga el gate de bundle: la vista había cruzado su tope de
+ * 72 kB. */
+const TabBolsas = lazy(() => import('./cortes/TabBolsas'));
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
@@ -511,9 +518,11 @@ const CortesView = () => {
                     corte: en la sala → entregada → recibida → contada. Comparte
                     con Cortes la sucursal y el período; el resto es suyo. */}
                 {enBolsas && (
-                    <TabBolsas desde={desdeBolsas} hasta={hastaBolsas} sala={sala} nombreSala={nombreSala}
-                        onAcciones={setAccionesBolsas} onMetricas={setMetricasBolsas}
-                        onAmpliarPeriodo={(desdeMin) => setPeriodoBolsas(`${desdeMin}|${hoySV()}`)} />
+                    <Suspense fallback={null}>
+                        <TabBolsas desde={desdeBolsas} hasta={hastaBolsas} sala={sala} nombreSala={nombreSala}
+                            onAcciones={setAccionesBolsas} onMetricas={setMetricasBolsas}
+                            onAmpliarPeriodo={(desdeMin) => setPeriodoBolsas(`${desdeMin}|${hoySV()}`)} />
+                    </Suspense>
                 )}
 
                 {!enBolsas && (<>

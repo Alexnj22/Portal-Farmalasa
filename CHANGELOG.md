@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.1 — Cortes de caja: la pestaña de bolsas se baja al abrirla
+
+`CortesView` cruzó su tope: **73 kB contra 72**. Lo causó el trabajo de hoy sobre
+bolsas —cuatro etapas plegables, la franja de totales, el conteo en dos pasos, el
+depósito y su archivo: 1,486 líneas—, que viajaba **estático** dentro de la
+vista.
+
+Y no hacía falta: quien entra a Cortes de caja entra a los CORTES, que es la
+pestaña por defecto, y se llevaba de arrastre todo el circuito del dinero sin
+abrirlo. Ahora `TabBolsas` es `lazy` con su `Suspense`, como ya lo son
+`DetalleDeBolsa`, `SalidaDeBolsa`, `EntregaDeBolsas`, `DepositoAlBanco` y
+`DepositosAlBanco` dentro de ella. `CortesView` sale de la lista de vistas que
+crecieron.
+
+**Lo que NO se arregló acá, dicho para que no se lea como que quedó verde:** el
+`ENTRY` sigue sobre su tope, en **303 kB contra 301**. Medido en el commit
+`80f7a52e` —el primero de la tanda de bolsas de hoy— **ya estaba en 302**: la
+deuda es anterior y de otra parte del portal. De ese kilobyte extra, uno es de
+esta tanda (las funciones nuevas de `data/bolsas.js`, que llegan al entry por el
+widget del tablero). El baseline no se toca: subirlo sería absorber en silencio
+algo que nadie decidió.
+
 ## v2.742.0 — Reimprimir el ticket de un traslado
 
 > «¿hay alguna forma de reimprimir una solicitud / traslado ante un error de

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.732.2 — 49 pruebas para el período, el nombre corto y seis capas de lectura
+
+Sigue el eje de pruebas de la auditoría. Todo sobre módulos que no tenían
+ninguna, y todo elegido por el mismo criterio: lo que **no falla, se equivoca**.
+
+**El período de las flechas** (30 con el nombre corto). La unidad se deduce del
+propio rango, que es el único sitio donde está dicha — un paso fijo se equivoca
+en los dos sentidos: un día de a un mes salta 30 días, un mes de a un día deja de
+ser un mes. Quedan anclados que el último día del mes se PREGUNTA (28, 29, 30 y
+31, con febrero bisiesto), que doce meses que no arrancan en enero NO son un año,
+que correr un mes entero da el mes entero siguiente y no «del 1 al 31 de
+febrero», y que ir y volver devuelve al mismo período en las cinco formas.
+
+**El nombre corto** es primer nombre + primer apellido, y sale de las columnas
+SEPARADAS: `employees.name` es generada, así que partir ese texto es adivinar
+dónde estaba la frontera — «ANA PEREZ LOPEZ» puede ser 1 nombre + 2 apellidos o
+al revés, y en producción hay de las dos formas. El heurístico queda anclado como
+lo que es: el último recurso.
+
+**La edad** decide qué documento se le pide a alguien (Art. 23.2 CT), así que el
+borde del cumpleaños está anclado en los dos lados, y que sin fecha devuelva
+`null` y no un cero — un 0 se leería como «recién nacido».
+
+**Seis capas de lectura y marcado** (19). Marcar leído no puede pisar una lectura
+anterior —el `.is('read_at', null)` es lo que hace que «marcar todas» no
+reescriba el instante en que alguien ya la había visto—; el maestro de
+presentaciones va por RPC de JSON porque «CAJA» agrupa 2.222 productos y el
+detalle cruzaría el tope de 1000 en silencio; la salud de las sincronizaciones
+mira sólo los cuatro dominios sin vigilancia propia; el contador del menú pide el
+número y no las filas; y regenerar la planilla borra sólo lo `PENDING`.
+
+Nómina e Inventario llegan a 95.
+
 ## v2.732.1 — El código del recorrido, que quedó fuera de su propia entrada
 
 Sin cambios de comportamiento respecto de v2.732.0: **es el código que aquella

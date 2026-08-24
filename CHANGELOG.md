@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.727.1 — Cinco pantallas vacías dibujadas a mano vuelven a la canónica
+
+Salió midiendo, no leyendo. `EmptyState` empezó a estampar `data-vacio` para que
+se pudiera saber en qué estado está una pantalla, y **cuatro vistas siguieron
+saliendo mudas**. No les faltaba el vacío: lo tenían **dibujado a mano**, con el
+envoltorio de `EmptyState` copiado clase por clase —mismo halo de 28×28, mismo
+`blur-[40px]`, misma animación de entrada— y lo único que agregaban era el
+color, que el canónico ya acepta.
+
+Cinco copias vuelven a la canónica: **Solicitudes, Avisos, Mis avisos, Turnos y
+Encuestas**. Se ven igual —la conversión es fiel, prop por prop— y ahora dicen
+que están vacías.
+
+**La sexta se queda a mano, y eso también está escrito:** es el único vacío
+*celebratorio* del portal —halo del doble de grande, ícono con degradado y sombra
+de brillo, título de display— y pasarlo al canónico lo apagaría. Lo que sí
+necesitaba era anunciarse, así que declara `data-vacio` y sigue siendo medible.
+Por eso el detector nuevo mira el atributo y no la clase: quien tenga una razón
+para dibujar el suyo, la declara.
+
+Barrido de auditoría: **sigue en 0**, ahora con una categoría más.
+
 ## v2.727.0 — La sala contesta el correo desde Inicio y el portal cierra el documento
 
 La versión anterior sólo AVISABA y mandaba a la pantalla de Clientes. Tenía dos

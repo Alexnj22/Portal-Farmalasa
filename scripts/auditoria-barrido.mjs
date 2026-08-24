@@ -241,6 +241,40 @@ const CATEGORIAS = [
             && !/T\d{2}:/.test(linea),
     },
     {
+        id: 'vacio-a-mano',
+        eje: 'vista',
+        titulo: 'Pantalla vacía dibujada a mano en vez de usar la canónica',
+        ve: 'Un `<div>` que reconstruye `EmptyState`: su envoltorio exacto '
+          + '(`animate-in fade-in zoom-in-95` más `min-h-[400px]` o `min-h-[200px]`) sin declarar '
+          + '`data-vacio`. Copiar la estructura duplica el halo, la geometría y la animación, y '
+          + 'deja la pantalla sin decir que está vacía.',
+        noVe: 'El vacío que vive dentro de `DataTable` por la prop `empty` —ése ya es canónico— ni '
+            + 'el que se escribe con otra forma. Y no ve el mensaje suelto de una lista interna, '
+            + 'que no es el vacío de la pantalla.',
+        // ── Por qué existe (2026-08-24) ─────────────────────────────────────
+        // Salió midiendo, no leyendo: `EmptyState` empezó a estampar
+        // `data-vacio` para que el barrido pudiera saber en qué estado está una
+        // ruta, y CUATRO vistas siguieron saliendo mudas. No les faltaba el
+        // vacío: lo tenían dibujado a mano, con el envoltorio de `EmptyState`
+        // copiado clase por clase —mismo halo de 28×28, mismo `blur-[40px]`,
+        // misma animación— y lo único que agregaban era el color, que el
+        // canónico ya acepta por `glowClass`/`iconClass`.
+        //
+        // Se convirtieron las cinco copias fieles. La sexta se quedó a mano a
+        // propósito —es el único vacío CELEBRATORIO del portal, con el halo del
+        // doble de grande y el ícono en degradado— y por eso el detector mira
+        // `data-vacio` y no la clase: quien tenga una razón para dibujar el
+        // suyo, la declara y sigue siendo medible.
+        archivos: /^src\/(views|components)\/.*\.jsx$/,
+        multilinea: true,
+        buscar: (_l, _t, i, lineas) => {
+            const l = lineas[i];
+            if (!/animate-in fade-in zoom-in-95/.test(l)) return false;
+            if (!/min-h-\[(400|200)px\]/.test(l)) return false;
+            return !/data-vacio/.test(l);
+        },
+    },
+    {
         id: 'texto-del-sistema-de-origen',
         eje: 'ux',
         titulo: 'La pantalla nombra el sistema de origen o la jerga de la tubería',

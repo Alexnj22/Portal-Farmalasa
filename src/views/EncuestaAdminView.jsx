@@ -972,18 +972,9 @@ export default function EncuestaAdminView() {
                         {loadingSurveys ? (
                             <div className="h-40 py-4"><SkeletonText lines={5} /></div>
                         ) : surveys.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
-                                <div className="relative group flex flex-col items-center text-center">
-                                    <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-[var(--dur-lento)]">
-                                        <BarChart2 size={40} strokeWidth={2} />
-                                    </div>
-                                    <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Sin encuestas aún</h3>
-                                    <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
-                                        Crea la primera encuesta usando el formulario de la izquierda.
-                                    </p>
-                                </div>
-                            </div>
+                            <EmptyState icon={BarChart2} glowClass="bg-brand" iconClass="text-brand-text"
+                                title="Sin encuestas aún"
+                                subtitle="Crea la primera encuesta usando el formulario de la izquierda." />
                         ) : surveys.map(s => {
                             const count = responseCounts[s.id] || 0;
                             const isExpanded = expandedSurveyId === s.id;

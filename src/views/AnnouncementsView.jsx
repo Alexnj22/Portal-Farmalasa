@@ -25,6 +25,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { EmptyState } from '../components/common/StateViews';
 
 // Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
@@ -731,22 +732,12 @@ const AnnouncementsView = ({ openModal }) => {
           <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
             <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
               {paginatedList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
-                  <div className="relative group flex flex-col items-center text-center">
-                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-[var(--dur-lento)] ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
-                    
-                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
-                      {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
-                    </div>
-                    
-                    <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
-                        {announcementSearch ? 'Sin resultados' : listTab === 'ACTIVE' ? 'Todo está al día' : listTab === 'SCHEDULED' ? 'Sin programaciones' : 'Archivo vacío'}
-                    </h3>
-                    <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
-                        {announcementSearch ? 'No encontramos avisos con esa búsqueda.' : listTab === 'ACTIVE' ? 'Bandeja limpia. No hay avisos activos pendientes por el momento.' : listTab === 'SCHEDULED' ? 'No tienes avisos esperando para publicarse en el futuro.' : 'Aquí aparecerán los avisos que ya cumplieron su ciclo.'}
-                    </p>
-                  </div>
-                </div>
+                <EmptyState className="h-full"
+                  icon={announcementSearch ? Search : listTab === 'ACTIVE' ? CheckCircle2 : listTab === 'SCHEDULED' ? CalendarClock : Archive}
+                  glowClass={announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}
+                  iconClass={announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}
+                  title={announcementSearch ? 'Sin resultados' : listTab === 'ACTIVE' ? 'Todo está al día' : listTab === 'SCHEDULED' ? 'Sin programaciones' : 'Archivo vacío'}
+                  subtitle={announcementSearch ? 'No encontramos avisos con esa búsqueda.' : listTab === 'ACTIVE' ? 'Bandeja limpia. No hay avisos activos pendientes por el momento.' : listTab === 'SCHEDULED' ? 'No tienes avisos esperando para publicarse en el futuro.' : 'Aquí aparecerán los avisos que ya cumplieron su ciclo.'} />
               ) : (
                 <>
                 {isAnnFuzzy && debouncedSearchTerm && (

@@ -37,6 +37,7 @@ const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
+import { EmptyState } from '../components/common/StateViews';
 
 // Las pestañas viven acá arriba y no dentro del componente: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
@@ -789,20 +790,13 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                         ))}
                     </div>
                 ) : baseFiltered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
-                        <div className="relative group flex flex-col items-center text-center">
-                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}`} />
-                            <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
-                                {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
-                            </div>
-                            <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
-                                {statusFilter === 'PENDING' ? 'Todo al día' : 'Sin resultados'}
-                            </h3>
-                            <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
-                                {statusFilter === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Sin solicitudes en esta categoría.'}
-                            </p>
-                        </div>
-                    </div>
+                    <EmptyState
+                        icon={statusFilter === 'PENDING' ? CheckCircle2 : ClipboardList}
+                        title={statusFilter === 'PENDING' ? 'Todo al día' : 'Sin resultados'}
+                        subtitle={statusFilter === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Sin solicitudes en esta categoría.'}
+                        glowClass={statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}
+                        iconClass={statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}
+                    />
                 ) : (
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (

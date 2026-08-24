@@ -15,6 +15,7 @@ import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { EmptyState } from '../../components/common/StateViews';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -526,20 +527,12 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                 <div className="space-y-5 flex-1 px-3 md:px-4 pb-4">
                     {isEmpty ? (
-                        <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
-                            <div className="relative group flex flex-col items-center text-center">
-                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-brand' : shiftTab === 'ACTIVE' ? 'bg-success' : 'bg-content-3'}`} />
-                                <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${searchTerm ? 'text-brand-text' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}`}>
-                                    {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
-                                </div>
-                                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
-                                    {searchTerm ? 'Sin resultados' : shiftTab === 'ACTIVE' ? 'Catálogo al día' : 'Archivo vacío'}
-                                </h3>
-                                <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
-                                    {searchTerm ? `No hay turnos que coincidan con "${searchTerm}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
-                                </p>
-                            </div>
-                        </div>
+                        <EmptyState className="h-full"
+                            icon={searchTerm ? Search : shiftTab === 'ACTIVE' ? CheckCircle2 : Archive}
+                            glowClass={searchTerm ? 'bg-brand' : shiftTab === 'ACTIVE' ? 'bg-success' : 'bg-content-3'}
+                            iconClass={searchTerm ? 'text-brand-text' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}
+                            title={searchTerm ? 'Sin resultados' : shiftTab === 'ACTIVE' ? 'Catálogo al día' : 'Archivo vacío'}
+                            subtitle={searchTerm ? `No hay turnos que coincidan con "${searchTerm}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'} />
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 w-full">
                             {globalInsights.map(insight => (

@@ -14,6 +14,7 @@ import { smartFilter } from '../../utils/searchUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
+import { EmptyState } from '../../components/common/StateViews';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin leer' },
@@ -274,7 +275,13 @@ const UnreadStack = memo(({ list, onRead }) => {
     // ── Todos leídos ──
     if (!current) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
+            // Éste NO usa `EmptyState` y es a propósito: es el único vacío
+            // celebratorio del portal —halo del doble de grande, ícono con
+            // degradado y sombra de brillo, título de display— y pasarlo al
+            // canónico lo apagaría. Lo que sí necesita es ANUNCIARSE: sin
+            // `data-vacio`, una medición externa lo lee como una pantalla que se
+            // quedó muda, que es lo contrario de lo que es.
+            <div data-vacio className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
                     <div className="relative z-base w-28 h-28 rounded-modal flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-[var(--dur-lento)]">
@@ -752,16 +759,9 @@ const EmployeeAnnouncementsView = () => {
                 </Notice>
                     )}
                     {filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
-                            <div className="relative flex flex-col items-center text-center">
-                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
-                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
-                                    <CheckCircle2 size={40} strokeWidth={1.5} />
-                                </div>
-                                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Todo al día</h3>
-                                <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">No tienes avisos sin leer. ¡Estás al día!</p>
-                            </div>
-                        </div>
+                        <EmptyState icon={CheckCircle2} glowClass="bg-success" iconClass="text-success"
+                            title="Todo al día"
+                            subtitle="No tienes avisos sin leer. ¡Estás al día!" />
                     ) : (
                         <UnreadStack list={filtered} userId={user?.id} onRead={handleRead} />
                     )}

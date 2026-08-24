@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.725.1 — El barrido queda en cero — y seis de ocho acusados no eran nada
+
+**Dos botones de ruta se podían apretar dos veces.** «Iniciar» escribe el estado
+y manda un aviso de salida **a cada sala de la ruta**; ese aviso ya se fue y no
+se puede retirar. «Base» marca la ruta completada. Los dos quedaron con freno por
+ruta —no una bandera global, porque un conductor puede tener varias en pantalla.
+
+**Los otros seis no eran nada.** Cuatro copiaban al portapapeles, uno generaba un
+código candidato y otro leía renglones para imprimir: apretar dos veces «Copiar»
+copia dos veces y no hay nada que deshacer. Seis de ocho falsos es exactamente el
+número con el que una categoría se termina apagando, así que ahora se le pide la
+señal que separa las dos clases — **que el manejador llame a algo que escriba**.
+La convención del repo lo hace posible: en `src/data/` los que leen se llaman
+`fetch*` y los que escriben empiezan por el verbo.
+
+**Y el último hallazgo de copy también era del detector.** En el libro de compras
+el botón se llama `key: 'sincronizar'` y en pantalla dice «Buscar nuevas» — el
+texto ya estaba bien y el detector señalaba la palabra que tiene que quedarse.
+Ahora descarta `key`/`slug`/`testId`, pero **no** `value` ni `name`: la regla «un
+rótulo no es una clave» avisa que hay catálogos donde el `value` ES el texto que
+se muestra, y filtrarlos haría más chico el número a costa de clasificar mal.
+
+**Dos errores tragados en el camino de entrar al portal** —los dos `catch {
+// silencioso }` del escuchador de sesión— siguen sin cortarle el paso a nadie,
+pero ahora quedan en la **caja negra**, que sobrevive a la recarga y se lee en
+Sistema. Un login que se queda a medias en el teléfono de una sala no dejaba
+NADA que mirar.
+
+Barrido de auditoría: **11 hallazgos → 0**. Plataforma y chasis llega a **95%**,
+que es el tope sin sello de sala: sus doce ejes están en verde y lo único que
+falta es verlo funcionando en una sala real.
+
+**Un cero que casi me engaña:** al fabricarle a un detector la regresión que
+debería cazar, el archivo de prueba dio cero. No era el detector — el barrido lee
+`git ls-files`, y un archivo sin `git add` no existe para él. Queda anotado en el
+script.
+
 ## v2.725.0 — Toda acción que escribe queda en la bitácora — 26 que no dejaban rastro
 
 **El detector decía 27 y estaba haciendo la pregunta mal.** Acusaba a cualquier

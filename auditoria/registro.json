@@ -28,12 +28,9 @@
           "hallazgos": []
         },
         "resiliencia": {
-          "pct": 79,
-          "evidencia": "barrido: 2 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
-          "hallazgos": [
-            "catch-mudo: src/context/AuthContext.jsx:1000",
-            "catch-mudo: src/context/AuthContext.jsx:1040"
-          ]
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
         },
         "observabilidad": {
           "pct": 96,
@@ -75,13 +72,11 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
-        "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1000",
-        "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1040",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
@@ -397,12 +392,9 @@
           ]
         },
         "resiliencia": {
-          "pct": 64,
-          "evidencia": "barrido: 0 catch callado, 3 botón sin freno · gate:borradores: 4 formulario(s) largo(s) sin borrador",
+          "pct": 79,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 4 formulario(s) largo(s) sin borrador",
           "hallazgos": [
-            "submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2151",
-            "submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2167",
-            "submit-sin-freno: src/views/EmployeeDetailView.jsx:1209",
             "formulario largo sin borrador: src/components/forms/EmployeeFormModal.jsx",
             "formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
             "formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
@@ -451,15 +443,12 @@
           ]
         }
       },
-      "pct": 87,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
         "[seguridad] dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea",
-        "[resiliencia] submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2151",
-        "[resiliencia] submit-sin-freno: src/components/forms/EmployeeFormModal.jsx:2167",
-        "[resiliencia] submit-sin-freno: src/views/EmployeeDetailView.jsx:1209",
         "[resiliencia] formulario largo sin borrador: src/components/forms/EmployeeFormModal.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
@@ -1296,10 +1285,9 @@
           "hallazgos": []
         },
         "resiliencia": {
-          "pct": 78,
-          "evidencia": "barrido: 0 catch callado, 1 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
+          "pct": 83,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 3 formulario(s) largo(s) sin borrador",
           "hallazgos": [
-            "submit-sin-freno: src/views/CotizacionesView.jsx:1115",
             "formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
             "formulario largo sin borrador: src/views/CotizacionesView.jsx",
             "formulario largo sin borrador: src/views/FacturacionView.jsx"
@@ -1345,12 +1333,11 @@
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[bd] índice nunca usado: idx_customers_erp_id (968 kB)",
-        "[resiliencia] submit-sin-freno: src/views/CotizacionesView.jsx:1115",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/CotizacionesView.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/FacturacionView.jsx",
@@ -1661,11 +1648,9 @@
           ]
         },
         "resiliencia": {
-          "pct": 81,
-          "evidencia": "barrido: 0 catch callado, 2 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
           "hallazgos": [
-            "submit-sin-freno: src/views/pedidos/TabPedidos.jsx:817",
-            "submit-sin-freno: src/views/pedidos/TabPedidos.jsx:828",
             "formulario largo sin borrador: src/views/pedidos/RecepcionModal.jsx"
           ]
         },
@@ -1710,7 +1695,7 @@
           "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1719,8 +1704,6 @@
         "[flujo] falta una ruta real (conductor = creador)",
         "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
         "[seguridad] notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger",
-        "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:817",
-        "[resiliencia] submit-sin-freno: src/views/pedidos/TabPedidos.jsx:828",
         "[resiliencia] formulario largo sin borrador: src/views/pedidos/RecepcionModal.jsx",
         "[vista] 8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
@@ -1881,11 +1864,9 @@
           ]
         },
         "ux": {
-          "pct": 89,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 1 texto(s) pendiente(s)",
-          "hallazgos": [
-            "src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,"
-          ]
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
         },
         "eficiencia": {
           "pct": 95,
@@ -1903,7 +1884,7 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1915,8 +1896,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/purchases/CuentasPorPagarView.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
-        "[movil] 23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[ux] src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,"
+        "[movil] 23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -2223,12 +2203,9 @@
           "hallazgos": []
         },
         "resiliencia": {
-          "pct": 85,
-          "evidencia": "barrido: 0 catch callado, 2 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
-          "hallazgos": [
-            "submit-sin-freno: src/views/IOSTestView.jsx:197",
-            "submit-sin-freno: src/views/IOSTestView.jsx:343"
-          ]
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
         },
         "observabilidad": {
           "pct": 96,
@@ -2276,8 +2253,6 @@
       "hallazgos": [
         "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
         "[flujo] auditoría DTE proveedores: H5b y D",
-        "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:197",
-        "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:343",
         "[movil] 23 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],

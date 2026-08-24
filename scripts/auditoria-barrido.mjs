@@ -205,8 +205,26 @@ const CATEGORIAS = [
                 if (prof <= 0 && /\/>|>\s*$|>[^<]*<\/Button>/.test(lineas[j])) break;
                 j++;
             }
-            return /onClick=\{\s*async\b/.test(el) && /\bawait\b/.test(el)
-                && !/\b(disabled|loading|cargando|guardando|enviando|ocupado|procesando)\b/.test(el);
+            if (!/onClick=\{\s*async\b/.test(el) || !/\bawait\b/.test(el)) return false;
+            if (/\b(disabled|loading|cargando|guardando|enviando|ocupado|procesando)\b/.test(el)) return false;
+            // ── Y además tiene que ESCRIBIR (2026-08-24) ──────────────────
+            // Medido sobre los ocho que quedaban: **seis no eran nada**. Cuatro
+            // copiaban al portapapeles, uno generaba un código candidato y otro
+            // leía renglones para imprimir. Apretar dos veces «Copiar» copia dos
+            // veces: no hay nada que deshacer.
+            //
+            // Los DOS reales eran los mismos dos: iniciar y completar una ruta,
+            // que escriben el estado y —el de iniciar— manda un aviso de salida a
+            // cada sala. Ese aviso ya se fue y no se puede retirar.
+            //
+            // Seis de ocho falsos es exactamente el número con el que una
+            // categoría se termina apagando, así que se le pide la señal que
+            // separa las dos clases: que el manejador llame a algo que escriba.
+            // La convención del repo lo hace posible — en `src/data/` los que
+            // leen se llaman `fetch*` y los que escriben empiezan por el verbo.
+            return /\b(insert|update|upsert|delete|guardar|despachar|recibir|rechazar|anular|aprobar|resolver|confirmar|enviar|crear|registrar)[A-Z]/.test(el)
+                || /\.(rpc|invoke)\s*\(/.test(el)
+                || /\.(insert|update|delete|upsert)\s*\(/.test(el);
         },
     },
     {
@@ -251,6 +269,19 @@ const CATEGORIAS = [
             // esos dos tipos.
             if (/\bconsole\.(log|warn|error|info|debug)\s*\(/.test(linea)) return false;
             const limpia = linea
+                // Un `key:`/`id:`/`name:`/`slug:` es un IDENTIFICADOR, no un
+                // rótulo: nadie lo ve. Costó un falso positivo en el libro de
+                // compras, donde el botón se llama `key: 'sincronizar'` y en
+                // pantalla dice «Buscar nuevas» — o sea que el texto YA estaba
+                // bien y el detector señalaba la palabra que tiene que quedarse.
+                // Es la misma trampa que CLAUDE.md ya anota para `matchErpFilter`.
+                //
+                // `value:` y `name:` quedan FUERA del filtro a propósito: la regla
+                // «un rótulo no es una clave» avisa que hay catálogos donde el
+                // `value` ES el texto que se muestra. Descartarlos haría más chico
+                // el número a costa de clasificar mal por construcción, que es
+                // exactamente lo que esa regla vino a impedir.
+                .replace(/\b(key|slug|testId|dataKey)\s*:\s*(['"`])[^'"`]*\2/g, '')
                 .replace(/\.(invoke|functions\.invoke)\s*\([^)]*\)/g, '')
                 .replace(/className=\{[^}]*\}/g, 'className={}')
                 .replace(/className="[^"]*"/g, 'className=""')
@@ -308,6 +339,11 @@ function localDelImport(texto, modulo, nombre) {
 }
 
 // ── Barrido ─────────────────────────────────────────────────────────────────
+// ⚠️ `git ls-files` lista lo RASTREADO. Un archivo nuevo sin `git add` no existe
+// para este barrido — y eso muerde justo cuando uno le fabrica a un detector la
+// regresión que debería cazar: el archivo de prueba da CERO y el cero se lee
+// como «el detector se rompió». Pasó el 2026-08-24. Para probar un detector:
+// `git add -N <archivo>` primero, y `git rm --cached` después.
 const archivos = execSync("git ls-files 'src/**'", { cwd: RAIZ })
     .toString().trim().split('\n').filter(f => /\.(js|jsx)$/.test(f));
 

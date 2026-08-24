@@ -3,6 +3,7 @@ import { supabase, AUTH_STORAGE_KEY } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
+import { anotar } from '../utils/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
@@ -997,8 +998,15 @@ export const AuthProvider = ({ children }) => {
           // efecto dispara solo; si no cambió, el arranque desde el cache local
           // ya trajo los permisos frescos de red ~70 ms antes y esta llamada
           // repetía las mismas dos consultas.
-        } catch {
-          // silencioso
+        } catch (e) {
+          // Callado A PROPÓSITO para el usuario: si esto lanza, la sesión ya
+          // está abierta y lo único que faltó es refrescar el perfil — cortar
+          // acá con una pantalla de error dejaría afuera a alguien que sí puede
+          // entrar. Pero callado no es sin rastro: queda en la caja negra, que
+          // sobrevive a la recarga y se lee en Sistema → Prueba de iOS. Sin
+          // eso, un login que se queda a medias en el teléfono de una sala no
+          // deja NADA que mirar.
+          anotar('auth-perfil-fallo', { mensaje: String(e?.message || e).slice(0, 140) });
         }
       })();
     };
@@ -1037,8 +1045,11 @@ export const AuthProvider = ({ children }) => {
         sesionProcesada.current = session.access_token;
 
         setTimeout(() => procesarSesion(session), 0);
-      } catch {
-        // silencioso
+      } catch (e) {
+        // Mismo criterio: un error acá no puede tumbar el listener de sesión —
+        // si lanza, Supabase deja de avisar de los cambios y el portal queda
+        // creyendo que sigue conectado. Se anota y se sigue.
+        anotar('auth-evento-fallo', { mensaje: String(e?.message || e).slice(0, 140), evento: event });
       }
     });
 

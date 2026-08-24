@@ -104,6 +104,11 @@ export default function TabPedidos({ searchTerm = '' }) {
     const canDownload = hasPermission('pedidos_descargar');
     // { pedidoId, sucId, item, opcion, nota } — el renglón cuya foto falta.
     const [devolverModal, setDevolverModal] = React.useState(null);
+    // Qué ruta está siendo movida ahora mismo. Sin esto, dos toques seguidos en
+    // «Iniciar» mandan DOS avisos de salida a cada sala de la ruta — el aviso ya
+    // se fue y no se puede retirar. Es por ruta y no una bandera global porque
+    // un conductor puede tener varias en pantalla.
+    const [rutaOcupada, setRutaOcupada] = React.useState(null);
     const {
         user, isBranch, canEdit, canEditMinMax,
         erpSucursalId, branchName,
@@ -814,7 +819,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Acciones */}
                                         <div className="flex items-center gap-1.5 shrink-0">
                                             {isConductorRuta && ruta.status === 'pendiente' && (
-                                                <Button tone="chart-3" icon={Play} onClick={async () => {
+                                                <Button tone="chart-3" icon={Play} disabled={rutaOcupada === ruta.id} onClick={async () => {
+                                                        if (rutaOcupada) return;
+                                                        setRutaOcupada(ruta.id);
                                                         try {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
                                                             if (error) throw error;
@@ -822,16 +829,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             await avisarSalidaALasSalas(ruta.ruta_pedidos ?? [], ruta.conductor_nombre);
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
+                                                        finally { setRutaOcupada(null); }
                                                     }}>Iniciar</Button>
                                             )}
                                             {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
-                                                <Button tone="chart-8" icon={Home} onClick={async () => {
+                                                <Button tone="chart-8" icon={Home} disabled={rutaOcupada === ruta.id} onClick={async () => {
+                                                        if (rutaOcupada) return;
+                                                        setRutaOcupada(ruta.id);
                                                         try {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
                                                             loadActiveRutas(); loadActive();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
+                                                        finally { setRutaOcupada(null); }
                                                     }}>Base</Button>
                                             )}
                                             {!isCompletada && (

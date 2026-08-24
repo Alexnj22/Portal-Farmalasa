@@ -1,6 +1,11 @@
 # Ticket de traslado y confirmación por escaneo
 
-**Fecha:** 2026-08-23 · **Estado:** decidido, sin construir · **Arranca:** 2026-08-24
+**Fecha:** 2026-08-23 · **Auditado contra producción:** 2026-08-24 · **Estado:** decidido, sin construir
+
+> La auditoría del 24-ago cambió tres cosas del plan original: apareció el
+> código que faltaba (`id_traslado`), se cayó el paso 1 para Bodega (no tiene
+> ticketera) y los pedidos salieron de v1. Las secciones de abajo ya están
+> corregidas; el detalle de qué se midió está en «Auditoría».
 
 ---
 
@@ -60,9 +65,10 @@ conteo hay que rehacerlo — el plan lo cubre igual, pero el tamaño podría cam
 ### Las dos consecuencias
 
 1. **El papel no es el problema.** Un ticket de un renglón en letra chica mide
-   6-7 cm; a 12 por día son ~80 cm diarios y un rollo de 80 m dura tres meses.
-   No hay nada que optimizar en el contenido del ticket. Lo que sí se
-   desperdicia es **el corte** (2-3 cm de avance cada uno) — ver «El ticket».
+   6-7 cm; a 12 por día son ~80 cm diarios. **El largo del rollo no está
+   verificado** —«tres meses» era una estimación, no una medición—, pero con
+   ese consumo cualquier rollo comercial aguanta más de un mes. Medición real
+   del papel que HOY se gasta, en «Auditoría · el papel».
 2. **La ceremonia tiene que ser mínima.** Doce escaneos al día no pagan una capa
    de bolsas, ni una de rutas, ni una pantalla de administración. Si algo de
    esto empieza a pedir una, es señal de que se fue de tamaño.
@@ -100,6 +106,9 @@ Decisiones del usuario el 2026-08-23. Están acá para no volver a discutirlas.
 | Escanear producto por producto al cargar | **Fuera de v1.** Lo que se verifica al cargar es el **traslado**; el producto se verifica al **recibir**, con el modelo de diferencias que ya existe. |
 | Capa de ruta / optimización para sala→sala | **Descartada.** Doce traslados al día no la pagan. |
 | El código de barras «contiene todos los productos» | **Aclarado.** Un código 1D no guarda productos: guarda el identificador del traslado y el portal resuelve el contenido. Mejor así — el papel no se puede desactualizar. |
+| Incluir los **pedidos** a Bodega en v1 | **Fuera de v1** (auditoría 24-ago). Un pedido no es una bolsa: son ~424 renglones y muchas cajas. Su código confirmaría el pedido, no que las cajas estén todas arriba — y lo que se olvida en un pedido es UNA CAJA. La hoja de despacho ya cumple. Ver «Auditoría · por qué los pedidos salen de v1». |
+| Ticketera en **Bodega** | **Pendiente de instalar** (decisión del usuario, 24-ago). Las otras seis salas funcionan desde el día uno. |
+| Inventar una secuencia para el código | **Descartada.** `id_traslado` ya existe y es compartida con los pedidos. Ver «El código». |
 
 ---
 
@@ -107,26 +116,84 @@ Decisiones del usuario el 2026-08-23. Están acá para no volver a discutirlas.
 
 ### El ticket
 
-Uno por traslado. Se imprime en la ticketera de la sala de **origen** al
-despachar.
+Uno por traslado. Se imprime **donde está físicamente el producto**, en el
+momento en que el despacho se confirma.
+
+**«Donde está el producto» NO es `origen_branch_name`.** El 28% de los
+traslados que salen de Bodega (53 de 191) son `por_respaldo`: los despacha otra
+sala mientras Bodega está cerrada. Caso real del 24-ago —
+`origen_branch_name: "Bodega"`, `by_sala: "S3"`—: el ticket tiene que decir
+«DE: Salud 3» y el trabajo de impresión tiene que ir a la caja de Salud 3. Se
+toma de quien confirma el despacho, y el listado del retiro incluye
+`salas_que_cubre_ahora` (la MISMA función que usa la policy — ver
+`fetchSalasQueCubro`).
+
+**Bodega no tiene ticketera y queda pendiente de instalarla** (decisión del
+usuario, 24-ago). Mientras tanto sus traslados —el 55% del total— no imprimen
+por la cola; `imprimirDocumento` cae solo al diálogo del navegador, así que la
+pantalla funciona igual y el papel sale por donde haya. **Las otras seis salas
+sí quedan cubiertas desde el día uno**, y entre ellas se mueven 159 traslados
+cada 30 días (5.3 por día).
+
+### Solicitud o traslado: el ticket tiene que decirlo
+
+Pedido del usuario el 24-ago, y no es cosmético — son dos hechos distintos para
+quien recibe:
+
+| familia | qué es | quién la abre | ¿el destino la espera? |
+|---|---|---|---|
+| **SOLICITUD** | la sala que NO tiene pide, y la que tiene confirma | `src/data/traslados.js` · `INVENTORY_TRANSFER_REQUEST` | **sí**, alguien la pidió |
+| **ENVÍO** | la sala que tiene EMPUJA sin que le pidan | `src/data/envios.js` | **no**, le llega de sorpresa |
+| PEDIDO | a Bodega, con hoja de despacho | tabla `pedidos` | fuera de v1 |
+
+Va en `ticket.titulo`, que el maquetador ya imprime en mayúsculas debajo de la
+regla: **no hace falta mecanismo nuevo**. Y cambia el aviso al destino: una
+solicitud dice «va en camino lo que pediste»; un envío tiene que decir qué es y
+por qué se lo mandan, porque nadie del otro lado lo estaba esperando.
 
 Contenido, en 54 columnas (letra chica del rollo):
 
 ```
+                     SOLICITUD
 ______________________________________________________
-                      TRASLADO
-                     TR000047
               [ codigo de barras CODE128 ]
-
-DE: Salud 1                     PARA: Salud 2
-Pide: Ana Pena          Envia: Jose Martinez
-23/08/26 03:08 p.m.
+                       32277
+DE: Salud 2                     PARA: Salud 1
+Pide: Helen Huezo      Envia: Karen Figueroa
+24/08/26 04:35 p.m.
 ______________________________________________________
 CANT  PRODUCTO
-  2   AMOXICILINA 500MG CAP x 12
+  1   FOSFOCIL 500 X 12 CAPS
 ______________________________________________________
               Recibido por: ______________
 ```
+
+El `32277` de abajo de las barras es la **leyenda del código**, que el
+maquetador ya sabe imprimir (`codigos[].leyenda`) — no es el HRI de la
+impresora, que sigue apagado. Ver «El código».
+
+### El código: ya existe, y sirve para los dos flujos
+
+`approval_requests` sólo tiene `id uuid` —36 caracteres, inviable en un CODE128
+de rollo—, así que el plan original iba a inventar una secuencia. **No hace
+falta.** `metadata.erp_traslado` trae `id_traslado`: cinco dígitos,
+secuencial, y es **una sola secuencia compartida con los pedidos** (medido el
+24-ago: pedidos 28480–32205, solicitudes entre salas 29441–32278). Un solo tipo
+de código cubre los dos flujos, que es justo lo que se pidió.
+
+Tres cosas que hay que saber antes de usarlo:
+
+- **Existe sólo DESPUÉS del despacho exitoso.** No estorba: es exactamente el
+  momento en que hay que imprimir. Pero significa que no se puede pre-imprimir
+  un ticket «para llenar después».
+- **Está doble-codificado.** `metadata.erp_traslado` es una **cadena JSON dentro
+  del jsonb**, no un objeto: se lee
+  `(metadata->>'erp_traslado')::jsonb->>'id_traslado'`, **nunca**
+  `metadata->'erp_traslado'->>'id_traslado'`. Hoy el portal sólo lo usa como
+  bandera de «ya se despachó», así que nadie lo había abierto.
+- **Cinco dígitos entran de sobra.** Con `BARRAS_MODULO = 2` un CODE128 de 5
+  caracteres mide ~25 mm de los ~72 mm útiles del rollo. El tope práctico son
+  ~20 caracteres; no acercarse sin volver a medir.
 
 Reglas que ya son del proyecto y aplican tal cual:
 
@@ -139,12 +206,15 @@ Reglas que ya son del proyecto y aplican tal cual:
   que parte a mitad de palabra donde se le acaba el rollo.
 - **Nada del sistema de origen en el papel.** CLAUDE.md, «la pantalla habla del
   PORTAL»: vale también para lo que se imprime.
-- **El valor del código va escrito como texto normal** (`TR000047` arriba de las
-  barras), **no como HRI**. `HRI_APAGADO` en `ticketPrint.js` está así a pedido
-  expreso del usuario porque el carné es una credencial; el código de un
-  traslado no lo es, y alguien tiene que poder teclearlo cuando el escaneo
-  falle. **No tocar `codigoDeBarrasParaElRollo` para esto** — se resuelve
-  imprimiendo el texto por separado, y así la regla del carné queda intacta.
+- **El valor del código va como `leyenda`, no como HRI.** `HRI_APAGADO` está
+  así a pedido expreso del usuario porque el carné es una credencial; el código
+  de un traslado no lo es, y alguien tiene que poder teclearlo cuando el escaneo
+  falle. **No tocar `codigoDeBarrasParaElRollo`** — el maquetador ya imprime un
+  renglón de leyenda debajo de cada código, así que la regla del carné queda
+  intacta y no hay código nuevo que escribir.
+  ⚠️ El comentario de `seccionesParaElPrograma` dice que la impresora imprime el
+  valor «con `GS H 2`». Está desactualizado: el código manda `GS H 0` y el HRI
+  está apagado. Corregirlo al pasar por ahí.
 - **El valor es alfanumérico sin guiones.** `limpiarValorDeBarras` deja sólo
   `A-Z0-9`: el formato de `buildPedidoCodigo` (`01-230826-1-S1`) se aplastaría a
   `012308261S1`. El código del traslado **nace** alfanumérico, no se limpia
@@ -284,9 +354,12 @@ deshonesta. Es el mismo criterio que ya tiene `pedido_items.motivo_no_envio`.
 | 2 | **Pantalla de retiro**: listado por origen, carné del retirador, escaneo, las dos alertas, descarte con constancia | 1 |
 | 3 | **El descarte que vuelve**: edad en el listado y aviso al destino al tercero | 2 |
 | 4 | **Recepción escaneando**, reusando el modelo de diferencias que ya existe | 2 |
+| — | **Recorte de papel de los tickets que ya salen** (título sin doble alto, blanco del pie): ~13%. Suelto, no bloquea nada, y no vale la pena hacerlo antes que lo de arriba | nada |
+| — | **Ticketera de Bodega**: pendiente de comprar/instalar. Destraba el 55% restante | hardware |
 
 El paso 1 ya mata el tirro por sí solo y no depende de ninguna pantalla nueva.
-Si el día se acaba ahí, el día valió la pena.
+Si el día se acaba ahí, el día valió la pena — y cubre a las seis salas que
+tienen caja, que son 5.3 traslados al día.
 
 ---
 
@@ -297,7 +370,9 @@ Si el día se acaba ahí, el día valió la pena.
 - No escanea producto por producto al cargar.
 - No cambia `codigoDeBarrasParaElRollo` ni la regla del HRI apagado del carné.
 - No optimiza el contenido del ticket para ahorrar papel: **está medido y no
-  hace falta**.
+  hace falta** — ver «Auditoría · el papel».
+- No cubre los pedidos a Bodega (fuera de v1) ni instala la ticketera de Bodega
+  (pendiente, decisión del usuario).
 
 ---
 
@@ -318,3 +393,160 @@ Si el día se acaba ahí, el día valió la pena.
   `CHANGELOG.md`, nunca en `src/version.js`.
 - **Otras sesiones tocan este árbol**: `git status --short` antes de editar un
   archivo ajeno, paths explícitos en cada `git add`, nunca `add -A`.
+
+---
+
+## Auditoría — 2026-08-24
+
+Medido contra producción. Lo que sigue **ya está aplicado** en las secciones de
+arriba; queda acá el detalle de qué se midió y por qué cambió la decisión.
+
+### De dónde salen los traslados, y quién puede imprimir
+
+```sql
+select metadata->>'origen_branch_name' origen, count(*) traslados,
+       round(count(*)/30.0,2) por_dia,
+       count(*) filter (where (metadata->>'erp_traslado')::jsonb ? 'por_respaldo') por_respaldo
+from public.approval_requests
+where type='INVENTORY_TRANSFER_REQUEST' and created_at > now() - interval '30 days'
+group by 1 order by 2 desc;
+```
+
+| origen | traslados/30d | por día | por respaldo |
+|---|---:|---:|---:|
+| **Bodega** | **191** | 6.37 | **53** |
+| Salud 1 | 48 | 1.60 | 0 |
+| Salud 2 | 44 | 1.47 | 0 |
+| Salud 3 | 28 | 0.93 | 0 |
+| Salud 5 | 15 | 0.50 | 0 |
+| Salud 4 | 14 | 0.47 | 0 |
+| La Popular | 8 | 0.27 | 0 |
+| Bodega · Área de Vencidos | 3 | 0.10 | 2 |
+
+Y las cajas de impresión, el mismo día:
+
+| sala | caja | estado |
+|---|---:|---|
+| La Popular, Salud 1, 2, 3, 4, 5 | 1 c/u | **viva** (latido de hace segundos) |
+| **Bodega** | 0 | **sin caja** |
+| Administración | 0 | sin caja |
+
+**Bodega es el origen del 55% de los traslados y no tiene ticketera.** El plan
+original decía «se imprime en la ticketera de la sala de origen» y para más de
+la mitad de los casos eso no existía. Decisión del usuario: **queda pendiente
+instalarla**, y las seis salas restantes —159 traslados cada 30 días, 5.3 por
+día— entran igual.
+
+Los **53 `por_respaldo`** son el segundo hallazgo y es más sutil: el origen
+registrado dice «Bodega» pero el producto y la persona están en otra sala.
+Imprimir por `origen_branch_name` mandaría el papel a la caja que no existe y
+escribiría un origen falso en el ticket.
+
+### El código que ya existía
+
+`approval_requests` no tiene número propio (`id uuid`, 36 caracteres). Pero:
+
+```sql
+select 'pedidos' fuente, min(id_traslado::bigint), max(id_traslado::bigint)
+from public.pedido_traslado_linea
+where id_traslado ~ '^[0-9]+$' and created_at > now() - interval '30 days'
+union all
+select 'solicitudes entre salas',
+       min((metadata->>'erp_traslado')::jsonb->>'id_traslado')::bigint,
+       max((metadata->>'erp_traslado')::jsonb->>'id_traslado')::bigint
+from public.approval_requests
+where type='INVENTORY_TRANSFER_REQUEST' and metadata ? 'erp_traslado'
+  and created_at > now() - interval '30 days';
+```
+
+| fuente | menor | mayor |
+|---|---:|---:|
+| pedidos | 28480 | 32205 |
+| solicitudes entre salas | 29441 | 32278 |
+
+**Una sola secuencia, entrelazada.** Cinco dígitos, perfecto para un CODE128 de
+rollo. Detalle en «El código».
+
+### Por qué los pedidos salen de v1
+
+```sql
+select count(distinct id_traslado) traslados, count(*) renglones,
+       count(distinct (pedido_id::text||'-'||erp_sucursal_id::text)) entregas
+from public.pedido_traslado_linea
+where created_at > now() - interval '30 days' and id_traslado is not null;
+```
+
+**3,196 `id_traslado` distintos para 20 entregas pedido-sala.** Cada renglón del
+pedido crea su propio traslado. Y por el otro lado: 61 pedidos en 30 días (2.0
+por día, 1.0 sala cada uno) con **25,840 renglones** — unos 424 por entrega.
+
+O sea que para un pedido, `id_traslado` no identifica lo que se carga: lo
+identifica `pedidos.numero`. Son dos espacios de códigos, y el plan original los
+trató como uno.
+
+Pero el motivo de fondo para dejarlos afuera no es el código, es físico: **un
+pedido no es una bolsa, son muchas cajas.** Un código a nivel pedido confirma el
+pedido, no que sus cajas estén todas arriba del camión — y lo que se olvida en
+un pedido es una caja. La garantía «no olvidés nada» es real para las bolsas
+chicas de sala a sala (12 al día, fáciles de dejar) y sólo a medias para los
+pedidos. Meterlos exige resolver el conteo de cajas, que es otro problema.
+
+### El papel
+
+Lo que HOY sale por la cola de las salas, en 30 días:
+
+```sql
+with e as (
+  select titulo, length(contenido) bytes, encode(contenido,'escape') t
+  from public.cola_impresion where created_at > now() - interval '30 days'
+), l as (
+  select titulo, bytes, length(t) - length(replace(t, chr(10), '')) lineas from e
+)
+select titulo, count(*) impresos, round(avg(lineas),1) lineas_prom,
+       round(sum(lineas)*0.35/100,2) metros_30d
+from l group by titulo order by 2 desc;
+```
+
+| ticket | impresos/30d | por día | líneas | ~cm | m/30d |
+|---|---:|---:|---:|---:|---:|
+| Bolsa de efectivo | 155 | 5.2 | 19.1 | 6.7 | 10.39 |
+| Vale de efectivo | 18 | 0.6 | 18.9 | 6.6 | 1.19 |
+| Prueba de la caja | 3 | 0.1 | 23.3 | 8.2 | 0.25 |
+| Entrega de bolsas | 1 | — | 24.0 | 8.4 | 0.08 |
+| Carné del día | 1 | — | 18.0 | 6.3 | 0.06 |
+| **total** | **178** | **5.9** | | | **~12 m** |
+
+**Doce metros al mes entre las seis salas.** Y el maquetador ya está optimizado:
+los cuatro renglones en blanco que dejaban los códigos de impresora se quitaron
+en v2.654.2, y el encabezado de empresa es opcional (la etiqueta de bolsa no lo
+lleva).
+
+**De esos 19 renglones, 6 son el margen de corte** (`SALTOS_DE_CORTE = 6`,
+~17 mm) y **no se tocan**: está medido con papel en la mano el 2026-08-17 — con
+12 mm la cuchilla se comía la última línea. Es la trampa de este pedido: el
+recorte más obvio es justamente el que sostiene el ticket.
+
+Lo realmente recortable son ~2 renglones de 19 —el título en doble alto, que
+ocupa el alto de dos, y el blanco antes del pie—: **13%, o sea 1.5 m al mes.**
+Se puede hacer, pero conviene saber que ahí no hay nada que ganar.
+
+Dos límites de esta medición, que hay que decir: **no incluye lo que sale por el
+camino directo** (sin pasar por la cola) ni el papel del **sistema de
+facturación**, que es casi seguro el que se lleva los rollos de verdad. Si el
+objetivo es gastar menos papel, el número que falta medir es ése.
+
+### Lo demás que se revisó
+
+- **`grupo_id` no existe en ningún dato real** — cero filas en 30 días. La
+  solicitud a varias salas (v2.672.0–v2.680.0) nunca se usó. No diseñar el
+  ticket alrededor de eso.
+- **`fetchTrasladosPorConfirmar` lleva `.range(0, 200)`.** Hoy no trunca nada
+  —los pendientes son pocos y el filtro por origen va en el servidor— pero el
+  listado del retiro **no debe heredar ese patrón**: es exactamente la forma del
+  bug que escondió tres cajas despachadas (CLAUDE.md, «un tope se aplica ANTES
+  del filtro»). Con 14 objetos al día no hay riesgo de cruzar las 1000 filas.
+- **Falta decidir**: qué permiso de módulo filtra el listado, y qué pasa cuando
+  la sala no tiene señal (el código no lleva los productos, así que resolverlo
+  exige la base — con 14 escaneos al día, la salida razonable es permitir marcar
+  «cargado» sin resolver y reconciliar después, o decir que sin señal no
+  funciona).

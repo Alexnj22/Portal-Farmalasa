@@ -606,21 +606,18 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -693,21 +690,18 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -782,22 +776,19 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/SOLICITUDES-QUIEN-DECIDE-Y-QUIEN-LO-VE-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar",
         "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -872,22 +863,19 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] push llega a 4 de 59 — la mayoría de los avisos no salen del portal",
         "[resiliencia] formulario largo sin borrador: src/views/EncuestaAdminView.jsx",
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -1060,14 +1048,12 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 94,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1076,8 +1062,7 @@
         "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",
         "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {

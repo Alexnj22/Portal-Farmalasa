@@ -18,6 +18,11 @@
  * `new Date(y, m - 1, d)` y ninguna pasa la cadena al constructor.
  */
 
+// Lo escrito sobre esta área:
+// `docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md` — por qué
+// domingo es 0 y no 7 (y cómo esa discrepancia hacía invisible el domingo en
+// seis lugares), y qué copia sola la corrida del sábado.
+
 export const getLocalMonday = (dateStr) => {
     let y, m, day;
     if (!dateStr) {

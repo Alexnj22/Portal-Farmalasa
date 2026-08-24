@@ -237,7 +237,7 @@ export const AREAS = [
         edge: ['auto-copy-weekly-roster', 'generate-vacation-plan', 'wfm-ai-scheduler'],
         crons: ['auto-copy-roster-saturday', 'auto-copy-weekly-roster', 'roster-missing-alert-saturday',
                 'wfm_weekly_snapshot'],
-        docs: [],
+        docs: ['docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md'],
     },
     {
         id: 'nomina',
@@ -254,7 +254,7 @@ export const AREAS = [
         tablas: ['payroll_entries', 'payroll_periods'],
         edge: [],
         crons: [],
-        docs: [],
+        docs: ['docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md'],
     },
     {
         id: 'solicitudes',
@@ -279,7 +279,7 @@ export const AREAS = [
         // cualquiera de las dos.
         edge: [],
         crons: [],
-        docs: [],
+        docs: ['docs/SOLICITUDES-QUIEN-DECIDE-Y-QUIEN-LO-VE-2026-08-24.md'],
     },
     {
         id: 'comunicacion',
@@ -301,7 +301,7 @@ export const AREAS = [
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily'],
-        docs: [],
+        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md'],
     },
     {
         id: 'sucursales',
@@ -360,7 +360,7 @@ export const AREAS = [
                 'vacuum-sales-invoices',
                 'dte-resync-month-popular', 'dte-resync-month-salud1', 'dte-resync-month-salud2',
                 'dte-resync-month-salud3', 'dte-resync-month-salud4', 'dte-resync-month-salud5'],
-        docs: [],
+        docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md'],
     },
     {
         id: 'metas',

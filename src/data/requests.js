@@ -7,6 +7,11 @@
 // comportamiento de enrutamiento, no solo mover el query). employee_rosters
 // (lectura puntual + upsert) reutiliza fetchEmployeeRosterSchedule/
 // upsertWeeklyRoster ya definidos en data/employees.js y data/system.js.
+// Lo escrito sobre este módulo:
+// `docs/SOLICITUDES-QUIEN-DECIDE-Y-QUIEN-LO-VE-2026-08-24.md` — las TRES veces
+// que un filtro del navegador más angosto que el RLS dejó la bandeja vacía sin
+// dar error, y por qué los fallbacks del enrutador podían dejar una solicitud
+// sin aprobador.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 

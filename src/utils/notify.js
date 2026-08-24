@@ -1,3 +1,7 @@
+// Lo escrito sobre este módulo:
+// `docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md` — por qué un
+// `catch` que sólo escribe en la consola dejó el push roto tres semanas, por qué
+// la suscripción pertenece al EQUIPO y no a la cuenta, y qué se reintenta.
 import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 

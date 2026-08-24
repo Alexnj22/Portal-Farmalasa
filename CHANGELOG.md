@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.3 — Cinco áreas sin documento propio ya lo tienen
+
+Sigue la auditoría. Once de las 25 áreas del portal no tenían ni un documento
+propio; cinco ya lo tienen, y cada uno sale de leer el código, no de resumir lo
+que se recuerda.
+
+**Ventas** — `docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md`. El techo de
+las 1000 filas rompió esta área cuatro veces distintas y ninguna dio error:
+«Receta Médica» mostraba 8 ventas de 93, y buscar «maria» en el año traía 1,000
+de 9,777 **con los totales sumados sobre el recorte**. Queda escrito por qué el
+cuadre diario compara contra afuera —un libro al que le falta un documento
+cuadra consigo mismo— y las seis causas que puede tener un día que no cuadra,
+incluida la que hace que resincronizar no sirva de nada.
+
+**Solicitudes** — `docs/SOLICITUDES-QUIEN-DECIDE-Y-QUIEN-LO-VE-2026-08-24.md`.
+Las TRES veces que un filtro del navegador más angosto que el RLS dejó la
+bandeja vacía: por `approver_id` (Talento Humano veía 0 de 5 pendientes), por la
+sala de quien pidió (Bodega veía 0 de 4 traslados) y por una lista de
+destinatarios que no caduca. Y por qué los fallbacks del enrutador podían dejar
+una solicitud sin aprobador.
+
+**Avisos y push** — `docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md`.
+Un `catch` que sólo escribía en la consola dejó el push roto tres semanas sin
+que el portal lo dijera una vez. Y por qué la suscripción pertenece al EQUIPO y
+no a la cuenta: en mostrador el turno cambia de persona y el equipo no.
+
+**Horarios** —
+`docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md`. Domingo es
+0 y la convención contraria vivía escrita en seis lugares, así que el domingo
+era invisible: el kiosco pedía autorización en cada marcaje dominical y una
+incapacidad dominical se guardaba con una clave que nadie lee.
+
+**Nómina** — `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md`. Por qué las
+secciones A y B no se pueden mezclar (mezclarlas no cambia el bruto: cambia
+cuánto se le retiene a la persona), los factores de los arts. 168 y 169, el tope
+del ISSS, y el defecto latente de la tabla de renta anualizada — retenía $10.57
+a quien por ley no debía pagar nada, y $44.97 donde correspondían $40.48.
+
+Y tres áreas tenían documentación viva sin ningún cartel que la nombrara desde
+el código: Inventario, Pedidos y Compras ya lo tienen.
+
 ## v2.731.2 — Asistencia: el tiempo se cuenta con pruebas y queda escrito
 
 Sigue la auditoría del portal. Asistencia era una de las áreas sin una sola

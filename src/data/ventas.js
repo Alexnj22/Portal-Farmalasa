@@ -1,6 +1,16 @@
 // Bloque 6.A — capa de datos, entidad "ventas" (facturas de venta,
 // items, precios, changelog). Extraído de VentasView.jsx: 13 llamadas
 // supabase.from().
+// Lo escrito sobre este módulo:
+// `docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md` — de dónde sale cada
+// número y qué lo rompe en silencio: el techo de las 1000 filas (cuatro veces
+// distintas), por qué el cuadre diario compara contra afuera, y las seis causas
+// que puede tener un día que no cuadra.
+// Lo escrito sobre este módulo:
+// `docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md` — de dónde sale cada
+// número y qué lo rompe en silencio: el techo de las 1000 filas (cuatro veces
+// distintas), por qué el cuadre diario compara contra afuera, y las seis causas
+// que puede tener un día que no cuadra.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 

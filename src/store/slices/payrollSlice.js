@@ -5,6 +5,11 @@ import {
     fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank,
 } from '../../data/payroll';
 
+// Lo escrito sobre este módulo:
+// `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
+// A y B no se pueden mezclar, los factores de los arts. 168/169, el tope del
+// ISSS, y el defecto de dinero LATENTE que tenía la tabla de renta anualizada.
+
 // ─── El Salvador ISR (Renta) biweekly table ─────────────────────────────────
 // Base: net quincena after ISSS & AFP deductions
 // ── La tabla de retención de renta, QUINCENAL ───────────────────────────────

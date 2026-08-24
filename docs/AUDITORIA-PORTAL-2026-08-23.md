@@ -1286,3 +1286,60 @@ migración y en el branch.
 
 `gate:migrations --remote`: **546 archivos locales, 546 filas en prod, sin
 deriva.**
+
+### 8.23 El barrido de revokes incompletos: 131 medidas, 7 cerradas
+
+El hallazgo de §8.22 no era de una función: era **del patrón que usa todo el
+repo**. Supabase concede EXECUTE por defecto a `anon, authenticated,
+service_role` sobre toda función nueva, así que
+
+```sql
+REVOKE EXECUTE ON FUNCTION f(...) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION f(...) TO service_role;
+```
+
+parece cerrar la función a `service_role` y **no la cierra**: `authenticated`
+queda adentro porque nunca se le quitó.
+
+Se cruzó lo **declarado** en las 545 migraciones contra el ACL **real** de
+producción. **131 funciones tienen EXECUTE para `authenticated` sin que ninguna
+migración se lo conceda.** Ese número, solo, asusta sin informar — así que se
+partió:
+
+| clase | cuántas | veredicto |
+|---|---:|---|
+| ayudantes `auth_*` | 6 | **correcto**: los llaman las policies, que corren como el usuario. Sin eso RLS entero deja de funcionar, y sólo devuelven datos del propio llamador |
+| funciones de disparador | 14 | **correcto**: sin `NEW` lanzan, no se pueden llamar a mano |
+| kiosco (`verify_kiosk_*`, `get_kiosk_boot_payload`) | 4 | **correcto**: abiertas a propósito, ya declaradas en `superficie-anon.json` |
+| las que el navegador SÍ llama | 3 | **correcto**: tienen que conservarlo |
+| INVOKER (sin privilegio propio) | 67 | **sin efecto**: corren con el permiso de quien llama |
+| **DEFINER, sin guarda, que el navegador no llama** | **7** | **hallazgo** |
+
+Las siete quedaron cerradas a `service_role`. La peor de lejos:
+
+> **`notify_employees`** — SECURITY DEFINER, sin ningún chequeo de permiso, y
+> acepta **título, cuerpo, enlace y `push` arbitrarios** contra cualquier lista
+> de empleados. El único freno era no podérselo mandar a uno mismo. Cualquier
+> sesión autenticada podía mandarle un aviso —y una notificación al teléfono— a
+> toda la empresa, **con el portal como remitente**.
+
+Le siguen `sincronizar_bitacora_dispensaciones` y `bitacora_tomar_folio`, que
+**escriben en un libro regulado** (folios de dispensación, anulación de
+renglones) sin preguntar quién llama.
+
+**Tres verificaciones antes de tocar nada**, porque un revoke mal puesto rompe en
+silencio: el navegador no las llama ni una vez (0), ninguna función **INVOKER**
+las invoca (0 — sus 11 llamadoras son DEFINER o disparadores, que corren con el
+permiso del dueño), y el revoke se probó primero en el entorno de pruebas.
+
+**Y una sospecha mía que la medición volteó:** creí que `next_cotizacion_numero`
+dejaba que cualquiera quemara números de cotización. Leerla lo desmintió — no
+consume ninguna secuencia, calcula el siguiente leyendo la tabla. Llamarla no
+tiene efecto.
+
+**El gate lo cierra para siempre**, y aprendió en dos pasos. La primera versión
+acusaba **por archivo**: 28 hallazgos sobre 7 funciones, y una migración que
+arreglara el permiso no borraba las quejas de las anteriores — el número no
+bajaba nunca y no había forma de cerrarlo. Postgres no funciona así: gana la
+última sentencia. Ahora mide el **estado final por función**, y excluye los
+disparadores. De 28 a 4, y de 4 a 0 con la migración.

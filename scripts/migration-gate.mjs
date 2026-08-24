@@ -196,6 +196,65 @@ for (const archivo of locales) {
   }
 }
 
+// ── 5.ter. Un REVOKE que se olvida de `authenticated` no revoca nada ──────────
+// Supabase concede EXECUTE por DEFECTO a `anon, authenticated, service_role`
+// sobre toda función nueva. El patrón que usa todo este repo —
+//
+//     REVOKE EXECUTE ON FUNCTION f(...) FROM PUBLIC, anon;
+//     GRANT  EXECUTE ON FUNCTION f(...) TO service_role;
+//
+// — parece cerrar la función a `service_role` y NO lo hace: `authenticated`
+// queda adentro por la puerta de atrás, porque nunca se le quitó.
+//
+// Medido el 2026-08-24 cruzando lo declarado contra el ACL real de producción:
+// **131 funciones tienen EXECUTE para `authenticated` sin que ninguna migración
+// se lo conceda**, y 14 son SECURITY DEFINER sin guarda de permiso adentro.
+// Entre ésas, `notify_employees` acepta título, cuerpo y `push` arbitrarios
+// contra cualquier lista de empleados.
+//
+// Se descubrió reconstruyendo el módulo fiscal en el entorno de pruebas: ahí
+// `calc_credito_declarable` quedó abierta a `authenticated` y en producción la
+// ejecuta sólo `service_role`. La diferencia entre las dos bases era la prueba.
+//
+// ── Se mide el ESTADO FINAL, no cada archivo ───────────────────────────────
+// La primera versión acusaba por archivo y daba 28 hallazgos sobre 7 funciones:
+// una migración que arregla el permiso no borraba las quejas de las anteriores,
+// así que el número no bajaba nunca y no había forma de cerrarlo. Postgres no
+// funciona así — gana la última sentencia. Acá también.
+//
+// Y NO mira las funciones de disparador: una `RETURNS trigger` no se puede
+// llamar a mano (sin `NEW` lanza), así que su EXECUTE es irrelevante. Acusarlas
+// metía 14 de 28 hallazgos que no eran nada.
+{
+  const devuelveTrigger = new Set();
+  for (const archivo of locales) {
+    const t = readFileSync(`${DIR}/${archivo}`, 'utf8');
+    for (const m of t.matchAll(/FUNCTION\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\([^)]*\)[\s\S]{0,200}?RETURNS\s+trigger/gi))
+      devuelveTrigger.add(m[1]);
+  }
+
+  // Estado final por función, recorriendo las migraciones EN ORDEN de versión.
+  const estado = new Map();   // fn → { authOk: boolean, archivo: string }
+  for (const archivo of [...locales].sort()) {
+    const texto = readFileSync(`${DIR}/${archivo}`, 'utf8').replace(/^\s*--.*$/gm, '');
+    for (const m of texto.matchAll(/REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\([^;]*?\)\s*FROM\s+([^;]+);/gis))
+      estado.set(m[1], { authOk: /\bauthenticated\b/.test(m[2]), archivo });
+    for (const m of texto.matchAll(/GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\([^;]*?\)\s*TO\s+([^;]+);/gis))
+      if (/\bauthenticated\b/.test(m[2]) && estado.has(m[1]))
+        estado.set(m[1], { authOk: true, archivo });   // se le concede a propósito
+  }
+
+  for (const [fn, { authOk, archivo }] of [...estado].sort()) {
+    if (authOk || devuelveTrigger.has(fn)) continue;
+    err(`${fn}(): el REVOKE nunca le quita el EXECUTE a \`authenticated\``,
+      [`Última declaración en ${archivo}.`,
+       'Supabase se lo concede por defecto, así que revocarle sólo a PUBLIC y anon lo deja adentro.',
+       'Si la función no es para el navegador, en una migración nueva:',
+       `  REVOKE EXECUTE ON FUNCTION public.${fn}(…) FROM PUBLIC, anon, authenticated;`,
+       'Y si SÍ es para el navegador, concedésela explícitamente.']);
+  }
+}
+
 const post = [...versiones.keys()].filter(v => v !== BASELINE).sort();
 console.log(`\n  ${DIR}/: baseline + ${post.length} migración(es) post-baseline`);
 console.log(`  ${LEGACY}/: ${(sqls(LEGACY) ?? []).length} archivo(s) de historia pre-baseline`);

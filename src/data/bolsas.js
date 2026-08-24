@@ -19,6 +19,7 @@ const CAMPOS = `
     cerrada_por, cerrada_at, estado, etiqueta_version, etiqueta_impresa_at,
     entregada_por, entregada_at, recibida_por, recibida_at,
     contado, contado_por, contado_at,
+    conteo_marcado, conteo_marcado_por, conteo_marcado_at,
     dif_via, dif_causa, dif_por, dif_at
 `;
 
@@ -198,10 +199,34 @@ export function recibirBolsas(ids) {
  *
  * Lo contado queda para siempre — resolver una diferencia después no lo pisa.
  */
-export function contarBolsa(id, contado, esperadoVisto) {
-    return supabase.rpc('contar_bolsa', {
+/**
+ * Contar una bolsa la MARCA; no la cierra.
+ *
+ * «al confirmar una bolsa pasa a confirmado de un solo? debe pasar hasta que se
+ * confirme todo el conteo» (usuario, 2026-08-24). El proceso real va sucursal
+ * por sucursal y día por día, y recién al final se firma el conteo entero.
+ *
+ * Lo marcado se guarda en el SERVIDOR y no en la pantalla: es efectivo contado a
+ * mano, y perderlo por una pestaña cerrada significa volver a contarlo.
+ */
+export function marcarConteoBolsa(id, contado, esperadoVisto) {
+    return supabase.rpc('marcar_conteo_bolsa', {
         p_id: id, p_contado: contado, p_esperado: esperadoVisto,
     });
+}
+
+/** Deshace la marca. La bolsa vuelve a estar sin contar. */
+export function desmarcarConteoBolsa(id) {
+    return supabase.rpc('desmarcar_conteo_bolsa', { p_id: id });
+}
+
+/**
+ * Cierra la tanda: todas las marcadas pasan a CONTADA de una vez, con su
+ * bitácora, y sale UN aviso por sala con todas sus diferencias — no uno por
+ * bolsa como antes, sobre algo que todavía se podía corregir.
+ */
+export function confirmarConteo(ids) {
+    return supabase.rpc('confirmar_conteo', { p_ids: ids });
 }
 
 /**

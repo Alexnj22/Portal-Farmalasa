@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.738.0 — Contar una bolsa la anota; cerrarlas es confirmar el conteo entero
+
+*«al confirmar una bolsa pasa a confirmado de un solo? debe pasar hasta que se
+confirme todo el conteo»*.
+
+Sí pasaba: un toque en «Cuadra» cerraba esa bolsa en el acto y, si no cuadraba,
+disparaba en ese mismo momento el aviso con push a la sala. Cada bolsa se cerraba
+sola, sin que existiera el conteo del que forma parte.
+
+**El proceso real es otro**, y lo dictó el usuario: se llevan todos los cortes a
+donde se cuentan, se va sucursal por sucursal y dentro de cada una día por día
+—del más viejo al más nuevo—, sale el total de esa sucursal, se repite con todas,
+y recién al final se hace el conteo total. Ése es el momento en que la cosa queda
+firmada.
+
+Ahora contar una bolsa la **anota**: se queda en «Por contar» con su monto
+escrito, su resultado a la vista (`Cuadró` / `Faltó $8.00`) y un **«Contar de
+nuevo»** — mientras el conteo no esté confirmado, corregir es gratis, que es
+justo el punto de haberlo partido en dos pasos. El cierre es un solo botón:
+**«Confirmar el conteo · 2 bolsas · $1,585.65»**.
+
+Tres decisiones que valen más que el botón:
+
+- **Lo anotado vive en la BASE, no en el navegador.** Era la barata de tomar mal:
+  es efectivo contado a mano, sobre una mesa con las bolsas de seis salas, y
+  perderlo por una pestaña cerrada o una sesión que se cierra sola significa
+  **volver a contar el dinero**. Una migración sale más barata que eso.
+- **El aviso sale al confirmar, y uno por sala con todas sus diferencias.**
+  Antes salía uno por bolsa apenas se marcaba, sobre un número que todavía se
+  podía corregir: la sala se enteraba de un faltante que quizá era un error de
+  tecleo.
+- **`contado_por` guarda a quien CONTÓ, no a quien apretó el botón final.** Quien
+  confirma queda en la bitácora. Sin esa separación, el conteo de seis salas
+  quedaría todo a nombre de la última persona que pasó por la pantalla.
+
+Si falta una sala que todavía no llegó, el botón **lo dice y no bloquea**:
+«Quedan 4 bolsas sin contar · se cerrarán sólo las contadas». Y `contar_bolsa`
+—el camino viejo, el que cerraba una bolsa sola— quedó sin EXECUTE para el
+navegador: dejarlo abierto sería dejar viva la conducta que se vino a quitar.
+
+Migración `20260824164827`, probada antes en el entorno de pruebas: marca,
+desmarca, rebota el esperado desactualizado, confirma seis bolsas en una tanda y
+rechaza la segunda confirmación.
+
 ## v2.737.4 — Los tres botones de traslados, en dos palabras
 
 > «enviar producto, que sea el primero. y el ultimo como Llevar productos.»

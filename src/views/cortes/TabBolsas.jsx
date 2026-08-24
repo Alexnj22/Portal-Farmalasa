@@ -11,7 +11,8 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
-    contarBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchPersonasDeBolsas, fetchSaldos,
+    confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
+    fetchPersonasDeBolsas, fetchSaldos, marcarConteoBolsa,
     recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -276,7 +277,7 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
  * Va detrás de `bolsas_ver_montos` como toda cifra de esta pantalla. Jefe/a de
  * Compras cuenta dinero y no ve montos: es una decisión vieja del usuario, no un
  * descuido, y esto no la cambia. */
-function Conteo({ bolsa, ocupado, onContar, verMontos }) {
+function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMontos }) {
     const [abierto, setAbierto] = useState(false);
     const [valor, setValor] = useState('');
     const vales = Number(bolsa.vales || 0);
@@ -285,7 +286,42 @@ function Conteo({ bolsa, ocupado, onContar, verMontos }) {
         const n = Number(String(valor).replace(',', '.'));
         if (!Number.isFinite(n) || n < 0) return;
         onContar(bolsa, n);
+        setAbierto(false);
+        setValor('');
     };
+
+    /* ── Ya contada, pero todavía no cerrada ────────────────────────────────
+     * La bolsa se queda acá con su monto escrito hasta que se confirme la tanda.
+     * Se muestra el resultado —cuadró, o cuánto faltó/sobró— y el camino de
+     * vuelta: mientras el conteo no esté confirmado, contar de nuevo es gratis.
+     * Ése es justamente el punto de haberlo separado en dos pasos. */
+    if (bolsa.conteo_marcado != null) {
+        const dif = Math.round((Number(bolsa.conteo_marcado) - saldoDe(bolsa)) * 100) / 100;
+        const cuadra = Math.abs(dif) < 0.01;
+        return (
+            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap w-full">
+                {cuadra
+                    ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadró</Badge>
+                    : (
+                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
+                            {dif < 0 ? 'Faltó' : 'Sobró'}
+                            {verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}
+                        </Badge>
+                    )}
+                {verMontos && (
+                    <span className="text-caption text-content-2 tabular-nums">
+                        Se contaron <b className="text-content">{formatMoney(bolsa.conteo_marcado)}</b>
+                    </span>
+                )}
+                <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
+                    <Button variant="ghost" size="sm" loading={ocupadoDesmarcar}
+                        onClick={() => onDesmarcar(bolsa)}>
+                        Contar de nuevo
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     if (!abierto) {
         return (
@@ -354,7 +390,7 @@ function Conteo({ bolsa, ocupado, onContar, verMontos }) {
                 </Button>
                 <Button variant="primary" size="sm" loading={ocupado} disabled={valor === ''}
                     onClick={guardar}>
-                    Guardar conteo
+                    Anotar
                 </Button>
             </div>
         </div>
@@ -760,6 +796,19 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
 
     // Las que además quedaron fuera del rango: el aviso no puede decir «están
     // abajo, en Contadas» sobre una bolsa que el período no dibuja.
+    /* Las que ya se contaron y esperan el cierre, y las que faltan. El botón de
+     * confirmar sale de acá: mientras haya alguna sin contar lo dice, pero no
+     * bloquea — puede faltar una sala que no llegó, y lo ya contado no tiene por
+     * qué quedar en el aire por eso. */
+    const marcadas = useMemo(
+        () => porContar.filter((b) => b.conteo_marcado != null),
+        [porContar],
+    );
+    const sinMarcar = useMemo(
+        () => porContar.filter((b) => b.conteo_marcado == null),
+        [porContar],
+    );
+
     const sinResolverFuera = useMemo(
         () => sinResolver.filter((b) => !enRango(b)),
         [sinResolver, enRango],
@@ -838,11 +887,35 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         });
     }, [correr, abrirEtapa]);
 
+    /* Contar una bolsa la MARCA. La bolsa se queda en «Por contar» con su monto
+     * escrito hasta que se confirma la tanda entera — «debe pasar hasta que se
+     * confirme todo el conteo» (usuario, 2026-08-24).
+     *
+     * `correr` limpia la selección al terminar, y acá no hay ninguna que limpiar:
+     * marcar no usa casillas. No molesta, pero por eso el aviso dice qué queda
+     * pendiente y no «listo». */
     const contar = useCallback((bolsa, monto) => correr(`contar-${bolsa.id}`,
-        () => contarBolsa(bolsa.id, monto, saldoDe(bolsa)),
+        () => marcarConteoBolsa(bolsa.id, monto, saldoDe(bolsa)),
         Math.abs(monto - saldoDe(bolsa)) < 0.01
-            ? `${bolsa.folio} cuadró`
-            : `${bolsa.folio} quedó marcada`), [correr]);
+            ? `${bolsa.folio} cuadró · falta confirmar el conteo`
+            : `${bolsa.folio} anotada · falta confirmar el conteo`), [correr]);
+
+    const desmarcar = useCallback((bolsa) => correr(`desmarcar-${bolsa.id}`,
+        () => desmarcarConteoBolsa(bolsa.id),
+        `${bolsa.folio} vuelve a estar sin contar`), [correr]);
+
+    /* El cierre de la tanda: acá pasa todo lo que antes pasaba bolsa por bolsa
+     * —el cambio de estado, la bitácora y el aviso a cada sala—. Después de esto
+     * ya no se puede corregir un conteo, sólo resolver su diferencia. */
+    const confirmar = useCallback(async (marcadas) => {
+        const ok = await correr('confirmar-conteo',
+            () => confirmarConteo(marcadas.map((b) => b.id)),
+            marcadas.length === 1
+                ? 'Conteo confirmado · 1 bolsa cerrada'
+                : `Conteo confirmado · ${marcadas.length} bolsas cerradas`);
+        if (!ok) return;
+        abrirEtapa('contadas');
+    }, [correr, abrirEtapa]);
 
     /**
      * Después de sacar dinero salen DOS papeles por bolsa: el vale que queda
@@ -1198,10 +1271,35 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             <Etapa
                 icon={Banknote}
                 titulo="Por contar"
-                ayuda="Recibidas y sin contar. Un toque en «Cuadra» cuando el dinero coincide."
+                ayuda="Se cuenta sala por sala y, dentro de cada una, día por día. Nada se cierra hasta confirmar el conteo: mientras tanto se puede contar de nuevo."
+                accion={puedeContar && marcadas.length > 0 && (
+                    <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+                        <Button variant="primary" size="sm" icon={ShieldCheck}
+                            loading={ocupado === 'confirmar-conteo'}
+                            onClick={() => confirmar(marcadas)}>
+                            Confirmar el conteo · {marcadas.length}
+                            {marcadas.length === 1 ? ' bolsa' : ' bolsas'}
+                            {verMontos ? ` · ${formatMoney(marcadas.reduce((a, b) => a + Number(b.conteo_marcado || 0), 0))}` : ''}
+                        </Button>
+                        {/* Decirlo sin bloquear. Una sala que todavía no llegó no
+                            puede dejar en el aire lo que ya se contó, pero cerrar
+                            sin saber que faltan dos es otra cosa. */}
+                        {sinMarcar.length > 0 && (
+                            <span className="text-caption text-warning-text">
+                                {sinMarcar.length === 1
+                                    ? 'Queda 1 bolsa sin contar'
+                                    : `Quedan ${sinMarcar.length} bolsas sin contar`}
+                                {' '}· se cerrarán sólo las contadas
+                            </span>
+                        )}
+                    </div>
+                )}
                 grupos={conNodo(porContar, {
                     pie: (b) => (puedeContar ? (
-                        <Conteo bolsa={b} ocupado={ocupado === `contar-${b.id}`} onContar={contar} verMontos={verMontos} />
+                        <Conteo bolsa={b}
+                            ocupado={ocupado === `contar-${b.id}`}
+                            ocupadoDesmarcar={ocupado === `desmarcar-${b.id}`}
+                            onContar={contar} onDesmarcar={desmarcar} verMontos={verMontos} />
                     ) : null),
                 })}
                 total={porContar.length} montoTotal={suma(porContar)}

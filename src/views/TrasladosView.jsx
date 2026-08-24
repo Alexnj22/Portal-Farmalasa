@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, Send } from 'lucide-react';
+import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, ScanLine, Send } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -26,6 +26,10 @@ import { getLocalMonday, formatWeekRange, shiftWeek } from '../utils/semana';
 const FilaPorRecibir = lazy(() =>
     import('./traslados/FilasTraslado').then(m => ({ default: m.FilaPorRecibir })));
 import { ChipPersona } from './solicitudes/PersonasSolicitud';
+/* Diferido como los demás diálogos de esta vista: la cámara y el lector sólo
+   hacen falta cuando alguien va a confirmar una llegada, no al abrir la
+   pantalla. */
+const ConfirmarPorCodigo = lazy(() => import('./traslados/ConfirmarPorCodigo'));
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
@@ -210,6 +214,8 @@ export default function TrasladosView() {
     const [envios,       setEnvios]       = useState(null);
     const [enviosCerrados, setEnviosCerrados] = useState(null);
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
+    /* El diálogo que confirma una llegada escaneando el ticket de la bolsa. */
+    const [abrirEscaneo, setAbrirEscaneo] = useState(false);
     const [error,        setError]        = useState('');
     /* En qué va cada composición: cuántas de sus salas contestaron. Las que NO
      * contestaron no están en `porRecibir` —esa lista es de lo que ya salió—,
@@ -733,6 +739,29 @@ export default function TrasladosView() {
                    solo en una línea que nadie puede recorrer. */
                 <div className="p-4 md:p-5 flex flex-col gap-3">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+
+                    {/* Confirmar escaneando el ticket que trae la bolsa.
+                        Va ARRIBA de la lista y no dentro de cada tarjeta: quien
+                        recibe llega con la bolsa en la mano y el papel en la
+                        otra, y no sabe —ni tiene por qué— cuál de las tarjetas
+                        de la lista le corresponde. El código lo dice. */}
+                    <div>
+                        <Button variant="secondary" icon={ScanLine}
+                            className="min-h-[var(--tap-min)]"
+                            onClick={() => setAbrirEscaneo(true)}>
+                            Confirmar escaneando el ticket
+                        </Button>
+                    </div>
+
+                    {abrirEscaneo && (
+                        <Suspense fallback={null}>
+                            <ConfirmarPorCodigo
+                                abierto
+                                onCerrar={() => setAbrirEscaneo(false)}
+                                onHecho={cargar}
+                            />
+                        </Suspense>
+                    )}
 
                     {cargando && <SkeletonText lines={4} />}
 

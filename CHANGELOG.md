@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.0 — Confirmar la llegada escaneando el ticket
+
+Reemplaza a la firma a lápiz que traía el papel hasta v2.730.3. Pedido del
+usuario: «al llegar el producto, al escanearlo lo confirme (verifique si no está
+confirmado ya)».
+
+**La verificación de doble recepción ya existía en el servidor** — responde
+`YA_RECIBIDO` — y no hubo que inventarla. Lo que faltaba era el camino del papel
+a la fila: el código lleva `id_traslado`, y lo que la recepción necesita es el
+`id` de la solicitud, que vive en otra columna del `metadata`. La resuelve
+`traslado_por_codigo`, **INVOKER**, así que el RLS sigue decidiendo qué se ve.
+
+**Los cuatro desenlaces se dicen distinto**, porque lo que se escanea es papel
+que alguien tiene en la mano y «no se pudo» no le sirve a nadie:
+
+| qué es | qué dice la pantalla |
+|---|---|
+| una bolsa de esta sala, sin recibir | qué trae y el botón de confirmar |
+| ya la recibieron | **quién y cuándo** — en verde, no en rojo: es la respuesta que se vino a buscar |
+| el código es de un pedido de Bodega | que se recibe desde Pedidos |
+| no aparece | que puede ser de otra sala **o** que no se leyó bien |
+
+Los dos últimos no se pueden separar y es a propósito: el RLS oculta lo ajeno,
+así que afirmar «no existe» sobre algo que sí existe en otra sala sería mentir.
+
+**Dos lectores, un solo detector.** El de la sala teclea y la cámara es el
+respaldo para quien escanea parado junto a las bolsas; los dos entregan el mismo
+texto. A diferencia del carné, acá un código tecleado SÍ vale: el número no está
+escrito en ninguna parte del papel —va sólo adentro de las barras— así que nadie
+puede teclearlo de memoria, y no hay presencia que probar.
+
+Y si entre escanear y apretar alguien más la recibió, el servidor lo dice y la
+pantalla pasa a mostrar quién: no se trata como un fallo.
+
 ## v2.730.4 — Las barras del traslado van al final y grandes
 
 Pedido del usuario: «pasa el código de barras para el final, y que sea más

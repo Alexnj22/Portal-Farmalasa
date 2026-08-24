@@ -293,6 +293,44 @@ export const recibirTraslado = (requestId) =>
     invocar({ request_id: requestId, accion: 'recibir' });
 
 /**
+ * Del número de las barras del ticket a la bolsa que alguien tiene en la mano.
+ *
+ * El papel pegado a la bolsa lleva `id_traslado` en su código; lo que
+ * `recibirTraslado` necesita es el `id` de la solicitud, que vive en otra
+ * columna. Sin este paso no hay camino del papel a la fila.
+ *
+ * **La consulta va a la base y no acá** por la misma razón que
+ * `get_traslados_por_recibir`: el número está adentro de un `jsonb` anidado
+ * (`metadata->'erp_traslado'->>'id_traslado'`) y eso PostgREST no lo filtra.
+ * `traslado_por_codigo` es INVOKER, así que el RLS sigue decidiendo qué se ve.
+ *
+ * **Nunca lanza y nunca devuelve `null`**: siempre trae un objeto con al menos
+ * `codigo`, para que la pantalla pueda decir qué pasó con lo que se escaneó en
+ * vez de quedarse muda. Los cuatro desenlaces se distinguen así:
+ *
+ * | qué pasó | cómo se ve |
+ * |---|---|
+ * | es una bolsa mía, sin recibir | `id` con valor, `ya_recibido: false` |
+ * | ya la recibieron | `ya_recibido: true` + `recibio` y `recibido_at` |
+ * | el código es de un pedido de Bodega | `id: null`, `es_de_un_pedido: true` |
+ * | no existe, o no es de esta sala | todo en `null` |
+ *
+ * Los dos últimos NO se pueden separar y es a propósito: el RLS oculta lo
+ * ajeno, así que afirmar «no existe» sobre algo que sí existe en otra sala
+ * sería mentir. El mensaje dice las dos cosas.
+ */
+export async function fetchTrasladoPorCodigo(codigo) {
+    const { data, error } = await supabase.rpc('traslado_por_codigo', {
+        p_codigo: String(codigo ?? ''),
+    });
+    if (error) {
+        console.error('traslados: traslado_por_codigo failed:', error.message);
+        return { traslado: null, error };
+    }
+    return { traslado: data ?? null, error: null };
+}
+
+/**
  * Si la sala de origen todavía puede, y quién más podría.
  *
  * Se pregunta al ABRIR la lista y no al apretar el botón: entre que alguien

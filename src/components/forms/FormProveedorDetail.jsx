@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
@@ -14,6 +14,8 @@ import { mensajeAmigable, mensajeConPrefijo } from '../../utils/errorMessages';
 import {
     ESTADO_CLASIF, DEDUCIBLE_OPTIONS, CLASIFICACION_OPTIONS, SECTOR_OPTIONS, tiposCostoGasto,
 } from '../../utils/f07Catalogos';
+import useBorrador from '../../hooks/useBorrador';
+import AvisoDeBorrador from '../common/AvisoDeBorrador';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -115,6 +117,21 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    /* El borrador cubre este bloque —el de contacto y notas— y no los otros dos
+     * de esta pantalla: «Condiciones de crédito» y la clasificación fiscal
+     * tienen su propio estado, su propio botón y tres o cuatro campos cada uno,
+     * así que ni llegan al umbral del gate ni comparten el momento de guardado.
+     * Un solo borrador para los tres no se podría descartar sin llevarse lo
+     * escrito en los otros.
+     *
+     * Se OFRECE, no se repone: es un registro que ya existe, y la ficha del
+     * proveedor la tocan varias personas. */
+    const claveBorrador = formData?.id ? `proveedor_${formData.id}` : null;
+    const { recuperado: borrador, cuando: borradorCuando, descartar: descartarBorrador } =
+        useBorrador(claveBorrador, form, { activo: formData?.canEdit !== false });
+    const [ofrecido, setOfrecido] = useState(false);
+    useEffect(() => { setOfrecido(false); }, [claveBorrador]);
 
     // ── Condiciones de crédito ────────────────────────────────────────────
     // Estado y botón propios, como la clasificación fiscal: es otro acto y lo
@@ -255,6 +272,9 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 nombre: formData.nombre, ...form,
             });
             useToastStore.getState().showToast('Guardado', 'Proveedor actualizado.', 'success');
+            // Guardado: el borrador ya no sirve. Después del `await`, para que
+            // un fallo no se lleve lo escrito.
+            descartarBorrador();
             formData?.onSaved?.();
             onClose();
         } catch (e) {
@@ -287,6 +307,14 @@ const FormProveedorDetail = ({ formData, onClose }) => {
 
     return (
         <div className="flex flex-col gap-5 p-1">
+            {borrador && !ofrecido && (
+                <AvisoDeBorrador
+                    cuando={borradorCuando}
+                    onRecuperar={() => { setForm(f => ({ ...f, ...borrador })); setOfrecido(true); }}
+                    onDescartar={() => { descartarBorrador(); setOfrecido(true); }}
+                />
+            )}
+
             {/* Datos fiscales — solo lectura, vienen del DTE */}
             <div data-surface="card" className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-surface-card-hover/70">
                 <FiscalRow icon={FileText} label={formData?.nit ? 'NIT' : 'DUI'} value={formData?.nit || formData?.dui} />

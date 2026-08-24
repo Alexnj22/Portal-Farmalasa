@@ -152,11 +152,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         (type === 'newEvent' && !formData?._editingEventId && idSujeto) ? `novedad_${idSujeto}`
       : (type === 'rehireEmployee' && idSujeto)                        ? `recontratacion_${idSujeto}`
       : (BRANCH_ACTIONS.has(type) && idSujeto)                         ? `sucursal_${idSujeto}`
+      : (type === 'editPayrollEntry' && idSujeto)                      ? `planilla_${idSujeto}`
       : null;
 
     // Editar OFRECE; dar de alta REPONE. Es la única diferencia entre los dos
     // caminos, y es la que decide si se puede pisar algo.
-    const borradorSeOfrece = BRANCH_ACTIONS.has(type);
+    //
+    // La entrada de planilla va por el mismo camino que la sucursal, y con más
+    // motivo: es un renglón de dinero que alguien ya calculó, así que reponerlo
+    // solo con lo que quedó a medias sería escribir un monto viejo sobre uno
+    // corregido.
+    const borradorSeOfrece = BRANCH_ACTIONS.has(type) || type === 'editPayrollEntry';
 
     const borradorSeguro = useMemo(() => {
         if (!claveBorrador || !formData) return null;

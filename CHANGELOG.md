@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.746.1 — La deuda de borradores queda en CERO
+
+Los tres que faltaban: la ficha del cliente, la del proveedor y la entrada de
+planilla. Con esto `gate:borradores` pasa de **24 formularios largos sin
+borrador el día que nació** a **cero**, y de acá en más cualquier hallazgo es
+deuda nueva, no ratchet.
+
+Los tres editan un registro que ya existe, así que van por el mismo camino que
+la ficha de sucursal: **se ofrece recuperar, no se repone solo**. Y en dos de
+ellos ese recaudo no es teórico:
+
+- **la ficha del cliente** toca los campos que Hacienda mira en un documento
+  fiscal, y además la corrige sola la corrida nocturna de fichas. Reponer un
+  borrador encima sería pisar una corrección hecha por el circuito;
+- **la entrada de planilla** es un renglón de dinero que alguien ya calculó.
+  Reponerlo escribiría un monto viejo sobre uno corregido, y el error viajaría a
+  una boleta.
+
+Tres cosas que se decidieron mirando cada caso, y no aplicando la misma receta:
+
+- **el proveedor son TRES formularios en una pantalla**, cada uno con su estado y
+  su botón: contacto, condiciones de crédito y clasificación fiscal. El borrador
+  cubre el primero —el único que llega al umbral de seis controles— porque un
+  solo borrador para los tres no se podría descartar al guardar uno sin llevarse
+  lo escrito en los otros dos;
+- **la entrada de planilla no tiene estado propio** para lo que se captura: sus
+  campos escriben en el `formData` de `UnifiedModal`, así que el borrador vive
+  ahí con la clave `planilla_<id de la entrada>` — el id de la **entrada** y no
+  el de la persona, porque hay una por período. Queda declarada como excepción
+  con su motivo, igual que las pestañas de sucursal;
+- **la clave siempre lleva el id del registro.** Una clave única ofrecería la
+  ficha de un proveedor sobre la de otro.
+
+El eje de resiliencia queda en **95 en las 25 áreas** y sale de la lista de los
+que frenan al portal. Compras sube a 95 en ese eje, Nómina y Facturación
+también.
+
 ## v2.746.0 — La ficha de sucursal guarda borrador y OFRECE recuperarlo
 
 El portal cierra la sesión sola cuando nadie usa la pantalla, y **los de sala

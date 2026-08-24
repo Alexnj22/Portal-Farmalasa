@@ -185,6 +185,17 @@ const EXCEPCIONES = {
     'sin estado propio: cero `useState` en todo el archivo. Ver ' +
     '`BranchTabGeneral.jsx`. Verificado el 2026-08-24.',
 
+  'src/components/forms/FormEditPayrollEntry.jsx':
+    'Sin estado propio para lo que se captura: los campos escriben en el ' +
+    '`formData` de `UnifiedModal` con `setFormData`, así que el borrador vive ' +
+    'ahí con la clave `planilla_<id de la entrada>` —el id de la ENTRADA y no ' +
+    'el de la persona, porque hay una por período—. Se OFRECE recuperar en vez ' +
+    'de reponer solo, y con más motivo que las otras: es un renglón de dinero ' +
+    'que alguien ya calculó, y reponerlo escribiría un monto viejo sobre uno ' +
+    'corregido. Los `*Input` locales del reparto de horas extra son un cálculo ' +
+    'intermedio: lo que se aplica termina en `formData` y eso es lo que se ' +
+    'guarda. Verificado el 2026-08-24.',
+
   'src/components/forms/FormRehireEmployee.jsx':
     'Mismo caso que `FormNovedad`: no tiene estado propio. Su borrador vive en ' +
     '`UnifiedModal` con la clave `recontratacion_<id de la persona>` — la clave ' +

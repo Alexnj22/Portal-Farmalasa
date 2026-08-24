@@ -25,6 +25,8 @@ import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
     ETIQUETA_CAMPO as ETIQUETAS,
 } from '../../utils/clienteValidacion';
+import useBorrador from '../../hooks/useBorrador';
+import AvisoDeBorrador from '../common/AvisoDeBorrador';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -168,6 +170,20 @@ const FormClienteDetail = ({ formData }) => {
 
     const [form, setForm] = useState(null);
     const [guardando, setGuardando] = useState(false);
+
+    /* La ficha fiscal se EDITA, así que el borrador se OFRECE y no se repone
+     * solo: reponer sobre un registro vivo escribiría datos viejos encima de lo
+     * que otra persona —o la corrida nocturna de fichas— cambió en el medio, y
+     * acá eso no es un detalle: los campos que se tocan son los que Hacienda
+     * mira en un documento fiscal.
+     *
+     * Sólo se guarda con la ficha ya cargada (`form` deja de ser `null`): antes
+     * de eso, guardar escribiría el vacío encima de lo que hubiera. */
+    const claveBorrador = id ? `cliente_${id}` : null;
+    const { recuperado: borrador, cuando: borradorCuando, descartar: descartarBorrador } =
+        useBorrador(claveBorrador, form, { activo: canEdit && !!form });
+    const [ofrecido, setOfrecido] = useState(false);
+    useEffect(() => { setOfrecido(false); }, [claveBorrador]);
     const [error, setError] = useState('');
     // El servidor exige un sí explícito para tocar los datos fiscales de un
     // contribuyente. Cuando lo pide, se muestra el aviso y el siguiente clic
@@ -273,6 +289,9 @@ const FormClienteDetail = ({ formData }) => {
                 `${n} campo${n !== 1 ? 's' : ''} guardado${n !== 1 ? 's' : ''}. Aplicando el cambio…`,
                 'success');
             setPideConfirmacion(false);
+            // La ficha quedó guardada: el borrador ya no sirve. Va DESPUÉS del
+            // `await`, para que un guardado fallido no se lleve lo escrito.
+            descartarBorrador();
             formData?.onSaved?.();
             await cargar();
 
@@ -302,7 +321,7 @@ const FormClienteDetail = ({ formData }) => {
         } finally {
             setGuardando(false);
         }
-    }, [id, cambios, cliente, formData, cargar, form]);
+    }, [id, cambios, cliente, formData, cargar, form, descartarBorrador]);
 
     if (cargando) return <LoadingState label="Cargando la ficha…" />;
 
@@ -327,6 +346,14 @@ const FormClienteDetail = ({ formData }) => {
 
     return (
         <div className="space-y-5">
+            {borrador && !ofrecido && panel === 'ficha' && (
+                <AvisoDeBorrador
+                    cuando={borradorCuando}
+                    onRecuperar={() => { setForm(f => ({ ...f, ...borrador })); setOfrecido(true); }}
+                    onDescartar={() => { descartarBorrador(); setOfrecido(true); }}
+                />
+            )}
+
             <SegmentedControl
                 options={[
                     { value: 'ficha', label: 'Ficha fiscal' },

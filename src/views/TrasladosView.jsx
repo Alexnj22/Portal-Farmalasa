@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, Ban, CornerUpLeft, History, PackageCheck, ScanLine, Send, Truck } from 'lucide-react';
+import { ArrowLeftRight, History, PackageCheck, ScanLine, Send, Truck } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
-import Badge from '../components/common/Badge';
-import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
@@ -25,17 +23,18 @@ import { getLocalMonday, formatWeekRange, shiftWeek } from '../utils/semana';
 // que acá el render depende de un dato que todavía no llegó.
 const FilaPorRecibir = lazy(() =>
     import('./traslados/FilasTraslado').then(m => ({ default: m.FilaPorRecibir })));
-import { ChipPersona } from './solicitudes/PersonasSolicitud';
 /* Diferido como los demás diálogos de esta vista: la cámara y el lector sólo
    hacen falta cuando alguien va a confirmar una llegada, no al abrir la
    pantalla. */
 const ConfirmarPorCodigo = lazy(() => import('./traslados/ConfirmarPorCodigo'));
 const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
-import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
+import { textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
+// El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
+const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));
 // Las cuatro tarjetas de envío viven SÓLO en la pestaña «Envíos», y la pestaña
 // que abre por defecto es «En camino». Estáticas, las bajaba también quien nunca
 // entra a la otra — y `WidgetTransferRequests` ya difería dos de estas mismas
@@ -118,55 +117,12 @@ const TABS = [
     { key: 'historial', label: 'Historial' },
 ];
 
-// El historial es una LISTA DE REGISTROS, así que va en `DataTable` — no en
-// tarjetas escritas a mano. Reportado sobre la primera versión: «no es
-// canónico, dónde está el filter pill, dónde están las cards, dónde está el
-// filtro para ver por tipo». Las tres cosas eran la misma: se dibujó una lista
-// suelta en vez de usar los canónicos, y `DataTable` da la tabla en escritorio,
-// las fichas en el teléfono y el estado vacío, los tres de una.
-//
-// Las otras dos pestañas NO son registros: son acciones —confirmar con su
-// flujo de rechazo, recibir— y siguen siendo las tarjetas que comparte el
-// widget. Meterlas en una tabla obligaría a un formulario dentro de una celda.
-// Sin anchos en porcentaje: se probaron y la suma empujaba ESTADO y FECHA fuera
-// del marco. La tabla reparte por contenido, así que lo que hace falta es TOPAR
-// al que se lo lleva todo —el nombre del producto, que además se repite en todas
-// las filas— para que el MOTIVO, que es el dato que uno viene a leer en un
-// historial, tenga dónde entrar. Los dos se cortan con `title` para el resto.
-//
-// Y se recorta con `line-clamp`, NO con `truncate` ni con `max-w`: en una tabla
-// de layout automático el `max-width` de un hijo no acota la celda —la celda
-// crece hasta el texto entero y la tabla se sale del marco, que fue lo que dejó
-// ESTADO y FECHA fuera de la vista en dos intentos seguidos—. `line-clamp` deja
-// que el texto AJUSTE dentro del ancho que la tabla reparte y corta por altura,
-// que es lo único que se puede acotar sin pelearse con el algoritmo.
-// `resolvio` se agregó el 2026-08-17. El historial guardaba el motivo del
-// rechazo pero no de quién era la firma: se podía leer que un traslado se
-// rechazó y por qué, y no quién lo decidió — o sea que el registro no servía
-// para lo único que un historial tiene que contestar cuando alguien pregunta.
-// Reportado así: «no sale tampoco el proceso de aprobaciones». Va pegado a
-// «Pidió» porque son las dos mitades del mismo circuito, y en el teléfono cae
-// a la hoja de detalle de `DataTable` en vez de desaparecer.
-/* El historial de un ENVÍO contesta otra pregunta que el de un traslado: no
- * «qué pasó con este producto» sino «qué se quedó la otra sala y qué devolvió,
- * y por qué». Por eso son columnas propias y no las de arriba. */
-const COLS_ENVIOS = [
-    { key: 'recorrido', label: 'Recorrido' },
-    { key: 'motivo',    label: 'Motivo',              hideBelow: 'md' },
-    { key: 'devuelto',  label: 'Devuelto',            hideBelow: 'lg' },
-    { key: 'resultado', label: 'Quedó / volvió', align: 'center' },
-    { key: 'fecha',     label: 'Fecha',          align: 'right' },
-];
-
-const COLS_HISTORIAL = [
-    { key: 'producto',  label: 'Producto' },
-    { key: 'recorrido', label: 'Recorrido',  hideBelow: 'md' },
-    { key: 'pidio',     label: 'Pidió',      hideBelow: 'lg' },
-    { key: 'resolvio',  label: 'Resolvió',   hideBelow: 'xl' },
-    { key: 'motivo',    label: 'Motivo',     hideBelow: 'lg' },
-    { key: 'estado',    label: 'Estado',     align: 'center' },
-    { key: 'fecha',     label: 'Fecha',      align: 'right' },
-];
+/* El historial dejó de ser una tabla el 2026-08-24 y sus columnas se fueron con
+ * ella. Lo que las reemplaza —tarjetas cortadas por sucursal y por desenlace, y
+ * por qué— vive en `traslados/HistorialTraslados.jsx`.
+ *
+ * Las otras dos pestañas NO son registros: son acciones —confirmar con su flujo
+ * de rechazo, recibir— y siempre fueron las tarjetas que comparte el widget. */
 
 // Qué se ve del historial: todo, lo que llegó, o lo que se rechazó. Es la misma
 // pregunta con tres respuestas, así que es un `FilterBar.Opciones` y no tres
@@ -572,185 +528,38 @@ export default function TrasladosView() {
                     ))}
                 </div>
                 </Suspense>
-            ) : /* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */
+            ) : /* ── El historial: TARJETAS, cortadas por sucursal y desenlace ──
+                   Era un `DataTable` desde el 2026-08-07 y el motivo estaba
+                   bien escrito: un historial es una lista de registros. Lo que
+                   esa forma no puede dar es lo que el usuario pidió el
+                   2026-08-24 —«que se vean siempre como cards, si alcance todos
+                   que se separe por sucursal y por rechazado / aprobado»—:
+                   una tabla tiene UN encabezado, y dos niveles de corte adentro
+                   obligan a filas-título que no son registros. El detalle de
+                   por qué, y por qué la sucursal es el ORIGEN, en
+                   `HistorialTraslados`. */
             enHistorial ? (
                 <div className="p-4 md:p-5">
-                    <DataTable
-                        columns={COLS_HISTORIAL}
-                        loading={cargando}
-                        minWidth="960px"
-                        empty={{
-                            icon: History,
-                            message: busqueda.trim() || tipo
-                                ? 'Sin traslados que coincidan'
-                                : 'Todavía no se cerró ningún traslado',
-                        }}
-                        // La ficha del teléfono: el producto manda, el recorrido
-                        // lo ubica y el estado es lo que se viene a mirar.
-                        movil={{ ancla: 'producto', identidad: 'recorrido', chips: ['estado', 'fecha'] }}
-                    >
-                        {lista.map((f, i) => {
-                            const m = f.metadata ?? {};
-                            const rechazado = f.status === 'REJECTED';
-                            return (
-                                <DataRow key={f.id} index={i}>
-                                    <DataCell>
-                                        <span className="flex items-center gap-2 min-w-0">
-                                            {rechazado
-                                                ? <Ban size={13} className="text-danger-text shrink-0" strokeWidth={2.5} />
-                                                : <PackageCheck size={13} className="text-success-text shrink-0" strokeWidth={2.5} />}
-                                            {/* Dos renglones y no uno: el nombre del
-                                                producto es el campo por el que se
-                                                escanea la lista, y cortado en «1 UNIDAD
-                                                · ACETAMINOFEN…» no distingue una fila de
-                                                la de al lado. */}
-                                            <span className="text-body-sm font-semibold text-content line-clamp-2"
-                                                title={resumenItems(m)}>
-                                                {resumenItems(m)}
-                                            </span>
-                                        </span>
-                                    </DataCell>
-                                    {/* `whitespace-nowrap`: el recorrido es UNA
-                                        cosa —de dónde sale y a dónde va— y
-                                        partido en dos renglones se lee como dos
-                                        datos sueltos. */}
-                                    <DataCell hideBelow="md">
-                                        <span className="text-label text-content-2 whitespace-nowrap">
-                                            {m.origen_branch_name ?? '—'} → {m.branch_name ?? '—'}
-                                        </span>
-                                    </DataCell>
-                                    {/* Un nombre de cuatro palabras estiraba la
-                                        fila al cuádruple de alto y descolocaba
-                                        toda la tabla. Se corta; el nombre entero
-                                        queda en el `title`. */}
-                                    {/* Quién pidió y CUÁNDO. La fecha de la
-                                        derecha es la del cierre, así que sin
-                                        ésta no había forma de saber cuánto
-                                        tardó — que es la mitad de lo que un
-                                        historial contesta. */}
-                                    {/* Con su CARA, por `ChipPersona` — el
-                                        canónico que ya usan la bandeja y el
-                                        detalle de Solicitudes. Un nombre pelado
-                                        en una tabla obliga a leerlo; una cara se
-                                        reconoce de reojo, que es como se recorre
-                                        un historial. Y cuándo lo pidió: la fecha
-                                        de la derecha es la del CIERRE, así que
-                                        sin ésta no había cómo saber cuánto
-                                        tardó. */}
-                                    <DataCell hideBelow="lg">
-                                        <ChipPersona persona={personaPor(f.employee_id)} vacio="Sin registro" />
-                                        <span className="block text-micro text-content-3 tabular-nums whitespace-nowrap mt-0.5">
-                                            {fmtFechaLarga(f.created_at)}
-                                        </span>
-                                    </DataCell>
-                                    {/* Quién puso la firma. Un traslado sin
-                                        `approver_id` no debería existir —lo
-                                        escribe la misma función que lo despacha
-                                        o lo rechaza— pero si aparece uno viejo,
-                                        `ChipPersona` dice «Sin registro» y no
-                                        dibuja un disco gris que se leería como
-                                        una foto que no cargó. */}
-                                    <DataCell hideBelow="xl">
-                                        <ChipPersona persona={personaPor(f.approver_id)} vacio="Sin registro" />
-                                    </DataCell>
-                                    <DataCell hideBelow="lg">
-                                        {/* El motivo del rechazo con lo que se sugirió: era el
-                                            único dato del circuito que se escribía y no se
-                                            podía volver a leer en ninguna pantalla. */}
-                                        <span className="block line-clamp-2 text-label text-content-3"
-                                            title={[rechazado ? m.rejection_reason : f.note, rechazado ? m.sugerencia : null]
-                                                .filter(Boolean).join(' — ')}>
-                                            {rechazado ? (m.rejection_reason ?? '—') : (f.note || '—')}
-                                            {rechazado && m.sugerencia ? ` — ${m.sugerencia}` : ''}
-                                        </span>
-                                    </DataCell>
-                                    <DataCell align="center">
-                                        <Badge variant={rechazado ? 'danger' : 'success'} size="sm">
-                                            {rechazado ? 'Rechazado' : 'Recibido'}
-                                        </Badge>
-                                    </DataCell>
-                                    <DataCell align="right">
-                                        <span className="text-label text-content-3 tabular-nums whitespace-nowrap">
-                                            {fmtFechaLarga(f.updated_at ?? f.created_at)}
-                                        </span>
-                                    </DataCell>
-                                </DataRow>
-                            );
-                        })}
-                    </DataTable>
-
-                    {/* ── Y los ENVÍOS cerrados ────────────────────────────
-                        Tabla aparte y no mezclados con los traslados: un envío
-                        no tiene UN desenlace sino uno por renglón —la sala se
-                        quedó tres y devolvió dos— y meterlo en la columna
-                        «Estado» de arriba obligaría a resumir en una palabra lo
-                        que hay que poder leer entero. Es el registro de por qué
-                        una sala devolvió producto: el único que queda.
-
-                        `get_envios_historial` existía desde el primer día y no
-                        la llamaba nadie, así que un envío desaparecía en cuanto
-                        terminaba. Mismo hueco que esta vista le tapó al
-                        traslado el 2026-08-07. */}
-                    {enviosVistos.length > 0 && (
-                        <div className="mt-6 flex flex-col gap-3">
-                            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                                Envíos cerrados
-                            </p>
-                            <DataTable
-                                columns={COLS_ENVIOS}
-                                loading={cargando}
-                                minWidth="820px"
-                                empty={{ icon: Send, message: 'Todavía no se cerró ningún envío' }}
-                                movil={{ ancla: 'recorrido', identidad: 'motivo', chips: ['resultado', 'fecha'] }}
-                            >
-                                {enviosVistos.map((e, i) => {
-                                    const acept = (e.lineas ?? []).filter(l => l.estado === 'aceptada').length;
-                                    const devue = (e.lineas ?? []).filter(l => String(l.estado).startsWith('devuelta')).length;
-                                    return (
-                                        <DataRow key={e.id} index={i}>
-                                            <DataCell>
-                                                <span className="flex items-center gap-2 min-w-0">
-                                                    {devue > 0
-                                                        ? <CornerUpLeft size={13} className="text-danger-text shrink-0" strokeWidth={2.5} />
-                                                        : <PackageCheck size={13} className="text-success-text shrink-0" strokeWidth={2.5} />}
-                                                    <span className="text-body-sm font-semibold text-content whitespace-nowrap">
-                                                        {e.origen_branch_name ?? '—'} → {e.branch_name ?? '—'}
-                                                    </span>
-                                                </span>
-                                            </DataCell>
-                                            <DataCell hideBelow="md">
-                                                <span className="text-label text-content-2 line-clamp-2" title={e.reason ?? ''}>
-                                                    <span className="font-bold">{e.motivo_tipo ?? '—'}</span>
-                                                    {e.reason && e.reason !== e.motivo_tipo ? ` · ${e.reason}` : ''}
-                                                </span>
-                                            </DataCell>
-                                            <DataCell hideBelow="lg">
-                                                {/* Qué devolvieron y por qué: es lo único que un
-                                                    historial de envíos tiene que poder contestar. */}
-                                                <span className="text-label text-content-2 line-clamp-2">
-                                                    {(e.lineas ?? [])
-                                                        .filter(l => String(l.estado).startsWith('devuelta'))
-                                                        .map(l => `${l.descripcion ?? l.erp_product_id} (${l.motivo_rechazo ?? 'sin motivo'})`)
-                                                        .join('; ') || '—'}
-                                                </span>
-                                            </DataCell>
-                                            <DataCell align="center">
-                                                <span className="text-label font-bold whitespace-nowrap">
-                                                    <span className="text-success-text">{acept}</span>
-                                                    <span className="text-content-3"> / </span>
-                                                    <span className={devue > 0 ? 'text-danger-text' : 'text-content-3'}>{devue}</span>
-                                                </span>
-                                            </DataCell>
-                                            <DataCell align="right">
-                                                <span className="text-label text-content-3 tabular-nums whitespace-nowrap">
-                                                    {fmtFechaLarga(e.updated_at ?? e.created_at)}
-                                                </span>
-                                            </DataCell>
-                                        </DataRow>
-                                    );
-                                })}
-                            </DataTable>
-                        </div>
+                    {cargando ? <SkeletonText lines={6} /> : (
+                        <Suspense fallback={<SkeletonText lines={6} />}>
+                            <HistorialTraslados
+                                filas={lista}
+                                envios={enviosVistos}
+                                /* Sólo con alcance sobre todas, Y sin una sala
+                                   ya elegida en el filtro: con una sucursal
+                                   filtrada, el corte deja un único título
+                                   repetido, que es ruido con forma de
+                                   estructura. */
+                                porSucursal={alcanceTodas && !sala}
+                                personaPor={personaPor}
+                                vacio={{
+                                    icon: History,
+                                    title: busqueda.trim() || tipo
+                                        ? 'Sin traslados que coincidan'
+                                        : 'Todavía no se cerró ningún traslado',
+                                }}
+                            />
+                        </Suspense>
                     )}
                 </div>
             ) : (

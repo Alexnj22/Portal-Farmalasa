@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.725.0 — Toda acción que escribe queda en la bitácora — 26 que no dejaban rastro
+
+**El detector decía 27 y estaba haciendo la pregunta mal.** Acusaba a cualquier
+archivo de `src/data/` que escribiera sin nombrar `appendAuditLog` — o sea a la
+capa de datos entera, que es una capa fina donde la bitácora no se escribe nunca.
+Un detector que acusa a 27 archivos por diseño no se lee: se apaga.
+
+Ahora sigue la **cadena de llamada**, con los alias de los imports, y nombra la
+función y el archivo donde falta el registro. Medido así fueron **26 acciones
+reales**, y las 26 quedaron cerradas:
+
+| dónde | qué no dejaba rastro |
+|---|---|
+| Planilla | crear el período, **aprobarlo**, **darlo por pagado**, recalcular, canjear horas del banco |
+| Vacaciones | crear, editar fechas, cambiar estado, confirmar, cancelar |
+| Mín·Máx | cambiar la configuración — que reescribe el mínimo y el máximo de **18,364 filas a la vez** |
+| Turnos | crear, editar, archivar y restaurar — de ahí sale el minuto de tardanza |
+| Horarios | poner y quitar una cobertura entre salas |
+| Traslados | **rechazar** un pedido de otra sala |
+| Cotizaciones | crear, editar y anular un precio ofrecido por escrito |
+| Bitácoras SRS | reconfigurar un área, que cambia lo que el regente firma al cerrar el mes |
+| Productos | marcar un producto como sin principio activo |
+| Inventario | reportar una venta perdida |
+
+Dos exenciones, escritas y con motivo: **el tema elegido y las notificaciones
+propias**. Escribir el estado de uno mismo no le pasa nada a nadie más, y
+anotarlo llenaría la bitácora de ruido que taparía justo lo que existe para
+encontrar. La exención va por tabla y no por nombre de función — el nombre lo
+cambia cualquiera, la tabla es el dato.
+
+**Y dos hallazgos eran del instrumento otra vez.** `practicantesSlice.js` importa
+`updatePracticante as updatePracticanteData`; buscando el nombre suelto, la
+coincidencia caía en el componente —que llama a la acción del store, que se llama
+igual— y el slice, que **sí** audita, quedaba invisible. El detector señalaba
+además el archivo equivocado para arreglarlo.
+
+Barrido completo: **38 hallazgos → 11**. 18 de las 25 áreas quedan limpias.
+Promedio de la auditoría: **90% → 91%**.
+
 ## v2.724.1 — El barrido cuenta estructura, no texto — y el módulo de datos deja de nombrar la tubería
 
 **`branches` pintaba 0 fichas con ocho sucursales cargadas.** Las dos sospechas

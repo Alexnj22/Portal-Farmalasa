@@ -23,6 +23,7 @@ import {
     fetchCotizacionItems, deleteCotizacionItems,
 } from '../data/cotizaciones';
 import { fetchBranchesBasic } from '../data/system';
+import { useStaffStore as useStaff } from '../store/staffStore';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -580,6 +581,12 @@ export default function CotizacionesView() {
             const { data: cotData, error: cotErr } = await insertCotizacion({ numero: numData, ...buildPayload() });
             if (cotErr) throw cotErr;
             await insertItems(cotData.id);
+            // Una cotización es un precio que la empresa le ofrece a alguien por
+            // escrito. Quién la emitió, por cuánto y a quién no quedaba en
+            // ningún lado fuera de la propia fila, que después se edita encima.
+            useStaff.getState().appendAuditLog('CREAR_COTIZACION', String(cotData.id),
+                { numero: numData, cliente: cotData.cliente_nombre ?? null,
+                  total: cotData.total ?? null, renglones: items.length });
             const { data: freshItems, error: freshErr } = await fetchCotizacionItems(cotData.id);
             if (freshErr) console.error('handleSave: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
@@ -598,6 +605,12 @@ export default function CotizacionesView() {
             if (cotErr) throw cotErr;
             await deleteCotizacionItems(editingId);
             await insertItems(editingId);
+            // Editar BORRA los renglones y los reescribe: el precio de antes
+            // deja de existir en la fila. Sin registro no hay forma de mostrar
+            // qué se había ofrecido si el cliente reclama.
+            useStaff.getState().appendAuditLog('EDITAR_COTIZACION', String(editingId),
+                { numero: cotData?.numero ?? null, total: cotData?.total ?? null,
+                  renglones: items.length });
             const { data: freshItems, error: freshErr } = await fetchCotizacionItems(editingId);
             if (freshErr) console.error('handleUpdate: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
@@ -645,6 +658,7 @@ export default function CotizacionesView() {
         if (!confirmAnular) return;
         setAnulando(true);
         await updateCotizacion(confirmAnular, { status: 'ANULADA' });
+        useStaff.getState().appendAuditLog('ANULAR_COTIZACION', String(confirmAnular), {});
         setAnulando(false);
         setConfirmAnular(null);
         loadList();

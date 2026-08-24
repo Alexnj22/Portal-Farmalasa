@@ -68,6 +68,16 @@ const FormTurnos = ({ branches }) => {
 
             if (error) throw error;
 
+            // Un turno define a qué hora se espera a alguien, y de ahí sale el
+            // minuto de tardanza que después se descuenta. Cambiarle la hora de
+            // entrada a un turno reescribe el juicio sobre marcaciones que ya
+            // ocurrieron, así que quién lo movió y a qué tiene que quedar.
+            useStaffStore.getState().appendAuditLog(
+                editingShiftId ? 'EDITAR_TURNO' : 'CREAR_TURNO',
+                String(editingShiftId ?? shiftObject.name),
+                { turno: shiftObject.name, entrada: shiftObject.start_time,
+                  salida: shiftObject.end_time, sucursal_id: shiftObject.branch_id });
+
             showToast(
                 editingShiftId ? "Turno Actualizado" : "Turno Creado",
                 `El turno "${shiftObject.name}" se guardó con éxito.`,
@@ -95,6 +105,8 @@ const FormTurnos = ({ branches }) => {
 
             if (error) throw error;
 
+            useStaffStore.getState().appendAuditLog('ARCHIVAR_TURNO', String(shift.id), { turno: shift.name });
+
             showToast(
                 "Turno Archivado",
                 `El turno "${shift.name}" ha sido movido al histórico.`,
@@ -118,6 +130,8 @@ const FormTurnos = ({ branches }) => {
             const { error } = await updateShiftFlags(shift.id, { is_archived: false, updated_at: new Date().toISOString() });
 
             if (error) throw error;
+
+            useStaffStore.getState().appendAuditLog('RESTAURAR_TURNO', String(shift.id), { turno: shift.name });
 
             showToast(
                 "Turno Restaurado",

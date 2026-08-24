@@ -30,6 +30,10 @@ export const createVacationPlanSlice = (set, get) => ({
                 h.id === headerId ? { ...h, status } : h
             ),
         }));
+        // Un plan de vacaciones es un derecho laboral con fechas: quién lo movió
+        // y cuándo tiene que poder reconstruirse. Las columnas de la fila guardan
+        // el estado ACTUAL y se pisan solas.
+        await get().appendAuditLog('CAMBIAR_ESTADO_PLAN_VACACIONES', headerId, { estado: status });
         return true;
     },
 
@@ -262,6 +266,11 @@ export const createVacationPlanSlice = (set, get) => ({
 
             if (error) throw error;
 
+            await get().appendAuditLog('CREAR_PLAN_VACACIONES', data?.id ?? null, {
+                empleado_id: planData.employee_id, sucursal_id: planData.branch_id,
+                desde: planData.start_date, hasta: planData.end_date, dias: planData.days || 15,
+            });
+
             const employees2 = get().employees || [];
             const branches2  = get().branches  || [];
             const enriched = {
@@ -308,6 +317,13 @@ export const createVacationPlanSlice = (set, get) => ({
                     vp.id === planId ? { ...vp, ...data, employee: vp.employee, branch: vp.branch } : vp
                 ),
             }));
+            // `metadata.original_*` guarda las fechas de ANTES, pero sólo las de
+            // la primera edición: la segunda las pisa. El registro es lo único
+            // que conserva la cadena entera.
+            await get().appendAuditLog('EDITAR_PLAN_VACACIONES', planId, {
+                desde: updates.start_date, hasta: updates.end_date, dias: updates.days,
+                desde_anterior: currentPlan?.start_date, hasta_anterior: currentPlan?.end_date,
+            });
             return true;
         } catch (err) {
             console.error('Error updating vacation plan:', err);
@@ -342,6 +358,7 @@ export const createVacationPlanSlice = (set, get) => ({
                     vp.id === planId ? { ...vp, status } : vp
                 ),
             }));
+            await get().appendAuditLog('CAMBIAR_ESTADO_PLAN_VACACIONES', planId, { estado: status });
             return true;
         } catch (err) {
             console.error('Error updating vacation plan:', err);
@@ -358,6 +375,10 @@ export const createVacationPlanSlice = (set, get) => ({
                     vp.id === planId ? { ...vp, status: 'CANCELLED' } : vp
                 ),
             }));
+            // «Eliminar» acá es marcar CANCELLED: la fila se queda y la fecha
+            // desaparece de la vista. Sin registro, un plan que dejó de existir
+            // para el empleado no tiene autor.
+            await get().appendAuditLog('CANCELAR_PLAN_VACACIONES', planId, {});
             return true;
         } catch (err) {
             console.error('Error deleting vacation plan:', err);

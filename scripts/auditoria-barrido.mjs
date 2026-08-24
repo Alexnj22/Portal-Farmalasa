@@ -102,15 +102,82 @@ const CATEGORIAS = [
     {
         id: 'escritura-sin-bitacora',
         eje: 'observabilidad',
-        titulo: 'Archivo que escribe en la base y no registra nada en la bitácora',
-        ve: 'Un archivo de `src/data/` con al menos una escritura (insert/update/delete/upsert) '
-          + 'y ni una referencia a `appendAuditLog`. La regla del proyecto es que toda acción '
-          + 'de usuario va a `audit_logs`.',
-        noVe: 'El que registra desde un trigger de Postgres o desde el llamador. Este detector '
-            + 'mira UN archivo por vez: no puede seguir la cadena, así que sobre-acusa.',
-        archivos: /^src\/data\/.*\.js$/,
-        porArchivo: (texto) =>
-            /\.(insert|update|delete|upsert)\(/.test(texto) && !/appendAuditLog|audit_logs|registrarAuditoria/.test(texto),
+        titulo: 'Acción que escribe en la base y no queda en la bitácora',
+        ve: 'Una función exportada de `src/data/` que hace `insert`/`update`/`delete`/`upsert`, '
+          + 'y NINGUNO de los archivos que la llaman menciona `appendAuditLog`. Se informa la '
+          + 'función y sus llamadores, que es donde hay que escribir el registro.',
+        noVe: 'La que se registra desde un trigger de Postgres o desde dentro de un RPC — eso no '
+            + 'se ve desde el fuente del portal. Tampoco ve la escritura hecha por un `.rpc()`, '
+            + 'que desde acá es indistinguible de una lectura. Y una función SIN llamadores no '
+            + 'se acusa: eso es código muerto, que es otro problema y otra categoría.',
+        // ── Por qué mira la cadena y no el archivo (2026-08-24) ──────────────
+        // La primera versión acusaba a cualquier archivo de `src/data/` que
+        // escribiera sin nombrar `appendAuditLog`, y daba **27 archivos** — la
+        // capa de datos entera. Era la pregunta mal hecha: `src/data/` es una
+        // capa fina y la bitácora se escribe en quien ORQUESTA la acción, que es
+        // la vista o el slice. Un detector que acusa a 27 archivos por diseño no
+        // se lee: se apaga.
+        //
+        // Comprobado a mano sobre tres, y los tres resultados fueron distintos —
+        // que es justo lo que un detector de archivo no podía distinguir:
+        //   · `cotizaciones` → `CotizacionesView` no audita NADA. Hueco real.
+        //   · `ventasPerdidas` → su vista audita, otros dos llamadores no.
+        //   · `laboratorios` → sus dos pestañas auditan. Falso positivo.
+        global: (indice) => {
+            const salida = [];
+            const consumidores = [...indice.entries()]
+                .filter(([f]) => /^src\/(views|components|store|hooks)\//.test(f));
+            for (const [archivo, texto] of indice) {
+                if (!/^src\/data\/.*\.js$/.test(archivo)) continue;
+                const lineas = texto.split('\n');
+                for (let i = 0; i < lineas.length; i++) {
+                    const m = lineas[i].match(/^export\s+(?:async\s+)?(?:function\s+(\w+)|const\s+(\w+)\s*=)/);
+                    if (!m) continue;
+                    const nombre = m[1] || m[2];
+                    // El cuerpo, por conteo de llaves desde la firma.
+                    let prof = 0, cuerpo = '', arrancó = false;
+                    for (let j = i; j < lineas.length && j < i + 200; j++) {
+                        cuerpo += lineas[j] + '\n';
+                        for (const c of lineas[j]) {
+                            if (c === '{') { prof++; arrancó = true; }
+                            else if (c === '}') prof--;
+                        }
+                        if (arrancó && prof <= 0) break;
+                    }
+                    if (!/\.(insert|update|delete|upsert)\(/.test(cuerpo)) continue;
+                    // ── Lo que NO es una acción de negocio ──────────────────
+                    // La bitácora registra lo que una persona le hace al dato
+                    // COMPARTIDO. Escribir el estado propio de quien está usando
+                    // el portal —qué tema eligió, qué aviso ya leyó— no le pasa
+                    // nada a nadie más, y anotarlo llenaría `audit_logs` de ruido
+                    // que taparía justamente lo que la bitácora existe para
+                    // encontrar. La exención va por TABLA y no por nombre de
+                    // función: el nombre lo cambia cualquiera, la tabla es el
+                    // dato. Salió de abrir tres hallazgos a mano — dos de los
+                    // tres eran de esta clase.
+                    if (/from\('(user_dashboard_prefs|notifications)'\)/.test(cuerpo)) continue;
+                    // ── Se sigue el ALIAS del import, no el nombre suelto ───
+                    // `practicantesSlice.js` importa
+                    // `updatePracticante as updatePracticanteData` y llama al
+                    // alias. Buscando el nombre suelto, la coincidencia caía en
+                    // el COMPONENTE —que llama a la acción del store, que se
+                    // llama igual— y el slice, que sí audita, quedaba invisible.
+                    // Dos falsos positivos que además señalaban el archivo
+                    // equivocado para arreglarlos.
+                    const modulo = archivo.replace(/^src\/data\//, '').replace(/\.js$/, '');
+                    const llamadores = consumidores.filter(([, t]) => {
+                        const local = localDelImport(t, modulo, nombre);
+                        return local && new RegExp(`\\b${local}\\s*\\(`).test(t);
+                    });
+                    if (!llamadores.length) continue;            // sin llamadores: código muerto
+                    if (llamadores.some(([, t]) => /appendAuditLog|registrarAuditoria/.test(t))) continue;
+                    salida.push({ archivo, linea: i + 1,
+                        texto: `${nombre}() — la llaman ${llamadores.length}, ninguna audita: `
+                             + llamadores.map(([f]) => f.replace('src/', '')).join(', ').slice(0, 120) });
+                }
+            }
+            return salida;
+        },
     },
     {
         id: 'submit-sin-freno',
@@ -224,16 +291,39 @@ function sinComentarios(lineas) {
     });
 }
 
+// Con qué nombre LOCAL usa `texto` la función `nombre` de `src/data/<modulo>`,
+// o null si no la importa. Un `import { a as b }` se llama `b` en ese archivo, y
+// un archivo que no la importa no puede ser su llamador por más que escriba un
+// identificador que se llame igual.
+function localDelImport(texto, modulo, nombre) {
+    const re = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*['"][^'"]*data/${modulo}['"]`, 'g');
+    let m;
+    while ((m = re.exec(texto))) {
+        for (const parte of m[1].split(',')) {
+            const [orig, alias] = parte.trim().split(/\s+as\s+/);
+            if (orig.trim() === nombre) return (alias || orig).trim();
+        }
+    }
+    return null;
+}
+
 // ── Barrido ─────────────────────────────────────────────────────────────────
 const archivos = execSync("git ls-files 'src/**'", { cwd: RAIZ })
     .toString().trim().split('\n').filter(f => /\.(js|jsx)$/.test(f));
 
 const hallazgos = [];
+// El índice completo, para los detectores que necesitan CRUZAR archivos. Un
+// detector que mira uno por vez no puede responder «¿alguien más se encarga?»,
+// y ésa es exactamente la pregunta de la bitácora.
+const INDICE = new Map();
+for (const f of archivos) INDICE.set(f, sinComentarios(fs.readFileSync(path.join(RAIZ, f), 'utf8').split('\n')).join('\n'));
+
 for (const f of archivos) {
     const texto = fs.readFileSync(path.join(RAIZ, f), 'utf8');
     const lineas = sinComentarios(texto.split('\n'));
     const area = areaDeArchivo(f);
     for (const cat of CATEGORIAS) {
+        if (cat.global) continue;
         if (!cat.archivos.test(f)) continue;
         if (cat.porArchivo) {
             if (cat.porArchivo(texto)) hallazgos.push({ cat: cat.id, eje: cat.eje, area, archivo: f, linea: 1, texto: '' });
@@ -244,6 +334,11 @@ for (const f of archivos) {
                 hallazgos.push({ cat: cat.id, eje: cat.eje, area, archivo: f, linea: i + 1, texto: lineas[i].trim().slice(0, 100) });
         }
     }
+}
+
+for (const cat of CATEGORIAS.filter(c => c.global)) {
+    for (const h of cat.global(INDICE))
+        hallazgos.push({ cat: cat.id, eje: cat.eje, area: areaDeArchivo(h.archivo), ...h });
 }
 
 if (JSON_OUT) { console.log(JSON.stringify({ categorias: CATEGORIAS.map(({ id, eje, titulo, ve, noVe }) => ({ id, eje, titulo, ve, noVe })), hallazgos }, null, 2)); process.exit(0); }

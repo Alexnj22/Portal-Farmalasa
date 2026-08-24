@@ -15,6 +15,7 @@ import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
@@ -268,6 +269,12 @@ export function DecisionTraslado({ fila, onHecho }) {
         const { error: e } = await rechazarTraslado(fila.id, motivo, texto, sugerencia);
         setOcupado(false);
         if (e) { setError(e.message ?? 'No se pudo rechazar.'); return; }
+        // Despachar y recibir pasan por la función del servidor, que deja su
+        // propio rastro. Rechazar se escribe desde el navegador y no dejaba
+        // ninguno: una sala que se queda sin lo que pidió no tenía forma de
+        // saber quién dijo que no ni por qué.
+        useStaff.getState().appendAuditLog('RECHAZAR_TRASLADO', String(fila.id),
+            { motivo, detalle: texto || null, sugerencia: sugerencia || null });
         onHecho('REJECTED');
     };
 

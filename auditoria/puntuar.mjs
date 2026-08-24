@@ -322,9 +322,23 @@ function puntuar(area) {
                     ...h.borradores.map(f => `formulario largo sin borrador: ${f}`)] };
 
     // ── observabilidad ──────────────────────────────────────────────────────
-    ev.observabilidad = { pct: tope(92 - n('escritura-sin-bitacora') * 9, 50),
-        evidencia: `barrido: ${n('escritura-sin-bitacora')} archivo(s) de src/data que escriben y no nombran appendAuditLog`,
-        hallazgos: h.barrido.filter(x => x.cat === 'escritura-sin-bitacora').map(x => x.archivo) };
+    // El detector se rehízo el 2026-08-24 y con él cambió lo que este número
+    // significa. Antes contaba ARCHIVOS de `src/data/` que escribían sin nombrar
+    // `appendAuditLog`: daba 27, o sea la capa de datos entera, porque la
+    // bitácora no se escribe ahí sino en quien orquesta la acción. Ahora sigue
+    // la cadena de llamada —con los alias de los imports— y cuenta ACCIONES cuyo
+    // registro no existe en ninguno de sus llamadores.
+    //
+    // Medido así fueron 26, y las 26 se cerraron: planilla (4), vacaciones (5),
+    // Mín·Máx (1), turnos (3), coberturas (2), traslado rechazado (1),
+    // cotizaciones (3), configuración de bitácoras (1), principio activo (2),
+    // venta perdida (1). Dos exenciones escritas —el tema elegido y las
+    // notificaciones propias— porque escribir el estado de uno mismo no es una
+    // acción sobre el dato compartido.
+    ev.observabilidad = { pct: tope(96 - n('escritura-sin-bitacora') * 9, 50),
+        evidencia: `barrido: ${n('escritura-sin-bitacora')} acción(es) que escriben y no quedan en la bitácora `
+                 + `(detector que sigue la cadena de llamada, no el archivo)`,
+        hallazgos: h.barrido.filter(x => x.cat === 'escritura-sin-bitacora').map(x => `${x.archivo}: ${x.texto}`) };
 
     // ── vista ───────────────────────────────────────────────────────────────
     ev.vista = { pct: tope(98 - h.design.length * 3, 55),

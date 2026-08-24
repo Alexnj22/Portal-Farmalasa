@@ -587,6 +587,11 @@ const SchedulesView = ({ openModal, setView }) => {
         setCoveragesAtBranch(prev => prev.filter(e => e.employee_id !== empId));
         setAddedCoverageEmpIds(prev => { const s = new Set(prev); s.delete(empId); return s; });
         await deleteScheduleCoverage(empId, filterBranch, startDate);
+        // Una cobertura dice que alguien de otra sala trabaja acá esa semana.
+        // Quitarla o ponerla cambia dónde se espera a una persona, y de eso
+        // dependen la marcación y el reclamo de después.
+        useStaff.getState().appendAuditLog('QUITAR_COBERTURA', String(empId),
+            { sucursal_id: Number(filterBranch), semana: startDate });
     }, [filterBranch, startDate]);
 
     const handleSaveCoverageCell = useCallback(async (empId, homeBranchId, dayOfWeek, scheduleData) => {
@@ -605,7 +610,9 @@ const SchedulesView = ({ openModal, setView }) => {
             return [...prev, entry];
         });
         const { error } = await upsertScheduleCoverage(entry);
-        if (error) console.error('Error guardando cobertura:', error);
+        if (error) { console.error('Error guardando cobertura:', error); return; }
+        useStaff.getState().appendAuditLog('GUARDAR_COBERTURA', String(empId),
+            { sucursal_id: Number(filterBranch), semana: startDate, dia: dayOfWeek });
     }, [filterBranch, startDate]);
 
     const triggerPublishAudit = () => {

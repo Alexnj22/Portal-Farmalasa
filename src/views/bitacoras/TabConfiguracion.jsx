@@ -8,6 +8,7 @@ import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import { LoadingState } from '../../components/common/StateViews';
 import { TIPO_AREA, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de las áreas.
@@ -57,9 +58,17 @@ function Area({ area, puedeEditar, onGuardado }) {
         });
         setGuardando(false);
         if (err) { setError(err); return; }
+        // Esto reescribe qué se le exige a la sala todos los días y, de rebote,
+        // el número que el regente firma al cerrar el mes. Tiene permiso propio
+        // (`bitacoras_configurar`) y no dejaba rastro de quién lo cambió — que
+        // es exactamente lo que una bitácora regulada tiene que poder mostrar.
+        useStaff.getState().appendAuditLog('CONFIGURAR_AREA_BITACORA', String(area.id), {
+            area: area.nombre ?? null, activa,
+            instrumento: instrumento.trim() || null, calibrado_hasta: calibrado || null,
+        });
         setOk(true);
         onGuardado?.();
-    }, [area.id, activa, instrumento, calibrado, onGuardado]);
+    }, [area.id, area.nombre, activa, instrumento, calibrado, onGuardado]);
 
     const vencida = area.calibrado_hasta && area.calibrado_hasta < new Date().toISOString().slice(0, 10);
 

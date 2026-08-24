@@ -153,6 +153,12 @@ export const createPayrollSlice = (set, get) => ({
         });
         if (error) throw error;
         set(s => ({ payrollPeriods: [data, ...s.payrollPeriods] }));
+        // La planilla mueve dinero y no dejaba rastro de nada: ni de quién abrió
+        // el período, ni de quién lo aprobó, ni de quién lo dio por pagado.
+        await get().appendAuditLog('CREAR_PERIODO_PLANILLA', data?.id ?? null, {
+            nombre: data?.name, tipo: data?.period_type,
+            desde: data?.start_date, hasta: data?.end_date, sucursal_id: data?.branch_id ?? null,
+        });
         return data;
     },
 
@@ -177,6 +183,14 @@ export const createPayrollSlice = (set, get) => ({
                 ? { ...s.activePayrollPeriod, ...updatePayload }
                 : s.activePayrollPeriod,
         }));
+        // Aprobar y dar por pagado son las dos decisiones que autorizan una
+        // salida de dinero. La columna `approved_by` guarda QUIÉN, pero se pisa
+        // en el siguiente cambio de estado: la bitácora es lo único que conserva
+        // la secuencia.
+        await get().appendAuditLog('CAMBIAR_ESTADO_PLANILLA', periodId, {
+            estado: status,
+            severity: (status === 'APPROVED' || status === 'PAID') ? 'CRITICAL' : undefined,
+        });
     },
 
     // ── Entries ───────────────────────────────────────────────────────────────
@@ -315,6 +329,13 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             await get().fetchPayrollEntries(periodId);
+            // El recálculo BORRA los renglones pendientes y los vuelve a
+            // escribir. Sin registro, un monto que cambió entre dos miradas no
+            // tiene explicación posible.
+            await get().appendAuditLog('CALCULAR_PLANILLA', periodId, {
+                renglones: rows.length, banco_de_horas: bankRows.length,
+                sin_salario: noSalary.length,
+            });
             return { warnings: noSalary };
         } catch (err) {
             console.error('Error generating payroll:', err);
@@ -347,6 +368,11 @@ export const createPayrollSlice = (set, get) => ({
             created_by:  createdBy || null,
         });
         if (error) throw error;
+        // Canjear horas es convertir tiempo trabajado en tiempo libre o en pago.
+        await get().appendAuditLog('MOVER_BANCO_DE_HORAS', employeeId, {
+            horas: parseFloat(hours.toFixed(2)), tipo: type, subtipo: subtype || 'DIURNAL',
+            periodo_id: periodId || null, nota: notes || null,
+        });
     },
 
     updatePayrollEntry: async (entryId, updates, editedBy, editReason) => {

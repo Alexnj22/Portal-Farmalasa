@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.739.2 — El depósito ofrecía llevar al banco 32 mil dólares que ya no están
+
+Encontrado midiendo producción a los minutos de publicar v2.739.0, no leyendo el
+código.
+
+`get_por_depositar()` devolvía toda bolsa contada sin `deposito_id` — y como esa
+columna nace en NULL, eso es **toda la historia**. En producción: **54 bolsas por
+$32,006.16**, las 54 con el mismo sello de conteo (`2026-08-21 20:51:29`) porque
+fueron una carga masiva. La franja nueva le habría ofrecido a administración
+llevar al banco treinta y dos mil dólares que no están sobre ninguna mesa, y el
+botón habría cerrado ese depósito **sin que nada fallara**.
+
+Es el mismo defecto que este módulo ya tuvo, y que estaba escrito: la lista «Sin
+bolsa» ofrecía 16 cortes por $10,778 —los confirmados antes de que existiera el
+disparador— y apretarlos habría inventado bolsas por dinero que ya no estaba. La
+respuesta es la misma: la consulta arranca desde el instante en que la tabla
+`depositos_bancarios` existió.
+
+**La lección, para que no haga falta una tercera vez:** una columna nueva que
+marca «ya se hizo» nace en NULL para todo el pasado, y una consulta que pregunta
+por su ausencia devuelve el pasado entero. No hay error, no falta ninguna fila, y
+el número que sale es grande y creíble.
+
+Migración `20260824182824`. Verificado: la consulta pasó de 54 filas a 0.
+
 ## v2.739.1 — Dos falsos positivos y dos formularios que sí perdían trabajo
 
 Siguiendo la deuda de borradores, **dos de los que quedaban no eran deuda** — y

@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.737.1 — El modal de traslados en el telefono, y el ticket que el lector de la computadora no entregaba
+
+> «en movil, se ve mal el modal, se desplaza horizontalmente» · «al escanear
+> una solicitud, en la computadora no lo lee, en el movil con la camara si»
+
+**Dos defectos distintos, los dos silenciosos, y los dos del mismo modal.**
+
+── El modal que se corría de lado ─────────────────────────────────────────────
+
+La rejilla de tarjetas decía `grid gap-2 md:grid-cols-2`, o sea que **en el
+teléfono no declaraba ninguna pista**. La implícita es `auto`, que se dimensiona
+al mayor mínimo de contenido de sus hijos — y una tarjeta con el nombre del
+producto en `truncate` (`white-space: nowrap`) aporta la cadena entera. El
+`md:grid-cols-2` de al lado nunca sufrió porque Tailwind lo emite como
+`minmax(0, 1fr)`, que topa la pista en el ancho disponible.
+
+Medido en WebKit iPhone 13, con el modal abierto y datos reales: la pista pedía
+**414 px dentro de un cuerpo de 340**, y el cuerpo del modal —`overflow-y-auto`,
+que CSS computa como `overflow-x: auto`— quedaba con **438 px de ancho de
+desplazamiento contra 388 de visible**. Con `grid-cols-1` la pista mide 340 y el
+desplazamiento horizontal es **cero**. Las nueve rejillas de tarjetas de
+traslado (seis en el widget, tres en la vista) tenían el mismo defecto.
+
+── El ticket que el lector de la computadora leía y el portal tiraba ──────────
+
+`useCapturaDeCarne` entregaba el código **sólo con Enter**, y al vencer su plazo
+de ráfaga tiraba lo leído sin decir nada. **Hay lectores que no mandan sufijo
+Enter** — lo dice el propio `LoginView`, que aprendió esa lección en su día y la
+tiene escrita (`RAFAGA_ESPERA_ENTER_MS`). Este hook nunca la aprendió: en una
+computadora con un lector así, el ticket **no se leía nunca**, la pantalla se
+quedaba en «Esperando el código del ticket», y la cámara del teléfono leía el
+mismo papel a la primera. Exactamente el reporte.
+
+Y encima descartaba —también en silencio— cualquier ráfaga con más de 80 ms
+entre dos teclas, marcándola como «tecleada». Ese candado existe para el
+**carné**, donde el código se puede saber de memoria y la velocidad es lo único
+que prueba que alguien estuvo ahí. **El ticket de una bolsa no tiene su número
+impreso** —decisión escrita en `trasladoTicket.js`—, así que no hay nada que
+teclear de memoria y el candado no protegía nada: sólo estorbaba.
+
+Las dos pantallas del ticket (`ConfirmarPorCodigo` y el recorrido de
+`RetiroModal`) pasan ahora `sinEnter` y `aceptarTecleado`. La firma del carné
+que pide el recorrido conserva el candado entero, que es donde sí significa
+algo.
+
+Si después de esto el lector sigue sin entregar nada, la pantalla lo dice: al
+escanear tiene que cambiar a «Leyendo…». Si ni eso aparece, el lector no está
+mandando teclas a esta pantalla y el problema está en su configuración, no en el
+portal.
+
 ## v2.737.0 — El retiro del mercado es su propio motivo
 
 > «agreguemos el motivo de, cuando bodega pide un producto por retiro del

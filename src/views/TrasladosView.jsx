@@ -562,7 +562,7 @@ export default function TrasladosView() {
                                 {/* Misma rejilla que «En camino»: en un monitor,
                                     una columna estira cada tarjeta a 1.700 px
                                     para dos renglones de texto. */}
-                                <div className="grid gap-3 xl:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                                     {porMomento[clave].map(e => (
                                         <Fila key={e.id} envio={e} onHecho={cargar} ahora={ahora} />
                                     ))}
@@ -828,7 +828,7 @@ export default function TrasladosView() {
                     <Suspense fallback={!cargando ? <SkeletonText lines={4} /> : null}>
                     {!cargando && bloques.grupos.map(({ grupoId, filas }) => (
                         <GrupoPorRecibir key={grupoId} grupo={grupos[grupoId]} filas={filas} onHecho={cargar}>
-                            <div className="grid gap-3 xl:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                                 {filas.map(f => (
                                     <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                                 ))}
@@ -837,7 +837,7 @@ export default function TrasladosView() {
                     ))}
 
                     {!cargando && bloques.sueltas.length > 0 && (
-                        <div className="grid gap-3 xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                             {bloques.sueltas.map(f => (
                                 <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} ahora={ahora} personaPor={personaPor} />
                             ))}

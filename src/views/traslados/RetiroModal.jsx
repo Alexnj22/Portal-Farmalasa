@@ -141,8 +141,15 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     /* El lector físico queda armado mientras no haya un diálogo encima: con la
      * cámara abierta o esperando una firma, una ráfaga de teclas entraría por
      * dos caminos a la vez. */
+    //
+    // Y con el candado de velocidad SUELTO: lo que se lee acá es el ticket de
+    // una bolsa, no un carné. Su número no está impreso, así que nadie lo puede
+    // teclear de memoria y no hay presencia que probar; lo único que hacía el
+    // candado era tirar en silencio la lectura de un lector sin sufijo Enter.
+    // La firma de abajo —ésa sí es un carné— lo conserva.
     const { teclas } = useCapturaDeCarne(
         abierto && !conCamara && !pidiendoFirma && !ocupado, escanear,
+        { aceptarTecleado: true, sinEnter: true },
     );
 
     /** La firma de quien entrega: su carné, y se reintenta la carga. */

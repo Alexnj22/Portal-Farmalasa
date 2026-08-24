@@ -64,7 +64,17 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     // La captura global de teclas sólo existe mientras el diálogo está abierto y
     // no hay nada que confirmar: con una bolsa ya en pantalla, un escaneo nuevo
     // la reemplazaría sin que nadie lo pidiera.
-    const { teclas } = useCapturaDeCarne(abierto && !hallado && !listo && !conCamara, buscar);
+    //
+    // `aceptarTecleado` + `sinEnter`: acá el candado de velocidad no protege
+    // nada —el número no está impreso en el papel, así que no hay memoria que
+    // valga— y en cambio TIRABA la lectura de todo lector que no manda Enter, o
+    // que teclea con un hueco de más de 80ms entre caracteres. En las dos
+    // formas el diálogo se quedaba en «Esperando el código del ticket» sin
+    // decir nada, y la cámara del teléfono leía el mismo papel a la primera.
+    const { teclas } = useCapturaDeCarne(
+        abierto && !hallado && !listo && !conCamara, buscar,
+        { aceptarTecleado: true, sinEnter: true },
+    );
 
     /* Se limpia AL CERRAR, y se ajusta durante el render y no en un efecto.
      *

@@ -22,6 +22,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *
  * `alLeer(codigo)` recibe la ráfaga completa. Se guarda en un ref para que
  * cambiar el callback no reinstale el listener a mitad de un escaneo.
+ *
+ * ── Y cuándo NO hay presencia que probar ───────────────────────────────────
+ * El párrafo de arriba vale para un CARNÉ: ahí el código lo puede saber
+ * cualquiera de memoria, así que la velocidad es la prueba. Pero el ticket de
+ * una bolsa no tiene su número impreso —está sólo adentro de las barras, por
+ * decisión escrita en `trasladoTicket.js`—, o sea que no hay nada que teclear
+ * de memoria y el candado no protege nada. Ahí sólo estorba.
+ *
+ * `opciones.aceptarTecleado` lo suelta, y `opciones.sinEnter` cierra el otro
+ * agujero: **un lector sin sufijo Enter existe**. Lo dice el propio
+ * `LoginView` —`RAFAGA_ESPERA_ENTER_MS`, 400ms— y este hook nunca lo aprendió:
+ * entregaba SÓLO con Enter y, al vencer `FIN_DE_RAFAGA_MS`, tiraba la ráfaga
+ * sin avisar. Con eso, en una computadora cuyo lector no manda Enter el ticket
+ * NO se lee nunca, mientras la cámara del teléfono lo lee sin problema — que
+ * es exactamente cómo se reportó (2026-08-24).
  */
 
 // Hueco entre teclas a partir del cual deja de parecer un lector. Es el mismo
@@ -34,7 +49,8 @@ const FIN_DE_RAFAGA_MS = 500;
 // es un carné.
 const MINIMO_DE_TECLAS = 3;
 
-export default function useCapturaDeCarne(activo, alLeer) {
+export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
+    const { aceptarTecleado = false, sinEnter = false } = opciones;
     // Cuántas teclas lleva la ráfaga en curso: es lo que se dibuja como puntos,
     // y por eso es estado y no un ref. El código NUNCA se pinta.
     const [teclas, setTeclas] = useState(0);
@@ -70,7 +86,7 @@ export default function useCapturaDeCarne(activo, alLeer) {
                 bufferRef.current = '';
                 setTeclas(0);
                 clearTimeout(timerRef.current);
-                if (leido.length >= MINIMO_DE_TECLAS && !manualRef.current) {
+                if (leido.length >= MINIMO_DE_TECLAS && (aceptarTecleado || !manualRef.current)) {
                     // Una lectura aceptada borra el aviso de «tecleado»: es la
                     // prueba de que ahora sí entró por el lector. Si la ráfaga
                     // venía marcada como manual el aviso se queda, que es lo
@@ -98,9 +114,18 @@ export default function useCapturaDeCarne(activo, alLeer) {
 
             clearTimeout(timerRef.current);
             timerRef.current = setTimeout(() => {
+                /* La ráfaga murió sin Enter. Con `sinEnter` se entrega igual
+                 * —hay lectores que no mandan sufijo, y tirarla acá es lo que
+                 * hacía que en esa computadora el ticket no se leyera NUNCA—; sin
+                 * él se olvida, para que el próximo escaneo no arranque con la
+                 * mitad del anterior pegada adelante. */
+                const leido = bufferRef.current;
+                const valia = leido.length >= MINIMO_DE_TECLAS
+                    && (aceptarTecleado || !manualRef.current);
                 bufferRef.current = '';
                 manualRef.current = false;
                 setTeclas(0);
+                if (sinEnter && valia) { setManual(false); alLeerRef.current?.(leido); }
             }, FIN_DE_RAFAGA_MS);
         };
         document.addEventListener('keydown', alTeclear, { capture: true });
@@ -108,7 +133,7 @@ export default function useCapturaDeCarne(activo, alLeer) {
             document.removeEventListener('keydown', alTeclear, { capture: true });
             clearTimeout(timerRef.current);
         };
-    }, [activo]);
+    }, [activo, aceptarTecleado, sinEnter]);
 
     return { teclas, manual, limpiar };
 }

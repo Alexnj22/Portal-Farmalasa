@@ -296,11 +296,9 @@
           "hallazgos": []
         },
         "resiliencia": {
-          "pct": 91,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
-          "hallazgos": [
-            "formulario largo sin borrador: src/views/dashboard/WidgetAnnulmentRequest.jsx"
-          ]
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
         },
         "observabilidad": {
           "pct": 96,
@@ -342,12 +340,11 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios",
-        "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetAnnulmentRequest.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -385,12 +382,9 @@
           ]
         },
         "resiliencia": {
-          "pct": 87,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 2 formulario(s) largo(s) sin borrador",
-          "hallazgos": [
-            "formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
-            "formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx"
-          ]
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
         },
         "observabilidad": {
           "pct": 96,
@@ -432,14 +426,12 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
         "[seguridad] dui, afp_number e isss_number siguen en employees_safe: están en SENSITIVE_FIELDS pero ningún módulo los gatea",
-        "[resiliencia] formulario largo sin borrador: src/components/forms/FormNovedad.jsx",
-        "[resiliencia] formulario largo sin borrador: src/components/forms/FormRehireEmployee.jsx",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -1236,11 +1228,10 @@
           "hallazgos": []
         },
         "resiliencia": {
-          "pct": 87,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 2 formulario(s) largo(s) sin borrador",
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
           "hallazgos": [
-            "formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
-            "formulario largo sin borrador: src/views/FacturacionView.jsx"
+            "formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx"
           ]
         },
         "observabilidad": {
@@ -1289,7 +1280,6 @@
       "hallazgos": [
         "[bd] índice nunca usado: idx_customers_erp_id (968 kB)",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormClienteDetail.jsx",
-        "[resiliencia] formulario largo sin borrador: src/views/FacturacionView.jsx",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -1778,11 +1768,10 @@
           ]
         },
         "resiliencia": {
-          "pct": 87,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 2 formulario(s) largo(s) sin borrador",
+          "pct": 91,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 1 formulario(s) largo(s) sin borrador",
           "hallazgos": [
-            "formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
-            "formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx"
+            "formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx"
           ]
         },
         "observabilidad": {
@@ -1823,7 +1812,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1833,7 +1822,6 @@
         "[flujo] las recetas están medidas (5 reales) y sin construir",
         "[seguridad] update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormProveedorDetail.jsx",
-        "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [

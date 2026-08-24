@@ -8,9 +8,7 @@
     "src/components/forms/BranchTabLegal.jsx",
     "src/components/forms/FormClienteDetail.jsx",
     "src/components/forms/FormEditPayrollEntry.jsx",
-    "src/components/forms/FormNovedad.jsx",
     "src/components/forms/FormNursingRegents.jsx",
-    "src/components/forms/FormProveedorDetail.jsx",
-    "src/components/forms/FormRehireEmployee.jsx"
+    "src/components/forms/FormProveedorDetail.jsx"
   ]
 }

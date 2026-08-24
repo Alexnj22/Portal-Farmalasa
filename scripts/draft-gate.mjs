@@ -139,6 +139,23 @@ const EXCEPCIONES = {
     'recuperarlo podría pisar un cambio POSTERIOR hecho desde otra pantalla. ' +
     'Verificado el 2026-08-24.',
 
+  'src/components/forms/FormNovedad.jsx':
+    'Su borrador vive en el PADRE, no acá: este formulario no tiene estado ' +
+    'propio —recibe `formData`/`setFormData` de `UnifiedModal`, que es quien ' +
+    'sabe de qué tipo de modal se trata y qué persona está abierta—. Ahí se ' +
+    'guarda con la clave `novedad_<id de la persona>`, sólo al CREAR una ' +
+    'novedad (nunca editando una ya registrada) y sin el archivo adjunto ni los ' +
+    'campos de `SENSITIVE_FIELDS`, porque una novedad de salario lleva el monto. ' +
+    'Es la misma forma que `PedirTrasladoModal`: el detector cuenta por archivo ' +
+    'y el estado no vive en el archivo que cuenta. Verificado el 2026-08-24.',
+
+  'src/components/forms/FormRehireEmployee.jsx':
+    'Mismo caso que `FormNovedad`: no tiene estado propio. Su borrador vive en ' +
+    '`UnifiedModal` con la clave `recontratacion_<id de la persona>` — la clave ' +
+    'lleva el id porque el modal abre con la ficha de alguien, y una clave única ' +
+    'repoblaría la recontratación de Ana sobre el expediente de Luis. ' +
+    'Verificado el 2026-08-24.',
+
   'src/views/purchases/ProveedoresView.jsx':
     'No es un formulario: es un listado con filtros. Siete de sus ocho controles ' +
     'son `LiquidSelect` de filtro —Categoría, Clase, Vínculo, clasificación ' +

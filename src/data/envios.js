@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { subirEvidencia as subirEvidenciaEn } from './evidencia';
 
 // Enviar producto a otra sala: el traslado al REVÉS.
 //
@@ -27,7 +28,7 @@ import { supabase } from '../supabaseClient';
 export const ERP_BODEGA = 6;
 
 /**
- * Los tres motivos por los que se empuja producto, y nada más.
+ * Los cinco motivos por los que se empuja producto, y nada más.
  *
  * La lista vive TAMBIÉN en la base (`motivos_envio()`), que es la que manda: si
  * se agrega uno acá sin agregarlo allá, el envío rebota — a propósito. Está
@@ -45,7 +46,38 @@ export const MOTIVOS_ENVIO = [
     'Baja rotación',
     'Producto nuevo',
     'Retiro del mercado',
+    'Avería',
 ];
+
+/**
+ * Y cuáles no entran sin foto. Espejo de `motivos_envio_con_foto()`.
+ *
+ * Hoy sólo la avería, y el corte no es arbitrario: los otros cuatro se pueden
+ * comprobar contra un dato —el vencimiento está en el lote, la rotación en las
+ * ventas, el retiro en la orden, lo nuevo en la compra—. El daño no: cuando la
+ * caja llega a Bodega ya viajó, y lo único que queda para decidir si se le
+ * reclama al proveedor, se repara o se da de baja es haber visto cómo salió.
+ *
+ * Es la misma regla que `OPS_CON_FOTO` en el descargue por daño: la foto se
+ * pide donde se puede ver algo. En un descuadre sería un trámite vacío.
+ */
+export const MOTIVOS_ENVIO_CON_FOTO = ['Avería'];
+
+export const envioNecesitaFoto = (motivo) => MOTIVOS_ENVIO_CON_FOTO.includes(motivo);
+
+/** Cuántas fotos admite un envío. Tres alcanzan para mostrar un daño. */
+export const MAX_FOTOS_ENVIO = 3;
+
+/**
+ * Sube la evidencia del envío y devuelve sus URLs.
+ *
+ * Va ANTES de crear el envío: si la subida falla, la fila no se crea. Un envío
+ * por avería sin la foto es exactamente el que Bodega no puede decidir, y la
+ * base lo rebota igual — dejarlo entrar «para no perder lo escrito» sólo
+ * cambiaría el momento del error.
+ */
+export const subirEvidenciaEnvio = (fotos, { salaId, userId }) =>
+    subirEvidenciaEn(fotos, { carpeta: 'envios', salaId, userId });
 
 /**
  * Y cuáles valen entre estos dos extremos. Espejo de
@@ -65,6 +97,7 @@ export const MOTIVOS_ENVIO = [
  * | Próximo a vencer | sí | sí | no |
  * | Producto nuevo | no | sí | no |
  * | Retiro del mercado | sí | no | no |
+ * | Avería | sí | no | no |
  *
  * Un producto que no rota en Salud 1 y sí en Salud 3 no gana nada dando la
  * vuelta por Bodega. Uno próximo a vencer sí, porque ahí la pregunta no es «¿a
@@ -79,6 +112,12 @@ export const MOTIVOS_ENVIO = [
  * que rotularlo «Baja rotación» —lo contrario de lo que pasó, porque no se movió
  * por sobrar sino porque no puede seguir vendiéndose— y el día que alguien
  * preguntara en qué salas quedó ese lote, no habría forma de saberlo.
+ *
+ * La **avería** viaja igual que el retiro y por la misma razón: lo dañado se
+ * junta en un solo lugar para contarlo, reclamarlo o darlo de baja. Sin ella, un
+ * frasco quebrado tenía que salir rotulado «Baja rotación» o «Retiro del
+ * mercado», y ninguno de los dos dice lo que pasó. Es el único motivo que **no
+ * entra sin foto** — ver `MOTIVOS_ENVIO_CON_FOTO`.
  *
  * **Y no queda por dónde colar una solicitud disfrazada**, que es lo que se
  * defiende desde el principio: entre salas el único motivo es «Baja rotación»,
@@ -95,7 +134,7 @@ export const MOTIVOS_ENVIO = [
  * apretar es peor que uno que nunca se ofreció.
  */
 export function motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) {
-    if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación', 'Retiro del mercado'];
+    if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación', 'Retiro del mercado', 'Avería'];
     if (origenEsBodega)  return ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
     return ['Baja rotación'];
 }

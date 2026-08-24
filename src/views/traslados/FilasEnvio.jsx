@@ -4,6 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
     MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio, recibirDevolucion,
 } from '../../data/envios';
@@ -132,6 +133,17 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
                         title={envio.reason}>
                         {envio.reason}
                     </p>
+                )}
+                {/* La foto, cuando la hay. Va en la cabecera —y no dentro del
+                    bloque de decidir— porque el envío le aparece a las dos
+                    salas y las dos la necesitan: quien recibe para decidir, y
+                    quien mandó para saber qué mandó. Hoy sólo la lleva la
+                    avería, que es el único motivo que no se puede comprobar
+                    contra un dato: cuando la caja llega, el daño ya viajó. */}
+                {envio.evidencia_urls?.length > 0 && (
+                    <div className="mt-2">
+                        <EvidenciaFotos urls={envio.evidencia_urls} titulo="Foto del daño" />
+                    </div>
                 )}
             </div>
         </div>

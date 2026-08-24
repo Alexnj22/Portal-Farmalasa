@@ -15,10 +15,18 @@
 // que corre con credenciales que el navegador no tiene y que releen la
 // existencia antes de escribir. Acá sólo se pide, se decide y se pregunta.
 import { supabase } from '../supabaseClient';
+import { subirEvidencia as subirEvidenciaEn } from './evidencia';
 
-/** El bucket de la foto del daño. Privado: se firma para mostrarla. */
-export const BUCKET_EVIDENCIA = 'inventario-evidencia';
-export const MAX_FOTOS = 3;
+/* El bucket y el tope de fotos viven en `data/evidencia.js`: son los mismos
+   para la devolución, el descargue por daño y el envío por avería. Se
+   re-exportan para no mover a quien ya los importa desde acá. */
+export { BUCKET_EVIDENCIA, MAX_FOTOS } from './evidencia';
+
+/** Las fotos de una devolución, en su propia carpeta. El nombre de la carpeta
+ *  se fija ACÁ y no en el llamador: cambiarlo movería de sitio las que ya están
+ *  subidas y las URLs guardadas dejarían de encontrar su archivo. */
+export const subirEvidencia = (fotos, opts = {}) =>
+    subirEvidenciaEn(fotos, { carpeta: 'devoluciones', ...opts });
 
 export const MOTIVOS = [
     { value: 'faltante', label: 'No llegó',  ayuda: 'Vino en la hoja pero no en la caja. No viaja nada: se corrige y ya.' },
@@ -44,33 +52,6 @@ export async function fetchDevolucionesDePedido(pedidoId, sucursalId) {
     const { data, error } = await q.order('solicitada_at', { ascending: true });
     if (error) console.error('devoluciones:', error.message);
     return data ?? [];
-}
-
-/**
- * Sube las fotos del daño y devuelve sus URLs.
- *
- * La evidencia va PRIMERO: si la subida falla, la devolución no se crea. Una
- * devolución por daño sin foto es exactamente la que bodega no puede decidir, y
- * dejarla entrar «para no perder lo escrito» la convierte en una fila que
- * alguien va a tener que rechazar a mano.
- *
- * Se guarda la URL en formato público como identificador aunque el bucket sea
- * privado (regla 10 de CLAUDE.md): la firma expira, así que lo que se persiste
- * no puede ser una URL firmada.
- */
-export async function subirEvidencia(fotos, { salaId, userId }) {
-    const urls = [];
-    const carpeta = `devoluciones/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}`;
-    for (const [i, f] of [...fotos].entries()) {
-        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-        const path = `${carpeta}/${Date.now()}-${i}.${ext}`;
-        const { error } = await supabase.storage
-            .from(BUCKET_EVIDENCIA).upload(path, f, { contentType: f.type });
-        if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
-        const { data } = supabase.storage.from(BUCKET_EVIDENCIA).getPublicUrl(path);
-        if (data?.publicUrl) urls.push(data.publicUrl);
-    }
-    return urls;
 }
 
 /** La sala pide devolver. La cantidad y el permiso los valida la base. */

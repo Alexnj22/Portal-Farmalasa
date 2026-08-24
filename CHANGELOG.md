@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.741.0 — La avería es motivo de envío a Bodega y va con foto
+
+Pedido: *«en los traslados a bodega, que tambien este el motivo de averia, y que
+se anexe foto.»*
+
+Una sala con un frasco quebrado o una caja golpeada no tenía cómo decirlo. Los
+motivos eran cuatro y ninguno era cierto: rotularlo «Baja rotación» dice que
+sobra, y «Retiro del mercado» dice que lo pidió el proveedor. El producto se
+movió porque **está dañado**, y el rótulo es el dato con el que después se mira
+el circuito — una avería escondida adentro de otro motivo no se puede encontrar
+el día que alguien pregunte cuánto se rompió este mes.
+
+Ahora son cinco. **La avería sólo viaja hacia Bodega**, igual que el retiro y por
+la misma razón: lo dañado se junta en un solo lugar para contarlo, reclamarlo al
+proveedor o darlo de baja. Repartirlo entre salas sería repartir el problema, y
+de Bodega hacia una sala sería mandar a la venta algo que no puede venderse.
+
+**Y no entra sin foto.** Es el único de los cinco que no se puede comprobar
+contra un dato: el vencimiento está en el lote, la rotación en las ventas, el
+retiro en la orden — el daño viaja con la caja, y cuando llega ya no se puede
+volver a mirar. La foto es lo único que le queda a quien recibe para decidir si
+se le reclama al proveedor, se repara o se da de baja. Se pide en la pantalla y
+la exige la base, porque lo que arma el envío es el navegador: sin el freno de
+adentro, un envío por avería sin evidencia entraría igual.
+
+La foto se ve en la tarjeta del envío, y se ve en los dos lados: quien recibe
+para decidir, quien mandó para saber qué mandó. No es un detalle menor — el
+descargue por daño obliga a tomar la foto desde el 7 de agosto y **ninguna
+pantalla la mostró nunca**, así que quien aprobaba el descarte no podía ver el
+daño. Se corrigió de paso.
+
+**Un permiso que habría hecho fallar la foto justo para quien la toma.** El
+depósito de evidencia sólo lo podía escribir quien mueve inventario, y quien
+manda producto a otra sala tiene otro permiso. Medido antes de escribir nada: de
+los 11 cargos que pueden enviar producto, **seis no podían subir la foto — 42 de
+las 47 personas activas**, y son las de sala. El error habría aparecido con la
+caja ya armada, diciendo «no se pudo subir la foto» y sin ninguna pista de que lo
+que faltaba era un permiso.
+
+Verificado contra producción con siete casos insertados y revertidos en la misma
+transacción: sin foto rebota, con una foto que no es del depósito rebota, con la
+foto entra, entre salas y desde Bodega rebotan por dirección, y los otros cuatro
+motivos siguen entrando sin evidencia.
+
 ## v2.740.0 — Los depósitos al banco se pueden mirar
 
 El depósito quedaba guardado entero desde v2.739.0 —folio, fecha, lo contado, lo

@@ -478,6 +478,10 @@ export const AREAS = [
             'src/views/VentasPperdidasView.jsx',
             'src/components/inventario/',
             'src/data/inventory.js', 'src/data/inventarioTab.js', 'src/data/inventoryMovements.js',
+            // La subida de la evidencia fotográfica: la usan el descargue por daño,
+            // la devolución de un pedido y el envío por avería. Va acá porque el
+            // depósito es `inventario-evidencia` y de acá salieron sus reglas.
+            'src/data/evidencia.js',
             'src/data/conteoInventario.js', 'src/data/ventasPerdidas.js',
             'src/store/slices/conteoInventarioSlice.js',
             'src/utils/conteoInventarioPrint.js',

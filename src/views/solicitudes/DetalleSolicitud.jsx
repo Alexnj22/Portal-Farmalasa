@@ -2,10 +2,13 @@ import React, { useState, useEffect, memo } from 'react';
 import {
     ArrowLeftRight, Stethoscope, FileImage, AlertTriangle, CalendarDays,
     Banknote, FileCheck2, Ban, CreditCard, Receipt, CheckCircle2,
-    PackagePlus, Trash2, ImageOff, Minus, Plus, BarChart2, Clock,
+    PackagePlus, Trash2, Minus, Plus, BarChart2, Clock,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
+// Las fotos guardadas viven en `components/common/EvidenciaFotos`: el envío por
+// avería necesita las mismas, y una segunda copia se habría separado de ésta.
+import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import {
@@ -115,51 +118,6 @@ const Caja = ({ children, tono = 'card', className = '' }) => {
         : 'bg-surface-card-hover border-divider';
     return <div className={`px-3 py-2.5 rounded-2xl border ${fondo} ${className}`}>{children}</div>;
 };
-
-/* ─── Las fotos de evidencia ──────────────────────────────────────────────── */
-//
-// El widget de movimiento OBLIGA a tomarlas cuando el producto está dañado, las
-// sube a `inventario-evidencia` y guarda su URL. Nunca se mostraron en ninguna
-// pantalla: quien aprobaba un descarte por daño no podía ver el daño.
-//
-// El bucket es PRIVADO, así que la URL guardada —que es la de formato público,
-// como manda la regla— no sirve para mostrar nada por sí sola: hay que firmarla.
-// `inventario-evidencia` faltaba en `PRIVATE_BUCKETS`, o sea que aunque alguien
-// hubiera escrito este bloque antes, las fotos habrían salido rotas.
-const EvidenciaFotos = memo(({ urls }) => {
-    const [firmadas, setFirmadas] = useState(null);
-
-    useEffect(() => {
-        let vivo = true;
-        Promise.all((urls ?? []).map(u => getSignedFileUrl(u).catch(() => null)))
-            .then(r => { if (vivo) setFirmadas(r); });
-        return () => { vivo = false; };
-    }, [urls]);
-
-    if (!urls?.length) return null;
-
-    return (
-        <div>
-            <Rotulo>Evidencia</Rotulo>
-            <div className="flex flex-wrap gap-2">
-                {(firmadas ?? urls.map(() => null)).map((src, i) => src ? (
-                    <a key={i} href={src} target="_blank" rel="noreferrer"
-                        className="w-16 h-16 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover
-                                   transition-transform duration-[var(--dur-fast)] hover:scale-105">
-                        <img src={src} alt={`Evidencia ${i + 1}`} className="w-full h-full object-cover" />
-                    </a>
-                ) : (
-                    <div key={i} className="w-16 h-16 rounded-xl border border-divider bg-surface-card-hover
-                                            flex items-center justify-center">
-                        {firmadas ? <ImageOff size={16} className="text-content-3" strokeWidth={2} />
-                                  : <div className="w-full h-full skeleton rounded-xl" />}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-EvidenciaFotos.displayName = 'EvidenciaFotos';
 
 /* ─── Las líneas de un movimiento ─────────────────────────────────────────── */
 /**
@@ -857,5 +815,3 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
         </div>
     );
 }
-
-export { EvidenciaFotos };

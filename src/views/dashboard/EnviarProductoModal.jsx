@@ -8,11 +8,12 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState } from '../../components/common/StateViews';
+import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { buscarInventarioGlobalV2 } from '../../data/inventory';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearEnvio, despacharEnvio, ERP_BODEGA, MOTIVOS_ENVIO, motivosEnvioPorDireccion, TOPE_RENGLONES_ENVIO } from '../../data/envios';
+import { crearEnvio, despacharEnvio, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '../../data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
@@ -94,8 +95,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
     const [destino, setDestino] = useState('');
     const [motivo, setMotivo] = useState('');
     const [nota, setNota] = useState('');
+    const [fotos, setFotos] = useState([]);   // File[] sin subir todavía
 
     const [enviando, setEnviando] = useState(false);
+    const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState('');
     const [resultado, setResultado] = useState(null);
 
@@ -389,6 +392,23 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         if (motivo && !motivosPosibles.includes(motivo)) setMotivo('');
     }, [motivosPosibles, motivo]);
 
+    /* ── La foto, y sólo donde hay algo que ver ────────────────────────────
+     *
+     * Espejo de `motivos_envio_con_foto()`: hoy la pide sólo la avería. Los
+     * otros cuatro motivos se pueden comprobar contra un dato —el vencimiento
+     * está en el lote, la rotación en las ventas—; el daño no, y cuando la caja
+     * llega a Bodega ya viajó.
+     *
+     * Al cambiar a un motivo que no la pide, la foto se DESCARTA. Guardarla
+     * «por si acaso» la convertiría en evidencia de algo que nadie fotografió:
+     * un envío por baja rotación llegaría con la foto de un frasco roto y sin
+     * nada que la explique. */
+    const pideFoto = envioNecesitaFoto(motivo);
+
+    useEffect(() => {
+        if (!pideFoto && fotos.length) setFotos([]);
+    }, [pideFoto, fotos.length]);
+
     /* Los renglones que quedaron apuntando a la sala a la que va el envío.
      * Puede pasar al revés del freno de arriba: se agrega el renglón y DESPUÉS
      * se elige ese mismo destino. */
@@ -413,6 +433,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
         : !motivo ? 'Elige el motivo.'
+        // La foto es lo único que le queda a Bodega para decidir si se le
+        // reclama al proveedor: el daño viaja con la caja y no se puede volver
+        // a mirar. La base la exige igual, así que pedirla acá sólo adelanta el
+        // aviso a antes de apretar.
+        : pideFoto && fotos.length === 0 ? 'Falta la foto del daño.'
         // Cuatro letras es el mismo piso que cobra la base: menos que eso no
         // explica nada, y que se rebote recién al apretar sería peor.
         : nota.trim().length < 4 ? 'Escribe por qué se lo mandas.'
@@ -428,6 +453,19 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         setError('');
         try {
             const erpDestino = Number(destino);
+
+            /* ── La evidencia va PRIMERO ───────────────────────────────────
+             * Si la subida falla, el envío no se crea y el producto no se
+             * mueve. Un envío por avería sin la foto es exactamente el que
+             * Bodega no puede decidir —y la base lo rebota igual—, así que
+             * dejarlo entrar «para no perder lo escrito» sólo cambiaría el
+             * momento del error, con el producto ya fuera de la sala. */
+            let evidencia = [];
+            if (pideFoto && fotos.length) {
+                setSubiendo(true);
+                evidencia = await subirEvidenciaEnvio(fotos, { salaId: miBranch, userId: user?.id });
+                setSubiendo(false);
+            }
 
             /* ── Una composición, un envío POR SALA DE ORIGEN ──────────────
              *
@@ -454,6 +492,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                 metadata: {
                     motivo_tipo: motivo,
                     reason: nota.trim() || motivo,
+                    /* Las mismas fotos en cada envío de la composición: el daño
+                       es del producto, y cada envío es una parte de la misma
+                       caja. Sin evidencia no se manda la clave — la base sólo
+                       la exige donde el motivo la pide. */
+                    ...(evidencia.length ? { evidencia_urls: evidencia } : {}),
                     // La sala que ENVÍA: la del renglón, no la de quien arma.
                     origen_erp_sucursal_id: erpOrigen,
                     origen_branch_name: grupo[0].origen_nombre
@@ -507,11 +550,13 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                 productos: renglones.length,
                 unidades: renglones.reduce((s, x) => s + x.unidades, 0),
                 motivo,
+                fotos: evidencia.length,
                 enviadas,
                 fallos: fallos.length,
             });
 
             clearDraft(claveBorrador);
+            setFotos([]);
             setResultado({
                 sala: NOMBRE_SALA[erpDestino] ?? '',
                 desde: [...porOrigen.keys()].map(erp => NOMBRE_SALA[erp] ?? `Sucursal ${erp}`),
@@ -529,6 +574,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                     ? 'No tienes permiso para enviar producto a otra sala.'
                     : (e?.message ?? 'No se pudo enviar.'),
             );
+            // También si lo que falló fue la subida: el rótulo del botón no
+            // puede quedarse en «Subiendo la foto…» sobre un envío que ya se
+            // detuvo.
+            setSubiendo(false);
             setEnviando(false);
         }
     };
@@ -927,6 +976,44 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 </p>
                             )}
                             </div>
+
+                            {/* ── La foto del daño ──────────────────────────
+                                Sólo con «Avería»: es el único motivo que no se
+                                puede comprobar contra un dato. El vencimiento
+                                está en el lote y la rotación en las ventas,
+                                pero el daño viaja con la caja y cuando llega ya
+                                no se puede volver a mirar — la foto es lo único
+                                que le queda a Bodega para decidir si se le
+                                reclama al proveedor, se repara o se da de baja.
+
+                                Va acá y no al final porque se toma mientras se
+                                tiene el producto en la mano, antes de sentarse a
+                                escribir el porqué. */}
+                            {pideFoto && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5 px-1">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3">
+                                            Foto del daño
+                                        </p>
+                                        <span className="text-micro font-semibold text-content-3">
+                                            {fotos.length} de {MAX_FOTOS_ENVIO}
+                                        </span>
+                                    </div>
+                                    <FotosDeEvidencia
+                                        fotos={fotos} onCambio={setFotos}
+                                        max={MAX_FOTOS_ENVIO} maxMB={10}
+                                        resaltar
+                                        onError={setError}
+                                        alt="Foto del daño" />
+                                    {fotos.length === 0 && (
+                                        <p className="text-micro text-warning-text font-medium leading-snug px-1 mt-1">
+                                            Falta la foto: es lo único que quien recibe puede mirar para
+                                            saber cómo salió el producto.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* ── El motivo escrito, SIEMPRE ────────────────
                                 Pedido del usuario: era «Detalle (opcional)» y
                                 sólo se exigía con «Otro».
@@ -952,6 +1039,8 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                     ? 'Ej.: no se ha vendido en dos meses y ocupa el estante'
                                     : motivo === 'Retiro del mercado'
                                     ? 'Ej.: lo pidió Bodega, el proveedor retira el lote 4471'
+                                    : motivo === 'Avería'
+                                    ? 'Ej.: se cayó la caja al bajarla y se quebraron dos frascos'
                                     : 'Explica por qué mandas este producto'}
                             />
                         </div>
@@ -997,7 +1086,11 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 onClick={transferir}
                                 disabled={!listoParaMandar || enviando}
                                 className="min-h-[var(--tap-min)]">
-                                {enviando ? 'Transfiriendo…' : 'Transferir'}
+                                {/* La subida de la foto es el tramo largo y va
+                                    primero: si el botón dijera «Transfiriendo…»
+                                    todo el rato, los segundos de la subida se
+                                    leerían como que el producto ya salió. */}
+                                {subiendo ? 'Subiendo la foto…' : enviando ? 'Transfiriendo…' : 'Transferir'}
                             </Button>
                         )}
                     </div>

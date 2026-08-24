@@ -21,6 +21,94 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.732.0 — El recorrido: quien carga las bolsas responde por ellas
+
+El circuito tenía DOS estados —despachada y recibida— y entre los dos la bolsa
+no tenía dueño. Este es el tercero: **entre que sale y llega hay una persona con
+nombre.**
+
+**Nadie elige en qué sala está.** Cada ticket sabe de dónde sale, así que el
+último escaneo lo dice. Y con eso el portal contesta las dos preguntas que
+importan al llegar a una sucursal: **qué dejar** (lo que ya lleva encima con
+destino a esa sala) y **qué recoger** (lo que ahí quedó esperando salir). La
+segunda es la que evita el olvido, y llega cuando todavía se puede hacer algo.
+
+**La entrega la firma alguien de la sala** — salvo cuando quien retira es de esa
+sala o la cubre, porque ahí sería su propia firma. **La pantalla no adivina
+cuándo hace falta**: intenta cargar, y si el servidor contesta `FALTA_ENTREGA`,
+pide el carné. Así la regla vive en un solo lugar, y es la misma vara que usa la
+policy de despacho (`salas_que_cubre_ahora`).
+
+**La custodia se cierra sola al recibir, por trigger.** La recepción entra por
+más de un camino —el botón «Ya llegó», el escaneo, y mañana lo que sea— y el que
+se olvide de cerrarla dejaría una bolsa entregada figurando encima de alguien.
+
+**Un recorrido no se puede cerrar con bultos encima** («si lo sobró se debe
+entregar»), y por eso el aviso de los tres días no es un adorno: es lo único que
+impide que uno quede abierto para siempre. La cuenta de días ya viene calculada.
+
+Tres cosas que se decidieron por medición y no por gusto:
+
+- **Las lecturas son DEFINER.** El RLS de `approval_requests` deja ver un
+  traslado sólo si su origen o su destino es TU sala, y quien hace el recorrido
+  carga bolsas entre salas ajenas: con INVOKER el manifiesto le salía **vacío
+  justo para lo que lleva encima**. Lo que las hace seguras no es el permiso sino
+  el filtro — `retirador_id = auth_employee_id()`, sin parámetro que lo cambie.
+- **Dos funciones quedaron alcanzables por `authenticated` sin que nadie lo
+  decidiera** y las levantó el advisor. `retiro_bultos_viejos` lista quién lleva
+  qué en todas las salas: se revocó. Advisor en **0 errores**.
+- **Un `try/finally` sin `catch` en la firma del carné** lo cazó `gate:design`:
+  un lector que rebota dejaba la pantalla igual que antes de pasar el carné, y
+  quien está parado ahí lo vuelve a pasar creyendo que no leyó.
+
+## v2.731.6 — El eje de pruebas mide la lógica, no los componentes
+
+**El denominador estaba mal elegido.** Contaba TODOS los archivos del área,
+`.jsx` incluidos, así que el camino al 95 pasaba por escribir una prueba de
+render por cada componente: exigía cubrir ~300 archivos, la mayoría
+presentacionales, y la forma barata de subirlo era montar el componente sin
+afirmar nada. Eso no mide si un área está probada.
+
+El `.js` frente al `.jsx` es la convención que este repo **ya sigue**: la lógica
+que importa se saca del componente a un módulo propio, y por eso existen
+`data/attendanceAudit.js`, `utils/semana.js` y `views/asistencia/quincena.js` —
+los tres nacieron de un archivo que decía «acá no se podían probar». Medir los
+`.js` premia exactamente esa extracción, y son 213 en lugar de 800.
+
+**Y es más estricto en un punto**: una prueba sobre un `.jsx` deja de sumar.
+Sucursales, que sólo tenía cubierto un componente, bajó de 58 a 40 — que es la
+lectura honesta de un área cuyos dos módulos de lógica no los mira nadie.
+
+**64 pruebas nuevas** en cinco archivos, todas sobre módulos que no tenían
+ninguna:
+
+· **Los campos del ticket** (21). El rollo es ASCII —«NUÑEZ» salió `NUÆEZ` la
+primera vez que se imprimió de verdad—, el recorte lo hace el portal y no la
+impresora (que parte a mitad de palabra donde se le acaba el papel), una fecha
+`YYYY-MM-DD` no la corre el huso, y el sello corto entra en media columna
+mientras el largo no.
+
+· **Las capas que paginan y las que deciden** (16). El tope de 1000 y el «quien
+decide es la base» sobre Min·Máx, Cortes, Envíos, Metas y el interruptor del
+traslado — incluido que aprobar y rechazar sean funciones DISTINTAS y no la
+misma con una bandera, y que el interruptor sean dos: pausar envío y recepción a
+la vez deja varado lo que ya salió de bodega y todavía no llegó.
+
+· **Pestañas y salas del tablero** (17). `kpi` está en dos pestañas y por eso no
+pertenece a ninguna; las baldosas por sucursal siguen al widget del que dependen
+en vez de tener su propia lista; Bodega siempre primero; y ninguna sala se llama
+igual en las dos numeraciones.
+
+· **Permisos y el candado** (10). Un candado vencido no es un candado, y eso lo
+decide un `.gt('expires_at')` en la consulta.
+
+· **Familias y módulos de solicitud** (14). Que el traslado NO figure en
+`MODULO_QUE_DECIDE` es la regla, no un olvido; que ningún rótulo diga «traslado»
+a quien lo pide; y que no haya dos familias del mismo color en el mismo menú.
+
+Promedio del portal: 92 → **93%**. Permisos, Metas, Min·Máx y Tablero llegan a 95
+en pruebas.
+
 ## v2.731.5 — El canal de avisos volvió: el navegador entra por una puerta angosta
 
 Aprobar un ajuste de Min/Max avisó «no se pudo enviar el aviso». La aprobación

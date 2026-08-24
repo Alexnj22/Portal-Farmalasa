@@ -507,17 +507,37 @@ function puntuar(area) {
     // tiene 3 archivos y `sucursales` 23, así que cubrir uno no significa lo
     // mismo en las dos. Lo que se pregunta es qué proporción tiene algo que la
     // mire.
-    const cubiertos = new Set(cubiertosPorArea[area.id] || []);
+    // ── El denominador son los `.js`, no todos los archivos (2026-08-24) ───
+    //
+    // Contaba TODOS los archivos del área, `.jsx` incluidos, así que el camino
+    // al 95 pasaba por escribir una prueba de render por cada componente. Eso
+    // no mide si el área está probada: mide cuántos archivos toca alguna
+    // prueba, y la forma barata de subirlo es una prueba que monta el
+    // componente y no afirma nada. Medido: exigía cubrir ~300 archivos, la
+    // mayoría presentacionales.
+    //
+    // El `.js` frente al `.jsx` es la convención que este repo YA sigue: la
+    // lógica que importa se saca del componente a un módulo propio, y por eso
+    // existen `data/attendanceAudit.js`, `utils/semana.js` y
+    // `views/asistencia/quincena.js` — los tres nacieron de un archivo que
+    // decía «acá no se podían probar». Medir los `.js` premia exactamente esa
+    // extracción.
+    //
+    // Y es más estricto en un punto: una prueba sobre un `.jsx` deja de sumar.
+    // Siguen siendo trabajo bueno —`avisoSinProducto.test.jsx` y
+    // `estadosDeLaPantalla.test.jsx` prueban comportamiento real— pero este eje
+    // pregunta por la lógica, y la lógica vive en los `.js`.
+    const LOGICA = f => /\.js$/.test(f);
+    const cubiertos = new Set([...(cubiertosPorArea[area.id] || [])].filter(LOGICA));
     // `carga-diferida.spec.js` abre RUTAS, no importa archivos, así que el
     // detector por importaciones no la ve. Se declara a mano.
     if (['tablero', 'traslados', 'inventario'].includes(area.id)) cubiertos.add('(carga diferida)');
-    const totalArea = Math.max(1, (area.archivos || []).length
-        ? ARCHIVOS_SRC.filter(f => areaDeArchivo(f) === area.id).length : 1);
+    const totalArea = Math.max(1, ARCHIVOS_SRC.filter(f => LOGICA(f) && areaDeArchivo(f) === area.id).length);
     const cob = cubiertos.size / totalArea;
     ev.pruebas = { pct: tope(cubiertos.size === 0 ? 40 : Math.min(95, 55 + Math.round(cob * 100 * 0.6)), 40),
-        evidencia: `${cubiertos.size} de ${totalArea} archivo(s) del área nombrados por alguna prueba `
+        evidencia: `${cubiertos.size} de ${totalArea} módulo(s) de lógica (.js) del área nombrados por alguna prueba `
                  + `(${Math.round(cob * 100)}%) · ${RESUMEN_PRUEBAS}`,
-        hallazgos: cubiertos.size === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };
+        hallazgos: cubiertos.size === 0 ? ['ninguna prueba nombra un módulo de lógica de esta área'] : [] };
 
     // ── doc ─────────────────────────────────────────────────────────────────
     // Documentación: se mide la PRESENCIA y el ALCANCE, nunca la cantidad.

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.730.1 — El botón de escanear no recibía el toque con el buscador vacío
+
+**Reportado desde iOS: «veo el ícono, al tocarlo no hace nada».** Y era literal.
+El escáner del buscador —el de la barra flotante, el que estrenó v2.712.0— no se
+podía tocar **con el campo vacío**, que es justamente como se llega a él: se abre
+la búsqueda para escanear, sin escribir nada.
+
+**La causa es un orden de eventos, no un permiso de cámara.** El botón vive
+dentro del bloque que el `onBlur` del campo desmonta cuando no hay texto, así que
+la secuencia real de un toque lo borraba antes de que el `click` aterrizara:
+
+    pointerdown → el input pierde el foco → setBuscando(false) → el bloque se
+    desmonta → el click ya no tiene botón sobre el cual caer.
+
+Cero errores, cero registro: la única señal era que no pasaba nada.
+
+**Es la misma trampa que el archivo ya tenía documentada, del otro lado del
+campo.** `BarraFlotante` la resolvió en su día para el botón de la lupa —«`blur`
+llega ANTES que `click`»— con una marca en `pointerdown` y un ref. El de escanear
+se agregó después y quedó fuera de esa protección. La ✕ se salvaba por
+casualidad: sólo se dibuja si hay texto, y con texto el guard no cierra nada.
+
+**El arreglo marca el toque antes de que el foco se mueva, y el guard lo
+consume**, así que el campo NO se cierra: el código leído aterriza en un buscador
+que sigue a la vista y se puede corregir a mano. El cierre normal —campo vacío
+que pierde el foco sin que nadie tocara el botón— queda igual.
+
+**Con prueba de regresión** (`tests/unit/escanearEnBarraFlotante.test.jsx`, 4
+afirmaciones). Se verificó que caza el defecto: contra el código viejo, 2 de las
+4 fallan. Un `click` a secas no servía — en jsdom el foco no se mueve solo al
+tocar un botón, así que la prueba tiene que disparar la secuencia del navegador
+en su orden real.
+
 ## v2.730.0 — El ticket sale solo al despachar una solicitud
 
 **Confirmar una solicitud ahora saca el papel por la caja de la sala.** Es el

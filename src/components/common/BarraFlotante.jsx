@@ -321,6 +321,24 @@ const BarraFlotante = memo(({
     const abiertoRef = useRef(false);
     const tocadoAbierto = useRef(false);
     const marcarBuscar = useCallback(() => { tocadoAbierto.current = abiertoRef.current; }, []);
+
+    // ── El mismo `blur` antes que `click`, del otro lado del campo ──────────
+    // (2026-08-24) El botón de escanear vive DENTRO del bloque que `onBlur`
+    // desmonta cuando el campo está vacío — que es justo cuando se escanea, sin
+    // haber escrito nada. Al tocarlo: el input pierde el foco, `setBuscando(false)`
+    // desmonta el bloque entero, y el `click` se queda sin botón sobre el cual
+    // caer. Desde iOS se veía como que el ícono no hace absolutamente nada.
+    // La ✕ se salvaba por casualidad: sólo se dibuja con texto, y con texto el
+    // guard de abajo no cierra.
+    // Se marca en `pointerdown` —que corre antes de que el foco se mueva— y el
+    // guard consume la marca: el campo NO se cierra, así el código leído aterriza
+    // en un campo que sigue a la vista y se puede corregir a mano.
+    const tocandoEscanear = useRef(false);
+    const marcarEscanear = useCallback(() => { tocandoEscanear.current = true; }, []);
+    const alPerderFoco = useCallback(() => {
+        if (tocandoEscanear.current) { tocandoEscanear.current = false; return; }
+        if (!buscador?.value) setBuscando(false);
+    }, [buscador]);
     const alternarBusqueda = useCallback(() => {
         if (tocadoAbierto.current) { setBuscando(false); return; }
         setBuscando(true);
@@ -389,8 +407,10 @@ const BarraFlotante = memo(({
                     buscador={buscador}
                     inputRef={inputRef}
                     setBuscando={setBuscando}
+                    alPerderFoco={alPerderFoco}
                     alternarBusqueda={alternarBusqueda}
                     marcarBuscar={marcarBuscar}
+                    marcarEscanear={marcarEscanear}
                     limpiarTodo={hayQueLimpiar ? limpiarTodo : null}
                     acciones={acciones}
                     principal={principal}
@@ -409,7 +429,8 @@ const BarraFlotante = memo(({
 /** El árbol que va al `body`. Separado solo para que el guard de arriba se lea. */
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
-    alternarBusqueda, marcarBuscar, limpiarTodo, acciones, principal, rotulos,
+    alPerderFoco, alternarBusqueda, marcarBuscar, marcarEscanear,
+    limpiarTodo, acciones, principal, rotulos,
     setAbierta, panelAbierto, panelVisible, clusterRef,
 }) => {
     return (
@@ -563,7 +584,11 @@ const BarraPortal = ({
                             // texto para quedarse abierto, la única forma de
                             // cerrarlo sería borrar el término. Vacío no hay nada
                             // que perder, así que ahí sí se recoge solo.
-                            onBlur={() => { if (!buscador.value) setBuscando(false); }}
+                            // El guard vive en el padre (`alPerderFoco`): además
+                            // del campo vacío tiene que mirar si el toque fue al
+                            // botón de escanear, que se desmontaría con este
+                            // mismo cierre antes de recibir su `click`.
+                            onBlur={alPerderFoco}
                             placeholder={buscador.placeholder || 'Buscar...'}
                             aria-label={buscador.placeholder || 'Buscar'}
                             // 16px como mínimo: por debajo, iOS hace zoom al enfocar
@@ -579,6 +604,7 @@ const BarraPortal = ({
                             borde, con o sin cámara. */}
                         {buscador.alEscanear && (
                             <button type="button" aria-label="Escanear un código de barras"
+                                onPointerDown={marcarEscanear}
                                 onClick={() => buscador.alEscanear()}
                                 className="w-10 h-10 min-w-[var(--tap-min)] min-h-[var(--tap-min)] shrink-0 rounded-full
                                     flex items-center justify-center text-brand-text

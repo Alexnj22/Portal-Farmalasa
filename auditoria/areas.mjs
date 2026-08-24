@@ -413,6 +413,7 @@ export const AREAS = [
             'src/views/FacturacionView.jsx', 'src/views/ClientesView.jsx', 'src/views/clientes/',
             'src/views/CotizacionesView.jsx',
             'src/data/facturacion.js', 'src/data/customers.js', 'src/data/cotizaciones.js',
+            'src/data/datosPedidos.js', 'src/views/dashboard/WidgetDatoPedido.jsx',
             'src/data/elSalvadorGeo.js',
             'src/utils/clienteValidacion.js', 'src/utils/duiUtils.js', 'src/utils/nitUtils.js',
             'src/utils/dteIva.js', 'src/utils/dtePdfCodigo.js', 'src/utils/dteTypes.js',
@@ -422,10 +423,14 @@ export const AREAS = [
         ],
         tablas: ['customers', 'customers_changelog', 'customer_activity', 'clientes_por_revisar',
                  'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido',
+                 'dte_datos_pedidos',
                  'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos'],
         edge: ['regularizar-dte', 'sincronizar-fichas-clientes', 'push-cliente-erp',
                'aplicar-solicitud-facturacion', 'sync-sales-dte', 'sync-numero-control',
-               'backfill-dte-related-docs', 'leer-dte-json'],
+               'backfill-dte-related-docs', 'leer-dte-json',
+               // La dispara una sala desde Inicio, pero el EFECTO es fiscal:
+               // escribe el correo en la ficha de origen y retransmite el DTE.
+               'responder-dato-pedido'],
         crons: ['regularizar-dte-2230-sv', 'sincronizar-fichas-clientes-2130-sv', 'drain-cliente-erp-queue',
                 'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily',
                 'refresh-customer-activity-daily'],

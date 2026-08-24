@@ -21,6 +21,97 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.727.0 — La sala contesta el correo desde Inicio y el portal cierra el documento
+
+La versión anterior sólo AVISABA y mandaba a la pantalla de Clientes. Tenía dos
+defectos: **las salas no pueden editar clientes** —ningún cargo de sala tiene
+`clientes.can_edit`— así que el aviso les pedía algo que el portal no les deja
+hacer, y no quedaba rastro de si alguien contestó. Un pedido sin campo de
+respuesta no es un pedido: es una notificación con forma de tarea.
+
+Ahora es un pedido de verdad. Baldosa **«Datos que faltan»** en Inicio, con el
+documento, el cliente, lo que dice hoy la ficha, y un campo para escribir el
+correo correcto. La sala confirma y el portal hace el resto:
+
+1. Comprueba que quien contesta es de esa sala (o lleva Facturación).
+2. Le limpia los espacios al valor antes de juzgarlo — rechazarle un correo bien
+   tecleado por un espacio sería repetir el defecto original del otro lado.
+3. Lo escribe en la ficha **del sistema donde se emite el documento**, que es la
+   que viaja a Hacienda. Escribirlo en el portal sería cosmético.
+4. **Relee la ficha y compara.** El sistema de origen contesta 200 con un cuerpo
+   de error: «no falló» no significa «cambió».
+5. Recién entonces cierra el pedido, con quién y cuándo en la bitácora.
+6. Y **reintenta el documento en el momento**, para que quien contestó sepa si
+   sirvió — sin esto habría que esperar al barrido de las 22:30.
+
+El resultado se dice tal cual: «ya quedó completa» si entró, y si volvió a
+rebotar, por qué. Decir «listo» en los dos casos sería mentirle a quien acaba de
+contestar.
+
+**La sala nunca necesita permiso sobre clientes.** No edita una ficha: contesta
+una pregunta sobre SU venta. Dárselo para esto habría abierto la edición de las
+28,000 fichas para resolver un campo de una.
+
+Un solo pedido vivo por cliente —la corrida vuelve a detectar el caso cada noche
+hasta que se resuelva—, y `dte_datos_pedidos` no tiene policy de escritura: se
+crea desde el circuito y se cierra desde la función que escribe en origen. Si se
+pudiera contestar tocando la tabla, el correo quedaría «respondido» en el portal
+y sin escribir donde importa.
+
+### Tres cosas que la prueba cazó antes de que las viera nadie
+
+- `requireActiveEmployeeUser` **no devuelve `branch_id`**. Comparar `emp.branch_id`
+  daba `NaN === n` —siempre falso— y habría dejado a TODAS las salas fuera de su
+  propio pedido, con un 403 que parece un problema de permisos. La sucursal se
+  lee de la base.
+- `EmptyState` no acepta `message`, así que el texto del vacío no se pintaba.
+  Lo cazó `gate:design` (`prop-inexistente`), junto con un «Nada pendiente» que
+  no sigue §26.1 y un «Intentá» que es voseo.
+- Y el aviso de la base decía **«Escribí»**. `gate:design` vigila el trato en el
+  fuente del frontend, pero **no lee SQL**: todo copy que viva dentro de una
+  función de Postgres queda fuera de su alcance y hay que revisarlo a mano.
+
+Probado en producción contra `0000065095_COF` de Salud 2, con todo deshecho: el
+pedido se crea, avisa a las 6 personas de la sala, la sala lo VE con el campo, y
+una sala distinta ve la lista vacía.
+
+## v2.726.1 — El entorno de pruebas llevaba 130 migraciones de atraso, y nadie lo miraba
+
+Separar las tres causas del barrido rindió enseguida: entre las doce rutas «sin
+resolver», `/inventario` no estaba vacía — decía **«Error al cargar
+inventario»**. Ninguna versión anterior del detector podía verlo, porque todas
+las juntaban bajo «sin datos».
+
+El error era del entorno, y al tirar del hilo apareció algo más grande:
+
+| | pruebas | producción | atraso |
+|---|---:|---:|---:|
+| migraciones | 413 | **543** | **130** |
+| tablas | 172 | 181 | 9 |
+| funciones | 497 | 554 | 57 |
+
+**El barrido móvil de las 54 rutas venía midiendo un portal de hace un mes.** Y
+el modo de falla no era un error claro, era en pedazos: una vista materializada
+que el branch nunca pobló, y una columna (`user_dashboard_prefs.mobile_theme`)
+que existe en producción y todavía no ahí. Las dos se leían como defectos del
+portal y ninguna lo era.
+
+CLAUDE.md decía que el esquema del branch era «idéntico al de prod, **verificado
+por huella md5**». Era cierto en julio, el día que se verificó. Es la misma
+lección que esta auditoría ya había escrito para las funciones abiertas sin
+credenciales: **una afirmación que nadie vuelve a verificar deja de ser cierta
+sin avisar**, y las dos veces el que se la creyó fue un instrumento.
+
+Queda corregida con la tabla medida, y queda el procedimiento para volver a
+comprobarlo. Ponerlo al día exige **rehacer el branch**, que borra los datos
+sembrados y la corrida de fechas — esa decisión no se automatiza.
+
+**Y las doce «sin resolver» se abrieron una por una: cero defectos del portal.**
+Cuatro escriben su vacío a mano en vez de usar los componentes canónicos, una es
+una redirección sin contenido propio, y el resto tienen datos que quedan bajo el
+corte. Haber llamado «mudas» a las doce habría puesto doce defectos en el
+informe.
+
 ## v2.726.0 — La pantalla dice si está vacía o cargando, en vez de dejar que se adivine
 
 `EmptyState` estampa **`data-vacio`** y `LoadingState` estampa

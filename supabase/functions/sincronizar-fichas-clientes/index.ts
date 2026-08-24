@@ -404,22 +404,27 @@ Deno.serve(async (req) => {
             // exige, así que dejarlo vacío cambia un rechazo por otro. El dato
             // hay que averiguarlo, y quien puede es la sala que hizo la venta.
             //
-            // Y se AVISA. `pedir_correo_a_la_sala` resuelve la sucursal desde
-            // la factura que Hacienda rechazó —no desde una «sucursal del
-            // cliente», que no existe: un cliente compra en varias salas— y
-            // notifica a esa sala más a quien puede editar la ficha, porque hoy
-            // las salas no tienen `clientes.can_edit`. No repite el aviso
-            // mientras siga sin leerse.
+            // Y se PIDE, con el campo para contestarlo. `pedir_dato_a_la_sala`
+            // resuelve la sucursal desde la factura que Hacienda rechazó —no
+            // desde una «sucursal del cliente», que no existe: un cliente compra
+            // en varias salas— crea el pedido y avisa a esa sala.
             //
-            // El «reenviar» del final de la regla no hizo falta construirlo: en
-            // cuanto alguien arregla el correo en Clientes, `pushClienteAlErp`
-            // lo manda a la ficha del sistema de origen y el barrido de las
-            // 22:30 retransmite toda factura sin sello. El lazo ya se cerraba
-            // solo; lo único que faltaba era que alguien se enterara.
-            const { error: avisoErr } = await admin
-              .rpc("pedir_correo_a_la_sala",
-                   { p_customer_id: c.customer_id, p_motivo_mh: c.motivo_mh });
-            if (avisoErr) console.error(`pedir_correo_a_la_sala (${c.customer_id}):`, avisoErr.message);
+            // La sala lo contesta desde Inicio y `responder-dato-pedido` hace el
+            // resto: escribe el correo en la ficha del sistema de origen, la
+            // relee para comprobar que cambió, cierra el pedido y reintenta el
+            // documento en el momento. La sala nunca necesita permiso sobre
+            // clientes — no edita una ficha, contesta una pregunta sobre SU
+            // venta.
+            //
+            // Un solo pedido vivo por cliente: la corrida vuelve a detectar el
+            // mismo caso cada noche hasta que se resuelva.
+            const { data: pedido, error: avisoErr } = await admin
+              .rpc("pedir_dato_a_la_sala", {
+                p_customer_id: c.customer_id, p_campo: "email",
+                p_motivo_mh: c.motivo_mh, p_valor_actual: antes,
+              });
+            if (avisoErr) console.error(`pedir_dato_a_la_sala (${c.customer_id}):`, avisoErr.message);
+            else if (!pedido?.ok) console.error(`pedir_dato_a_la_sala (${c.customer_id}): ${pedido?.motivo}`);
 
             aRevisar.push({
               erp_id: erpId, name: c.name, motivo: "correo_pedido_a_la_sala",

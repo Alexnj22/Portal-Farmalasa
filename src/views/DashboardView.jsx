@@ -28,7 +28,7 @@ import {
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
   ReceiptText, Upload, Eye, Lock, Thermometer, Pill,
-  Wallet
+  Wallet, Mail
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 // Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
@@ -52,6 +52,7 @@ import WidgetAnnulmentRequest from './dashboard/baldosas/BaldosaFacturacion';
 import WidgetMinMaxRequest from './dashboard/baldosas/BaldosaMinMax';
 import WidgetInventoryMovement from './dashboard/baldosas/BaldosaInventario';
 import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
+import WidgetDatoPedido from './dashboard/WidgetDatoPedido';
 import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
@@ -194,6 +195,10 @@ const WIDGET_SIZES = {
   // se filtra por id antes de acomodar.
   vendedores:    { minCols: 2, minRows: 3, label: 'Venta por vendedor' },
   traslados:     { minCols: 2, minRows: 2, label: 'Traslados'          },
+  // Un pedido lleva un párrafo, un campo de correo y un botón: con una sola
+  // columna el campo queda tan angosto que no se ve lo que se escribió, y
+  // esto es un dato que va a un documento fiscal a nombre de otra persona.
+  dato_pedido:   { minCols: 2, minRows: 2, label: 'Datos que faltan'  },
 };
 
 // La acción de un widget manda a OTRO módulo, así que el permiso que decide si
@@ -598,6 +603,7 @@ const WIDGET_DEFS = [
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
   { id: 'bolsas_sala',  label: 'Bolsas de efectivo de mi sala', permission: 'dash_bolsas_sala', icon: Package,  category: 'ventas'    },
+  { id: 'dato_pedido',  label: 'Datos que faltan',        permission: 'dash_dato_pedido',  icon: Mail,         category: 'ventas'    },
 ];
 
 // El permiso de cada widget, indexado. Lo necesitan la barra de pestañas, el
@@ -3389,6 +3395,17 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'traslados') {
       if (!showWidget('traslados', 'dash_traslados')) return null;
       return wrapWidget('traslados', <WidgetTransferRequests />, staggerIdx);
+    }
+
+    /* ── DATOS QUE FALTAN ── */
+    // El portal le pide a la sala el dato que le falta para terminar un
+    // documento (hoy: el correo de un contribuyente que Hacienda rechazó). Sin
+    // selector de sucursal a propósito: el RPC filtra por la sala del empleado,
+    // y ofrecer un desplegable sugeriría que se puede contestar por otra —el
+    // correo de un cliente que no se tuvo enfrente no se puede averiguar.
+    if (wid === 'dato_pedido') {
+      if (!showWidget('dato_pedido', 'dash_dato_pedido')) return null;
+      return wrapWidget('dato_pedido', <WidgetDatoPedido />, staggerIdx);
     }
 
     /* ── META DE LA SALA ── */

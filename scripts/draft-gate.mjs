@@ -46,6 +46,26 @@ const BASELINE = join(RAIZ, 'scripts', 'draft-gate-baseline.json');
 // borrador no se paga ahí.
 const UMBRAL = 6;
 
+/* ── El conteo es por ARCHIVO, y eso clasifica mal a tres formas (2026-08-24) ──
+ *
+ * Al saldar la deuda original de 24, **cinco resultaron no ser deuda** — y las
+ * cinco por la misma causa: el detector suma los controles de un ARCHIVO, pero
+ * un archivo puede hospedar cosas que no son un formulario largo.
+ *
+ *   · un LISTADO CON FILTROS (`ProveedoresView`, `DashboardView`): filtrar no
+ *     produce nada que se pueda perder. Ya se excluyen `SearchInput`,
+ *     `RangeDatePicker` y `PeriodPicker` por esto, pero `LiquidSelect` no se
+ *     puede excluir — en el resto del portal SÍ es captura;
+ *   · VARIOS FORMULARIOS CORTOS en un archivo (`WidgetAnnulmentRequest` son
+ *     cuatro; `FacturacionView` repite el mismo par nota+archivo);
+ *   · una pantalla que AUTOGUARDA (`TabCatalogo`), donde un borrador podría
+ *     pisar un cambio posterior hecho desde otra pantalla.
+ *
+ * O sea: **un hallazgo nuevo hay que ABRIRLO antes de creerle**. Contar 6
+ * controles es una señal de que hay que mirar, no un veredicto. Y la salida
+ * correcta cuando no es deuda es una excepción con su motivo escrito acá — no
+ * borrarlo del conteo, que es como un gate deja de significar algo. */
+
 // Controles de CAPTURA. Deliberadamente NO están los de filtro y navegación
 // (`SearchInput`, `RangeDatePicker`, `PeriodPicker`, `ThemeAxisPicker`): filtrar
 // una lista no produce nada que se pueda perder, y contarlos haría que una
@@ -118,6 +138,31 @@ const EXCEPCIONES = {
     'Un borrador acá guardaría una copia de algo que ya está en la base, y al ' +
     'recuperarlo podría pisar un cambio POSTERIOR hecho desde otra pantalla. ' +
     'Verificado el 2026-08-24.',
+
+  'src/views/purchases/ProveedoresView.jsx':
+    'No es un formulario: es un listado con filtros. Siete de sus ocho controles ' +
+    'son `LiquidSelect` de filtro —Categoría, Clase, Vínculo, clasificación ' +
+    'fiscal, Activos— y el octavo es «Asignar categoría…», una acción en lote ' +
+    'que guarda al instante y nace con `value=""`, o sea que no acumula estado. ' +
+    'Filtrar una lista no produce nada que se pueda perder. ' +
+    'Verificado el 2026-08-24.',
+
+  'src/views/FacturacionView.jsx':
+    'Sus diez controles NO son un formulario de diez campos: son el mismo ' +
+    '`FilaConfirmar` —una nota y un archivo— instanciado en varias pestañas, más ' +
+    'tres selectores de filtro. Confirmar un pago o resolver un hallazgo es UNA ' +
+    'nota corta y un comprobante; el archivo además es un `File` que un borrador ' +
+    'no puede conservar. Cae exactamente en el caso que el UMBRAL de este gate ' +
+    'describe: campos que se vuelven a escribir en diez segundos, donde el costo ' +
+    'de un borrador no se paga. Verificado el 2026-08-24.',
+
+  'src/views/dashboard/WidgetAnnulmentRequest.jsx':
+    'Son CUATRO formularios independientes de dos a cuatro campos —anular, ' +
+    'cambiar forma de pago, cambiar vendedor, cambiar cliente—, no uno de seis. ' +
+    'Cada uno es elegir un motivo y escribir un comentario sobre una factura que ' +
+    'ya está seleccionada: si se pierde, se rehace en el mismo tiempo que se ' +
+    'tarda en leer esta línea. El gate cuenta por ARCHIVO y acá el archivo ' +
+    'hospeda cuatro flujos. Verificado el 2026-08-24.',
 
   'src/views/pedidos/RecepcionModal.jsx':
     'Lo que ya se hizo NO se pierde: cada hoja confirmada se escribe al servidor ' +

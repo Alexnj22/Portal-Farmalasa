@@ -11,9 +11,6 @@
     "src/components/forms/FormNovedad.jsx",
     "src/components/forms/FormNursingRegents.jsx",
     "src/components/forms/FormProveedorDetail.jsx",
-    "src/components/forms/FormRehireEmployee.jsx",
-    "src/views/FacturacionView.jsx",
-    "src/views/dashboard/WidgetAnnulmentRequest.jsx",
-    "src/views/purchases/ProveedoresView.jsx"
+    "src/components/forms/FormRehireEmployee.jsx"
   ]
 }

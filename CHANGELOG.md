@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.727.2 — El widget se abrió en un navegador, y el tipo de documento se derivó del número de control
+
+### La baldosa, probada de verdad
+
+`tests/e2e/dato-pedido.spec.js` inicia sesión, encuentra «Datos que faltan» con
+un pedido sembrado, comprueba que el botón nace apagado, escribe un correo sin
+forma, confirma, y **el motivo del rechazo aparece en pantalla**. No confirma un
+correo válido a propósito: corre contra producción y eso escribiría en la ficha
+del sistema de origen y retransmitiría un documento fiscal — abrir no puede
+escribir.
+
+Tres cosas que sólo se veían abriéndola:
+
+1. **CORS.** Las edge functions aceptan `PORTAL_ORIGIN`, `localhost:5173` y
+   `localhost:4173`; Playwright levanta el **4174**. Desde ahí el navegador
+   bloquea la llamada en el preflight y **la pantalla no muestra ningún error**:
+   el toast nunca aparece porque la respuesta nunca llega. Se lee como un fallo
+   del formulario. La prueba lleva escrito arriba con qué puerto se corre.
+2. **El login se traga la contraseña.** Una de cada dos corridas terminaba con
+   «qa.test» + la clave pegados en el campo de usuario y el de contraseña vacío
+   —la pantalla escucha el teclado para el lector de carné—. Falla como si la
+   credencial fuera mala. Ahora se comprueba lo que quedó ESCRITO antes de
+   enviar, en vez de confiar en que el `fill` aterrizó donde se pidió.
+3. **El rótulo aparece dos veces** —el título propio y el de la manija de
+   arrastre—, así que el selector sin `.first()` falla por ambigüedad y se lee
+   como «la baldosa no está».
+
+### El tipo de documento se deriva; el correlativo no se inventa
+
+La venta del 07-nov-2025 (Salud 1, MAPFRE) figuraba con `tipo_documento =
+'UNKNOWN'` y sin correlativo. Ante Hacienda está cerrada —sello de 40, código de
+generación, «DTE INVALIDADO EN MH»—: lo roto era la copia del portal, y era lo
+único que mantenía un hallazgo abierto desde hace nueve meses.
+
+Su número de control es `DTE-01-S003P001-000000000034660`. El segundo tramo es el
+tipo del catálogo de Hacienda: `01` factura de consumidor final, `03` crédito
+fiscal. Comprobado sobre las 1,482 filas de esa sala donde ambos conviven:
+**1,482 de 1,482**. Así que se deriva de la columna, no de un literal.
+
+**El correlativo parecía salir del último tramo. No sale.** El mismo cruce da
+112 de 1,482 — el número de control lleva su propia serie. Y acá se puede ver el
+daño que habría hecho: `0000034660_COF` **ya existe** en esa sala, es la factura
+141900 de las 17:00:36 por $2.00. Escribirlo habría puesto dos documentos
+fiscales con el mismo correlativo, peor que el hueco que venía a tapar.
+
+Queda vacío y su observación sigue abierta a propósito: ese número sólo lo tiene
+el sistema donde se emitió, y un dato fiscal no se completa por parecido.
+
 ## v2.727.1 — Cinco pantallas vacías dibujadas a mano vuelven a la canónica
 
 Salió midiendo, no leyendo. `EmptyState` empezó a estampar `data-vacio` para que

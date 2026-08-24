@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-08-24",
+  "recalculado": "2026-08-23",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -62,8 +62,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 66,
-          "evidencia": "25 de 132 archivo(s) del área nombrados por alguna prueba (19%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "pct": 67,
+          "evidencia": "26 de 132 archivo(s) del área nombrados por alguna prueba (20%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1058,8 +1058,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 75,
-          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
+          "pct": 95,
+          "evidencia": "2 de 3 archivo(s) del área nombrados por alguna prueba (67%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1070,7 +1070,7 @@
           ]
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [

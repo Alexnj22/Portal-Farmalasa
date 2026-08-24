@@ -383,9 +383,9 @@ export const AREAS = [
         nombre: 'Cortes de caja y bolsas de efectivo',
         resumen: 'El cierre de turno de cada caja, las diferencias y su resolución, y el recorrido del dinero físico hasta administración.',
         modulos: ['cortes_caja', 'bolsas', 'bolsas_conteo', 'bolsas_ver_montos', 'bolsas_ver_cards'],
-        rutas: ['/cortes'],
+        rutas: ['/cortes', '/bolsas'],
         archivos: [
-            'src/views/CortesView.jsx', 'src/views/cortes/', 'src/views/bolsas/',
+            'src/views/CortesView.jsx', 'src/views/BolsasView.jsx', 'src/views/bolsas/',
             'src/components/cortes/', 'src/components/bolsas/',
             'src/data/cortes.js', 'src/data/bolsas.js',
             'src/hooks/useCerrarBolsa.js', 'src/hooks/useResolverCorte.js', 'src/hooks/useCortesDeAvisos.js',

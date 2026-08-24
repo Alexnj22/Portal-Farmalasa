@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
     AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins, Inbox, Landmark, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
     recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
+import { tokenMatch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
@@ -44,18 +45,39 @@ const DepositoAlBanco = lazy(() => import('../../components/bolsas/DepositoAlBan
 const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlBanco'));
 
 /**
- * El proceso entero de una bolsa de efectivo, en una pantalla.
+ * El proceso entero de una bolsa de efectivo, una etapa por vez.
  *
  * Pedido del usuario (2026-08-15): «el widget es para acceder fácil, pero debe
  * haber una vista donde se haga todo el proceso, donde cuando se cuente el
- * dinero en admin se ponga que todo bien». Esto es esa vista, y va como pestaña
- * de Cortes de caja porque es lo que le pasa al dinero DESPUÉS del corte.
+ * dinero en admin se ponga que todo bien». Esto es esa vista. Vivió como
+ * pestaña de Cortes de caja hasta el 2026-08-24, y hoy es su propio módulo —
+ * el porqué está en `BolsasView`.
  *
- * ── Las secciones son las ETAPAS, no filtros ────────────────────────────────
- * Cuatro bloques en el orden en que pasan las cosas: en la sala → esperando
- * recepción → por contar → contadas. No es una lista con una píldora de estado:
- * cada etapa tiene una acción distinta y un dueño distinto, y verlas en orden es
- * lo que hace que la pantalla explique el circuito sin que nadie lo enseñe.
+ * ── Las etapas eran cuatro bloques apilados; hoy son PESTAÑAS ───────────────
+ * «me estoy perdiendo en los pasos, al tener tantos, me pierdo y no sé dónde
+ * está qué» (usuario, 2026-08-24).
+ *
+ * Hasta ese día las cuatro etapas se dibujaban una debajo de la otra, en el
+ * orden en que pasan las cosas, con el argumento de que verlas en fila explica
+ * el circuito sin que nadie lo enseñe. El argumento era bueno y el resultado
+ * fue otro: con los dos avisos de arriba, las diferencias sin resolver, las
+ * cuatro etapas y el archivo de depósitos, la pantalla llegó a OCHO bloques
+ * apilados —tres de ellos plegados— y encontrar algo pasó a ser scrollear y
+ * abrir. Un diseño que hay que recorrer entero para saber qué hay no explica
+ * nada: esconde.
+ *
+ * La etapa activa vive en la DIRECCIÓN (`usePestanaEnUrl`, en `BolsasView`) y
+ * el precio de esconder las otras tres lo paga el CONTADOR de cada píldora:
+ * la fila dice «En la sala 3 · Esperando 0 · Por contar 5 · Finalizadas 12»
+ * sin abrir ninguna. Sin ese número la separación sería justamente el defecto
+ * que este circuito no puede tener —una bolsa trabada seis días detrás de una
+ * pestaña que nadie abre—, y por eso el contador se construyó ANTES de partir
+ * la pantalla, no después.
+ *
+ * Y por eso el buscador filtra las CUATRO etapas y no sólo la abierta: al
+ * escribir un folio, los contadores dicen en qué pestaña cayó. Ésa es la otra
+ * mitad de «no sé dónde está qué» — la primera es cuánto trabajo hay en cada
+ * paso, la segunda es dónde quedó ESTA bolsa.
  *
  * ── Y las tres firmas son de tres personas ──────────────────────────────────
  * La sala entrega, administración acusa recibo, administración cuenta. El
@@ -74,16 +96,21 @@ const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlB
  * con un botón que estira el período hasta la pendiente más vieja. Esconder una
  * bolsa pendiente sólo es aceptable si la pantalla dice que la escondió.
  *
- * ── Las dos acciones viven en la píldora ────────────────────────────────────
+ * ── Las acciones viven en la píldora, y son las de la ETAPA abierta ─────────
  * «los botones de sacar dinero, entregar dinero, deben estar en el filterpill»
  * (usuario, 2026-08-17). Es §17 al pie de la letra: `FilterBar` lleva los
  * filtros de la vista **y sus acciones**. Estaban colgados de la etapa «En la
  * sala», que además las escondía al hacer scroll.
  *
- * La píldora la dibuja `CortesView` —una por vista—, así que esta pestaña
- * PUBLICA sus acciones por `onAcciones` y sigue siendo dueña de sus diálogos.
- * Al revés (que el padre supiera cuántas bolsas hay en la sala para poder
- * deshabilitarlas) habría que cargar las bolsas dos veces.
+ * La píldora la dibuja `BolsasView` —una por vista—, así que este motor las
+ * PUBLICA por `onAcciones` y sigue siendo dueño de sus diálogos. Al revés (que
+ * el padre supiera cuántas bolsas hay en la sala para poder deshabilitarlas)
+ * habría que cargar las bolsas dos veces.
+ *
+ * Cambian con la pestaña porque el trabajo cambia con la pestaña: en la sala se
+ * saca y se entrega, en «Finalizadas» se deposita al banco. Una píldora con las
+ * cuatro acciones de las cuatro etapas ofrecería en cada pantalla tres botones
+ * que no son de ahí.
  *
  * ── Y los montos, detrás de `bolsas_ver_montos` ─────────────────────────────
  * «los totales de dinero no los deben ver los dependientes, solo quien tenga
@@ -111,6 +138,7 @@ const diasDesde = (f) => Math.max(0, Math.round(
 
 const DIAS_DE_ALARMA = 4;
 
+
 /* «Hoy» / «Ayer» y si no la fecha corta. Es el MISMO rótulo que usa el diálogo
  * de entrega para agrupar por día — dos formas distintas de nombrar el mismo día
  * en dos pantallas del mismo circuito obligan a traducir mentalmente. */
@@ -126,15 +154,22 @@ const rotularDia = (fecha) => {
     return fechaCorta(fecha);
 };
 
-/* ── Qué etapa se ve abierta, y por qué se recuerda ─────────────────────────
+/* ── Qué se ve plegado dentro de «Finalizadas», y por qué se recuerda ───────
  *
  * «que las secciones sean plegables, asi solo se ve lo que mas interesa. por
  * ejemplo contadas no lo necesito ver» (usuario, 2026-08-24).
  *
- * «Contadas» arranca cerrada porque es el ARCHIVO: crece sin techo y nadie
- * entra a esta pantalla a mirarlo. Las tres pendientes arrancan abiertas — son
- * trabajo por hacer, y una etapa con trabajo escondida detrás de un chevron es
- * exactamente cómo una bolsa se queda tres días sin que nadie la vea.
+ * Ese pedido lo cumplían los chevrones cuando las cuatro etapas vivían
+ * apiladas. Desde que son pestañas lo cumple la pestaña —abrir una es cerrar
+ * las otras tres— y lo único que sigue compartiendo pantalla con otra cosa es
+ * lo que hay dentro de «Finalizadas»: el archivo de bolsas contadas y el
+ * archivo de depósitos al banco.
+ *
+ * Ahí el plegado sigue valiendo, y con un cambio: **«Contadas» ya no arranca
+ * cerrada**. Antes lo hacía porque nadie entraba a la pantalla a mirar el
+ * archivo; ahora, quien abre la pestaña «Finalizadas» entró a eso. Los
+ * depósitos sí siguen cerrados: son la otra pregunta, la de cuadrar contra el
+ * banco, y sólo se abre cuando toca.
  *
  * Se guarda en el navegador y NO en la dirección, a diferencia de la pestaña
  * activa (`usePestanaEnUrl`). Son dos cosas distintas: la pestaña es a dónde
@@ -147,7 +182,7 @@ const rotularDia = (fecha) => {
  * pantalla de dinero no se puede quedar en blanco por una preferencia.
  */
 const CLAVE_PLEGADO = 'bolsas:etapas-cerradas';
-const CERRADAS_LA_PRIMERA_VEZ = ['contadas', 'depositos'];
+const CERRADAS_LA_PRIMERA_VEZ = ['depositos'];
 
 function usePlegado() {
     const [cerradas, setCerradas] = useState(() => {
@@ -169,16 +204,10 @@ function usePlegado() {
         return guardar(n);
     }), []);
 
-    /* Abrir a la fuerza: lo usa la recepción para que las bolsas que acaban de
-     * pasar a «Por contar» no aterricen dentro de una sección cerrada. */
-    const abrir = useCallback((clave) => setCerradas((s) => {
-        if (!s.has(clave)) return s;
-        const n = new Set(s);
-        n.delete(clave);
-        return guardar(n);
-    }), []);
-
-    return { cerradas, alternar, abrir };
+    /* Ya no hay «abrir a la fuerza»: lo usaba la recepción para que las bolsas
+     * que acababan de pasar a «Por contar» no aterrizaran dentro de una sección
+     * cerrada, y eso hoy lo resuelve el cambio de pestaña. */
+    return { cerradas, alternar };
 }
 
 // Una sola referencia vacía: devolver `[]` en cada render haría que el carril de
@@ -450,7 +479,7 @@ function Resolver({ bolsa, ocupado, onResolver }) {
  * pierde cuando alguien deja filtrada una sala y se olvida.
  */
 function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo,
-    vacio, verMontos, plegada = false, onPlegar, anclaRef }) {
+    vacio, verMontos, plegada = false, onPlegar }) {
     /* El desglose por día de TODA la etapa: junta los días de las seis salas.
      * Del más reciente al más viejo, que es como se pregunta («¿y lo de hoy?»).
      * Es una vuelta sobre lo que ya está agrupado, no una consulta más. */
@@ -465,21 +494,36 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
         .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
 
     return (
-        <section className="space-y-2" ref={anclaRef}>
+        <section className="space-y-2">
             {/* El encabezado ENTERO pliega, y el conteo se queda visible al
                 cerrar: es lo que hace que una sección cerrada siga informando —
                 «Contadas · 12 bolsas» sin las doce tarjetas. Si el número
-                desapareciera con el contenido, cerrar sería esconder. */}
+                desapareciera con el contenido, cerrar sería esconder.
+
+                Pero sólo pliega SI HAY con qué compartir la pantalla. Desde que
+                las etapas son pestañas, las tres pendientes son lo único que
+                hay en la suya: un chevron ahí no ahorra nada y, peor, dibuja un
+                control que promete esconder lo único que se vino a ver. Sin
+                `onPlegar` el encabezado es un título y no un botón — y no un
+                botón deshabilitado, que sería un blanco de dedo de 44px que no
+                hace nada (§15.8). */}
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
                 <h3 className="text-label font-bold text-content">
-                    <button type="button" onClick={onPlegar} aria-expanded={!plegada}
-                        className="flex items-center gap-2 min-h-[var(--tap-min)] text-left
-                                   hover:text-content-2 transition-colors">
-                        {plegada ? <ChevronDown size={14} className="text-content-3 shrink-0" />
-                            : <ChevronUp size={14} className="text-content-3 shrink-0" />}
-                        <Icon size={15} className="text-content-3" />
-                        {titulo}
-                    </button>
+                    {onPlegar ? (
+                        <button type="button" onClick={onPlegar} aria-expanded={!plegada}
+                            className="flex items-center gap-2 min-h-[var(--tap-min)] text-left
+                                       hover:text-content-2 transition-colors">
+                            {plegada ? <ChevronDown size={14} className="text-content-3 shrink-0" />
+                                : <ChevronUp size={14} className="text-content-3 shrink-0" />}
+                            <Icon size={15} className="text-content-3" />
+                            {titulo}
+                        </button>
+                    ) : (
+                        <span className="flex items-center gap-2 text-left">
+                            <Icon size={15} className="text-content-3" />
+                            {titulo}
+                        </span>
+                    )}
                 </h3>
                 {/* Los TRES totales de la pantalla, de mayor a menor: éste es el
                     de la etapa entera. Va con más peso que su cuenta de bolsas
@@ -608,7 +652,11 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
     );
 }
 
-export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, onMetricas, onAmpliarPeriodo }) {
+export default function CircuitoDeBolsas({
+    etapa = 'sala', busqueda = '',
+    desde, hasta, sala, nombreSala,
+    onAcciones, onMetricas, onConteos, onAmpliarPeriodo, onIrAEtapa,
+}) {
     const { hasPermission, getScope } = useAuth();
     /* ── La sala ve SU etapa; el resto del circuito es de administración ──
      *
@@ -643,10 +691,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      * y un pendiente no puede desaparecer por mover unas fechas. */
     const [porDepositar, setPorDepositar] = useState([]);
     const [depositando, setDepositando] = useState(false);
-    const { cerradas, alternar: plegar, abrir: abrirEtapa } = usePlegado();
-    // Dónde está «Por contar», para llevar ahí a quien acaba de recibir.
-    const anclaPorContar = useRef(null);
-    const anclaContadas = useRef(null);
+    const { cerradas, alternar: plegar } = usePlegado();
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
      * contra ESTO y no contra `Date.now()` en el render: leer el reloj mientras
      * se dibuja hace que dos renders del mismo estado den resultados distintos
@@ -721,14 +766,42 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         [bolsas, sala],
     );
 
+    /* ── El buscador recorta las CUATRO etapas, no la abierta ───────────────
+     *
+     * Es la mitad del pedido que las pestañas solas no cubren: «no sé dónde
+     * está qué» es dos preguntas, y la segunda es dónde quedó ESTA bolsa. Al
+     * filtrar las cuatro, el contador de cada píldora contesta en cuál cayó —
+     * escribir un folio deja la fila en «En la sala 0 · Esperando 1 · Por
+     * contar 0 · Finalizadas 0» y el trabajo de buscar ya está hecho.
+     *
+     * Filtrar sólo la etapa abierta habría sido peor que no tener buscador:
+     * daría cero resultados sobre una bolsa que existe, y quien lo lea concluye
+     * que la bolsa no está en el sistema.
+     *
+     * Va por `tokenMatch` —el canónico de §24— sobre lo que alguien tiene a
+     * mano cuando pregunta por una bolsa: el folio de la etiqueta pegada, la
+     * sala, el día, la caja, el monto y quién la firmó. El nombre sale del
+     * padrón de empleados y no del `Map` de `personas`, que llega DESPUÉS de la
+     * primera pintada: buscar por un nombre y no encontrarlo durante un segundo
+     * es la clase de resultado que enseña a desconfiar del buscador. */
+    const coincide = useCallback((b) => {
+        if (!busqueda.trim()) return true;
+        return tokenMatch(busqueda,
+            b.folio, nombreSala[b.branch_id], b.fecha, rotularDia(b.fecha), b.hora, b.caja,
+            String(b.monto_inicial ?? ''), String(b.saldo ?? ''), String(b.contado ?? ''),
+            nombrePersona.get(b.cerrada_por), nombrePersona.get(b.entregada_por),
+            nombrePersona.get(b.recibida_por), nombrePersona.get(b.contado_por));
+    }, [busqueda, nombreSala, nombrePersona]);
+
     /* Con alcance de una sala la pantalla es UNA etapa, así que todo lo que se
      * cuenta —el vacío, lo que el rango dejó afuera, el aviso— se cuenta sobre
      * las bolsas que están en la sala y nada más. Filtrar sólo al dibujar
      * dejaría a un dependiente leyendo «3 bolsas pendientes quedaron fuera de
      * estas fechas» sin ninguna sección donde pudieran aparecer. */
     const delAlcance = useMemo(
-        () => (alcanceTodos ? deLaSala : deLaSala.filter((b) => b.estado === 'ABIERTA')),
-        [deLaSala, alcanceTodos],
+        () => (alcanceTodos ? deLaSala : deLaSala.filter((b) => b.estado === 'ABIERTA'))
+            .filter(coincide),
+        [deLaSala, alcanceTodos, coincide],
     );
 
     // ── El período recorta TODA la pantalla, también lo pendiente ────────────
@@ -805,8 +878,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      * por dejar el rango en «Hoy», y es justo la que más hay que ver. El filtro
      * de sala es el mismo de la vista; el de alcance lo puso ya la policy. */
     const sinResolver = useMemo(
-        () => (sala ? diferencias.filter((b) => String(b.branch_id) === String(sala)) : diferencias),
-        [diferencias, sala],
+        () => (sala ? diferencias.filter((b) => String(b.branch_id) === String(sala)) : diferencias)
+            .filter(coincide),
+        [diferencias, sala, coincide],
     );
 
     // Las que además quedaron fuera del rango: el aviso no puede decir «están
@@ -880,15 +954,15 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      */
     const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
 
-    /* Confirmar la recepción MUEVE la bolsa de sección: sale de «Esperando
-     * recepción» y aparece en «Por contar», que está más abajo y —desde que las
-     * etapas se pliegan— puede estar cerrada. Sin esto, apretar el botón se ve
-     * como que las bolsas se borraron.
+    /* Confirmar la recepción MUEVE la bolsa de pestaña: sale de «Esperando
+     * recepción» y aparece en «Por contar». Sin llevar a quien apretó, el botón
+     * se ve como que las bolsas se borraron — la etapa de origen se queda vacía
+     * y lo que pasó está en otra pantalla.
      *
-     * Así que la recepción abre «Por contar», lleva la pantalla hasta ahí y lo
-     * dice en el aviso. El `requestAnimationFrame` espera al render que abre la
-     * sección; el ancla es la sección y no una tarjeta, porque la recarga aún no
-     * terminó y las tarjetas todavía no están. */
+     * Con las etapas apiladas esto era abrir la sección y hacer scroll; con
+     * pestañas es cambiar de pestaña, que además deja la dirección apuntando a
+     * donde quedó el trabajo. El aviso lo dice igual, porque quien mira el
+     * teléfono puede no ver moverse la fila de arriba. */
     const recibir = useCallback(async (lista) => {
         const ok = await correr('recibir',
             () => recibirBolsas(lista.map((b) => b.id)),
@@ -896,11 +970,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 ? 'Recepción confirmada · ya está en «Por contar»'
                 : `Recepción de ${lista.length} bolsas confirmada · ya están en «Por contar»`);
         if (!ok) return;
-        abrirEtapa('porContar');
-        requestAnimationFrame(() => {
-            anclaPorContar.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-    }, [correr, abrirEtapa]);
+        onIrAEtapa?.('contar');
+    }, [correr, onIrAEtapa]);
 
     /* Contar una bolsa la MARCA. La bolsa se queda en «Por contar» con su monto
      * escrito hasta que se confirma la tanda entera — «debe pasar hasta que se
@@ -929,8 +1000,8 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 ? 'Conteo confirmado · 1 bolsa cerrada'
                 : `Conteo confirmado · ${marcadas.length} bolsas cerradas`);
         if (!ok) return;
-        abrirEtapa('contadas');
-    }, [correr, abrirEtapa]);
+        onIrAEtapa?.('finalizadas');
+    }, [correr, onIrAEtapa]);
 
     /**
      * Después de sacar dinero salen DOS papeles por bolsa: el vale que queda
@@ -999,7 +1070,19 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
     // Ninguna depende de haber marcado bolsas: quien va a pagar una remesa sabe
     // el monto, no de qué bolsa sale —eso lo elige el portal—, y la entrega
     // pregunta por DÍAS, que es como la sala piensa lo que se lleva.
-    const acciones = useMemo(() => (puedeEntregar ? [
+    //
+    // Son de la etapa «En la sala» y por eso sólo salen ahí: sacar dinero de una
+    // bolsa que ya salió de la sala no es una operación que exista, y ofrecerla
+    // desde «Por contar» sería un botón que abre un diálogo con la lista vacía.
+    //
+    // Las otras tres etapas no publican acciones a la píldora, y es deliberado:
+    // confirmar la recepción, confirmar el conteo y depositar al banco llevan
+    // pegado un NÚMERO —cuántas bolsas y cuánto dinero— que es la mitad de la
+    // decisión. Ese número no cabe en una píldora que además tiene que mostrar
+    // los filtros, así que esos tres botones se quedan junto a la cifra que
+    // están confirmando. Un botón de dinero sin su monto al lado se aprieta a
+    // ciegas.
+    const acciones = useMemo(() => (puedeEntregar && etapa === 'sala' ? [
         {
             key: 'sacar', icon: HandCoins, label: 'Sacar dinero', rotulo: 'Sacar',
             disabled: !enSala.length, onClick: () => setSacando(true),
@@ -1008,47 +1091,124 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             key: 'entregar', icon: Send, label: 'Entregar dinero', rotulo: 'Entregar',
             variant: 'primary', disabled: !enSala.length, onClick: () => setEntregando(true),
         },
-    ] : []), [puedeEntregar, enSala.length, setSacando, setEntregando]);
+    ] : VACIO), [puedeEntregar, etapa, enSala.length, setSacando, setEntregando]);
+
+    // ── El número de cada pestaña, publicado a la píldora del header ───────
+    //
+    // El contador es el PRECIO de haber partido la pantalla en pestañas: una
+    // pestaña cerrada esconde lo suyo, y en un circuito de efectivo lo escondido
+    // es dinero parado. Con el número, la fila entera se lee sin abrir nada —
+    // que es lo que las cuatro etapas apiladas hacían y lo que no se podía
+    // perder al separarlas.
+    //
+    // Cuenta lo que la pestaña VA A MOSTRAR, filtros incluidos: el mismo período
+    // y el mismo buscador que recortan el cuerpo. Un contador que contara el
+    // total mandaría a una pestaña que va a salir vacía, que es peor que no
+    // tener contador.
+    //
+    // «Esperando recepción» se pone en rojo cuando hay alguna de más de un día:
+    // es el estado más riesgoso del circuito —el dinero no está ni en la sala ni
+    // en administración— y es el único cuyo problema no se ve entrando a la
+    // pestaña, porque adentro esas bolsas se ven igual que las de hace diez
+    // minutos. `Contador` devuelve `null` en cero, así que las pestañas al día
+    // no dibujan nada.
+    const conteos = useMemo(() => ({
+        sala: enSala.length,
+        camino: enCamino.length,
+        contar: porContar.length,
+        finalizadas: contadas.length,
+        tonos: { camino: enCaminoViejas.length ? 'danger' : undefined },
+    }), [enSala.length, enCamino.length, porContar.length, contadas.length, enCaminoViejas.length]);
+
+    useEffect(() => { onConteos?.(conteos); }, [conteos, onConteos]);
 
     // ── El carril, publicado a la píldora de la vista ──────────────────────
-    // «necesita cards la vista» (usuario, 2026-08-20). Las cuatro cifras son las
-    // del CIRCUITO, no las del período: tres etapas pendientes —que ignoran el
-    // período a propósito— más lo que quedó sin resolver del archivo.
+    // «necesita cards la vista» (usuario, 2026-08-20).
     //
-    // «En camino» lleva su propio subtítulo cuando hay alguna de más de un día:
-    // es el estado más riesgoso —el dinero no está ni en la sala ni en
-    // administración— y era el único que no se veía sin bajar hasta su sección.
+    // ── Y desde el 24-ago NO repiten los números de las pestañas ───────────
+    // Las cuatro tarjetas eran «En la sala · En camino · Por contar · Sin
+    // resolver», o sea el desglose por etapa. Con las etapas convertidas en
+    // pestañas —cada una con su contador— ese carril pasó a decir por segunda
+    // vez lo que ya dice la fila de arriba, y §17.0 lo nombra: «un carril que
+    // es un desglose por categoría disfrazado de métricas» contesta UNA sola
+    // pregunta dibujada como cuatro. Su lugar ya es la navegación.
     //
-    // Los montos siguen a `bolsas_ver_montos` y NO a este permiso: son dos
+    // Lo que queda son las TRES cifras que ninguna pestaña contesta, porque
+    // cruzan las cuatro:
+    //
+    //   · cuánto dinero está fuera de administración (sala + camino), que es la
+    //     exposición real del circuito y vive repartida en dos pestañas;
+    //   · cuántos días lleva la más vieja, que es la alarma — y hasta hoy sólo
+    //     se veía entrando a la etapa donde estuviera;
+    //   · cuánto quedó sin cuadrar.
+    //
+    // Son TRES y no cuatro, y el cuarto se cayó midiendo. «Al banco» —lo contado
+    // y sin depositar— salía cortado y, sobre todo, ya vive con más peso del
+    // que una tarjeta le puede dar: encabeza la pestaña «Finalizadas» a 26px y
+    // con su botón al lado. Repetirlo acá costaba ancho a los otros tres.
+    //
+    // El ancho es la razón concreta y se midió el 2026-08-24: el piso de una
+    // tarjeta son 148px (§17.0) y ahí caben ~8 caracteres, así que `$1,224.50`
+    // salía `$1,224.` con puntos suspensivos y además un escalón tipográfico
+    // más chico que sus vecinas — la fila quedaba despareja. Con tres, cada una
+    // llega a 184px a 1512 y el monto se lee entero. Es §17.0 al pie de la
+    // letra: «cuántas tarjetas hay lo fija la vista, nunca el dato».
+    //
+    // Los rótulos son cortos a propósito, y se midieron: el piso de una tarjeta
+    // son 148px (§17.0) y ahí entran unos 12 caracteres. «En circulación» (14)
+    // salía «En circulaci…» y «Sin depositar» (13) salía «Sin deposita…» — o sea
+    // que el rótulo dejaba de nombrar la métrica, que es lo único que hace. Hoy
+    // son «Sin recibir» y «Al banco», y el matiz vive en el `sub`, que es
+    // exactamente para lo que existe.
+    //
+    // No filtran al tocarlas, y por eso van sin `onClick`: la etapa ya es la
+    // pestaña, y ninguna de estas cuatro cifras ES una etapa — «En circulación»
+    // vive en dos a la vez. Una tarjeta que llevara a un sitio parcial diría
+    // menos que el número que ya muestra.
+    //
+    // Los montos siguen a `bolsas_ver_montos` y NO a `bolsas_ver_cards`: son dos
     // preguntas distintas —ver el resumen y ver cuánta plata hay—, y con una
-    // sola llave el carril se habría llevado los montos a quien no los ve.
+    // sola llave el carril se habría llevado los montos a quien no los ve. Sin
+    // montos cada tarjeta cae a su CUENTA, que sigue contestando lo suyo.
     const metricas = useMemo(() => {
         if (!verCards) return VACIO;
         const cifra = (lista) => (verMontos ? formatMoney(suma(lista)) : String(lista.length));
         const cuantas = (n) => `${n} ${n === 1 ? 'bolsa' : 'bolsas'}`;
+
+        const enCirculacion = [...enSala, ...enCamino];
+        // La más vieja de lo que sigue pendiente, mirando las TRES etapas: la
+        // antigüedad se cuenta desde la fecha del corte, que es cuando ese
+        // efectivo dejó de estar en la caja.
+        const pendientes = [...enSala, ...enCamino, ...porContar];
+        const masVieja = pendientes.reduce(
+            (peor, b) => (peor && String(peor.fecha) <= String(b.fecha) ? peor : b), null);
+        const diasMasVieja = masVieja ? diasDesde(masVieja.fecha) : 0;
+
         return [
-            { clave: 'sala', icon: Package, label: 'En la sala',
-              value: cifra(enSala), sub: cuantas(enSala.length),
+            { clave: 'circulacion', icon: HandCoins, label: 'Sin recibir',
+              value: cifra(enCirculacion),
+              sub: enCirculacion.length
+                  ? `${enCirculacion.length} en sala o en camino`
+                  : 'todo recibido',
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text' },
-            { clave: 'camino', icon: Send, label: 'En camino',
-              value: cifra(enCamino),
-              sub: enCaminoViejas.length
-                  ? `${cuantas(enCamino.length)} · ${enCaminoViejas.length} de más de un día`
-                  : cuantas(enCamino.length),
-              iconBg: enCaminoViejas.length ? 'bg-warning/10' : 'bg-surface-card-hover',
-              iconCls: enCaminoViejas.length ? 'text-warning-text' : 'text-content-3',
-              valueCls: enCaminoViejas.length ? 'text-warning-text' : 'text-content' },
-            { clave: 'contar', icon: Banknote, label: 'Por contar',
-              value: cifra(porContar), sub: cuantas(porContar.length),
-              iconBg: 'bg-surface-card-hover', iconCls: 'text-content-3' },
+            { clave: 'masVieja', icon: CalendarDays, label: 'La más vieja',
+              value: masVieja ? `${diasMasVieja} d` : '—',
+              sub: masVieja
+                  ? `${nombreSala[masVieja.branch_id] || 'sin sala'} · ${rotularDia(masVieja.fecha)}`
+                  : 'sin pendientes',
+              iconBg: diasMasVieja >= DIAS_DE_ALARMA ? 'bg-danger/10' : 'bg-surface-card-hover',
+              iconCls: diasMasVieja >= DIAS_DE_ALARMA ? 'text-danger-text' : 'text-content-3',
+              valueCls: diasMasVieja >= DIAS_DE_ALARMA ? 'text-danger-text' : 'text-content' },
             { clave: 'sinResolver', icon: Scale, label: 'Sin resolver',
-              value: String(sinResolver.length),
-              sub: sinResolver.length ? 'contadas y sin cuadrar' : 'todo cuadrado',
+              value: verMontos && sinResolver.length
+                  ? formatMoney(sinResolver.reduce((a, b) => a + Math.abs(diferenciaDe(b) ?? 0), 0))
+                  : String(sinResolver.length),
+              sub: sinResolver.length ? `${cuantas(sinResolver.length)} sin cuadrar` : 'todo cuadrado',
               iconBg: sinResolver.length ? 'bg-danger/10' : 'bg-success/10',
               iconCls: sinResolver.length ? 'text-danger-text' : 'text-success-text',
               valueCls: sinResolver.length ? 'text-danger-text' : 'text-success-text' },
         ];
-    }, [verCards, verMontos, enSala, enCamino, enCaminoViejas, porContar, sinResolver]);
+    }, [verCards, verMontos, enSala, enCamino, porContar, sinResolver, nombreSala]);
 
     useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
     useEffect(() => () => onMetricas?.(VACIO), [onMetricas]);
@@ -1094,20 +1254,22 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 </Notice>
             )}
 
-            {/* El aviso decía «están abajo, en Contadas» — y desde que las etapas
-                se pliegan, «Contadas» arranca CERRADA. Un aviso que manda a un
-                sitio que no se ve es peor que no tenerlo, así que trae el botón
-                que lo abre y lleva hasta ahí. */}
-            {alcanceTodos && sinResolver.length > 0 && (
+            {/* Una diferencia sin cuadrar es lo ÚNICO que sale en las cuatro
+                pestañas, y es a propósito: vive en «Finalizadas», o sea en la
+                que menos se abre, y es la que no puede esperar a que alguien
+                pase por ahí. Un aviso que sólo aparece donde ya estás mirando
+                no avisa nada.
+
+                El botón lleva a la pestaña donde están. Antes abría la sección
+                plegada y hacía scroll; hoy cambia de pestaña, que además deja la
+                dirección apuntando ahí — se puede pasar el enlace. Y no sale en
+                «Finalizadas», donde el botón llevaría al sitio donde ya se
+                está. */}
+            {alcanceTodos && sinResolver.length > 0 && etapa !== 'finalizadas' && (
                 <Notice variant="danger" icon={AlertTriangle}
                     action={(
                         <Button variant="secondary" size="sm" icon={Scale}
-                            onClick={() => {
-                                abrirEtapa('contadas');
-                                requestAnimationFrame(() => {
-                                    anclaContadas.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                });
-                            }}>
+                            onClick={() => onIrAEtapa?.('finalizadas')}>
                             Ver
                         </Button>
                     )}>
@@ -1117,7 +1279,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                             : `Hay ${sinResolver.length} bolsas contadas que no cuadraron y siguen sin resolver`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Están en «Contadas», al final de la pantalla.
+                        Están en «Finalizadas».
                     </span>
                 </Notice>
             )}
@@ -1189,6 +1351,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 />
             ) : (<>
             {/* ── 1. En la sala ─────────────────────────────────────────── */}
+            {etapa === 'sala' && (
             <Etapa
                 icon={Package}
                 titulo="En la sala"
@@ -1215,15 +1378,16 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 })}
                 total={enSala.length} montoTotal={suma(enSala)}
                 verMontos={verMontos}
-                plegada={cerradas.has('enSala')} onPlegar={() => plegar('enSala')}
                 vacio={pendientesFuera.length ? "Sin efectivo esperando en las salas en estas fechas" : "Sin efectivo esperando en las salas"}
             />
+            )}
 
             {/* Las tres etapas siguientes son de ADMINISTRACIÓN: confirmar la
                 recepción y contar el dinero exigen `bolsas_conteo`, y el archivo
                 de contadas es de las seis salas. Con alcance de una sala la
                 pantalla termina en «En la sala». */}
             {alcanceTodos && (<>
+            {etapa === 'camino' && (<>
             {/* ── 2. Esperando recepción ──────────────────────────────────
                 Es el estado MÁS riesgoso del circuito —la bolsa no está en la
                 sala ni en administración, la tiene una persona en el camino— y
@@ -1278,11 +1442,12 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                     </Button>
                 ) : null}
                 verMontos={verMontos}
-                plegada={cerradas.has('enCamino')} onPlegar={() => plegar('enCamino')}
                 vacio={pendientesFuera.length ? "Nada en camino en estas fechas" : "Nada en camino"}
             />
+            </>)}
 
             {/* ── 3. Por contar ─────────────────────────────────────────── */}
+            {etapa === 'contar' && (
             <Etapa
                 icon={Banknote}
                 titulo="Por contar"
@@ -1319,10 +1484,15 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 })}
                 total={porContar.length} montoTotal={suma(porContar)}
                 verMontos={verMontos}
-                plegada={cerradas.has('porContar')} onPlegar={() => plegar('porContar')}
-                anclaRef={anclaPorContar}
                 vacio={pendientesFuera.length ? "Nada pendiente de contar en estas fechas" : "Nada pendiente de contar"}
             />
+            )}
+
+            {/* ── FINALIZADAS: el depósito, el archivo y los depósitos ─────
+                Es la única pestaña que lleva más de un bloque, y por eso es la
+                única donde el plegado sigue existiendo: acá sí hay algo con qué
+                compartir la pantalla. */}
+            {etapa === 'finalizadas' && (<>
 
             {/* ── El depósito al banco ─────────────────────────────────────
                 Lo que sigue después de confirmar un conteo, y por eso va DESPUÉS
@@ -1404,27 +1574,29 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 total={contadas.length} montoTotal={suma(contadas)}
                 verMontos={verMontos}
                 plegada={cerradas.has('contadas')} onPlegar={() => plegar('contadas')}
-                anclaRef={anclaContadas}
                 vacio="Sin bolsas contadas en estas fechas"
             />
 
-            </>)}
-
             {/* ── El archivo de los depósitos ──────────────────────────────
-                Va al final y ARRANCA CERRADO, igual que «Contadas» y por lo
-                mismo: es historia, y a esta pantalla se entra a mover dinero,
-                no a revisarla. Se abre cuando hay que cuadrar contra el banco.
+                Va al final y ARRANCA CERRADO. «Contadas» dejó de arrancar así
+                el 2026-08-24 —quien abre esta pestaña vino a ver el archivo— y
+                esto no: es la OTRA pregunta, la de cuadrar contra el banco, y
+                sólo se abre cuando toca hacerla.
 
                 Detrás de `bolsas_ver_montos` va la sección ENTERA y no sólo las
                 cifras: «DEP-260824-1, 8 bolsas» sin montos no contesta ninguna
                 de las preguntas por las que existe. */}
-            {alcanceTodos && verMontos && (
+            {verMontos && (
                 <Suspense fallback={null}>
                     <DepositosAlBanco desde={desde} hasta={hasta} nombreSala={nombreSala}
                         plegada={cerradas.has('depositos')}
                         onPlegar={() => plegar('depositos')} />
                 </Suspense>
             )}
+
+            </>)}
+
+            </>)}
 
             </>)}
 

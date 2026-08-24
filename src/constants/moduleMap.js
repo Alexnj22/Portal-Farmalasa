@@ -50,6 +50,7 @@ export const MODULE_MAP = {
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
     cortes_caja:       { path: '/cortes',           label: 'Cortes de caja',           icon: Wallet     },
+    bolsas:            { path: '/bolsas',           label: 'Bolsas de efectivo',       icon: Package    },
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },

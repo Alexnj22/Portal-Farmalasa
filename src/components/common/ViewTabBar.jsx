@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { Search, X, ChevronRight, ScanLine } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
+import Contador from './Contador';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 import { usePublicarBuscador, useHayBarraFlotante } from './CanalDeVista';
 
@@ -58,6 +59,8 @@ const spring = 'ease-[var(--ease-spring)]';
  *   tabs            – Array<{ key, label, icon? | Icon? }>
  *   activeTab       – string
  *   onTabChange     – (key: string) => void
+ *                     Cada pestaña puede además llevar `cuenta` (número) y
+ *                     `tono` — ver «El número en la píldora» abajo.
  *   searchValue     – string
  *   onSearchChange  – (value: string) => void
  *   placeholder     – string
@@ -332,6 +335,24 @@ export default function ViewTabBar({
                   ${isActive ? activeTabCls : inactiveTabCls}`}>
                 {TabIcon && <TabIcon size={12} strokeWidth={2.5} />}
                 <span>{tab.label}</span>
+                {/* ── El número de la pestaña ─────────────────────────────
+                    Una pestaña ESCONDE lo que no está abierto, y ése es
+                    justamente su precio: sin el número, «Esperando recepción»
+                    y una bolsa trabada ahí hace seis días se ven igual desde
+                    afuera, y la única forma de enterarse es abrir las cuatro.
+                    Con el número, la fila entera contesta de un vistazo
+                    dónde está el trabajo — y, cuando hay un buscador puesto,
+                    en qué pestaña cayó lo que se buscó.
+
+                    Es `Contador` y no un `<span>` a mano (§16.2): la burbuja
+                    tiene que ser circular con un dígito y ovalada con dos, y
+                    escribirla suelta es exactamente cómo se copió nueve
+                    veces. Devuelve `null` en cero, así que una pestaña vacía
+                    no dibuja un «0» — no hay nada, y eso se dice no
+                    dibujando nada. */}
+                <Contador valor={tab.cuenta} max={99} size="sm"
+                    tono={tab.tono || (isActive ? 'brand' : 'neutral')}
+                    aria-label={`${tab.cuenta} en ${tab.label}`} />
               </button>
             );
           })}
@@ -363,7 +384,15 @@ export default function ViewTabBar({
             <LiquidSelect
               value={activeTab}
               onChange={(key) => { onTabChange?.(key); setIsSearchMode(false); }}
-              options={tabs.map(t => ({ value: t.key, label: t.label }))}
+              /* En el teléfono la fila es un desplegable, así que el número
+                 va PEGADO AL RÓTULO y no como burbuja: una lista de opciones
+                 no tiene dónde colgar una. Sin esto, el contador existiría en
+                 escritorio y no en el teléfono, que es justo donde la pestaña
+                 cerrada esconde más — no hay fila que la delate. */
+              options={tabs.map(t => ({
+                value: t.key,
+                label: Number(t.cuenta) > 0 ? `${t.label} · ${t.cuenta}` : t.label,
+              }))}
               icon={ActiveTabIcon}
               clearable={false}
               compact

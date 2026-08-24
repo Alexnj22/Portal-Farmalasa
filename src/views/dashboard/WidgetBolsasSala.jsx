@@ -196,7 +196,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
     /**
-     * Entregar NO imprime nada — ver el mismo comentario en `TabBolsas`. El
+     * Entregar NO imprime nada — ver el mismo comentario en `CircuitoDeBolsas`. El
      * comprobante de entrega se quitó el 2026-08-24 por pedido del usuario: la
      * entrega ya queda registrada con folio, hora y las dos personas.
      */

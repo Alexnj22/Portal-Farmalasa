@@ -86,10 +86,25 @@ const MENU_GROUPS = [
     // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
     // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
     // cerrar el turno, y quien lo abre —la sala que cierra, quien confirma la
-    // diferencia— entra por eso y no por otra cosa. Con un solo módulo el grupo
-    // se pinta plano (renderGroup -> renderNavItem), así que queda a un clic
-    // desde cualquier pantalla en vez de detrás del acordeón.
-    { key: 'cortes',       label: 'Cortes de caja', icon: Wallet,       modules: ['cortes_caja'] },
+    // diferencia— entra por eso y no por otra cosa.
+    //
+    // El 2026-08-24 dejó de ser un grupo de un módulo: «Bolsas de efectivo» era
+    // una PESTAÑA de Cortes y hoy es su vecina. «Me estoy perdiendo en los
+    // pasos, al tener tantos, me pierdo y no sé dónde está qué» (usuario) —
+    // metidas en una vista, el corte y el circuito del efectivo compartían una
+    // píldora que cambiaba de significado según la pestaña, y las cuatro etapas
+    // de la bolsa quedaban apiladas dentro de una sola.
+    //
+    // Son dos preguntas seguidas y por eso van JUNTAS en un grupo y no en dos
+    // menús sueltos: el corte dice cuánto efectivo hubo, la bolsa dice dónde
+    // está. Se llama «Efectivo» y no «Caja» porque «caja» ya nombra el punto de
+    // venta en el resto del portal.
+    //
+    // Y esto además le abrió la puerta a `bolsas`, que era módulo de permisos
+    // propio —con alcance y tres capacidades— sin ruta ni entrada de menú: se
+    // llegaba sólo por `/cortes`, detrás del guardia de `cortes_caja`. Quien
+    // tuviera `bolsas` y no `cortes_caja` no podía entrar, y no daba error.
+    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['cortes_caja', 'bolsas'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

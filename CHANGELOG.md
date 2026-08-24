@@ -21,6 +21,163 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.744.1 — El registro se recalcula, y el rojo de eficiencia era un pico
+
+Dos pendientes que quedaron de las tandas anteriores, verificados los dos.
+
+**El registro.** El barrido no podía leer `TabBolsas.jsx` porque otra sesión
+estaba renombrándolo en el mismo árbol. Estabilizado, el recálculo recoge las
+diecisiete tarjetas migradas: **Personal 93 → 95 %** (su eje de vista, de 71 a
+92) y **Comunicación 92 → 95 %** (de 59 a 89). El promedio del portal sigue en
+94 %.
+
+**El rojo de `gate:eficiencia` NO era una regresión.** Marcaba **2.752
+escrituras sin inserción por hora contra un tope de 1.240**, medido con ventana
+válida, y se anotó con la advertencia de que se había medido *mientras otra
+sesión trabajaba en el circuito de traslados*. Remedido en reposo, también con
+ventana válida: **894/h — exactamente el mismo número que el informe del
+23-ago**, con cero llamadas salientes fuera de 2xx y cero colgadas.
+`pedido_traslado_linea`, que dominaba el pico con 3.337/h, ya ni aparece entre
+las seis primeras. **La advertencia era lo que evitó tocar producción por un
+pico**, y el arreglo de v2.743.1 —que la lectura anterior sólo se pise si la
+corrida logró juzgar— es lo que permitió remedir sin reiniciar la ventana.
+
+**Y de verificarlo salió un hallazgo que sí es real, y que corrige lo que se
+había dicho.** Se afirmó que el 0 % HOT era «estructural porque `estado` está
+indexada». Eso vale para `pedido_traslado_linea` —verificado en
+`trasladar-pedido-erp`: todos sus updates cambian `estado`, así que ahí el HOT
+es imposible por definición— pero **no** para `inventory`, que también está en
+0 % y por otra causa: leyendo la función viva, `sync_inventory_batch` sólo
+escribe `cantidad`, `descripcion`, `presentacion` y `synced_at`, y **ninguna de
+las cuatro está indexada**. Ahí lo que falta es espacio en la página.
+
+La correlación, medida sobre cuatro tablas, no deja lugar a dudas:
+
+| tabla | filas por página | HOT |
+|---|---:|---:|
+| `impresion_dispositivos` | 0.8 | **100 %** |
+| `session_last_seen` | 72 (filas diminutas) | **100 %** |
+| `pedido_traslado_linea` | 14.8 (~550 B/fila ≈ página llena) | 0 % |
+| `inventory` | 10.6 | 0 % |
+
+O sea que **a `inventory` sí se la puede llevar a HOT** bajándole el
+`fillfactor`, y vale la pena: 23.746 filas, 18 MB, **seis índices**, y el sync
+corre cada minuto por siete áreas — con 0 % HOT cada update rehace las seis
+entradas de índice sin necesidad. No se hizo: es una de las tablas calientes de
+la regla de migraciones, el `ALTER TABLE` sólo aplica a páginas nuevas y para
+que valga sobre lo existente hay que reescribir la tabla, que es exactamente el
+DDL que causó el outage del 2026-07-08. Queda anotado con su ventana y su
+receta.
+
+## v2.744.0 — El historial en tarjetas, cortado por sucursal y desenlace
+
+> «mejora historial, que se vean siempre como cards, si alcance todos, que se
+> separe por sucursal y por rechazado / aprobado.»
+
+── Y sí, esto revierte una decisión escrita ──────────────────────────────────
+
+El historial era un `DataTable` desde el 2026-08-07, y el motivo estaba bien
+puesto: un historial es una lista de REGISTROS, y `DataTable` da la tabla en
+escritorio, las fichas en el teléfono y el vacío, los tres de una.
+
+Lo que esa forma no puede dar son **dos niveles de corte**. Una tabla tiene UN
+encabezado y una sola tira de filas; meter «sucursal» y «desenlace» adentro
+obliga a filas-título que no son registros — lo decía el propio comentario que
+esta entrega retira: *«el historial es una tabla donde un encabezado de grupo no
+entra»*. Con tarjetas, el corte ES la estructura del documento y no un remiendo
+dentro de una fila.
+
+── Los dos cortes, y por qué en ese orden ────────────────────────────────────
+
+**Sucursal primero, desenlace después.** Quien mira las siete salas pregunta
+«¿qué pasó en Bodega?», y recién adentro «¿qué salió y qué se rechazó?». Al
+revés —dos bloques grandes con las salas mezcladas— hay que recorrer la lista
+entera para juntar lo de una sala.
+
+**La sucursal es el ORIGEN, no el destino.** El desenlace que agrupa —recibido o
+rechazado— es la decisión de la sala que TIENE el producto. Cortar por destino
+pondría bajo un mismo título decisiones de seis salas distintas, y el segundo
+corte dejaría de significar algo.
+
+Y el corte por sucursal aparece **sólo con alcance sobre todas y sin una sala ya
+filtrada**: con una sola a la vista, un único título repetido no separa nada.
+
+Las salas van ordenadas por **cuántos traslados cerró cada una**, no
+alfabéticamente: se abre esta pestaña para ver dónde pasó algo, y el orden
+alfabético esconde a la que más movió detrás de la que no movió nada.
+
+── Lo que la tarjeta recuperó ────────────────────────────────────────────────
+
+La tabla escondía tres columnas por debajo de `lg` —quién pidió, quién resolvió
+y el MOTIVO— y se recuperaban abriendo la ficha del teléfono. En una tarjeta no
+hay dónde abrir, así que van las siete visibles. El motivo era justamente el
+dato que uno viene a leer en un historial.
+
+**Los envíos cerrados** pasan a tarjetas también, y se cortan por sucursal —
+pero **no** por desenlace: un envío no tiene uno solo, tiene uno por renglón (la
+sala se quedó tres y devolvió dos), así que «aprobado / rechazado» no lo
+describe.
+
+── Medido en el navegador ────────────────────────────────────────────────────
+
+Contra producción, escritorio 1280 y WebKit iPhone 13: **48 tarjetas, 0 tablas,
+cero desplazamiento horizontal** en los dos, y los siete cortes de sala con sus
+bloques adentro — `BODEGA · 24 → RECIBIDOS · 23 / RECHAZADOS · 1`, `SALUD 1 ·
+6`, y así hasta `BODEGA · ÁREA DE VENCIDOS · 1`.
+
+## v2.743.6 — Las bolsas de efectivo tienen su propia pantalla, y cada etapa su pestaña
+
+> «me estoy perdiendo en los pasos, al tener tantos, me pierdo y no sé dónde
+> está qué» (usuario)
+
+**Bolsas de efectivo sale de Cortes de caja y es su propio módulo.** El menú
+gana un grupo **Efectivo** con las dos: *Cortes de caja* y *Bolsas de efectivo*.
+Vivían juntas con un buen argumento —es el mismo dinero, antes y después del
+corte— y el precio se cobró en la pantalla: una sola píldora que cambiaba de
+significado según la pestaña (dos períodos distintos, dos carriles, ranuras que
+aparecían y desaparecían), y las cuatro etapas del efectivo apiladas dentro de
+una de esas pestañas. Con los dos avisos, las diferencias sin resolver y el
+archivo de depósitos, la pantalla llegaba a **ocho bloques**, tres de ellos
+plegados.
+
+**Las cuatro etapas son pestañas, y cada una lleva su número.** *En la sala ·
+Esperando recepción · Por contar · Finalizadas*. El contador se construyó
+ANTES de partir la pantalla, no después: una pestaña esconde lo suyo, y acá lo
+escondido es dinero parado — sin el número, una bolsa trabada seis días vive
+detrás de una pestaña que nadie abre. «Esperando recepción» se pone en rojo
+cuando alguna lleva más de un día. Es una capacidad nueva de `ViewTabBar`, así
+que queda para las 29 vistas con pestañas, no sólo para ésta.
+
+**Y el buscador filtra las CUATRO, no la abierta.** Ésa es la otra mitad de «no
+sé dónde está qué»: la primera es cuánto trabajo hay en cada paso, la segunda es
+dónde quedó ESTA bolsa. Al escribir un folio, los contadores dicen en cuál cayó
+—`QA-R2` deja la fila en `0 · 0 · 1 · 0`— y el trabajo de buscar ya está hecho.
+Busca por folio, sala, día, caja, monto y quién firmó.
+
+**De paso, un permiso que no tenía puerta.** `bolsas` era módulo de permisos
+propio —con alcance y tres capacidades— sin ruta ni entrada de menú: se llegaba
+sólo por `/cortes`, detrás del guardia de `cortes_caja`. Quien tuviera `bolsas`
+y no `cortes_caja` **no podía entrar**, y el filtro de sala leía el alcance de
+`cortes_caja` en vez del suyo. Las dos cosas se leen como «el permiso no
+funciona» y ninguna daba error.
+
+**El carril son tres tarjetas y ninguna repite una pestaña.** Eran «En la sala ·
+En camino · Por contar · Sin resolver», o sea el desglose por etapa dicho dos
+veces. Hoy son las cifras que **cruzan** las cuatro: *Sin recibir* (lo que está
+en sala o en camino), *La más vieja* (los días de la pendiente más antigua, en
+rojo a los 4) y *Sin resolver*. La cuarta —«Al banco»— se cayó midiendo: ya
+encabeza «Finalizadas» a 26px con su botón al lado, y con cuatro tarjetas el
+monto de miles salía cortado (`$1,224.`) y un escalón más chico que sus vecinas.
+Con tres, cada una llega a 184px a 1512 y se lee entera.
+
+**Lo que se comprobó en pantalla**, contra el entorno de pruebas con nueve
+bolsas sembradas en las cuatro etapas y borradas al terminar: los contadores dan
+3·2·2·2 y coinciden con lo sembrado; las tres cifras del carril cuadran al
+centavo ($1,224.50 · 5 d · $12.65); el buscador deja `QA-R2` sólo en «Por
+contar» y `nohaynada` en cero; ningún texto se corta a 1512; y en iPhone 13 la
+fila de pestañas cae al desplegable **con el número pegado al rótulo** («En la
+sala · 3»), sin desborde horizontal.
+
 ## v2.743.5 — la foto del daño se abre sin salir del portal
 
 La miniatura de `EvidenciaFotos` era un `<a target="_blank">`. Mirar la foto

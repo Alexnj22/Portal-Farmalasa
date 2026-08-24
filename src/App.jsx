@@ -52,6 +52,7 @@ const VacationPlanView = lazy(IMPORTADORES.VacationPlanView);
 const PayrollView = lazy(IMPORTADORES.PayrollView);
 const VentasView = lazy(IMPORTADORES.VentasView);
 const CortesView = lazy(IMPORTADORES.CortesView);
+const BolsasView = lazy(IMPORTADORES.BolsasView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
@@ -701,6 +702,7 @@ function MainApp() {
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="cortes" element={<PermissionGuard moduleKey="cortes_caja"><CortesView /></PermissionGuard>} />
+                                    <Route path="bolsas" element={<PermissionGuard moduleKey="bolsas"><BolsasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
@@ -829,6 +831,7 @@ const ROUTE_TITLES = {
     '/announcements':     'Centro de comunicaciones',
     '/ventas':            'Ventas',
     '/cortes':            'Cortes de caja',
+    '/bolsas':            'Bolsas de efectivo',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/clientes':          'Clientes',

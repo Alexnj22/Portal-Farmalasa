@@ -21,6 +21,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     impresion:          ['ticketera', 'imprimir ticket', 'rollo', 'prueba de papel', 'impresora'],
     carne_temporal:     ['carne', 'carnet', 'carne temporal', 'gafete', 'codigo de barras', 'acceso temporal', 'anular carne'],
     cortes_caja:        ['corte de caja', 'cuadre', 'arqueo', 'faltante', 'sobrante', 'diferencia de caja', 'efectivo'],
+    bolsas:             ['bolsa de efectivo', 'entregar dinero', 'sacar dinero', 'contar el dinero', 'remesa', 'deposito al banco', 'etiqueta de la bolsa', 'vale'],
     ios_test:           ['prueba de app movil'],
     sync_health:        ['estado de los datos', 'tareas programadas', 'salud del sistema'],
     orphan_objects:     ['archivos huerfanos', 'storage sin usar', 'limpieza'],

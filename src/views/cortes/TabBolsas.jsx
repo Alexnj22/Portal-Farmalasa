@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import {
-    AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
+    AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins, Inbox, Landmark, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -12,7 +12,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
-    fetchPersonasDeBolsas, fetchSaldos, marcarConteoBolsa,
+    fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos, marcarConteoBolsa,
     recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -34,6 +34,10 @@ const DetalleDeBolsa = lazy(() => import('../../components/bolsas/DetalleDeBolsa
  * personas, y sólo hace falta al apretar «Sacar dinero». */
 const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
 const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBolsas'));
+
+/* Y el depósito al banco: sólo hace falta al cerrar el día, después de haber
+ * confirmado un conteo. */
+const DepositoAlBanco = lazy(() => import('../../components/bolsas/DepositoAlBanco'));
 
 /**
  * El proceso entero de una bolsa de efectivo, en una pantalla.
@@ -630,6 +634,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
      * no puede depender del período (ver `fetchBolsasConDiferencia`), y para una
      * sala son lo único que vuelve después de entregar. */
     const [diferencias, setDiferencias] = useState([]);
+    /* Lo contado y todavía sin llevar al banco. Viene SIN rango, como las
+     * diferencias: efectivo confirmado que no se depositó es un pendiente,
+     * y un pendiente no puede desaparecer por mover unas fechas. */
+    const [porDepositar, setPorDepositar] = useState([]);
+    const [depositando, setDepositando] = useState(false);
     const { cerradas, alternar: plegar, abrir: abrirEtapa } = usePlegado();
     // Dónde está «Por contar», para llevar ahí a quien acaba de recibir.
     const anclaPorContar = useRef(null);
@@ -681,6 +690,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
             fetchBolsasConDiferencia(),
         ]);
+        const paraBanco = await fetchPorDepositar();
         // Una diferencia puede estar además dentro del rango: se deduplica por
         // id para no dibujar la misma bolsa dos veces en «Contadas».
         const vistas = new Set((contadas || []).map((b) => b.id));
@@ -692,6 +702,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
         const saldos = await fetchSaldos(todas.map((b) => b.id));
         setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        setPorDepositar(paraBanco || []);
         setLeidoEn(Date.now());
         setCargando(false);
         const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por, b.dif_por]);
@@ -1309,6 +1320,44 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                 vacio={pendientesFuera.length ? "Nada pendiente de contar en estas fechas" : "Nada pendiente de contar"}
             />
 
+            {/* ── El depósito al banco ─────────────────────────────────────
+                Lo que sigue después de confirmar un conteo, y por eso va DESPUÉS
+                de «Por contar» y antes del archivo: es trabajo pendiente, no
+                historia.
+
+                No se dibuja como etapa porque no lo es — las bolsas ya están
+                contadas y siguen en «Contadas». Esto es la decisión de cuánto de
+                todo eso se lleva al banco hoy.
+
+                Viene sin rango a propósito: efectivo confirmado que nadie
+                depositó es un pendiente, y un pendiente no puede desaparecer por
+                mover unas fechas. */}
+            {puedeContar && porDepositar.length > 0 && (
+                <div data-surface="card" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-3">
+                    <div>
+                        <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                            Contado y sin llevar al banco
+                        </div>
+                        {verMontos ? (
+                            <div className="text-display font-black tabular-nums text-content leading-none mt-1">
+                                {formatMoney(porDepositar.reduce((a, b) => a + Number(b.contado || 0), 0))}
+                            </div>
+                        ) : (
+                            <div className="text-display font-black tabular-nums text-content leading-none mt-1">
+                                {porDepositar.length}
+                            </div>
+                        )}
+                        <div className="text-caption text-content-2 mt-1.5">
+                            en {porDepositar.length} {porDepositar.length === 1 ? 'bolsa' : 'bolsas'}
+                        </div>
+                    </div>
+                    <Button variant="primary" size="sm" icon={Landmark}
+                        onClick={() => setDepositando(true)}>
+                        Depósito al banco
+                    </Button>
+                </div>
+            )}
+
             {/* ── 4. Contadas ───────────────────────────────────────────── */}
             <Etapa
                 icon={ShieldCheck}
@@ -1371,6 +1420,18 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala, onAcciones, 
                         cerradaPor={nombrePersona.get(abierta.cerrada_por)}
                         onClose={() => setAbierta(null)}
                         onCambio={cargar}
+                    />
+                </Suspense>
+            )}
+
+            {depositando && (
+                <Suspense fallback={null}>
+                    <DepositoAlBanco
+                        abierto={depositando}
+                        bolsas={porDepositar}
+                        personas={empleados}
+                        onClose={() => setDepositando(false)}
+                        onHecho={cargar}
                     />
                 </Suspense>
             )}

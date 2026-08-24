@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.739.0 — El depósito al banco cierra lo que el conteo confirmó
+
+La otra mitad del circuito que el usuario dictó el 24-ago. Después de confirmar
+el conteo aparece **cuánto hay contado y sin llevar al banco**, y un botón que
+abre la decisión:
+
+```
+$4,532.67   contado en 8 bolsas
+Cuánto va al banco        4,500.00
+Entra de afuera  $50.00   ·  «Vale de $50 en Salud 3»
+─────────────────────────────────
+Contado                 $4,532.67
+Entra de afuera         +  $50.00
+Al banco              − $4,500.00
+Remanente                  $82.67
+```
+
+Cuatro decisiones que valen más que el formulario:
+
+- **Se llama «Depósito al banco», no «Remesa».** El usuario dice remesar y en su
+  idioma está bien, pero en esta misma pantalla «Remesa» ya es otra cosa: el
+  motivo con el que una sala le paga una transferencia de MoneyGram o RIA a un
+  cliente. Dos cosas distintas con el mismo nombre, a un clic de distancia,
+  garantizan que alguien elija la equivocada.
+- **El remanente es una RESTA, no un campo.** No hay dónde escribirlo, así que
+  no puede decir otra cosa que lo que dan los números de arriba. Y el total
+  contado tampoco se escribe: lo suma el servidor sobre las bolsas al cerrar.
+- **El dinero que entra de afuera exige decir de dónde salió.** Los ~$50 que
+  completan el monto redondo salen por «Sacar dinero», que ya existe. Sin nota,
+  el servidor rechaza: plata que entra sin explicación es plata que aparece de
+  la nada.
+- **El remanente lo firma quien CIERRA, no quien lo recibe.** *«quien marca como
+  finalizado / entregado, queda registrado que fue quien entrego el remanente. no
+  hace falta que don rutilio confirme»*. Es distinto de la entrega de bolsas,
+  donde quien retira sí se identifica con su carné: allá el dinero se va a la
+  calle, acá pasa de una persona de administración a otra.
+
+**El cambio de moneda por billete no se registra**: cambiar $300 de moneda por
+$300 en billete no mueve ningún total, y de este módulo ya se quitó un motivo de
+salida por exactamente eso.
+
+Migración `20260824181552`. Probada primero en el entorno de pruebas, donde se
+cazó que **`FOR UPDATE` no se puede usar junto a un agregado** — el candado que
+evita que dos cierres se lleven las mismas bolsas va en una consulta aparte.
+Verificado de punta a punta desde el navegador: `DEP-260824-1`, 8 bolsas ligadas,
+y la franja desaparece porque ya no queda nada sin depositar.
+
+**Queda pendiente y escrito:** el aporte se registra como monto con su nota, no
+enlazado al vale real — vincularlo exigiría adivinar con qué motivo se registró,
+y un vínculo mal adivinado es peor que ninguno.
+
 ## v2.738.4 — El recorrido tambien dice si el lector mando algo
 
 > «la pantalla no cambia en nada al escanear» — con una captura de **Llevar

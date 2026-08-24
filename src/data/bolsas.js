@@ -20,7 +20,7 @@ const CAMPOS = `
     entregada_por, entregada_at, recibida_por, recibida_at,
     contado, contado_por, contado_at,
     conteo_marcado, conteo_marcado_por, conteo_marcado_at,
-    dif_via, dif_causa, dif_por, dif_at
+    dif_via, dif_causa, dif_por, dif_at, deposito_id
 `;
 
 /**
@@ -248,6 +248,38 @@ export async function fetchBolsasConDiferencia() {
     const { data, error } = await supabase.rpc('get_bolsas_con_diferencia');
     if (error) { console.error('bolsas: fetchBolsasConDiferencia failed:', error.message); return []; }
     return data || [];
+}
+
+// ── El depósito al banco ───────────────────────────────────────────────────
+//
+// Lo que sigue después de confirmar el conteo: se decide cuánto se lleva al
+// banco, entra lo que haga falta para llegar al monto redondo, y lo que sobra
+// queda como remanente.
+//
+// **No es la «Remesa» de `bolsas_tipos_salida`**, que es el motivo con el que
+// una sala le paga una transferencia a un cliente. Dos cosas distintas en la
+// misma pantalla no pueden llamarse igual.
+
+/** Lo contado y todavía sin llevar al banco. */
+export async function fetchPorDepositar() {
+    const { data, error } = await supabase.rpc('get_por_depositar');
+    if (error) { console.error('bolsas: fetchPorDepositar failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
+ * Cierra el depósito. El total NO se manda: lo suma el servidor sobre las
+ * bolsas, porque es la cifra contra la que se decidió cuánto llevar.
+ */
+export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = null, recibidoPor = null, nota = null }) {
+    return supabase.rpc('registrar_deposito_bancario', {
+        p_bolsa_ids: bolsaIds,
+        p_monto: monto,
+        p_aporte: aporte,
+        p_aporte_nota: aporteNota,
+        p_recibido_por: recibidoPor,
+        p_nota: nota,
+    });
 }
 
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */

@@ -13,14 +13,10 @@
     "src/components/forms/FormNursingRegents.jsx",
     "src/components/forms/FormProveedorDetail.jsx",
     "src/components/forms/FormRehireEmployee.jsx",
-    "src/views/CotizacionesView.jsx",
-    "src/views/DashboardView.jsx",
     "src/views/EncuestaAdminView.jsx",
     "src/views/FacturacionView.jsx",
     "src/views/dashboard/WidgetAnnulmentRequest.jsx",
     "src/views/pedidos/RecepcionModal.jsx",
-    "src/views/productos/TabCatalogo.jsx",
-    "src/views/purchases/CuentasPorPagarView.jsx",
     "src/views/purchases/ProveedoresView.jsx"
   ]
 }

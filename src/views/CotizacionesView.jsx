@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback , useRef } from 'react';
+import useBorrador from '../hooks/useBorrador';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -363,6 +364,21 @@ export default function CotizacionesView() {
     const [saving,           setSaving]           = useState(false);
     const [saveError,        setSaveError]        = useState('');
     // Sucursal seleccionada en el formulario — inicia con la rama del usuario
+    /* ── La cotización a medio armar se guarda sola ──────────────────────────
+     *
+     * Una cotización se arma renglón por renglón: buscar el producto, elegir su
+     * presentación, poner la cantidad. Diez renglones son varios minutos, y la
+     * sesión se cierra sola por inactividad — hasta ahora se perdía entera.
+     *
+     * **Sólo mientras se CREA** (`mode === 'form'` sin `editingId`): editando
+     * una que ya existe, la fila de la base es la verdad, y un borrador viejo
+     * repoblándola cambiaría un precio ya ofrecido por escrito a un cliente.
+     *
+     * El cliente elegido no entra: se guarda su id, no el objeto, porque el
+     * nombre y el NIT se vuelven a resolver contra la base al repoblar — un
+     * borrador de ayer con la ficha de ayer ofrecería datos que quizá cambiaron. */
+    const claveBorrador = 'cotizacion_nueva';
+
     const [formBranchId, setFormBranchId] = useState(() =>
         user?.branchId ? String(user.branchId) : ''
     );
@@ -520,6 +536,30 @@ export default function CotizacionesView() {
     const removeItem = useCallback((id) => setItems(prev => prev.filter(i => i._id !== id)), []);
 
     // ── Reset formulario ──────────────────────────────────────────────────────
+    const creando = mode === 'form' && !editingId;
+    const { recuperado, descartar } = useBorrador(
+        claveBorrador,
+        { fecha, customerId, docType, paymentType, appliesRetention, notes, items, formBranchId },
+        { activo: creando },
+    );
+
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (!creando) { repuesto.current = false; return; }
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        // Repone la cotización UNA vez al entrar al formulario. No hay cascada:
+        // el pestillo ya se cerró arriba.
+        if (recuperado.fecha) setFecha(recuperado.fecha);
+        if (recuperado.customerId) setCustomerId(recuperado.customerId);
+        if (recuperado.docType) setDocType(recuperado.docType);
+        if (recuperado.paymentType) setPaymentType(recuperado.paymentType);
+        if (recuperado.appliesRetention != null) setAppliesRetention(!!recuperado.appliesRetention);
+        if (recuperado.notes) setNotes(recuperado.notes);
+        if (Array.isArray(recuperado.items) && recuperado.items.length) setItems(recuperado.items);
+        if (recuperado.formBranchId) setFormBranchId(recuperado.formBranchId);
+    }, [creando, recuperado]);
+
     const resetForm = () => {
         setFecha(todayStr()); setCustomerId(''); setDocType('COF');
         setPaymentType('EFECTIVO'); setAppliesRetention(false);
@@ -589,6 +629,7 @@ export default function CotizacionesView() {
                   total: cotData.total ?? null, renglones: items.length });
             const { data: freshItems, error: freshErr } = await fetchCotizacionItems(cotData.id);
             if (freshErr) console.error('handleSave: fetch fresh items failed:', freshErr.message);
+            descartar();   // la cotización existe: el borrador ya no sirve
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
         } catch (e) { setSaveError(mensajeAmigable(e, 'Error al guardar.')); }

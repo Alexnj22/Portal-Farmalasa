@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.739.1 — Dos falsos positivos y dos formularios que sí perdían trabajo
+
+Siguiendo la deuda de borradores, **dos de los que quedaban no eran deuda** — y
+distinguirlos importa tanto como saldar los reales, porque un gate que acusa a
+quien hizo bien el trabajo es un gate que se termina desactivando.
+
+**`TabCatalogo` autoguarda TODO**: la foto, el devolutivo, la categoría y los
+principios activos se persisten al cambiar, con 700 ms de espera, y por eso la
+pantalla no tiene botón «Guardar» — su propio pie lo dice. Un borrador ahí
+guardaría una copia de algo que ya está en la base, y al recuperarlo podría pisar
+un cambio POSTERIOR hecho desde otra pantalla.
+
+**`DashboardView` no es un formulario.** Sus doce controles son ONCE selectores
+de sucursal —uno por widget: turnos, ventas, anulaciones, min/máx, movimientos,
+facturas, cortes, bolsas…— más el selector de mes: filtran lo que cada tarjeta
+muestra, no capturan nada. El detector ya excluye `SearchInput`, `RangeDatePicker`
+y `PeriodPicker` por este motivo, y no puede excluir `LiquidSelect`, que en el
+resto del portal SÍ es captura. Los dos quedan declarados como excepción con su
+motivo verificable, no borrados del conteo.
+
+**Y dos que sí perdían trabajo de verdad:**
+
+**El pago a un proveedor.** Repartir un pago entre sus facturas es teclear un
+monto por documento; los proveedores con muchas pendientes son varios minutos que
+se perdían enteros. La clave lleva el NIT del emisor —uno repoblando el pago de
+otro aplicaría montos a facturas que no son— y **sólo se guarda lo que se estaba
+armando**: el reparto, la forma, la referencia y la fecha. Nunca los días ni el
+límite de crédito, que son condiciones del proveedor con su propio botón y que un
+borrador viejo cambiaría sin que nadie lo pidiera.
+
+**La cotización.** Se arma renglón por renglón —buscar el producto, elegir la
+presentación, poner la cantidad—, y diez renglones son varios minutos. Sólo
+mientras se CREA: editando una que ya existe, la fila de la base es la verdad, y
+un borrador viejo repoblándola cambiaría **un precio ya ofrecido por escrito a un
+cliente**.
+
+Deuda de borradores: **19 → 15**.
+
 ## v2.739.0 — El depósito al banco cierra lo que el conteo confirmó
 
 La otra mitad del circuito que el usuario dictó el 24-ago. Después de confirmar

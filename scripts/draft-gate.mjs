@@ -108,6 +108,27 @@ const EXCEPCIONES = {
     'Si algún día se decide que sí debe sobrevivir, el lugar es el store —con fecha ' +
     'de vencimiento y revalidación de existencia—, no `saveDraft` sobre este modal. ' +
     'Revisado el 2026-08-21.',
+
+  'src/views/productos/TabCatalogo.jsx':
+    'No hay nada que perder: TODO autoguarda. La foto, el devolutivo, la ' +
+    'categoría y los principios activos se persisten al cambiar —con 700 ms de ' +
+    'espera, misma decisión que la ficha del proveedor en Política de ' +
+    'Vencimiento— y por eso la pantalla no tiene botón «Guardar»: su pie lo dice ' +
+    'literalmente («todo autoguarda: foto, devolutivo, categoría y principios»). ' +
+    'Un borrador acá guardaría una copia de algo que ya está en la base, y al ' +
+    'recuperarlo podría pisar un cambio POSTERIOR hecho desde otra pantalla. ' +
+    'Verificado el 2026-08-24.',
+
+  'src/views/DashboardView.jsx':
+    'No es un formulario. Sus 12 controles son ONCE selectores de sucursal —uno ' +
+    'por widget: turnos, ventas, anulaciones, min/max, movimientos, facturas, ' +
+    'cortes, bolsas…— más el selector de mes: filtran lo que cada tarjeta ' +
+    'muestra, no capturan nada. El detector excluye `SearchInput`, ' +
+    '`RangeDatePicker` y `PeriodPicker` por este mismo motivo, y no puede ' +
+    'excluir `LiquidSelect`, que en el resto del portal SÍ es captura. Lo que sí ' +
+    'se puede perder en el tablero —el acomodo de los widgets— ya persiste por ' +
+    'su cuenta en `portal_dash_layout_*`, y los formularios de verdad viven en ' +
+    'los widgets, que se miran uno por uno. Verificado el 2026-08-24.',
 };
 
 const esJsx = (n) => n.endsWith('.jsx');

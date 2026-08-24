@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import useBorrador from '../../hooks/useBorrador';
 import {
     Wallet, AlertTriangle, Clock, CheckCircle2, Landmark, Ban, CalendarRange,
 } from 'lucide-react';
@@ -114,6 +115,38 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
     const [dias, setDias]         = useState(fila.dias_credito ?? '');
     const [limite, setLimite]     = useState(fila.limite_credito ?? '');
 
+    /* ── El pago a medio armar se guarda solo ────────────────────────────────
+     *
+     * Repartir un pago entre las facturas de un proveedor es teclear un monto
+     * por documento: los que tienen muchas pendientes son varios minutos de
+     * trabajo, y la sesión se cierra sola por inactividad. Hasta ahora se perdía
+     * entero y había que volver a repartirlo factura por factura.
+     *
+     * La clave lleva el NIT del emisor: cada proveedor tiene su reparto, y uno
+     * repoblando el pago de otro aplicaría montos a facturas que no son.
+     *
+     * Sólo se guarda lo que se estaba ARMANDO —el reparto, la forma, la
+     * referencia y la fecha—, nunca los días ni el límite de crédito: esos dos
+     * son condiciones del proveedor con su propio botón de guardar, y un
+     * borrador viejo repoblándolos cambiaría un dato ya confirmado. */
+    const { recuperado, descartar } = useBorrador(
+        `cxp_pago_${fila.emisor_nit}`, { montos, forma, referencia, fecha },
+    );
+
+    const repuesto = useRef(false);
+    useEffect(() => {
+        if (repuesto.current || !recuperado) return;
+        repuesto.current = true;
+        // Repone el reparto UNA vez. No hay cascada: el pestillo ya se cerró
+        // arriba, así que la segunda pasada del efecto sale antes.
+        /* eslint-disable react-hooks/set-state-in-effect */
+        if (recuperado.montos) setMontos(recuperado.montos);
+        if (recuperado.forma) setForma(recuperado.forma);
+        if (recuperado.referencia) setRef(recuperado.referencia);
+        if (recuperado.fecha) setFecha(recuperado.fecha);
+        /* eslint-enable react-hooks/set-state-in-effect */
+    }, [recuperado]);
+
     const cargar = useCallback(async () => {
         const { filas, error: e } = await fetchDetalleProveedor(fila.emisor_nit);
         setError(e?.message ?? '');
@@ -160,6 +193,7 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
         useStaffStore.getState().appendAuditLog('CXP_PAGO_REGISTRADO', fila.emisor_nit, {
             proveedor: fila.proveedor, monto: totalAplicado, forma, referencia, facturas: aplicaciones.length,
         });
+        descartar();   // el pago existe: el borrador ya no sirve
         setMontos({}); setRef('');
         await cargar();
         onHecho();

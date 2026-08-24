@@ -338,7 +338,17 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 // `DataTable`: una excepción sin motivo es deuda disfrazada, y un
                 // hallazgo que aparece en cada corrida y nunca se arregla es como
                 // se aprende a ignorar un informe.
-                const tablas = [...document.querySelectorAll('table:not([data-tabla="matriz"])')];
+                // DOS listas, porque son dos preguntas distintas y confundirlas
+                // ya costó una corrida: al excluir la matriz del conteo de
+                // HALLAZGOS quedó excluida también del de CONTENIDO, y
+                // `schedules` —que pinta un calendario entero— pasó a contarse
+                // como «sin nada que medir». El barrido bajó de 27 rutas medidas
+                // a 25 sin que el portal hubiera cambiado.
+                //
+                //   `todasLasTablas` → ¿había algo que mirar en esta vista?
+                //   `tablas`         → ¿cayó a tabla algo que debía ser ficha?
+                const todasLasTablas = [...document.querySelectorAll('table')];
+                const tablas = todasLasTablas.filter(t => t.getAttribute('data-tabla') !== 'matriz');
                 const fichas = [...document.querySelectorAll('button[data-surface="card"], div[data-surface="card"]')]
                     .filter(e => e.firstElementChild?.classList?.contains('justify-between')).length;
                 const anchas = tablas.filter(t => t.getBoundingClientRect().width > vw + 1).length;
@@ -370,7 +380,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 return { tablas: tablas.length, fichas, tablasAnchas: anchas,
                          reventó: /ALGO SALIÓ MAL/.test(texto),
                          sinAcceso,
-                         sinDatos: sinAcceso || (texto.length < 1100 && fichas === 0 && tablas.length === 0 && filas === 0),
+                         sinDatos: sinAcceso || (texto.length < 1100 && fichas === 0 && todasLasTablas.length === 0 && filas === 0),
                          vacia: texto.length < 1100 };
             });
             if (extra.reventó) extra.error = [...new Set(errores)].slice(0, 3);

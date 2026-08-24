@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.723.2 — El eje móvil, destrabado
+
+Cierra el trabajo del barrido. El eje `movil` sube de **85 a 92** en las 25 áreas
+—era el único cuello de botella común a todas— y el portal queda en 89%.
+
+**Un efecto secundario que hay que contar**, porque es la misma lección de todo
+el día. Al declarar la matriz del calendario con `data-tabla="matriz"` para
+sacarla del conteo de HALLAZGOS, quedó también fuera del conteo de CONTENIDO — y
+`schedules`, que pinta un calendario entero, pasó a contarse como «sin nada que
+medir». El barrido bajó de 27 rutas a 25 **sin que el portal hubiera cambiado**.
+
+Eran dos preguntas distintas compartiendo una variable: «¿había algo que mirar en
+esta vista?» y «¿cayó a tabla algo que debía ser ficha?». Ahora son dos listas, y
+`schedules` volvió a contarse.
+
+**Dónde queda el barrido:** 25 de 54 rutas medidas, **0 hallazgos, 0 reventadas,
+0 tablas en el teléfono, 0 inputs por debajo de 16 px**. Las 29 restantes no
+tienen datos en el entorno de pruebas.
+
+Queda anotado un caso para la próxima: **`branches` pinta 0 fichas** con ocho
+sucursales cargadas. O la vista filtra por algo, o sus tarjetas no usan el
+selector que el barrido reconoce — que es exactamente lo que le pasaba a
+`minmax`.
+
 ## v2.723.1 — El barrido con permisos destapó dos defectos móviles
 
 El barrido móvil pasó de medir **13 rutas de 54 a medir 27**, y con eso

@@ -703,3 +703,31 @@ limitado por los doce ejes — la mejor área llegaría a **92%, no a 100**.
 El cuello de botella es uno solo y es el mismo para las 25: el eje `movil`. Por
 eso destrabarlo era el trabajo, y no registrar sellos que no habrían cambiado
 nada.
+
+### 8.5 El eje móvil, destrabado — y los dos defectos que escondía
+
+El barrido pasó de medir **13 rutas de 54 a 25**, y con eso aparecieron dos
+defectos que llevaban meses detrás de un cero:
+
+- **Sucursales**: el botón «Horario (Hoy)» medía **310×43 px** — a un píxel del
+  blanco de dedo.
+- **Horarios**: el calendario pinta una tabla de 1,054 px en una pantalla de 390.
+  Ése **se queda tabla**: es una matriz (personas × días), no una lista de
+  registros. Quedó declarado con su motivo para que el barrido deje de
+  reportarlo en cada corrida — un hallazgo que aparece siempre y nunca se
+  arregla es como se aprende a ignorar un informe.
+
+Los dos cerrados en v2.723.1. El barrido final: **0 hallazgos, 0 reventadas, 0
+tablas en el teléfono, 0 inputs chicos**.
+
+El eje sube de 85 a **92**, no a 100: 29 rutas siguen sin datos en el entorno de
+pruebas, así que la mitad larga del portal continúa sin medirse en el teléfono.
+Un gate que no pudo medir no puede dar verde — pero tampoco corresponde el 85 de
+cuando no se sabía nada.
+
+**Y el arreglo tuvo un efecto secundario que hay que contar.** Al declarar la
+matriz para sacarla del conteo de HALLAZGOS quedó también fuera del conteo de
+CONTENIDO, y `schedules` —que pinta un calendario entero— pasó a contarse como
+«sin nada que medir». El barrido bajó de 27 rutas a 25 sin que el portal hubiera
+cambiado. Eran dos preguntas distintas usando la misma variable: «¿había algo que
+mirar?» y «¿cayó a tabla algo que debía ser ficha?». Ahora son dos listas.

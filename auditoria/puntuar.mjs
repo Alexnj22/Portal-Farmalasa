@@ -336,20 +336,28 @@ function puntuar(area) {
     // filas que desde el fuente son una caja cerrada. El barrido de 54 rutas es
     // lo que cierra ese hueco y su última corrida completa es del 2026-08-17.
     // Nada barrido después de esa fecha puede declararse verde.
-    // El barrido SÍ se corrió el 2026-08-23 y dijo «54 vistas · 0 por corregir».
-    // Ese cero era del INSTRUMENTO: sólo 13 rutas tenían algo que medir y las
-    // otras 41 llegaron sin datos —el entorno de pruebas no los tiene, y la
-    // cuenta de pruebas no abre todas las pantallas—. Su bandera `vacia` medía
-    // el texto del body ENTERO, y el menú lateral solo ya pasaba el umbral, así
-    // que ninguna vista sin datos se marcaba nunca.
+    // ── El barrido, tras destrabarlo el 2026-08-24 ─────────────────────────
+    // Pasó de medir 13 rutas de 54 a medir 25-27, y el camino tuvo dos
+    // diagnósticos equivocados que vale la pena tener escritos:
     //
-    // Se arregló el instrumento (ahora informa «MEDIDAS N» y marca las que no
-    // pudo medir), pero el eje NO sube: para medir de verdad hace falta correrlo
-    // contra un entorno CON datos. Un gate que no pudo medir no puede dar verde.
-    ev.movil = { pct: 85,
-        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas',
-        hallazgos: ['el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41',
-                    'la última corrida sobre un entorno CON datos es del 2026-08-17'] };
+    //   · «faltan datos» — falso: había 5.111 facturas, pero todas del 15 de
+    //     agosto, y las vistas filtran por hoy. Correr las fechas subió a 15.
+    //   · «hay que sembrar más» — falso: `minmax` pinta 50 filas y el barrido la
+    //     contaba como vacía. El detector estaba mal.
+    //   · lo real: 19 de las 54 devolvían «sin acceso» con la cuenta de pruebas.
+    //     El barrido medía el cartel, no la pantalla.
+    //
+    // Con eso aparecieron DOS defectos reales que llevaban escondidos detrás de
+    // un cero, y los dos quedaron cerrados en v2.723.1.
+    //
+    // El eje sube a 92 y no a 100: 29 rutas siguen sin datos en el entorno de
+    // pruebas, así que la mitad larga del portal continúa sin medirse en el
+    // teléfono. Un gate que no pudo medir no puede dar verde — pero tampoco
+    // corresponde el 85 de cuando no se sabía nada.
+    ev.movil = { pct: 92,
+        evidencia: 'gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, '
+                 + '0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).',
+        hallazgos: ['29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en

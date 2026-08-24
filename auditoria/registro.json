@@ -50,11 +50,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -78,7 +77,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -87,8 +86,7 @@
         "[resiliencia] catch-mudo: src/context/AuthContext.jsx:1040",
         "[observabilidad] src/data/system.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -149,11 +147,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -177,7 +174,7 @@
           "hallazgos": []
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -192,8 +189,7 @@
         "[seguridad] kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[seguridad] kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -244,11 +240,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -278,8 +273,7 @@
       "hallazgos": [
         "[observabilidad] src/data/permissions.js",
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -336,11 +330,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -376,8 +369,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx",
         "[observabilidad] src/data/dashboard.js",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -442,11 +434,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -488,8 +479,7 @@
         "[observabilidad] src/data/employees.js",
         "[observabilidad] src/data/practicantes.js",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -539,11 +529,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -569,13 +558,12 @@
           ]
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[observabilidad] src/data/attendanceAudit.js",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -630,11 +618,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -660,7 +647,7 @@
           ]
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -668,8 +655,7 @@
         "[observabilidad] src/data/schedules.js",
         "[observabilidad] src/data/vacationPlans.js",
         "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -723,11 +709,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -760,8 +745,7 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
         "[observabilidad] src/data/payroll.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -817,11 +801,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -847,7 +830,7 @@
           ]
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -855,8 +838,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
         "[observabilidad] src/data/requests.js",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -913,11 +895,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -943,7 +924,7 @@
           ]
         }
       },
-      "pct": 85,
+      "pct": 86,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -952,8 +933,7 @@
         "[observabilidad] src/data/encuestas.js",
         "[observabilidad] src/data/notifications.js",
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1003,18 +983,17 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 83,
-          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline",
+          "pct": 86,
+          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline",
           "hallazgos": [
-            "5 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1040,7 +1019,7 @@
           ]
         }
       },
-      "pct": 88,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1049,9 +1028,8 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabInmueble.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/BranchTabLegal.jsx",
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
-        "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1108,11 +1086,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1148,8 +1125,7 @@
         "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",
         "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1199,11 +1175,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1227,13 +1202,12 @@
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/views/metas/GastoModal.jsx",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1286,11 +1260,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1314,7 +1287,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1322,8 +1295,7 @@
         "[flujo] el −$621.17 falso de Salud 1 sin explicar",
         "[flujo] falta probar las bolsas en sala",
         "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1382,11 +1354,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1422,8 +1393,7 @@
         "[observabilidad] src/data/cotizaciones.js",
         "[observabilidad] src/data/facturacion.js",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1482,11 +1452,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1524,8 +1493,7 @@
         "[observabilidad] src/data/minmaxLabs.js",
         "[observabilidad] src/data/productos.js",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1582,11 +1550,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1620,8 +1587,7 @@
         "[bd] índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)",
         "[observabilidad] src/data/ventasPerdidas.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1673,11 +1639,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1701,15 +1666,14 @@
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] MIN·MAX no lee el factor",
         "[flujo] falta el 1-sep del cron de La Popular",
         "[observabilidad] src/data/minmaxRequests.js",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1773,11 +1737,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1817,8 +1780,7 @@
         "[observabilidad] src/data/recepcion.js",
         "[vista] 8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1876,11 +1838,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -1904,7 +1865,7 @@
           "hallazgos": []
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1916,8 +1877,7 @@
         "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
         "[observabilidad] src/data/envios.js",
         "[observabilidad] src/data/traslados.js",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -1978,11 +1938,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -2008,7 +1967,7 @@
           "hallazgos": []
         }
       },
-      "pct": 86,
+      "pct": 87,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2022,8 +1981,7 @@
         "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
         "[observabilidad] src/data/cuentasPorPagar.js",
         "[observabilidad] src/data/facturasCompra.js",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[ux] src/views/purchases/FacturasCompraView.jsx:968 — key: 'sincronizar', icon: RefreshCw,"
       ],
       "verificaciones": [
@@ -2077,11 +2035,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -2105,7 +2062,7 @@
           "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2113,8 +2070,7 @@
         "[flujo] art.156 retención renta $262.52 sin marcar",
         "[flujo] libros de compras: quedan hallazgos abiertos",
         "[vista] LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -2168,11 +2124,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -2196,7 +2151,7 @@
           "hallazgos": []
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2204,8 +2159,7 @@
         "[flujo] falta el aviso de franja por vencerse",
         "[observabilidad] src/data/bitacoras.js",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17"
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
       ],
       "verificaciones": [
         {
@@ -2262,11 +2216,10 @@
           ]
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -2303,8 +2256,7 @@
         "[seguridad] confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
       ],
       "verificaciones": [
@@ -2360,11 +2312,10 @@
           "hallazgos": []
         },
         "movil": {
-          "pct": 85,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e corrido el 2026-08-23: midió 13 de 54 rutas",
+          "pct": 92,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 25 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1).",
           "hallazgos": [
-            "el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-            "la última corrida sobre un entorno CON datos es del 2026-08-17"
+            "29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono"
           ]
         },
         "ux": {
@@ -2399,8 +2350,7 @@
         "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:197",
         "[resiliencia] submit-sin-freno: src/views/IOSTestView.jsx:343",
         "[observabilidad] src/data/orphanObjects.js",
-        "[movil] el barrido midió 13 de 54 rutas: el entorno de pruebas no tiene datos para las otras 41",
-        "[movil] la última corrida sobre un entorno CON datos es del 2026-08-17",
+        "[movil] 29 de las 54 rutas siguen sin datos en el entorno de pruebas: no están medidas en el teléfono",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [

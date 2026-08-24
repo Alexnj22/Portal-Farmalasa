@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.4 — 47 pruebas: la cola de impresión, el mes impreso y la bitácora
+
+**La cola de impresión** (16). Existe porque el camino directo sólo alcanza la
+computadora que tiene el navegador abierto y no puede alcanzar otra: apuntar a la
+IP de la caja es contenido mixto y el navegador lo corta. Quedan ancladas las
+tres reglas que se aprendieron con el papel en la mano — que el contenido viaje
+en base64 (un ticket es un flujo de bytes y un NUL no cabe en una columna `text`;
+el 17-ago el papel salía en la computadora equivocada por eso), que **el error
+viaje en vez de volverse lista vacía** (la pantalla decía «Ninguna sala imprime
+todavía» con cinco cajas latiendo), y que el token no esté entre las columnas que
+se piden. Más: elegir dónde imprimir va por su propia función y no por la tabla,
+porque aquélla exige el permiso de instalación; sacar una caja **borra la fila**,
+no la desactiva; y si no se puede leer la versión publicada del agente, la
+pantalla **no opina**.
+
+**El mes impreso de las bitácoras** (13). Su regla central es lo que un papel no
+suele hacer: **el hueco se imprime**. Cada día que tocaba sale con su casilla, y
+la que nadie llenó sale vacía y marcada — un papel que sólo lista lo anotado no
+distingue «no había que leer» de «nadie leyó», y esa distinción ES toda la
+bitácora. Con ella: la desviación va al pie con su acción correctiva (ítem
+5.6.5), y si no hay acción escrita **lo dice** en vez de omitirla; el libro de
+receta sale siempre aunque esté vacío, porque es el que el inspector pide
+primero; y una fila anulada dice ANULADA y su motivo en vez de desaparecer — es
+un libro foliado, y un folio que se borra deja un salto que nadie puede explicar.
+
+**La bitácora de acciones** (18). La autoría sale de la SESIÓN y no de `sb_user`
+en `localStorage`, que lo escribe el navegador y se puede editar: desde la
+migración `20260806000957` la policy exige `user_id = auth.uid()`, y mandar otra
+cosa hace que la fila se rechace y el error se pierda — bitácora muda. Y que la
+gravedad y el origen inventados **caigan al valor por defecto en vez de rechazar
+la fila entera**: el constraint de Postgres sólo acepta tres de cada uno, y un
+valor fuera de catálogo tiraría el insert y se perdería la anotación.
+
+Bitácoras, Impresión y Sistema llegan a 95 en pruebas.
+
 ## v2.733.3 — Bolsas: entregar no imprime, la sala ve su etapa y «Cuadra» cuenta el saldo
 
 Tres cosas en `/cortes?tab=bolsas`, las dos primeras pedidas y la tercera

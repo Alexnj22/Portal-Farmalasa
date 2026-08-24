@@ -1086,3 +1086,35 @@ Queda escrito porque el síntoma es **indistinguible** del defecto real que
 `ErrorBoundary` viene a cubrir, y perseguirlo en el portal habría costado horas.
 Antes de creerle a un fallo de carga de módulo en desarrollo: reiniciar el
 servidor.
+
+### 8.18 La brecha de mayo/2025, cerrada — $117,509.80
+
+El acumulado diario de ventas (`sales_daily_stats`) **empezaba el 2025-05-18** y
+las facturas el **2025-05-01**. Faltaban **85 pares fecha·sala** —17 días × 5
+salas— con **12,113 facturas** por **$117,509.80**.
+
+La causa estaba entendida desde el 21 de agosto y anotada sin taparse: el cron
+diario corre `refresh_sales_daily_stats(365)`, y esos días salieron de la ventana
+de un año antes de haberse calculado nunca. Un tramo que nunca entró y que
+después queda a más de 365 días **no vuelve solo**.
+
+**Lo que hizo segura la corrección fue medir antes lo que la función BORRA.** No
+sólo agrega: elimina de su ventana las filas que ya no tengan facturas detrás.
+Sobre 500 días eso son **2,744 filas en riesgo**, así que primero se comprobó
+cuántas quedarían huérfanas —**cero**— y recién entonces se corrió, con permiso
+explícito. Escribió 86 filas.
+
+> Una función idempotente no es automáticamente una función inofensiva: **lo que
+> hace depende del rango que se le dé.**
+
+**Y mi propia medición previa estaba mal.** Conté **$120,078.21** porque sumé
+todas las facturas; la función excluye `estado IN ('NULA','DTE INVALIDADO EN
+MH')`. La diferencia de **$2,568.41** son exactamente las anuladas. El número
+bueno era el que ya estaba anotado — o sea que el dato viejo corrigió a la
+medición nueva, que es el orden inverso al habitual y conviene tenerlo presente.
+
+Hoy la tabla arranca el 2025-05-01 y **no falta ningún par en 500 días**.
+
+⚠️ El agujero se puede volver a abrir: el cron sigue con 365 días. Si aparece
+otra brecha vieja, la salida es la misma — medir el borrado, y llamar con un
+rango que la cubra.

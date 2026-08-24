@@ -998,10 +998,9 @@
     "ventas": {
       "ejes": {
         "flujo": {
-          "pct": 77,
-          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
           "hallazgos": [
-            "la brecha de mayo/2025 en el acumulado diario: $117,509.80 en 85 pares",
             "falta verlo en sala (lo que no es venta de productos)",
             "hay ventas de gente de Bodega en salas, sin revisar"
           ]
@@ -1071,11 +1070,10 @@
           ]
         }
       },
-      "pct": 89,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
-        "[flujo] la brecha de mayo/2025 en el acumulado diario: $117,509.80 en 85 pares",
         "[flujo] falta verlo en sala (lo que no es venta de productos)",
         "[flujo] hay ventas de gente de Bodega en salas, sin revisar",
         "[bd] índice nunca usado: idx_psr_sucursal_producto (456 kB)",

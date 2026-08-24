@@ -212,8 +212,10 @@ const PENDIENTES = {
                 'las recetas están medidas (5 reales) y sin construir'],
     fiscal:    ['art.162 retención IVA $48.95 sin resolver', 'art.156 retención renta $262.52 sin marcar',
                 'libros de compras: quedan hallazgos abiertos'],
-    ventas:    ['la brecha de mayo/2025 en el acumulado diario: $117,509.80 en 85 pares',
-                'falta verlo en sala (lo que no es venta de productos)',
+    // La brecha de mayo/2025 se CERRÓ el 2026-08-24: `refresh_sales_daily_stats(500)`
+    // escribió las 85 filas que faltaban ($117,509.80). Sale de la lista porque
+    // una lista de pendientes sólo sirve si es cierta.
+    ventas:    ['falta verlo en sala (lo que no es venta de productos)',
                 'hay ventas de gente de Bodega en salas, sin revisar'],
     acceso:    ['falta probar el lector físico en sala', 'falta que el papel conteste qué simbología lee el lector',
                 'falta prueba en vivo del candado doble', 'carné: turno y sala definido y sin implementar'],

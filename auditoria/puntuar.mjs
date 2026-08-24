@@ -275,7 +275,27 @@ const porArea = id => ({
     borradores: (draft.deuda || []).filter(f => areaDeArchivo(f) === id),
 });
 
-// Pruebas: qué archivo de prueba nombra un archivo de esta área.
+// ── Pruebas: se cuentan los ARCHIVOS CUBIERTOS, no los archivos de prueba ────
+//
+// Contaba archivos de prueba, y eso mide lo que no importa. Se vio el
+// 2026-08-24 escribiendo pruebas para subir el eje: **Nómina tiene UN archivo
+// que prueba a fondo `calcRenta` y `calcPayrollEntry`** —la tabla de renta
+// entera, el tope del ISSS, la quincena completa— y puntuaba 62%, lo mismo que
+// un área con una prueba de una línea. Para subirla habría que PARTIR ese
+// archivo en dos, que no agrega una sola verificación.
+//
+// Una regla que premia partir archivos enseña a partir archivos. Ahora se cuenta
+// cuántos archivos DE LA VISTA quedan nombrados por alguna prueba: eso sí sube
+// cuando se cubre algo nuevo y no se mueve al reacomodar los tests.
+//
+// Se mira contra el total de archivos del área para que el número signifique
+// «qué proporción de esta área tiene algo que la mire», que es la pregunta.
+// Todos los archivos de `src/` bajo control de versiones, para poder decir
+// «cuántos de los N que tiene el área están cubiertos».
+const ARCHIVOS_SRC = execSync("git ls-files 'src/**'", { cwd: RAIZ })
+    .toString().trim().split('\n').filter(f => /\.(js|jsx)$/.test(f));
+
+const cubiertosPorArea = {};
 const pruebasPorArea = {};
 for (const dir of ['tests/unit', 'tests/e2e']) {
     for (const f of fs.readdirSync(path.join(RAIZ, dir)).filter(x => /\.(js|jsx)$/.test(x))) {
@@ -284,7 +304,9 @@ for (const dir of ['tests/unit', 'tests/e2e']) {
             let p = m[1];
             if (!/\.(js|jsx)$/.test(p)) for (const e of ['.js', '.jsx']) if (fs.existsSync(path.join(RAIZ, p + e))) { p += e; break; }
             const a = areaDeArchivo(p);
-            if (a) (pruebasPorArea[a] ||= new Set()).add(dir + '/' + f);
+            if (!a) continue;
+            (pruebasPorArea[a] ||= new Set()).add(dir + '/' + f);
+            (cubiertosPorArea[a] ||= new Set()).add(p);
         }
     }
 }
@@ -465,19 +487,25 @@ function puntuar(area) {
                     ...(chn ? [chn] : [])] };
 
     // ── pruebas ─────────────────────────────────────────────────────────────
-    const t = (pruebasPorArea[area.id] || new Set()).size
-        // `carga-diferida.spec.js` no nombra archivos de `src/` —abre rutas—, así
-        // que el detector por importaciones no la ve. Se declara a mano: es la
-        // única prueba que verifica que lo diferido vuelve.
-        + (['tablero', 'traslados', 'inventario'].includes(area.id) ? 1 : 0)
-        // `registroDePermisos.test.js` importa de `src/constants/`, que el
-        // detector sí ve. Las demás de la tanda del 2026-08-23 también — se
-        // dejan que las cuente solo, para que el día que alguien borre una el
-        // puntaje baje sin que haya que acordarse de esta lista.
-        ;
-    ev.pruebas = { pct: tope(t === 0 ? 40 : Math.min(95, 55 + t * 7), 40),
-        evidencia: `${t} archivo(s) de prueba nombran archivos de esta área · ${RESUMEN_PRUEBAS}`,
-        hallazgos: t === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };
+    // Se mide COBERTURA: cuántos archivos del área quedan nombrados por alguna
+    // prueba, sobre cuántos tiene. Antes se contaban archivos de prueba, y eso
+    // premiaba partir un archivo en dos — ver el comentario del recolector.
+    //
+    // Un área con pocos archivos llega alto con poco, y está bien: `ventas`
+    // tiene 3 archivos y `sucursales` 23, así que cubrir uno no significa lo
+    // mismo en las dos. Lo que se pregunta es qué proporción tiene algo que la
+    // mire.
+    const cubiertos = new Set(cubiertosPorArea[area.id] || []);
+    // `carga-diferida.spec.js` abre RUTAS, no importa archivos, así que el
+    // detector por importaciones no la ve. Se declara a mano.
+    if (['tablero', 'traslados', 'inventario'].includes(area.id)) cubiertos.add('(carga diferida)');
+    const totalArea = Math.max(1, (area.archivos || []).length
+        ? ARCHIVOS_SRC.filter(f => areaDeArchivo(f) === area.id).length : 1);
+    const cob = cubiertos.size / totalArea;
+    ev.pruebas = { pct: tope(cubiertos.size === 0 ? 40 : Math.min(95, 55 + Math.round(cob * 100 * 0.6)), 40),
+        evidencia: `${cubiertos.size} de ${totalArea} archivo(s) del área nombrados por alguna prueba `
+                 + `(${Math.round(cob * 100)}%) · ${RESUMEN_PRUEBAS}`,
+        hallazgos: cubiertos.size === 0 ? ['ninguna prueba nombra un archivo de esta área'] : [] };
 
     // ── doc ─────────────────────────────────────────────────────────────────
     const vivos = area.docs.filter(d => fs.existsSync(path.join(RAIZ, d)));

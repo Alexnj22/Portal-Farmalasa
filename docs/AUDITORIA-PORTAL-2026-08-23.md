@@ -1405,3 +1405,33 @@ con «falta»**, y casi todas son «falta que alguien lo haga en una sala».
 
 Lo que esta revisión sí deja es la lista de **qué le falta a cada una para
 sellarse**, que es más útil que un sello puesto de apuro.
+
+### 8.26 El eje de pruebas medía lo que no importa
+
+Escribiendo pruebas para subirlo apareció el defecto en la regla, no en el
+portal: **contaba archivos de prueba**.
+
+Nómina tiene **un** archivo que prueba a fondo `calcRenta` y `calcPayrollEntry`
+—la tabla de renta entera, el tope del ISSS, la quincena completa— y puntuaba
+62%: exactamente lo mismo que un área con una prueba de una línea. Para subirla
+habría que **partir ese archivo en dos**, que no agrega una sola verificación.
+
+> Una regla que premia partir archivos enseña a partir archivos. Y el que la
+> escribió —yo— estuvo a punto de hacerlo.
+
+Ahora cuenta **cuántos archivos del área quedan nombrados por alguna prueba**,
+sobre cuántos tiene. Sube cuando se cubre algo nuevo y no se mueve al reacomodar
+los tests.
+
+El retrato que da es distinto, y varios puntajes **bajaron** — que es la señal de
+que ahora es honesto:
+
+| área | cobertura real |
+|---|---|
+| Traslados | **7 de 9 (78%)** |
+| Cortes de caja | 7 de 20 (35%) |
+| Plataforma | 25 de 132 (19%) |
+| Bitácoras | 1 de 13 (8%) |
+| **Sucursales** | **1 de 23 (4%)** |
+
+La regla vieja ponía a Traslados y a Sucursales casi iguales. Son 78% y 4%.

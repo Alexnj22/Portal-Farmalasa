@@ -62,8 +62,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "19 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 66,
+          "evidencia": "25 de 132 archivo(s) del área nombrados por alguna prueba (19%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -72,8 +72,8 @@
           "hallazgos": []
         }
       },
-      "pct": 95,
-      "estado": "completo",
+      "pct": 93,
+      "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
@@ -156,8 +156,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 60,
+          "evidencia": "3 de 36 archivo(s) del área nombrados por alguna prueba (8%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -166,7 +166,7 @@
           "hallazgos": []
         }
       },
-      "pct": 90,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -247,8 +247,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 67,
+          "evidencia": "2 de 10 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -334,8 +334,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 62,
+          "evidencia": "3 de 27 archivo(s) del área nombrados por alguna prueba (11%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -346,7 +346,7 @@
           ]
         }
       },
-      "pct": 91,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -431,8 +431,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 62,
+          "evidencia": "3 de 26 archivo(s) del área nombrados por alguna prueba (12%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -443,7 +443,7 @@
           ]
         }
       },
-      "pct": 89,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -519,8 +519,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 75,
+          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -531,7 +531,7 @@
           ]
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -604,8 +604,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 62,
+          "evidencia": "2 de 17 archivo(s) del área nombrados por alguna prueba (12%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -616,7 +616,7 @@
           ]
         }
       },
-      "pct": 91,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -691,8 +691,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 67,
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -703,7 +703,7 @@
           ]
         }
       },
-      "pct": 91,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -780,8 +780,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 64,
+          "evidencia": "2 de 14 archivo(s) del área nombrados por alguna prueba (14%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -870,8 +870,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 67,
+          "evidencia": "3 de 15 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -963,8 +963,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 58,
+          "evidencia": "1 de 23 archivo(s) del área nombrados por alguna prueba (4%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1058,8 +1058,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 75,
+          "evidencia": "1 de 3 archivo(s) del área nombrados por alguna prueba (33%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1070,7 +1070,7 @@
           ]
         }
       },
-      "pct": 90,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1146,8 +1146,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 59,
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1231,8 +1231,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "6 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 76,
+          "evidencia": "7 de 20 archivo(s) del área nombrados por alguna prueba (35%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1241,7 +1241,7 @@
           "hallazgos": []
         }
       },
-      "pct": 93,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1321,8 +1321,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 83,
-          "evidencia": "4 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 68,
+          "evidencia": "4 de 19 archivo(s) del área nombrados por alguna prueba (21%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1331,7 +1331,7 @@
           "hallazgos": []
         }
       },
-      "pct": 93,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1412,8 +1412,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 70,
+          "evidencia": "3 de 12 archivo(s) del área nombrados por alguna prueba (25%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1424,7 +1424,7 @@
           ]
         }
       },
-      "pct": 91,
+      "pct": 90,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1505,8 +1505,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 73,
+          "evidencia": "5 de 17 archivo(s) del área nombrados por alguna prueba (29%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1515,7 +1515,7 @@
           "hallazgos": []
         }
       },
-      "pct": 93,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1591,8 +1591,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 76,
-          "evidencia": "3 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 64,
+          "evidencia": "3 de 20 archivo(s) del área nombrados por alguna prueba (15%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1601,7 +1601,7 @@
           "hallazgos": []
         }
       },
-      "pct": 93,
+      "pct": 92,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1683,8 +1683,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 65,
+          "evidencia": "7 de 44 archivo(s) del área nombrados por alguna prueba (16%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1693,7 +1693,7 @@
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 88,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1778,7 +1778,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "evidencia": "7 de 9 archivo(s) del área nombrados por alguna prueba (78%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1872,8 +1872,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 59,
+          "evidencia": "1 de 16 archivo(s) del área nombrados por alguna prueba (6%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1964,8 +1964,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 64,
+          "evidencia": "2 de 13 archivo(s) del área nombrados por alguna prueba (15%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1974,7 +1974,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2051,8 +2051,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 69,
-          "evidencia": "2 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 60,
+          "evidencia": "1 de 13 archivo(s) del área nombrados por alguna prueba (8%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2061,7 +2061,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2144,8 +2144,8 @@
           ]
         },
         "pruebas": {
-          "pct": 83,
-          "evidencia": "4 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 67,
+          "evidencia": "1 de 5 archivo(s) del área nombrados por alguna prueba (20%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2154,7 +2154,7 @@
           "hallazgos": []
         }
       },
-      "pct": 91,
+      "pct": 89,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2233,8 +2233,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 62,
-          "evidencia": "1 archivo(s) de prueba nombran archivos de esta área · 1029 pruebas en 74 archivos, todas verdes",
+          "pct": 59,
+          "evidencia": "1 de 15 archivo(s) del área nombrados por alguna prueba (7%) · 1038 pruebas en 75 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {

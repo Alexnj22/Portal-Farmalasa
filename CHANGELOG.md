@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.734.2 — 41 pruebas: la ruta, las reglas de despacho y la recepción
+
+**El aviso de salida** existe porque hasta el 2026-08-14 **tres caminos ponían
+una ruta en marcha y sólo uno avisaba** — los otros dos son los que se usan
+cuando la ruta quedó pendiente o se arma hoy y sale mañana, y ahí la sala se
+quedaba esperando sin enterarse. Anclado que vaya con push (es cuando la sala
+empieza a organizar quién recibe), que se DEGRADE en vez de callarse cuando
+faltan los números o el conductor, que una sala fuera del mapa no rompa el resto,
+y que **no lance**: un aviso que falla no puede deshacer una ruta que ya salió.
+
+**El orden de la ruta.** Un orden peor no da error — el camión llega igual, sólo
+que más tarde. Queda anclado que optimizar **no descarte paradas**, que el orden
+elegido no sea peor que el original, que cada parada salga numerada con su tramo
+medido, y que la distancia esté en el orden de magnitud correcto (un error de
+factor entre kilómetros y metros daría 60 o 60.000.000).
+
+**Las reglas de despacho.** La presentación ya elegida se sigue ofreciendo aunque
+se haya desactivado —si desapareciera, la regla quedaría apuntando a la nada—,
+pero ninguna otra inactiva aparece como opción nueva. Y los tres filtros se
+aplican JUNTOS: «los nuevos que todavía no tienen regla» es la pregunta para la
+que existe esa pantalla, y con «nuevo» como tercer valor del filtro era
+literalmente la combinación imposible de pedir. Más: «con regla» sin ninguna
+regla devuelve **nada** y no todo, y el laboratorio pedido manda sobre la lista
+de ocultos.
+
+**La recepción.** Las presentaciones de varios productos se traen paginadas
+—`product_id` se repite, así que acotar la entrada no acota la salida—, el
+buscador excluye lo que ya está en la lista (agregarlo dos veces es un clic, y el
+conteo queda duplicado), y «cómo se despachó la última vez» sólo mira renglones
+que lo dicen.
+
+Pedidos llega a 95 en pruebas.
+
 ## v2.734.1 — Bolsas: recibir de un toque, el conteo dice contra qué, y a la sala le vuelve la diferencia
 
 Segunda tanda sobre `/cortes?tab=bolsas`, después de que la sala dejara de ver

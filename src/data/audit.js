@@ -1,5 +1,9 @@
 // Bloque 6.A — capa de datos, entidad "audit". Extraído de
 // auditSlice.js: 2 llamadas supabase.from() (appendAuditLog/fetchAuditLogs).
+// Lo escrito sobre esta área:
+// `docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md` — por qué la
+// autoría sale de la sesión y no de `localStorage`, qué se respalda y qué se
+// resincroniza, y las dos lecciones de la caja negra.
 import { supabase } from '../supabaseClient';
 
 // La autoría del log tiene que salir de la SESIÓN, no de `sb_user` en

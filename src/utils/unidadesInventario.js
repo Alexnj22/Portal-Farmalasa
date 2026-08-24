@@ -1,3 +1,9 @@
+// Lo escrito sobre este módulo:
+// `docs/PRODUCTOS-LA-PRESENTACION-Y-EL-FACTOR-2026-08-24.md` — por qué sumar
+// `cantidad` sin convertir cambiaba el ORDEN de las salas, por qué el factor lo
+// manda la base, y las dos maneras de pasar de unidades a presentaciones (una
+// sugiere, la otra es un techo).
+//
 // Cuántas unidades hay de verdad en una fila de `inventory`.
 //
 // `cantidad` NO está en unidades: está en la presentación de esa fila. El mismo

@@ -169,7 +169,7 @@ export const AREAS = [
         tablas: ['user_dashboard_prefs', 'dashboard_canon'],
         edge: [],
         crons: [],
-        docs: [],
+        docs: ['docs/TABLERO-DONDE-QUEDA-CADA-WIDGET-2026-08-24.md'],
     },
 
     // ═══ GENTE ══════════════════════════════════════════════════════════════
@@ -199,7 +199,7 @@ export const AREAS = [
                  'practicantes', 'education_catalog_entries'],
         edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily'],
-        docs: [],
+        docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md'],
     },
     {
         id: 'asistencia',
@@ -330,7 +330,7 @@ export const AREAS = [
         tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map'],
         edge: ['analyze-branch', 'check-doc-expiry'],
         crons: ['check-doc-expiry-daily'],
-        docs: [],
+        docs: ['docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md'],
     },
 
     // ═══ COMERCIAL ══════════════════════════════════════════════════════════
@@ -461,7 +461,7 @@ export const AREAS = [
                  'laboratorios', 'lab_locations'],
         edge: ['sync-products', 'notify-new-products-daily'],
         crons: ['sync-products-10min', 'notify-new-products-daily', 'vacuum-products-hourly'],
-        docs: [],
+        docs: ['docs/PRODUCTOS-LA-PRESENTACION-Y-EL-FACTOR-2026-08-24.md'],
     },
     {
         id: 'inventario',
@@ -671,7 +671,7 @@ export const AREAS = [
         edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai'],
         crons: ['check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily'],
-        docs: [],
+        docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md'],
     },
 ];
 

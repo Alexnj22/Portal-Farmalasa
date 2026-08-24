@@ -2,6 +2,11 @@
 // gastos, documentos, historial). Extraído de branchSlice.js: 15
 // llamadas supabase.from() (los supabase.storage.from() de subida de
 // documentos quedan fuera — acceso a bucket, no a tabla).
+// Lo escrito sobre este módulo:
+// `docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md` — las TRES
+// numeraciones que tiene cada sala y por qué la equivocada no da error, por qué
+// los documentos se versionan en vez de pisarse, y de dónde sale el personal
+// mínimo.
 import { supabase } from '../supabaseClient';
 
 // ── Sucursal ─────────────────────────────────────────────────────────────────

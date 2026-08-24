@@ -1,3 +1,8 @@
+// Lo escrito sobre este módulo:
+// `docs/TABLERO-DONDE-QUEDA-CADA-WIDGET-2026-08-24.md` — los tres reportes que
+// llevaron a esta regla, la medición que la eligió (0.27 huecos contra 0.55 y
+// 2.01), y por qué medir sobre tableros al azar invertía el resultado.
+//
 // Dónde queda cada widget después de soltar uno encima de otro.
 //
 // ── Cómo se llegó a esta regla (2026-08-16) ───────────────────────────────

@@ -4,6 +4,11 @@
 // acceso a bucket, no a tabla). employee_branches/employee_events/
 // employee_rosters ya tienen funciones equivalentes en data/system.js
 // (Bloque 6.A, systemSlice.js) — se reutilizan en vez de duplicar.
+// Lo escrito sobre este módulo:
+// `docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md` — qué salió
+// de `employees_safe` y por qué (el código de carné ES la contraseña; 47 de 47
+// podían leerlo), por qué `RETURNING` enumera columnas, y por qué sin permiso el
+// salario devuelve vacío en vez de error.
 import { supabase } from '../supabaseClient';
 
 // ── Catálogo educativo/médico (upsert best-effort, ignora duplicados) ──────

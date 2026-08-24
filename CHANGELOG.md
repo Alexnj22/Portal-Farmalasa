@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.731.4 — Las 25 áreas ya tienen documento propio
+
+Cierra el eje de documentación de la auditoría. Faltaban seis, y son las que
+menos se habían escrito nunca porque son las que menos se tocan seguido.
+
+**Personal** — `docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md`.
+Qué salió de `employees_safe` y por qué: el código de carné **es** la contraseña
+del portal (`signInWithPassword(password: code)`), así que publicarlo dejaba que
+cualquier empleado con sesión leyera el de todos —medido: 47 de 47— y entrara
+como cualquiera. El sueldo y la cuenta bancaria eran el mismo caso, con un módulo
+que no gateaba nada. Y por qué un `RETURNING` acá no puede volver a ser `*`.
+
+**Productos** — `docs/PRODUCTOS-LA-PRESENTACION-Y-EL-FACTOR-2026-08-24.md`.
+`inventory.cantidad` no está en unidades, y sumarla sin convertir no daba un
+número corto: **cambiaba el orden de las salas**. Más las dos maneras de pasar de
+unidades a presentaciones —una sugiere y puede estirarse, la otra es un techo que
+el trigger de la base repite—, y por qué ningún factor puede ser 0.
+
+**Sucursales** — `docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md`. Cada
+sala tiene TRES numeraciones que no se deducen entre sí, y la equivocada apunta a
+otro almacén sin dar error. El código corto es el caso peor: armarlo con el id da
+«S5» para La Popular, que se lee como otra sala que sí existe.
+
+**Tablero** — `docs/TABLERO-DONDE-QUEDA-CADA-WIDGET-2026-08-24.md`. La regla de
+acomodo salió de tres reportes y se eligió **midiendo**: 0.27 huecos contra 0.55
+y 2.01. Y medir sobre tableros al azar invertía el resultado, porque los tableros
+al azar no existen — el portal siempre los compacta.
+
+**Sistema** — `docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md`.
+La autoría de la bitácora sale de la sesión y no de `localStorage`; qué se
+respalda y qué se resincroniza; y las dos lecciones de la caja negra — un valor
+vivo no se descarta con una consulta de ayer, y cuando una hipótesis se cae tres
+veces lo que falta no es otra hipótesis sino una medición del aparato donde pasa.
+
+Con esto el eje `doc` queda en 95 en las 25 áreas y el promedio del portal sube a
+**92%**.
+
 ## v2.731.3 — Cinco áreas sin documento propio ya lo tienen
 
 Sigue la auditoría. Once de las 25 áreas del portal no tenían ni un documento

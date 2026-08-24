@@ -137,6 +137,10 @@ describe('el ticket que se manda al programa de impresión', () => {
         expect(todo).toContain('Edwin Nunez');
         expect(todo).toContain('Impresion de prueba - no es un comprobante');
         // Ni un byte fuera de ASCII: es lo único que el aparato garantiza leer.
+        // El rango arranca en \x00 A PROPÓSITO —el ticket lleva bytes de control
+        // reales (`ESC ! \x00` pide la letra normal)— así que el linter ve un
+        // carácter de control donde acá es justo lo que hay que permitir.
+        // eslint-disable-next-line no-control-regex
         expect(/[^\x00-\x7E]/.test(todo)).toBe(false);
     });
 

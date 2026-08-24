@@ -37,7 +37,6 @@ test.describe('traslado automático', () => {
         console.log('URL:', page.url());
         const main = page.locator('main').first();
         const cuerpo = (await main.count()) ? await main.innerText() : await page.locator('body').innerText();
-        const desde = cuerpo.indexOf('102');
         console.log('CODIGOS:', JSON.stringify([...cuerpo.matchAll(/\d{2}-\d{6}-\d+-\w+/g)].map(m => m[0])));
 
         // La tarjeta de la prueba, y su botón de finalizar.

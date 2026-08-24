@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.2 — `main` estaba rojo, y el libro que se presenta sale a su módulo
+
+**Lo primero es lo urgente: la suite estaba roja en `main`.** El quinto motivo de
+envío —«Avería»— entró con su foto obligatoria, pero `direccionDelEnvio.test.js`
+se quedó esperando cuatro. Las dos cosas están commiteadas, así que `main`
+amaneció con una prueba fallando: **el pre-commit de todas las sesiones
+bloqueado**. Corregido poniendo la prueba al día con su propio código, con el
+orden intacto —es el de la lista que se ofrece en pantalla, por eso se compara
+con `toEqual` y no con un `toContain` por motivo—.
+
+**`construirLibro` sale a `src/views/contabilidad/libroIva.js`.** Es la función
+que arma el archivo que se presenta a Hacienda, y estaba exportada desde un
+archivo de componente: eso rompe el refresco en caliente de React —al editar la
+vista, Vite recarga la página entera— y es la regla que este repo ya aplicó tres
+veces (`semana.js`, `usarExpediente.js`, `estadoDialogo.js`).
+
+Se mudan con ella los nueve ayudantes que usa. Los sigue usando la vista, que
+ahora los importa: **una sola definición, dos consumidores** — y no dos copias,
+que es exactamente lo que un libro fiscal no puede permitirse. Sigue exportada a
+propósito: `anexoColumnas.test.js` la prueba porque es el único camino que
+produce el archivo, así que el candado tiene que apretarse sobre ella. Dos veces
+seguidas —el 2026-08-11— salió un anexo con una columna de menos y nadie las
+contaba; esas 24 pruebas siguen en verde tras la mudanza, que es lo que la hace
+segura.
+
+Con ellas, dos residuos de lint: una variable asignada y nunca usada en la prueba
+de traslado, y el `\x00` del regex que verifica que el ticket sea ASCII — ahí el
+carácter de control es **justo lo que hay que permitir** (el rollo lleva bytes
+reales: `ESC ! \x00` pide la letra normal), así que va con su motivo escrito en
+vez de cambiar la prueba.
+
 ## v2.742.1 — Cortes de caja: la pestaña de bolsas se baja al abrirla
 
 `CortesView` cruzó su tope: **73 kB contra 72**. Lo causó el trabajo de hoy sobre

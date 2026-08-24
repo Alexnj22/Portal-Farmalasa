@@ -39,9 +39,15 @@ const DE_BODEGA   = () => motivosEnvioPorDireccion(true,  false);  // Bodega →
 const ENTRE_SALAS = () => motivosEnvioPorDireccion(false, false);  // sala → sala
 
 describe('los motivos del envío', () => {
-    it('son CUATRO, y ninguno abierto', () => {
+    it('son CINCO, y ninguno abierto', () => {
+        // La avería entró el 2026-08-24 con `MOTIVOS_ENVIO_CON_FOTO` y esta
+        // prueba se quedó en cuatro: `main` amaneció con la suite roja, o sea
+        // con el pre-commit de todas las sesiones bloqueado. El orden importa
+        // —es el de la lista que se ofrece en pantalla— y por eso se compara
+        // con `toEqual` y no con un `toContain` por motivo.
         expect(MOTIVOS_ENVIO).toEqual([
             'Próximo a vencer', 'Baja rotación', 'Producto nuevo', 'Retiro del mercado',
+            'Avería',
         ]);
     });
 

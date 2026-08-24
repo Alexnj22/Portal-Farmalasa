@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.735.5 — 57 pruebas: el kiosco sin conexión, las sesiones y el carné de papel
+
+**La ventana de gracia** reemplazó a un caché que guardaba los PIN de los
+supervisores **en claro en el disco de cada tablet**. Queda anclado que sólo
+guarde id y fecha —un atacante que la lea obtiene una lista de ids; antes obtenía
+credenciales—, que dure siete días, que se pode sola, que una fecha basura NO
+cuente como autorización, y que quien nunca se autorizó en ese kiosco caiga al
+camino PENDIENTE en vez de ser aceptado a ciegas.
+
+**La cola de marcajes** tenía dos defectos: un marcaje encolado a las 8 y
+recuperado a las 15 entraba a planilla **como si la persona hubiera llegado a las
+15**, y un rechazo del servidor dejaba el item al frente para siempre — con una
+policy que rechazaba SIEMPRE, la cola quedaba trabada de por vida en el primer
+marcaje mientras la pantalla decía «se sincronizará solo». Anclado que se mande
+la hora real, que un fallo de RED conserve y un RECHAZO descarte, que se procese
+en orden (la entrada antes que la salida), y que un item viejo sin `ocurridoEn`
+caiga a `queuedAt` en vez de perderse.
+
+**Autorizar en el kiosco: «dijo que no» no es «no pude preguntar».** El código se
+calculaba en el navegador con `Math.sin()` del reloj, así que cualquiera que
+abriera el bundle —que es público por definición— calculaba el código de la hora
+y **se autorizaba sus propias horas extra**. Hoy sale de un HMAC con un pepper en
+Vault. Anclado que el rate limit y el dispositivo inválido sean negativos REALES
+y no caigan al camino offline: si cayeran, bastaría teclear mal muchas veces para
+que el kiosco pasara a confiar en su ventana de gracia.
+
+**El carné de papel.** El de plástico lleva impreso el `kiosk_pin`, que **es la
+contraseña del portal de esa persona**: imprimirlo en un ticket dejaría esa
+credencial permanente sobre un mostrador. Anclado que la condición de «vivo» de
+la lista sea la MISMA que aplica el servidor —si se separan, la pantalla
+escondería un papel que sigue abriendo el portal—, que el tope de 50 sea un
+número deliberado y no el cap de PostgREST, y que la sala por cuya ticketera sale
+se guarde CON el carné.
+
+**Las sesiones**: una persona sin conexiones vivas igual aparece con su última
+entrada (antes la tarjeta mostraba un guión), los navegadores que MIENTEN
+diciendo también «Safari» se resuelven bien, y sin fecha la antigüedad es
+**infinita** y nunca 0 — un 0 se leería como «entró recién», que es lo contrario.
+
+Acceso sube a 87 en pruebas.
+
 ## v2.735.4 — El botón más largo perdía su ícono, recortado
 
 Reportado con una captura: los tres botones del panel de Traslados se veían de

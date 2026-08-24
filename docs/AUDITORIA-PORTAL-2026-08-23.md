@@ -900,3 +900,55 @@ lo pasan a `DataTable` por la prop `empty`, y `DataTable` lo pinta con marcado
 propio. Ahora lo estampan las dos, en sus dos formas (la tabla de escritorio y la
 hoja del teléfono), y hay pruebas que lo anclan: si alguien las quita, falla algo
 en vez de volverse ciego el barrido en silencio.
+
+### 8.11 El entorno de pruebas llevaba 130 migraciones de atraso
+
+Separar las tres causas del barrido tuvo un rendimiento inmediato: entre las doce
+rutas «sin resolver», `/inventario` no estaba vacía — decía **«Error al cargar
+inventario»**. Ninguna versión anterior del detector podía verlo, porque todas
+las juntaban bajo «sin datos».
+
+El error resultó ser del **entorno**, y al tirar de ese hilo apareció algo más
+grande. Medido el 2026-08-24:
+
+| | pruebas | producción | atraso |
+|---|---:|---:|---:|
+| migraciones | 413 | **543** | **130** |
+| tablas | 172 | 181 | 9 |
+| funciones | 497 | 554 | 57 |
+
+**El barrido móvil de las 54 rutas —el instrumento que decide el eje `movil` de
+las 25 áreas— venía midiendo un portal de hace un mes.**
+
+Y el modo de falla no era un error claro, era **en pedazos**: una vista
+materializada que el branch nunca pobló, y una columna
+(`user_dashboard_prefs.mobile_theme`) que existe en producción y todavía no ahí.
+Las dos se leían como defectos del portal y ninguna lo era.
+
+CLAUDE.md decía que el esquema del branch era «idéntico al de prod, **verificado
+por huella md5** de tablas, funciones, policies e índices». Era cierto en julio,
+el día que se verificó. Es exactamente la lección que esta misma auditoría había
+escrito para la superficie `anon`: **una afirmación que nadie vuelve a verificar
+deja de ser cierta sin avisar**, y las dos veces el que se la creyó fue un
+instrumento.
+
+Queda corregida en CLAUDE.md, con la tabla medida, y queda el procedimiento para
+volver a comprobarlo (`scripts/entorno-pruebas/comparar_con_produccion.mjs`).
+Ponerlo al día exige **rehacer el branch**, que borra los datos sembrados y la
+corrida de fechas — es una decisión de quien esté trabajando, no algo que
+convenga automatizar.
+
+### 8.12 Las doce «sin resolver», abiertas una por una
+
+| ruta | qué era |
+|---|---|
+| `compras`, `libro-compras-completo`, `requests`, `sesiones` | **tienen datos** — 5 renglones, 3 fichas, etc. Quedan bajo el corte de contenido |
+| `corte-z`, `encuesta` | pintan una explicación o un encabezado, sin filas |
+| `ventas-perdidas`, `requests-personales`, `my-announcements`, `encuesta-admin` | **vacío escrito a mano**, fuera de `EmptyState` y de la prop `empty` de `DataTable` |
+| `my-requests` | una **redirección** a `/requests-personales`: no tiene contenido propio |
+| `inventario` | **el único defecto**, y era del entorno (§8.11) |
+
+O sea: de doce, **cero defectos del portal** y cuatro casos de vacío escrito
+fuera de los dos componentes canónicos — que es un hallazgo de consistencia, no
+de funcionamiento. Haber llamado «mudas» a las doce habría puesto doce defectos
+en el informe.

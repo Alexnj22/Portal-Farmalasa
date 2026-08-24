@@ -49,7 +49,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -80,7 +81,8 @@
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -145,7 +147,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -185,7 +188,8 @@
         "[seguridad] kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -238,7 +242,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -268,7 +273,8 @@
       "hallazgos": [
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -327,7 +333,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -363,7 +370,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/dashboard/WidgetInventoryMovement.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -426,7 +434,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -464,7 +473,8 @@
         "[resiliencia] formulario largo sin borrador: src/components/practicantes/PracticanteModal.jsx",
         "[vista] 9 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -516,7 +526,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -547,7 +558,8 @@
       "sello_sala": null,
       "hallazgos": [
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -603,7 +615,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -636,7 +649,8 @@
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[vista] 7 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -692,7 +706,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -725,7 +740,8 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormEditPayrollEntry.jsx",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -783,7 +799,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -817,7 +834,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/solicitudes/ModalNuevaPersonal.jsx",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -875,7 +893,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -909,7 +928,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/EncuestaAdminView.jsx",
         "[vista] 13 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -970,7 +990,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1007,7 +1028,8 @@
         "[resiliencia] formulario largo sin borrador: src/components/forms/FormNursingRegents.jsx",
         "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1068,7 +1090,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1105,7 +1128,8 @@
         "[bd] índice nunca usado: idx_changelog_branch_detected (392 kB)",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1159,7 +1183,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1189,7 +1214,8 @@
       "hallazgos": [
         "[resiliencia] formulario largo sin borrador: src/views/metas/GastoModal.jsx",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1246,7 +1272,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1279,7 +1306,8 @@
         "[flujo] falta probar las bolsas en sala",
         "[resiliencia] formulario largo sin borrador: src/components/bolsas/SalidaDeBolsa.jsx",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1338,7 +1366,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1372,7 +1401,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/FacturacionView.jsx",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1431,7 +1461,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1467,7 +1498,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/productos/TabCatalogo.jsx",
         "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [
@@ -1526,7 +1558,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1560,7 +1593,8 @@
         "[bd] índice nunca usado: idx_mv_stock_analysis_sucursal (224 kB)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1614,7 +1648,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1645,7 +1680,8 @@
         "[flujo] MIN·MAX no lee el factor",
         "[flujo] falta el 1-sep del cron de La Popular",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1708,7 +1744,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1745,7 +1782,8 @@
         "[vista] 8 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1804,7 +1842,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1839,7 +1878,8 @@
         "[flujo] falta probar la sala de respaldo después de las 17:00",
         "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1901,7 +1941,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -1938,7 +1979,8 @@
         "[resiliencia] formulario largo sin borrador: src/views/purchases/CuentasPorPagarView.jsx",
         "[resiliencia] formulario largo sin borrador: src/views/purchases/ProveedoresView.jsx",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -1995,7 +2037,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -2028,7 +2071,8 @@
         "[flujo] libros de compras: quedan hallazgos abiertos",
         "[vista] LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -2084,7 +2128,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -2116,7 +2161,8 @@
         "[flujo] falta el aviso de franja por vencerse",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
       ],
       "verificaciones": [
         {
@@ -2177,7 +2223,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -2215,7 +2262,8 @@
         "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
         "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos, 0 inserciones"
       ],
       "verificaciones": [
@@ -2270,7 +2318,8 @@
           "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: 31 de 54 rutas medidas, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono. Destapó y cerró 2 defectos (v2.723.1). Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) y 12 quedan sin resolver.",
           "hallazgos": [
             "11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-            "12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte"
+            "las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos"
           ]
         },
         "ux": {
@@ -2303,7 +2352,8 @@
         "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
         "[flujo] auditoría DTE proveedores: H5b y D",
         "[movil] 11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono",
-        "[movil] 12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, 1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte",
+        "[movil] las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó a cargar datos",
         "[doc] el área no tiene ni un documento propio en docs/"
       ],
       "verificaciones": [

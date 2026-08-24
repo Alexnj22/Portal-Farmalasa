@@ -383,8 +383,11 @@ function puntuar(area) {
                  + 'Desde v2.725.2 las 23 restantes están CLASIFICADAS: 11 dicen que no hay datos (la pantalla está bien) '
                  + 'y 12 quedan sin resolver.',
         hallazgos: ['11 de las 54 rutas no tienen datos en el entorno de pruebas: no están medidas en el teléfono',
-                    '12 rutas sin resolver: ni contenido reconocible ni un vacío canónico. De las 3 abiertas a mano, '
-                    + '1 era un vacío escrito fuera de los componentes canónicos, 1 una ruta que redirige y 1 tenía datos bajo el corte'] };
+                    'las 12 «sin resolver» se abrieron una por una: 0 defectos del portal, 4 vacíos escritos fuera de los '
+                    + 'componentes canónicos, 1 redirección y el resto con datos bajo el corte de contenido',
+                    'el entorno de pruebas está 130 migraciones atrás de producción: lo medido en el teléfono habla de un '
+                    + 'portal de hace un mes. Vale para la MAQUETA (que no depende del esquema) y no para lo que no llegó '
+                    + 'a cargar datos'] };
 
     // ── ux ──────────────────────────────────────────────────────────────────
     // Los 32 textos que nombraban el sistema de origen se corrigieron en

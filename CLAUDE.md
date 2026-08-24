@@ -218,8 +218,30 @@ aplicar a prod. Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2
 ⚠️ **El ref cambia cada vez que se rehace el branch.** El de julio
 (`ewcmerxqjvludtgskuin`) está borrado; si encontrás ese en un doc, es viejo. El
 vigente sale de `supabase branches list` o del `VITE_SUPABASE_URL` de
-`.env.staging`. Su esquema es **idéntico al de prod** —verificado por huella md5
-de tablas, funciones, policies e índices— y trae datos de muestra, cero PII.
+`.env.staging`. Trae datos de muestra, cero PII.
+
+⚠️ **Su esquema NO se mantiene solo al día, y creer que sí ya costó una tanda de
+mediciones.** Acá decía «idéntico al de prod, verificado por huella md5 de
+tablas, funciones, policies e índices». Era cierto en julio, el día que se
+verificó, y nada lo volvió a mirar. Medido el 2026-08-24:
+
+| | pruebas | producción |
+|---|---:|---:|
+| migraciones | 413 | **543** |
+| tablas | 172 | 181 |
+| funciones | 497 | 554 |
+
+**130 migraciones de atraso**, y el modo de falla no es un error claro: es en
+pedazos. `/inventario` mostraba «Error al cargar inventario» porque una vista
+materializada del branch nunca se pobló; el tema del teléfono pedía
+`user_dashboard_prefs.mobile_theme`, que existe en prod y todavía no ahí. Las dos
+se leían como defectos del portal y ninguna lo era.
+
+**Antes de creerle a una medición hecha contra el branch, comparar** —
+`node scripts/entorno-pruebas/comparar_con_produccion.mjs` dice cómo y qué
+significa una diferencia. Para ponerlo al día se lo **rehace**, y eso borra los
+datos sembrados y la corrida de fechas: es una decisión de quien esté trabajando,
+no algo que convenga automatizar.
 
 **Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
 final de este archivo): `npm run dev:staging`.

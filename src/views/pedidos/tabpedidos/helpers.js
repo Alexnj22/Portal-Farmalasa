@@ -38,12 +38,71 @@ export function fmtRelative(iso) {
     return `hace ${Math.floor(h / 24)}d`;
 }
 
-export function getBranchStage(row, pedidoStatus) {
+// Reparte las filas visibles en grupos: una caja por ruta con SUS paradas, y
+// una última con lo que no va en ninguna ruta.
+//
+// Vive acá y no dentro del hook para que se pueda probar sin montar la vista —
+// era justo lo que no tenía prueba el día que la Ruta #21 se llevó adentro una
+// sala que no despachó.
+export function agruparPorRuta(filas, mapaDeParadas, uid = '') {
+    const grupos = [];
+    const rutasPuestas = new Set();
+    const sueltas = [];
+    for (const fila of filas) {
+        const parada = mapaDeParadas.get(claveParada(fila.pedido_id, fila.erp_sucursal_id));
+        if (parada) {
+            if (!rutasPuestas.has(parada.ruta.id)) {
+                rutasPuestas.add(parada.ruta.id);
+                const filasDeLaRuta = filas.filter(f =>
+                    mapaDeParadas.get(claveParada(f.pedido_id, f.erp_sucursal_id))?.ruta.id === parada.ruta.id);
+                grupos.push({ isRuta: true, ruta: parada.ruta, driverOnline: parada.driverOnline, rows: filasDeLaRuta });
+            }
+        } else {
+            sueltas.push(fila);
+        }
+    }
+    if (sueltas.length) grupos.push({ isRuta: false, ruta: null, rows: sueltas });
+    // La ruta donde soy conductor va al tope
+    const yo = String(uid ?? '');
+    grupos.sort((a, b) => {
+        if (!a.isRuta || !b.isRuta) return 0;
+        const aMio = yo && String(a.ruta?.conductor_id) === yo;
+        const bMio = yo && String(b.ruta?.conductor_id) === yo;
+        return aMio === bMio ? 0 : aMio ? -1 : 1;
+    });
+    return grupos;
+}
+
+// El estado de UNA SALA. `row` viene de `get_pedidos_en_curso`, una fila por
+// (pedido, sucursal).
+//
+// «En tránsito» pedía `pedidoStatus === 'enviado'`, y ése es el estado del
+// PEDIDO: en uno de varias salas, despachar la primera ponía a TODAS en
+// tránsito. Una sala que sigue en Bodega esperando la próxima ruta aparecía
+// viajando. Hoy lo decide `row.enviado_at`, que desde la migración
+// 20260824211021 es la salida de la parada de ESTA sala — o NULL si no tiene.
+// La llave de una PARADA: (pedido, sala). Una parada es de una sala concreta,
+// así que indexar por pedido a secas pierde información — y no en silencio a
+// medias: `map.set(pedido_id, …)` deja ganar a la última sala que se recorra.
+//
+// Con eso, en el pedido 137 del 2026-08-24 la parada de Salud 1 quedó como «la
+// parada del pedido 137», y la tarjeta de Salud 2 —que nunca estuvo en ninguna
+// ruta— se agrupó dentro de la Ruta #21, mostró la cara del conductor en su
+// nodo «Entregado» y le ofreció al conductor el botón «Entregué» para una
+// parada que no era la suya.
+//
+// Va acá y no escrita a mano en cada sitio para que el que llena el mapa y los
+// que lo leen no puedan divergir.
+export function claveParada(pedidoId, sucursalId) {
+    return `${pedidoId}__${sucursalId}`;
+}
+
+export function getBranchStage(row) {
     if (!row) return 'sin_iniciar';
-    if (row.recibido_erp_at)                             return 'erp';
-    if (row.llegada_fisica_at)                           return 'contando';
-    if (row.finalizado_at && pedidoStatus === 'enviado') return 'transito';
-    if (row.finalizado_at)                               return 'preparado';
+    if (row.recibido_erp_at)                     return 'erp';
+    if (row.llegada_fisica_at)                   return 'contando';
+    if (row.finalizado_at && row.enviado_at)     return 'transito';
+    if (row.finalizado_at)                       return 'preparado';
     // Usar pauses (historial) como fuente primaria — más confiable que los campos de PSS
     const hasActivePause = (row.pauses ?? []).some(p => !p.reanudado_at);
     if (hasActivePause || (row.pausado_at && !row.reanudado_at)) return 'pausado';
@@ -66,10 +125,35 @@ export function getBranchStage(row, pedidoStatus) {
 // manda es `pendientes`, que viene por (pedido, sucursal) de
 // `get_pedido_item_stats` — el mismo número que la tarjeta ya muestra en
 // «Paso 2 (N)».
-export function hayRecepcionPendiente({ pedidoStatus, pendientes = 0, reenviosHistorial = [] }) {
+//
+// La primera guarda es `enviadoAt`, y es la que faltaba: nada le puede llegar a
+// una sala que no salió. Con sólo `pedidoStatus === 'enviado'`, en el pedido
+// 137 del 2026-08-24 Salud 2 —sin preparar, sin parada, sin una caja— tenía el
+// botón «Confirmar llegada de cajas» activo, y apretarlo escribía
+// `llegada_fisica_at` sobre una sala con `total_cajas` en NULL.
+export function hayRecepcionPendiente({ enviadoAt = null, pedidoStatus, pendientes = 0, reenviosHistorial = [] }) {
+    if (!enviadoAt) return false;
     if (pedidoStatus === 'enviado') return true;
     if (pedidoStatus === 'parcial' && pendientes > 0) return true;
     return (reenviosHistorial ?? []).some(c => c.sent_at && !c.arrived_at);
+}
+
+// Qué rótulo lleva la tarjeta de una sala. La tarjeta es de la SALA, así que no
+// puede pintar el estado del PEDIDO: en el pedido 137 del 2026-08-24, con
+// Salud 1 despachada y Salud 2 todavía en Bodega, las dos decían «En ruta».
+//
+// Las claves son las de `PEDIDO_BADGE` — quien pinte esto no inventa rótulos,
+// elige cuál de los que ya existen le toca a esta fila.
+export function estadoDeLaSala(row) {
+    if (!row) return 'confirmado';
+    if (row.pedido_status === 'anulado')  return 'anulado';
+    if (row.recibido_erp_at)              return 'completado';
+    // La diferencia también es por sala: `diferencias_reportadas_at` viene de
+    // `pedido_sucursal_status`, mientras que `pedido_status === 'parcial'` se
+    // enciende con la primera sala que reporta una y se lo cuelga a todas.
+    if (row.diferencias_reportadas_at && !row.confirmado_correccion_at) return 'parcial';
+    if (row.enviado_at)                   return 'enviado';
+    return 'confirmado';
 }
 
 // solicitado = need in presentation units before dispatch rounding

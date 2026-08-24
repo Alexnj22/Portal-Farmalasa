@@ -23,7 +23,7 @@ import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SucPill from './tabpedidos/SucPill';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente } from './tabpedidos/helpers';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada } from './tabpedidos/helpers';
 import ItemSections from './tabpedidos/ItemSections';
 import LifecycleTimeline from './tabpedidos/LifecycleTimeline';
 import DifSection from './tabpedidos/DifSection';
@@ -294,8 +294,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                         // Dentro de una ruta: no-entregadas primero (por orden), entregadas al fondo
                         const displayRows = group.isRuta
                             ? [...group.rows].sort((a, b) => {
-                                const sa = pedidoRutaMap.get(a.pedido_id)?.stop;
-                                const sb = pedidoRutaMap.get(b.pedido_id)?.stop;
+                                const sa = pedidoRutaMap.get(claveParada(a.pedido_id, a.erp_sucursal_id))?.stop;
+                                const sb = pedidoRutaMap.get(claveParada(b.pedido_id, b.erp_sucursal_id))?.stop;
                                 const doneA = sa?.entregado_at ? 1 : 0;
                                 const doneB = sb?.entregado_at ? 1 : 0;
                                 if (doneA !== doneB) return doneA - doneB;
@@ -303,7 +303,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                             })
                             : group.rows;
                         const cards = displayRows.map(row => {
-                            const stage      = getBranchStage(row, row.pedido_status);
+                            const stage      = getBranchStage(row);
+                            const estadoSala = estadoDeLaSala(row);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isExp      = expanded === cardKey;
                             const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
@@ -390,12 +391,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {row.codigo ?? `#${row.numero}`}
                                         </span>
                                         <SucPill sucId={row.erp_sucursal_id} />
+                                        {/* El rótulo es de la SALA, no del pedido — `estadoDeLaSala`.
+                                            Con `pedido_status`, el pedido 137 del 2026-08-24 ponía
+                                            «En ruta» sobre Salud 2, que no se había ni empezado a
+                                            preparar: el pedido sí iba en ruta, esa sala no. */}
                                         <Badge
-                                            variant={PEDIDO_BADGE[row.pedido_status]?.variant ?? 'neutral'}
+                                            variant={PEDIDO_BADGE[estadoSala]?.variant ?? 'neutral'}
                                             uppercase={false}
                                             className="shrink-0"
                                         >
-                                            {PEDIDO_BADGE[row.pedido_status]?.label ?? row.pedido_status}
+                                            {PEDIDO_BADGE[estadoSala]?.label ?? estadoSala}
                                         </Badge>
                                         <span className="ml-auto text-caption text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
                                         {isExp ? <ChevronDown size={13} className="text-content-3 shrink-0" /> : <ChevronRight size={13} className="text-content-3 shrink-0" />}
@@ -509,18 +514,23 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-divider px-3 pt-2 pb-1.5">
                                         {(() => {
-                                            // La parada de ESTA tarjeta. El mapa de rutas vivas se
-                                            // indexa sólo por pedido —con dos sucursales gana la
-                                            // última— y además olvida las rutas de ayer, así que el
-                                            // paso «Entregado» amanecía en blanco. `entregaMap` es
-                                            // el registro del pedido: va por (pedido, sucursal) y no
-                                            // caduca. La ruta viva manda cuando es de esta sucursal,
+                                            // La parada de ESTA tarjeta. El mapa de rutas vivas va
+                                            // por (pedido, sala) —`claveParada`— pero olvida las
+                                            // rutas de ayer, así que el paso «Entregado» amanecía en
+                                            // blanco. `entregaMap` es el registro del pedido: va por
+                                            // (pedido, sucursal) y no caduca. La ruta viva manda
                                             // porque se actualiza en el momento en que el conductor
                                             // marca la entrega.
-                                            const rutaInfo = pedidoRutaMap.get(row.pedido_id);
-                                            const stopVivo = rutaInfo?.stop?.erp_sucursal_id === sucDeLaTarjeta ? rutaInfo.stop : null;
+                                            //
+                                            // El `?? rutaInfo?.stop` que cerraba esta cadena era el
+                                            // último resto de la llave por pedido: le prestaba a esta
+                                            // tarjeta la parada de OTRA sala, y por eso el nodo
+                                            // «Entregado» de Salud 2 mostraba la cara del conductor
+                                            // de Salud 1 (pedido 137, 2026-08-24). Sin parada propia
+                                            // el nodo va vacío, que es la verdad.
+                                            const rutaInfo = pedidoRutaMap.get(claveParada(row.pedido_id, sucDeLaTarjeta));
                                             const entrega  = entregaMap[cardKey] ?? null;
-                                            const rtStop   = stopVivo ?? entrega ?? rutaInfo?.stop ?? null;
+                                            const rtStop   = rutaInfo?.stop ?? entrega ?? null;
                                             const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
                                             const rtCond   = condId ? empMap.get(condId) ?? null : null;
                                             return (
@@ -594,8 +604,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 </Button>
                                             )}
                                             {/* Entregué — conductor, junto a PDF para ahorrar espacio */}
-                                            {pedidoRutaMap.has(row.pedido_id) && (() => {
-                                                const { ruta, stop } = pedidoRutaMap.get(row.pedido_id);
+                                            {pedidoRutaMap.has(claveParada(row.pedido_id, row.erp_sucursal_id)) && (() => {
+                                                const { ruta, stop } = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id));
                                                 const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
@@ -615,7 +625,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
                                                 const hasPendingFalta  = (row.falta_cajas ?? []).length > 0 || hasElecFaltantes || hasEspFaltantes;
                                                 const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
-                                                const rutaActiva       = pedidoRutaMap.get(row.pedido_id)?.ruta;
+                                                const rutaActiva       = pedidoRutaMap.get(claveParada(row.pedido_id, row.erp_sucursal_id))?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 /* Era un `div` con `role="img"` —que le promete
@@ -664,6 +674,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         que está probada: escrito acá como `pedido_status === 'enviado'`
                                         el bloque desaparecía a mitad de la recepción. */}
                                     {(isBranch || isSU) && (row.erp_sucursal_id ?? erpSucursalId) && hayRecepcionPendiente({
+                                        enviadoAt: row.enviado_at,
                                         pedidoStatus: row.pedido_status,
                                         pendientes: cardStats[cardKey]?.pendientes ?? 0,
                                         reenviosHistorial: row.reenvios_historial ?? [],

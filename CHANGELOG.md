@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.3 — En ruta es de la sala, no del pedido
+
+**Reportado desde la pantalla:** la Ruta #21 mostraba dos pedidos, y uno de
+ellos no se había preparado ni empezado.
+
+**No se agregó a la ruta.** La ruta tiene UNA parada en la base —Salud 1— y su
+propio encabezado lo decía: «0/1 entregas». Tampoco eran dos pedidos: eran las
+dos salas del pedido 137, y la de Salud 2 no tenía hora de inicio, ni de listo,
+ni una sola caja. El diálogo de crear ruta ni siquiera la ofrecía para elegir.
+Lo que falló fue la pantalla, y por el mismo motivo en cuatro lugares: leía por
+PEDIDO lo que es por SALA.
+
+- **La tarjeta se agrupaba dentro de la ruta.** El mapa de rutas vivas se
+  indexaba por pedido, así que la parada de Salud 1 pasaba a ser «la parada del
+  pedido 137» y arrastraba adentro a todas sus salas. Ahora la llave es
+  (pedido, sala).
+- **Decía «En ruta 11:51 a.m.»** sobre una sala que no se movió: esa hora era la
+  de salida del pedido entero, que `crear_ruta` estampa una sola vez. La salida
+  de una sala ahora es la de SU parada.
+- **Mostraba la cara del conductor** en su paso «Entregado», prestada de la
+  parada de la otra sala. Sin parada propia, el paso va vacío.
+- **Le ofrecía «Confirmar llegada de cajas»**, y ésa era la parte con
+  consecuencia: apretarlo registraba la llegada de un pedido que nadie preparó.
+- Y de paso, dos casos de la misma familia que nadie había reportado: una sala
+  ya lista esperando la próxima ruta figuraba «en tránsito» en cuanto su hermana
+  salía, y la diferencia que reportaba una sala marcaba a todas.
+
+**Medido antes de tocar nada:** sobre las 111 salas del historial, la hora de
+salida nueva cambia **una sola fila** — la de Salud 2. Las 29 salas realmente
+despachadas conservan la suya al microsegundo, y no hay ninguna con llegada o
+ingreso registrados sin parada, así que ninguna línea de tiempo pierde su paso.
+
+**Y las pruebas se probaron.** `tests/unit/rutaPorSala.test.js` reconstruye el
+pedido 137 tal como estaba; se le devolvió el defecto a mano cuatro veces —la
+llave por pedido, el tránsito por estado del pedido, la recepción sin guarda y
+el rótulo del pedido— y las cuatro cayeron. Un detector en verde que nunca vio
+rojo no dice nada.
+
 ## v2.742.2 — `main` estaba rojo, y el libro que se presenta sale a su módulo
 
 **Lo primero es lo urgente: la suite estaba roja en `main`.** El quinto motivo de

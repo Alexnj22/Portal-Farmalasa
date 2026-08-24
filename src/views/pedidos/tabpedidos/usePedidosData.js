@@ -12,7 +12,7 @@ import { tokenMatch } from '../../../utils/searchUtils';
 import { ERP_NAMES } from '../../../constants/erp';
 import { printFromPedidoItems, getExactPageGroups } from '../../../utils/pedidoPrint';
 import { PAUSE_REASONS } from './constants';
-import { getBranchStage, currentMonthRange } from './helpers';
+import { getBranchStage, estadoDeLaSala, claveParada, agruparPorRuta, currentMonthRange } from './helpers';
 import {
     fetchEmployeeBranchId, fetchSucursalIdForBranch, fetchBodegaBranchId, fetchBranchIdForSucursal,
     fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchApoyoForPedidos, fetchApoyoForPedido,
@@ -108,7 +108,8 @@ export function usePedidosData({ searchTerm = '' }) {
     const [modal,         setModal]         = useState(null);
     const [rutaMapOpen,   setRutaMapOpen]   = useState(null); // ruta obj para RutaMapModal
 
-    // Rutas activas: mapa pedidoId → { ruta, stop, driverOnline }
+    // Rutas activas: mapa `claveParada(pedidoId, sucId)` → { ruta, stop, driverOnline }.
+    // Por PARADA y no por pedido — ver `claveParada` en ./helpers.
     const [pedidoRutaMap, setPedidoRutaMap] = useState(new Map());
 
     const [llegadaModal,         setLlegadaModal]         = useState(null); // { pedidoId, sucId, key, rows }
@@ -314,7 +315,7 @@ export function usePedidosData({ searchTerm = '' }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadActive, isBranch, erpSucursalId, expanded]);
 
-    // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
+    // ── Rutas activas: mapa (pedido, sala) → { ruta, stop, driverOnline } ────
     const loadingRutasRef = useRef(false);
     const loadActiveRutas = useCallback(async () => {
         if (loadingRutasRef.current) return;
@@ -349,7 +350,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 ...s, suc_name: sucNameMap[s.erp_sucursal_id] ?? `Suc. ${s.erp_sucursal_id}`,
             }));
             enriched.forEach(stop => {
-                map.set(stop.pedido_id, { ruta: { ...ruta, ruta_pedidos: enriched }, stop, driverOnline: onlineMap[ruta.id] ?? false });
+                map.set(claveParada(stop.pedido_id, stop.erp_sucursal_id), { ruta: { ...ruta, ruta_pedidos: enriched }, stop, driverOnline: onlineMap[ruta.id] ?? false });
             });
         });
         setPedidoRutaMap(map);
@@ -1640,7 +1641,11 @@ export function usePedidosData({ searchTerm = '' }) {
         } else if (filterStatus === 'observacion') {
             rows = rows.filter(r => hasObservacion(r) && r.pedido_status !== 'completado');
         } else if (filterStatus !== 'all') {
-            rows = rows.filter(r => r.pedido_status === filterStatus);
+            // «Pendientes» y «En ruta» se comparan contra el estado de la SALA,
+            // que es el que la tarjeta pinta. Contra `pedido_status`, la Salud 2
+            // del pedido 137 salía bajo «En ruta» y se escondía bajo
+            // «Pendientes» — al revés de lo que era.
+            rows = rows.filter(r => estadoDeLaSala(r) === filterStatus);
         } else {
             // Ocultar completados sin problemas; mantener los que tienen diferencias/observación
             rows = rows.filter(r => r.pedido_status !== 'completado' || hasObservacion(r));
@@ -1661,8 +1666,8 @@ export function usePedidosData({ searchTerm = '' }) {
             const mineB = uid && (String(b.iniciado_por) === uid || String(b.created_by) === uid);
             if (mineA !== mineB) return mineA ? -1 : 1;
             // 2. Stage
-            const stageA = getBranchStage(a, a.pedido_status);
-            const stageB = getBranchStage(b, b.pedido_status);
+            const stageA = getBranchStage(a);
+            const stageB = getBranchStage(b);
             const baseA = STAGE_ORDER[stageA] ?? 5;
             const baseB = STAGE_ORDER[stageB] ?? 5;
             const sa = (hasObservacion(a) && baseA > 0 && baseA < 7) ? 6 : baseA;
@@ -1688,34 +1693,12 @@ export function usePedidosData({ searchTerm = '' }) {
         }).filter(s => s.total > 0);
     }, [activeRows, filterDate, isBranch, erpSucursalId]);
 
-    // Agrupa filteredRows: rutas primero (con sus rows hijas), luego normales
-    const renderGroups = useMemo(() => {
-        const groups = [];
-        const addedRutas = new Set();
-        const normalRows = [];
-        for (const row of filteredRows) {
-            const ri = pedidoRutaMap.get(row.pedido_id);
-            if (ri) {
-                if (!addedRutas.has(ri.ruta.id)) {
-                    addedRutas.add(ri.ruta.id);
-                    const rutaRows = filteredRows.filter(r => pedidoRutaMap.get(r.pedido_id)?.ruta.id === ri.ruta.id);
-                    groups.push({ isRuta: true, ruta: ri.ruta, driverOnline: ri.driverOnline, rows: rutaRows });
-                }
-            } else {
-                normalRows.push(row);
-            }
-        }
-        if (normalRows.length) groups.push({ isRuta: false, ruta: null, rows: normalRows });
-        // Ruta donde soy conductor va al tope
-        const uid = String(user?.id ?? '');
-        groups.sort((a, b) => {
-            if (!a.isRuta || !b.isRuta) return 0;
-            const aMe = uid && String(a.ruta?.conductor_id) === uid;
-            const bMe = uid && String(b.ruta?.conductor_id) === uid;
-            return aMe === bMe ? 0 : aMe ? -1 : 1;
-        });
-        return groups;
-    }, [filteredRows, pedidoRutaMap, user]);
+    // Agrupa filteredRows: rutas primero (con sus paradas), luego el resto.
+    // El reparto vive en `agruparPorRuta` (./helpers) para poder probarlo sin
+    // montar la vista — ver `tests/unit/rutaPorSala.test.js`.
+    const renderGroups = useMemo(
+        () => agruparPorRuta(filteredRows, pedidoRutaMap, user?.id),
+        [filteredRows, pedidoRutaMap, user]);
 
     return {
         user, isBranch, canEdit, canEditMinMax,

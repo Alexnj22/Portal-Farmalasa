@@ -27,7 +27,7 @@
 // no lo hace, y el día que alguien agregue un campo sin recortar copiaría el
 // patrón equivocado. `soloAscii` se usa sólo donde no hay recorte — la prosa de
 // los bloques y el título.
-import { soloAscii, recortar, selloCorto, COLUMNAS } from './ticketCampos';
+import { soloAscii, recortar, selloCorto } from './ticketCampos';
 
 /**
  * La simbología del código de barras del traslado.
@@ -149,22 +149,33 @@ export function construirTicketDeTraslado({
         // El rótulo de la familia arriba y en grande: es lo primero que mira
         // quien abre la bolsa.
         encabezado: { titulo: FAMILIAS[familia] ?? 'TRASLADO' },
-        // **Sin encabezado de empresa, a propósito.** Es un papel interno que no
-        // sale del negocio; el nombre y la dirección serían cuatro renglones que
-        // no le sirven a nadie. Es también lo que nombra el trabajo en la cola de
-        // la sala, así que lleva el número: en una lista de tickets, «SALUD 2 ->
-        // SALUD 1» sin número no distingue dos bolsas del mismo par.
-        titulo: soloAscii(`${origen || '?'} -> ${destino || '?'}${numero ? ` - ${numero}` : ''}`),
+        // **Sin encabezado de empresa y sin título, a propósito.**
+        //
+        // Lo primero porque es un papel interno: el nombre y la dirección serían
+        // cuatro renglones que no le sirven a nadie. Lo segundo porque el título
+        // era «SALUD 2 -> SALUD 1» y eso YA lo dicen los renglones «De:» y
+        // «Para:» de abajo (pedido del usuario, 2026-08-24): un renglón que
+        // repite el de al lado no informa, gasta rollo.
+        //
+        // El nombre para la lista de la caja va aparte (`tituloDeCola`), porque
+        // ahí sí hace falta distinguir un trabajo de otro.
+        titulo: '',
         datos,
         bloques,
-        // El valor va también como LEYENDA, o sea escrito bajo las barras por
-        // nosotros y no por la impresora. El HRI de la impresora sigue apagado
-        // (`HRI_APAGADO`) porque esa regla existe por el carné, que es una
-        // credencial: escribirla en claro convierte el papel en una contraseña.
-        // El número de un traslado no es una credencial, y alguien tiene que
-        // poder teclearlo el día que el lector no lea.
+        /* **El número NO se escribe bajo las barras. Nunca.**
+         *
+         * Instrucción del usuario, 2026-08-24: «no pongas nunca el código bajo el
+         * código de barras». Es la misma regla que ya rige el carné —por eso
+         * `HRI_APAGADO` apaga el renglón de la impresora— y acá se cumple además
+         * no mandando `leyenda`.
+         *
+         * Se había argumentado lo contrario: que alguien tiene que poder teclear
+         * el número cuando el lector no lea. El argumento estaba mal planteado —
+         * el papel ya trae con qué encontrarlo sin el número (de dónde, a dónde,
+         * quién, cuándo y qué lleva), que es exactamente el camino que describe
+         * el aviso de «SIN NUMERO». */
         codigos: numero
-            ? [{ valor: numero, simbologia: SIMBOLOGIA_DEL_TRASLADO, leyenda: numero }]
+            ? [{ valor: numero, simbologia: SIMBOLOGIA_DEL_TRASLADO }]
             : [],
         items: items.length ? {
             columnas: [{ label: 'PRODUCTO' }, { label: 'CANT', alinear: 'der' }],
@@ -173,9 +184,11 @@ export function construirTicketDeTraslado({
                 String(it?.cantidad ?? ''),
             ]),
         } : undefined,
-        // La firma de quien recibe se queda en el papel aunque el portal tenga la
-        // recepción escaneada: el papel viaja con la bolsa y llega antes que
-        // cualquier pantalla. Es la línea que hoy hace el tirro.
-        pie: ['Recibido por: ' + '_'.repeat(Math.min(24, COLUMNAS - 16))],
+        /* **Sin renglón para firmar** (pedido del usuario, 2026-08-24). Lo que
+         * confirma que la bolsa llegó es ESCANEARLA, no una firma a lápiz: la
+         * firma no se puede consultar después, no dice a qué hora llegó y, sobre
+         * todo, no puede avisar que ese traslado ya se había confirmado. El
+         * servidor ya sabe decirlo — responde `YA_RECIBIDO`. */
+        pie: [],
     };
 }

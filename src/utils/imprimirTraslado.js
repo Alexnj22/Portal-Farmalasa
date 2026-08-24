@@ -36,7 +36,17 @@ export async function imprimirTicketDeTraslado({ sala, ...datos }) {
         // `ticketPrint` sólo hace falta cuando hay algo que imprimir, y esta
         // vista se abre muchas veces por cada vez que alguien despacha.
         const { imprimirDocumento } = await import('./ticketPrint');
-        return await imprimirDocumento(construirTicketDeTraslado(datos), { sala });
+        // El papel no lleva título impreso —de dónde a dónde ya lo dicen sus
+        // renglones—, así que la lista de la caja necesita uno propio: cinco
+        // trabajos llamados «Documento» no dejan ver cuál no salió.
+        const tituloDeCola = [
+            datos?.familia === 'envio' ? 'ENVIO' : 'SOLICITUD',
+            datos?.aplicado?.id_traslado,
+            datos?.destino,
+        ].filter(Boolean).join(' ');
+        return await imprimirDocumento(
+            construirTicketDeTraslado(datos), { sala, tituloDeCola },
+        );
     } catch (e) {
         console.error('imprimirTicketDeTraslado:', e);
         return { ok: false, detalle: 'No se pudo imprimir el ticket.' };

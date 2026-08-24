@@ -910,7 +910,12 @@ export function seccionesParaElPrograma(ticket) {
         //
         // Los saltos del final son el margen de corte (ver SALTOS_DE_CORTE): la
         // cuchilla queda arriba del punto donde deja de salir papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + '\n' + pie.join('\n')) + '\n'.repeat(SALTOS_DE_CORTE),
+        // El `\n` de adelante sólo va si HAY pie: separa el total —la cifra que
+        // alguien va a contar con las manos— de lo que viene abajo, y sin pie no
+        // separa nada. Se vio en el ticket de traslado, que desde el 2026-08-24
+        // no lleva pie: era un renglón en blanco de más en cada papel.
+        pie: soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : ''))
+            + '\n'.repeat(SALTOS_DE_CORTE),
         img: '', qr: '', qr_farmalasa: '',
     };
 }
@@ -1318,7 +1323,8 @@ function cargarLaCola() {
 cargarLaCola().catch(() => {});
 
 export async function imprimirDocumento(
-    ticket, { forzarDialogo = false, soloDirecta = false, soloCola = false, sala = null } = {},
+    ticket,
+    { forzarDialogo = false, soloDirecta = false, soloCola = false, sala = null, tituloDeCola = null } = {},
 ) {
     const { ancho, sistema } = leerAjustesDeImpresion();
     // Las barras del camino del navegador se dibujan ANTES de elegir camino: si
@@ -1332,7 +1338,14 @@ export async function imprimirDocumento(
             const { encolarImpresion } = await cargarLaCola();
             const { error } = await encolarImpresion({
                 branchId: sala,
-                titulo: ticket?.titulo || 'Documento',
+                /* Cómo se llama el trabajo en la lista de la caja.
+                 *
+                 * Normalmente es el título del ticket, que es el mismo texto que
+                 * sale impreso. Pero hay papeles que NO llevan título impreso —el
+                 * ticket de traslado, que dice de dónde a dónde en sus propios
+                 * renglones y no lo repite arriba— y ésos caían en «Documento»:
+                 * una lista de cinco «Documento» no deja ver cuál no salió. */
+                titulo: tituloDeCola || ticket?.titulo || 'Documento',
                 contenidoB64: ticketEnBase64(textoParaElRollo(doc)),
             });
             if (!error) {

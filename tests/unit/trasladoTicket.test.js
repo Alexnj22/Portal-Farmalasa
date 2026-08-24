@@ -44,11 +44,27 @@ const renglones = (t) => {
 };
 
 describe('el ticket de traslado', () => {
-    it('pone el número del traslado en el código de barras, y también escrito', () => {
+    // El valor NO se escribe bajo las barras — instrucción del usuario, la misma
+    // regla que ya rige el carné. Se ancla como prueba y no como comentario
+    // porque `leyenda` es un campo opcional: agregarlo «para que se pueda
+    // teclear» es exactamente el cambio bienintencionado que hay que frenar.
+    it('pone el número en las barras y NUNCA escrito debajo', () => {
         const t = base();
-        expect(t.codigos).toEqual([
-            { valor: '32274', simbologia: SIMBOLOGIA_DEL_TRASLADO, leyenda: '32274' },
-        ]);
+        expect(t.codigos).toEqual([{ valor: '32274', simbologia: SIMBOLOGIA_DEL_TRASLADO }]);
+        expect(t.codigos[0]).not.toHaveProperty('leyenda');
+    });
+
+    // El renglón «SALUD 2 -> SALUD 1» repetía lo que dicen «De:» y «Para:» dos
+    // renglones más abajo. Un renglón que repite al de al lado no informa, gasta
+    // rollo.
+    it('no imprime un título que repita el recorrido', () => {
+        expect(base().titulo).toBe('');
+    });
+
+    // Lo que confirma que la bolsa llegó es escanearla: una firma a lápiz no se
+    // puede consultar después ni avisar que ese traslado ya se había confirmado.
+    it('no lleva renglón para firmar', () => {
+        expect(base().pie).toEqual([]);
     });
 
     it('distingue la solicitud del envío en el encabezado', () => {
@@ -99,7 +115,6 @@ describe('el ticket de traslado', () => {
         expect(todo).toContain('Ana Nunez');
         expect(todo).toContain('Jose Martinez');
         expect(todo).toContain('Proximo a vencer');
-        expect(t.titulo).toBe('Salud N -> Bodega - 32274');
     });
 
     // Ningún renglón puede pasarse del ancho del rollo: la impresora parte donde
@@ -134,11 +149,7 @@ describe('el ticket de traslado', () => {
         expect(base().encabezado.lineas ?? []).toEqual([]);
     });
 
-    // El título nombra el trabajo en la cola de la sala: sin el número, dos
-    // bolsas del mismo par de salas se ven idénticas en la lista.
-    it('el título lleva el par de salas y el número', () => {
-        expect(base().titulo).toBe('Salud 2 -> Salud 1 - 32274');
-    });
+
 });
 
 describe('de qué sala sale la bolsa', () => {

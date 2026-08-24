@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.730.3 — El ticket repetía el recorrido y traía el número escrito
+
+Tres correcciones del usuario después de ver el papel dibujado, y una de ellas
+revierte una decisión que estaba argumentada al revés.
+
+**Fuera el título.** Decía «SALUD 2 -> SALUD 1 - 32274» y dos renglones más
+abajo estaban «De:» y «Para:» diciendo lo mismo. Un renglón que repite al de al
+lado no informa, gasta rollo. El nombre para la lista de la caja va ahora aparte
+(`tituloDeCola`), porque ahí sí hace falta distinguir un trabajo de otro y cinco
+«Documento» no dejan ver cuál no salió.
+
+**El número NUNCA se escribe bajo las barras.** Instrucción del usuario, y es la
+misma regla que ya rige el carné. Estaba puesto con el argumento de que alguien
+tiene que poder teclearlo si el lector falla — el argumento estaba mal
+planteado: el papel ya trae con qué encontrar el traslado sin el número (de
+dónde, a dónde, quién, cuándo y qué lleva), que es exactamente el camino que
+describe el aviso de «SIN NUMERO».
+
+**Fuera el renglón para firmar.** Lo que confirma que la bolsa llegó es
+escanearla. Una firma a lápiz no se puede consultar después, no dice a qué hora
+llegó y, sobre todo, no puede avisar que ese traslado ya se había confirmado —
+que el servidor sí sabe decir (`YA_RECIBIDO`).
+
+Y un renglón de rollo que apareció al quitar el pie: el blanco que separaba el
+total del pie se imprimía igual con el pie vacío, o sea sin separar nada. Ahora
+sólo sale si hay pie. Son 3.5 mm en cada ticket sin pie.
+
 ## v2.730.2 — El ticket se comía la presentación del producto
 
 Se vio **dibujando el papel**, no leyendo el código: «ACEITE GOMENOLADO MORAZAN

@@ -74,6 +74,11 @@ const ACCION = {
     // nota del evento dice qué NO se hizo, así que el rótulo no puede decir
     // «Se contó» — sería la única línea de la bitácora que miente.
     REGULARIZAR: 'Se regularizó',
+    // Los dos del corte que dejó de existir. Sin rótulo se pintaban con su
+    // código crudo —«CORTE_DESCARTADO»—, que es jerga de la tubería en la
+    // única pantalla donde alguien va a leer qué le pasó a este dinero.
+    CORTE_DESCARTADO: 'El corte se descartó',
+    REAJUSTAR: 'Se le sumó el efectivo de una bolsa anulada',
 };
 
 export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {

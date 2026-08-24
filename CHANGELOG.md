@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.742.4 — Anular una bolsa devuelve su efectivo a la del día
+
+Reportado desde Salud 1: *«se habían confirmado 2 cortes, así que el último
+salían $30 y algo (lo cual era incorrecto), así que anulé el anterior, y volví a
+reimprimir el último para que me dé la cantidad correcta en bolsa de efectivo,
+pero sigue en $30 y algo»*.
+
+La bolsa de un corte parcial no guarda el total del corte: guarda **lo que entró
+desde el corte anterior**, porque los cortes del día son acumulativos. Con dos
+cortes confirmados —$839.09 y $877.64— las bolsas nacieron de $839.09 y $38.55,
+que es correcto. Al descartar el primero, su bolsa quedó anulada… y los $839.09
+se quedaron sin ninguna bolsa detrás. La sala terminó el día con **$38.55 en
+bolsas contra $877.64 declarados**.
+
+Las dos salidas que se intentaron no podían funcionar, y eso también era parte
+del problema: **reimprimir** sólo cambia la etiqueta, no el monto; y **reabrir y
+volver a confirmar** el corte no hacía nada, porque el portal ve que ese corte ya
+tiene su bolsa y se detiene ahí. No había forma de arreglarlo desde la pantalla.
+
+Ahora, al anular una bolsa —a mano o porque su corte se descartó—, **el efectivo
+que quedó sin respaldo vuelve a la bolsa que siga abierta ese día**, y su
+etiqueta pasa a «sin imprimir» para que se imprima de nuevo. Es lo correcto y no
+un arreglo cosmético: una bolsa sólo se anula sola cuando sigue en la sala y sin
+vales adentro, o sea que el efectivo nunca se movió y la bolsa siguiente es la
+que legítimamente lo cubre.
+
+Dos frenos deliberados. **Sólo suma, nunca resta**: si las bolsas superaran lo
+declarado, avisa y no toca nada, porque bajarle el monto a una bolsa cuya
+etiqueta ya se pegó es sacar efectivo de un respaldo en silencio. Y **si no queda
+ninguna bolsa en la sala que pueda absorberlo, avisa**: una bolsa que ya salió
+fue contada contra su número, y cambiárselo después le inventaría una diferencia
+a alguien.
+
+El descuadre de Salud 1 quedó corregido: **S1-1119 pasó de $38.55 a $877.64**,
+con el cambio anotado en su bitácora y la etiqueta marcada para reimprimir. Al
+abrir la bolsa se ve la línea «Se le sumó el efectivo de una bolsa anulada · De
+$38.55 a $877.64».
+
+Y de paso, dos líneas de esa misma bitácora dejaron de mostrar su código crudo
+(«CORTE_DESCARTADO») en la única pantalla donde alguien va a leer qué le pasó a
+ese dinero.
+
+Verificado contra producción rehaciendo el escenario entero —dos cortes, dos
+bolsas, se descarta el primero— insertado y revertido en la misma transacción, y
+comprobando que correrlo dos veces no suma dos veces.
+
 ## v2.742.3 — En ruta es de la sala, no del pedido
 
 **Reportado desde la pantalla:** la Ruta #21 mostraba dos pedidos, y uno de

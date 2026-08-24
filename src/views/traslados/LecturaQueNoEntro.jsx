@@ -17,6 +17,23 @@ import Notice from '../../components/common/Notice';
  *
  * `d` es el `diagnostico` que devuelve ese hook.
  */
+/**
+ * Cómo se llamaban las teclas que no se pudieron leer.
+ *
+ * «8 sin interpretar» dice que hay un problema; no dice cuál. El nombre crudo
+ * —`key` y `code`, tal como los entrega el navegador— es lo que convierte el
+ * próximo intento en un arreglo en vez de otra hipótesis. Se muestra en
+ * monoespaciado porque son identificadores, no prosa.
+ */
+function Nombres({ lista }) {
+    if (!lista?.length) return null;
+    return (
+        <span className="block mt-1 font-mono text-micro text-content-3 break-all">
+            {lista.join('  ')}
+        </span>
+    );
+}
+
 export default function LecturaQueNoEntro({ d, eventos = 0 }) {
     /* ── El CERO también se dibuja, y ésa es la mitad que faltaba ──────────
      * Sin esta rama, «no llegó ninguna tecla» se veía como una pantalla en
@@ -50,6 +67,7 @@ export default function LecturaQueNoEntro({ d, eventos = 0 }) {
                 El lector mandó <strong>{d.ignoradas}</strong> {d.ignoradas === 1 ? 'tecla' : 'teclas'} que
                 esta computadora no pudo interpretar. Suele arreglarse cambiándole
                 el idioma de teclado al lector, o su modo de emulación.
+                <Nombres lista={d.nombres} />
             </Notice>
         );
     }
@@ -74,6 +92,7 @@ export default function LecturaQueNoEntro({ d, eventos = 0 }) {
             {d.texto ? <> → «<strong>{d.texto}</strong>»</> : null}.
             {d.motivo === 'corta' && ' Son muy pocas para ser un código de ticket.'}
             {d.motivo === 'tecleada' && ' Vino demasiado lenta para ser un escaneo.'}
+            <Nombres lista={d.nombres} />
         </Notice>
     );
 }

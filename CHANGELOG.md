@@ -21,6 +21,83 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.739.6 — Cinco de los 24 no eran deuda, y el gate ahora lo dice
+
+Al saldar la deuda de borradores, **cinco de los 24 hallazgos originales
+resultaron no ser deuda** — y las cinco por la misma causa: el detector suma los
+controles de un ARCHIVO, y un archivo puede hospedar cosas que no son un
+formulario largo.
+
+· **Un listado con filtros.** `ProveedoresView` tiene siete `LiquidSelect` de
+filtro —Categoría, Clase, Vínculo, clasificación fiscal, Activos— y un octavo que
+es «Asignar categoría…», una acción en lote que guarda al instante y nace con
+`value=""`. `DashboardView` son once selectores de sucursal, uno por widget.
+Filtrar una lista no produce nada que se pueda perder.
+
+· **Varios formularios cortos en un archivo.** `WidgetAnnulmentRequest` son
+CUATRO —anular, cambiar forma de pago, cambiar vendedor, cambiar cliente—, cada
+uno de dos a cuatro campos sobre una factura ya seleccionada. `FacturacionView`
+repite el mismo par nota+archivo de `FilaConfirmar` en varias pestañas.
+
+· **Una pantalla que autoguarda.** `TabCatalogo` persiste foto, devolutivo,
+categoría y principios al cambiar, con 700 ms de espera, y por eso no tiene botón
+«Guardar»: un borrador ahí podría pisar un cambio POSTERIOR hecho desde otra
+pantalla.
+
+Las cinco quedan como **excepción con su motivo verificable**, no borradas del
+conteo — que es como un gate deja de significar algo. Y el encabezado del gate lo
+dice ahora en su propia letra: **contar 6 controles es una señal de que hay que
+mirar, no un veredicto**; un hallazgo nuevo hay que abrirlo antes de creerle.
+
+Deuda de borradores: **12 → 9**. Y los nueve que quedan son **una sola familia**:
+todos reciben su `formData` de un padre —`UnifiedModal` o el expediente de
+sucursal—, así que la pregunta que falta es una sola y es la misma para todos: si
+un borrador viejo puede repoblar un registro que ya existe.
+
+## v2.739.5 — Que teclas manda el lector, y el dialogo que se salia de la pantalla
+
+> «llegó una lectura y no se pudo usar: 1 tecla · hueco máximo 2 ms · terminó
+> con Enter · 8 sin interpretar» · «el modal de llevar productos crece
+> verticalmente y se sale de la pantalla»
+
+**El instrumento contestó, y la respuesta descartó dos hipótesis de una.** El
+lector SÍ manda, la ráfaga viaja a 2 ms entre teclas —o sea que es un escaneo,
+no un tecleo— y termina con Enter. Nada de eso era el problema. Lo que falla es
+la interpretación: de nueve teclas, el portal entendía **una**.
+
+── El respaldo de `code` era demasiado estrecho ──────────────────────────────
+
+Cuando `e.key` no sirve, el carácter se saca de `e.code` — pero la tabla sólo
+cubría `Digit`, `Numpad` y `Key`. Un `code` como `Minus`, `Period`, `Slash` o
+`Comma` **es tan carácter como `Digit3`**, y quedaba afuera: bastaba un guion en
+el código para que la ráfaga entera se perdiera. Ahora hay tabla para toda la
+puntuación imprimible, incluidos los operadores del teclado numérico.
+
+── Y la pantalla dice CÓMO se llamaban las teclas que no entendió ────────────
+
+«8 sin interpretar» dice que hay un problema; no dice cuál. Ahora se listan los
+nombres crudos que entrega el navegador —`Unidentified/Lang1`,
+`Unidentified/F13`…—, que es lo que convierte el próximo intento en un arreglo
+en vez de otra hipótesis. Sólo donde el código no es una credencial: en un carné
+esa lista sería la contraseña escrita en la pantalla.
+
+── El diálogo que se salía de la pantalla ────────────────────────────────────
+
+El panel de escritorio de `CuerpoDialogo` **no tenía tope de alto**. Crecía con
+su contenido hasta salirse de la ventana, y **lo primero que se va por abajo es
+el pie**: los botones. Un diálogo cuyo botón de cerrar quedó fuera de la
+pantalla es un diálogo del que no se puede salir sin la tecla Escape.
+
+Se reportó sobre «Llevar productos» —que crece con cada bolsa que uno carga, así
+que aparece justo cuando el recorrido va largo—, pero era del componente y por
+lo tanto de **todos** sus diálogos.
+
+Ahora topa en `88dvh`, el mismo canon que `LiquidModal`, con el contenido
+scrolleando y el pie fijo. **Medido en el navegador, en una ventana de 420 px de
+alto**: antes el panel medía **724 px y se salía**; ahora mide 370 y no. Y en
+una ventana normal de 700 px queda en 616, o sea que el tope no cambia nada
+donde no hacía falta.
+
 ## v2.739.4 — La salida de bolsa y la encuesta se guardan solas
 
 **La salida de efectivo.** Registrarla es elegir el motivo, el monto, la entidad,

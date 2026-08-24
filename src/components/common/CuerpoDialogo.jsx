@@ -67,10 +67,30 @@ const CuerpoDialogo = memo(({
         );
     }
 
+    /* ── El panel de escritorio TIENE tope de alto (2026-08-24) ──────────────
+     * No lo tenía, y eso no es un detalle de estilo: sin tope, el panel crece
+     * con su contenido hasta salirse de la pantalla, y **lo primero que se va
+     * por abajo es el pie**, o sea los botones. Un diálogo cuyo botón de
+     * cerrar quedó fuera de la ventana es un diálogo del que no se puede salir
+     * sin la tecla Escape.
+     *
+     * Reportado sobre «Llevar productos», que crece con cada bolsa que uno
+     * carga —así que el defecto aparece justo cuando el recorrido va largo—,
+     * pero era de ESTE componente y por lo tanto de todos sus diálogos: la
+     * lista de renglones de «Recibir traslado» crece igual.
+     *
+     * `88dvh` es el mismo tope que `LiquidModal` (su `TOPE_ALTO`) — el canon
+     * del portal para un panel, y `dvh` y no `vh` porque en el navegador de un
+     * teléfono la barra que aparece y desaparece cambia el alto real.
+     *
+     * El reparto es el de siempre: el contenido scrollea (`flex-1 min-h-0`) y
+     * el pie no (`shrink-0`). Sin `min-h-0` un hijo de flex no se encoge por
+     * debajo de su contenido y el `overflow` no llega a activarse nunca. */
     return (
         <div data-surface="modal"
-            className={`w-full ${anchoEscritorio} mx-auto rounded-modal overflow-hidden ${className}`}>
-            <div className="p-6 sm:p-8 flex flex-col items-center text-center">
+            className={`w-full ${anchoEscritorio} mx-auto rounded-modal overflow-hidden
+                max-h-[88dvh] flex flex-col ${className}`}>
+            <div className="p-6 sm:p-8 flex flex-col items-center text-center flex-1 min-h-0 overflow-y-auto">
                 {Icono && (
                     <div className={`w-14 h-14 rounded-2xl grid place-items-center mb-4 border
                         bg-surface-card-hover shadow-sm ${TONO_ESCRITORIO[tono] || TONO_ESCRITORIO.brand}`}>
@@ -92,7 +112,7 @@ const CuerpoDialogo = memo(({
                 // que en la hoja— y acá eso la deja a la DERECHA, que es donde el
                 // escritorio la espera. Una sola fuente de orden para las dos
                 // anatomías, en vez de que el llamador escriba dos.
-                <div className="px-5 py-4 border-t border-divider bg-surface-card-hover
+                <div className="shrink-0 px-5 py-4 border-t border-divider bg-surface-card-hover
                     flex flex-row-reverse gap-3 [&>*]:flex-1">
                     {pie}
                 </div>

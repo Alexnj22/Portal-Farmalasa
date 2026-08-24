@@ -48,6 +48,9 @@ const FIN_DE_RAFAGA_MS = 500;
 // Los códigos reales miden 3 a 5 caracteres y el PIN 8, así que menos de 3 no
 // es un carné.
 const MINIMO_DE_TECLAS = 3;
+// Cuántos nombres de tecla ilegible se guardan para mostrar. Con seis alcanza
+// para ver el patrón, y una lista larga en pantalla deja de leerse.
+const TOPE_DE_NOMBRES = 6;
 
 /**
  * El carácter de una tecla, incluso cuando el lector no lo dice.
@@ -58,15 +61,30 @@ const MINIMO_DE_TECLAS = 3;
  * **entera y sin dejar rastro**, que se ve exactamente igual que un lector que
  * no manda nada.
  *
- * El respaldo es deliberadamente estrecho —`Digit`, `Numpad` y `Key`— para no
- * convertir en carácter a un modificador: `ShiftLeft` no coincide con ninguno.
+ * El respaldo es deliberadamente estrecho —nombres de tecla que SON un carácter
+ * imprimible— para no convertir en carácter a un modificador: `ShiftLeft` no
+ * coincide con ninguno.
+ *
+ * La tabla de puntuación se agregó midiendo un lector real (2026-08-24): la
+ * pantalla informó «1 tecla · 8 sin interpretar», o sea que la ráfaga llegaba
+ * entera y el portal sólo entendía una de cada nueve. Un `code` como `Minus` o
+ * `Period` es tan carácter como `Digit3`, y dejarlo afuera descartaba el código
+ * completo.
  */
+const CODIGO_A_CARACTER = {
+    Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
+    Semicolon: ';', Quote: "'", Backquote: '`', Comma: ',', Period: '.', Slash: '/',
+    Space: ' ',
+    NumpadAdd: '+', NumpadSubtract: '-', NumpadMultiply: '*', NumpadDivide: '/',
+    NumpadDecimal: '.',
+};
+
 function caracterDe(e) {
     if (typeof e.key === 'string' && e.key.length === 1) return e.key;
     const c = e.code || '';
     if (/^(Digit|Numpad)\d$/.test(c)) return c.slice(-1);
     if (/^Key[A-Z]$/.test(c)) return c.slice(3);
-    return null;
+    return CODIGO_A_CARACTER[c] ?? null;
 }
 
 export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
@@ -97,6 +115,12 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
     const alLeerRef = useRef(alLeer);
     const huecoMaxRef = useRef(0);
     const ignoradasRef = useRef(0);
+    /* CÓMO se llamaban las teclas que no se pudieron leer.
+     *
+     * «8 sin interpretar» dice que hay un problema; no dice cuál. Con el nombre
+     * —`key` y `code` crudos— se arregla en un solo intento en vez de a
+     * hipótesis. Va topado: lo que importa es el patrón, no la ráfaga entera. */
+    const nombresRef = useRef([]);
 
     useEffect(() => { alLeerRef.current = alLeer; });
 
@@ -118,6 +142,9 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
             ignoradas: ignoradasRef.current,
             conEnter, entregado, motivo,
             texto: aceptarTecleado ? leido : null,
+            // Los nombres SÓLO donde el código no es una credencial: en un carné
+            // la lista de teclas es la contraseña escrita en la pantalla.
+            nombres: aceptarTecleado ? nombresRef.current.slice(0, TOPE_DE_NOMBRES) : [],
         });
 
         /** El plazo que cierra la ráfaga cuando dejan de llegar teclas. */
@@ -143,6 +170,7 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
                             : (!sinEnter ? 'sin-enter' : 'tecleada')));
                 huecoMaxRef.current = 0;
                 ignoradasRef.current = 0;
+                nombresRef.current = [];
                 if (entregado) { setManual(false); alLeerRef.current?.(leido); }
             }, FIN_DE_RAFAGA_MS);
         };
@@ -178,6 +206,7 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
                 manualRef.current = false;
                 huecoMaxRef.current = 0;
                 ignoradasRef.current = 0;
+                nombresRef.current = [];
                 return;
             }
 
@@ -192,6 +221,9 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
                 // se armaba al aceptar un carácter—, que es justo el caso que
                 // esta cuenta existe para delatar.
                 ignoradasRef.current += 1;
+                if (nombresRef.current.length < TOPE_DE_NOMBRES) {
+                    nombresRef.current.push(`${e.key || '?'}/${e.code || '?'}`);
+                }
                 armarFin();
                 return;
             }

@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.733.5 — El recorrido nunca sabía en qué sala estabas
+
+Ocho correcciones de una revisión de código sobre lo de ayer. La primera es la
+que importa y las dos siguientes son la misma causa.
+
+**`retiro_cargar` no devolvía dónde estaba la bolsa, y la pantalla lo leía.**
+`r.origen_branch_id` venía `undefined` siempre. Consecuencia: la mitad de «qué
+recoger acá» —la que existe justamente para que no se olvide una bolsa— **no se
+ejecutaba nunca**. No fallaba nada, no había error: simplemente el aviso no
+aparecía.
+
+**Y el id y el nombre de la sala salían de lugares distintos.** El id era el del
+DESTINO —lo único que traía la consulta— y el nombre el del ORIGEN, así que
+escanear un Salud 1 → Salud 4 mostraba «Dejar en Salud 1» y listaba las bolsas
+que iban a Salud 4.
+
+**Un traslado sin `origen_branch_id` rechazaba todos los carnés del edificio.**
+`puede_entregar_de(quien, NULL)` da falso —`= NULL` es NULL— así que pedía la
+firma, y la firma también daba falso: «esa persona no puede entregar producto de
+esa sala», culpando a la persona por un dato que le falta al traslado. Ahora
+contesta `SIN_ORIGEN` y dice qué hacer.
+
+**Soltar una bolsa no dejaba rastro de ningún tipo.** `retiro_soltar` BORRA la
+fila, y era la única acción de la función cuyo propósito entero es asignar
+responsabilidad: si la bolsa después falta, no había dónde leer quién la tuvo.
+Las tres acciones de custodia van ahora a `audit_logs`.
+
+**El cron salía sin `timeout_milliseconds`**, o sea con el defecto de 5 segundos
+de pg_net, sobre una función que hace dos viajes por bolsa. Con una docena
+atrasadas, pg_net anotaría un timeout en vez del 200 y `gate:eficiencia`
+reportaría un cron caído sobre trabajo que sí se hizo.
+
+Y cuatro más: los antiduplicados se buscan **de una vez** y no uno por bolsa (con
+su índice, y otro para el filtro por sala, que barrían tablas enteras); un fallo
+en una bolsa **ya no aborta la corrida** —el `check_key` lleva los días adentro,
+así que lo que quedara sin avisar hoy no se reintenta mañana y se perdía en
+silencio—; `pendientes` se **limpia** cuando no se sabe en qué sala estamos; y el
+voseo pasó a tuteo (DESIGN.md §26.7), que el archivo mezclaba con tuteo en la
+misma pantalla.
+
+Las dos tablas y el cron quedaron declarados en `auditoria/areas.mjs`. **El gate
+no los había señalado porque su snapshot de producción es del 23-ago**, anterior
+a las tablas: no pudo medirlos, y dio verde igual.
+
 ## v2.733.4 — 47 pruebas: la cola de impresión, el mes impreso y la bitácora
 
 **La cola de impresión** (16). Existe porque el camino directo sólo alcanza la

@@ -14,6 +14,19 @@ import {
     DIAS_PARA_ALARMA,
 } from '../../data/retiros';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { useStaffStore as useStaff } from '../../store/staffStore';
+
+/* La bitácora de la custodia.
+ *
+ * `retiro_soltar` BORRA la fila, así que sin esto soltar una bolsa no dejaba
+ * rastro de ningún tipo: si después falta, no hay dónde leer quién la tuvo ni
+ * cuándo dejó de tenerla. Y es justamente la acción cuyo único propósito es
+ * asignar responsabilidad. Regla del repo: toda acción de usuario va a
+ * `audit_logs`. */
+const anotar = (accion, requestId, detalle) => {
+    try { useStaff.getState().appendAuditLog(accion, String(requestId ?? ''), detalle); }
+    catch (e) { console.error('bitácora del retiro:', e); }   // no puede tumbar la acción
+};
 
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 
@@ -56,6 +69,12 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         if (branchId) {
             const { pendientes: p } = await fetchPendientesEnSala(branchId);
             setPendientes(p ?? []);
+        } else {
+            // Se LIMPIA, no se deja como estaba: sin sala conocida, la lista
+            // anterior sería «acá quedan 4 esperando salir» sobre una sucursal
+            // de la que ya nos fuimos. Un dato viejo con cara de actual es peor
+            // que ninguno.
+            setPendientes([]);
         }
         setCargando(false);
     }, []);
@@ -96,13 +115,21 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 return;
             }
 
-            // De dónde salió ES dónde estamos parados. Con eso se recarga lo que
-            // queda esperando acá — que es la alerta que evita el olvido.
-            const sala = { id: traslado.branch_id_destino, nombre: traslado.origen };
+            /* De dónde salió ES dónde estamos parados.
+             *
+             * El id y el nombre tienen que salir del MISMO lugar. Estuvieron
+             * cruzados: el id era el del DESTINO —lo único que traía la
+             * consulta— y el nombre el del ORIGEN, así que el panel decía
+             * «Dejar en Salud 1» y listaba las bolsas que iban a Salud 4. Hoy
+             * los dos vienen de `retiro_cargar`, que devuelve el origen. */
             const origenId = r.origen_branch_id ?? null;
             setPidiendoFirma(null);
-            setSalaActual({ id: origenId ?? sala.id, nombre: traslado.origen });
-            await recargar(origenId ?? null);
+            setSalaActual(origenId ? { id: origenId, nombre: traslado.origen } : null);
+            anotar('CARGAR_BULTO', traslado.id, {
+                origen: traslado.origen ?? null, destino: traslado.destino ?? null,
+                firma_propia: r.firma_propia === true, entrego_id: entregoId ?? null,
+            });
+            await recargar(origenId);
             onCambio?.();
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo leer ese código.'));
@@ -154,6 +181,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         const r = await cerrarRetiro();
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo cerrar el recorrido.'); return; }
+        anotar('CERRAR_RETIRO', retiro?.retiro_id, { bultos: bultos.length });
         setAviso('Recorrido cerrado.');
         await recargar(salaActual?.id ?? null);
         onCambio?.();
@@ -164,6 +192,8 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         const r = await soltarBulto(requestId);
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo soltar esa bolsa.'); return; }
+        // La fila se borra: esta anotación es el ÚNICO rastro de que existió.
+        anotar('SOLTAR_BULTO', requestId, { sala: salaActual?.nombre ?? null });
         await recargar(salaActual?.id ?? null);
         onCambio?.();
     };
@@ -193,8 +223,8 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
                     {pidiendoFirma ? (
                         <Notice variant="warning" icon={UserCheck}>
-                            Esa bolsa está guardada en <strong>{pidiendoFirma.origen}</strong> y vos no
-                            sos de ahí. Pasá el carné de quien te la entrega.
+                            Esa bolsa está guardada en <strong>{pidiendoFirma.origen}</strong> y tú no
+                            eres de ahí. Pasa el carné de quien te la entrega.
                             {teclas > 0 && ' Leyendo…'}
                         </Notice>
                     ) : (
@@ -234,14 +264,14 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                         <Notice variant="warning">
                             Acá quedan <strong>{pendientes.length}</strong> esperando salir
                             {pendientes.some(p => p.destino) && `, para ${[...new Set(pendientes.map(p => p.destino).filter(Boolean))].join(', ')}`}.
-                            Escaneá su ticket si te las llevás.
+                            Escanea su ticket si te las llevas.
                         </Notice>
                     )}
 
                     {/* El manifiesto */}
                     {!cargando && bultos.length === 0 && (
                         <EmptyState icon={Truck} title="Todavía no llevas nada"
-                            subtitle="Escaneá el ticket de la primera bolsa y el recorrido arranca solo." />
+                            subtitle="Escanea el ticket de la primera bolsa y el recorrido arranca solo." />
                     )}
 
                     {bultos.length > 0 && (

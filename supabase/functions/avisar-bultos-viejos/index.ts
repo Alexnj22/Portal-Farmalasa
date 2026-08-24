@@ -67,13 +67,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Los antiduplicados de TODAS las bolsas en una consulta, no una por bolsa.
+    // Eran N barridos de `notifications` —tabla sin índice para esa clave y que
+    // sólo crece— encadenados uno tras otro dentro de una llamada con plazo.
+    const claves = filas.map((f) => `bulto_viejo:${f.request_id}:${f.dias}`);
+    const { data: yaAvisados, error: e5 } = await supabase
+      .from('notifications').select('metadata').in('metadata->>check_key', claves);
+    if (e5) throw new Error(`notifications: ${e5.message}`);
+    const yaEstan = new Set((yaAvisados ?? []).map((n) => n?.metadata?.check_key).filter(Boolean));
+
     let avisados = 0;
+    const fallidos: string[] = [];
     for (const f of filas) {
       const checkKey = `bulto_viejo:${f.request_id}:${f.dias}`;
-      const { data: yaEsta, error: e3 } = await supabase
-        .from('notifications').select('id').filter('metadata->>check_key', 'eq', checkKey).limit(1);
-      if (e3) throw new Error(`notifications(${checkKey}): ${e3.message}`);
-      if (yaEsta && yaEsta.length > 0) continue;
+      if (yaEstan.has(checkKey)) continue;
 
       const destinatarios = [...new Set([
         String(f.retirador_id),
@@ -81,6 +88,10 @@ Deno.serve(async (req) => {
       ])].filter(Boolean);
       if (destinatarios.length === 0) continue;
 
+      // Un fallo en UNA bolsa no puede tumbar la corrida. El `check_key` lleva
+      // los días adentro, así que las que quedaran sin avisar hoy NO se
+      // reintentan mañana —mañana la clave es otra—: el aviso de este día se
+      // perdería en silencio. Se anota y se sigue.
       const { error: e4 } = await supabase.rpc('notify_employees', {
         p_recipients: destinatarios,
         p_type: 'TRASLADO_SIN_ENTREGAR',
@@ -91,11 +102,15 @@ Deno.serve(async (req) => {
         p_link: '/traslados',
         p_metadata: { check_key: checkKey, request_id: f.request_id, dias: f.dias },
       });
-      if (e4) throw new Error(`notify_employees: ${e4.message}`);
+      if (e4) { fallidos.push(`${checkKey}: ${e4.message}`); continue; }
       avisados++;
     }
 
-    return json({ ok: true, avisados, revisados: filas.length });
+    // `ok: false` cuando algo quedó sin avisar, y con el detalle: una corrida
+    // que dice 200 sobre trabajo a medias es la forma en que un fallo vive
+    // meses sin que nadie lo mire.
+    return json({ ok: fallidos.length === 0, avisados, revisados: filas.length, fallidos },
+                fallidos.length ? 500 : 200);
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

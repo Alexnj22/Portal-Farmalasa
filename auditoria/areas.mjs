@@ -546,11 +546,11 @@ export const AREAS = [
             'src/data/retiros.js',
             'src/store/composicionTraslado.js',
         ],
-        tablas: ['envio_linea', 'traslado_interruptor'],
+        tablas: ['envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos'],
         edge: ['aplicar-traslado-inventario', 'enviar-producto-erp', 'barrer-traslados-recibidos',
                 'avisar-bultos-viejos'],
         crons: ['barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
-                'avisar-traslados-por-respaldo-0805-sv'],
+                'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
         docs: ['docs/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },
 

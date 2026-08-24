@@ -1343,3 +1343,29 @@ arreglara el permiso no borraba las quejas de las anteriores — el número no
 bajaba nunca y no había forma de cerrarlo. Postgres no funciona así: gana la
 última sentencia. Ahora mide el **estado final por función**, y excluye los
 disparadores. De 28 a 4, y de 4 a 0 con la migración.
+
+### 8.24 El sello prestado: la guarda estaba, y le faltaba la mitad
+
+Los siete pares de compras que comparten sello (§8.20) tienen causa, y es una
+asimetría de una línea. `sync-erp-purchases` construye un mapa
+`número de documento → sellos` y pregunta:
+
+> ¿este número trae **un solo** sello? Si no, NULL — «un sello equivocado es peor
+> que ninguno».
+
+Falta la pregunta de al lado: **¿este sello es de un solo número?** Sin ella, un
+sello que el libro del sistema de origen repite bajo dos documentos distintos se
+le pega a los dos.
+
+Y no vinieron del correo: **ningún `purchase_dte_documents` tiene esos sellos**,
+así que la única vía es el sync. Los montos además difieren —COFARSAL $465.96 con
+FARMA VALUE $38.33, COFARSAL $663.94 con LETERAGO $125.82— o sea que **no es la
+misma compra cargada dos veces**: son dos compras reales con un sello prestado.
+
+La guarda nueva usa el mismo criterio que su vecina, en la otra dirección.
+
+**Queda sin desplegar y sin decidir**, y es honesto decirlo: el arreglo está en el
+repo pero la función corre la versión vieja, así que el defecto sigue produciendo
+pares (el séptimo apareció el 1 de agosto). Y las cuatro filas ya escritas siguen
+con un sello que en cada par le pertenece a una sola de las dos. Las dos cosas son
+escrituras a producción y esperan decisión.

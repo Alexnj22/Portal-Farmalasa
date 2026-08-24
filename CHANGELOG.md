@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.734.0 — Bolsas: recibir de un toque, el conteo dice contra qué, y a la sala le vuelve la diferencia
+
+_(pendiente de redactar)_
+
+## v2.733.7 — 45 pruebas: la geografía fiscal, el IVA del DTE y la ficha de cliente
+
+**La división territorial** (28, con el IVA). Desde la reestructuración municipal
+el país tiene 14 departamentos, **44 municipios** y **262 distritos** — los 262
+son los municipios de antes. El sistema de origen rotula en mayúscula, sin
+tildes y a veces truncado: medido sobre las 894 fichas con distrito, **cero
+coinciden exacto**, 687 difieren sólo en grafía y 207 son abreviaturas que
+ninguna normalización resuelve. Sin conciliar, el formulario muestra el distrito
+VACÍO y la ficha parece incompleta cuando no lo está. Quedan anclados los tres
+casos —grafía, abreviatura y nombre que cambió («San José Las Flores» → «Las
+Flores»)—, que lo no reconocido se devuelva tal cual en vez de inventarse o
+descartarse, y que una abreviatura que no pertenece a ese municipio **no se
+aplique**: aplicarla a ciegas mudaría la ficha de departamento.
+
+Y que la cascada no pueda quedar en un estado imposible: el municipio manda sobre
+el departamento, el departamento se DEDUCE cuando falta (92 fichas reales), y sin
+municipio no hay distrito.
+
+**El IVA de un DTE** sale de `tributos` y no de `totalIva`, que **no existe en el
+esquema de Hacienda**: leerlo de ahí dejó 513 de 516 documentos de julio con el
+IVA en NULL. Anclado que sea **sólo el código 20** —FOVIAL y COTRANS no son
+crédito fiscal—, que un `totalIva` en cero no gane (en consumidor final viene así
+y el impuesto va en el precio), y que sin nada devuelva `null` y no cero, que se
+sumaría al crédito como un dato averiguado.
+
+**La ficha de cliente** (17). Son 24.502 fichas: nada se filtra en el navegador,
+porque un `select()` traería el 4% del catálogo y la vista mostraría números
+falsos con toda naturalidad. `customers` **no tiene policy de UPDATE**, así que
+el RPC es el único camino de escritura — y sólo viajan los campos que se mandan,
+que es lo contrario del POST parcial del origen, que borra lo que no recibe.
+Anclado también que un `error` DENTRO de una respuesta 200 lance (si no, la
+pantalla pinta una ficha vacía como si el cliente no tuviera datos), y que el
+envío al origen **nunca lance**: el guardado ya terminó, y hacer esperar a la
+persona por un servidor de terceros que tardó más de 300 s sería castigarla por
+la lentitud de otro.
+
+Facturación y DTE llega a 95 en pruebas.
+
 ## v2.733.6 — 54 pruebas: la bandeja, la capa fiscal y la de compras
 
 **La bandeja de solicitudes** (22, con cinco catálogos de sala). Se prueba por lo

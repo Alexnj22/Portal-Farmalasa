@@ -114,6 +114,20 @@ describe('el ticket de traslado', () => {
         }
     });
 
+
+    // El recorte a 30 se comía la PRESENTACIÓN, que es lo único que distingue dos
+    // productos del mismo nombre. Medido sobre 365 renglones reales de 90 días:
+    // máximo 49 caracteres, y 105 (el 29%) pasaban de 30. Los dos nombres de acá
+    // son reales: 33 y 45 caracteres.
+    it('no se come la presentacion de un nombre largo', () => {
+        const t = base({ items: [
+            { nombre: 'ACEITE GOMENOLADO MORAZAN X 15 ML', cantidad: 2 },
+            { nombre: 'DIENTE DE LEON 350MG X 30 CAPS. PHARMA NATURA', cantidad: 1 },
+        ] });
+        expect(t.items.filas[0][0]).toBe('ACEITE GOMENOLADO MORAZAN X 15 ML');
+        expect(t.items.filas[1][0]).toBe('DIENTE DE LEON 350MG X 30 CAPS. PHARMA NATURA');
+    });
+
     // El papel interno no lleva encabezado de empresa: son cuatro renglones que
     // no le sirven a nadie y el rollo los paga igual.
     it('no imprime el encabezado de la empresa', () => {

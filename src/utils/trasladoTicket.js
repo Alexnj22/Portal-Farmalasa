@@ -58,10 +58,27 @@ export const FAMILIAS = {
     envio:     'ENVIO',
 };
 
-// El nombre del producto ocupa la columna izquierda de un renglón de dos, o sea
-// la mitad del rollo. Lo que no entra se recorta ACÁ y no en la impresora, que
-// parte a mitad de palabra donde se le acaba el papel.
-const ANCHO_PRODUCTO = 30;
+/**
+ * Cuánto nombre de producto entra antes de la cantidad.
+ *
+ * **El número sale de medir, y la primera versión —30— estaba mal.** Se vio
+ * dibujando el ticket: «ACEITE GOMENOLADO MORAZAN X 15 ML» salía
+ * `ACEITE GOMENOLADO MORAZAN X 1.`, o sea que lo que se comía era justamente la
+ * PRESENTACIÓN. Y eso no es un detalle cosmético: es lo único que distingue dos
+ * productos del mismo nombre —la propia tarjeta de traslados documenta dos
+ * «BRONCODINE FLUX», uno jarabe de 120 ml y otro gotas de 30 ml—. Un papel que
+ * dice «X 1.» se puede cotejar contra el producto equivocado y darlo por bueno,
+ * que es peor que no decir nada.
+ *
+ * Medido sobre los 365 renglones de traslado de 90 días: promedio 27, p90 36,
+ * p99 46, **máximo 49**. Con 30 se mutilaban **105 renglones, el 29%**. Con 48
+ * —lo que queda del rollo dejando 6 para la cantidad— se recorta **uno solo**,
+ * y con su punto a la vista.
+ *
+ * El recorte pasa ACÁ y no en la impresora, que parte a mitad de palabra donde
+ * se le acaba el papel.
+ */
+const ANCHO_PRODUCTO = 48;
 
 /**
  * De qué sala sale la bolsa **físicamente**, que no siempre es la que la pidió.

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.730.2 — El ticket se comía la presentación del producto
+
+Se vio **dibujando el papel**, no leyendo el código: «ACEITE GOMENOLADO MORAZAN
+X 15 ML» salía `ACEITE GOMENOLADO MORAZAN X 1.`. Lo que se recortaba era
+justamente la presentación — y eso es lo único que distingue dos productos del
+mismo nombre. La tarjeta de traslados ya documenta el caso: dos «BRONCODINE
+FLUX», uno jarabe de 120 ml y otro gotas de 30 ml. Un papel que dice «X 1.» se
+puede cotejar contra el producto equivocado y darlo por bueno, que es peor que
+no decir nada.
+
+**El ancho estaba elegido, no medido.** Sobre los 365 renglones de traslado de
+90 días: promedio 27, p90 36, p99 46, máximo 49. Con 30 se mutilaban **105
+renglones, el 29%**. Con 48 —lo que queda del rollo dejando 6 para la cantidad—
+se recorta **uno solo**, y con su punto a la vista.
+
+Queda anclado con dos nombres reales de 33 y 45 caracteres.
+
 ## v2.730.1 — El botón de escanear no recibía el toque con el buscador vacío
 
 **Reportado desde iOS: «veo el ícono, al tocarlo no hace nada».** Y era literal.

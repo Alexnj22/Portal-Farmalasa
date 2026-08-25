@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.755.1 — Rehacer una propuesta que nadie confirmó, y septiembre recalculado
+
+La v2.755.0 arregló la fórmula, pero las propuestas de septiembre ya estaban
+guardadas: salieron a las 08:00 del mismo día con mayo·junio·julio, y
+`generar_propuestas_metas` inserta con `ON CONFLICT DO NOTHING` —correrla dos
+veces no puede mover un número que alguien ya está mirando—, así que no había
+forma de rehacerlas sin borrar filas a mano.
+
+`recalcular_propuestas_metas(mes, motivo)` cierra ese hueco con tres frenos, y
+ninguno es decorativo:
+
+- **Sólo un mes que todavía no empezó.** Rehacer la meta del mes que la sala
+  está vendiendo sería mover el arco con el partido jugándose.
+- **Sólo `propuesta` o `devuelta`.** Una confirmada o una oficial ya son la
+  palabra de alguien.
+- **Sólo si nadie la tocó a mano.** `upsert_meta_manual` cambia `monto_base` y
+  no toca `monto_propuesto`, así que la igualdad entre los dos es la prueba de
+  que el número sigue siendo el del portal. Si el supervisor lo ajustó, la fila
+  se saltea: su ajuste manda sobre la fórmula. Y si `monto_propuesto` viene en
+  NULL no se puede probar nada, así que tampoco se toca.
+
+Exige motivo escrito y lo deja en `metas_historial` con el antes y el después:
+un número que cambia sin que nadie lo haya pedido tiene que poder explicarse
+después. Los tres frenos se probaron disparándolos antes de usarla, y la segunda
+corrida sobre el mismo mes devuelve 0 sin escribir una fila más.
+
+Septiembre quedó recalculado con agosto adentro:
+
+| Sala | Antes | Ahora | Dif. |
+|---|---:|---:|---:|
+| La Popular | 39,828.06 | 40,503.93 | +675.87 |
+| Salud 1 | 49,865.27 | 48,963.34 | −901.93 |
+| Salud 2 | 43,576.19 | 44,061.09 | +484.90 |
+| Salud 3 | 44,373.50 | 44,810.49 | +436.99 |
+| Salud 4 | 41,065.03 | 39,129.04 | −1,935.99 |
+| Salud 5 | 15,567.58 | 16,475.40 | +907.82 |
+
+La que más cambia de criterio es **Salud 5**: venía de julio al 103.4% y agosto
+proyecta 88.2%, así que el factor pasa de 1.02 (sostenerse) a 1.10 (recuperar
+terreno). Las otras cinco cambian de monto pero no de tramo.
+
+De paso, la nota que acompaña a cada propuesta pasó a vivir en un solo lugar
+(`metas_nota_propuesta`): la escriben la que propone y la que rehace, y era el
+mismo `CASE` a punto de existir dos veces.
+
+La función no se abre al navegador: hoy no hay botón que la llame, y una función
+que escribe metas expuesta sin quien la use es superficie por las dudas.
+
 ## v2.755.0 — La meta cuenta el mes que está por cerrar, y la sala se entera el 1
 
 Reportado al revisar la propuesta de septiembre: *«veo que me dice cómo cerró

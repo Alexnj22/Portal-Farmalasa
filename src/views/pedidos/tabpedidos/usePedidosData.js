@@ -1576,6 +1576,37 @@ export function usePedidosData({ searchTerm = '' }) {
         } finally { setBusyAction(null); }
     }, [recargarTarjeta]);
 
+    // La misma corrida SIN escribir. `simulacro` es el valor por omisión de la
+    // función desde el día uno —hace todas las comprobaciones contra el sistema
+    // y no toca una línea— y no había forma de dispararlo desde el portal, así
+    // que un movimiento pausado era un freno sin salida: la única manera de
+    // saber si iba a andar era dejarlo andar.
+    //
+    // Lo que devuelve se cuenta con detalle a propósito: el lote y la
+    // presentación que eligió son justo lo que hay que mirar antes de dejar
+    // salir producto por un camino recién estrenado.
+    const handleProbarDevolucion = useCallback(async (pedidoId, sucId, id) => {
+        setBusyAction(`devsim_${id}`);
+        try {
+            const r = await moverDevoluciones([id], { simulacro: true });
+            const hecho = r.hechas?.[0] ?? null;
+            useToastStore.getState().showToast(
+                r.ok ? 'La prueba pasó — no se movió nada' : 'La prueba encontró un problema',
+                r.ok && hecho
+                    ? `${hecho.producto ?? 'El producto'} · ${hecho.presentacion ?? 'sin presentación'} · `
+                      + `${(hecho.renglones ?? []).map(x => `${x.cantidad} del lote ${x.lote ?? 'sin lote'}`).join(', ') || 'sin lotes'}`
+                      + (hecho.avisos?.length ? ` · ${hecho.avisos.join(' · ')}` : '')
+                    : (r.fallos?.[0]?.error ?? r.error ?? 'Sin detalle.'),
+                r.ok ? 'success' : 'warning', 12000,
+            );
+            useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_PROBADA', pedidoId, {
+                sucursal_id: sucId, devolucion_id: id, ok: r.ok === true,
+            });
+        } catch (e) {
+            useToastStore.getState().showToast('Prueba', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, []);
+
     // El botón que cierra el círculo. Mientras nadie lo apriete, el producto
     // está en tránsito — y esa es la razón de que esta pieza se construyera
     // primero.
@@ -1786,6 +1817,7 @@ export function usePedidosData({ searchTerm = '' }) {
         handleProponerConFoto,
         handleDecidirDevolucion,
         handleMoverDevolucion,
+        handleProbarDevolucion,
         handleRecibirDevolucion,
         filterOptions,
         hasObservacion,

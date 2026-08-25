@@ -182,6 +182,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         handleConfirmarCorreccion,
         handleProponerConFoto,
         handleMoverDevolucion,
+        handleProbarDevolucion,
         handleRecibirDevolucion,
         handleDecidirDiferencia,
         handleConfirmarLlegadaDiferencia,
@@ -743,6 +744,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 }
                                                 onConfirmarCorreccion={() =>
                                                     handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
+                                                }
+                                                onProbarDevolucion={(id) =>
+                                                    handleProbarDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
                                                 }
                                                 onMoverDevolucion={(id) =>
                                                     handleMoverDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)

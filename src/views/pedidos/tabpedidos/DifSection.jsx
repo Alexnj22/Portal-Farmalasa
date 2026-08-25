@@ -61,7 +61,7 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-export default function DifSection({ row, difItems = [], eventos = [], devoluciones = [], isBranch, esSupervision = false, busyAction, empMap = new Map(), onCorregirBodega, onConfirmarCorreccion, onDecidirDiferencia, onConfirmarLlegada, onPedirFoto, onMoverDevolucion, onRecibirDevolucion, readOnly = false, onNeedItems, itemsLoaded = true }) {
+export default function DifSection({ row, difItems = [], eventos = [], devoluciones = [], isBranch, esSupervision = false, busyAction, empMap = new Map(), onCorregirBodega, onConfirmarCorreccion, onDecidirDiferencia, onConfirmarLlegada, onPedirFoto, onMoverDevolucion, onRecibirDevolucion, onProbarDevolucion, readOnly = false, onNeedItems, itemsLoaded = true }) {
     const [showAll,  setShowAll]  = useState(false);
     const [corrNota, setCorrNota] = useState('');
     const [catalogo, setCatalogo] = useState({});
@@ -208,6 +208,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                 dev={dev} item={item} isBranch={isBranch} busyAction={busyAction}
                                 empMap={empMap} readOnly={readOnly}
                                 onMover={onMoverDevolucion}
+                                onProbar={onProbarDevolucion}
                                 onRecibir={onRecibirDevolucion}
                             />
 
@@ -287,6 +288,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             onDecidirDiferencia={onDecidirDiferencia}
                             onConfirmarLlegada={onConfirmarLlegada}
                             onMoverDevolucion={onMoverDevolucion}
+                            onProbarDevolucion={onProbarDevolucion}
                             onRecibirDevolucion={onRecibirDevolucion} />
                     ))}
                 </div>
@@ -365,7 +367,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 function FilaCompacta({
     item, tono, Icono, abierta, onToggle, derecha, catalogo, empMap, dev,
     isBranch, esSupervision, readOnly = false,
-    onDecidirDiferencia, onConfirmarLlegada, onMoverDevolucion, onRecibirDevolucion,
+    onDecidirDiferencia, onConfirmarLlegada, onMoverDevolucion, onRecibirDevolucion, onProbarDevolucion,
 }) {
     const et = ERROR_TIPO_LABEL[item.error_tipo];
     const hover = tono === 'success' ? 'hover:bg-success/5' : 'hover:bg-warning/5';
@@ -391,7 +393,8 @@ function FilaCompacta({
                         esSupervision={esSupervision} empMap={empMap} readOnly={readOnly}
                         onDecidir={onDecidirDiferencia} onConfirmarLlegada={onConfirmarLlegada} />
                     <DevolucionBloque dev={dev} isBranch={isBranch} empMap={empMap} readOnly={readOnly}
-                        onMover={onMoverDevolucion} onRecibir={onRecibirDevolucion} />
+                        onMover={onMoverDevolucion} onRecibir={onRecibirDevolucion}
+                        onProbar={onProbarDevolucion} />
                 </div>
             )}
         </div>

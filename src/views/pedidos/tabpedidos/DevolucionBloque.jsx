@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle, FlaskConical, Image as ImageIcon } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import Badge from '../../../components/common/Badge';
@@ -23,7 +23,7 @@ const MOTIVO_LABEL = {
 
 export default function DevolucionBloque({
     dev, isBranch, busyAction, empMap = new Map(), readOnly = false,
-    onMover, onRecibir,
+    onMover, onRecibir, onProbar,
 }) {
     const [firmadas, setFirmadas] = useState([]);
 
@@ -51,6 +51,7 @@ export default function DevolucionBloque({
     if (!dev) return null;
 
     const moviendo   = busyAction === `devmov_${dev.id}`;
+    const probando   = busyAction === `devsim_${dev.id}`;
     const recibiendo = busyAction === `devrec_${dev.id}`;
     const quienPidio = dev.solicitada_por ? empMap.get(dev.solicitada_por) : null;
     const quienDecidio = dev.decidida_por ? empMap.get(dev.decidida_por) : null;
@@ -180,11 +181,26 @@ export default function DevolucionBloque({
                     el acuerdo. */}
                 {(dev.estado === 'aceptada'
                   || (dev.estado === 'error' && !dev.id_traslado && !dev.detalle?.revisar_a_mano)) && !isBranch && (
-                    <Button tone="chart-3" icon={Truck} disabled={moviendo}
-                        onClick={() => onMover?.(dev.id)}>
-                        {moviendo ? <Loader2 size={10} className="animate-spin" />
-                                  : (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')}
-                    </Button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Button tone="chart-3" icon={Truck} disabled={moviendo || probando}
+                            onClick={() => onMover?.(dev.id)}>
+                            {moviendo ? <Loader2 size={10} className="animate-spin" />
+                                      : (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')}
+                        </Button>
+                        {/* La misma corrida SIN escribir. La función hace todas
+                            las comprobaciones contra el sistema —abre la sesión,
+                            busca el producto, resuelve la presentación, mide la
+                            existencia, reparte los lotes— y no toca una línea.
+                            Existía desde el día uno (`simulacro` es su valor por
+                            omisión) y no había forma de dispararla, así que un
+                            movimiento pausado era un freno sin salida: la única
+                            manera de saber si iba a andar era dejarlo andar. */}
+                        <Button variant="secondary" icon={FlaskConical} disabled={moviendo || probando}
+                            onClick={() => onProbar?.(dev.id)}
+                            title="Hace todas las comprobaciones contra el sistema y no mueve nada">
+                            {probando ? <Loader2 size={10} className="animate-spin" /> : 'Probar sin mover nada'}
+                        </Button>
+                    </div>
                 )}
 
                 {/* Una línea que se cortó a mitad de camino NO se reintenta sola:

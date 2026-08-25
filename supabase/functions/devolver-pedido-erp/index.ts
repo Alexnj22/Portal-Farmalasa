@@ -9,7 +9,6 @@ import {
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
-  existenciasDeUbicacion,
   hayEnTexto,
   hoySV,
   identificarTrasladoNuevo,
@@ -754,10 +753,9 @@ Deno.serve(async (req) => {
       // La foto de los pendientes: el movimiento nuevo es el que no estaba. El
       // `insert` no devuelve el id y el listado ignora el orden que se le pide.
       let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
-      // Lo que hay de verdad en el área de trabajo del origen. Ver
-      // `existenciasDeUbicacion`: la casilla de la pantalla suma vencidos.
-      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
-
+      // Lo que hay de verdad en el área de trabajo del origen: la casilla de la
+      // pantalla NO sirve, porque suma las dos ubicaciones — ver `leerUbicacion`.
+      //
       // El cuarto argumento de `disponibleEnBodega` —lo apartado en el área de
       // vencidos, de donde el sistema descarga PRIMERO— sólo existe saliendo de
       // Bodega: una sala tiene una sola ubicación
@@ -765,9 +763,14 @@ Deno.serve(async (req) => {
       // decía que el origen era siempre una sala y por eso no hacía falta; con
       // el sobrante saliendo de Bodega, dejarlo afuera aprobaría mover
       // mercadería apartada que el sistema después rechaza.
-      const ubicVencidos = ubicacionDeVencidos(mapaOrigen);
-      const lecturaEstante  = ubicVencidos ? await leerUbicacion(cookie, erpOrigen, ubicOrigen)   : null;
+      const ubicVencidos    = ubicacionDeVencidos(mapaOrigen);
+      const lecturaEstante  = await leerUbicacion(cookie, erpOrigen, ubicOrigen);
       const lecturaVencidos = ubicVencidos ? await leerUbicacion(cookie, erpOrigen, ubicVencidos) : null;
+      // La MISMA lectura sirve para las dos cosas. Pedirla dos veces —una con
+      // `existenciasDeUbicacion` y otra con `leerUbicacion`— era una vuelta de
+      // más al sistema por cada sala de origen, sobre la pantalla más pesada
+      // que tiene.
+      const enUbicacion = lecturaEstante?.unidades ?? null;
 
       for (const d of lista) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }

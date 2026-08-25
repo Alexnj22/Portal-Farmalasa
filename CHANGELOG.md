@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.750.1 — El código del sobrante, que quedó fuera del commit anterior
+
+v2.750.0 se llevó el changelog y la versión, pero no los cinco archivos que
+describía: el índice de git es estado COMPARTIDO entre sesiones y otra los había
+sacado de ahí en el medio. Acá van «Probar sin mover nada» y la lectura de
+ubicación que se hacía dos veces.
+
+El mismo commit se llevó de arrastre 12 archivos de `docs/` que esa otra sesión
+tenía preparados — un `git commit` sin pathspec commitea TODO lo que está en el
+índice, no lo que uno acaba de agregar. Quedaron adentro y no se pierde nada,
+pero no era su commit.
+
 ## v2.750.0 — El sobrante se puede probar en seco, y queda encendido
 
 **«Probar sin mover nada»**, en el bloque del movimiento, para bodega y

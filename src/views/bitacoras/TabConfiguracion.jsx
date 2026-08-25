@@ -299,33 +299,24 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
 
     const [franjas, setFranjas] = useState(() => unir('franjas'));
     const [limpiezas, setLimpiezas] = useState(() => unir('limpiezas'));
-    // El termómetro del ambiente es UNO: el mismo aparato mide la sala y la
-    // bodega, porque es el que se lleva en la mano al caminar la vuelta. El del
-    // refrigerador no entra acá — es otro, y es el único que se calibra.
-    const instrumentoActual = areas.find(a => a.tipo !== 'refrigerador'
-        && (a.franjas || []).length > 0)?.instrumento || '';
-    const [instrumento, setInstrumento] = useState(instrumentoActual);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
     const [ok, setOk] = useState(false);
 
     const sucio = JSON.stringify(franjas) !== JSON.stringify(unir('franjas'))
-        || JSON.stringify(limpiezas) !== JSON.stringify(unir('limpiezas'))
-        || instrumento !== instrumentoActual;
+        || JSON.stringify(limpiezas) !== JSON.stringify(unir('limpiezas'));
 
     const guardar = useCallback(async () => {
         setGuardando(true); setError(null); setOk(false);
-        const { areas: tocadas, error: err } = await aplicarHorarios(
-            branchId, franjas, limpiezas, instrumento.trim());
+        const { areas: tocadas, error: err } = await aplicarHorarios(branchId, franjas, limpiezas);
         setGuardando(false);
         if (err) { setError(err); return; }
         useStaff.getState().appendAuditLog('CONFIGURAR_HORARIOS_BITACORA', String(branchId), {
             sucursal: branchId, areas: tocadas, franjas, limpiezas,
-            instrumento: instrumento.trim() || null,
         });
         setOk(true);
         onCambio?.();
-    }, [branchId, franjas, limpiezas, instrumento, onCambio]);
+    }, [branchId, franjas, limpiezas, onCambio]);
 
     if (!franjas.length && !limpiezas.length) return null;
 
@@ -333,7 +324,7 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
         <section data-surface="card" data-tono={sucio ? 'warning' : undefined} className="p-4 space-y-3">
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <h4 className="text-body font-black text-content flex items-center gap-2">
-                    <Clock size={16} /> Horarios y termómetro
+                    <Clock size={16} /> Horarios de la sucursal
                 </h4>
                 {puedeEditar && sucio && (
                     <Button variant="primary" size="sm" icon={Check} onClick={guardar} loading={guardando}>
@@ -347,23 +338,6 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
                 {rango && ` Las horas van entre las que abre y cierra la sucursal (${rotularHora12(rango.abre)} a ${rotularHora12(rango.cierra)}).`}
             </p>
 
-            {/* El termómetro del ambiente: uno solo para la sala y la bodega.
-                Lo dice la pista, porque es justo lo que se preguntaba al verlo
-                repetido en las dos tarjetas. */}
-            <div className="space-y-1.5 max-w-md">
-                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                    Termómetro
-                </p>
-                <PortalInput
-                    name="instrumento-sucursal" icon={Thermometer} readOnly={!puedeEditar}
-                    aria-label="Cómo se identifica el termómetro de la sucursal"
-                    value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
-                    placeholder="Termohigrómetro TH-01"
-                />
-                <p className="text-label text-content-3 ml-1">
-                    El mismo para la sala de ventas y la bodega
-                </p>
-            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <EditorDeHorarios tipo="franjas" filas={franjas} rango={rango}

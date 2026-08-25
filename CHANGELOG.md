@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.763.1 — El termómetro del ambiente no se declara
+
+*«No es el mismo, cada uno tiene uno independiente, pero ¿qué necesitas que
+escriba? ¿el nombre? ¿es necesario?»* (usuario). Las dos mitades eran ciertas y
+la anterior estaba mal en las dos:
+
+- **Independiente sí.** El RTS **6.2.11** pide «un instrumento o equipo
+  independiente para área de bodega y sala de ventas». La versión de hace un
+  rato escribía el mismo texto en las dos áreas — decía lo contrario de lo que
+  exige la norma.
+- **Y el nombre no lo pide nadie.** Para una farmacia, el reglamento exige que
+  el instrumento **exista** (6.2.11) y la guía de la SRS pregunta si **hay**
+  termómetro (2.13, CRÍTICO). Ninguno pide identificarlo.
+
+**Medido antes de decidirlo: cero áreas tenían instrumento guardado.** Lo que se
+veía en pantalla era el texto de ejemplo del campo, no un dato — en más de una
+semana de uso nadie escribió uno. El campo se fue, y con él el último resto de
+la tarjeta de la sucursal que no era un horario.
+
+**El refrigerador conserva el suyo**, y ahí sí tiene sentido: su certificado de
+calibración se emite a nombre de un aparato concreto, y es lo que un inspector
+cruza (6.2.19 / guía 2.32, CRÍTICO).
+
+La pantalla completa bajó de 2.402 a **2.307px** en iPhone 13.
+
 ## v2.763.0 — El termómetro del ambiente no se calibra ni se pregunta dos veces
 
 *«Los termómetros digitales, que sepa, no se calibran, así que no debería de

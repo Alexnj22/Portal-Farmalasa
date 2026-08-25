@@ -840,15 +840,11 @@ export const contarPuntos = (puntos, tipo) => (puntos || []).filter(p => p.tipo 
  * dejaría la sala en el horario nuevo y la bodega en el viejo, que es
  * exactamente el estado que esto viene a hacer imposible.
  */
-export async function aplicarHorarios(branchId, franjas, limpiezas, instrumento = null) {
+export async function aplicarHorarios(branchId, franjas, limpiezas) {
     const { data, error } = await supabase.rpc('aplicar_horarios_bitacora', {
         p_branch_id: Number(branchId),
         p_franjas: franjas || [],
         p_limpiezas: limpiezas || [],
-        // El mismo aparato mide la sala y la bodega. El refrigerador no: su
-        // termómetro es otro, y es el único que la norma manda calibrar en una
-        // farmacia (RTS 6.2.19, guía 2.32 CRÍTICO).
-        p_instrumento: instrumento,
     });
     if (error) return { areas: 0, error: error.message ?? 'No se pudieron guardar los horarios.' };
     return { areas: data ?? 0, error: null };

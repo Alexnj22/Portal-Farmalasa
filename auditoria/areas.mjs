@@ -638,7 +638,8 @@ export const AREAS = [
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min'],
-        docs: ['docs/PLAN-BITACORAS-SRS-2026-08-16.md'],
+        docs: ['docs/PLAN-BITACORAS-SRS-2026-08-16.md',
+               'docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md'],
     },
     {
         id: 'impresion',

@@ -56,14 +56,17 @@ export async function fetchPendientesEnSala(branchId) {
 /**
  * Cargar una bolsa: pasa a mi responsabilidad.
  *
- * `entregoId` es el carné de quien la entrega en esa sala. Va en `null` cuando
- * quien retira es de esa sala —o la cubre—, porque ahí la firma sería la suya;
- * **eso lo decide el servidor, no esta llamada**: mandar `null` sin derecho
- * vuelve con `FALTA_ENTREGA`, que es justo lo que la pantalla necesita saber
- * para pedir el carné.
+ * **La falta de firma NO la traba** (decisión del usuario, 2026-08-25: «me debe
+ * permitir cargar los productos y de último o de primero solicitar quien
+ * entrega»). Antes volvía con `FALTA_ENTREGA` sin cargar nada, así que quien no
+ * es de la sala necesitaba a alguien de esa sala parado al lado, carné en mano,
+ * bolsa por bolsa. Hoy la bolsa entra igual y queda marcada `falta_firma`.
+ *
+ * `entregoId` es el atajo para firmar en el mismo movimiento; lo normal es
+ * dejarlo en `null` y firmar aparte con `firmarEntrega`, una vez por sala.
  *
  * Nunca lanza. Los códigos que puede traer:
- *   · `FALTA_ENTREGA`  — hay que escanear a alguien de esa sala
+ *   · `FIRMA_PROPIA`   — el carné pasado es el de uno mismo
  *   · `ENTREGA_AJENA`  — esa persona no puede entregar de ahí
  *   · `YA_CARGADA`     — la lleva otro, y el mensaje dice quién
  *   · `YA_RECIBIDO`    — llegó a destino entre medio
@@ -76,6 +79,29 @@ export async function cargarBulto(requestId, entregoId = null) {
     if (error) {
         console.error('retiros: retiro_cargar failed:', error.message);
         return { ok: false, error: 'No se pudo cargar esa bolsa.' };
+    }
+    return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+}
+
+/**
+ * La firma de quien entrega: una vez por persona, vale para todo el recorrido.
+ *
+ * Sirve en los dos órdenes por construcción, y por eso es una llamada aparte y
+ * no un parámetro de `cargarBulto`:
+ *
+ *   · **de último**  — estampa todas las bolsas que ya van encima y salieron de
+ *                      las salas de las que esa persona responde
+ *   · **de primero** — queda vigente en el recorrido, y cada bolsa que se
+ *                      escanee después nace ya firmada
+ *
+ * `firmadas: 0` NO es un fallo: es exactamente lo que devuelve firmar de
+ * primero, cuando todavía no hay nada cargado.
+ */
+export async function firmarEntrega(entregoId) {
+    const { data, error } = await supabase.rpc('retiro_firmar', { p_entrego_id: entregoId });
+    if (error) {
+        console.error('retiros: retiro_firmar failed:', error.message);
+        return { ok: false, error: 'No se pudo registrar la firma.' };
     }
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }

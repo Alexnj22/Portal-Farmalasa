@@ -10,8 +10,8 @@ import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '../../data/traslados';
 import { fetchEmployeeByKioskPin } from '../../data/pedidos';
 import {
-    fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, soltarBulto, cerrarRetiro,
-    DIAS_PARA_ALARMA,
+    fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, firmarEntrega, soltarBulto,
+    cerrarRetiro, DIAS_PARA_ALARMA,
 } from '../../data/retiros';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -49,11 +49,21 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  * La segunda es la que evita el olvido, y llega en el momento en que se puede
  * hacer algo: al llegar, no al final del recorrido.
  *
- * ── La entrega la firma alguien de la sala ─────────────────────────────────
- * El servidor decide si hace falta —quien retira siendo de esa sala, o
- * cubriéndola, firma solo— y cuando hace falta contesta `FALTA_ENTREGA`. La
- * pantalla NO adivina eso: intenta cargar, y si el servidor pide el carné,
- * lo pide. Así la regla vive en un solo lugar.
+ * ── La entrega la firma alguien de la sala, pero NO traba la carga ─────────
+ * Pedido del usuario parado en La Popular (2026-08-25): «sí tiene que
+ * confirmar, pero me debe permitir cargar los productos y de último o de
+ * primero solicitar quien entrega, pero son complementarias».
+ *
+ * Hasta hoy la firma era un CANDADO: `retiro_cargar` rebotaba con
+ * `FALTA_ENTREGA` y no cargaba nada, así que quien no es de la sala necesitaba
+ * a alguien de esa sala parado al lado, carné en mano, **bolsa por bolsa**.
+ * Cuatro bolsas eran cuatro interrupciones a la misma persona, y quien llegaba
+ * a una sala sin nadie libre no podía ni empezar.
+ *
+ * Ahora son dos pasos que se dan en cualquier orden y una sola vez por sala:
+ * se escanean los tickets, y el carné se pasa antes o después. Lo que queda sin
+ * firmar se ve —en el aviso de arriba y en cada renglón—, que es la diferencia
+ * entre un paso pendiente y un paso olvidado.
  */
 export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     const [cargando,  setCargando]  = useState(true);
@@ -64,8 +74,13 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     const [aviso,     setAviso]     = useState('');
     const [ocupado,   setOcupado]   = useState(false);
     const [conCamara, setConCamara] = useState(false);
-    // La bolsa que espera la firma de quien entrega.
-    const [pidiendoFirma, setPidiendoFirma] = useState(null);   // { requestId, origen }
+    /* El lector deja de leer tickets y pasa a leer un carné.
+     *
+     * Es un MODO y no «la bolsa que espera firma», que es lo que era antes: la
+     * firma ya no pertenece a una bolsa sino al recorrido, y vale para todas las
+     * de esa sala. Un solo lector armado a la vez — con los dos, una ráfaga de
+     * teclas entraría por dos caminos. */
+    const [modoFirma, setModoFirma] = useState(false);
     const { user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const [imprimiendo, setImprimiendo] = useState(null);   // request_id en curso
@@ -119,14 +134,17 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
             const r = await cargarBulto(traslado.id, entregoId);
             if (!r?.ok) {
-                if (r?.codigo === 'FALTA_ENTREGA' && !entregoId) {
-                    // El servidor dice que hace falta la firma. Se pide acá y se
-                    // reintenta con ella: la pantalla no decide cuándo hace falta.
-                    setPidiendoFirma({ codigo, origen: traslado.origen });
-                    return;
-                }
                 setError(r?.error ?? 'No se pudo cargar esa bolsa.');
                 return;
+            }
+            // La bolsa YA está cargada. Si le falta firma se dice, no se traba:
+            // el aviso de arriba lleva la cuenta y el carné se pasa cuando se
+            // pueda. Si en cambio se heredó una firma dada antes, se nombra a
+            // quien entrega — que es la confirmación de que ese paso ya se dio.
+            if (r.falta_firma) {
+                setAviso(`Cargada. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.`);
+            } else if (r.entrego) {
+                setAviso(`Cargada · te la entrega ${r.entrego}.`);
             }
 
             /* De dónde salió ES dónde estamos parados.
@@ -137,11 +155,11 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
              * «Dejar en Salud 1» y listaba las bolsas que iban a Salud 4. Hoy
              * los dos vienen de `retiro_cargar`, que devuelve el origen. */
             const origenId = r.origen_branch_id ?? null;
-            setPidiendoFirma(null);
             setSalaActual(origenId ? { id: origenId, nombre: traslado.origen } : null);
             anotar('CARGAR_BULTO', traslado.id, {
                 origen: traslado.origen ?? null, destino: traslado.destino ?? null,
-                firma_propia: r.firma_propia === true, entrego_id: entregoId ?? null,
+                firma_propia: r.firma_propia === true, falta_firma: r.falta_firma === true,
+                entrego: r.entrego ?? null,
             });
             await recargar(origenId);
             onCambio?.();
@@ -152,9 +170,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         }
     }, [recargar, onCambio]);
 
-    /* El lector físico queda armado mientras no haya un diálogo encima: con la
-     * cámara abierta o esperando una firma, una ráfaga de teclas entraría por
-     * dos caminos a la vez. */
+    /* El lector físico queda armado mientras no esté leyendo otra cosa: con la
+     * cámara abierta o en modo firma, una ráfaga de teclas entraría por dos
+     * caminos a la vez. */
     //
     // Y con el candado de velocidad SUELTO: lo que se lee acá es el ticket de
     // una bolsa, no un carné. Su número no está impreso, así que nadie lo puede
@@ -162,20 +180,33 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     // candado era tirar en silencio la lectura de un lector sin sufijo Enter.
     // La firma de abajo —ésa sí es un carné— lo conserva.
     const { teclas, diagnostico, eventos } = useCapturaDeCarne(
-        abierto && !conCamara && !pidiendoFirma && !ocupado, escanear,
+        abierto && !conCamara && !modoFirma && !ocupado, escanear,
         { aceptarTecleado: true, sinEnter: true },
     );
 
-    /** La firma de quien entrega: su carné, y se reintenta la carga. */
+    /** La firma de quien entrega: su carné, una vez, para toda su sala.
+     *
+     * No reintenta ninguna carga —eso era cuando la firma era el candado—: sella
+     * lo que ya va encima de esa sala y queda vigente para lo que se escanee
+     * después. Por eso `firmadas: 0` no es un fallo: es firmar de primero. */
     const leerFirma = useCallback(async (code) => {
-        setOcupado(true); setError('');
+        setOcupado(true); setError(''); setAviso('');
         try {
             const { data, error: e } = await fetchEmployeeByKioskPin(String(code).toUpperCase().trim());
             if (e)     { setError(mensajeAmigable(e, 'No se pudo confirmar el carné.')); return; }
             if (!data) { setError('Ese carné no es de nadie.'); return; }
-            const pendiente = pidiendoFirma;
-            setPidiendoFirma(null);
-            await escanear(pendiente.codigo, data.id);
+
+            const r = await firmarEntrega(data.id);
+            if (!r?.ok) { setError(r?.error ?? 'No se pudo registrar la firma.'); return; }
+
+            setModoFirma(false);
+            const n = Number(r.firmadas ?? 0);
+            setAviso(n > 0
+                ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'bolsa' : 'bolsas'}.`
+                : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
+            anotar('FIRMAR_ENTREGA', retiro?.retiro_id, { quien: r.quien ?? null, bolsas: n });
+            await recargar(salaActual?.id ?? miBranch ?? null);
+            onCambio?.();
         } catch (e) {
             // Sin este `catch`, un lector que rebota o una red que se cae dejan
             // la pantalla igual que antes de pasar el carné: quien está parado
@@ -183,9 +214,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             // apaga el reloj y no dice nada.
             setError(mensajeAmigable(e, 'No se pudo confirmar el carné.'));
         } finally { setOcupado(false); }
-    }, [pidiendoFirma, escanear]);
+    }, [recargar, onCambio, retiro, salaActual, miBranch]);
 
-    useCapturaDeCarne(abierto && Boolean(pidiendoFirma) && !ocupado, leerFirma);
+    const { teclas: teclasCarne } = useCapturaDeCarne(abierto && modoFirma && !ocupado, leerFirma);
 
     /** El MISMO ticket otra vez, cuando el papel no sirvió.
      *
@@ -235,6 +266,15 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     }, [miBranch]);
 
     const bultos = useMemo(() => retiro?.bultos ?? [], [retiro]);
+
+    /* Lo que va encima sin la firma de quien lo entregó, por sala.
+     *
+     * Lo agrupa el servidor y no esta pantalla: es la misma cuenta que decide a
+     * quién sirve cada carné, y hacerla dos veces es garantizar que un día
+     * difieran. Acá sólo se pinta. */
+    const sinFirma = useMemo(() => retiro?.sin_firma ?? [], [retiro]);
+    const bolsasSinFirma = useMemo(
+        () => sinFirma.reduce((n, s) => n + Number(s.bolsas ?? 0), 0), [sinFirma]);
 
     /* Lo que va a la sala donde estamos parados: es «lo que hay que dejar acá».
      * Se calcula sobre el manifiesto y no se consulta: el portal ya sabe qué
@@ -289,11 +329,44 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     {error && <Notice variant="danger">{error}</Notice>}
                     {aviso && <Notice variant="success">{aviso}</Notice>}
 
-                    {pidiendoFirma ? (
+                    {/* La firma pendiente va ARRIBA del lector y se queda ahí.
+                        Es lo único de esta pantalla que se puede olvidar sin que
+                        nada falle: la bolsa ya está cargada y el recorrido sigue
+                        andando igual. */}
+                    {!modoFirma && bolsasSinFirma > 0 && (
                         <Notice variant="warning" icon={UserCheck}>
-                            Esa bolsa está guardada en <strong>{pidiendoFirma.origen}</strong> y tú no
-                            eres de ahí. Pasa el carné de quien te la entrega.
-                            {teclas > 0 && ' Leyendo…'}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="flex-1 min-w-[12rem]">
+                                    Falta el carné de quien te entrega{' '}
+                                    {sinFirma.map((f, i) => (
+                                        <React.Fragment key={f.branch_id ?? i}>
+                                            {i > 0 && ', '}
+                                            <strong>{f.bolsas}</strong> en {f.sala ?? 'una sala'}
+                                        </React.Fragment>
+                                    ))}. Se pasa una sola vez por sala.
+                                </span>
+                                <Button variant="secondary" icon={UserCheck} disabled={ocupado}
+                                    onClick={() => { setModoFirma(true); setError(''); setAviso(''); }}>
+                                    Pasar carné
+                                </Button>
+                            </div>
+                        </Notice>
+                    )}
+
+                    {modoFirma ? (
+                        <Notice variant="info" icon={UserCheck}>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="flex-1 min-w-[12rem]">
+                                    Pasa el carné de quien te entrega el producto. Vale para todo lo
+                                    que te lleves de su sala en este recorrido, lo hayas escaneado ya
+                                    o no.
+                                    {teclasCarne > 0 && ' Leyendo…'}
+                                </span>
+                                <Button variant="secondary" icon={ScanLine} disabled={ocupado}
+                                    onClick={() => setModoFirma(false)}>
+                                    Volver a los tickets
+                                </Button>
+                            </div>
                         </Notice>
                     ) : (
                         <div className="flex flex-col gap-2">
@@ -313,6 +386,18 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                         : ocupado ? 'Buscando el ticket…'
                                             : 'Esperando el ticket de la próxima bolsa'}
                                 </p>
+                                {/* «De primero»: el carné se puede pasar ANTES de
+                                    escanear nada, y ahí no hay ninguna bolsa
+                                    pendiente que dispare el aviso de arriba. Sin
+                                    este botón, la mitad del pedido del usuario no
+                                    tendría por dónde entrar. */}
+                                {bolsasSinFirma === 0 && (
+                                    <Button variant="secondary" icon={UserCheck} disabled={ocupado}
+                                        title="Pasar el carné de quien entrega"
+                                        onClick={() => { setModoFirma(true); setError(''); setAviso(''); }}>
+                                        Carné
+                                    </Button>
+                                )}
                                 <Button variant="secondary" icon={Camera} disabled={ocupado}
                                     onClick={() => setConCamara(true)}>Cámara</Button>
                             </div>
@@ -412,6 +497,13 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                         </p>
                                         {b.entrego && (
                                             <p className="text-micro text-content-3">Te la entregó {b.entrego}</p>
+                                        )}
+                                        {/* Sin firma NO es lo mismo que sin
+                                            `entrego`: una bolsa retirada de la
+                                            sala propia nunca lo va a tener y
+                                            está bien. Lo distingue el servidor. */}
+                                        {b.falta_firma && (
+                                            <p className="text-micro text-warning-text">Falta el carné de quien la entregó</p>
                                         )}
                                     </div>
                                     {b.dias >= DIAS_PARA_ALARMA && (

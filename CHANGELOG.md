@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.0 — El carné de quien entrega ya no traba el recorrido
+
+Reporte del usuario, parado en La Popular: *«si me voy a llevar un producto de
+solicitud a otra sucursal, al escanearlo me dice que no pertenezco a la
+sucursal, entonces?»*.
+
+El portal tenía razón en pedir la firma —entre que una bolsa sale y llega tiene
+que haber alguien con nombre respondiendo por ella— pero la pedía en el peor
+momento: `retiro_cargar` rebotaba con `FALTA_ENTREGA` y **no cargaba nada**. O
+sea que quien no es de esa sala necesitaba a alguien de esa sala parado al lado,
+carné en mano, **bolsa por bolsa**. Cuatro bolsas eran cuatro interrupciones a la
+misma persona, y llegar a una sucursal donde nadie estaba libre significaba no
+poder ni empezar a escanear.
+
+La decisión del usuario: *«sí tiene que confirmar, pero me debe permitir cargar
+los productos y de último o de primero solicitar quien entrega, pero son
+complementarias»*. Así quedó — dos pasos que se dan en cualquier orden:
+
+- **De último** — se escanean los tickets, las bolsas quedan marcadas «falta el
+  carné de quien la entregó», y antes de irse alguien de la sala pasa el suyo:
+  se firman **todas las de esa sala de una sola vez**.
+- **De primero** — pasa el carné al llegar, queda vigente para ese recorrido, y
+  cada bolsa que se escanee después nace ya firmada.
+
+Por eso la firma pasó a tener su propia tabla (`retiro_firmas`) y no vive sólo en
+la columna del bulto: **una firma dada antes de cargar nada no tiene ningún bulto
+donde escribirse**. Y una fila por persona, no por sala, porque
+`puede_entregar_de` ya sabe de qué salas responde cada quien —la propia y las que
+cubre ahora mismo—; guardar una sala acá sería una segunda vara que el día que
+cambie un horario deja de coincidir con la primera.
+
+`retiro_bultos` estrena `firma_requerida`, y no es contabilidad: hasta hoy
+`entrego_id IS NULL` significaba las **dos** cosas —«el retirador es de la sala,
+su firma sería la suya» y «no firmó nadie»— porque la segunda no podía existir.
+Ahora existe, y sin esa columna una bolsa sin firmar sería indistinguible de una
+que no la necesita.
+
+En pantalla: el aviso de lo que falta firmar va **arriba del lector y se queda
+ahí**, con la cuenta por sala, porque es lo único de esa pantalla que se puede
+olvidar sin que nada falle — la bolsa ya está cargada y el recorrido sigue
+andando igual. Un solo lector armado a la vez: el botón «Pasar carné» conmuta de
+leer tickets a leer un carné y vuelve, que con los dos escuchando una ráfaga de
+teclas entraría por dos caminos.
+
 ## v2.766.7 — El aviso de versión nueva no vuelve a subir a diálogo
 
 Segunda mitad de v2.766.4, y salió de mirarlo en producción: *«le di en ahora no

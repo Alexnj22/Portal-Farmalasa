@@ -64,8 +64,8 @@ function SelectorDeHora({ value, onChange, etiqueta }) {
     }, [value]);
 
     return (
-        <label className="flex items-center gap-2 min-w-0">
-            <span className="text-label text-content-3 shrink-0 w-10">{etiqueta}</span>
+        <label className="flex items-center gap-1.5 min-w-0 col-span-2 sm:col-span-1">
+            <span className="text-label text-content-3 shrink-0">{etiqueta}</span>
             {/* `clearable={false}`: un horario no puede quedar sin hora, y el
                 botón de limpiar aparecía como una × roja al lado de cada uno —
                 se lee como «quitar», que es lo que hace el otro botón del
@@ -73,31 +73,31 @@ function SelectorDeHora({ value, onChange, etiqueta }) {
                 acá la etiqueta ya dice qué es. */}
             <LiquidSelect value={hhmm(value)} onChange={onChange} options={opciones}
                 nano clearable={false} ariaLabel={`Hora ${etiqueta}`}
-                className="min-w-0 flex-1" />
+                className="min-w-0 flex-1 sm:w-[124px] sm:flex-none" />
         </label>
     );
 }
 
 function Renglon({ fila, onCambio, onQuitar, sinNombre }) {
     return (
-        <div data-surface="card" className="p-2.5 space-y-2">
-            <div className="flex items-center gap-2">
-                <PortalInput
-                    className="flex-1 min-w-0"
-                    name={`rotulo-${fila.clave}`} compact
-                    aria-label="Cómo se llama este horario"
-                    value={fila.label || ''} onChange={(e) => onCambio({ label: e.target.value })}
-                    placeholder={sinNombre}
-                />
-                <Button variant="ghost" size="sm" iconOnly icon={Trash2}
-                    title="Quitar este horario" onClick={onQuitar} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-                <SelectorDeHora etiqueta="desde" value={fila.desde}
-                    onChange={(v) => onCambio({ desde: v })} />
-                <SelectorDeHora etiqueta="hasta" value={fila.hasta}
-                    onChange={(v) => onCambio({ hasta: v })} />
-            </div>
+        // Todo en UNA fila desde `sm`: rótulo, las dos horas y el tacho. Antes
+        // el rótulo se llevaba el ancho entero y las horas iban debajo, así que
+        // cinco horarios ocupaban media pantalla de alto en escritorio y el
+        // campo de texto medía 1.800px para escribir «Mañana».
+        <div data-surface="card" className="p-2 grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(110px,1fr)_auto_auto_auto] items-center gap-2">
+            <PortalInput
+                className="min-w-0"
+                name={`rotulo-${fila.clave}`} compact
+                aria-label="Cómo se llama este horario"
+                value={fila.label || ''} onChange={(e) => onCambio({ label: e.target.value })}
+                placeholder={sinNombre}
+            />
+            <Button variant="ghost" size="sm" iconOnly icon={Trash2} className="sm:order-last"
+                title="Quitar este horario" onClick={onQuitar} />
+            <SelectorDeHora etiqueta="desde" value={fila.desde}
+                onChange={(v) => onCambio({ desde: v })} />
+            <SelectorDeHora etiqueta="hasta" value={fila.hasta}
+                onChange={(v) => onCambio({ hasta: v })} />
         </div>
     );
 }

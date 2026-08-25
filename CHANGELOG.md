@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.760.1 — La configuración entra en dos columnas y las vitrinas sólo se cuentan
+
+Reportado por el usuario mirando la pantalla: *«visualmente se ve super mal […]
+aprovechemos más los espacios, 2 columnas o más»*, y *«solo que se asigne la
+cantidad de vitrinas / estantes y no se nombren»*.
+
+**Las vitrinas y los estantes ya no se nombran, sólo se cuentan.** Cuatro campos
+de texto para escribir cuatro veces «Vitrina N» era trabajo que no agregaba
+nada: la sala las cuenta de izquierda a derecha igual, y el portal las numera
+solo. Queda el contador y nada más.
+
+**Un horario es UNA fila.** El rótulo, «desde», «hasta» y el tacho en la misma
+línea desde 640px. Antes el campo de texto para escribir «Mañana» medía 1.800px
+y las dos horas iban debajo, así que cinco horarios ocupaban media pantalla de
+alto.
+
+**Las áreas van en dos columnas desde 1280px.** En una pantalla ancha, una sola
+columna estiraba cada control al ancho entero —un selector para elegir «7:00 AM»
+del tamaño de la pantalla— y obligaba a rodar cuatro áreas de largo. En el
+teléfono siguen en una columna, igual que los contadores: a 390px los dos
+entraban pero el rótulo se cortaba en «V» y «E», que no es un rótulo.
+
+**Dos arreglos de detalle.** «Instrumento» y «Calibrado hasta» tenían anatomías
+distintas —uno era `PortalInput` con su rótulo adentro y el otro un bloque a
+mano—, así que quedaban a distinta altura y la pista de la derecha se metía en
+la sección siguiente; ahora las dos columnas son iguales. Y el badge del tipo se
+esconde cuando repite el nombre: «Bodega · Bodega» y «Sala de ventas · Sala de
+ventas» era la misma palabra dos veces, ocupando el lugar del rango.
+
+Verificado a 1800, 1280 y 390px contra el build: 0 desborde horizontal en los
+tres.
+
 ## v2.760.0 — La limpieza dice qué vitrina y qué estante se limpió
 
 Pedido del usuario: *«en configuración se debe poder configurar cuántas vitrinas

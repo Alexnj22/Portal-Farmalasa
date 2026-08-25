@@ -113,7 +113,12 @@ function Area({ area, puedeEditar, onGuardado }) {
                     <Icono size={16} />
                 </span>
                 <h4 className="text-body font-black text-content">{area.nombre}</h4>
-                <Badge variant="neutral" size="sm" uppercase={false}>{TIPO_AREA[area.tipo] || area.tipo}</Badge>
+                {/* El tipo, sólo cuando NO repite el nombre: «Bodega · Bodega»
+                    y «Sala de ventas · Sala de ventas» era la misma palabra dos
+                    veces, y ocupaba el lugar del dato que sí importa (el rango). */}
+                {TIPO_AREA[area.tipo] !== area.nombre && (
+                    <Badge variant="neutral" size="sm" uppercase={false}>{TIPO_AREA[area.tipo] || area.tipo}</Badge>
+                )}
                 {sinTemperatura ? (
                     <Badge variant="chart-3" size="sm" uppercase={false} icon={Sparkles}>sólo limpieza</Badge>
                 ) : (
@@ -148,20 +153,34 @@ function Area({ area, puedeEditar, onGuardado }) {
 
             {puedeEditar ? (
                 <>
+                    {/* Las dos columnas con la MISMA anatomía —rótulo arriba,
+                        control, pista abajo— y `items-start`: antes una era un
+                        `PortalInput` (que dibuja su rótulo adentro) y la otra un
+                        bloque a mano, así que los dos campos quedaban a distinta
+                        altura y la pista de la derecha se metía en la sección de
+                        abajo. */}
                     {!sinTemperatura && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <PortalInput
-                                label="Instrumento" name={`inst-${area.id}`} icon={Thermometer}
-                                value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
-                                placeholder="Termohigrómetro TH-01"
-                                helperText="Cómo se identifica el aparato de esta área"
-                            />
-                            <div>
-                                <p className="text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                            <div className="space-y-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                                    Instrumento
+                                </p>
+                                <PortalInput
+                                    name={`inst-${area.id}`} icon={Thermometer}
+                                    aria-label="Cómo se identifica el aparato de esta área"
+                                    value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
+                                    placeholder="Termohigrómetro TH-01"
+                                />
+                                <p className="text-label text-content-3 ml-1">
+                                    Cómo se identifica el aparato de esta área
+                                </p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
                                     Calibrado hasta
                                 </p>
                                 <LiquidDatePicker value={calibrado} onChange={(v) => setCalibrado(v || '')} />
-                                <p className="text-label text-content-3 mt-1">
+                                <p className="text-label text-content-3 ml-1">
                                     Un certificado vencido invalida las lecturas
                                 </p>
                             </div>
@@ -201,7 +220,7 @@ function Area({ area, puedeEditar, onGuardado }) {
                         </Notice>
                     )}
 
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border-card">
                         <Switch
                             checked={activa}
                             onChange={setActiva}
@@ -353,9 +372,16 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
                 </span>
             </Notice>
 
-            {areas.map(a => (
-                <Area key={a.id} area={a} puedeEditar={puedeEditar} onGuardado={alGuardar} />
-            ))}
+            {/* Dos columnas desde `xl`. En una pantalla de escritorio ancha,
+                una sola columna estiraba cada campo a 1.800px —un selector de
+                hora del ancho de la pantalla para elegir «7:00 AM»— y obligaba
+                a rodar cuatro áreas de largo. `items-start` para que una
+                tarjeta corta (el baño) no se estire al alto de una larga. */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                {areas.map(a => (
+                    <Area key={a.id} area={a} puedeEditar={puedeEditar} onGuardado={alGuardar} />
+                ))}
+            </div>
 
             {!areas.length && (
                 <Notice variant="warning" icon={AlertTriangle}>

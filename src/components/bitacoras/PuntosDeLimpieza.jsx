@@ -1,9 +1,8 @@
 import React from 'react';
-import { Check, Minus, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Check, Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
-import PortalInput from '../common/PortalInput';
-import { TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos, nuevaClave } from '../../data/bitacoras';
+import { TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los muebles que se limpian dentro de un área.
@@ -18,11 +17,12 @@ import { TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos, nuevaClave } from '../../d
 // estable es lo que hace que el registro de ayer siga hablando del mismo
 // mueble cuando alguien baja el contador. Ver `ajustarPuntos`.
 //
-// ── Y el nombre se puede escribir ──────────────────────────────────────────
-// «Vitrina 1» alcanza para contar, pero lo que hace auditable el registro es
-// que se pueda llamar «Vitrina de refrigerados» —el nombre que usa el
-// procedimiento que firmó el regente—. Sin eso, cruzar el libro contra el
-// procedimiento es un ejercicio de memoria.
+// ── Sólo la CANTIDAD, no el nombre (2026-08-25) ────────────────────────────
+// Primera versión: cada mueble con su campo de texto para llamarlo «Vitrina de
+// refrigerados». El usuario lo sacó — «solo que se asigne la cantidad de
+// vitrinas / estantes y no se nombren»— y tiene razón: escribir cuatro veces
+// «Vitrina N» es trabajo que no agrega nada, y la sala las cuenta de izquierda
+// a derecha igual. El portal las numera solo.
 // ═══════════════════════════════════════════════════════════════════════════
 
 function Contador({ label, singular, valor, onCambiar }) {
@@ -42,25 +42,26 @@ function Contador({ label, singular, valor, onCambiar }) {
     );
 }
 
-/** El editor: cuántas vitrinas, cuántos estantes, y cómo se llama cada una. */
+/**
+ * El editor: cuántas vitrinas y cuántos estantes tiene el área.
+ *
+ * Sólo la CANTIDAD, por pedido del usuario: «solo que se asigne la cantidad de
+ * vitrinas / estantes y no se nombren». El nombre lo pone el portal —«Vitrina
+ * 1», «Estante 3»— y con eso alcanza para marcar, contar e imprimir. Cuatro
+ * campos de texto para escribir cuatro veces «Vitrina N» era trabajo que no
+ * agregaba nada: la sala igual las cuenta de izquierda a derecha.
+ */
 export default function PuntosDeLimpieza({ puntos, onCambiar }) {
     const lista = puntos || [];
 
-    const renombrar = (clave, label) =>
-        onCambiar(lista.map(p => (p.clave === clave ? { ...p, label } : p)));
-
-    const quitar = (clave) => onCambiar(lista.filter(p => p.clave !== clave));
-
-    const agregarOtro = () => onCambiar([...lista, {
-        clave: nuevaClave(lista, 'p'), tipo: 'otro', label: 'Mostrador',
-    }]);
-
     return (
-        <div className="space-y-3">
+        <div className="space-y-2">
             <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                 <Sparkles size={12} /> Qué se limpia
             </p>
 
+            {/* Una sola columna en el teléfono: a 390px las dos entraban pero
+                el rótulo se cortaba en «V» y «E», que no es un rótulo. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {TIPOS_DE_PUNTO.map(t => (
                     <div key={t.tipo} data-surface="card" className="px-3 py-2">
@@ -70,35 +71,11 @@ export default function PuntosDeLimpieza({ puntos, onCambiar }) {
                 ))}
             </div>
 
-            {lista.length > 0 && (
-                <div className="space-y-1.5">
-                    {lista.map(p => (
-                        <div key={p.clave} className="flex items-center gap-2">
-                            <PortalInput
-                                className="flex-1 min-w-0" compact
-                                name={`punto-${p.clave}`}
-                                aria-label="Cómo se llama este mueble"
-                                value={p.label || ''}
-                                onChange={(e) => renombrar(p.clave, e.target.value)}
-                                placeholder="Vitrina de refrigerados"
-                            />
-                            <Button variant="ghost" size="sm" iconOnly icon={Trash2}
-                                title="Quitar este mueble" onClick={() => quitar(p.clave)} />
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-3">
-                <Button variant="ghost" size="sm" icon={Plus} onClick={agregarOtro}>
-                    Agregar otro mueble
-                </Button>
-                <p className="text-label text-content-3">
-                    {lista.length === 0
-                        ? 'Sin detalle: la limpieza se anota con una sola casilla.'
-                        : 'Al anotar la limpieza se marca cuáles se limpiaron.'}
-                </p>
-            </div>
+            <p className="text-label text-content-3">
+                {lista.length === 0
+                    ? 'Sin detalle: la limpieza se anota con una sola casilla.'
+                    : `Al anotar se marca cuáles de ${lista.length === 1 ? 'la' : 'las'} ${lista.length} se limpiaron.`}
+            </p>
         </div>
     );
 }

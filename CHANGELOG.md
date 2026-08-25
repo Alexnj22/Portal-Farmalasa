@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.758.1 — El atajo del Inicio y el aviso abren la ronda directo
+
+La otra mitad de la vuelta: llegar a ella. `/bitacoras?ronda=1` abre la ronda
+sin pasar por la grilla, y lo usan los dos caminos por donde la sala entra —
+
+- **El Inicio.** Con dos o más pendientes, la baldosa dice «Pasar la ronda» en
+  vez de «Anotar» y abre la vuelta entera. Con uno solo sigue llevando a la
+  grilla: ahí el botón de esa casilla ya está a la vista, y un segundo camino
+  hacia lo mismo sería ruido.
+- **El aviso de franja por vencerse.** Sin esto, el aviso deja a la persona
+  mirando la grilla y todavía tiene que encontrar el botón — que es justo el
+  paso que el aviso venía a evitar.
+
+El parámetro se **consume** al abrirse: si se quedara en la dirección, cerrar el
+diálogo lo volvería a abrir en el render siguiente.
+
 ## v2.758.0 — La bitácora se pasa en una vuelta, y avisa antes de que cierre la franja
 
 Pedido del usuario: *«veamos las bitácoras, mejorémoslo, que sea más

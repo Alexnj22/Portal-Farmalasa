@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Check, ClipboardCheck, Clock, Droplets, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -193,6 +194,24 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
 
     // Todo lo que se puede anotar ahora, en el orden de la caminata.
     const ronda = useMemo(() => bloquesDeLaRonda(dia), [dia]);
+
+    // ── `?ronda=1` abre la vuelta sin pasar por la grilla ───────────────────
+    // Lo usan el atajo del Inicio y el aviso de franja por vencerse. Sin esto,
+    // el aviso deja a la persona mirando la grilla y todavía tiene que
+    // encontrar el botón — que es justo el paso que el aviso venía a evitar.
+    //
+    // El parámetro se CONSUME: si se quedara en la dirección, cerrar el
+    // diálogo lo volvería a abrir en el render siguiente. Y se espera a que el
+    // día esté cargado, porque antes la lista está vacía y no habría nada que
+    // abrir.
+    const [params, setParams] = useSearchParams();
+    const pidenRonda = params.get('ronda') === '1';
+    useEffect(() => {
+        if (!pidenRonda || cargando) return;
+        setParams(p => { p.delete('ronda'); return p; }, { replace: true });
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- lo pide la dirección, no un render
+        if (puedeAnotar && !cerrado && ronda.length > 0) setEnRonda(true);
+    }, [pidenRonda, cargando, puedeAnotar, cerrado, ronda.length, setParams]);
 
     // Las áreas que hoy no aplican se muestran aparte, pero se muestran: que no
     // aparecieran sería esconder una parte de la sala, y el día que alguien

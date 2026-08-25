@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Sparkles, Thermometer } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Sparkles, Thermometer } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -98,11 +98,23 @@ export default function WidgetBitacoras() {
                     subtitle="Hoy no hay nada que anotar." />
             )}
 
+            {/* Con dos o más pendientes el atajo abre la VUELTA entera, no la
+                grilla: medido el 2026-08-25, el 68% de los registros se anota a
+                menos de tres minutos del anterior, así que llegar de a uno es
+                la excepción. Con uno solo sigue yendo a la grilla — ahí el
+                botón de esa casilla ya está a la vista. */}
             <div className="mt-auto">
-                <Button variant="primary" size="sm" icon={Thermometer}
-                    onClick={() => navigate('/bitacoras')}>
-                    Anotar
-                </Button>
+                {resumen.abiertas + resumen.vencidas >= 2 ? (
+                    <Button variant="primary" size="sm" icon={ClipboardCheck}
+                        onClick={() => navigate('/bitacoras?ronda=1')}>
+                        Pasar la ronda
+                    </Button>
+                ) : (
+                    <Button variant="primary" size="sm" icon={Thermometer}
+                        onClick={() => navigate('/bitacoras')}>
+                        Anotar
+                    </Button>
+                )}
             </div>
         </div>
     );

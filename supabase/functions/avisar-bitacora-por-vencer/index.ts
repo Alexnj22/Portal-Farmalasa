@@ -113,7 +113,9 @@ Deno.serve(async (req) => {
         p_type: 'BITACORA_POR_VENCER',
         p_title: `La bitácora cierra a las ${p.cierra}`,
         p_body: `Faltan ${cuantos} en ${p.areas}. Quedan ${p.minutos} minutos para anotarlos a tiempo.`,
-        p_link: '/bitacoras',
+        // Abre la VUELTA, no la grilla: el aviso existe para ahorrar el paso
+        // de ir a buscar qué falta.
+        p_link: '/bitacoras?ronda=1',
         p_metadata: {
           check_key: checkKey,
           branch_id: p.branch_id,

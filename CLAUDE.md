@@ -936,6 +936,30 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   Un cron que falla se mide por **tasa, no por tropiezo**: un `job startup
   timeout` suelto es un aviso, el 5% es rojo. Y un cron nuevo se mide antes de
   entrar: `sistema: null` es deuda declarada, no un número inventado.
+- **Toda salida de datos del portal se ANOTA, y el que exporta no firma.** Desde
+  el 2026-08-24 hay `export_log`, y se escribe por `registrar_egreso(modulo,
+  formato, filas, detalle)` — nunca con un `INSERT` del cliente. El motivo no es
+  estilo: `export_log.employee_id` tiene que ser la **ficha** (`employees.id`) y
+  el navegador conoce la **cuenta** (`auth.users.id`); para **33 de las 42
+  personas** que usan el portal esos dos ids no son el mismo valor, así que un
+  `INSERT` con `session.user.id` lo rechaza la policy **para la mayoría de la
+  gente y en silencio**. La firma sale de `auth_employee_id()` adentro de la
+  función. En el frente, `registrarEgreso` de `src/data/egreso.js`; **nunca
+  lanza** —una descarga no puede fallar porque no se pudo anotar— pero avisa en
+  consola. Y `exportCsv` **exige el módulo**: sin él el archivo baja igual pero
+  el egreso queda como `sin-declarar`, que es un hallazgo visible en la tabla en
+  vez de un hueco. Cuatro salidas no usan el canónico y se armaban el CSV a mano
+  —la planilla del banco, el directorio de personal, asistencia y Mín·Máx—: al
+  agregar una salida nueva, usar `exportCsv`.
+- **Un control de seguridad nuevo se instala UNA vez y se enciende con una fila.**
+  `security_config` tiene tres estados —`observar` → `avisar` → `exigir`— y los
+  helpers `sec_exige(key)` / `sec_avisa(key)`, los dos `STABLE` para envolverlos
+  en `(SELECT …)`. Que el interruptor sea una **fila** y no una policy es el
+  punto: cambiar una policy es DDL sobre tabla caliente, o sea el outage del
+  2026-07-08, así que **la marcha atrás nunca puede ser una migración**. Su
+  default es `false`: si la fila no existe, NO exige — un control mal escrito
+  nunca deja a nadie afuera por accidente. Detalle en
+  `docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`.
 - **Antes de cerrar trabajo que toque una tabla, una ficha o un diálogo:
   `npm run gate:movil`** (bloqueante en cero) y el barrido de la ruta que
   tocaste. El canon completo está arriba, en «el teléfono no es la pantalla

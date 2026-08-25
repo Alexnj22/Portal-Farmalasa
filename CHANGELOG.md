@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.753.1 — La documentación dice lo que se hizo, y se corrige un dato falso
+
+Cierre documental de las Fases 0 y 1 del blindaje. Hasta acá los planes estaban
+al día pero **CLAUDE.md, el documento del área y el de avisos no**, así que las
+dos reglas nuevas vivían sólo en el código que las implementa — que es
+exactamente cómo una regla se pierde.
+
+**Lo corregido primero, porque es un dato falso que entró hoy al repo.** La
+medición del 24-ago dijo que «los renglones con factor 0 pasaron de 3 a 4, la
+deuda crece sola» y que «el MIN·MAX de ese producto nace roto». **Las dos cosas
+son falsas.** Los cuatro son las RECARGAS DE SALDO de TIGO, DIGICEL y MOVISTAR
+—DIGICEL cuenta dos veces por una fila activa y otra inactiva—: no son un
+producto en caja, no tienen presentación ni unidades, y **ninguno tiene una sola
+fila en `product_stock_params`**. Factor 0 es su valor correcto.
+
+Y el error no fue de medición: **la respuesta ya estaba escrita cuarenta líneas
+más abajo, en el §8.3 del mismo documento**, con los tres nombres. Se contaron
+cuatro filas y se concluyó sin abrirlas. Antes de creerle a un número que SUBIÓ
+hay que abrir los casos igual que si hubiera bajado.
+
+**Las dos reglas nuevas, ahora en CLAUDE.md:**
+
+- **Toda salida de datos se anota, y el que exporta no firma.** `export_log` se
+  escribe por `registrar_egreso(...)` y nunca con un INSERT del cliente, porque
+  el `employee_id` es la ficha y el navegador conoce la cuenta — para 33 de 42
+  personas esos ids difieren y la policy lo rechazaría en silencio. `exportCsv`
+  exige el módulo. Queda anotado también que **cuatro salidas no usan el
+  canónico** y se arman el CSV a mano, la planilla del banco entre ellas.
+- **Un control de seguridad se instala una vez y se enciende con una fila.**
+  `security_config` con sus tres estados, y el motivo de que sea una fila y no
+  una policy: cambiar una policy es DDL sobre tabla caliente, o sea el outage
+  del 2026-07-08, así que la marcha atrás nunca puede ser una migración.
+
+El documento del área de Sistema gana su §6 bis con las dos tablas y el
+recordatorio; el de avisos, el tipo `BLINDAJE_LINEA_BASE` — el caso raro de un
+aviso cuya condición de apagado **no es leerlo**.
+
+En memoria quedan el estado del blindaje y una lección del barrido: **una guarda
+puede ser el permiso y no la identidad.** El detector de «función sin
+protección» buscaba sólo `auth_employee_id()` y acusó a las dos únicas que sí
+escriben, que se defienden con `auth_has_module_permission`. Acusar al que hizo
+bien el trabajo es cómo un gate se termina desactivando.
+
 ## v2.753.0 — El barrido de cortes deja de correr con las salas cerradas
 
 **~5.760 peticiones diarias menos** al sistema de origen, entre las 23:00 y las

@@ -9,13 +9,29 @@ escribió una sola fila ni se aplicó ninguna migración. Queda una decisión ab
 ## Medido contra producción — 2026-08-24
 
 **Once días después, sigue sin aplicarse nada** — que es coherente, porque el §7
-es una decisión y no se tomó. Lo único que cambió es que la deuda creció sola:
-los renglones con **factor 0** eran 3 el 13-ago y hoy son **4**. Ninguno con
-factor nulo.
+es una decisión y no se tomó.
 
-Es la señal de que esto no se queda quieto esperando: cada producto que entra al
-catálogo con el factor mal escrito suma un caso, y el MIN·MAX de ese producto
-nace roto.
+> ### ⚠️ Corrección a la primera versión de esta medición (mismo día)
+>
+> Esta sección decía que **«la deuda creció sola: los renglones con factor 0
+> eran 3 y hoy son 4»**, y que *«el MIN·MAX de ese producto nace roto»*. **Las
+> dos cosas son falsas**, y la respuesta ya estaba escrita cuarenta líneas más
+> abajo, en el §8.3 de este mismo documento.
+>
+> Los cuatro renglones son **RECARGA SALDO** de TIGO, DIGICEL y MOVISTAR —el de
+> DIGICEL cuenta dos veces porque tiene una fila activa y otra inactiva—. No son
+> un producto en caja: no tienen presentación, no tienen unidades, y **ninguno
+> tiene una sola fila en `product_stock_params`**. Factor 0 es el valor
+> **correcto** para ellos y no rompe ningún MIN·MAX, porque no tienen MIN·MAX.
+>
+> El error no fue de medición sino de lectura: se contaron cuatro filas y se
+> concluyó sin abrirlas, teniendo el §8.3 al lado. Es
+> [[feedback_un_detector_en_cero_se_cuenta_a_mano_una_vez]] al revés — antes de
+> creerle a un número que SUBIÓ, hay que abrir los casos igual que si hubiera
+> bajado.
+
+Lo que sí sigue abierto es el §7 —la decisión— y los 21 renglones del §8.1, que
+no se volvieron a medir hoy. Ninguno con factor nulo.
 
 ---
 

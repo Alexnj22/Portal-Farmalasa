@@ -136,6 +136,60 @@ lo que es historia de la empresa, no.
 
 ---
 
+## 6 bis. Lo que SALE del portal, y el interruptor de los frenos
+
+Agregado el **2026-08-24** (Fases 0 y 1 de
+`docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`). Dos tablas nuevas de esta
+área, y las dos existen para poder decidir con datos más adelante.
+
+### `export_log` — qué salió, quién se lo llevó
+
+Las **once salidas** del portal —los CSV, los ZIP de documentos, la planilla del
+banco— anotan módulo, formato, cantidad de filas y el recorte. **Append-only**:
+no tiene policy de UPDATE ni de DELETE, igual que la bitácora.
+
+Se escribe **sólo** por `registrar_egreso(...)`, nunca con un `INSERT` del
+cliente, y el motivo es el mismo de toda esta área: `employee_id` tiene que ser
+la **ficha** y el navegador conoce la **cuenta**. Para 33 de las 42 personas esos
+ids difieren, así que un `INSERT` desde el frente lo rechazaría la policy **para
+la mayoría de la gente y en silencio** — la línea base habría salido sesgada
+hacia las nueve cuyos ids coinciden. Es la misma lección del §1: la autoría sale
+de la sesión, resuelta por la base.
+
+Hoy **no bloquea nada**. Es la línea base con la que se va a elegir un techo de
+exportación, y ahí hay una trampa propia de este portal: `fetchAllRows` pagina
+20,000+ filas como comportamiento **normal**, así que «muchas filas» no
+distingue a nadie. Lo que va a distinguir es *qué* módulos exporta cada quien.
+
+### `security_config` — el interruptor
+
+Tres estados por control: `observar` (deja pasar) → `avisar` (deja pasar y
+anota) → `exigir` (bloquea). Hoy los cuatro están en `observar`.
+
+**Que sea una fila y no una policy es el punto entero.** Cambiar una policy es
+DDL sobre una tabla caliente —o sea `ACCESS EXCLUSIVE`, o sea el outage del
+2026-07-08—, así que si el interruptor fuera «editar la policy», cada marcha
+atrás sería otra migración en horario. Con la fila, apagar un control es un
+`UPDATE`.
+
+Los helpers `sec_exige(key)` y `sec_avisa(key)` son `STABLE` para envolverlos en
+`(SELECT …)` y que se evalúen una vez por consulta. Su default es **false**: si
+la fila no existe, no exige. Un control mal escrito nunca deja a nadie afuera
+por accidente.
+
+### El recordatorio que se apaga solo
+
+`recordar-linea-base-egreso-mensual` (día 1, 9:00 SV) avisa cuando `export_log`
+cumple 30 días. **Se apaga cuando alguien decide, no cuando alguien lo lee**: la
+condición de corte es que `techo_exportacion` tenga autor, y las filas nacieron
+sembradas con autor nulo. Decidir que NO va techo también lo apaga.
+
+Su freno contra corridas repetidas mira `notifications`, pero la memoria del
+aviso **no vive ahí** a propósito: esa tabla se purga a diario, y un freno que se
+purga deja de frenar sin avisar.
+
+---
+
 ## 7. Antes de tocar algo en Sistema
 
 1. **Toda acción de usuario va a `appendAuditLog`.**

@@ -18,6 +18,13 @@ transferible del portal entero:
 | Los comunicados (`announcements`) | pantalla + push por trigger | lo que la empresa anuncia |
 | La encuesta de clima | su propia vista | por campaña |
 
+**Un tipo de aviso agregado el 2026-08-24:** `BLINDAJE_LINEA_BASE`, campana sin
+push, mensual y a lo sumo una vez. Es el caso raro de un aviso cuya condición de
+apagado **no es leerlo**: se apaga cuando alguien mueve el interruptor
+`security_config.techo_exportacion`, o sea cuando la decisión se tomó. Un aviso
+que se apaga al leerlo vuelve a aparecer y entrena a ignorarlo — que es el mismo
+problema que la regla de ruido de abajo, por el otro lado.
+
 **La regla de ruido:** `push = true` **sólo** para eventos accionables — una
 solicitud pendiente, una solicitud decidida, la llegada física o el reenvío de
 un pedido. El resto enciende la campana y nada más. Un push por cada cosa que

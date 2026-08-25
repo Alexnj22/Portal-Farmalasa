@@ -78,7 +78,8 @@ async function getSessionCookie(username: string, password: string): Promise<str
  * Una sesión POR SALA, viva entre corridas.
  *
  * ── Por qué ──────────────────────────────────────────────────────────────
- * Esta función corre cada 30 segundos de 7 a 22, porque quien corta la caja
+ * Esta función corre cada 30 segundos de 7 a 23 SV —la ventana la aplica
+ * `HORA_DESDE`/`HORA_HASTA` más abajo, porque el cron no puede—, porque quien corta la caja
  * quiere verlo en el momento: si hubo diferencia tiene que poder revisarla y
  * rehacer el corte ahí mismo, no media hora después. Esa cadencia no se toca.
  *
@@ -239,6 +240,46 @@ function hoySV(): string {
   return new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 }
 
+/**
+ * La hora SV, 0-23.
+ *
+ * Se deriva del mismo desplazamiento que `hoySV` a propósito: si un día El
+ * Salvador adoptara horario de verano, las dos tienen que moverse juntas o la
+ * ventana de abajo dejaría de coincidir con el día que se sincroniza.
+ */
+function horaSV(): number {
+  return new Date(Date.now() - 6 * 3600_000).getUTCHours();
+}
+
+/**
+ * La ventana en la que hay cortes que sincronizar.
+ *
+ * ── Por qué existe ────────────────────────────────────────────────────────
+ * El cron dispara cada 30 segundos y **no tiene ventana horaria**: `pg_cron` con
+ * un intervalo (`30 seconds`) no admite un rango de horas como sí lo admite una
+ * expresión cron. Así que la función corría 2.880 veces al día mientras el
+ * manifiesto de `gate:eficiencia` declaraba 1.920 —«cada 30 s de 7 a 22 SV»— y
+ * el encabezado de arriba decía lo mismo. Las tres cosas se contradecían y nadie
+ * lo miraba: son **6 peticiones por corrida**, o sea ~5.760 diarias al sistema
+ * de origen entre las 23:00 y las 07:00, con las salas cerradas.
+ *
+ * ── De dónde sale el rango ────────────────────────────────────────────────
+ * De los cortes reales, no del horario nominal. Medido sobre 60 días: el primero
+ * es a las **9** y el último a las **22** —hay 24 cortes en esa hora—, así que la
+ * ventana llega hasta las 23:00 y no hasta las 22:00. Cortar a las 22 en punto
+ * habría dejado sin sincronizar hasta la mañana siguiente justamente los cortes
+ * de cierre, que son los que más se miran.
+ *
+ * 16 horas × 120 corridas = 1.920 al día, que es exactamente lo que el
+ * manifiesto ya declaraba.
+ *
+ * ── Lo que NO frena ───────────────────────────────────────────────────────
+ * Una llamada con fechas explícitas es un backfill hecho a mano, y ésa tiene que
+ * poder correr a cualquier hora: quien la ejecuta ya decidió qué quiere.
+ */
+const HORA_DESDE = 7;
+const HORA_HASTA = 23;   // exclusivo: la última corrida es a las 22:59:30
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -251,7 +292,20 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const fecha1: string = /^\d{4}-\d{2}-\d{2}$/.test(String(body.desde ?? "")) ? body.desde : hoySV();
+
+    // Fuera de la ventana no hay cortes que traer: se contesta sin gastar una
+    // sola petición. `ok: true` porque no es un fallo — es que no había trabajo,
+    // y un `false` acá ensuciaría la tasa de error del cron.
+    const conFechas = /^\d{4}-\d{2}-\d{2}$/.test(String(body.desde ?? ""));
+    const h = horaSV();
+    if (!conFechas && (h < HORA_DESDE || h >= HORA_HASTA)) {
+      return new Response(
+        JSON.stringify({ ok: true, omitido: "fuera de horario", hora_sv: h }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const fecha1: string = conFechas ? body.desde : hoySV();
     const fecha2: string = /^\d{4}-\d{2}-\d{2}$/.test(String(body.hasta ?? "")) ? body.hasta : fecha1;
     const onlyBranch = body.branchId != null ? Number(body.branchId) : null;
 

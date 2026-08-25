@@ -76,10 +76,17 @@ const CRONS = [
   {
     job: 'cortes-caja-30s', slug: 'sync-cortes-caja', cadencia: '30 seconds',
     corridasDia: 1920, sistema: 6,
-    motivo: 'Cada 30 s de 7 a 22 SV porque quien corta la caja revisa la diferencia EN EL MOMENTO '
+    motivo: 'Cada 30 s de 7 a 23 SV porque quien corta la caja revisa la diferencia EN EL MOMENTO '
           + 'y rehace el corte; la cadencia es requisito del usuario y no se espacia. '
           + 'Son 6 listados, uno por sala: desde v2.671.1 la sesión de cada sala sobrevive a la '
-          + 'corrida, antes eran 13 (un ingreso + un cambio de sala por cada listado).',
+          + 'corrida, antes eran 13 (un ingreso + un cambio de sala por cada listado). '
+          + 'La VENTANA la aplica la función y no el cron: `pg_cron` con un intervalo '
+          + '(`30 seconds`) no admite un rango de horas, así que hasta el 2026-08-25 disparaba '
+          + '2.880 veces mientras acá decía 1.920 — eran ~5.760 peticiones diarias de más, entre '
+          + 'las 23:00 y las 07:00 con las salas cerradas. Hoy `HORA_DESDE`/`HORA_HASTA` de '
+          + '`sync-cortes-caja` contestan sin gastar nada fuera de ese rango. El tope son las 23 y '
+          + 'no las 22 porque los cortes reales llegan hasta las 22:xx (24 en esa hora, medidos '
+          + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
   },
   {
     job: 'avisar-bultos-viejos-daily', slug: 'avisar-bultos-viejos', cadencia: '0 15 * * *',

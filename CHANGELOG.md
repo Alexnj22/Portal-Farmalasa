@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.753.0 — El barrido de cortes deja de correr con las salas cerradas
+
+**~5.760 peticiones diarias menos** al sistema de origen, entre las 23:00 y las
+07:00.
+
+Tres lugares decían que el barrido de cortes corre «de 7 a 22 SV»: el manifiesto
+de `gate:eficiencia`, el encabezado de la propia función y el comentario de su
+cadencia. **Ninguno lo implementaba.** El cron dispara cada 30 segundos, y
+`pg_cron` con un intervalo (`30 seconds`) **no admite un rango de horas** como sí
+lo admite una expresión cron — así que corría las 24 horas: 2.877 disparos
+medidos contra los 1.920 declarados, a 6 peticiones por corrida.
+
+Nadie lo miraba porque el gate mostraba esa diferencia en gris, como dato y no
+como hallazgo, y las tres afirmaciones se respaldaban entre sí sin que ninguna
+fuera cierta.
+
+Ahora la ventana la aplica la función: fuera de rango contesta sin gastar una
+sola petición. Responde `ok: true` y no un error, porque no había trabajo que
+hacer y un `false` ensuciaría la tasa de fallo del cron.
+
+**El tope son las 23:00 y no las 22:00, y eso salió de medir en vez de copiar el
+horario nominal.** Sobre 60 días de cortes reales: el primero es a las 9 y el
+último a las 22 — **24 cortes ocurren en esa hora**. Cortar a las 22 en punto
+habría dejado sin sincronizar hasta la mañana siguiente justamente los cortes de
+cierre, que son los que más se miran. Con 16 horas × 120 corridas son 1.920 al
+día, que es exactamente lo que el manifiesto ya declaraba.
+
+**Un backfill a mano no se frena**: una llamada con fechas explícitas corre a
+cualquier hora, porque quien la ejecuta ya decidió qué quiere.
+
+Desplegada con `--no-verify-jwt` —la llama un cron, y sin el flag empieza a
+fallar con 401 antes de ejecutar una línea, cosa que ya pasó tres veces—.
+Verificado después del despliegue: `verify_jwt` sigue en `false`, 6 corridas en 3
+minutos sin fallos y 47 llamadas salientes, o sea que dentro de la ventana sigue
+trabajando igual.
+
 ## v2.752.1 — El portal avisa cuando ya se puede elegir el techo
 
 Cierra la Fase 1 del blindaje. El registro de lo que sale empezó hoy y su valor
@@ -330,8 +366,10 @@ Lo que la medición encontró en el resto, y que ningún encabezado decía:
   que las cuentas por pagar no pueden calcular ni una fecha de vencimiento.
 - **Metas**: A6 bajó solo de 26 personas a **4**; A8 **empeoró** de 33 de 35 a
   **46 de 49** sin `hire_date`, porque los empleados nuevos entran sin fecha.
-- **Factor y MIN·MAX**: los renglones con factor 0 pasaron de 3 a **4**. La deuda
-  crece sola mientras la decisión del §7 no se toma.
+- **Factor y MIN·MAX**: nada aplicado, el §7 sigue sin decidirse. ⚠️ Esta entrada
+  decía además que «los renglones con factor 0 pasaron de 3 a 4, la deuda crece
+  sola»: **es falso**, corregido en el propio plan el mismo día. Son las cuatro
+  RECARGAS DE SALDO, no tienen MIN·MAX y factor 0 es su valor correcto.
 - **Credencial de carné**: 0 de 15 bloques, **1 terminal registrada de 7**, y
   `kiosk_pin` sigue con 6 privilegios de lectura para `authenticated`/`anon`.
 - **Blindaje ante terceros**: las 5 fases en cero, 67 policies dejan leer sin

@@ -195,7 +195,7 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                                     placeholder="Termohigrómetro TH-01"
                                 />
                                 <p className="text-label text-content-3 ml-1">
-                                    Cómo se identifica el aparato
+                                    Uno por área, con su certificado vigente
                                 </p>
                             </div>
                             {/* La sala tiene el certificado en la mano y sabe
@@ -269,7 +269,9 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         <Switch
                             checked={activa}
                             onChange={setActiva}
-                            label={activa ? 'El área lleva bitácora' : 'Área apagada — no se le pide nada'}
+                            label={activa
+                                ? 'El área lleva bitácora'
+                                : 'Apagada — no cuenta como faltante'}
                         />
                         {sucio && (
                             <Button variant="primary" size="sm" icon={Check} onClick={guardar}
@@ -364,8 +366,7 @@ function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
             </header>
 
             <p className="text-label text-content-3">
-                Si esta sucursal conserva medicamentos que necesitan frío, el reglamento pide
-                termómetro calibrado y registro de temperatura dos veces al día, entre 2 y 8 °C.
+                Encendido, pide termómetro calibrado y dos lecturas al día entre 2 y 8 °C.
             </p>
 
             {!puedeEditar ? (
@@ -536,19 +537,22 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
 
     return (
         <div className="space-y-4">
-            <Notice variant="info">
-                <span className="font-bold">El reglamento exige un instrumento independiente por área.</span>
-                <span className="block mt-0.5 font-normal text-content-2">
-                    Uno para la sala de ventas y otro para la bodega, cada uno con certificado de
-                    calibración vigente. Si una sala es un solo ambiente, apaga el área que no existe:
-                    así deja de contar como faltante al cerrar el mes.
-                </span>
-                <span className="block mt-1.5 font-normal text-content-2">
-                    Las vitrinas y el servicio sanitario son áreas de <strong>sólo limpieza</strong>: no
-                    llevan temperatura ni instrumento, pero sí su propio registro y su propio
-                    cumplimiento. Si esta sucursal no tiene alguna, apágala igual que las demás.
-                </span>
-            </Notice>
+            {/* ── El aviso largo se fue (2026-08-25) ───────────────────────
+                Medido en iPhone 13: ocupaba 530px de una pantalla de 664 — más
+                de la mitad del teléfono antes de ver nada configurable. Sus
+                tres ideas ya estaban dichas en la pantalla o se mudaron a donde
+                se usan: «un instrumento por área con certificado vigente» es
+                ahora la pista del campo Instrumento, «vitrinas y baño son sólo
+                limpieza» ya lo dice el badge de cada tarjeta, y lo único que no
+                era obvio —que apagar un área la saca del cumplimiento— quedó
+                acá y en la etiqueta del interruptor.
+
+                Un aviso que hay que rodar para pasar de largo no se lee: se
+                aprende a saltar. */}
+            <p className="text-label text-content-3">
+                Apaga el área que esta sucursal no tenga: deja de contar como faltante al cerrar
+                el mes.
+            </p>
 
             {/* Dos columnas desde `xl`. En una pantalla de escritorio ancha,
                 una sola columna estiraba cada campo a 1.800px —un selector de

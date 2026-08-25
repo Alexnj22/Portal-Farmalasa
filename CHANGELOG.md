@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.761.1 — El aviso largo de Configuración se fue a donde se usa
+
+Preguntado por el usuario: *«¿es necesario esto? ¿se puede acortar? ¿cómo se ve
+en móvil?»*. Medido en iPhone 13: el aviso ocupaba **530px de una pantalla de
+664** — más de la mitad del teléfono antes de ver nada configurable, y había que
+rodarlo entero para llegar a la primera tarjeta. Un aviso que hay que pasar de
+largo no se lee: se aprende a saltar.
+
+Sus tres ideas ya estaban dichas en la pantalla, o se mudaron a donde se usan:
+
+- «Un instrumento independiente por área, con certificado vigente» → es la pista
+  del propio campo **Instrumento**, que es donde hace falta saberlo.
+- «Las vitrinas y el servicio sanitario son de sólo limpieza» → ya lo dice el
+  badge **sólo limpieza** de cada tarjeta.
+- Lo único que no era obvio —que **apagar un área la saca del cumplimiento**—
+  quedó en una línea arriba y en la etiqueta del interruptor, que ahora dice
+  «Apagada — no cuenta como faltante» en vez de «no se le pide nada».
+
+El aviso pasó de 530px a 90px, y la primera tarjeta configurable entra en la
+primera pantalla del teléfono. El texto del refrigerador también se acortó: la
+condicional que repetía el título se fue.
+
 ## v2.761.0 — El refrigerador es un interruptor, no un área
 
 Tres correcciones del usuario sobre la pantalla de Configuración.

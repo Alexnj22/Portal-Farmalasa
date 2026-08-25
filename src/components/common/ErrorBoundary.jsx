@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { anotar } from '../../utils/cajaNegra';
+import { marcarVersionNueva } from '../../utils/versionNueva';
 
 /**
  * ¿Este error es «el chunk no cargó» y no «el código falló»?
@@ -11,17 +12,19 @@ import { anotar } from '../../utils/cajaNegra';
  * y `React.lazy` revienta. No es un defecto de esa pantalla: es una versión
  * vieja pidiendo piezas de una versión que se fue.
  *
- * `main.jsx` ya escucha `vite:preloadError` y recarga. Esto es la SEGUNDA red, y
+ * `main.jsx` ya escucha `vite:preloadError` y avisa. Esto es la SEGUNDA red, y
  * hace falta porque ese evento no cubre todos los casos — medido en los registros
  * de producción del portal: 92 errores de render en 45 días, de SIETE personas, y
  * los recientes son todos de esta familia. Los dos mensajes más frecuentes
  * («Importing a module script failed», «undefined is not an object (evaluating
  * 'k._result.default')») son de WebKit, donde el evento de Vite no siempre llega.
  *
- * `_result.default` es el interno de `React.lazy`, y explica por qué hace falta
- * RECARGAR y no reintentar: `lazy` **cachea el rechazo**. Aunque el archivo
+ * `_result.default` es el interno de `React.lazy`, y explica por qué la salida
+ * es RECARGAR y no reintentar: `lazy` **cachea el rechazo**. Aunque el archivo
  * vuelva a estar disponible, ese componente sigue fallando hasta que la página
- * se recarga entera.
+ * se recarga entera. Por eso el aviso de versión nueva llega acá en su forma de
+ * diálogo y no de franja: hay que explicar que esa pantalla no va a abrir. Pero
+ * quien recarga sigue siendo la persona — nunca esta clase.
  */
 const ES_CHUNK_QUE_NO_CARGO = [
     /Failed to fetch dynamically imported module/i,
@@ -33,8 +36,6 @@ const ES_CHUNK_QUE_NO_CARGO = [
     /ChunkLoadError/,
 ];
 
-const CLAVE_RECARGA = 'chunk_reload_at';
-const VENTANA_MS = 30_000;
 
 export default class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -50,18 +51,12 @@ export default class ErrorBoundary extends React.Component {
         console.error('[ErrorBoundary]', error, info);
         const mensaje = error?.message || 'Error desconocido';
 
-        // El guard de 30 s se comparte con `main.jsx` a propósito, con la MISMA
-        // clave: son dos caminos hacia la misma recarga, y dos ventanas
-        // independientes se turnarían para recargar en bucle.
+        // ── Acá había una recarga automática, y se la sacó (2026-08-25) ──
+        // Se recargaba sola al detectar un error de esta familia, y esa recarga
+        // se lleva todo lo escrito y no guardado. Hoy sólo AVISA: la recarga la
+        // aprieta una persona, en `AvisoVersionNueva`. Ver la nota gemela en
+        // `src/main.jsx`.
         const esDeCarga = ES_CHUNK_QUE_NO_CARGO.some((r) => r.test(mensaje));
-        let recargando = false;
-        if (esDeCarga) {
-            try {
-                const ultima = Number(sessionStorage.getItem(CLAVE_RECARGA) || 0);
-                recargando = Date.now() - ultima > VENTANA_MS;
-                if (recargando) sessionStorage.setItem(CLAVE_RECARGA, String(Date.now()));
-            } catch { recargando = false; }   // sin sessionStorage no se recarga: mejor la pantalla de error que un bucle
-        }
 
         try {
             const { appendAuditLog } = useStaffStore.getState();
@@ -69,22 +64,21 @@ export default class ErrorBoundary extends React.Component {
                 appendAuditLog('ERROR_RENDER', null, {
                     message: mensaje,
                     stack: info?.componentStack?.slice(0, 500),
-                    // Se anota SIEMPRE, recargue o no. El caso que NO recarga es
-                    // el peor —dentro de la ventana, la vista nunca aparece— y
-                    // sin esto se ve igual que el que sí se resolvió.
+                    // Se anota que fue de carga y que se avisó: sin esto, una
+                    // pantalla que no abrió se ve igual que un toque que no
+                    // registró, y es justo el par que no se podía distinguir.
                     chunk: esDeCarga || undefined,
-                    recargando: esDeCarga ? recargando : undefined,
+                    avisado: esDeCarga || undefined,
                 });
             }
         } catch { /* best-effort: no debe romper el error boundary si el audit log falla */ }
 
         if (esDeCarga) {
-            try { anotar('chunk-no-cargo', { origen: 'error-boundary', recargando }); } catch { /* */ }
-            // Fuera del ciclo de render de React: recargar desde
-            // `componentDidCatch` mientras React todavía está montando el árbol
-            // de error deja avisos en consola y en algunos navegadores cancela
-            // la navegación a medias.
-            if (recargando) setTimeout(() => window.location.reload(), 0);
+            try { anotar('chunk-no-cargo', { origen: 'error-boundary', avisado: true }); } catch { /* */ }
+            // Fuera del ciclo de render de React: tocar el estado de otro
+            // componente desde `componentDidCatch`, mientras React todavía está
+            // montando el árbol de error, deja avisos en consola.
+            setTimeout(() => { try { marcarVersionNueva({ bloqueado: true }); } catch { /* */ } }, 0);
         }
     }
 

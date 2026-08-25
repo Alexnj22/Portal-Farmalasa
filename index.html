@@ -78,53 +78,29 @@
          la franja del status bar se funda con él en standalone y Safari. -->
     <meta name="theme-color" content="#e2defc" />
 
-    <script>
-      // PWA standalone iOS: al reabrir la app "agregada a inicio", iOS
-      // RESUME la sesión suspendida en vez de recargar — puede vivir días
-      // con bundle y datos viejos, sin botón de refresh (comprobado
-      // 2026-07-23: la PWA del usuario mostraba datos del día anterior y
-      // código de 4 deploys atrás — ningún fix "llegaba" al standalone).
-      // Si la página estuvo oculta >30 min, recargar al volver a primer
-      // plano. Solo en standalone/nativo: en navegador normal existe
-      // refresh manual y recargar pestañas de fondo perdería trabajo.
-      (function () {
-        var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
-        var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-        if (!isStandalone && !isNative) return;
-        var MAX_HIDDEN_MS = 30 * 60 * 1000;
-        var hiddenAt = null;
-        document.addEventListener('visibilitychange', function () {
-          if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
-          if (hiddenAt && Date.now() - hiddenAt > MAX_HIDDEN_MS && navigator.onLine !== false) {
-            // ── El punto ciego que este `return` tenía (2026-08-08) ──────────
-            // Esta recarga es la ÚNICA del portal que no deja rastro, y a la
-            // vista es idéntica al fallo que estamos persiguiendo: la pantalla
-            // se va y vuelve sola. Peor: al ser un `reload()` limpio dispara
-            // `pagehide`, que borra el pulso — o sea que además BORRA la prueba
-            // de que no hubo muerte súbita, y el registro siguiente arranca
-            // igual que si nada hubiera pasado.
-            //
-            // Se anota a mano y no con `anotar()` porque acá el bundle todavía
-            // no existe; el formato es el mismo a propósito, para que caiga en
-            // la misma lista de `/ios-test`.
-            try {
-              var reg = JSON.parse(localStorage.getItem('portal_caja_negra') || '[]');
-              if (!Array.isArray(reg)) reg = [];
-              reg.push({
-                t: new Date().toISOString(),
-                tipo: 'recarga-programada',
-                ruta: location.pathname + location.search,
-                msg: 'estuvo ' + Math.round((Date.now() - hiddenAt) / 60000) + ' min en segundo plano — se recarga por la regla de los 30 min',
-              });
-              localStorage.setItem('portal_caja_negra', JSON.stringify(reg.slice(-40)));
-            } catch (e) { /* modo privado o cuota */ }
-            location.reload();
-            return;
-          }
-          hiddenAt = null;
-        });
-      })();
-    </script>
+    <!-- ── Acá vivía una recarga a ciegas cada 30 minutos (2026-08-25) ─────
+         La app instalada en el teléfono no se recarga al reabrirla: iOS la
+         SUSPENDE y la reanuda, así que podía vivir días con el bundle y los
+         datos del día anterior (comprobado 2026-07-23: ningún arreglo «llegaba»
+         al standalone). El parche era recargar sola si había estado más de 30
+         minutos en segundo plano.
+
+         Se lo quitó porque recargaba **sin preguntar y sin saber si hacía
+         falta**: se llevaba lo que hubiera escrito y no guardado, y lo hacía
+         igual aunque no hubiera ninguna versión nueva que traer. Pedido del
+         usuario: *«no que se haga de un solo, imagina que se esté trabajando o
+         llenando algo y se pierda por eso»*.
+
+         Lo reemplaza `src/utils/versionNueva.js`, que al volver a primer plano
+         PREGUNTA qué versión está publicada y sólo avisa si de verdad hay otra
+         — con un botón, que aprieta la persona. Cubre el mismo caso (es el
+         disparador de `visibilitychange`) y además deja de molestar cuando no
+         hay nada que actualizar.
+
+         Lo que este bloque hacía y el reemplazo NO hace: refrescar los DATOS de
+         una pantalla que estuvo dormida sin que haya versión nueva. Eso lo
+         cubren `useRecargarAlVolver` y la revalidación de sesión de
+         `AuthContext`, vista por vista — no todas lo tienen. -->
 
     <title>Portal - FarmaSalud</title>
 

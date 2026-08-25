@@ -14,6 +14,7 @@ import { pantallaDeArranque, PANTALLA } from './utils/arranqueSesion';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import AvisoEntornoPruebas from "./components/common/AvisoEntornoPruebas";
+import AvisoVersionNueva from "./components/common/AvisoVersionNueva";
 
 // Layouts (shell — necesarios en toda ruta, se quedan eager)
 import AppLayout from "./components/layout/AppLayout";
@@ -913,6 +914,12 @@ const AppWithToast = () => {
                     también en /login y /kiosk, o sea ANTES de que alguien escriba
                     una credencial creyendo que está en producción. */}
                 <AvisoEntornoPruebas />
+                {/* Fuera de <Routes> por el mismo motivo y por uno propio: es lo
+                    que reemplazó a la recarga automática, así que tiene que
+                    estar puesto en toda ruta —incluido el kiosco, que vive
+                    encendido en una tablet y es el que más días acumula con el
+                    mismo bundle. */}
+                <AvisoVersionNueva />
             </div>
         </>
     );

@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { anotar, entorno, iniciarPulso, iniciarSondaRotacion, recogerPulso } from "./utils/cajaNegra";
 import { APP_VERSION } from "./version";
+import { marcarVersionNueva } from "./utils/versionNueva";
 
 // Supabase uses the Web Locks API internally to serialize token refreshes.
 // When multiple async auth operations fire simultaneously (validateSession +
@@ -55,26 +56,22 @@ document.addEventListener('visibilitychange', () => {
 // Tras un deploy, los chunks con hash viejo ya no existen en el servidor y el
 // SPA fallback devuelve index.html ("'text/html' is not a valid JavaScript
 // MIME type") al hacer un import() dinámico (React.lazy). Vite emite
-// vite:preloadError en ese caso: recargamos para tomar el bundle nuevo,
-// con guard de 30s en sessionStorage para no entrar en loop de reloads.
+// vite:preloadError en ese caso.
+//
+// ── Acá había una recarga, y se la sacó a propósito (2026-08-25) ───────────
+// `window.location.reload()` sin preguntar se lleva todo lo escrito y no
+// guardado. Pedido del usuario: *«no que se haga de un solo, imagina que se
+// esté trabajando o llenando algo y se pierda por eso»*. Hoy esto sólo AVISA;
+// la recarga la aprieta una persona, en `AvisoVersionNueva`.
+//
+// El evento NO se cancela: sin `preventDefault()` el fallo sigue su camino
+// hasta el `ErrorBoundary`, y eso es lo que se quiere — el toque tiene que
+// producir algo visible. Cancelarlo dejaba la pantalla igual que un toque que
+// no registró, que es exactamente lo que el usuario reportaba como «le doy y
+// no abre».
 window.addEventListener('vite:preloadError', (event) => {
-  const KEY = 'chunk_reload_at';
-  const last = Number(sessionStorage.getItem(KEY) || 0);
-  const recargando = Date.now() - last > 30_000;
-  // Se anota SIEMPRE, recargue o no. El caso que no recarga es el peor de los
-  // dos y el que no dejaba rastro: dentro de la ventana de 30s el chunk sigue
-  // sin cargar, la vista nunca aparece y no pasa nada visible — «le doy y no
-  // abre». Sin esta línea, ese caso es indistinguible de un toque que no
-  // registró.
-  anotar('chunk-no-cargo', {
-    url: String(event.payload?.url || '').slice(-120),
-    recargando,
-  });
-  if (recargando) {
-    event.preventDefault();
-    sessionStorage.setItem(KEY, String(Date.now()));
-    window.location.reload();
-  }
+  anotar('chunk-no-cargo', { url: String(event.payload?.url || '').slice(-120), avisado: true });
+  marcarVersionNueva({ bloqueado: true });
 });
 
 import App from "./App.jsx";

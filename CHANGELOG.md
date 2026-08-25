@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.764.0 — El portal avisa que hay versión nueva en vez de recargarse solo
+
+*«Porque el portal a veces se actualiza solo, puedo estar viendo algo y se
+actualiza»* — y después, al saber por qué: *«si hay nueva versión que salte un
+toast o algo, y le diga que se debe actualizar, no que se haga de un solo,
+imagina que se esté trabajando o llenando algo y se pierda por eso»* (usuario).
+
+**Había TRES recargas automáticas y ninguna preguntaba.** Se publica varias
+veces al día; cada publicación cambia el nombre de los archivos de código y los
+viejos dejan de existir en el servidor. Las tres caras del mismo problema:
+
+| dónde | cuándo se disparaba |
+|---|---|
+| `src/main.jsx` | `vite:preloadError` — un archivo de una pantalla que ya no está |
+| `ErrorBoundary` | el mismo fallo llegando por WebKit, donde el evento de Vite no siempre llega |
+| `index.html` | a ciegas, si la app instalada en el teléfono había estado 30 min en segundo plano |
+
+Las tres corrían `location.reload()` sin avisar, y una recarga se lleva todo lo
+escrito y no guardado. Los formularios largos guardan borrador (`gate:borradores`)
+pero no todos, y ninguno cubre lo escrito en el minuto anterior.
+
+**Y el portal se enteraba TARDE.** No había ninguna detección: la primera señal
+de que el bundle había quedado viejo era que algo ya había fallado. O sea que la
+recarga no era una precaución sino un rescate — para cuando ocurría, la persona
+ya estaba trabada. Medido en `audit_logs`: **92 errores de render en 45 días, de
+siete personas**, casi todos de esta familia.
+
+**Ahora se pregunta antes.** `vite.config.js` deja en cada publicación un
+`version.json` con el nombre del archivo de entrada, y `src/utils/versionNueva.js`
+lo consulta al volver a la pestaña y cada 15 minutos. Si es otro, aparece una
+franja con dos botones: **Actualizar** y **Ahora no**. Nada recarga salvo el
+botón.
+
+Se compara el ARCHIVO y no el número de versión porque lo que rompe no es el
+número: es que el archivo con hash viejo dejó de existir. Dos publicaciones
+pueden llevar el mismo número y romper igual.
+
+**Cuando ya falló, el aviso sube a diálogo** y explica por qué la pantalla no
+abrió — `React.lazy` cachea el rechazo, así que esa vista no va a abrir hasta
+recargar. Aun ahí el botón «Ahora no» existe y no recarga: se vuelve a la franja
+y quien estaba llenando algo se queda donde estaba.
+
+**El freno contra el bucle.** Si alguien aprieta «Actualizar» y la recarga no
+trae el bundle nuevo (un borde de CDN sirviendo todavía lo viejo), sin freno el
+aviso reaparecería al instante y sería un botón que no hace nada, apretado en
+bucle. Se anota el objetivo antes de recargar y, si al volver no llegó, el aviso
+se calla diez minutos y queda en la caja negra.
+
+**Lo que se perdió y hay que saberlo:** la recarga de los 30 minutos de
+`index.html` también refrescaba los DATOS de una pantalla dormida aunque no
+hubiera versión nueva. Eso ahora lo cubren `useRecargarAlVolver` y la
+revalidación de sesión de `AuthContext`, vista por vista — y no todas lo tienen.
+
+`bundle-gate`: el entry sube 2,210 B gzip (medido enfrentando dos builds:
+305,634 → 307,844). El techo se sube a mano de 301 a 303 con su motivo escrito.
+El hallazgo de paso es el otro: ese techo salía de la holgura del 15% sobre una
+medición de 262 kB y el entry ya estaba en 299 sin que nadie lo mirara — el
+colchón entero se había consumido de a poco.
+
 ## v2.763.1 — El termómetro del ambiente no se declara
 
 *«No es el mismo, cada uno tiene uno independiente, pero ¿qué necesitas que

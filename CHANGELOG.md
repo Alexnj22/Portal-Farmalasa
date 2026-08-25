@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.5 — Cada sentido tiene su propio freno
+
+`traslado_interruptor` ya tenía **cuatro** filas, no dos: `sobrante_enviar` y
+`sobrante_recibir` existían desde que se creó el catálogo de diferencias, y
+estaban en **pausa** con el motivo «Sin estrenar». `devolver-pedido-erp` leía
+sólo `devolver_*`, así que el primer sobrante habría movido producto real por un
+camino que nadie estrenó **mientras su freno decía que no** — que es la peor
+forma de tener un freno.
+
+Ahora se leen los dos y se mira **por fila**, no por llamada: un lote puede
+traer los dos sentidos, y pausar el sobrante no puede frenar una devolución que
+sí está probada. Lo pausado se aparta antes de tocar la fila o el sistema y se
+dice con su motivo; no se descarta en silencio. Los dos interruptores tienen que
+estar presentes: uno que falta **no** es «sin pausa». El simulacro sigue
+permitido con la pausa puesta — no escribe nada, y mirar es justo lo que hace
+falta para decidir si se enciende.
+
+Consecuencia práctica: **el brazo del sobrante sale apagado.** Bodega puede
+acordar la salida, y al intentar moverla el portal contesta «La salida está
+pausada: Sin estrenar». Se enciende desde `traslado_interruptor` cuando se
+decida estrenarlo mirando.
+
 ## v2.747.4 — Auditoría de planes: nueve se cierran y tres encabezados decían lo contrario
 
 Repaso de los 43 planes y auditorías vivos de `docs/`, a pedido. **Nueve se

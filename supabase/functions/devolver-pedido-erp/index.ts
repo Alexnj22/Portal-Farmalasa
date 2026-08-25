@@ -241,23 +241,43 @@ Deno.serve(async (req) => {
     // se movió se mueve después; uno que se movió de más hay que ir a buscarlo.
     // El simulacro sigue permitido —no escribe— para poder mirar cómo quedó
     // todo mientras está pausado.
+    //
+    // Hay UN interruptor POR SENTIDO, y eso importa: los cuatro ya existían en
+    // la tabla, y `sobrante_enviar`/`sobrante_recibir` estaban en PAUSA con el
+    // motivo «Sin estrenar». Leer sólo `devolver_*` habría movido producto real
+    // por un camino que nadie estrenó mientras su freno decía que no — la peor
+    // forma de tener un freno.
+    //
+    // Y se mira POR FILA y no por llamada, porque un lote puede traer los dos
+    // sentidos: pausar el sobrante no puede frenar una devolución que sí está
+    // probada.
+    const llaveNormal   = accion === "recibir" ? "devolver_recibir" : "devolver_enviar";
+    const llaveSobrante = accion === "recibir" ? "sobrante_recibir" : "sobrante_enviar";
+    const frenos = new Map<string, { pausado: boolean; motivo: string | null }>();
     if (!simulacro) {
-      const llave = accion === "recibir" ? "devolver_recibir" : "devolver_enviar";
-      const { data: sw, error: swErr } = await admin
-        .from("traslado_interruptor").select("pausado, motivo").eq("accion", llave).maybeSingle();
-      if (swErr || !sw)
+      const { data: sws, error: swErr } = await admin
+        .from("traslado_interruptor").select("accion, pausado, motivo")
+        .in("accion", [llaveNormal, llaveSobrante]);
+      // FALLA CERRADO: si no se puede leer, no se mueve nada. Un producto que no
+      // se movió se mueve después; uno que se movió de más hay que ir a
+      // buscarlo. Los DOS tienen que estar: uno que falta no es «sin pausa».
+      if (swErr || (sws ?? []).length !== 2)
         return json({
           ok: false, codigo: "INTERRUPTOR_ILEGIBLE",
-          error: "No se pudo comprobar si las devoluciones están pausadas. No se movió nada.",
+          error: "No se pudo comprobar si estos movimientos están pausados. No se movió nada.",
         }, 503);
-      if (sw.pausado)
-        return json({
-          ok: false, codigo: "DEVOLUCIONES_PAUSADAS",
-          error: accion === "recibir"
-            ? `La entrada de devoluciones está pausada${sw.motivo ? `: ${sw.motivo}` : "."}`
-            : `La salida de devoluciones está pausada${sw.motivo ? `: ${sw.motivo}` : "."}`,
-        }, 409);
+      for (const sw of sws!) frenos.set(String(sw.accion), sw);
     }
+
+    /** El freno de ESTA fila, o null si puede moverse. */
+    const frenadaPor = (d: { sentido?: string }) => {
+      if (simulacro) return null;   // el simulacro no escribe: mirar está permitido aunque esté pausado
+      const sw = frenos.get(haciaLaSala(d) ? llaveSobrante : llaveNormal);
+      return sw?.pausado ? sw : null;
+    };
+    const textoDeFreno = (sw: { motivo: string | null }) =>
+      (accion === "recibir" ? "La entrada está pausada" : "La salida está pausada")
+      + (sw.motivo ? `: ${sw.motivo}` : ".");
 
     const { data: devsRaw, error: devErr } = await admin
       .from("pedido_devolucion")
@@ -307,11 +327,27 @@ Deno.serve(async (req) => {
     // que tuvo el guion de rollback hasta que se le agregó esta mitad, y el
     // motivo de que esta pieza fuera lo primero de la lista.
     if (accion === "recibir") {
-      const aRecibir = devs.filter((d) => d.estado === "enviada" && d.id_traslado);
-      if (aRecibir.length === 0)
+      const listas = devs.filter((d) => d.estado === "enviada" && d.id_traslado);
+      if (listas.length === 0)
         return json({
           ok: false, codigo: "NADA_QUE_RECIBIR",
           error: "Ninguna de esas devoluciones tiene un movimiento despachado que recibir.",
+        }, 409);
+
+      // Lo pausado se aparta ANTES de tocar la fila o el sistema, y se dice —no
+      // se descarta en silencio—: quien apretó tiene que saber que su
+      // movimiento no entró y por qué.
+      const aRecibir: typeof listas = [];
+      for (const d of listas) {
+        const sw = frenadaPor(d);
+        if (sw) fallos.push({ clave: d.clave, error: textoDeFreno(sw) });
+        else aRecibir.push(d);
+      }
+      if (aRecibir.length === 0)
+        return json({
+          ok: false, codigo: "PAUSADO", accion: "recibir", simulacro,
+          error: fallos[0]?.error ?? "Estos movimientos están pausados.",
+          recibidas: 0, hechas, fallos, pendientes,
         }, 409);
 
       // La sesión es la del lado que RECIBE, y la sucursal es estado GLOBAL de
@@ -595,14 +631,27 @@ Deno.serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════════
     // PASO 1 · ENVIAR — sale del origen que el sentido nombra
     // ══════════════════════════════════════════════════════════════════════
-    const aEnviar = devs.filter((d) =>
+    const porSalir = devs.filter((d) =>
       d.estado === "aceptada"
       || (d.estado === "error" && !d.id_traslado && !(d.detalle as { revisar_a_mano?: boolean } | null)?.revisar_a_mano)
     );
-    if (aEnviar.length === 0)
+    if (porSalir.length === 0)
       return json({
         ok: false, codigo: "NADA_QUE_ENVIAR",
         error: "Ninguna de esas devoluciones está aceptada y lista para salir.",
+      }, 409);
+
+    const aEnviar: typeof porSalir = [];
+    for (const d of porSalir) {
+      const sw = frenadaPor(d);
+      if (sw) fallos.push({ clave: d.clave, error: textoDeFreno(sw) });
+      else aEnviar.push(d);
+    }
+    if (aEnviar.length === 0)
+      return json({
+        ok: false, codigo: "PAUSADO", accion: "enviar", simulacro,
+        error: fallos[0]?.error ?? "Estos movimientos están pausados.",
+        enviadas: 0, hechas, fallos, pendientes,
       }, 409);
 
     // Los datos del renglón: la presentación y el factor con los que el producto

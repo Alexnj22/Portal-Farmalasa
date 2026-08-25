@@ -24,7 +24,7 @@ import {
   searchBranchInvoices, WIDGET_INVOICE_PAGE,
 } from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
-import { cierreDelDiaYaSalio } from '../../data/cortes';
+import { salaConCajaAbierta } from '../../data/cortes';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -73,36 +73,39 @@ function isSameDay(dateStr) {
     today.getDate() === d.getDate();
 }
 
-/* ── Anular: sólo mientras la caja de ese día siga abierta ───────────────────
-   Pedido del usuario el 2026-08-24: si el cierre del día ya salió, ¿de dónde
-   sale el efectivo que hay que devolver, y en qué asiento queda esa venta? En
-   ninguno — el conteo ya se hizo, se declaró y se cuadró.
+/* ── Anular pide una CAJA abierta, no un día abierto ────────────────────────
+   Pedido del usuario el 2026-08-24, y corregido por él mismo esa misma noche.
 
-   Acá vivía un «período de gracia de 3 días» que no frenaba nada: sólo pedía un
-   comentario. Ofrecía exactamente lo que no se puede hacer —anular la venta de
-   anteayer— y por eso se fue entero.
+   Anular devuelve efectivo, y ese efectivo sale de la caja que esté abierta en
+   ese momento. Si la sala ya sacó su cierre del día, no hay ninguna: no hay de
+   dónde descontar, y la venta quedaría moviendo un número ya declarado.
 
-   El día está CERRADO si la sala ya emitió su cierre, o si la fecha ya pasó. Lo
-   decide la base con `cierre_del_dia_ya_salio`, la MISMA función que aplican el
-   trigger de la solicitud y la Edge Function que la ejecuta: una sola regla,
-   escrita una sola vez. Acá se pregunta sólo por HOY —una llamada por sala— y
-   el resto sale del calendario, que no es una regla de negocio que pueda
-   cambiar sin que nadie se entere.
+   El freno es del MOMENTO, no de la venta. La fecha de la factura no
+   interviene: una venta de hace tres días se anula sin problema mientras la
+   sala tenga caja abierta. La primera versión de esta regla lo leía al revés
+   —bloqueaba para siempre lo que ya tenía su cierre— y eso convertía «esperá a
+   mañana» en una promesa falsa.
 
-   `cierreHoy` tiene cuatro valores a propósito. 'cargando' y `null` (no se pudo
-   averiguar) NO son «el día está abierto»: ofrecer anular con esa duda es
-   prometer algo que el servidor va a rechazar, y decir que ya cerró sería
-   inventarlo. Los dos bloquean, y cada uno dice lo suyo. */
-function estadoDelDia(inv, cierreHoy) {
-  if (!isSameDay(inv.fecha)) return 'cerrado';
-  if (cierreHoy === true)    return 'cerrado';
-  if (cierreHoy === false)   return 'abierto';
-  return cierreHoy === 'cargando' ? 'cargando' : 'desconocido';
+   Acá vivía además un «período de gracia de 3 días» que no frenaba nada: sólo
+   pedía un comentario. Se fue entero.
+
+   Lo decide la base con `sala_con_caja_abierta`, la MISMA función que aplican
+   el trigger de la solicitud y la Edge Function que la ejecuta: una sola regla,
+   escrita una sola vez. Es una pregunta por SALA y por momento, no por factura.
+
+   `cajaAbierta` tiene cuatro valores a propósito. 'cargando' y `null` (no se
+   pudo averiguar) NO son «hay caja»: ofrecer anular con esa duda es prometer
+   algo que el servidor va a rechazar, y decir que ya cerró sería inventarlo.
+   Los dos bloquean, y cada uno dice lo suyo. */
+function estadoDeLaCaja(cajaAbierta) {
+  if (cajaAbierta === true)  return 'abierta';
+  if (cajaAbierta === false) return 'cerrada';
+  return cajaAbierta === 'cargando' ? 'cargando' : 'desconocido';
 }
 const MOTIVO_SIN_ANULAR = {
-  cerrado:     'El cierre del día de esta venta ya salió',
-  cargando:    'Verificando el cierre del día…',
-  desconocido: 'No se pudo verificar el cierre del día',
+  cerrada:     'La sala ya sacó su cierre del día — espera a mañana, o a que abra caja',
+  cargando:    'Verificando si la sala tiene caja abierta…',
+  desconocido: 'No se pudo verificar si la sala tiene caja abierta',
 };
 
 /* ── La ventana que el filtro de fecha admite ───────────────────────────────
@@ -250,9 +253,9 @@ function findTargetEmployee(employees) {
 }
 
 /* ─── Invoice detail ─────────────────────────────────────────────────────────── */
-function InvoiceDetail({ inv, onBack, onModify, employees, cierreHoy }) {
-  const estadoDia = estadoDelDia(inv, cierreHoy);
-  const seAnula   = estadoDia === 'abierto';
+function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
+  const estadoCaja = estadoDeLaCaja(cajaAbierta);
+  const seAnula    = estadoCaja === 'abierta';
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(true);
   const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
@@ -333,15 +336,15 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cierreHoy }) {
           )}
         </div>
 
-        {/* El cierre del día — la ventana en que esta venta se puede anular */}
+        {/* La caja de la sala — de ahí sale el efectivo que se devuelve */}
         <div className={`rounded-2xl px-3 py-2 flex items-start gap-2 shrink-0 ${
           seAnula ? 'bg-warning/10 border border-warning/30' : 'bg-danger/10 border border-danger/30'
         }`}>
           <Clock size={12} className={`mt-0.5 shrink-0 ${seAnula ? 'text-warning' : 'text-danger'}`} strokeWidth={2.5} />
           <p className={`text-label font-bold leading-snug ${seAnula ? 'text-warning-text' : 'text-danger'}`}>
             {seAnula
-              ? 'Se puede anular hasta que salga el cierre del día.'
-              : `${MOTIVO_SIN_ANULAR[estadoDia]}: ya no se puede anular. Los cambios de cliente, vendedor y forma de pago sí se pueden pedir.`}
+              ? 'La sala tiene caja abierta: se puede anular hasta que salga el cierre del día.'
+              : `${MOTIVO_SIN_ANULAR[estadoCaja]}: no hay caja de dónde descontar. Los cambios de cliente, vendedor y forma de pago sí se pueden pedir.`}
           </p>
         </div>
       </div>
@@ -356,20 +359,20 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cierreHoy }) {
 }
 
 /* ─── Type selector ─────────────────────────────────────────────────────────── */
-function TypeSelector({ inv, onSelect, onBack, employees, cierreHoy }) {
+function TypeSelector({ inv, onSelect, onBack, employees, cajaAbierta }) {
   const isCCF = inv.tipo_documento === 'CCF';
   const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
-  const estadoDia = estadoDelDia(inv, cierreHoy);
-  const seAnula   = estadoDia === 'abierto';
+  const estadoCaja = estadoDeLaCaja(cajaAbierta);
+  const seAnula    = estadoCaja === 'abierta';
 
   const types = [
     {
       key: 'annul',     icon: Ban,       label: 'Anulación de factura',
       // Los otros tres cambios NO se apagan con el cierre: cambiar el cliente,
       // el vendedor o la forma de pago no mueve el efectivo de la caja.
-      desc: !seAnula ? MOTIVO_SIN_ANULAR[estadoDia]
+      desc: !seAnula ? MOTIVO_SIN_ANULAR[estadoCaja]
           : isCCF   ? 'CCF — requiere nota de crédito'
-          : 'Hasta que salga el cierre del día',
+          : 'Hasta que la sala saque su cierre del día',
       disabled: !seAnula,
       color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30',   iconBg: 'bg-danger/10',
     },
@@ -416,23 +419,24 @@ function TypeSelector({ inv, onSelect, onBack, employees, cierreHoy }) {
 }
 
 /* ─── Annulment form ─────────────────────────────────────────────────────────── */
-function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, cierreHoy }) {
+function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, cajaAbierta }) {
   const [reason,      setReason]      = useState('');
   const [comment,     setComment]     = useState('');
   const [ccfAck,      setCcfAck]      = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const estadoDia       = estadoDelDia(inv, cierreHoy);
-  const seAnula         = estadoDia === 'abierto';
+  const estadoCaja      = estadoDeLaCaja(cajaAbierta);
+  const seAnula         = estadoCaja === 'abierta';
   const isCCF           = inv.tipo_documento === 'CCF';
   const ccfNotSameDay   = isCCF && !isSameDay(inv.fecha);
   const ccfSameDay      = isCCF && isSameDay(inv.fecha);
   const isCreditPay     = (inv.tipo_pago || '').toLowerCase() === 'credito';
   // El otro motivo para exigir comentario —estar fuera del período de gracia—
-  // se fue con el período: hoy una venta de otro día no llega hasta acá.
+  // se fue con el período. La antigüedad de la venta ya no dice nada: lo que
+  // manda es si la sala tiene caja abierta ahora.
   const commentRequired = ccfNotSameDay;
-  // El freno del cierre va PRIMERO: si el día cerró mientras el formulario
+  // El freno de la caja va PRIMERO: si la sala cerró mientras el formulario
   // estaba abierto, no hay nada que llenar que lo destrabe.
   const canSubmit       = seAnula && reason && (!commentRequired || comment.trim()) && (!ccfNotSameDay || ccfAck);
   const vendor          = employees.find(e => String(e.code) === String(inv.cod_vendedor));
@@ -478,17 +482,18 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* El día cerró. Se puede llegar acá de dos maneras: entrando con el
-            cierre ya emitido (el selector lo apaga, pero el título de la vista
-            se puede abrir por otro camino) o teniéndolo abierto en el momento
-            en que la sala corta. En las dos, decirlo acá evita llenar un
-            formulario que la base va a rechazar. */}
+        {/* La sala no tiene caja abierta. Se puede llegar acá de dos maneras:
+            entrando con el cierre ya emitido (el selector lo apaga, pero la
+            vista se puede abrir por otro camino) o teniendo el formulario
+            abierto en el momento en que la sala corta. En las dos, decirlo acá
+            evita llenar algo que la base va a rechazar — y decir CUÁNDO volver,
+            porque esto no es definitivo: mañana la sala abre y entra. */}
         {!seAnula && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-danger/10 border border-danger/40">
             <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-label font-bold text-danger-text leading-snug">
-              {MOTIVO_SIN_ANULAR[estadoDia]}: la anulación ya no descuenta de la caja de ese día.
-              Si la venta está mal, hay que resolverlo por la vía contable.
+              {MOTIVO_SIN_ANULAR[estadoCaja]}: no hay caja de dónde descontar el efectivo.
+              Vuelve mañana, o cuando la sucursal tenga una caja abierta.
             </p>
           </div>
         )}
@@ -525,9 +530,9 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         )}
         {/* Acá iba «Factura fuera del plazo (N días)». Era el aviso del período
             de gracia: informaba que la venta estaba vencida y dejaba pedirla
-            igual con un motivo detallado. Hoy una venta de otro día no llega
-            hasta este formulario, así que el aviso decía algo que ya no puede
-            pasar — lo reemplaza el bloque del cierre, arriba. */}
+            igual con un motivo detallado. La antigüedad dejó de decir nada —lo
+            que manda es si la sala tiene caja abierta—, así que el aviso hablaba
+            de una regla que ya no existe. Lo reemplaza el bloque de arriba. */}
 
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
@@ -955,12 +960,12 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const [focused,     setFocused]     = useState(null);
   const [reloadKey,   setReloadKey]   = useState(0);
   const [successInfo, setSuccessInfo] = useState({ type: 'annul', supervisor: '' });
-  /* ¿Ya salió el cierre del día en esta sala? Una sola pregunta por sala, no
-     una por factura: el resto de la lista es de días anteriores, y ésos están
-     cerrados por calendario (ver `estadoDelDia`). Arranca en 'cargando' y no en
-     `false` a propósito — `false` significa «el día está abierto», y afirmarlo
-     antes de preguntar ofrecería anular durante el primer parpadeo. */
-  const [cierreHoy,   setCierreHoy]   = useState('cargando');
+  /* ¿La sala tiene una caja abierta ahora? Una sola pregunta por sala y no una
+     por factura: la respuesta no depende de qué venta se mire, sino del momento
+     (ver `estadoDeLaCaja`). Arranca en 'cargando' y no en `true` a propósito —
+     `true` significa «hay caja», y afirmarlo antes de preguntar ofrecería
+     anular durante el primer parpadeo. */
+  const [cajaAbierta, setCajaAbierta] = useState('cargando');
 
   /* Ámbito de la consulta: el mes en curso, o el día elegido en el filtro. Se
      resuelve en el servidor — antes el filtro de fecha se aplicaba en el
@@ -1079,19 +1084,17 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
     return () => { cancelado = true; clearTimeout(t); };
   }, [activeBranchId, ambito, search, buildTokens, reloadKey]);
 
-  /* El cierre del día de ESTA sala. Se vuelve a preguntar al cambiar de sala y
-     en cada recarga del widget (`reloadKey`), que es lo que corre después de
-     enviar una solicitud: si el cierre salió mientras el modal estaba abierto,
-     la próxima vuelta ya lo sabe. No se sondea cada minuto — el modal es
-     efímero, y la base rechaza igual si se cuela una. */
+  /* La caja de ESTA sala. Se vuelve a preguntar al cambiar de sala y en cada
+     recarga del widget (`reloadKey`), que es lo que corre después de enviar una
+     solicitud: si la sala cerró mientras el modal estaba abierto, la próxima
+     vuelta ya lo sabe. No se sondea cada minuto — el modal es efímero, y la
+     base rechaza igual si se cuela una. */
   useEffect(() => {
-    if (!activeBranchId) { setCierreHoy('cargando'); return undefined; }
+    if (!activeBranchId) { setCajaAbierta('cargando'); return undefined; }
     let cancelado = false;
-    setCierreHoy('cargando');
-    const hoy = svToday();
-    const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    cierreDelDiaYaSalio(activeBranchId, iso)
-      .then((r) => { if (!cancelado) setCierreHoy(r); });
+    setCajaAbierta('cargando');
+    salaConCajaAbierta(activeBranchId)
+      .then((r) => { if (!cancelado) setCajaAbierta(r); });
     return () => { cancelado = true; };
   }, [activeBranchId, reloadKey]);
 
@@ -1118,7 +1121,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
     [invoices],
   );
 
-  const sharedProps = { user, activeBranch, activeBranchId, employees, appendAuditLog, cierreHoy };
+  const sharedProps = { user, activeBranch, activeBranchId, employees, appendAuditLog, cajaAbierta };
 
   if (!activeBranchId) {
     return (
@@ -1152,10 +1155,10 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   if (view === 'pay_change'   && focused) return <PaymentChangeForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'vendor_change'&& focused) return <VendorChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} codigosVistos={codigosVistos} {...sharedProps} />;
   if (view === 'client_change'&& focused) return <ClientChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
-  if (view === 'type_select'  && focused) return <TypeSelector inv={focused} onBack={() => setView(prevView)} onSelect={key => setView(key)} employees={employees} cierreHoy={cierreHoy} />;
+  if (view === 'type_select'  && focused) return <TypeSelector inv={focused} onBack={() => setView(prevView)} onSelect={key => setView(key)} employees={employees} cajaAbierta={cajaAbierta} />;
   if (view === 'detail'       && focused) return (
     <InvoiceDetail inv={focused} onBack={() => { setView('list'); setFocused(null); }}
-      onModify={() => { setPrevView('detail'); setView('type_select'); }} employees={employees} cierreHoy={cierreHoy} />
+      onModify={() => { setPrevView('detail'); setView('type_select'); }} employees={employees} cajaAbierta={cajaAbierta} />
   );
 
   /* ── Lista ── */

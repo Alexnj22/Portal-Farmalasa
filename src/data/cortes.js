@@ -231,28 +231,33 @@ export async function fetchEventosDelCorte(corteId) {
 }
 
 /**
- * ¿El cierre del día de esa sala ya salió?
+ * ¿Esa sala tiene una caja abierta ahora?
  *
  * La usa el widget de solicitudes de facturación para no ofrecer una anulación
- * que la base va a rechazar. La regla vive en la función `cierre_del_dia_ya_salio`
- * de Postgres —el trigger de la solicitud y la Edge Function que la aplica
- * llaman a esa MISMA función—, así que acá no se rearma: se pregunta.
+ * que la base va a rechazar: anular devuelve efectivo, y ese efectivo sale de
+ * la caja que esté abierta en ese momento.
+ *
+ * La regla vive en `sala_con_caja_abierta` de Postgres —el trigger de la
+ * solicitud y la Edge Function que la aplica llaman a esa MISMA función—, así
+ * que acá no se rearma: se pregunta. Adentro se deduce del cierre del día, que
+ * es lo único que el portal captura: la sala tiene caja abierta si hoy todavía
+ * no sacó su Z.
  *
  * Va por RPC y no leyendo `cortes_caja` porque su policy de SELECT exige el
  * permiso del módulo `cortes_caja`, que sólo tienen 9 de los 24 cargos. Quien
  * pide una anulación puede no tenerlo, y esa lectura no fallaría: devolvería
- * cero filas, o sea «el día está abierto». La función es SECURITY DEFINER y
- * contesta un booleano.
+ * cero filas, o sea «no hay cierre», o sea «hay caja abierta». La función es
+ * SECURITY DEFINER y contesta un booleano.
  *
  * Devuelve `true`/`false`, o **`null` si no se pudo averiguar**. Ese tercer
- * valor existe a propósito: un error de red no es «el día está abierto» ni «el
- * día está cerrado», y quien llama tiene que poder decir «no se pudo verificar»
- * en vez de afirmar cualquiera de las dos.
+ * valor existe a propósito: un error de red no es «hay caja» ni «no hay caja»,
+ * y quien llama tiene que poder decir «no se pudo verificar» en vez de afirmar
+ * cualquiera de las dos.
  */
-export async function cierreDelDiaYaSalio(branchId, fecha) {
-    const { data, error } = await supabase.rpc('cierre_del_dia_ya_salio', {
-        p_branch_id: Number(branchId), p_fecha: fecha,
+export async function salaConCajaAbierta(branchId) {
+    const { data, error } = await supabase.rpc('sala_con_caja_abierta', {
+        p_branch_id: Number(branchId),
     });
-    if (error) { console.error('cortes: cierreDelDiaYaSalio failed:', error.message); return null; }
+    if (error) { console.error('cortes: salaConCajaAbierta failed:', error.message); return null; }
     return data === true;
 }

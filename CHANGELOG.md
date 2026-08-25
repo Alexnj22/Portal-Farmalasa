@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.750.2 — Anular pide una caja abierta, no un día abierto
+
+Corrección de v2.748.0, el mismo día. Ahí el freno era de la **venta**: una vez
+que salía el cierre de su día, esa factura no se anulaba nunca más. El usuario
+lo corrigió al pedir el texto del aviso —*«espera a mañana para anularlo, o
+cuando esté una caja abierta en la sucursal»*— y esa frase describe otra regla.
+
+**El freno es del MOMENTO, no de la venta.** Lo que hace falta para anular es
+que la sala tenga una **caja abierta ahora**, porque de esa caja sale el
+efectivo que se devuelve. La fecha de la factura no interviene — que es lo que
+el usuario ya había dicho («no importa si la factura es de hace 2 o 3 días») y
+que la regla anterior leía justo al revés.
+
+Consecuencia deliberada: **una venta vieja se puede anular mientras haya caja
+abierta**. Verificado sin escribir nada — una factura de Salud 1 del 20-ago
+pasa el trigger hoy, porque Salud 1 todavía no cerró.
+
+**Y el aviso cambió de tono, que era el punto.** Antes decía «resolvelo por la
+vía contable», o sea *nunca más*. Ahora dice **cuándo volver**: «Espera a
+mañana —o a que la sala abra caja— para anularla». Un «no se puede» a secas se
+lee como definitivo, y acá no lo es.
+
+**Cómo se sabe que hay una caja abierta.** No existe un registro de apertura: lo
+único que el portal captura es el cierre. Así que se deduce del cierre, y se
+puede porque el cierre es **definitivo** — verificado sobre los 336 cortes
+capturados: **no hay ni un corte parcial con hora posterior al Z de su día**. El
+Z es siempre el último evento de la sala. Entonces: hay caja abierta si esa sala
+todavía no sacó su cierre de hoy.
+
+Dos límites conocidos, escritos para que nadie los descubra de nuevo:
+
+- **La madrugada.** Entre medianoche y la apertura, «hoy» todavía no tiene Z y
+  esto contesta «abierta» aunque la sala esté con la persiana abajo. No se
+  inventa un horario para taparlo: el portal no tiene la hora de apertura de
+  cada sala, y un horario inventado fallaría distinto en cada una.
+- **Una sala que deje de emitir su Z** se leería como abierta para siempre. La
+  falla acá es hacia ABIERTO, al revés que en v2.748.0 — es la consecuencia
+  inevitable de deducir «está abierta» de la ausencia de un cierre. Lo vigila
+  `gate:eficiencia`, que mide el cron de cortes.
+
+La función vieja `cierre_del_dia_ya_salio` se borró entera. Dos funciones que
+contestan lo mismo de dos maneras distintas es cómo una se queda vieja sin que
+nadie lo note.
+
 ## v2.750.1 — El código del sobrante, que quedó fuera del commit anterior
 
 v2.750.0 se llevó el changelog y la versión, pero no los cinco archivos que

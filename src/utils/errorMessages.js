@@ -81,11 +81,12 @@ const REGLAS = [
     // sin leer un error de Postgres.
     [/FACTURA_ANULADA/i,
         'Esa factura ya está anulada. No se le pueden pedir cambios.'],
-    // El cierre del día ya salió: la caja de esa venta se contó, se declaró y se
-    // cuadró, así que anularla ya no descuenta de ningún lado. Se nombra la
-    // salida —la vía contable— porque el problema no desaparece por avisarlo.
-    [/CORTE_CERRADO/i,
-        'El cierre del día de esa venta ya salió, así que no se puede anular. Resolvelo por la vía contable.'],
+    // La sala ya sacó su cierre del día: no hay caja abierta de dónde descontar
+    // el efectivo que se devuelve. NO es un callejón sin salida —mañana la sala
+    // abre y la anulación entra—, así que el mensaje dice cuándo volver y no
+    // sólo que no se puede. Un «no se puede» a secas se lee como definitivo.
+    [/CAJA_CERRADA/i,
+        'Esa sala ya sacó su cierre del día, así que no hay caja de dónde descontar. Espera a mañana —o a que la sala abra caja— para anularla.'],
     [/approval_requests_una_pendiente_por_factura|una_pendiente_por_factura/i,
         'Esa factura ya tiene una solicitud pendiente. Espera a que se resuelva.'],
     [/FACTURA_NO_EXISTE/i,

@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
     // ── id del portal → id del ERP ───────────────────────────────────────
     const { data: factura, error: facErr } = await admin
       .from("sales_invoices")
-      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento, fecha")
+      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento")
       .eq("id", meta.invoice_id)
       .maybeSingle();
     if (facErr) throw facErr;
@@ -210,33 +210,6 @@ Deno.serve(async (req) => {
     // y pendiente ante Hacienda, que es justo el caso que hay que terminar.
     if (estaAnulada(factura.estado) && !esAnulacion)
       return json({ ok: false, error: "La factura ya está anulada." }, 409);
-
-    /* ── El cierre del día, otra vez: acá y no sólo al pedirla ───────────────
-       El trigger `validar_solicitud_facturacion` ya rechaza una anulación cuya
-       caja cerró, pero eso se mide cuando la SALA pide — y quien aplica es el
-       supervisor, más tarde. Entre las dos cosas la sala saca su Z.
-
-       No es hipotético: la única solicitud pendiente medida el 2026-08-24 se
-       creó a las 18:54 y el cierre de esa sala salió a las 19:02. Ocho minutos.
-       Sin este chequeo, aprobarla al día siguiente habría revertido en la caja
-       un efectivo que ya se contó, se declaró y se cuadró — que es exactamente
-       lo que la regla existe para impedir.
-
-       Va antes de abrir la sesión del sistema de origen y antes de tocar nada:
-       el arriendo tomado arriba lo suelta el `finally`, salga como salga. */
-    if (esAnulacion) {
-      const { data: diaCerrado, error: cierreErr } = await admin
-        .rpc("cierre_del_dia_ya_salio", {
-          p_branch_id: factura.branch_id,
-          p_fecha: factura.fecha,
-        });
-      if (cierreErr) throw cierreErr;
-      if (diaCerrado)
-        return json({
-          ok: false,
-          error: "El cierre del día de esa venta ya salió, así que la anulación no se puede aplicar. Rechazá la solicitud y resolvelo por la vía contable.",
-        }, 409);
-    }
 
     const erpId = String(factura.erp_invoice_id);
 
@@ -264,6 +237,34 @@ Deno.serve(async (req) => {
         ok: false,
         error: "No se pudo ubicar la sucursal de la factura, así que no se toca.",
       }, 422);
+
+    /* ── ¿La sala tiene una caja abierta AHORA? ──────────────────────────────
+       Anular devuelve efectivo, y ese efectivo sale de la caja que esté
+       abierta en ese momento. Si la sala ya sacó su cierre, no hay ninguna.
+
+       El trigger `validar_solicitud_facturacion` ya lo rechaza al PEDIRLA, pero
+       eso se mide cuando la sala pide — y quien aplica es el supervisor, más
+       tarde. En el medio la sala cierra.
+
+       No es hipotético: la única solicitud pendiente medida el 2026-08-24 se
+       creó a las 18:54 y el cierre de esa sala salió a las 19:02. Ocho minutos.
+
+       Y a diferencia del trigger, acá no es un callejón sin salida: la
+       solicitud sigue en pie y se puede aplicar mañana, cuando la sala vuelva a
+       abrir caja. Por eso el mensaje dice que espere, no que la rechace.
+
+       Va antes de abrir la sesión del sistema de origen y antes de tocar nada:
+       el arriendo tomado arriba lo suelta el `finally`, salga como salga. */
+    if (esAnulacion) {
+      const { data: cajaAbierta, error: cajaErr } = await admin
+        .rpc("sala_con_caja_abierta", { p_branch_id: factura.branch_id });
+      if (cajaErr) throw cajaErr;
+      if (!cajaAbierta)
+        return json({
+          ok: false,
+          error: `${mapa.nombre ?? "Esa sala"} ya sacó su cierre del día, así que no hay caja de dónde descontar. Espera a mañana —o a que la sala abra caja— y apruébala entonces.`,
+        }, 409);
+    }
 
     const cookie = await login();
 

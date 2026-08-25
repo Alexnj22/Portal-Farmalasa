@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.750.3 — El autovacuum de una tabla de seis filas deja de correr cada nueve minutos
+
+Lo único que quedó en pie del hallazgo «402 escrituras/h sobre 6 filas de
+`impresion_dispositivos`». Ese hallazgo estaba mal concluido —son **100% HOT**,
+así que ninguna de esas escrituras rehace una entrada de índice, y la tabla pesa
+152 kB— pero al medirlo apareció esto, que sí es real:
+
+| tabla | filas | updates/día | autovacuums/día |
+|---|---:|---:|---:|
+| `impresion_dispositivos` | 6 | 9.429 | **159** |
+| `session_activity` | 22 | 1.096 | **22** |
+
+**683 autovacuums en 4,3 días sobre seis filas: uno cada nueve minutos.**
+
+El disparador por defecto es `threshold 50 + 20% de las filas`, pensado para
+tablas grandes. Sobre SEIS filas da 50 + 1,2 = **51,2 tuplas muertas**, así que
+dispara cada 51 updates — medido, uno cada 59. La tabla es el latido de las seis
+cajas de impresión: se reescribe para siempre, y el autovacuum la persigue sin
+nada que ganar. Con 100% HOT es todavía menos necesario, porque el «page
+pruning» recupera el espacio dentro de la propia página al leerla.
+
+`threshold = 1000` en las dos deja el autovacuum en ~9/día y ~1/día contra 159 y
+22: una reducción del **94%**. No se apaga — se le saca la prisa. El congelado
+(`freeze_max_age`) corre por su cuenta y no se toca, así que la prevención de
+wraparound queda igual.
+
+**Dos tablas con el mismo patrón se dejaron en paz a propósito:**
+`http_request_queue` (155/día) y `subscription` (98/día) no son del portal, son
+de `pg_net` y de Realtime — ajustarle los parámetros a la tabla de una extensión
+es pelearse con quien la mantiene, y además su rotación es por INSERT/DELETE y no
+por update.
+
+Migración `20260825032302`, probada antes en el entorno de pruebas. El `ALTER
+TABLE … SET (…)` de parámetros de almacenamiento **no reescribe la tabla** —
+verificado: el `relfilenode` no cambia—, así que el lock es de un instante.
+
 ## v2.750.2 — Anular pide una caja abierta, no un día abierto
 
 Corrección de v2.748.0, el mismo día. Ahí el freno era de la **venta**: una vez

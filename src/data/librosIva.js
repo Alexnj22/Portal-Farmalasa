@@ -16,6 +16,7 @@
 import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
+import { registrarEgreso } from './egreso';
 // `client-zip` solo hace falta al apretar un botón, así que va por
 // `await import()` — regla de librerías pesadas de CLAUDE.md.
 let zipPromise = null;
@@ -50,6 +51,7 @@ export async function descargarPaqueteDteVenta(row) {
     const a = Object.assign(document.createElement('a'), { href: url, download: `${base}.zip` });
     a.click();
     URL.revokeObjectURL(url);
+    registrarEgreso('dte_venta', { formato: 'zip', filas: entradas.length, detalle: { documento: base } });
 }
 
 const params = (desde, hasta, branchId) => ({

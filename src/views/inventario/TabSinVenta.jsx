@@ -548,7 +548,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
             archivo = `stock_retenido_${slug}_${hoy}.csv`;
         }
 
-        exportCsv(headers, rows, archivo);
+        exportCsv(headers, rows, archivo, 'inventario_sin_venta');
         useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
             vista: mode, sucursal: suc, filtro: filterMode,
             busqueda: searchTerm || null, count: rows.length,

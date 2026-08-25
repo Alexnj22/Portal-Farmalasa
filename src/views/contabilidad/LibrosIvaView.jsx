@@ -29,6 +29,7 @@ import {
 } from '../../data/librosIva';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 
+import { registrarEgreso } from '../../data/egreso';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.
@@ -595,7 +596,7 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                         disabled={loading || filas.length === 0}
                         title={`Exportar los ${filas.length} documentos con retención de ${etiquetaMes(mes)} en CSV`}
                         onClick={() => exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(filas),
-                            `iva-retenido-sobre-ventas_${sufijoArchivo}.csv`)}>
+                            `iva-retenido-sobre-ventas_${sufijoArchivo}.csv`, 'libros_iva_retencion')}>
                         Exportar
                     </Button>
                 <div className="text-right">
@@ -831,7 +832,7 @@ async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
         agregar(tab, todo[tab], l => `${l.base}_${mes}.csv`);
 
     if (entradas.length === 0) return null;
-    return { blob: await downloadZip(entradas).blob(), nombre: `libros-iva_${mes}.zip` };
+    return { blob: await downloadZip(entradas).blob(), nombre: `libros-iva_${mes}.zip`, archivos: entradas.length };
 }
 
 export default function LibrosIvaView({ openModal }) {
@@ -1032,7 +1033,7 @@ export default function LibrosIvaView({ openModal }) {
 
     const exportar = () => {
         const libro = construirLibro(activeTab, datos, t);
-        if (libro) exportCsv(libro.headers, libro.rows, `${libro.base}_${sufijoArchivo}.csv`);
+        if (libro) exportCsv(libro.headers, libro.rows, `${libro.base}_${sufijoArchivo}.csv`, 'libros_iva');
     };
 
     // El armado vive a nivel de módulo (`armarPaqueteDelMes`); acá solo el
@@ -1053,6 +1054,7 @@ export default function LibrosIvaView({ openModal }) {
                 });
                 a.click();
                 URL.revokeObjectURL(a.href);
+                registrarEgreso('libros_iva', { formato: 'zip', filas: paquete.archivos ?? null, detalle: { mes, paquete: 'mes-completo' } });
             })
             .catch(e => setError(e?.message || 'No se pudo generar el paquete.'))
             .finally(() => setZipeando(false));

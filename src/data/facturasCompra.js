@@ -3,6 +3,7 @@
 import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
+import { registrarEgreso } from './egreso';
 // supabase-js lanza FunctionsHttpError con .message genérico
 // ("Edge Function returned a non-2xx status code") — el mensaje real que arma
 // la función (ej. "Máximo 300 documentos...") solo está en error.context
@@ -142,6 +143,7 @@ export async function downloadPurchaseDtePackage(row) {
     if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
 
     triggerDownload(await downloadZip(entradas).blob(), `${baseName}.zip`);
+    registrarEgreso('dte_compra', { formato: 'zip', filas: entradas.length, detalle: { documento: baseName } });
 }
 
 // ── Descarga masiva ────────────────────────────────────────────────────────
@@ -269,5 +271,12 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendi
     }
 
     if (incluidos === 0) throw new Error('No se pudo descargar ningún archivo.');
+    // La descarga masiva: se anota lo que de verdad entró al ZIP, no lo que se
+    // pidió. `total` e `incluidos` difieren cuando algún archivo no estaba, y
+    // para la línea base importa el que salió.
+    registrarEgreso('dte_compra', {
+        formato: 'zip', filas: incluidos,
+        detalle: { masiva: true, pedidos: total, fallidos: fallidos.length },
+    });
     return { total, incluidos, fallidos: fallidos.length };
 }

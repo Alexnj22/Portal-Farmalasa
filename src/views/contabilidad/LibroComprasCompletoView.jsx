@@ -326,6 +326,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                      num(totDecl.credito), '', '', '', '', ''],
                 ],
                 `libro-compras-declarable_${desde.slice(0, 7)}.csv`,
+                'libro_compras_declarable',
             );
             useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_DECLARABLE_EXPORT', mes, {
                 documentos: totDecl.docs, credito_fiscal: totDecl.credito,
@@ -366,6 +367,7 @@ export default function LibroComprasCompletoView({ openModal }) {
             // Con la extensión: sin ella el navegador guarda un archivo sin tipo
             // y Excel no lo abre con doble click.
             `libro-compras-completo_${desde.slice(0, 7)}.csv`,
+            'libro_compras_completo',
         );
         useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
             documentos: totales.docs, credito_fiscal: totales.credito,

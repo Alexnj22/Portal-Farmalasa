@@ -18,6 +18,8 @@
 // línea vacía que nadie ve en pantalla y que Excel lee como una fila más. En un
 // libro fiscal, una fila en blanco es una fila del libro.
 
+import { registrarEgreso } from '../data/egreso';
+
 function escapeCell(value) {
     if (value == null) return '';
     const str = String(value);
@@ -29,11 +31,19 @@ function escapeCell(value) {
  * los libros de IVA: los reportes que replican arrancan directo en datos, y una
  * fila de rótulos de más los desalinea contra el archivo con el que se comparan.
  *
+ * `modulo` NO es opcional: es lo que hace legible la línea base del registro de
+ * egreso (Fase 1 del blindaje). Si falta, el archivo se descarga igual —cortarle
+ * la descarga a alguien por un descuido de programación sería peor— pero el
+ * egreso queda anotado como `sin-declarar`, que es un hallazgo VISIBLE en la
+ * propia tabla en vez de un hueco silencioso. Una línea base con agujeros que
+ * nadie sospecha es peor que ninguna.
+ *
  * @param {string[]|null} headers
  * @param {Array<Array<string|number>>} rows
  * @param {string} filename
+ * @param {string} modulo  de dónde sale, en términos del portal (`libros_iva`, `personal`, …)
  */
-export function exportCsv(headers, rows, filename) {
+export function exportCsv(headers, rows, filename, modulo) {
     const blob = new Blob([buildCsvText(headers, rows)], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), {
         href: URL.createObjectURL(blob),
@@ -41,6 +51,13 @@ export function exportCsv(headers, rows, filename) {
     });
     a.click();
     URL.revokeObjectURL(a.href);
+
+    if (!modulo) console.error(`[exportCsv] "${filename}" se descargó sin declarar módulo.`);
+    registrarEgreso(modulo || 'sin-declarar', {
+        formato: 'csv',
+        filas: Array.isArray(rows) ? rows.length : null,
+        detalle: { archivo: filename },
+    });
 }
 
 /**

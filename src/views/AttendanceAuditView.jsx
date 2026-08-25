@@ -38,6 +38,7 @@ import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { registrarEgreso } from '../data/egreso';
 import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, isAutoPunch,
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
     from './asistencia/quincena';
@@ -1025,6 +1026,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     a.download = `quincena-${selectedQuincena}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    registrarEgreso('asistencia', { formato: 'csv', filas: rows.length - 1, detalle: { quincena: selectedQuincena } });
   }, [quincenaSummary, branchNameById, selectedQuincena]);
 
   // ── Group employees by branch ────────────────────────────────────────────

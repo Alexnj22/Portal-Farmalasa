@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.752.0 — Queda anotado lo que sale del portal
+
+Las **once salidas** del portal —los CSV, los ZIP de documentos, la planilla del
+banco— anotan de ahora en más quién se las llevó, de qué módulo y cuántas filas.
+Fase 1.2 del blindaje. **No bloquea nada**: es la línea base con la que la Fase 3
+va a elegir un techo, y sin ella cualquier umbral sería inventado.
+
+**El registro NO recibe quién exporta, y es la parte que no se podía saltear.**
+`export_log.employee_id` tiene que ser la **ficha** (`employees.id`), y el
+navegador conoce la **cuenta** (`auth.users.id`). Para **33 de las 42 personas**
+que usan el portal esos dos ids no son el mismo valor: entran por una cuenta
+`*@staff.local` ligada en `employee_auth_accounts`. Un `INSERT` que hubiera
+mandado `session.user.id` habría sido rechazado por la policy **justamente para
+la mayoría de la gente, y en silencio** — la línea base habría salido sesgada
+hacia las nueve personas cuyos ids coinciden, sin que nada fallara nunca. La
+firma la pone `registrar_egreso` leyendo `auth_employee_id()` adentro, que
+además es la regla de siempre: la autoría nunca viaja como parámetro.
+
+Verificado contra producción: un `INSERT` directo a `export_log` a nombre de otro
+devuelve **42501**, y el RPC rechaza tanto la llamada sin sesión que resuelva a
+una ficha como la que no declara módulo.
+
+**Dos cosas aparecieron al cablearlo, y valen más que el cableado:**
+
+1. **Cuatro salidas no usaban el `exportCsv` canónico** — se armaban el CSV a
+   mano. Entre ellas las dos más sensibles del portal: la **planilla del banco**
+   (nombre, banco y número de cuenta de cada persona) y el **directorio de
+   personal** (DUI, teléfono, fecha de nacimiento). Se les puso el registro donde
+   están; migrarlas al canónico es otra decisión y no se hace de paso, porque el
+   archivo del banco lo consume un banco y su formato no se toca al pasar.
+2. **La planilla anota `cuentas_visibles`.** Quien no puede aprobar se lleva los
+   números de cuenta como `****`. Sin ese dato las dos descargas se ven idénticas
+   en el registro y no lo son — y la diferencia es justo la que importa.
+
+`exportCsv` ahora pide el módulo. Si falta, el archivo **se descarga igual**
+—cortarle la descarga a alguien por un descuido de programación sería peor— pero
+el egreso queda anotado como `sin-declarar`. Es deliberado: un hallazgo visible
+en la propia tabla es mejor que un hueco silencioso, porque una línea base con
+agujeros que nadie sospecha es peor que ninguna.
+
+Los cuatro interruptores de `security_config` siguen en `observar`. Nada bloquea
+a nadie.
+
 ## v2.751.0 — Diez funciones dejan de ser alcanzables sin iniciar sesión
 
 La superficie `anon` baja de **24 funciones a 14**. Las que quedan son el

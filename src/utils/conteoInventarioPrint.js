@@ -848,7 +848,7 @@ export function exportAjustesConteo(conteo, items) {
         i.nota ?? '',
     ]);
     const suc = (conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_');
-    exportCsv(headers, rows, `Ajuste_${suc}_${String(conteo.id).slice(0, 8)}.csv`);
+    exportCsv(headers, rows, `Ajuste_${suc}_${String(conteo.id).slice(0, 8)}.csv`, 'conteo_inventario');
 }
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.

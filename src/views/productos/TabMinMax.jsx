@@ -50,6 +50,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 
+import { registrarEgreso } from '../../data/egreso';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
@@ -239,6 +240,9 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
     const blob = new Blob(['﻿' + [h.join(SEP), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
+    // Esta función es una SOMBRA del `exportCsv` canónico —mismo nombre, otra
+    // firma— así que no hereda su registro de egreso y hay que anotarlo acá.
+    registrarEgreso('minmax', { formato: 'csv', filas: sorted.length, detalle: { sucursal: sucursalName, bodega: isBodega } });
 }
 
 // ─── ABC × XYZ Matrix ────────────────────────────────────────────────────────

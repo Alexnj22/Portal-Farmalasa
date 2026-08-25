@@ -672,6 +672,7 @@ export const AREAS = [
             'src/hooks/useSyncMonitor.js', 'src/hooks/useBannerPortal.js',
             'src/utils/cajaNegra.js',
             'src/components/forms/FormAuditDetail.jsx',
+            'src/data/egreso.js',
         ],
         tablas: ['audit_logs', 'sync_log', 'sync_alert_log', 'backup_sync_log', 'orphan_objects_registry',
                  'security_config', 'export_log'],

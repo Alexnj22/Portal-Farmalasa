@@ -57,6 +57,7 @@ import CarrilCards from '../components/common/CarrilCards';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 import { SIN_ASIGNAR } from '../data/constants';
+import { registrarEgreso } from '../data/egreso';
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las sucursales' }];
 
 // Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
@@ -840,6 +841,7 @@ const StaffManagementView = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    registrarEgreso('personal', { formato: 'csv', filas: rows.length, detalle: { archivo: 'directorio' } });
   };
 
   // D3.9 (2026-07-27): esta barra estaba reescrita a mano. Los dos botones de

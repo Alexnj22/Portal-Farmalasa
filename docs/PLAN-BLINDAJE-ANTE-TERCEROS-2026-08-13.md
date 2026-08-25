@@ -225,14 +225,51 @@ Las dos últimas líneas de la tabla de arriba y la fila «anotar la salida prop
 están para que el resto signifique algo: **un control que sólo sabe decir que no
 es tan inútil como uno que sólo sabe decir que sí.**
 
-### Lo que falta de esta fase, y no es código de base
+### Las once salidas ya escriben en el registro (mismo día)
 
-- **Escribir en `export_log` desde cada exportación** (CSV, ZIP de DTE,
-  impresión masiva). La tabla existe y está vacía; hasta que alguien le escriba,
-  la línea base no empieza a acumularse.
-- **Un mes de datos.** El techo de la Fase 3.3 sale de ahí, y de ningún otro
-  lado: el §1.3 de abajo explica por qué un umbral ingenuo de volumen apagaría
-  el portal —`fetchAllRows` pagina 20,000+ filas como comportamiento normal—.
+Migración `20260825034152` + `src/data/egreso.js`.
+
+**El registro NO recibe quién exporta**, y es la parte que no se puede saltear:
+`export_log.employee_id` tiene que ser la **ficha** (`employees.id`) y el
+navegador conoce la **cuenta** (`auth.users.id`). Para **33 de las 42 personas**
+que usan el portal esos dos ids no son el mismo valor. Un `INSERT` que mandara
+`session.user.id` habría sido rechazado por la policy **justamente para la
+mayoría de la gente, y en silencio** — la línea base habría salido sesgada hacia
+las nueve personas cuyos ids coinciden, sin que nada fallara. La firma la pone
+`registrar_egreso` leyendo `auth_employee_id()` adentro.
+
+| salida | módulo |
+|---|---|
+| Libros de IVA (CSV) · retención sobre ventas · ZIP del mes | `libros_iva`, `libros_iva_retencion` |
+| Libro de compras completo · declarable | `libro_compras_completo`, `libro_compras_declarable` |
+| ZIP de un DTE de venta · de compra · la descarga masiva | `dte_venta`, `dte_compra` |
+| **Planilla del banco** | `planilla_banco` |
+| Directorio de personal | `personal` |
+| Asistencia por quincena | `asistencia` |
+| Mín·Máx · Sin venta · Ventas perdidas · Ajuste de conteo | `minmax`, `inventario_sin_venta`, `ventas_perdidas`, `conteo_inventario` |
+
+Dos cosas que aparecieron al cablearlo y que valen más que el cableado:
+
+1. **Cuatro de las salidas no usaban el `exportCsv` canónico** — se armaban el
+   CSV a mano, y entre ellas las dos más sensibles: la **planilla del banco**
+   (nombre, banco y número de cuenta) y el **directorio de personal** (DUI,
+   teléfono, fecha de nacimiento). Se les puso el registro donde están; migrarlas
+   al canónico es otra decisión, porque el archivo del banco lo consume un banco
+   y su formato no se toca de paso.
+2. **La planilla anota `cuentas_visibles`.** Quien no puede aprobar se lleva los
+   números de cuenta como `****`; sin ese dato las dos descargas se ven iguales
+   en el registro y no lo son.
+
+`exportCsv` ahora pide el módulo. Si falta, el archivo **se descarga igual**
+—cortarle la descarga a alguien por un descuido de programación sería peor— pero
+el egreso queda como `sin-declarar`, que es un hallazgo visible en la propia
+tabla en vez de un hueco silencioso.
+
+### Lo que falta de esta fase
+
+**Un mes de datos.** El techo de la Fase 3.3 sale de ahí, y de ningún otro lado:
+el §1.3 de abajo explica por qué un umbral ingenuo de volumen apagaría el portal
+—`fetchAllRows` pagina 20,000+ filas como comportamiento normal—.
 
 ---
 
@@ -493,7 +530,7 @@ diseño.
 ## Estado
 
 - [x] **Fase 0** — `set-employee-password`, `disable-employee-auth` · **aplicada y verificada el 2026-08-24** (v35 / v10)
-- [x] **Fase 1** — `security_config`, `export_log` **instalados y verificados el 2026-08-24** (`20260825033558`) · falta escribir el registro desde cada exportación y juntar la línea base
+- [x] **Fase 1** — `security_config`, `export_log` y las **once salidas cableadas**, verificados el 2026-08-24 (`20260825033558`, `20260825034152`) · falta juntar un mes de línea base
 - [ ] Fase 2A/2B/2C/2D — cierre de lecturas
 - [ ] Fase 3 — contención
 - [ ] Fase 4 — vigilancia

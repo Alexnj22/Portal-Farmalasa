@@ -24,6 +24,7 @@ import FilterBar from '../components/common/FilterBar';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 
+import { registrarEgreso } from '../data/egreso';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -490,6 +491,15 @@ const PayrollView = ({ openModal }) => {
         const a    = document.createElement('a');
         a.href = url; a.download = `planilla-banco-${activePeriod.name}.csv`; a.click();
         URL.revokeObjectURL(url);
+        // La salida más sensible del portal: nombre, banco y número de cuenta de
+        // cada persona. `cuentas_visibles` distingue quién se llevó los números
+        // de verdad de quién se llevó `****` — sin eso, las dos descargas se
+        // ven iguales en el registro y no lo son.
+        registrarEgreso('planilla_banco', {
+            formato: 'csv',
+            filas: filteredEntries.length,
+            detalle: { periodo: activePeriod?.name || null, cuentas_visibles: !!canApprove },
+        });
     };
 
     const isPaid     = activePeriod?.status === 'PAID';

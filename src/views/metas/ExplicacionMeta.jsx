@@ -48,11 +48,18 @@ const Paso = ({ n, titulo, monto, children }) => (
     </div>
 );
 
-export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto }) {
+// `datos` llega desde la vista cuando ésta ya pidió el cálculo de todas las
+// salas del mes (`explicarMetasPropuestas`), que es el camino normal: el
+// contexto de la tarjeta y este panel tienen que leer el MISMO objeto o pueden
+// contradecirse. Si no llega, el panel se lo pide para su sala sola al abrirse
+// — así el componente sigue sirviendo suelto.
+export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, datos = null }) {
     const [abierto, setAbierto] = useState(false);
-    const [d, setD] = useState(null);
+    const [propio, setPropio] = useState(null);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState(false);
+
+    const d = datos ?? propio;
 
     const alternar = () => {
         const nuevo = !abierto;
@@ -60,7 +67,7 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
         if (nuevo && !d && !cargando) {
             setCargando(true);
             explicarMetaPropuesta({ branchId, yearMonth })
-                .then((x) => { setD(x); setCargando(false); })
+                .then((x) => { setPropio(x); setCargando(false); })
                 .catch(() => { setError(true); setCargando(false); });
         }
     };
@@ -182,6 +189,19 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                             {coincide ? (
                                 <p className="text-micro font-black tabular-nums text-success-text pt-0.5 border-t border-border-card">
                                     = {formatMoney(d.recalculada)} — el mismo monto de arriba.
+                                </p>
+                            ) : d.ultimo_proyectado ? (
+                                /* Con un mes proyectado adentro, que los dos números
+                                   NO coincidan es lo esperable: la sala siguió
+                                   vendiendo desde que se guardó la propuesta, así que
+                                   la proyección se mueve sola. Pintarlo de alarma
+                                   enseñaría a ignorar la alarma justo el día que sea
+                                   de verdad — que es cuando los tres meses ya cerraron
+                                   y el número igual no da. */
+                                <p className="text-micro font-semibold text-content-3 tabular-nums pt-0.5 border-t border-border-card">
+                                    Hoy la cuenta da {formatMoney(d.recalculada)}: la propuesta se guardó en{' '}
+                                    {formatMoney(montoPropuesto)} y {ymLabelCorto(d.ym_ultimo)} siguió
+                                    vendiendo. Manda la guardada.
                                 </p>
                             ) : (
                                 <p className="text-micro font-semibold text-warning-text tabular-nums flex items-start gap-1 pt-0.5 border-t border-border-card">

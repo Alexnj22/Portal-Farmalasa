@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.756.2 — La tarjeta de Confirmar habla del mismo mes que la fórmula
+
+Reportado: *«en las cards me dice cerró jul, pero no cómo va a cerrar agosto, así
+que no entiendo»*. Exacto — y el arreglo de la v2.755.0 lo dejó a la vista sin
+tocarlo.
+
+El contexto de la tarjeta salía del **histórico**, que sólo tiene meses
+**cerrados**. Así que mientras la fórmula ya se calculaba contra agosto
+proyectado, la tarjeta seguía mostrando julio. Dos números distintos en la misma
+tarjeta, y ninguno de los dos estaba mal por su cuenta.
+
+Y había un segundo defecto debajo: los tres datos del contexto usaban **meses
+fijos**, no el mes de la tarjeta —«mismo mes del año pasado» salía siempre de
+`mes siguiente − 12` y «cerró» de `mes en curso − 1`—, pero el componente es el
+mismo para la sección del mes en curso y la del que viene. Una tarjeta del mes
+en curso mostraba el año pasado **del mes que viene**.
+
+Ahora los tres salen de la misma cuenta que hizo la propuesta:
+
+- **Mismo mes, año pasado** → el mes de ESA tarjeta, un año antes.
+- **Promedio** → los MISMOS tres meses que usó la fórmula, nombrados
+  («Promedio jun·jul·ago») y marcando cuando uno va proyectado. Antes eran «los
+  últimos 3 cerrados», que ya no son los mismos.
+- **Cerró jul** → **«Va cerrando ago 2026 · 98.3% de su meta de $41,155.66»**.
+  El verbo cambia según el mes haya cerrado o no: decir «cerró» de un mes en
+  curso es falso aunque el número sea correcto.
+
+`explicar_metas_propuestas(mes)` devuelve el cálculo de las 6 salas en **una**
+llamada, con la misma forma que la de una sola, y el panel «De dónde sale» ahora
+lo recibe ya cargado. Son 1 llamada en vez de 7, y —lo que importa— el contexto
+y el panel leen el **mismo objeto**, así que no pueden contradecirse. El color
+del porcentaje también viene del servidor (`metas_tramo_de_pct`): los umbrales
+viven en `metas_config` y derivarlos en el navegador era la tercera copia de la
+misma regla.
+
+**Y una alarma que habría empezado a mentir.** El panel compara el monto guardado
+contra el recalculado y avisa en ámbar si no coinciden — pensado para cazar «la
+fórmula cambió después de proponer». Con un mes proyectado adentro **la
+diferencia es lo esperable**: la sala sigue vendiendo, así que la proyección se
+mueve sola (medido: $1.71 en dos horas). Ese caso ahora se explica en gris —
+«hoy la cuenta da X, la propuesta se guardó en Y y agosto siguió vendiendo» — y
+el ámbar queda para lo que sí es un hallazgo: los tres meses cerrados y el número
+igual no da. Una alarma que suena siempre enseña a ignorarla.
+
 ## v2.756.1 — El portal dice vitrina o estante, nunca anaquel
 
 Pedido del usuario: *«no uses nunca anaquel, solo Vitrina / Estante. audita

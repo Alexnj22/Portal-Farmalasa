@@ -10,7 +10,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
-    fetchMetasRows, fetchMetasHistorico, generarPropuestas,
+    fetchMetasRows, fetchMetasHistorico, explicarMetasPropuestas, generarPropuestas,
     confirmarMeta, confirmarMetasLote, aprobarMeta, devolverMeta,
     fetchAutorizadores, aprobarMetaPorAutorizacion,
     aprobarMetasLote, aprobarMetasPorAutorizacionLote,
@@ -41,6 +41,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
 
     const [rows, setRows] = useState([]);
     const [historico, setHistorico] = useState([]);
+    // El cálculo de la propuesta por mes y por sala: `{ [ym]: { [branch_id]: … } }`.
+    // Es la MISMA fuente que el panel «De dónde sale», y por eso el contexto de
+    // la tarjeta no puede decir un mes distinto del que usó la fórmula.
+    const [calc, setCalc] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     // id → pasos de ajuste sobre la propuesta. Se guardan los PASOS y no el
@@ -59,10 +63,22 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         let alive = true;
         setLoading(true);  
         setError(null);
-        Promise.all([fetchMetasRows([ymActual, ymSig]), fetchMetasHistorico()])
-            .then(([r, h]) => {
+        // Dos meses y dos llamadas: el cálculo de un mes depende del mes, así
+        // que el contexto de una tarjeta de agosto y el de una de septiembre no
+        // son el mismo objeto ni miran los mismos meses base.
+        Promise.all([
+            fetchMetasRows([ymActual, ymSig]),
+            fetchMetasHistorico(),
+            explicarMetasPropuestas(ymActual),
+            explicarMetasPropuestas(ymSig),
+        ])
+            .then(([r, h, cAct, cSig]) => {
                 if (!alive) return;
-                setRows(r); setHistorico(h); setAjustes({});
+                const porMes = {};
+                for (const [ym, lista] of [[ymActual, cAct], [ymSig, cSig]]) {
+                    porMes[ym] = Object.fromEntries((lista || []).map((x) => [x.branch_id, x]));
+                }
+                setRows(r); setHistorico(h); setCalc(porMes); setAjustes({});
                 // Los paneles abiertos apuntan a filas que acaban de cambiar de
                 // estado: dejarlos abiertos sería ofrecer una acción sobre algo
                 // que ya no está.
@@ -84,29 +100,17 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         return () => { alive = false; };
     }, []);
 
-    // Contexto por sala, derivado del histórico ya calculado: el mismo mes del
-    // año pasado, el promedio de los últimos 3 meses cerrados y en cuánto cerró
-    // el mes pasado — que es el dato con el que uno decide si el monto propuesto
-    // es alcanzable o no.
-    const ymPasado = ymSumar(ymActual, -1);
-    const contexto = useMemo(() => {
-        const porSala = {};
-        const ult3 = [ymSumar(ymActual, -1), ymSumar(ymActual, -2), ymSumar(ymActual, -3)];
-        for (const h of historico) {
-            const c = (porSala[h.branch_id] ||= { anioPasado: null, tres: [] });
-            if (h.year_month === ymSumar(ymSig, -12)) c.anioPasado = Number(h.venta_total);
-            if (ult3.includes(h.year_month)) c.tres.push(Number(h.venta_total));
-            if (h.year_month === ymPasado) {
-                c.pctPasado = h.pct_cumplimiento != null ? Number(h.pct_cumplimiento) : null;
-                c.tierPasado = h.bono_tier || null;
-                c.metaPasada = h.monto_meta != null ? Number(h.monto_meta) : null;
-            }
-        }
-        for (const c of Object.values(porSala)) {
-            c.prom3 = c.tres.length ? c.tres.reduce((s, v) => s + v, 0) / c.tres.length : null;
-        }
-        return porSala;
-    }, [historico, ymActual, ymSig, ymPasado]);
+    // El histórico indexado por sala Y mes, para que cada tarjeta pregunte por
+    // SU mes. Antes había un solo juego de meses para las dos secciones: el
+    // «mismo mes del año pasado» salía siempre de `ymSig - 12` y el «cerró» de
+    // `ymActual - 1`, así que una tarjeta del mes en curso mostraba el año
+    // pasado del mes que VIENE. Los otros dos datos ya no salen de acá —
+    // vienen de `calc`, que es la misma cuenta que hizo la propuesta.
+    const histIdx = useMemo(() => {
+        const m = new Map();
+        for (const h of historico) m.set(`${h.branch_id}|${h.year_month}`, h);
+        return m;
+    }, [historico]);
 
     // El buscador de la barra es UNO solo para las tres pestañas, así que acá
     // también tiene que filtrar: si no, escribir el nombre de una sala no
@@ -292,7 +296,12 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
 
     const FilaMeta = ({ r }) => {
         const es = ESTADO_CFG[r.estado] || ESTADO_CFG.propuesta;
-        const ctx = contexto[r.branch_id] || {};
+        // El cálculo de ESTA tarjeta: el de su mes y su sala.
+        const c = calc[r.year_month]?.[r.branch_id] || null;
+        const anioPasado = histIdx.get(`${r.branch_id}|${ymSumar(r.year_month, -12)}`);
+        const meses = c?.meses_base || [];
+        const promMeses = meses.length ? Number(c.suma_venta) / meses.length : null;
+        const hayProyectado = meses.some((m) => m.proyectado);
         const editable = canEdit && ['propuesta', 'devuelta'].includes(r.estado);
         // En «espera aprobación» el monto también se puede mover: quien aprueba
         // —o quien registra la autorización del gerente— puede ajustarlo antes
@@ -324,29 +333,50 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 )}
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
+                    {/* El mismo mes DE ESTA tarjeta, un año antes — no un mes
+                        fijo: la sección del mes en curso y la del que viene
+                        comparten componente. */}
                     <div>
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Mismo mes, año pasado</p>
-                        <p className="text-body-sm font-black tabular-nums">{ctx.anioPasado != null ? formatMoney(ctx.anioPasado) : '—'}</p>
+                        <p className="text-body-sm font-black tabular-nums">
+                            {anioPasado?.venta_total != null ? formatMoney(anioPasado.venta_total) : '—'}
+                        </p>
                     </div>
+                    {/* Los MISMOS tres meses que usó la fórmula, no «los últimos
+                        3 cerrados»: con el mes en curso adentro, un promedio de
+                        otro trío explicaría una propuesta que no es ésta. */}
                     <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Promedio 3 meses</p>
-                        <p className="text-body-sm font-black tabular-nums">{ctx.prom3 != null ? formatMoney(ctx.prom3) : '—'}</p>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                            {meses.length ? `Promedio ${meses.map((m) => ymLabelCorto(m.ym).split(' ')[0]).join('·')}` : 'Promedio 3 meses'}
+                        </p>
+                        <p className="text-body-sm font-black tabular-nums">
+                            {promMeses != null ? formatMoney(promMeses) : '—'}
+                            {hayProyectado && <span className="text-content-3 font-semibold"> · uno proyectado</span>}
+                        </p>
                     </div>
-                    {/* En cuánto cerró el mes pasado: es con lo que uno decide si
-                        el monto propuesto es alcanzable. Sin meta ese mes no hay
-                        porcentaje que mostrar, y decirlo es más honesto que un
-                        guion suelto. */}
+                    {/* En cuánto viene el mes anterior: es con lo que uno decide
+                        si el monto propuesto es alcanzable, y es EXACTAMENTE el
+                        mes del que sale el factor. Si todavía no cerró se dice
+                        así: «cerró» sobre un mes en curso sería falso, y era lo
+                        que confundía — la tarjeta de septiembre hablaba de julio
+                        mientras la fórmula ya contaba agosto. */}
                     <div className="col-span-2">
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                            Cerró {ymLabelCorto(ymPasado)}
+                            {c?.ym_ultimo
+                                ? `${c.ultimo_proyectado ? 'Va cerrando' : 'Cerró'} ${ymLabelCorto(c.ym_ultimo)}`
+                                : 'Mes anterior'}
                         </p>
-                        {ctx.pctPasado != null ? (
+                        {c?.pct_ultimo != null ? (
                             <p className="text-body-sm font-black tabular-nums">
-                                <span className={TRAMO_CFG[ctx.tierPasado]?.textCls || ''}>{formatPct(ctx.pctPasado)}</span>
-                                <span className="text-content-3 font-semibold"> de su meta de {formatMoney(ctx.metaPasada)}</span>
+                                <span className={TRAMO_CFG[c.tramo_ultimo]?.textCls || ''}>{formatPct(c.pct_ultimo)}</span>
+                                {c.meta_ultimo != null && (
+                                    <span className="text-content-3 font-semibold"> de su meta de {formatMoney(c.meta_ultimo)}</span>
+                                )}
                             </p>
                         ) : (
-                            <p className="text-body-sm font-semibold text-content-3">Ese mes no tuvo meta</p>
+                            <p className="text-body-sm font-semibold text-content-3">
+                                {c ? 'Ese mes no tuvo meta' : '—'}
+                            </p>
                         )}
                     </div>
                     {r.monto_propuesto != null && (
@@ -357,6 +387,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 branchId={r.branch_id}
                                 yearMonth={r.year_month}
                                 montoPropuesto={r.monto_propuesto}
+                                datos={c}
                             />
                         </div>
                     )}

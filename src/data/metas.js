@@ -114,6 +114,25 @@ export async function explicarMetaPropuesta({ branchId, yearMonth }) {
     return data ?? null;
 }
 
+// El mismo desglose, pero de TODAS las salas de un mes y en una sola llamada.
+// Cada elemento tiene la forma exacta del de arriba más `branch_id`, así que
+// entra tal cual donde entraba aquél.
+//
+// Existe porque el contexto de la tarjeta de Confirmar —el promedio de los
+// meses base y en cuánto viene cerrando el anterior— salía del histórico, que
+// sólo tiene meses CERRADOS: la tarjeta de septiembre decía «Cerró jul» mientras
+// la fórmula ya contaba agosto proyectado. Leyendo los dos del mismo objeto no
+// se pueden contradecir, y de paso son 1 llamada en vez de 6.
+export async function explicarMetasPropuestas(yearMonth) {
+    const { data, error } = await supabase.rpc('explicar_metas_propuestas', {
+        p_year_month: yearMonth,
+    });
+    if (error) throw error;
+    // Sin permiso el RPC devuelve NULL; para el llamador es «no hay contexto»,
+    // no una lista vacía que se lea como «esta sala no tiene meses base».
+    return Array.isArray(data) ? data : [];
+}
+
 // Aprueba varias de una vez, en UNA transacción: si alguna falla no quedan la
 // mitad oficiales. Igual que `confirmarMetasLote`, del otro lado del flujo.
 export async function aprobarMetasLote(ids) {

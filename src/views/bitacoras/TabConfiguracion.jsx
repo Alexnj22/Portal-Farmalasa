@@ -10,7 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import EditorDeHorarios from '../../components/bitacoras/EditorDeHorarios';
 import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
-import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rangoDeLaSucursal, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -38,6 +38,13 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 const ICONO = {
     sala_ventas: Store, bodega: Warehouse, refrigerador: Snowflake,
     vitrinas: LayoutPanelTop, servicio_sanitario: Toilet,
+};
+
+/** «07:00» → «7:00 AM», para decir el horario en el texto de ayuda. */
+const rotularHora12 = (hm) => {
+    const [h, m] = String(hm || '').split(':').map(Number);
+    if (Number.isNaN(h)) return '';
+    return `${h % 12 === 0 ? 12 : h % 12}:${String(m || 0).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 };
 
 /**
@@ -272,6 +279,12 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
  * habría duplicado la obligación a las vitrinas sin que nadie lo decidiera.
  */
 function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
+    // El horario de atención de la sucursal ya está cargado en el portal; de ahí
+    // salen las horas que se pueden elegir. Ofrecer de 5 AM a 10:30 PM en todas
+    // dejaba poner una lectura con el local cerrado — nadie la toma y el mes la
+    // cuenta como faltante todos los días.
+    const sucursal = useStaff(st => (st.branches || []).find(b => String(b.id) === String(branchId)));
+    const rango = useMemo(() => rangoDeLaSucursal(sucursal), [sucursal]);
     // La unión de los momentos que hoy existen en la sucursal, con la primera
     // hora que aparece. Después de guardar, todas las áreas quedan iguales —
     // que es el punto; antes de guardar puede haber diferencias, y mostrar la
@@ -322,12 +335,13 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
 
             <p className="text-label text-content-3">
                 Valen para todas las áreas: la vuelta se camina una sola vez.
+                {rango && ` Las horas van entre las que abre y cierra la sucursal (${rotularHora12(rango.abre)} a ${rotularHora12(rango.cierra)}).`}
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                <EditorDeHorarios tipo="franjas" filas={franjas}
+                <EditorDeHorarios tipo="franjas" filas={franjas} rango={rango}
                     onCambiar={puedeEditar ? setFranjas : undefined} />
-                <EditorDeHorarios tipo="limpiezas" filas={limpiezas}
+                <EditorDeHorarios tipo="limpiezas" filas={limpiezas} rango={rango}
                     onCambiar={puedeEditar ? setLimpiezas : undefined} />
             </div>
 

@@ -832,3 +832,26 @@ export async function aplicarHorarios(branchId, franjas, limpiezas) {
     if (error) return { areas: 0, error: error.message ?? 'No se pudieron guardar los horarios.' };
     return { areas: data ?? 0, error: null };
 }
+
+/**
+ * A qué hora abre y a qué hora cierra una sucursal, según su horario semanal.
+ *
+ * «Los horarios disponibles deben ser los de cada sucursal, la sucursal ya
+ * tiene esa información» (usuario, 2026-08-25). Y la tiene:
+ * `branches.weekly_hours` guarda `{start, end, isOpen}` por día de la semana —
+ * es lo mismo que ve el cliente en la puerta. Ofrecer de 5 AM a 10:30 PM en
+ * todas las salas invitaba a poner una lectura a una hora en que el local está
+ * cerrado: nadie la puede tomar y el mes la cuenta como faltante todos los días.
+ *
+ * Se toma el DÍA MÁS AMPLIO, no el más chico: la bodega abre 08:00–17:00 entre
+ * semana y sólo hasta las 12:00 el sábado; con el mínimo, el horario de la
+ * tarde no se podría configurar ningún día.
+ */
+export function rangoDeLaSucursal(branch) {
+    const dias = Object.values(branch?.weekly_hours || {})
+        .filter(d => d?.isOpen && d.start && d.end);
+    if (!dias.length) return null;
+    const abre   = dias.map(d => String(d.start).slice(0, 5)).sort()[0];
+    const cierra = dias.map(d => String(d.end).slice(0, 5)).sort().at(-1);
+    return { abre, cierra };
+}

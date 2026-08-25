@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.762.1 — Las horas que se ofrecen son las que la sucursal abre
+
+*«Los horarios disponibles deben de ser los de cada sucursal, la sucursal ya
+tiene esa información»* (usuario). Y la tiene: `branches.weekly_hours` guarda
+`start`, `end` e `isOpen` por día de la semana — es el mismo horario que ve el
+cliente en la puerta.
+
+El selector ofrecía de **5:00 AM a 10:30 PM en todas las salas**, así que se
+podía poner una lectura a una hora en que el local está cerrado: nadie la puede
+tomar, y el mes la cuenta como faltante todos los días. Ahora Salud 1 ofrece de
+**7:00 AM a 10:00 PM** (31 medias horas en vez de 36) y la bodega central, de
+**8:00 AM a 5:00 PM**.
+
+Se toma el **día más amplio**, no el más chico: la bodega abre 08:00–17:00 entre
+semana y sólo hasta las 12:00 el sábado; con el mínimo, el horario de la tarde
+no se podría configurar ningún día. Una sucursal sin horario cargado cae al
+rango viejo, que es la única respuesta honesta cuando no se sabe — y un valor ya
+guardado fuera de rango se agrega a la lista en vez de desaparecer, para que el
+primer guardado no le cambie la hora a nadie sin pedirlo.
+
+El texto de la tarjeta lo dice: «Las horas van entre las que abre y cierra la
+sucursal (7:00 AM a 10:00 PM)».
+
 ## v2.762.0 — El reloj es de la sucursal, no de cada área
 
 *«Las lecturas y la limpieza se hacen al mismo tiempo en ambas áreas»*

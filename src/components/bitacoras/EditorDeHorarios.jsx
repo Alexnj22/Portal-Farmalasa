@@ -40,24 +40,39 @@ function rotularHora(hm) {
     return `${h12}:${String(m || 0).padStart(2, '0')} ${ampm}`;
 }
 
-// De 05:00 a 22:30, cada media hora: cubre desde antes de que abra la primera
-// sala hasta después de que cierre la última, sin ofrecer la madrugada.
-const HORAS = [];
-for (let h = 5; h <= 22; h += 1) {
-    HORAS.push(`${String(h).padStart(2, '0')}:00`);
-    HORAS.push(`${String(h).padStart(2, '0')}:30`);
+/**
+ * Las medias horas entre que la sucursal abre y cierra.
+ *
+ * «Los horarios disponibles deben ser los de cada sucursal» (usuario): antes se
+ * ofrecía de 5 AM a 10:30 PM en todas, y con eso se podía poner una lectura a
+ * una hora en que el local está cerrado — nadie la puede tomar y el mes la
+ * cuenta como faltante todos los días. Sin horario cargado se cae al rango
+ * viejo, que es la única respuesta honesta cuando no se sabe.
+ */
+function mediasHoras(abre = '05:00', cierra = '22:30') {
+    const aMin = (t) => {
+        const [h, m] = String(t).split(':').map(Number);
+        return (Number.isNaN(h) ? 5 : h) * 60 + (Number.isNaN(m) ? 0 : m);
+    };
+    const ini = Math.floor(aMin(abre) / 30) * 30;
+    const fin = Math.ceil(aMin(cierra) / 30) * 30;
+    const salida = [];
+    for (let m = ini; m <= Math.min(fin, 23 * 60 + 30); m += 30) {
+        salida.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+    }
+    return salida;
 }
 
-function SelectorDeHora({ value, onChange, etiqueta, nombre }) {
+function SelectorDeHora({ value, onChange, etiqueta, nombre, horas }) {
     // Si el valor guardado no cae en una media hora (por ejemplo 07:15, puesto
     // antes de que existiera este editor), se agrega a la lista: la alternativa
     // es que el selector muestre vacío y el primer guardado le cambie la hora a
     // la sala sin que nadie lo haya pedido.
     const opciones = useMemo(() => {
         const v = hhmm(value);
-        const base = HORAS.includes(v) || !v ? HORAS : [...HORAS, v].sort();
+        const base = horas.includes(v) || !v ? horas : [...horas, v].sort();
         return base.map(h => ({ value: h, label: rotularHora(h) }));
-    }, [value]);
+    }, [value, horas]);
 
     return (
         <label className="flex items-center gap-1.5 min-w-0">
@@ -76,9 +91,10 @@ function SelectorDeHora({ value, onChange, etiqueta, nombre }) {
  * @param {Array} filas                 la lista actual
  * @param {Function} onCambiar          recibe la lista nueva
  */
-export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
+export default function EditorDeHorarios({ tipo, filas, onCambiar, rango }) {
     const esLectura = tipo === 'franjas';
     const lista = filas || [];
+    const horas = useMemo(() => mediasHoras(rango?.abre, rango?.cierra), [rango?.abre, rango?.cierra]);
     if (!lista.length) return null;
 
     // Sin `onCambiar` es un LECTOR, no un editor: quien no puede configurar
@@ -110,9 +126,9 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
                         ) : (
                             <>
                                 <SelectorDeHora etiqueta="desde" nombre={f.label} value={f.desde}
-                                    onChange={(v) => cambiar(i, { desde: v })} />
+                                    horas={horas} onChange={(v) => cambiar(i, { desde: v })} />
                                 <SelectorDeHora etiqueta="hasta" nombre={f.label} value={f.hasta}
-                                    onChange={(v) => cambiar(i, { hasta: v })} />
+                                    horas={horas} onChange={(v) => cambiar(i, { hasta: v })} />
                             </>
                         )}
                     </div>

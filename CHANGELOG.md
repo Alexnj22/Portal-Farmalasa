@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.749.0 — El testigo de índices: la ventana que le faltaba al hallazgo
+
+`npm run indices:testigo`. Sólo lee producción.
+
+La auditoría marcó **10 índices «que nunca se usaron», ~8 MB**, y proponía
+borrarlos. Medido, la etiqueta afirmaba tres cosas y dos no se sostenían:
+`idx_scan` empieza a contar **en el último arranque del servidor**, el índice sí
+se usa cuando la consulta llega, y el contador funciona. El cero no decía «no
+acelera nada» — decía «en esta ventana nadie ejecutó esa consulta».
+
+Eso dejó el hallazgo en el peor estado posible: **ni abierto ni cerrable**. Se
+hereda de sesión en sesión y nadie puede resolverlo, porque para juzgarlo hace
+falta algo que ninguna corrida puntual tiene — tiempo.
+
+Esto es lo que faltaba. Guarda el `idx_scan` de los diez **con la marca de
+arranque del servidor**, y al volver semanas después dice cuáles se movieron.
+Tres cosas que hacen que sirva:
+
+- **se niega a concluir si el servidor reinició en el medio.** `idx_scan` vuelve
+  a cero con el arranque, así que comparar contra un testigo anterior daría un
+  delta inventado — y el modo de falla sería silencioso, porque el número saldría
+  positivo igual. Es la misma lección que `gate:eficiencia` aprendió midiendo
+  escrituras;
+- **se niega a concluir con menos de 30 días.** Un índice de cierre mensual puede
+  pasar tres semanas quieto y ser imprescindible;
+- **la lista de los diez va explícita**, no calculada con `idx_scan = 0`: lo que
+  hay que seguir es si ESTOS diez se mueven, no descubrir diez nuevos cada vez.
+
+Y avisa de lo que el testigo tampoco puede contestar: antes de borrar ninguno,
+hay que comprobar con `EXPLAIN (COSTS OFF)` que su consulta **no exista**, y no
+sólo que nadie la haya corrido. Si el planificador entra por él, el cero es de
+uso y borrarlo deja un barrido completo.
+
+Testigo marcado hoy. Usa el mismo canal que `gate:perf` y `gate:eficiencia`
+(`scripts/lib/canal-supabase.mjs`), en vez de reimplementar el manejo del `.env`
+que el CLI no sabe leer.
+
 ## v2.748.0 — Una venta no se anula si ya salió el cierre del día
 
 La pregunta la hizo el usuario y no tiene respuesta contable: si la caja del día

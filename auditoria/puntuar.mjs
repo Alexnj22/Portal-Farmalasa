@@ -154,6 +154,12 @@ const SERVIDOR = {
     // borrar el trigram deja al buscador de inventario haciendo un barrido
     // completo la próxima vez que alguien lo abra.
     //
+    // Desde el 2026-08-24 hay con qué cerrarlos: `npm run indices:testigo`
+    // guarda el `idx_scan` de los diez con la marca de arranque del servidor, y
+    // al volver semanas después dice cuáles se movieron. Sin ese testigo el
+    // hallazgo no se puede juzgar NI cerrar, y se hereda de sesión en sesión.
+    // Marcado el 2026-08-24 — se relee con una ventana de ~30 días.
+    //
     // Por eso el peso bajó de 3 a 1: **no es deuda de la base, es una medición
     // que esta ventana no alcanza a hacer.** No se bajó para que calle — se
     // bajó porque el hallazgo dejó de ser accionable, que es distinto. Siguen

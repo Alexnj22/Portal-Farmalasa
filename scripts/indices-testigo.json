@@ -1,0 +1,66 @@
+{
+  "arranque": "2026-08-20T20:29:44.398882+00:00",
+  "indices": [
+    {
+      "bytes": 401408,
+      "indice": "idx_changelog_branch_detected",
+      "lecturas": 0,
+      "tabla": "sales_invoice_changelog"
+    },
+    {
+      "bytes": 786432,
+      "indice": "idx_conteo_items_source_sync_key",
+      "lecturas": 0,
+      "tabla": "conteo_inventario_items"
+    },
+    {
+      "bytes": 991232,
+      "indice": "idx_customers_erp_id",
+      "lecturas": 0,
+      "tabla": "customers"
+    },
+    {
+      "bytes": 2023424,
+      "indice": "idx_igmv_desc_norm_trgm",
+      "lecturas": 1,
+      "tabla": "inventory_grouped_mv"
+    },
+    {
+      "bytes": 2023424,
+      "indice": "idx_igmv_desc_trgm",
+      "lecturas": 0,
+      "tabla": "inventory_grouped_mv"
+    },
+    {
+      "bytes": 229376,
+      "indice": "idx_mv_stock_analysis_sucursal",
+      "lecturas": 0,
+      "tabla": "mv_stock_analysis"
+    },
+    {
+      "bytes": 458752,
+      "indice": "idx_product_precios_history_pres",
+      "lecturas": 0,
+      "tabla": "product_precios_history"
+    },
+    {
+      "bytes": 606208,
+      "indice": "idx_products_pa_trgm",
+      "lecturas": 0,
+      "tabla": "products"
+    },
+    {
+      "bytes": 606208,
+      "indice": "idx_products_pactivo_norm_trgm",
+      "lecturas": 0,
+      "tabla": "products"
+    },
+    {
+      "bytes": 466944,
+      "indice": "idx_psr_sucursal_producto",
+      "lecturas": 0,
+      "tabla": "product_sales_rollup"
+    }
+  ],
+  "medido_en": "2026-08-25T03:10:29.135337+00:00"
+}

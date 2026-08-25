@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.1 — La limpieza se llama Mañana y Tarde
+
+*«Con los botones de apertura / cierre de limpieza, cámbialos por mañana /
+tarde»* (usuario). Es el mismo recorrido y la misma vuelta que las lecturas —
+dos vocabularios para lo mismo obligan a traducir mentalmente cada vez que se
+mira la grilla. Renombrados en las 26 áreas de las siete sucursales.
+
+**La CLAVE no se tocó**: sigue siendo `apertura`/`cierre`, porque la referencian
+los registros ya anotados. El rótulo se puede cambiar, la clave no — es
+[[feedback_un_rotulo_no_es_una_clave]] aplicado a un turno. Consecuencia a
+tener presente: el mes impreso de los días ya pasados también dirá «Mañana» y
+«Tarde», porque el rótulo se lee de la configuración de hoy.
+
+**Y sí, se liberan por hora** —lo preguntó el usuario y conviene dejarlo
+escrito—. `bitacora_estado_franja` decide contra la hora de El Salvador, nunca
+contra la del navegador:
+
+| Momento | Qué se ve |
+|---|---|
+| Antes de la ventana | chip gris con la hora de inicio; no se puede anotar |
+| Dentro de la ventana | botón azul, y el registro entra a tiempo |
+| Después | botón gris: se anota igual, y queda marcado **tarde** |
+
+El reloj del navegador no participa a propósito: un equipo con la hora corrida
+—o alguien mirando desde otro huso— vería abierta una franja ya vencida y
+anotaría «a tiempo» algo que no lo está, y el ítem 6.1.14 del RTS pide que el
+registro sea CONTEMPORÁNEO.
+
 ## v2.766.0 — La limpieza se corrige y se quita, y quien anota tiene cara
 
 **La limpieza se puede corregir y se puede quitar.** *«Permite editar / quitar

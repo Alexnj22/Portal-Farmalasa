@@ -734,9 +734,15 @@ export const FRANJAS_POR_DEFECTO = [
     { clave: 't', label: 'Tarde',    desde: '17:00', hasta: '19:00' },
 ];
 
+// Los turnos de limpieza se llaman como los momentos del día —«Mañana» y
+// «Tarde»—, no «Apertura» y «Cierre»: es el mismo recorrido y la misma vuelta,
+// y dos vocabularios para lo mismo obligan a traducir mentalmente cada vez que
+// se mira la grilla. La CLAVE sigue siendo `apertura`/`cierre` porque la
+// referencian los registros ya anotados: el rótulo se puede cambiar, la clave
+// no ([[feedback_un_rotulo_no_es_una_clave]]).
 export const LIMPIEZAS_POR_DEFECTO = [
-    { clave: 'apertura', label: 'Apertura', desde: '07:00', hasta: '10:00' },
-    { clave: 'cierre',   label: 'Cierre',   desde: '17:00', hasta: '20:00' },
+    { clave: 'apertura', label: 'Mañana', desde: '07:00', hasta: '10:00' },
+    { clave: 'cierre',   label: 'Tarde',  desde: '17:00', hasta: '20:00' },
 ];
 
 /**

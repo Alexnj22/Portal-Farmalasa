@@ -10,7 +10,7 @@ import LiquidSelect from '../common/LiquidSelect';
 // agregar». Y es correcto: Mañana, Mediodía y Tarde no son una preferencia de
 // cada sala, son los momentos del día que nombra el reglamento (RTS 6.2.16:
 // «al menos dos veces al día, una a mediados de la mañana y otra a mediados de
-// la tarde»). Apertura y Cierre, lo mismo para la limpieza.
+// la tarde»). La limpieza usa los mismos dos: Mañana y Tarde.
 //
 // Dejarlos editables invitaba a que cada sucursal los llamara distinto —y el
 // mes impreso de siete salas saldría con siete juegos de encabezados— y a que

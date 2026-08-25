@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.6 — «11 de 26» es un dato, no una falta
+
+*«No debe mostrar como malo que no se limpie todo»* (usuario). El contador de
+muebles salía en **rojo** cuando no estaban todos, y eso convertía un dato en
+una acusación.
+
+Y la norma le da la razón: lo que el RTS exige es que exista el **procedimiento**
+(6.1.11), su **registro** (5.5.5) y que el local **se vea limpio** (guía 2.11,
+CRÍTICO). En ningún lado dice que cada turno tenga que pasar por los veintiséis
+muebles. Una alarma que se dispara por lo normal se aprende a ignorar — y
+entonces deja de servir el día que sí importa.
+
+Ahora el contador va en neutro, y el check verde del registro sigue afuera, en
+la celda, donde corresponde. El mes impreso también dejó de decir «falta: …» y
+dice **«no se limpiaron: …»**: los nombra porque un «11 de 26» sin decir cuáles
+obliga a ir a buscarlo a otro lado, pero los nombra como lo que son.
+
 ## v2.766.5 — Las vitrinas y los estantes se marcan en una rejilla
 
 *«Mejora el orden de vitrinas, que sea más moderno y mejor estructurado»*. Con

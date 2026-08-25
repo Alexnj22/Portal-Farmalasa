@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Minus, Plus, Sparkles } from 'lucide-react';
+import { Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacoras';
@@ -182,16 +182,26 @@ export function ListaDePuntos({ puntos, marcadas, onCambiar, compacta = false })
     );
 }
 
-/** El resumen de lo anotado: «4 de 4», y en rojo si faltó alguno. */
+/**
+ * Cuántos muebles se limpiaron de los que lleva el área.
+ *
+ * En NEUTRO, nunca en rojo: «11 de 26» no es un incumplimiento. Corregido por
+ * el usuario — «no debe mostrar como malo que no se limpie todo»— y tiene
+ * respaldo en la norma: lo que el RTS exige es que exista el procedimiento
+ * (6.1.11), su registro (5.5.5) y que el local se vea limpio (guía 2.11). En
+ * ningún lado dice que cada turno tenga que pasar por los veintiséis muebles.
+ * Pintarlo de rojo convertía un dato en una acusación, y una alarma que se
+ * dispara por lo normal se aprende a ignorar.
+ *
+ * El check verde del registro ya está afuera, en la celda: acá va sólo el
+ * número.
+ */
 export function ResumenDePuntos({ registro }) {
     const total = registro?.puntos_total ?? 0;
     if (!total) return null;
-    const hechos = registro?.puntos_hechos ?? 0;
-    const completo = hechos === total;
     return (
-        <span className={`text-label font-black tabular-nums ${completo ? 'text-success-text' : 'text-danger-text'}`}>
-            {completo && <Check size={11} className="inline -mt-px mr-0.5" />}
-            {hechos} de {total}
+        <span className="text-label font-bold text-content-3 tabular-nums shrink-0">
+            {registro?.puntos_hechos ?? 0} de {total}
         </span>
     );
 }

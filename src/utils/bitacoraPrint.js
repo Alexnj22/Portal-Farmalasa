@@ -199,15 +199,17 @@ function tablaLimpieza(area) {
         const celdas = turnos.map((t) => {
             const li = (d.limpiezas || []).find(x => x.turno === t.clave);
             if (!li || !li.hecha) return '<td class="falta">—</td>';
-            // Cuántos muebles de los que lleva el área. El papel dice el
-            // NÚMERO y, si faltó alguno, su nombre: un «3 de 4» sin decir cuál
-            // obliga a ir a buscarlo a otro lado, y el inspector está parado
-            // enfrente de la vitrina.
+            // Cuántos muebles de los que lleva el área, y cuáles no entraron
+            // en ese turno. Es un DATO, no una falta: la norma pide el
+            // procedimiento y su registro, no que cada turno pase por todos los
+            // muebles. Se nombran porque un «11 de 26» sin decir cuáles obliga
+            // a ir a buscarlo a otro lado, y el inspector está parado enfrente
+            // de la vitrina.
             const total = li.puntos_total ?? 0;
             const detalle = total
                 ? `<br/><span class="quien">${li.puntos_hechos ?? 0} de ${total}</span>` : '';
             const faltantes = (li.puntos_faltantes || []).length
-                ? `<br/><span class="quien">falta: ${esc((li.puntos_faltantes || []).join(', '))}</span>` : '';
+                ? `<br/><span class="quien">no se limpiaron: ${esc((li.puntos_faltantes || []).join(', '))}</span>` : '';
             return `<td class="c">✓${detalle}${faltantes}<br/><span class="quien">${esc(li.por || '')}${
                 li.observaciones ? `<br/>${esc(li.observaciones)}` : ''}</span></td>`;
         }).join('');

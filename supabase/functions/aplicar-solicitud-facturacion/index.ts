@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
     // ── id del portal → id del ERP ───────────────────────────────────────
     const { data: factura, error: facErr } = await admin
       .from("sales_invoices")
-      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento")
+      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento, fecha")
       .eq("id", meta.invoice_id)
       .maybeSingle();
     if (facErr) throw facErr;
@@ -210,6 +210,33 @@ Deno.serve(async (req) => {
     // y pendiente ante Hacienda, que es justo el caso que hay que terminar.
     if (estaAnulada(factura.estado) && !esAnulacion)
       return json({ ok: false, error: "La factura ya está anulada." }, 409);
+
+    /* ── El cierre del día, otra vez: acá y no sólo al pedirla ───────────────
+       El trigger `validar_solicitud_facturacion` ya rechaza una anulación cuya
+       caja cerró, pero eso se mide cuando la SALA pide — y quien aplica es el
+       supervisor, más tarde. Entre las dos cosas la sala saca su Z.
+
+       No es hipotético: la única solicitud pendiente medida el 2026-08-24 se
+       creó a las 18:54 y el cierre de esa sala salió a las 19:02. Ocho minutos.
+       Sin este chequeo, aprobarla al día siguiente habría revertido en la caja
+       un efectivo que ya se contó, se declaró y se cuadró — que es exactamente
+       lo que la regla existe para impedir.
+
+       Va antes de abrir la sesión del sistema de origen y antes de tocar nada:
+       el arriendo tomado arriba lo suelta el `finally`, salga como salga. */
+    if (esAnulacion) {
+      const { data: diaCerrado, error: cierreErr } = await admin
+        .rpc("cierre_del_dia_ya_salio", {
+          p_branch_id: factura.branch_id,
+          p_fecha: factura.fecha,
+        });
+      if (cierreErr) throw cierreErr;
+      if (diaCerrado)
+        return json({
+          ok: false,
+          error: "El cierre del día de esa venta ya salió, así que la anulación no se puede aplicar. Rechazá la solicitud y resolvelo por la vía contable.",
+        }, 409);
+    }
 
     const erpId = String(factura.erp_invoice_id);
 

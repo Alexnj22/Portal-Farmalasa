@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.748.0 — Una venta no se anula si ya salió el cierre del día
+
+La pregunta la hizo el usuario y no tiene respuesta contable: si la caja del día
+ya se contó, se declaró y se cuadró, **¿de dónde sale el efectivo que hay que
+devolver, y en qué asiento queda esa venta?** En ninguno. Anular después del
+cierre no corrige nada — mueve un número que ya se reportó y deja la caja
+descuadrada sin que nadie pueda explicar por qué.
+
+**El día está cerrado si la sala ya emitió su cierre, o si la fecha ya pasó.**
+Las dos condiciones, y la segunda no es un detalle: la captura de cortes arrancó
+el 14-ago, así que toda venta anterior no tiene ni una fila de corte y con la
+regla apoyada nada más en el cierre se leería como un día ABIERTO — justo al
+revés de la verdad. Un día que ya pasó está cerrado, lo haya capturado el portal
+o no.
+
+O sea que la ventana real es **la venta de hoy, antes de que la sala corte**.
+
+**Y con eso muere el «período de gracia de 3 días».** Nunca frenó nada: sólo
+pedía un comentario. Ofrecía exactamente lo que no se puede hacer —anular la
+venta de anteayer— y su aviso «Factura fuera del plazo (N días)» invitaba a
+seguir. Se fue entero: el rótulo del selector, la franja del detalle y el aviso
+del formulario.
+
+**La regla se escribe UNA vez y se aplica en TRES momentos.** La función
+`cierre_del_dia_ya_salio` vive en la base, y la llaman el trigger que valida la
+solicitud, la pantalla que la ofrece y la ejecución que la aplica. Los tres
+momentos hacen falta porque son tres instantes distintos:
+
+| dónde | cuándo mide | qué pasa si falta |
+|---|---|---|
+| el widget | al ofrecer la anulación | se llena un formulario que el servidor rechaza |
+| el trigger | al crear la solicitud | la pantalla se puede saltear: es un INSERT |
+| la aplicación | al aprobarla | **es el hueco real** |
+
+Ese tercero no es hipotético. La única solicitud pendiente medida el 24-ago se
+creó a las **18:54** y el cierre de esa sala salió a las **19:02**: ocho
+minutos. Sin el chequeo al aplicar, aprobarla al otro día habría revertido en la
+caja un efectivo ya contado — que es exactamente lo que la regla existe para
+impedir.
+
+**Sólo la anulación.** Cambiar el cliente, el vendedor o la forma de pago no
+mueve el efectivo de la caja, así que el cierre no los estorba: siguen
+disponibles con el día cerrado, y el detalle lo dice.
+
+**Tres detalles que se rompen solos si no se conocen:**
+
+- **La pregunta va por RPC, no leyendo `cortes_caja`.** Su policy de SELECT
+  exige el permiso del módulo `cortes_caja`, que tienen 9 de los 24 cargos.
+  Quien pide una anulación puede no tenerlo, y esa lectura **no fallaría**:
+  devolvería cero filas, o sea «el día está abierto». La función es SECURITY
+  DEFINER y contesta un booleano.
+- **La sala y la fecha salen de la FACTURA, nunca del `metadata`.** Ese objeto
+  lo escribe quien pide: con él, la regla se esquivaría mandando la fecha de
+  hoy.
+- **«No se pudo averiguar» no es «el día está abierto».** El estado del cierre
+  tiene cuatro valores —cargando, abierto, cerrado y desconocido— y los dos
+  últimos bloquean diciendo cada uno lo suyo. Ofrecer anular con la duda es
+  prometer algo que el servidor va a rechazar; afirmar que ya cerró sería
+  inventarlo.
+
 ## v2.747.6 — Diez tarjetas menos, y ya nada de escritorio frena a un área
 
 El ratchet baja de **34 a 24**. Lo que cambia no es el número: con esto **las

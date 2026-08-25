@@ -229,3 +229,30 @@ export async function fetchEventosDelCorte(corteId) {
     await signPhotosDeep(data || []);
     return data || [];
 }
+
+/**
+ * ¿El cierre del día de esa sala ya salió?
+ *
+ * La usa el widget de solicitudes de facturación para no ofrecer una anulación
+ * que la base va a rechazar. La regla vive en la función `cierre_del_dia_ya_salio`
+ * de Postgres —el trigger de la solicitud y la Edge Function que la aplica
+ * llaman a esa MISMA función—, así que acá no se rearma: se pregunta.
+ *
+ * Va por RPC y no leyendo `cortes_caja` porque su policy de SELECT exige el
+ * permiso del módulo `cortes_caja`, que sólo tienen 9 de los 24 cargos. Quien
+ * pide una anulación puede no tenerlo, y esa lectura no fallaría: devolvería
+ * cero filas, o sea «el día está abierto». La función es SECURITY DEFINER y
+ * contesta un booleano.
+ *
+ * Devuelve `true`/`false`, o **`null` si no se pudo averiguar**. Ese tercer
+ * valor existe a propósito: un error de red no es «el día está abierto» ni «el
+ * día está cerrado», y quien llama tiene que poder decir «no se pudo verificar»
+ * en vez de afirmar cualquiera de las dos.
+ */
+export async function cierreDelDiaYaSalio(branchId, fecha) {
+    const { data, error } = await supabase.rpc('cierre_del_dia_ya_salio', {
+        p_branch_id: Number(branchId), p_fecha: fecha,
+    });
+    if (error) { console.error('cortes: cierreDelDiaYaSalio failed:', error.message); return null; }
+    return data === true;
+}

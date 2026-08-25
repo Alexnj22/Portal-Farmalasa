@@ -100,16 +100,27 @@ export async function fetchInvariante({ desde, hasta }) {
  * La bolsa que nació al confirmar un corte — para imprimir su etiqueta en ese
  * mismo momento, sin que nadie tenga que ir a buscarla a otra pantalla.
  *
- * Devuelve `null` cuando el corte no generó bolsa, que es un caso normal y no
- * un error: si lo declarado ya estaba cubierto por las bolsas del día, el
- * disparador no crea ninguna.
+ * `bolsa: null` sin error es un caso NORMAL: si lo declarado ya estaba cubierto
+ * por las bolsas del día, el disparador no crea ninguna.
+ *
+ * Devuelve el error en vez de tragárselo porque quien la llama tiene que poder
+ * distinguir «este corte no generó bolsa» de «no pude leerla»: son la misma
+ * respuesta —`null`— y consecuencias opuestas. En el primero no hay nada que
+ * imprimir; en el segundo hay una etiqueta que nadie va a pegar y alguien tiene
+ * que enterarse. Es `feedback_cero_hallazgos_y_cero_datos_se_ven_igual` en una
+ * sola función.
+ *
+ * @returns {Promise<{bolsa: object|null, error: object|null}>}
  */
 export async function fetchBolsaDeCorte(corteId) {
     const { data, error } = await supabase.from('bolsas')
         .select(CAMPOS).eq('corte_id', corteId).neq('estado', 'ANULADA')
         .order('id', { ascending: false }).limit(1).maybeSingle();
-    if (error) { console.error('bolsas: fetchBolsaDeCorte failed:', error.message); return null; }
-    return data || null;
+    if (error) {
+        console.error('bolsas: fetchBolsaDeCorte failed:', error.message);
+        return { bolsa: null, error };
+    }
+    return { bolsa: data || null, error: null };
 }
 
 /**

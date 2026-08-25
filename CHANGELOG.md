@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.750.4 — La etiqueta del corte avisa cuando no salió
+
+Dos reportes de sala —«la etiqueta no imprimió al confirmar el corte»— medidos
+contra producción: **tres** bolsas de las últimas 60 salieron sin etiqueta, y
+las tres cayeron dentro de los **tres minutos siguientes a un despliegue**.
+
+| bolsa | se confirmó | despliegues cerca | la etiqueta salió |
+|---|---|---|---|
+| S3-1126 (Salud 3) | 24-ago 21:17 | 21:15 y 21:20 | a mano, 3 min después, otra persona |
+| S5-1113 (Salud 5) | 24-ago 12:26 | 12:24 y 12:29 | a mano, 50 s después |
+| S2-1065 (Salud 2) | 20-ago 12:00 | 11:57 | a mano, 113 s después |
+
+Es el bug del chunk muerto otra vez (el del 21-ago con la remesa REM-1013): los
+dos módulos que arman la etiqueta se piden con `import()` en el momento de
+confirmar, o sea **después** de escribir. Publicada una versión nueva, el
+archivo con el hash viejo ya no existe, el `import()` devuelve el `index.html`
+del portal y tira. Los diálogos que mueven plata ya se defendían bajándolos al
+ABRIR; el camino de confirmar un corte nunca recibió esa vacuna.
+
+Tres cambios, y sólo el primero ataca la causa:
+
+1. **Los dos módulos se bajan al montar**, no al apretar confirmar. Va en
+   `useResolverCorte` y no en las cuatro pantallas que confirman, por la misma
+   razón que la escritura vive ahí: la quinta se olvidaría.
+2. **El fallo se ve.** Los tres caminos eran mudos —la bolsa que no se pudo
+   leer, el `catch`, y un `r.ok` sin `else`—, así que el corte quedaba
+   confirmado, la bolsa creada, y nadie se enteraba hasta que la bolsa llegaba a
+   administración sin nada escrito encima. `fetchBolsaDeCorte` ahora devuelve su
+   error en vez de tragárselo: «este corte no generó bolsa» y «no pude leerla»
+   eran la misma respuesta —`null`— con consecuencias opuestas.
+3. **La constancia se escribe DESPUÉS de mandar el papel, no antes.** Marcar
+   primero le ponía `etiqueta_impresa_at` a una bolsa cuya etiqueta no existía:
+   la pantalla dejaba de mostrar «Sin etiqueta» y se borraba la única señal del
+   fallo que sobrevive al aviso.
+
 ## v2.750.3 — El autovacuum de una tabla de seis filas deja de correr cada nueve minutos
 
 Lo único que quedó en pie del hallazgo «402 escrituras/h sobre 6 filas de

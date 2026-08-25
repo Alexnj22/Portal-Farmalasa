@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { resolverCorte } from '../data/cortes';
 import { fetchBolsaDeCorte } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -31,6 +31,31 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
     const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
     const [ocupadoId, setOcupadoId] = useState(null);
+
+    // ── El motor de impresión se baja ANTES de escribir ─────────────────────
+    //
+    // Los dos módulos que arman la etiqueta viajan en su propio chunk, y eso los
+    // ata al despliegue que tenía la pestaña cuando se abrió. Tras publicar una
+    // versión, el archivo con el hash viejo ya no existe: el `import()` devuelve
+    // el `index.html` del portal, tira, y el bloque de impresión de abajo muere
+    // en su `catch` — el corte queda confirmado, la bolsa creada y la etiqueta
+    // nunca sale.
+    //
+    // No es hipotético. Los TRES cortes que se confirmaron sin etiqueta cayeron
+    // dentro de los tres minutos siguientes a un despliegue: S3-1126 (24-ago
+    // 21:17, despliegues 21:15 y 21:20), S5-1113 (24-ago 12:26, despliegues
+    // 12:24 y 12:29) y S2-1065 (20-ago 12:00, despliegue 11:57). En los tres la
+    // etiqueta la terminó mandando otra persona minutos después, a mano.
+    //
+    // Bajarlo al montar no evita el chunk muerto —eso no se puede desde acá—:
+    // lo adelanta a un momento en que recargar no cuesta nada, y deja el módulo
+    // en memoria para cuando se apriete confirmar. Va ACÁ y no en las cuatro
+    // pantallas que confirman por la misma razón que la escritura: una quinta
+    // pantalla nueva se olvidaría de pedirlo, y el modo de falla es mudo.
+    useEffect(() => {
+        import('../utils/ticketPrint').catch(() => {});
+        import('../utils/bolsaComprobante').catch(() => {});
+    }, []);
 
     const resolver = useCallback(async (corte, estado, { motivo = null, observaciones = null } = {}) => {
         if (!corte || ocupadoId) return false;
@@ -71,33 +96,56 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
         // `soloDirecta` evita el último recurso: un diálogo de impresión que
         // nadie pidió, en una máquina que no es la caja.
         if (estado === 'CONFIRMADO') {
+            // Que no salga el papel no puede deshacer una confirmación ya
+            // guardada —el dinero es lo que importa— pero SÍ tiene que decirlo.
+            // Hasta hoy los tres caminos de fallo eran mudos: la bolsa que no se
+            // pudo leer, el `catch`, y un `r.ok` sin `else`. Una etiqueta que no
+            // sale y no avisa es una bolsa que llega a administración sin nada
+            // escrito encima, que es el problema entero que esto vino a
+            // resolver. El aviso dura más que los otros a propósito: quien
+            // confirma ya está mirando otra cosa.
+            const avisar = (detalle, folio = '') => showToast?.(
+                'La etiqueta no salió',
+                `${folio ? `${folio} · ` : ''}${detalle} Imprímela desde Bolsas.`,
+                'error', 9000,
+            );
             try {
-                const bolsa = await fetchBolsaDeCorte(corte.id);
-                if (bolsa) {
+                const { bolsa, error: errorBolsa } = await fetchBolsaDeCorte(corte.id);
+                if (errorBolsa) {
+                    avisar('No se pudo leer la bolsa de este corte.');
+                } else if (bolsa) {
                     const [{ imprimirDocumento }, { construirEtiquetaDeBolsa }, { marcarEtiquetaImpresa }] =
                         await Promise.all([
                             import('../utils/ticketPrint'),
                             import('../utils/bolsaComprobante'),
                             import('../data/bolsas'),
                         ]);
-                    const { data: version } = await marcarEtiquetaImpresa(bolsa.id);
                     const r = await imprimirDocumento(construirEtiquetaDeBolsa({
                         bolsa,
                         sala,
                         salidas: [],
                         cerradaPor: user?.name || '',
-                        version: version ?? (bolsa.etiqueta_version || 0) + 1,
+                        // El número que va impreso se calcula acá y la constancia
+                        // se escribe DESPUÉS de mandarlo, no antes. Al revés
+                        // —como estaba— un envío que fallaba dejaba la bolsa con
+                        // `etiqueta_impresa_at` puesto: el papel no existía y la
+                        // pantalla ya no mostraba «Sin etiqueta», que es la única
+                        // señal que sobrevive al toast. Marcar primero borraba
+                        // justo la evidencia del fallo.
+                        version: (bolsa.etiqueta_version || 0) + 1,
                         impresaAt: new Date().toISOString(),
                     }), { soloDirecta: true, sala: corte.branch_id });
                     if (r.ok) {
+                        await marcarEtiquetaImpresa(bolsa.id);
                         showToast?.('Etiqueta enviada', `${bolsa.folio} · pégala en la bolsa`, 'success');
+                    } else {
+                        console.error('cortes: la etiqueta no se pudo mandar:', r.detalle);
+                        avisar('La caja no la recibió.', bolsa.folio);
                     }
                 }
             } catch (err) {
-                // Que no salga el papel no puede deshacer una confirmación ya
-                // guardada: el dinero es lo que importa y la etiqueta se
-                // reimprime desde la sala.
                 console.error('cortes: no se pudo imprimir la etiqueta de la bolsa:', err?.message);
+                avisar('No se pudo preparar el papel.');
             }
         }
         return true;

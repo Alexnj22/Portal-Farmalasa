@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.754.0 — Conteo: agregar vive en la píldora y el área de vencidos es su propia pestaña
+
+Dos pedidos de sala sobre **Conteo de inventario**, y el primero destapó un
+botón que en el teléfono no existía.
+
+**«Agregar» estaba escrito dos veces y una de las dos no llegó a dibujarse.**
+En escritorio era un `<Button>` suelto al lado de la píldora de filtros; para el
+teléfono la vista le pasaba a `FilterBar` una prop `accionPrincipal`, **que
+`FilterBar` no acepta**. La prop caía en `...rest` y se perdía sin error, así
+que con el pulgar —donde el botón de escritorio está explícitamente apagado
+(`!compacto`)— **no había ninguna forma de agregar un producto al conteo**. Es
+el modo de falla de siempre: nada falla, no falta ninguna fila, y sólo se ve con
+el teléfono en la mano.
+
+Ahora es una sola definición, con el canónico que §17 fijó el 2026-07-30:
+`acciones`, un descriptor y no JSX, justamente porque el mismo botón se dibuja de
+dos maneras muy distintas —pieza de la píldora con mouse, botón grande del
+clúster con el pulgar— y `FilterBar` es quien decide cuál. Va con `rotulo:
+'Agregar'`, que es la palabra que entra en los 60px del clúster.
+
+**El área de vencidos pasó a ser una pestaña.** Es OTRO anaquel: se recorre y se
+cuenta por separado, y un mismo producto puede estar en los dos con cantidades
+distintas. Vivía como una sección al final de la misma página, o sea que para
+llegar había que pasar por las 2,759 filas de bodega —con su paginación en el
+medio—. Verlas juntas además invita a teclear el número de un anaquel en la fila
+del otro, que es el error que no deja rastro: las dos filas existen y las dos
+aceptan un número.
+
+Tres decisiones que no son obvias:
+
+* **La pestaña existe según el total SIN filtrar, no según lo que se ve.** Con
+  `vencidos.length` —que sí está filtrado— buscar «acetaminofen» haría
+  DESAPARECER la pestaña que se está mirando. El total del área se toma de la
+  primera vuelta, que siempre sale sin término, sin estado y sin laboratorio, y
+  se vuelve a tomar cada vez que los tres están limpios.
+* **El número de la píldora sí es el filtrado**, en las dos pestañas: es lo que
+  contesta «en qué pestaña cayó lo que busqué».
+* **La pestaña activa va en la DIRECCIÓN** (`?area=bodega|vencidos`), no en
+  `useState`. La sesión de sala se cierra sola a los 5 minutos y la aplicación se
+  recarga al publicar una versión: con la pestaña en memoria, quien estaba
+  contando el área de vencidos vuelve a bodega sin que nada falle. El parámetro
+  se llama `area` porque es el mismo nombre con el que las dos RPC de lectura
+  piden la lista (`'NORMAL'` / `'VENCIDOS'`).
+
+En una sala no hay área de vencidos: ahí no se dibuja ninguna pestaña y la vista
+se ve igual que antes.
+
+**Lo que queda abierto, y hay que saberlo:** en el área de vencidos NO se ofrece
+«Agregar». `agregar_item_conteo` inserta con `is_vencidos = false` clavado, así
+que el renglón nacería en la bodega. Sin las pestañas eso pasaba igual, pero se
+VEÍA —la fila aparecía en la lista de arriba—; con dos anaqueles separados sería
+un alta que no deja rastro visible. Dar de alta EN el área de vencidos pide un
+parámetro nuevo en esa función.
+
+Verificado: `gate:design` (incluida `pestana-fuera-de-la-url`), `gate:movil` y
+`gate:borradores`, los tres en verde. Sin probar en sala.
+
 ## v2.753.1 — La documentación dice lo que se hizo, y se corrige un dato falso
 
 Cierre documental de las Fases 0 y 1 del blindaje. Hasta acá los planes estaban

@@ -43,6 +43,7 @@ import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
 import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '../../hooks/useLayoutCompacto';
 import usePaginaEnUrl from '../../hooks/usePaginaEnUrl';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { CajaFecha } from './camposDeConteo';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -1542,6 +1543,17 @@ export default function ConteoDetailView() {
     const [vencidos, setVencidos] = useState([]);
     const [vencidosItems, setVencidosItems] = useState({});
     const [vencidosLoading, setVencidosLoading] = useState(true);
+    // Cuántos productos hay en el área de vencidos SIN filtrar. Es lo que
+    // decide si la pestaña existe, y por eso no puede ser `vencidos.length`:
+    // esa lista sí está filtrada, así que buscar "acetaminofen" haría
+    // DESAPARECER la pestaña que se está mirando —y con ella el conteo del
+    // área—, sin decir por qué. Se toma de la primera vuelta, que siempre sale
+    // sin término, sin estado y sin laboratorio, y se vuelve a tomar cada vez
+    // que los tres están limpios; así agregar un producto al área la enciende.
+    const [vencidosTotal, setVencidosTotal] = useState(0);
+    // Y éste es el total CON filtro: el número de la píldora, que es lo que
+    // contesta «en qué pestaña cayó lo que busqué».
+    const [vencidosFiltrados, setVencidosFiltrados] = useState(0);
     // La página y el tamaño viven en la DIRECCIÓN, no en `useState`. Contar es
     // recorrer un anaquel de 1,400 productos de a 25: perder la posición no
     // cuesta un clic, cuesta volver a buscar dónde se iba. Y perderla no es
@@ -1682,6 +1694,11 @@ export default function ConteoDetailView() {
                 laboratorioId, area: 'VENCIDOS',
             });
             setVencidos(pagina.rows);
+            setVencidosFiltrados(pagina.total);
+            // Sin filtro puesto, lo filtrado ES el total del área.
+            if (!searchDiferido && filtro === 'TODOS' && laboratorioId == null) {
+                setVencidosTotal(pagina.total);
+            }
             const ids = pagina.rows.map((r) => r.erp_product_id);
             const lines = await fetchConteoItemsForProducts(id, ids, {
                 search: searchDiferido, filtro, area: 'VENCIDOS',
@@ -1984,6 +2001,30 @@ export default function ConteoDetailView() {
         ] : []),
     ];
 
+    // ── Bodega y área de vencidos son DOS PESTAÑAS ───────────────────────
+    // Son dos anaqueles distintos: se recorren por separado, se cuentan por
+    // separado y un mismo producto puede estar en los dos. Vivían como una
+    // sección al final de la misma página, o sea que para llegar al área de
+    // vencidos había que pasar por las 2,759 filas de bodega —con su paginación
+    // en el medio— y el número de arriba mezclaba las dos listas.
+    //
+    // La pestaña sólo existe si el conteo TIENE área de vencidos: en una sala no
+    // la hay, y una pestaña vacía sugiere que falta contar algo. Con una sola,
+    // `ViewTabBar` no dibuja pestaña ninguna — la vista se ve como antes.
+    const pestanas = vencidosTotal > 0 ? [
+        { key: 'bodega',   label: 'Inventario',       icon: Package,        cuenta: total },
+        { key: 'vencidos', label: 'Área de vencidos', icon: AlertTriangle,  cuenta: vencidosFiltrados, tono: 'danger' },
+    ] : [];
+    // En la DIRECCIÓN y no en `useState`: la sesión de sala se cierra sola a los
+    // 5 minutos y la aplicación se recarga al publicar una versión — con la
+    // pestaña en memoria, quien estaba contando el área de vencidos vuelve a
+    // bodega sin que nada falle (ver `usePestanaEnUrl`).
+    // El parámetro se llama `area` y no `tab` porque es el mismo nombre con el
+    // que las dos RPC de lectura piden la lista ('NORMAL' / 'VENCIDOS'): una
+    // dirección compartida dice qué anaquel se está mirando, no un ordinal.
+    const [pestana, setPestana] = usePestanaEnUrl(pestanas, 'bodega', 'area');
+    const enVencidos = pestana === 'vencidos' && vencidosTotal > 0;
+
     // Una sola definición de los filtros para los dos sitios donde viven: en el
     // cuerpo con mouse, dentro de la barra flotante con el pulgar.
     const barraFiltros = (
@@ -1995,7 +2036,30 @@ export default function ConteoDetailView() {
             // acción principal se le pasan acá y no se cablean a mano: el canónico
             // decide dónde van en cada tamaño.
             buscador={{ value: search, onChange: cambiarBusqueda, placeholder: simple ? 'Producto o código' : 'Producto, lote o código', alEscanear: () => setLectorAbierto(true) }}
-            accionPrincipal={editable && canEdit ? { icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true) } : null}
+            // «Agregar» vive DENTRO de la píldora, que es donde §17 pone las
+            // acciones de la vista desde el 2026-07-30. Estaba escrito como
+            // `accionPrincipal`, que **`FilterBar` no acepta**: la prop caía en
+            // `...rest` y se perdía sin error, así que en el teléfono —donde el
+            // botón suelto de escritorio no se dibuja— NO HABÍA forma de agregar
+            // un producto al conteo. El canónico es `acciones`, un descriptor y
+            // no JSX, porque el mismo botón se dibuja de dos maneras: pieza de la
+            // píldora con mouse y botón grande del clúster con el pulgar.
+            // `rotulo` es la palabra que entra en los 60px del clúster.
+            // Y NO en el área de vencidos: `agregar_item_conteo` inserta con
+            // `is_vencidos = false` clavado, así que el renglón nacería en la
+            // bodega y la pestaña donde se apretó el botón no lo mostraría
+            // nunca. Sin las pestañas eso pasaba igual, pero se veía —la fila
+            // aparecía en la lista de arriba—; con dos anaqueles separados
+            // sería un alta que no deja rastro visible. Dar de alta EN el área
+            // de vencidos pide un parámetro nuevo en esa función.
+            acciones={editable && canEdit && !enVencidos ? [{
+                key: 'agregar',
+                icon: Plus,
+                label: simple ? 'Agregar producto' : 'Agregar producto/lote',
+                rotulo: 'Agregar',
+                variant: 'primary',
+                onClick: () => setShowAddForm(true),
+            }] : []}
         >
             {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
                 sucursal, y cambiarla sería abrir otro conteo. */}
@@ -2042,6 +2106,9 @@ export default function ConteoDetailView() {
     // puro: 26 líneas para lo que el componente ya hace.
     const filtersContent = (
         <ViewTabBar
+            tabs={pestanas}
+            activeTab={pestana}
+            onTabChange={setPestana}
             searchValue={search}
             onSearchChange={cambiarBusqueda}
             placeholder={simple ? 'Buscar producto, laboratorio o código...' : 'Buscar producto, laboratorio, lote o código...'}
@@ -2245,17 +2312,11 @@ export default function ConteoDetailView() {
                             </span>
                         </label>
                     )}
-                    {/* En teléfono este botón NO va acá: vive en la barra flotante,
-                        porque después de tres pantallas de scroll un botón que está
-                        arriba dejó de existir. */}
-                    {/* "Producto/Lote" nombra las dos cosas que se pueden dar de alta,
-                        y en un conteo sencillo la segunda no existe. */}
-                    {editable && canEdit && !compacto && (
-                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm(true)}>
-                            {simple ? 'Agregar Producto' : 'Agregar Producto/Lote'}
-                        </Button>
-                    )}
-
+                    {/* «Agregar» ya no es un botón suelto al lado de la píldora:
+                        vive DENTRO, como acción de la vista (§17). Suelto había
+                        que mantenerlo dos veces —uno acá para el mouse y otro en
+                        la barra flotante para el pulgar— y la mitad táctil nunca
+                        se llegó a cablear. */}
                     {barraFiltros}
                     </div>
                 </div>
@@ -2276,7 +2337,7 @@ export default function ConteoDetailView() {
                     </Notice>
                 )}
 
-                {showAddForm && editable && conteo && !compacto && (
+                {showAddForm && editable && conteo && !compacto && !enVencidos && (
                     <Suspense fallback={null}><AddManualItemForm
                         branchId={conteo.branch_id}
                         simple={simple}
@@ -2289,56 +2350,64 @@ export default function ConteoDetailView() {
                     /></Suspense>
                 )}
 
-                {/* La BODEGA. El área de vencidos va en su propia sección más
-                    abajo: es otro anaquel y se recorre aparte. */}
-                <ListaDeConteo
-                    enFichas={enFichas}
-                    loading={loading}
-                    products={products}
-                    itemsByProduct={itemsByProduct}
-                    verSistema={verSistema}
-                    simple={simple}
-                    columnas={columnas(verSistema, simple)}
-                    orden={orden}
-                    onSort={handleSort}
-                    vacio="Sin productos para este filtro"
-                    desbloqueadas={desbloqueadas}
-                    editable={editable}
-                    recuento={recuento}
-                    onUnlock={setDesbloqueada}
-                    onSave={handleSaveItem}
-                    onRecount={handleRecountItem}
-                    onShowHistory={abrirHistorial}
-                    onEditLote={abrirEditLote}
-                    currentUser={user}
-                    enVivo={conteo?.fuente_sistema === 'VIVO'}
-                />
+                {/* ── El anaquel que se está contando ──────────────────────
+                    Bodega y área de vencidos son DOS anaqueles, y desde acá se
+                    ve UNO. Antes la segunda era una sección al final de la misma
+                    página: para llegar al área de vencidos había que pasar por
+                    las 2,759 filas de bodega y por su paginación, y el resumen de
+                    arriba mezclaba las dos listas.
 
-                {total > 0 && (
-                    <TablePagination pageSize={tamPagina} onPageSizeChange={cambiarTamPagina} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
+                    Que sean excluyentes no es sólo orden. Un mismo producto puede
+                    estar en los dos anaqueles con cantidades distintas, así que
+                    verlos juntos invita a teclear el número de uno en la fila del
+                    otro — que es el error que no deja rastro, porque las dos
+                    filas existen y las dos aceptan un número. */}
+                {!enVencidos && (
+                    <>
+                        <ListaDeConteo
+                            enFichas={enFichas}
+                            loading={loading}
+                            products={products}
+                            itemsByProduct={itemsByProduct}
+                            verSistema={verSistema}
+                            simple={simple}
+                            columnas={columnas(verSistema, simple)}
+                            orden={orden}
+                            onSort={handleSort}
+                            vacio="Sin productos para este filtro"
+                            desbloqueadas={desbloqueadas}
+                            editable={editable}
+                            recuento={recuento}
+                            onUnlock={setDesbloqueada}
+                            onSave={handleSaveItem}
+                            onRecount={handleRecountItem}
+                            onShowHistory={abrirHistorial}
+                            onEditLote={abrirEditLote}
+                            currentUser={user}
+                            enVivo={conteo?.fuente_sistema === 'VIVO'}
+                        />
+
+                        {total > 0 && (
+                            <TablePagination pageSize={tamPagina} onPageSizeChange={cambiarTamPagina} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
+                        )}
+                    </>
                 )}
 
                 {/* ── Área de vencidos ──────────────────────────────────────
-                    El sistema aparta lo vencido en su propia área, que es OTRO
-                    anaquel: se recorre y se cuenta por separado. Iba mezclado
-                    con la bodega, y no era sólo cuestión de orden — un producto
-                    que está en las dos salía en UNA fila con los totales de
-                    ambas sumados (42 de 83 en el conteo abierto).
+                    El sistema aparta lo vencido en su propia área. El aviso se
+                    queda aunque ahora haya pestaña: la pestaña dice DÓNDE estoy,
+                    no que lo de acá se cuenta aparte de la bodega.
 
-                    Va al final y no arriba porque el recorrido empieza por la
-                    bodega, que es el 97% de los renglones. Y sólo aparece si
-                    hay algo: una sección vacía sugiere que falta contarla.
-
-                    Sin paginación propia: son decenas de productos, no miles.
-                    Si algún día crece, acá va su `TablePagination`. */}
-                {vencidos.length > 0 && (
-                    <div className="space-y-3 pt-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="danger" icon={AlertTriangle} uppercase={false}>Área de vencidos</Badge>
-                            <span className="text-caption text-content-3">
-                                {vencidos.length} producto{vencidos.length === 1 ? '' : 's'} apartado{vencidos.length === 1 ? '' : 's'} — se cuentan aparte de la bodega
-                            </span>
-                        </div>
+                    Sin paginación propia: son decenas de productos, no miles (83
+                    contra 2,759 en el conteo abierto). Si algún día crece, acá va
+                    su `TablePagination`. */}
+                {enVencidos && (
+                    <div className="space-y-3">
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <strong>Otro anaquel.</strong> Lo apartado por vencer se recorre y se cuenta
+                            aparte de la bodega. Un producto puede estar en los dos: el número que anotes
+                            acá es sólo el de esta área.
+                        </Notice>
                         <ListaDeConteo
                             enFichas={enFichas}
                             loading={vencidosLoading}
@@ -2347,7 +2416,7 @@ export default function ConteoDetailView() {
                             verSistema={verSistema}
                             simple={simple}
                             columnas={columnas(verSistema, simple)}
-                            vacio="Sin productos en el área de vencidos"
+                            vacio="Sin productos en el área de vencidos para este filtro"
                             desbloqueadas={desbloqueadas}
                             editable={editable}
                             recuento={recuento}
@@ -2385,7 +2454,7 @@ export default function ConteoDetailView() {
             {/* El alta en hoja inferior, el mismo material que la de filtros: en
                 teléfono el formulario inline empujaba la lista tres pantallas hacia
                 abajo y había que volver a subir para seguir contando. */}
-            {compacto && editable && conteo && (
+            {compacto && editable && conteo && !enVencidos && (
                 <ModalShell
                     open={showAddForm}
                     onClose={() => setShowAddForm(false)}

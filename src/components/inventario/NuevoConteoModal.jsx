@@ -38,7 +38,7 @@ const MODO_OPTIONS = [
 // Y un tercer eje: contra QUÉ existencia se compara lo que se cuenta. Hasta
 // ahora había uno solo —el de la existencia del momento— y no se decía en
 // ninguna parte, así que una venta hecha entre imprimir la hoja y teclearla
-// aparecía como diferencia de anaquel.
+// aparecía como una diferencia del estante.
 const FUENTE_OPTIONS = [
     { value: 'HOJA', label: 'Según la hoja', icon: Printer },
     { value: 'VIVO', label: 'En vivo', icon: Radio },
@@ -358,7 +358,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         </div>
                         <p className="text-caption text-content-3 leading-snug mt-2">
                             {modo === 'SIMPLE'
-                                ? 'Un mismo producto sigue separado por presentación cuando cambia el tamaño del empaque (la caja de 10 y la unidad se cuentan aparte, como están en el anaquel). Dos nombres distintos para el mismo empaque van en un solo renglón.'
+                                ? 'Un mismo producto sigue separado por presentación cuando cambia el tamaño del empaque (la caja de 10 y la unidad se cuentan aparte, como están en el estante). Dos nombres distintos para el mismo empaque van en un solo renglón.'
                                 : 'Es la forma más detallada y la que permite ver qué está vencido o por vencer mientras se cuenta. En una sucursal completa son bastantes más renglones que contar.'}
                         </p>
                     </div>

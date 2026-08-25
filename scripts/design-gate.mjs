@@ -99,8 +99,8 @@ const EXCEPTIONS = {
   //     que se ve como un error de encuadre.
   //   · `border-white/80` es la guía de encuadre. Tiene que contrastar contra
   //     LO QUE SEA que esté mirando la cámara —una caja blanca, una repisa
-  //     oscura, un anaquel a contraluz—, no contra el fondo de la aplicación.
-  //     Un token de borde se pierde sobre la mitad de los anaqueles.
+  //     oscura, un estante a contraluz—, no contra el fondo de la aplicación.
+  //     Un token de borde se pierde sobre la mitad de los estantes.
   //   · La sombra `0 0 0 9999px` no es una sombra: es el truco de anillo que
   //     oscurece todo lo que queda FUERA de la guía. No está en la escala
   //     `--shadow-*` porque no pertenece a ella — no describe elevación.
@@ -1091,6 +1091,29 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
   // la regla: faltaban verbos, y `Elegí` sólo estaba en mayúscula, así que a
   // media oración no lo veía nadie.
   'Acomodá','Publicá','Encendé','Apagá','Cambiá','Arrastrá','Soltá','Movés','Acomodás'];
+
+// ── `copy-anaquel` — el portal dice «vitrina» o «estante», nunca «anaquel» ──
+//
+// Decisión del usuario, 2026-08-25: *«no uses nunca anaquel, solo Vitrina /
+// Estante»*. No es preferencia de estilo — son las dos palabras que la empresa
+// usa, y las únicas que el propio portal ya tenía como DATO: `laboratorios`
+// guarda `vitrina`, `estante` y `peldano` para la sala, y el catálogo hace
+// elegir entre «Vit.» y «Est.». O sea que la pantalla venía nombrando de una
+// forma lo que la base nombraba de otra.
+//
+// Va como categoría del gate y no como una nota en DESIGN.md porque una regla
+// de vocabulario que nadie verifica vuelve sola: se limpiaron 51 usos de una
+// vez, y basta que la escriba una sesión para que empiece de nuevo.
+//
+// Mira las líneas que NO son comentario, igual que `copy-trato`: lo que la
+// regla protege es lo que la gente LEE. Los comentarios quedaron limpios en la
+// misma tanda, pero acusarlos haría ruido sin proteger a nadie.
+//
+// ⚠ Y el gate NO puede ver el hueco más grande, que ya mordió una vez: los
+// rótulos que viven DENTRO de funciones de Postgres. El aviso del conteo
+// cíclico decía «anaquel» y ningún grep del fuente lo encontraba — salió de
+// auditar `pg_proc.prosrc`. Al cambiar vocabulario, mirar también ahí.
+const ANAQUEL_RE = /\b[Aa]naquel(?:es)?\b/g;
 
 // Las minúsculas van explícitas en vez de poner la bandera `i`: con `i`, `Pedí`
 // —que también es «yo pedí», pretérito perfectamente correcto— marcaría como
@@ -2606,6 +2629,19 @@ function scanFile(path) {
       while ((m = VOSEO_RE.exec(line))) {
         findings.push({ line: i + 1, label: `voseo "${m[1]}" — el portal usa tuteo (§26.7)`,
           category: 'copy-trato', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'copy-anaquel')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      ANAQUEL_RE.lastIndex = 0;
+      let m;
+      while ((m = ANAQUEL_RE.exec(line))) {
+        findings.push({ line: i + 1,
+          label: `"${m[0]}" — el portal dice «vitrina» o «estante» (decisión del usuario, 2026-08-25)`,
+          category: 'copy-anaquel', text: line.trim().slice(0, 120) });
       }
     });
   }

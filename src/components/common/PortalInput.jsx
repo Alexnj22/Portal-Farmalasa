@@ -46,7 +46,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     compact = false,
     // `alto`: el opuesto de `compact` — 56px y dígitos grandes, para el campo
     // que se llena DE PIE con una sola mano. Nace del conteo de inventario en el
-    // teléfono: contar un anaquel es teclear un número por lote mirando la
+    // teléfono: contar un estante es teclear un número por lote mirando la
     // estantería, no la pantalla, y un campo de 44px con texto normal se falla.
     // Va en el canónico y no como input a mano porque es una VARIANTE DE ALTO
     // del mismo control (igual que `compact`), no otra anatomía.

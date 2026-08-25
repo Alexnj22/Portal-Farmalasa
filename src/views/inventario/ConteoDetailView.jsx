@@ -34,7 +34,7 @@ import Notice from '../../components/common/Notice';
 // Diferido: el lector sólo existe si alguien toca «escanear», y arrastra el
 // diálogo entero además de la librería de decodificación. Estático costaba 2 kB
 // del cierre de esta vista —y el techo del `bundle-gate` los vio— para una
-// pantalla que se abre de pie frente a un anaquel, muchas veces con datos.
+// pantalla que se abre de pie frente a un estante, muchas veces con datos.
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 // Mismo motivo que el lector: 162 líneas que sólo existen al tocar «Agregar».
 const AddManualItemForm = lazy(() => import('./AddManualItemForm'));
@@ -169,7 +169,7 @@ const fmtHora = (iso) => (iso ? new Date(iso).toLocaleTimeString('es-SV', { hour
 const difClass = (dif) => (dif == null ? 'text-content-3' : dif === 0 ? 'text-success' : dif < 0 ? 'text-danger' : 'text-chart-1-text');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
-// Un producto puede venir en dos presentaciones del MISMO anaquel —«PAQUETE X
+// Un producto puede venir en dos presentaciones del MISMO estante —«PAQUETE X
 // 10» y «UNIDAD»—, y el sistema las guarda en dos casilleros separados. Si en
 // la repisa hay un paquete sin abrir que el sistema tiene como diez sueltas, el
 // renglón de UNIDAD dice «-10» y el de PAQUETE «+1» aunque no falte una sola
@@ -233,7 +233,7 @@ const renglonEtiqueta = (item, simple) => (simple
     ? (item.presentacion ? `presentación ${item.presentacion}` : 'sin presentación')
     : `lote ${item.lote || 'sin lote'}`);
 
-// Contar es teclear seguido sin levantar la vista del anaquel: Enter salta al
+// Contar es teclear seguido sin levantar la vista del estante: Enter salta al
 // siguiente renglón que falta y las flechas recorren.
 //
 // Vive acá arriba y no dentro de la fila porque **las dos maquetas lo
@@ -641,7 +641,7 @@ function ItemRow({
                                 />
                                 {editable && !recuento && (
                                     <Button variant="ghost" icon={PackageX} disabled={saving}
-                                        title="No ubicado — lo busqué y no está en el anaquel"
+                                        title="No ubicado — lo busqué y no está en el estante"
                                         aria-label="Marcar como no ubicado"
                                         iconOnly onClick={marcarNoUbicado} />
                                 )}
@@ -690,7 +690,7 @@ function ItemRow({
 }
 
 // El total de una banda cuando sus renglones son presentaciones distintas del
-// mismo anaquel: la suma cruda no significa nada —1 paquete + 4 unidades no son
+// mismo estante: la suma cruda no significa nada —1 paquete + 4 unidades no son
 // «5»—, así que el servidor la devuelve convertida a unidades y acá se dice de
 // qué unidad habla. El sufijo es del ancho de dos caracteres a propósito: la
 // tabla ya entra justa a 1440.
@@ -712,7 +712,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
     const dif = product.diferencia_total;
     const enUnidades = !!product.total_en_unidades;
     // Todos sus lotes confirmados: la banda deja de llamar. Es la señal que se
-    // busca al recorrer un anaquel — qué falta, no qué ya está.
+    // busca al recorrer un estante — qué falta, no qué ya está.
     const completo = product.item_count > 0 && product.contados_count >= product.item_count;
     return (
         <DataRow index={index} className={completo ? 'bg-success/10' : ''}>
@@ -872,8 +872,8 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     </span>
                     {/* Corregir el lote solo existía en la tabla, o sea solo en
                         escritorio (`hidden md:block`). Y el caso que lo necesita
-                        —el lote del anaquel no es el que copió el snapshot— se
-                        descubre justamente de pie frente al anaquel, con el
+                        —el lote del estante no es el que copió el snapshot— se
+                        descubre justamente de pie frente al estante, con el
                         teléfono en la mano. 44px de lado: es un objetivo táctil,
                         no el adorno de otro control. */}
                     {/* Sin `w-11 h-11` a mano: `iconOnly` ya resuelve el lado con
@@ -1458,7 +1458,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                         />
                         <p className="text-caption text-content-3 leading-snug">
                             {trato === 'CERO'
-                                ? 'El conteo cubrió toda el área: lo que no apareció en el anaquel se registra con físico 0 y su faltante es real. Quedan marcados como "no ubicado", no como contados.'
+                                ? 'El conteo cubrió toda el área: lo que no apareció en vitrinas ni estantes se registra con físico 0 y su faltante es real. Quedan marcados como "no ubicado", no como contados.'
                                 : 'El conteo fue parcial: esos renglones no se valúan ni cuentan como diferencia. El número queda guardado en el reporte para que nadie lea el resultado como un cuadre completo.'}
                         </p>
                     </>
@@ -1527,7 +1527,7 @@ export default function ConteoDetailView() {
     // Con el teléfono acostado el alto es lo que falta: medido el 2026-08-23 en
     // un iPhone 13 (844 × 390), encima de la lista había 474px — el 121% de la
     // pantalla, o sea que no se veía UN producto sin scrollear. Contar es mirar
-    // el anaquel y teclear; el encabezado es contexto, no herramienta.
+    // el estante y teclear; el encabezado es contexto, no herramienta.
     const altoEscaso = useAltoEscaso();
     // Plegado por defecto SÓLO donde el alto escasea. Es estado de pantalla y
     // no de la dirección a propósito: no describe qué se está mirando, y un
@@ -1550,7 +1550,7 @@ export default function ConteoDetailView() {
     // área—, sin decir por qué. Sale del resumen (`productos_vencidos`), que
     // es una cifra del conteo entero y no de lo que hay en pantalla.
     // La página y el tamaño viven en la DIRECCIÓN, no en `useState`. Contar es
-    // recorrer un anaquel de 1,400 productos de a 25: perder la posición no
+    // recorrer un estante de 1,400 productos de a 25: perder la posición no
     // cuesta un clic, cuesta volver a buscar dónde se iba. Y perderla no es
     // hipotético — la sesión de sala se cierra sola a los 5 minutos y la
     // aplicación se recarga cuando se publica una versión.
@@ -1580,7 +1580,7 @@ export default function ConteoDetailView() {
     // el código cae en el mismo campo, y desde v2.710.0 el servidor lo mira
     // junto al nombre, el laboratorio, el lote y la presentación.
     const [lectorAbierto, setLectorAbierto] = useState(false);
-    // Orden por columna. `null` = el orden del anaquel (laboratorio, producto),
+    // Orden por columna. `null` = el orden del estante (laboratorio, producto),
     // que es el que sirve para recorrerlo contando; lo resuelve el servidor.
     const [orden, setOrden] = useState({ key: null, dir: 'asc' });
 
@@ -1786,7 +1786,7 @@ export default function ConteoDetailView() {
     }, [verSistema, filtro, cambiarFiltro]);
 
     // Un segundo clic invierte; el tercero NO vuelve a "sin orden". Con el orden
-    // del anaquel como default, poder volver a él es útil, pero hacerlo el tercer
+    // del estante como default, poder volver a él es útil, pero hacerlo el tercer
     // paso de un ciclo lo vuelve un accidente: se limpia desde la píldora.
     const handleSort = (key) => { resetPage(); setOrden((prev) => (
         prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
@@ -2008,7 +2008,7 @@ export default function ConteoDetailView() {
     // solo (la hoja), así que "Imprimir" imprime y no abre un selector de una
     // opción; con el conteo cerrado hay cuatro y ahí sí hay algo que elegir.
     const documentos = !canDownload ? [] : [
-        { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con columna de notas y firma de quien contó.' },
+        { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el estante, con columna de notas y firma de quien contó.' },
         { kind: 'hoja-compacta', icon: Printer, label: 'Hoja compacta', detalle: 'La mitad de páginas: dos productos por renglón, apaisada y sin columna de notas.' },
         ...(hasResults ? [
             { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },
@@ -2018,7 +2018,7 @@ export default function ConteoDetailView() {
     ];
 
     // ── Bodega y área de vencidos son DOS PESTAÑAS ───────────────────────
-    // Son dos anaqueles distintos: se recorren por separado, se cuentan por
+    // Son dos estantes distintos: se recorren por separado, se cuentan por
     // separado y un mismo producto puede estar en los dos. Vivían como una
     // sección al final de la misma página, o sea que para llegar al área de
     // vencidos había que pasar por las 2,759 filas de bodega —con su paginación
@@ -2031,9 +2031,9 @@ export default function ConteoDetailView() {
     // ── El número de la píldora es CUÁNTO FALTA POR CONTAR ────────────────
     // Decidido con el usuario el 2026-08-25, sobre la pregunta «¿esos números
     // qué son?». Antes era «cuántos productos hay», que en una pantalla de
-    // contar no se puede accionar: el anaquel entero y el anaquel entero menos
+    // contar no se puede accionar: el estante entero y el estante entero menos
     // uno se ven casi igual. Con los que faltan, la fila contesta de un vistazo
-    // dónde queda trabajo — y `Contador` no dibuja el cero, así que un anaquel
+    // dónde queda trabajo — y `Contador` no dibuja el cero, así que un estante
     // terminado se anuncia quedándose sin número.
     //
     // Sale del RESUMEN y no de la lista de abajo: la lista está filtrada y
@@ -2049,7 +2049,7 @@ export default function ConteoDetailView() {
     // bodega sin que nada falle (ver `usePestanaEnUrl`).
     // El parámetro se llama `area` y no `tab` porque es el mismo nombre con el
     // que las dos RPC de lectura piden la lista ('NORMAL' / 'VENCIDOS'): una
-    // dirección compartida dice qué anaquel se está mirando, no un ordinal.
+    // dirección compartida dice qué estante se está mirando, no un ordinal.
     const [pestana, setPestana] = usePestanaEnUrl(pestanas, 'bodega', 'area');
     const enVencidos = pestana === 'vencidos' && (resumen?.productos_vencidos ?? 0) > 0;
 
@@ -2077,7 +2077,7 @@ export default function ConteoDetailView() {
             // `is_vencidos = false` clavado, así que el renglón nacería en la
             // bodega y la pestaña donde se apretó el botón no lo mostraría
             // nunca. Sin las pestañas eso pasaba igual, pero se veía —la fila
-            // aparecía en la lista de arriba—; con dos anaqueles separados
+            // aparecía en la lista de arriba—; con dos estantes separados
             // sería un alta que no deja rastro visible. Dar de alta EN el área
             // de vencidos pide un parámetro nuevo en esa función.
             acciones={editable && canEdit && !enVencidos ? [{
@@ -2357,7 +2357,7 @@ export default function ConteoDetailView() {
 
                 {!verSistema && (
                     <Notice variant="info" icon={EyeOff}>
-                        <strong>Conteo ciego.</strong> Anotá lo que ves en el anaquel, no lo que el sistema espera:
+                        <strong>Conteo ciego.</strong> Anota lo que ves en el estante, no lo que el sistema espera:
                         la existencia del sistema y la diferencia no se muestran porque no salen de la base para tu rol.
                         Se ven cuando el conteo se finaliza, o con el permiso «Ver Existencia del Sistema».
                     </Notice>
@@ -2365,7 +2365,7 @@ export default function ConteoDetailView() {
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Recuento a ciegas sobre los renglones <strong>con diferencia</strong>, en orden de anaquel (por laboratorio).
+                        Recuento a ciegas sobre los renglones <strong>con diferencia</strong>, en orden de estante (por laboratorio).
                         El campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
                         No puedes recontar una línea que contaste tú mismo.
                     </Notice>
@@ -2384,15 +2384,15 @@ export default function ConteoDetailView() {
                     /></Suspense>
                 )}
 
-                {/* ── El anaquel que se está contando ──────────────────────
-                    Bodega y área de vencidos son DOS anaqueles, y desde acá se
+                {/* ── El estante que se está contando ──────────────────────
+                    Bodega y área de vencidos son DOS estantes, y desde acá se
                     ve UNO. Antes la segunda era una sección al final de la misma
                     página: para llegar al área de vencidos había que pasar por
                     las 2,759 filas de bodega y por su paginación, y el resumen de
                     arriba mezclaba las dos listas.
 
                     Que sean excluyentes no es sólo orden. Un mismo producto puede
-                    estar en los dos anaqueles con cantidades distintas, así que
+                    estar en los dos estantes con cantidades distintas, así que
                     verlos juntos invita a teclear el número de uno en la fila del
                     otro — que es el error que no deja rastro, porque las dos
                     filas existen y las dos aceptan un número. */}
@@ -2438,7 +2438,7 @@ export default function ConteoDetailView() {
                 {enVencidos && (
                     <div className="space-y-3">
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <strong>Otro anaquel.</strong> Lo apartado por vencer se recorre y se cuenta
+                            <strong>Otro estante.</strong> Lo apartado por vencer se recorre y se cuenta
                             aparte de la bodega. Un producto puede estar en los dos: el número que anotes
                             acá es sólo el de esta área.
                         </Notice>

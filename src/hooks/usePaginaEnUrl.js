@@ -16,7 +16,7 @@ import { PAGE_SIZE_OPTIONS } from '../components/common/TablePagination';
  * Y «se me actualiza» no es hipotético en este portal: la sesión de sala se
  * cierra sola a los 5 minutos, el service worker recarga la aplicación cuando se
  * publica una versión, y F5 existe. Con la página en `useState`, cualquiera de
- * las tres deja al que está frente al anaquel buscando de nuevo dónde iba, entre
+ * las tres deja al que está frente al estante buscando de nuevo dónde iba, entre
  * 1,400 productos y sin ninguna pista de dónde estaba.
  *
  * **Reemplaza, no empuja.** `usePestanaEnUrl` empuja al historial porque una
@@ -26,7 +26,7 @@ import { PAGE_SIZE_OPTIONS } from '../components/common/TablePagination';
  *
  * **El tamaño de página va junto y validado contra la lista blanca.** Van juntos
  * porque «página 50» sin «de a cuántos» no ubica nada: restaurar la 50 con un
- * tamaño distinto del que se eligió deja a la persona en otro tramo del anaquel.
+ * tamaño distinto del que se eligió deja a la persona en otro tramo del estante.
  * Y validado porque el tamaño viaja como `p_limit` a una RPC: un `?ver=99999`
  * escrito a mano pediría una página que PostgREST recorta a 1000 filas **sin
  * error ni aviso** (CLAUDE.md, regla del cap de 1000). La lista blanca es lo que

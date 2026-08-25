@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.756.1 — El portal dice vitrina o estante, nunca anaquel
+
+Pedido del usuario: *«no uses nunca anaquel, solo Vitrina / Estante. audita
+donde se usa y cambialo.»*
+
+**No es preferencia de estilo, y eso lo dice la propia base.** `laboratorios`
+guarda `vitrina`, `estante` y `peldano` para la ubicación en la sala (más
+`bodega_numero` / `bodega_peldano`), y el catálogo de productos hace elegir
+entre «Vit.» y «Est.». O sea que la pantalla venía nombrando de una forma lo
+que la base nombraba de otra desde siempre.
+
+**51 usos cambiados**, y cuál de las dos palabras no es libre: **estante** es la
+genérica —Bodega sólo tiene estantes, y una sala tiene estantes ADEMÁS de
+vitrinas—, **vitrina** es la específica de la sala, y donde la frase habla del
+recorrido completo van las dos («lo que hay en vitrinas y estantes»).
+
+Diez de esos usos eran texto que **ve la gente**: el vacío de Conteo de
+inventario, el aviso del conteo ciego, el detalle de la hoja para llenar a mano,
+el `title` de «no ubicado», el aviso del área de vencidos, el explicativo de
+presentaciones al crear un conteo y el marcador de la bitácora de limpieza. El
+resto eran comentarios, y se limpiaron igual: el vocabulario vuelve por ahí.
+
+### El que ningún grep del fuente encontraba
+
+**El aviso del conteo cíclico vive dentro de una función de Postgres.** Decía
+«Se cuenta a ciegas: anotá lo que ves en el anaquel», y es el cuerpo de la
+notificación que reciben las salas cuando se les crea el conteo del mes.
+Grepear `src/` no lo ve; salió de auditar `pg_proc.prosrc`. Es exactamente el
+hueco que CLAUDE.md ya tenía anotado para los rótulos de catálogo —«el chequeo
+tiene que incluir `supabase/`, porque hay rótulos que también viven dentro de
+funciones de Postgres»— y esta vez mordió.
+
+Corregido por migración, con el cuerpo de la función copiado de
+`pg_get_functiondef` tal cual estaba: lo único que cambia es esa frase. De paso
+se corrigió «anotá» → «anota», porque §26.7 fija tuteo y el gate de copy tampoco
+puede ver un string que está dentro de la base. Ningún aviso ya enviado lo dice
+—verificado: 0 filas en `notifications`—, así que no hubo historia que
+reescribir, sólo el molde.
+
+La auditoría completa fue a cuatro sitios, no a uno: el fuente, las funciones
+vivas de Postgres (7 menciones más, **todas en comentarios**), los datos
+sembrados (barrido de toda columna de texto de las tablas chicas: **cero**) y
+las notificaciones ya enviadas (**cero**).
+
+### Y ahora hay quien lo vigile
+
+Nueva categoría `copy-anaquel` en `npm run gate:design`, **bloqueante en cero**,
+sobre las líneas que no son comentario — misma forma que `copy-trato`. Porque
+una regla de vocabulario que nadie verifica vuelve sola: se limpiaron 51 usos de
+una vez y basta que la escriba una sesión para que empiece de nuevo. Se
+comprobó que el detector **falla** al reintroducir la palabra, que es lo único
+que prueba que sirve.
+
+El canon queda escrito en **DESIGN.md §26.7b**, con la tabla de cuál va dónde y
+con la advertencia que este cambio dejó: el gate NO puede ver los rótulos que
+viven dentro de funciones de Postgres, así que al cambiar vocabulario la
+búsqueda incluye `supabase/`, las funciones vivas y los datos sembrados.
+
+### Lo que NO se tocó, a propósito
+
+* **Las migraciones ya aplicadas y el CHANGELOG**: son el registro de lo que se
+  hizo, no texto que alguien lea para trabajar. Reescribirlos sería falsificar
+  el archivo.
+* **`docs/legal/*.txt`**: son la letra del RTS y de la guía de verificación del
+  CSSP. La guía pregunta literalmente «¿Están separados en anaqueles y vitrinas
+  los productos…?» — es su palabra, no la nuestra.
+* **Siete comentarios dentro de funciones de Postgres**: cambiarlos obligaría a
+  reemplazar cuatro funciones para no cambiar ni una línea de comportamiento.
+
+Verificado: `gate:design` (con la categoría nueva), `gate:movil`,
+`gate:borradores`, `gate:bundle`, `gate:migrations`, `gate:perf` y
+`gate:eficiencia` en verde; las 1,805 pruebas pasan.
+
 ## v2.756.0 — Conteo: el alta lee el código, y las pestañas dicen cuánto falta
 
 Tres cosas que pidió el usuario mirando **Conteo de inventario** después de

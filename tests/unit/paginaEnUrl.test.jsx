@@ -13,7 +13,7 @@ import usePaginaEnUrl from '../../src/hooks/usePaginaEnUrl';
 //    actualiza, me devuelve a la página 1»
 //
 // El modo de falla es el silencio: nada explota, la tabla se pinta perfecta y
-// la única señal es que quien está frente al anaquel tiene que buscar de nuevo
+// la única señal es que quien está frente al estante tiene que buscar de nuevo
 // dónde iba entre 1,400 productos. Por eso hace falta anclarlo con pruebas —
 // una regresión acá se vería exactamente igual que el arreglo.
 //

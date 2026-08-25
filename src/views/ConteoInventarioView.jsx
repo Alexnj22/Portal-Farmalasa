@@ -432,7 +432,7 @@ export default function ConteoInventarioView() {
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
                 subtext: foco === 'TODOS'
-                    ? 'Un conteo toma una foto del inventario del sistema y la compara con lo que hay en el anaquel.'
+                    ? 'Un conteo toma una foto del inventario del sistema y la compara con lo que hay en vitrinas y estantes.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
                 action: foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }

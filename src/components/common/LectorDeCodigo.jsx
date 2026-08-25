@@ -29,7 +29,7 @@ import Button from './Button';
  *
  * ── Los 500 ms de calentamiento no son cosmética ──────────────────────────
  * Los primeros cuadros de una cámara vienen borrosos y zxing les inventa
- * lecturas: sin la espera, abrir el lector delante de un anaquel devolvía un
+ * lecturas: sin la espera, abrir el lector delante de un estante devolvía un
  * código de algo que no se estaba apuntando. El `cooldown` cumple lo mismo del
  * otro lado — una vez que leyó, deja de leer, porque el callback sigue
  * llegando mientras la cámara se apaga.
@@ -99,7 +99,7 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
                 lectorRef.current = lector;
                 if (cancelado || !videoRef.current) return;
                 // `undefined` = que el navegador elija la cámara. En un teléfono
-                // eso es la trasera, que es la que apunta al anaquel.
+                // eso es la trasera, que es la que apunta al estante.
                 await lector.decodeFromVideoDevice(undefined, videoRef.current, (resultado) => {
                     if (!resultado || cancelado || calentando || enfriandoRef.current) return;
                     enfriandoRef.current = true;

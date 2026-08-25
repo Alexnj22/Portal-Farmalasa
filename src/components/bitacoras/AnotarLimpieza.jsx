@@ -56,7 +56,7 @@ export default function AnotarLimpieza({ area, turno, fecha, onCerrar }) {
                     label="Observaciones (opcional)" name="observaciones"
                     value={obs} onChange={(e) => setObs(e.target.value)}
                     rows={3}
-                    placeholder="Sólo si hay algo que anotar: una gotera, un anaquel que hubo que reacomodar…"
+                    placeholder="Sólo si hay algo que anotar: una gotera, una vitrina que hubo que reacomodar…"
                 />
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}

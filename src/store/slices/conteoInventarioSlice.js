@@ -164,7 +164,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     // además ignora el orden por sistema/diferencia en un conteo ciego — la
     // lista ordenada por el número tapado lo revela igual.
     //
-    // `area` parte la lista en dos anaqueles: 'NORMAL' es la bodega, 'VENCIDOS'
+    // `area` parte la lista en dos estantes: 'NORMAL' es la bodega, 'VENCIDOS'
     // el área donde el sistema aparta lo vencido. NULL las junta, que era el
     // comportamiento viejo — y era un error: un producto que está en las dos
     // (42 de 83 en el conteo abierto) salía en UNA fila con los totales de
@@ -192,7 +192,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     },
 
     // Solo los laboratorios que están EN ESTE conteo. El catálogo completo son
-    // 1,100+: ofrecerlos todos deja elegir uno que no está en el anaquel y
+    // 1,100+: ofrecerlos todos deja elegir uno que no está en el estante y
     // vaciar la tabla sin explicación.
     fetchConteoLaboratorios: async (conteoId) => {
         const { data, error } = await supabase.rpc('get_conteo_laboratorios', { p_conteo_id: conteoId });
@@ -256,7 +256,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_erp_product_id: null,
             p_erp_product_ids: ids,
             // El área tiene que viajar también acá: los 42 productos que están
-            // en los dos anaqueles traerían sus DOS juegos de renglones a las
+            // en los dos estantes traerían sus DOS juegos de renglones a las
             // dos secciones, y cada una mostraría los del otro lado.
             p_area: area,
         })));

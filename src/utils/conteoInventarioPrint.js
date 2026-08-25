@@ -309,7 +309,7 @@ function tablaDeLaboratorio({ widths, bandaLab, headerRow, filas, layout }) {
 }
 
 // El corte de laboratorio. La hoja SIEMPRE vino ordenada por laboratorio —es el
-// orden en que se recorre el anaquel— pero no lo decía en ninguna parte: en 93
+// orden en que se recorre el estante— pero no lo decía en ninguna parte: en 93
 // páginas no había forma de saber dónde termina uno y empieza el siguiente.
 function bandaLaboratorio(nombre, ncols) {
     return [
@@ -345,7 +345,7 @@ function cuerpoConCortes(items, ncols, filaDeItem) {
 
 // ── Hoja compacta ───────────────────────────────────────────────────────────
 // 3,665 renglones en una columna vertical son 103 páginas: demasiado papel para
-// recorrer un anaquel. La hoja compacta pone DOS productos por renglón impreso y
+// recorrer un estante. La hoja compacta pone DOS productos por renglón impreso y
 // gira la página, y con eso la mitad de las hojas.
 //
 // Lo que se sacrifica es la columna «Nota»: es la única que no hace falta para

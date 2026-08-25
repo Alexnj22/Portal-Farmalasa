@@ -2013,7 +2013,7 @@ el conteo y estoy en la página 50, y se me actualiza, me devuelve a la página
 1»*— y «se me actualiza» acá no es hipotético: la sesión de sala se cierra sola
 a los 5 minutos (v2.647.0), el service worker recarga la aplicación al publicar
 una versión, y F5 existe. Cualquiera de las tres deja a alguien de pie frente al
-anaquel buscando de nuevo dónde iba entre 1,400 productos.
+estante buscando de nuevo dónde iba entre 1,400 productos.
 
 `usePaginaEnUrl` (`src/hooks/usePaginaEnUrl.js`) devuelve
 `{ page, pageSize, totalPages, setPage, setPageSize, resetPage }` y se diferencia
@@ -4246,7 +4246,7 @@ está en esa pantalla la vista lo dice en vez de no hacer nada.
 `shadow-literal` en `design-gate`): el `<video>` muestra lo que ve la cámara, no
 el tema. El fondo tiene que ser negro —cualquier token se lee como un error de
 encuadre—, la guía tiene que contrastar contra lo que sea que haya enfrente (una
-caja blanca, un anaquel a contraluz) y no contra el fondo de la aplicación, y la
+caja blanca, un estante a contraluz) y no contra el fondo de la aplicación, y la
 «sombra» de 9999px no es una sombra sino el anillo que oscurece lo que queda
 fuera de la guía. El motivo está escrito también en `EXCEPTIONS`.
 
@@ -6203,6 +6203,37 @@ lugares. Un `¡Guardado!` en un botón es la app festejando su propio CRUD; un
 Los tres que quedan, y son la lista completa: `FeedbackOverlay` (cumpleaños y
 aviso urgente del kiosco), `LoginView` (`¡Acceso concedido!` al escanear el
 carné) y `EmployeeProfileView` (`¡Hoy! 🎉` en el cumpleaños propio).
+
+### 26.7b «Vitrina» o «estante» — nunca «anaquel»
+
+**Decisión del usuario, 2026-08-25:** *«no uses nunca anaquel, solo Vitrina /
+Estante»*.
+
+No es preferencia de estilo. Son las dos palabras que la empresa usa, y son las
+únicas que el portal ya tenía **como dato**: `laboratorios` guarda `vitrina`,
+`estante` y `peldano` para la ubicación en la sala (más `bodega_numero` /
+`bodega_peldano`), y el catálogo hace elegir entre «Vit.» y «Est.». O sea que la
+pantalla venía nombrando de una forma lo que la base nombraba de otra.
+
+Cuál de las dos:
+
+| | |
+|---|---|
+| **estante** | la genérica. Bodega sólo tiene estantes, y una sala tiene estantes ADEMÁS de vitrinas |
+| **vitrina** | la específica de la sala — el mueble de exhibición |
+| **las dos** | cuando la frase habla del recorrido completo de una sala: «lo que hay en vitrinas y estantes» |
+
+Lo vigila la categoría `copy-anaquel` de `npm run gate:design`, bloqueante en
+cero, sobre las líneas que no son comentario. Se escribió junto con la limpieza
+—51 usos de una vez— porque una regla de vocabulario que nadie verifica vuelve
+sola: basta que la escriba una sesión.
+
+⚠ **El gate no puede ver el hueco más grande, y ese hueco ya mordió.** El aviso
+del conteo cíclico decía «anotá lo que ves en el anaquel» y vive **dentro de una
+función de Postgres**, así que ningún grep del fuente lo encontraba: salió de
+auditar `pg_proc.prosrc`. Es el mismo hueco que CLAUDE.md ya anota para los
+rótulos de catálogo. Al cambiar vocabulario, la búsqueda incluye `supabase/`,
+las funciones vivas y los datos sembrados — no sólo `src/`.
 
 ### 26.8 Un error dice qué pasó y qué hacer
 

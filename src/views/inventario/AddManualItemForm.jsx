@@ -17,7 +17,7 @@ import {
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
 // este formulario ya viaja diferido. Estático lo volvería a meter en el paquete
-// de una pantalla que se abre de pie frente a un anaquel.
+// de una pantalla que se abre de pie frente a un estante.
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 
 /**
@@ -25,7 +25,7 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  *
  * Sale de `ConteoDetailView` el 2026-08-23 por peso, no por orden: son líneas
  * que sólo existen cuando alguien toca «Agregar», y viajaban en el paquete de
- * una pantalla que se abre de pie frente a un anaquel. El `bundle-gate` lo vio.
+ * una pantalla que se abre de pie frente a un estante. El `bundle-gate` lo vio.
  *
  * Se carga con `lazy` + `Suspense` y montado SÓLO mientras está abierto: si se
  * montara siempre, `lazy` bajaría su trozo al entrar y no habría diferido nada.
@@ -35,7 +35,7 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  * sea más amigable». Tres cosas cambiaron, y las tres tienen su motivo:
  *
  * 1. **Se llega al producto por el código, no sólo por el nombre.** Quien está
- *    de pie frente al anaquel tiene la caja en la mano: leerle el código es un
+ *    de pie frente al estante tiene la caja en la mano: leerle el código es un
  *    gesto, y escribir «acetaminofén 500 mg tabletas» son doce teclas y una
  *    duda de ortografía. El buscador YA miraba `codigo_barras` —lo hace
  *    `filtroProductoOCodigo`—, así que lo que faltaba no era la consulta: era
@@ -86,13 +86,13 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
     // Qué pasó con el último código leído. Es estado y no un toast porque el
     // aviso tiene que quedarse a la vista mientras se decide qué hacer: un
     // toast se va solo a los pocos segundos y quien está contando estaba
-    // mirando el anaquel, no la pantalla.
+    // mirando el estante, no la pantalla.
     const [avisoDeCodigo, setAvisoDeCodigo] = useState(null);
     const [buscandoCodigo, setBuscandoCodigo] = useState(false);
 
     // Antes se filtraban los productos ya presentes en el conteo, lo que hacía
     // imposible el caso más común de una farmacia: el snapshot trae el lote A y
-    // en el anaquel aparece también el B. El duplicado real es
+    // en el estante aparece también el B. El duplicado real es
     // (producto, presentación, lote), y ahora lo rechaza agregar_item_conteo.
     const handleSearch = async (q) => {
         if (!q || q.trim().length < 2) { setResults([]); return; }
@@ -169,7 +169,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
             setAvisoDeCodigo({ tipo: filas.length ? VARIOS : SIN_RESULTADO, codigo: q, cuantos: filas.length });
         } catch (err) {
             // Un escaneo que revienta NO puede quedarse mudo: quien lo pasó está
-            // mirando el anaquel y sólo vuelve la vista al oír el pitido. Sin
+            // mirando el estante y sólo vuelve la vista al oír el pitido. Sin
             // esto, un fallo de red se veía idéntico a un código que no existe.
             console.error('resolverCodigo: product search failed:', err?.message || err);
             setAvisoDeCodigo({ tipo: FALLO, codigo: q, detalle: mensajeAmigable(err) });
@@ -230,7 +230,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                     <div className="min-w-0">
                         <p className="text-body-sm font-black text-content">Agregar al conteo</p>
                         <p className="text-caption text-content-2">
-                            Para lo que apareció en el anaquel y no está en la lista
+                            Para lo que apareció en el estante y no está en la lista
                             {simple ? '.' : ', o para un lote que no venía.'}
                         </p>
                     </div>

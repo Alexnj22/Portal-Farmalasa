@@ -8,7 +8,7 @@ import { render, cleanup, waitFor, fireEvent } from '@testing-library/react';
 // El 2026-08-23 `AddManualItemForm` se extrajo de `ConteoDetailView` y pasó a
 // `lazy()`: 162 líneas que sólo existen cuando alguien toca «Agregar» y que
 // viajaban en el paquete de una pantalla que se abre de pie frente a un
-// anaquel. El `bundle-gate` lo pidió —la vista había quedado 1 kB sobre su
+// estante. El `bundle-gate` lo pidió —la vista había quedado 1 kB sobre su
 // techo— y bajó de 68 a 67 kB.
 //
 // **Mover 162 líneas de archivo no lo prueba el compilador.** El build valida

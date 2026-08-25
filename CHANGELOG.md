@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.751.0 — Diez funciones dejan de ser alcanzables sin iniciar sesión
+
+La superficie `anon` baja de **24 funciones a 14**. Las que quedan son el
+pre-login del kiosco y de las cajas de impresión, que **tienen** que ser
+alcanzables sin sesión y se defienden solas validando `device_token` adentro.
+
+Ninguna de las diez era un agujero —la auditoría del 23-ago ya las había
+verificado una por una— pero estaban abiertas sin que nadie lo hubiera decidido:
+nacieron con el GRANT por los **default privileges** de Supabase, que conceden
+EXECUTE a `anon` sobre cada función nueva del esquema `public`. No es que alguien
+las abriera; es que nadie las cerró.
+
+**Seis eran funciones de trigger**, donde el GRANT es inerte: Postgres no deja
+invocarlas directamente. Que revocarlo no rompa el trigger se **probó** en el
+entorno de pruebas antes de tocar producción, porque de una premisa así no
+alcanza con estar seguro — revocado el permiso, una sesión `authenticated` cambió
+un `min_units` y el trigger escribió igual su `manual_at`. (Los dos primeros
+intentos dieron «no escribió» y el defecto estaba en la prueba: tomaba `LIMIT 1`
+sin orden y caía en una fila pegada al CHECK `chk_min_lt_max`, así que el UPDATE
+ni llegaba a correr.)
+
+**Y de `update_proveedor_manual` la auditoría se había equivocado de
+sobrecarga.** Decía que el GRANT lo tenía «la vieja». Es al revés: la revocación
+del 2026-07-29 cerró la de ocho argumentos, y cuando se le agregó
+`p_retiene_renta` la **nueva** —la que el portal usa hoy— nació abierta otra vez.
+
+**Lo que el gate enseñó, y es la parte que se me había pasado.**
+`gate:migrations` levantó la primera migración: **`REVOKE … FROM anon, PUBLIC`
+deja intacto el EXECUTE de `authenticated`**, que Supabase concede aparte. Cerrar
+la puerta de la calle y dejar abierta la del pasillo. La pregunta por función es
+una sola —¿la llama el navegador?— y se contestó mirando el fuente: las tres
+funciones puras tienen **cero** apariciones en `src/`, así que pierden también
+`authenticated`; `update_proveedor_manual` sí la llama `FormProveedorDetail`, así
+que recibe el permiso **explícito** en vez de quedarse con el heredado.
+
+Migraciones `20260825032825` y `20260825033229`. El eje de seguridad sube a 98 en
+Compras, Solicitudes, Traslados y Pedidos.
+
 ## v2.750.4 — La etiqueta del corte avisa cuando no salió
 
 Dos reportes de sala —«la etiqueta no imprimió al confirmar el corte»— medidos

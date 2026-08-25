@@ -396,10 +396,6 @@ function puntuar(area) {
     const higiene = [], abiertos = [];
     if (area.id === 'acceso') higiene.push(...SERVIDOR.anon_funciones.kiosco_sin_documentar.map(f => `${f}(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila`));
     if (area.id === 'impresion') higiene.push(...SERVIDOR.anon_funciones.impresion.map(f => `${f}(): GRANT a anon de más; valida el token del equipo adentro`));
-    if (area.id === 'compras') higiene.push('update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada');
-    if (area.id === 'solicitudes') higiene.push('asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar');
-    if (area.id === 'traslados') higiene.push('expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger');
-    if (area.id === 'pedidos') higiene.push('notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger');
     if (area.id === 'facturacion-dte') higiene.push(...SERVIDOR.search_path_mutable.map(f => `${f}(): sin SET search_path — viola la regla 4 del hardening`));
     if (area.id === 'sucursales') higiene.push('branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado');
     if (area.id === 'horarios') higiene.push('holidays y shifts: legibles por anon con USING(true), sin motivo escrito');
@@ -425,6 +421,14 @@ function puntuar(area) {
     // En el mismo commit viaja `dui_disponible`, porque el aviso de DUI repetido
     // cruzaba contra el padrón cargado y sin el campo ahí habría dicho «no hay
     // duplicado» SIEMPRE — el mismo modo de falla que tuvo el código de carné.
+    // CERRADO el 2026-08-25 (migración 20260825032825): se revocaron los seis
+    // GRANT de trigger, las tres funciones puras y `update_proveedor_manual`.
+    // Los triggers eran inertes —Postgres no deja invocarlos directamente— pero
+    // el EXECUTE estaba igual, por los default privileges de Supabase. De
+    // `update_proveedor_manual` esta lista decía «la sobrecarga vieja» y era al
+    // revés: el GRANT lo tenía la NUEVA, la de nueve argumentos que usa el
+    // portal, porque nació con él después de que la revocación del 2026-07-29
+    // cerrara la de ocho.
     const anonMios = [...abiertos, ...higiene];
     ev.seguridad = { pct: tope(98 - higiene.length * 2 - abiertos.length * 25, 55),
         evidencia: '0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · '

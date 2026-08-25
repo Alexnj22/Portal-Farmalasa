@@ -1,68 +1,125 @@
 {
-  "nota": "TODO lo que el rol `anon` puede ejecutar o leer en producción, declarado con su motivo. El gate compara esta lista contra el snapshot: si producción tiene algo que no está acá, FALLA. Es lo único que impide que la superficie vuelva a crecer sin que nadie mire — creció de 5 a 24 entre el 2026-07-29 y el 2026-08-23 y no lo detectó nada.",
-  "por_que_existe": "CLAUDE.md afirmaba que sólo CINCO funciones eran ejecutables por anon y que 'ninguna otra función del proyecto es ejecutable por anon'. La auditoría del 2026-08-23 midió 24. Se abrieron tres a mano y las tres se defienden solas (validan device_token, o lanzan FORBIDDEN, o son triggers inertes), así que no había ningún agujero abierto — pero tampoco había nada vigilando. Una afirmación que nadie verifica deja de ser cierta sin avisar, y la que nadie verifica sobre quién puede entrar sin credenciales es la peor de todas.",
-  "revisado": "2026-08-23",
-  "funciones": [
-    { "nombre": "get_kiosk_boot_payload", "area": "acceso", "guarda": "device_token", "estado": "declarada-desde-siempre",
-      "motivo": "Pre-login del kiosco: la pantalla de marcación necesita su carga inicial antes de que nadie se identifique." },
-    { "nombre": "get_kiosk_coverage_employees", "area": "acceso", "guarda": "device_token", "estado": "declarada-desde-siempre",
-      "motivo": "Pre-login del kiosco: quién puede marcar hoy en esta sala, incluida la cobertura de otra." },
-    { "nombre": "verify_kiosk_device", "area": "acceso", "guarda": "device_token", "estado": "declarada-desde-siempre",
-      "motivo": "Pre-login del kiosco: valida que el equipo esté dado de alta." },
-    { "nombre": "verify_kiosk_pin", "area": "acceso", "guarda": "device_token", "estado": "declarada-desde-siempre",
-      "motivo": "Pre-login del kiosco: reemplazó la comparación del PIN en el navegador (rediseño de credenciales, 2026-07-29)." },
-    { "nombre": "verify_kiosk_authorization", "area": "acceso", "guarda": "device_token", "estado": "declarada-desde-siempre",
-      "motivo": "Pre-login del kiosco: valida el código SU sin que viaje al navegador." },
-
-    { "nombre": "kiosco_identificar", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "El kiosco identifica por carné antes de que exista sesión. Entra por kiosco_sucursal(device_id, device_token): sin token válido no hace nada." },
-    { "nombre": "kiosco_marcar", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "La marcación misma. Verificado a mano el 2026-08-23: abre resolviendo la sala por device_id + device_token." },
-    { "nombre": "kiosco_marcajes_recientes", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "Las últimas marcaciones que muestra la pantalla del kiosco." },
-    { "nombre": "kiosco_declarar_turno", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "Declarar el turno propio desde el kiosco cuando el rol no lo trae publicado." },
-    { "nombre": "kiosco_bitacora", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "Registro de lo que pasó en el kiosco. Es la observabilidad de una pantalla sin sesión." },
-    { "nombre": "kiosco_aviso_leido", "area": "acceso", "guarda": "device_token", "estado": "hallada-2026-08-23",
-      "motivo": "Marcar leído un comunicado desde el kiosco." },
-
-    { "nombre": "canjear_codigo_de_vinculacion", "area": "impresion", "guarda": "codigo-de-un-solo-uso", "estado": "hallada-2026-08-23",
-      "motivo": "El agente de impresión corre en la computadora de la caja y no tiene sesión de portal. Canjea un código de vinculación por un token de equipo." },
-    { "nombre": "reclamar_impresion", "area": "impresion", "guarda": "device+token", "estado": "hallada-2026-08-23",
-      "motivo": "El agente pide el siguiente documento de su cola. Hay DOS sobrecargas vivas: la vieja (p_device, p_token) y la nueva (+p_version, +p_canal)." },
-    { "nombre": "confirmar_impresion", "area": "impresion", "guarda": "device+token", "estado": "hallada-2026-08-23",
-      "motivo": "El agente avisa si el documento salió o falló." },
-
-    { "nombre": "asignar_aprobador_solicitud", "area": "solicitudes", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER. Sin NEW no se puede ejecutar, así que es inerte por RPC — pero el GRANT no debería estar. Revocable sin riesgo." },
-    { "nombre": "expandir_lineas_envio", "area": "traslados", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER, inerte por RPC. El GRANT sobra." },
-    { "nombre": "notificar_resolucion_envio", "area": "traslados", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER, inerte por RPC. El GRANT sobra." },
-    { "nombre": "validar_envio_producto", "area": "traslados", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER, inerte por RPC. El GRANT sobra." },
-    { "nombre": "notificar_decision_diferencia", "area": "pedidos", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER, inerte por RPC. El GRANT sobra." },
-    { "nombre": "marcar_ajuste_manual_minmax", "area": "minmax", "guarda": "es-un-trigger", "estado": "GRANT-de-mas",
-      "motivo": "Función de TRIGGER, inerte por RPC. El GRANT sobra." },
-
-    { "nombre": "update_proveedor_manual", "area": "compras", "guarda": "auth_can_edit_any(['proveedores'])", "estado": "GRANT-de-mas",
-      "motivo": "ESCRIBE en proveedores_maestro, pero abre con RAISE EXCEPTION 'FORBIDDEN' si el llamador no tiene el permiso — y anon nunca lo tiene. El GRANT quedó sobre la sobrecarga VIEJA: la revocación del 2026-07-29 alcanzó a la nueva y no a las dos. Es el ejemplo de cómo se acumula esta deuda: una firma cambia, se crea la nueva, y la vieja se queda con sus permisos." },
-
-    { "nombre": "es_ultimo_dia_del_mes_sv", "area": "plataforma", "guarda": "funcion-pura", "estado": "sin-riesgo",
-      "motivo": "Calendario. No toca ninguna tabla: no hay nada que filtrar." },
-    { "nombre": "nit_sv_valido", "area": "facturacion-dte", "guarda": "funcion-pura", "estado": "sin-riesgo",
-      "motivo": "Valida la forma de un NIT. No toca ninguna tabla." },
-    { "nombre": "sello_mh_valido", "area": "facturacion-dte", "guarda": "funcion-pura", "estado": "sin-riesgo",
-      "motivo": "Valida la forma de un sello de Hacienda. No toca ninguna tabla. Es la que evita que `IS NULL` dé por bueno cualquier texto." }
-  ],
-  "tablas": [
-    { "nombre": "branches", "area": "sucursales", "estado": "necesaria",
-      "motivo": "El kiosco tiene que saber en qué sala está antes de que nadie inicie sesión. La policy se llama `kiosk_read` y es USING(true): expone el listado de sucursales de la empresa, que no es un dato sensible, pero conviene saber que está abierto." },
-    { "nombre": "holidays", "area": "horarios", "estado": "revisar",
-      "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). No hay motivo escrito de por qué anon necesita los feriados. Candidata a acotar a authenticated." },
-    { "nombre": "shifts", "area": "horarios", "estado": "revisar",
-      "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). El catálogo de turnos probablemente lo necesita el kiosco; no está escrito. Candidata a acotar." }
-  ]
+ "nota": "TODO lo que el rol `anon` puede ejecutar o leer en producción, declarado con su motivo. El gate compara esta lista contra el snapshot: si producción tiene algo que no está acá, FALLA. Es lo único que impide que la superficie vuelva a crecer sin que nadie mire — creció de 5 a 24 entre el 2026-07-29 y el 2026-08-23 y no lo detectó nada. · 2026-08-25: se REVOCARON diez (migración 20260825032825) y salen de esta lista — seis funciones de trigger (el GRANT era inerte: Postgres no deja invocarlas directamente, y al dispararse no comprueba el EXECUTE de quien provocó la escritura, probado en el entorno de pruebas), tres funciones puras que no leen ninguna tabla, y update_proveedor_manual. De esa última la auditoría se había equivocado de sobrecarga: el GRANT lo tenía la NUEVA (nueve argumentos, la que usa el portal), porque nació con él por default privileges después de que la revocación del 2026-07-29 cerrara la vieja. Lo que queda declarado es el pre-login del kiosco y de las cajas de impresión, que TIENE que ser alcanzable sin sesión.",
+ "por_que_existe": "CLAUDE.md afirmaba que sólo CINCO funciones eran ejecutables por anon y que 'ninguna otra función del proyecto es ejecutable por anon'. La auditoría del 2026-08-23 midió 24. Se abrieron tres a mano y las tres se defienden solas (validan device_token, o lanzan FORBIDDEN, o son triggers inertes), así que no había ningún agujero abierto — pero tampoco había nada vigilando. Una afirmación que nadie verifica deja de ser cierta sin avisar, y la que nadie verifica sobre quién puede entrar sin credenciales es la peor de todas.",
+ "revisado": "2026-08-25",
+ "funciones": [
+  {
+   "nombre": "get_kiosk_boot_payload",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "declarada-desde-siempre",
+   "motivo": "Pre-login del kiosco: la pantalla de marcación necesita su carga inicial antes de que nadie se identifique."
+  },
+  {
+   "nombre": "get_kiosk_coverage_employees",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "declarada-desde-siempre",
+   "motivo": "Pre-login del kiosco: quién puede marcar hoy en esta sala, incluida la cobertura de otra."
+  },
+  {
+   "nombre": "verify_kiosk_device",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "declarada-desde-siempre",
+   "motivo": "Pre-login del kiosco: valida que el equipo esté dado de alta."
+  },
+  {
+   "nombre": "verify_kiosk_pin",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "declarada-desde-siempre",
+   "motivo": "Pre-login del kiosco: reemplazó la comparación del PIN en el navegador (rediseño de credenciales, 2026-07-29)."
+  },
+  {
+   "nombre": "verify_kiosk_authorization",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "declarada-desde-siempre",
+   "motivo": "Pre-login del kiosco: valida el código SU sin que viaje al navegador."
+  },
+  {
+   "nombre": "kiosco_identificar",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "El kiosco identifica por carné antes de que exista sesión. Entra por kiosco_sucursal(device_id, device_token): sin token válido no hace nada."
+  },
+  {
+   "nombre": "kiosco_marcar",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "La marcación misma. Verificado a mano el 2026-08-23: abre resolviendo la sala por device_id + device_token."
+  },
+  {
+   "nombre": "kiosco_marcajes_recientes",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "Las últimas marcaciones que muestra la pantalla del kiosco."
+  },
+  {
+   "nombre": "kiosco_declarar_turno",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "Declarar el turno propio desde el kiosco cuando el rol no lo trae publicado."
+  },
+  {
+   "nombre": "kiosco_bitacora",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "Registro de lo que pasó en el kiosco. Es la observabilidad de una pantalla sin sesión."
+  },
+  {
+   "nombre": "kiosco_aviso_leido",
+   "area": "acceso",
+   "guarda": "device_token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "Marcar leído un comunicado desde el kiosco."
+  },
+  {
+   "nombre": "canjear_codigo_de_vinculacion",
+   "area": "impresion",
+   "guarda": "codigo-de-un-solo-uso",
+   "estado": "hallada-2026-08-23",
+   "motivo": "El agente de impresión corre en la computadora de la caja y no tiene sesión de portal. Canjea un código de vinculación por un token de equipo."
+  },
+  {
+   "nombre": "reclamar_impresion",
+   "area": "impresion",
+   "guarda": "device+token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "El agente pide el siguiente documento de su cola. Hay DOS sobrecargas vivas: la vieja (p_device, p_token) y la nueva (+p_version, +p_canal)."
+  },
+  {
+   "nombre": "confirmar_impresion",
+   "area": "impresion",
+   "guarda": "device+token",
+   "estado": "hallada-2026-08-23",
+   "motivo": "El agente avisa si el documento salió o falló."
+  }
+ ],
+ "tablas": [
+  {
+   "nombre": "branches",
+   "area": "sucursales",
+   "estado": "necesaria",
+   "motivo": "El kiosco tiene que saber en qué sala está antes de que nadie inicie sesión. La policy se llama `kiosk_read` y es USING(true): expone el listado de sucursales de la empresa, que no es un dato sensible, pero conviene saber que está abierto."
+  },
+  {
+   "nombre": "holidays",
+   "area": "horarios",
+   "estado": "revisar",
+   "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). No hay motivo escrito de por qué anon necesita los feriados. Candidata a acotar a authenticated."
+  },
+  {
+   "nombre": "shifts",
+   "area": "horarios",
+   "estado": "revisar",
+   "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). El catálogo de turnos probablemente lo necesita el kiosco; no está escrito. Candidata a acotar."
+  }
+ ]
 }

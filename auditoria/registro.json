@@ -694,11 +694,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 96,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -747,7 +745,6 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[seguridad] asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1541,11 +1538,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 96,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -1601,7 +1596,6 @@
         "[flujo] falta que alguien confirme el lote que llegó — que es lo legal",
         "[flujo] falta una ruta real (conductor = creador)",
         "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
-        "[seguridad] notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger",
         "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
@@ -1637,11 +1631,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 96,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -1695,7 +1687,6 @@
         "[flujo] falta que alguien pida del área de vencidos y que Bodega lo despache",
         "[flujo] falta verlo en pantalla (lo confirma la sala)",
         "[flujo] falta probar la sala de respaldo después de las 17:00",
-        "[seguridad] expandir_lineas_envio(), notificar_resolucion_envio(), validar_envio_producto(): triggers con GRANT a anon, inertes fuera de un trigger",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1728,11 +1719,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 96,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -1785,7 +1774,6 @@
         "[flujo] falta el plazo de los 163 proveedores y el insert al sistema",
         "[flujo] 7 pares de compras comparten sello; en DOS los proveedores son distintos, así que un sello está en la compra equivocada",
         "[flujo] las recetas están medidas (5 reales) y sin construir",
-        "[seguridad] update_proveedor_manual(): la sobrecarga vieja conservó el GRANT a anon que la revocación del 2026-07-29 le quitó a la nueva. Lanza FORBIDDEN sin el permiso, así que no expone nada",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [

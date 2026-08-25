@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.757.0 — La propuesta de meta sale el 28, con tres días más de venta
+
+Pedido del usuario: *«cambiemos del 25 al 28 el cálculo de meta, para tener una
+meta más real»*. Con el mes en curso ya adentro de la fórmula (v2.755.0), cada
+día de espera es un día menos de proyección — y eso se mide. Enfrentando la
+proyección contra el cierre REAL de mayo, junio y julio:
+
+| | Error medio | Peor caso |
+|---|---:|---:|
+| 24 días (el 25) | ~2.0% | $3,585.91 |
+| 27 días (el 28) | ~1.2% | $1,394.16 |
+
+El error se parte casi a la mitad. El costo es la otra cara y conviene tenerlo
+escrito: quedan **2-3 días** para confirmar y aprobar antes de que arranque el
+mes, y en **febrero queda uno solo** (el 28 es el último día). Ahí la red es el
+recordatorio del día 1, que ya avisa a supervisión y gerencia que el mes en
+curso sigue sin meta oficial.
+
+**Dos cosas se rompían al mover el número, y ninguna habría dado error.**
+
+**El recordatorio «Metas sin confirmar» estaba clavado en el 28.** Con la
+propuesta también el 28, la misma corrida que las crea mandaba el aviso de que
+están sin confirmar — a las 08:00 de la mañana en que aparecieron. Pasa a ser
+«desde el día siguiente al de la propuesta», que es lo que siempre quiso decir.
+
+**Y mover el día, por sí solo, no habría cambiado la meta de septiembre.**
+`generar_propuestas_metas` inserta con `ON CONFLICT DO NOTHING` —correcto:
+correrla dos veces no puede pisar un número que alguien ya está mirando—, así
+que el 28 no habría tocado las filas creadas el 25 y la meta habría seguido
+calculada con 24 días. El cambio se habría sentido como aplicado sin estarlo.
+Ahora el día de la propuesta también **rehace** lo que ya estaba, con los tres
+frenos de `recalcular_propuestas_metas`: sólo un mes que no empezó, sólo
+`propuesta`/`devuelta`, y sólo si nadie la ajustó a mano. En un mes normal no
+cambia nada (las acaba de crear con los mismos datos); en un mes ya propuesto,
+las pone al día.
+
+Si rehace algo, **se avisa**. `generar_...` sólo notifica cuando inserta, así
+que sin este aviso los montos habrían cambiado en silencio entre que el
+supervisor los miró y los confirma — que es justo lo que no puede pasar sin
+dejar rastro.
+
+En concreto: **el 28 a las 08:00 las seis metas de septiembre se recalculan con
+27 días de agosto** y llega el aviso. Si se confirman antes, el 28 no las toca —
+la palabra de quien confirmó manda sobre la fórmula.
+
 ## v2.756.3 — En Conteo, el nombre de quien contó vuelve a ser nombre y apellido
 
 Pedido del usuario: *«en Conteo, que solo salga nombre apellido, eso es un

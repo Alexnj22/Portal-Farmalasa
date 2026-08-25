@@ -65,7 +65,7 @@ export default function MetasView() {
     const [bonificacionesHastaYm, setBonificacionesHastaYm] = useState(null);
     // El día en que el portal propone las metas del mes siguiente. Confirmación
     // lo necesita para no adelantar una sección que todavía no tiene contenido.
-    const [diaPropuesta, setDiaPropuesta] = useState(25);
+    const [diaPropuesta, setDiaPropuesta] = useState(28);
 
     // `reloadKey` entra en las dependencias: al mover el interruptor desde la
     // pestaña Bono hay que releer, si no el resto de la vista sigue con el

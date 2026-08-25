@@ -34,7 +34,7 @@ const ESTADO_CFG = {
 // El ciclo del mes siguiente: el supervisor ajusta y confirma, el gerente
 // aprueba o devuelve con nota. También muestra el mes en curso si quedó
 // alguna meta sin oficializar (el sistema nunca la oficializa solo).
-export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm, onClearSearch, diaPropuesta = 25 }) {
+export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm, onClearSearch, diaPropuesta = 28 }) {
     const { showToast } = useToastStore();
     const ymActual = ymHoySV();
     const ymSig = ymSumar(ymActual, 1);
@@ -663,7 +663,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <EmptyState
                             compact icon={CalendarCheck}
                             title={`Sin metas para ${ymLabel(ymSig).toLowerCase()}`}
-                            subtitle={`El día ${diaPropuesta} el portal las propone solo, con las ventas de los meses cerrados.`}
+                            subtitle={`El día ${diaPropuesta} el portal las propone solo, con el ritmo de los últimos 3 meses — el que está por cerrar entra proyectado.`}
                             action={canEdit && (
                                 <Button
                                     variant="primary" icon={Sparkles} disabled={busy != null}

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.761.0 — El refrigerador es un interruptor, no un área
+
+Tres correcciones del usuario sobre la pantalla de Configuración.
+
+**1 · Los nombres de los horarios son fijos.** *«los nombres son fijos, no se
+pueden eliminar ni agregar»*. Mañana, Mediodía y Tarde no son una preferencia de
+cada sala: son los momentos que nombra el reglamento (RTS 6.2.16, «una a
+mediados de la mañana y otra a mediados de la tarde»), y Apertura y Cierre lo
+mismo para la limpieza. Editables, cada sucursal los llamaría distinto —y el mes
+impreso de siete salas saldría con siete juegos de encabezados— y alguien podría
+borrar una lectura obligatoria sin saber que lo era. Lo que sí cambia por local
+es el reloj, y eso es lo único que quedó: el rótulo pasó a ser texto, se fueron
+el tacho y «Agregar horario».
+
+**2 · Las vitrinas y los estantes se preguntan UNA vez.** *«no entiendo porque
+pregunta vitrinas y estantes tantas veces, solo 1 vez debe salir»*. Estaban por
+área, y una sucursal tiene cuatro áreas con limpieza: la misma pregunta cuatro
+veces, con cuatro respuestas posibles para un hecho que es uno solo. Ahora viven
+en el área de **Vitrinas** —que es la que los tiene— y en la sala de ventas si
+la sucursal no lleva vitrinas.
+
+**3 · El refrigerador dejó de ser un área.** *«el refrigerador no es un área,
+significa que se tienen medicamentos ahí […] debe ser un selector no una nueva
+área, al activarlo pregunta la última calibración»*. Y es exacto: la sala de
+ventas y la bodega son lugares del local —están o no están—, mientras que el
+refrigerador es una pregunta de sí o no cuya respuesta enciende dos
+obligaciones. El RTS lo dice así: **6.2.18** pide refrigerador de uso exclusivo
+cuando hay medicamentos que lo requieren, **6.2.19** exige que tenga termómetro
+**calibrado**, y **6.2.20** pide registro dos veces al día entre 2 y 8 °C.
+Metido en la misma lista que «Vitrinas», la decisión sanitaria quedaba escondida
+detrás de un formulario de alta.
+
+Hoy es una tarjeta con interruptor arriba de todo, y **la fecha de calibración
+se pide ANTES de encenderlo**: un refrigerador encendido sin calibración anotada
+es exactamente el hallazgo que busca el inspector, y pedirla «más tarde» es cómo
+queda vacía para siempre. Apagado no ocupa una tarjeta. Por debajo sigue siendo
+un área —las lecturas necesitan dónde vivir— y una vez encendido se configura
+como las demás; lo que cambió es la puerta.
+
+**De paso, la calibración son dos fechas.** `calibrado_el` es nueva: la sala
+tiene el certificado en la mano y sabe cuándo lo calibraron, y lo que el portal
+necesita para avisar es cuándo **vence**. Al poner la primera, el portal propone
+la segunda a un año —lo habitual— y deja corregirla; pidiendo sólo el
+vencimiento, esa cuenta se hace de cabeza y a veces sale mal. La alarma de
+«calibración vencida» (ítem CRÍTICO del RTS 5.6.14) sigue mirando el
+vencimiento, que es la fecha que decide si la lectura vale.
+
+Y el instrumento pasó a su propia fila: en tres columnas, «Termohigrómetro
+TH-01» se cortaba en «Termohigrómetro TH».
+
+Verificado contra el build a 1800, 1280 y 390px: 0 desborde horizontal.
+
 ## v2.760.1 — La configuración entra en dos columnas y las vitrinas sólo se cuentan
 
 Reportado por el usuario mirando la pantalla: *«visualmente se ve super mal […]

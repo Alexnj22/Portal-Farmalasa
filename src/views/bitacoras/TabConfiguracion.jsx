@@ -42,7 +42,21 @@ const ICONO = {
 
 const hhmm = (t) => String(t || '').slice(0, 5);
 
-function Area({ area, puedeEditar, onGuardado }) {
+/**
+ * Un año después de una fecha, sin que el huso la mueva.
+ *
+ * Es la vigencia habitual de un certificado de calibración: se PROPONE y se
+ * puede corregir. Proponerla no es inventar el dato — el campo queda a la vista
+ * y editable—; no proponerla obliga a hacer la cuenta de cabeza, que es donde
+ * aparece el «2027» escrito sobre un certificado de 2026.
+ */
+const unAnoDespues = (fecha) => {
+    const d = new Date(`${fecha}T12:00:00Z`);
+    d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+};
+
+function Area({ area, puedeEditar, conPuntos, onGuardado }) {
     const Icono = ICONO[area.tipo] || Thermometer;
     // Un área que sólo se limpia no tiene termómetro que identificar ni
     // certificado que vencer. Ofrecerle esos dos campos invita a llenarlos con
@@ -52,6 +66,7 @@ function Area({ area, puedeEditar, onGuardado }) {
     const [activa, setActiva] = useState(area.activa);
     const [instrumento, setInstrumento] = useState(area.instrumento || '');
     const [calibrado, setCalibrado] = useState(area.calibrado_hasta || '');
+    const [calibradoEl, setCalibradoEl] = useState(area.calibrado_el || '');
     const [franjas, setFranjas] = useState(() => area.franjas || []);
     const [limpiezas, setLimpiezas] = useState(() => area.limpiezas || []);
     const [puntos, setPuntos] = useState(() => area.puntos || []);
@@ -68,6 +83,7 @@ function Area({ area, puedeEditar, onGuardado }) {
     const sucio = activa !== area.activa
         || instrumento !== (area.instrumento || '')
         || calibrado !== (area.calibrado_hasta || '')
+        || calibradoEl !== (area.calibrado_el || '')
         || horariosSucios || puntosSucios;
 
     // El CHECK de la base lo dice también, pero acá se puede decir con palabras:
@@ -82,6 +98,7 @@ function Area({ area, puedeEditar, onGuardado }) {
             activa,
             instrumento: instrumento.trim() || null,
             calibrado_hasta: calibrado || null,
+            calibrado_el: calibradoEl || null,
             franjas,
             limpiezas,
             puntos,
@@ -94,7 +111,8 @@ function Area({ area, puedeEditar, onGuardado }) {
         // es exactamente lo que una bitácora regulada tiene que poder mostrar.
         useStaff.getState().appendAuditLog('CONFIGURAR_AREA_BITACORA', String(area.id), {
             area: area.nombre ?? null, activa,
-            instrumento: instrumento.trim() || null, calibrado_hasta: calibrado || null,
+            instrumento: instrumento.trim() || null,
+            calibrado_hasta: calibrado || null, calibrado_el: calibradoEl || null,
             // Los horarios entran en la bitácora de auditoría enteros: son
             // exactamente lo que decide qué se le va a exigir a la sala, y un
             // «se cambió la configuración» sin decir a qué no sirve de nada.
@@ -102,7 +120,8 @@ function Area({ area, puedeEditar, onGuardado }) {
         });
         setOk(true);
         onGuardado?.();
-    }, [area.id, area.nombre, activa, instrumento, calibrado, franjas, limpiezas, puntos, onGuardado]);
+    }, [area.id, area.nombre, activa, instrumento, calibrado, calibradoEl,
+        franjas, limpiezas, puntos, onGuardado]);
 
     const vencida = area.calibrado_hasta && area.calibrado_hasta < new Date().toISOString().slice(0, 10);
 
@@ -159,9 +178,13 @@ function Area({ area, puedeEditar, onGuardado }) {
                         bloque a mano, así que los dos campos quedaban a distinta
                         altura y la pista de la derecha se metía en la sección de
                         abajo. */}
+                    {/* El instrumento ocupa su propia fila: en tres columnas,
+                        «Termohigrómetro TH-01» se cortaba en «Termohigrómetro
+                        TH». Las dos fechas sí entran de a dos, que además es
+                        como se leen: calibrado el… vence el… */}
                     {!sinTemperatura && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 sm:col-span-2">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
                                     Instrumento
                                 </p>
@@ -172,16 +195,34 @@ function Area({ area, puedeEditar, onGuardado }) {
                                     placeholder="Termohigrómetro TH-01"
                                 />
                                 <p className="text-label text-content-3 ml-1">
-                                    Cómo se identifica el aparato de esta área
+                                    Cómo se identifica el aparato
+                                </p>
+                            </div>
+                            {/* La sala tiene el certificado en la mano y sabe
+                                CUÁNDO lo calibraron; lo que el portal necesita
+                                para avisar es cuándo VENCE. Se piden los dos, y
+                                al poner la fecha de calibración se propone el
+                                vencimiento a un año —lo habitual— para no
+                                obligar a hacer esa cuenta de cabeza. */}
+                            <div className="space-y-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                                    Última calibración
+                                </p>
+                                <LiquidDatePicker value={calibradoEl} onChange={(v) => {
+                                    setCalibradoEl(v || '');
+                                    if (v && !calibrado) setCalibrado(unAnoDespues(v));
+                                }} />
+                                <p className="text-label text-content-3 ml-1">
+                                    La fecha del certificado
                                 </p>
                             </div>
                             <div className="space-y-1.5">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                                    Calibrado hasta
+                                    Vence
                                 </p>
                                 <LiquidDatePicker value={calibrado} onChange={(v) => setCalibrado(v || '')} />
                                 <p className="text-label text-content-3 ml-1">
-                                    Un certificado vencido invalida las lecturas
+                                    Vencido, invalida las lecturas
                                 </p>
                             </div>
                         </div>
@@ -195,10 +236,14 @@ function Area({ area, puedeEditar, onGuardado }) {
                     )}
                     <EditorDeHorarios tipo="limpiezas" filas={limpiezas} onCambiar={setLimpiezas} />
 
-                    {/* Los muebles sólo tienen sentido si el área se limpia:
-                        una lista de vitrinas en un área sin turno de limpieza
-                        no la vería nadie. */}
-                    {limpiezas.length > 0 && (
+                    {/* Los muebles se preguntan UNA vez por sucursal, no una
+                        por área: «no entiendo porque pregunta vitrinas y
+                        estantes tantas veces, solo 1 vez debe salir» (usuario).
+                        La sucursal tiene cuatro áreas con limpieza y la
+                        pregunta salía cuatro veces, con cuatro respuestas
+                        posibles para un hecho que es uno solo. Vive en el área
+                        de Vitrinas, que es la que los tiene. */}
+                    {conPuntos && (
                         <PuntosDeLimpieza puntos={puntos} onCambiar={setPuntos} />
                     )}
 
@@ -254,6 +299,122 @@ function Area({ area, puedeEditar, onGuardado }) {
 }
 
 /**
+ * ¿Esta sucursal guarda medicamentos en refrigerador?
+ *
+ * ── Por qué es un interruptor y no un «área» ───────────────────────────────
+ * Corregido por el usuario: «el refrigerador no es un área, significa que se
+ * tienen medicamentos ahí, y se lleva control de temperatura y calibración de
+ * ese. debe ser un selector no una nueva área, al activarlo pregunta la última
+ * calibración».
+ *
+ * Y es exacto: la sala de ventas y la bodega son lugares del local —están o no
+ * están—, mientras que el refrigerador es una PREGUNTA de sí o no cuya
+ * respuesta enciende dos obligaciones. El RTS lo dice así: 6.2.18 pide
+ * refrigerador de uso exclusivo cuando hay medicamentos que lo requieren,
+ * 6.2.19 exige que tenga termómetro CALIBRADO, y 6.2.20 pide registro dos veces
+ * al día entre 2 y 8 °C. Ponerlo en la misma lista que «Vitrinas» dejaba la
+ * decisión sanitaria escondida detrás de un formulario de alta.
+ *
+ * Por debajo sigue siendo un área —las lecturas necesitan dónde vivir—, y una
+ * vez encendido se configura como las demás. Lo que cambió es la puerta.
+ */
+function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
+    const refri = areas.find(a => a.tipo === 'refrigerador');
+    const activo = Boolean(refri?.activa);
+    const [fecha, setFecha] = useState('');
+    const [trabajando, setTrabajando] = useState(false);
+    const [error, setError] = useState(null);
+
+    const encender = useCallback(async () => {
+        setTrabajando(true); setError(null);
+        const datos = { activa: true, calibrado_el: fecha, calibrado_hasta: unAnoDespues(fecha) };
+        // Si ya existió y se apagó, se vuelve a encender: crear otro chocaría
+        // con el UNIQUE (sucursal, tipo, nombre) y, peor, dejaría las lecturas
+        // viejas colgando de un área apagada.
+        const { error: err } = refri
+            ? await guardarArea(refri.id, datos)
+            : await crearArea({ ...areaNueva('refrigerador', branchId, areas), ...datos });
+        setTrabajando(false);
+        if (err) { setError(err); return; }
+        useStaff.getState().appendAuditLog('CONFIGURAR_REFRIGERADOR_BITACORA',
+            String(refri?.id ?? branchId), { sucursal: branchId, encendido: true, calibrado_el: fecha });
+        setFecha('');
+        onCambio?.();
+    }, [refri, fecha, branchId, areas, onCambio]);
+
+    const apagar = useCallback(async () => {
+        if (!refri) return;
+        setTrabajando(true); setError(null);
+        const { error: err } = await guardarArea(refri.id, { activa: false });
+        setTrabajando(false);
+        if (err) { setError(err); return; }
+        useStaff.getState().appendAuditLog('CONFIGURAR_REFRIGERADOR_BITACORA', String(refri.id),
+            { sucursal: branchId, encendido: false });
+        onCambio?.();
+    }, [refri, branchId, onCambio]);
+
+    return (
+        <section data-surface="card" data-tono={activo ? 'chart-1' : undefined} className="p-4 space-y-3">
+            <header className="flex flex-wrap items-center gap-2">
+                <span className="grid place-items-center size-8 rounded-btn bg-brand/10 text-brand-text shrink-0">
+                    <Snowflake size={16} />
+                </span>
+                <h4 className="text-body font-black text-content">Refrigerador con medicamentos</h4>
+                {activo && <Badge variant="chart-1" size="sm" uppercase={false}>2 a 8 °C · dos lecturas al día</Badge>}
+            </header>
+
+            <p className="text-label text-content-3">
+                Si esta sucursal conserva medicamentos que necesitan frío, el reglamento pide
+                termómetro calibrado y registro de temperatura dos veces al día, entre 2 y 8 °C.
+            </p>
+
+            {!puedeEditar ? (
+                <p className="text-body-sm font-bold text-content-2">
+                    {activo ? 'Encendido.' : 'Esta sucursal no lleva refrigerador.'}
+                </p>
+            ) : activo ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-body-sm text-content-2">
+                        <span className="font-bold text-content">Encendido.</span>{' '}
+                        {refri?.calibrado_el
+                            ? `Calibrado el ${refri.calibrado_el}${refri.calibrado_hasta ? `, vence el ${refri.calibrado_hasta}` : ''}.`
+                            : 'Sin fecha de calibración anotada.'}
+                        {' '}Su horario y su calibración se ajustan en la tarjeta del área.
+                    </p>
+                    <Button variant="secondary" size="sm" onClick={apagar} loading={trabajando}>
+                        Apagar
+                    </Button>
+                </div>
+            ) : (
+                <div className="flex flex-wrap items-end gap-3">
+                    {/* La fecha se pide ANTES de encender, no después: un
+                        refrigerador encendido sin calibración anotada es
+                        exactamente el hallazgo que busca el inspector, y pedirla
+                        «más tarde» es cómo queda vacía para siempre. */}
+                    <div className="space-y-1.5">
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                            Última calibración
+                        </p>
+                        <LiquidDatePicker value={fecha} onChange={(v) => setFecha(v || '')} />
+                    </div>
+                    <Button variant="primary" size="sm" icon={Check} onClick={encender}
+                        loading={trabajando} disabled={!fecha}>
+                        Encender
+                    </Button>
+                    {!fecha && (
+                        <p className="text-label text-content-3">
+                            Hace falta la fecha del certificado para encenderlo.
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {error && <Notice variant="danger" compact icon={AlertTriangle}>{error}</Notice>}
+        </section>
+    );
+}
+
+/**
  * Agregar un área que esta sucursal todavía no lleva.
  *
  * Nació de una pregunta del usuario que no tenía respuesta: «¿cómo activo un
@@ -280,7 +441,10 @@ function AgregarArea({ branchId, areas, onCreada }) {
     const disponibles = useMemo(() => {
         const usados = new Set(areas.map(a => `${a.tipo}|${a.nombre}`));
         return Object.entries(PLANTILLA_AREA)
-            .filter(([t, p]) => !usados.has(`${t}|${p.nombre}`))
+            // El refrigerador no se agrega por acá: es un interruptor de la
+            // sucursal («no es un área, significa que se tienen medicamentos
+            // ahí»), y tiene su propia tarjeta arriba.
+            .filter(([t, p]) => t !== 'refrigerador' && !usados.has(`${t}|${p.nombre}`))
             .map(([t]) => ({ value: t, label: TIPO_AREA[t] || t }));
     }, [areas]);
 
@@ -308,8 +472,7 @@ function AgregarArea({ branchId, areas, onCreada }) {
             </h4>
             <p className="text-label text-content-3">
                 Nace encendida y con los horarios de las áreas que esta sucursal ya lleva. El
-                refrigerador arranca en 2 a 8 °C, que es lo que exige el reglamento para la
-                cadena de frío.
+                refrigerador no se agrega por acá: tiene su propio interruptor arriba.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3">
                 <div className="space-y-1.5">
@@ -353,6 +516,21 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
 
     const alGuardar = useCallback(() => { cargar(); onCambio?.(); }, [cargar, onCambio]);
 
+    // El refrigerador APAGADO no ocupa una tarjeta: su interruptor está arriba
+    // y una tarjeta gris de un área que la sucursal no tiene es ruido.
+    const visibles = useMemo(
+        () => areas.filter(a => a.tipo !== 'refrigerador' || a.activa),
+        [areas],
+    );
+
+    // Los muebles se preguntan UNA vez. Viven en el área de Vitrinas, que es la
+    // que los tiene; si la sucursal no lleva vitrinas, en la sala de ventas.
+    const idDeLosMuebles = useMemo(() => (
+        areas.find(a => a.tipo === 'vitrinas')?.id
+        ?? areas.find(a => a.tipo === 'sala_ventas')?.id
+        ?? null
+    ), [areas]);
+
     if (cargando) return <LoadingState label="Cargando la configuración…" />;
     if (error) return <Notice variant="danger" icon={AlertTriangle}>{error.message || 'No se pudo cargar.'}</Notice>;
 
@@ -377,9 +555,15 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
                 hora del ancho de la pantalla para elegir «7:00 AM»— y obligaba
                 a rodar cuatro áreas de largo. `items-start` para que una
                 tarjeta corta (el baño) no se estire al alto de una larga. */}
+            {branchId && (
+                <Refrigerador branchId={branchId} areas={areas}
+                    puedeEditar={puedeEditar} onCambio={alGuardar} />
+            )}
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-                {areas.map(a => (
-                    <Area key={a.id} area={a} puedeEditar={puedeEditar} onGuardado={alGuardar} />
+                {visibles.map(a => (
+                    <Area key={a.id} area={a} puedeEditar={puedeEditar}
+                        conPuntos={a.id === idDeLosMuebles} onGuardado={alGuardar} />
                 ))}
             </div>
 

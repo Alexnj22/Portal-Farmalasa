@@ -1,36 +1,32 @@
 import React, { useMemo } from 'react';
-import { Plus, Sparkles, Thermometer, Trash2 } from 'lucide-react';
-import Button from '../common/Button';
+import { Sparkles, Thermometer } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
-import PortalInput from '../common/PortalInput';
-import { nuevaClave } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Los horarios de un área — las franjas de temperatura y los turnos de limpieza.
+// Los horarios de un área — cuándo se toma la temperatura y cuándo se limpia.
 //
-// ── Por qué los edita el jefe de la sala ───────────────────────────────────
-// Pedido del usuario: «permite modificar los horarios por sucursal, para
-// limpieza y servicios sanitarios (que lo puedan modificar los jefes)». A qué
-// hora se barre no lo dice ninguna norma: lo dice el local. Lo que sí exige el
-// RTS (6.2.16) son DOS lecturas de temperatura al día, una a media mañana y
-// otra a media tarde — por eso el editor avisa cuando queda menos de dos, en
-// vez de impedirlo: quien configura puede tener un motivo, pero no puede no
-// enterarse.
+// ── Lo único que se cambia es la HORA (2026-08-25) ─────────────────────────
+// Pedido del usuario: «los nombres son fijos, no se pueden eliminar ni
+// agregar». Y es correcto: Mañana, Mediodía y Tarde no son una preferencia de
+// cada sala, son los momentos del día que nombra el reglamento (RTS 6.2.16:
+// «al menos dos veces al día, una a mediados de la mañana y otra a mediados de
+// la tarde»). Apertura y Cierre, lo mismo para la limpieza.
+//
+// Dejarlos editables invitaba a que cada sucursal los llamara distinto —y el
+// mes impreso de siete salas saldría con siete juegos de encabezados— y a que
+// alguien borrara una lectura obligatoria sin saber que lo era. Lo que SÍ
+// cambia por local es el reloj: a qué hora abre, cuándo se barre.
+//
+// ── Por qué el rótulo se sigue guardando ───────────────────────────────────
+// `bitacora_lecturas.franja` guarda la CLAVE, no el rótulo; el rótulo viaja en
+// la configuración para que el mes impreso lo imprima. Que ahora no se edite no
+// cambia el modelo: cambia quién lo decide.
 //
 // ── Una hora es UN control, no tres ────────────────────────────────────────
-// La primera versión usaba `TimePicker12` (hora + minutos + AM/PM = tres
-// selectores por punta, seis por renglón). Medido en iPhone 13: cinco horarios
-// ocupaban más de tres pantallas de alto y había que rodar para ver el botón de
-// guardar. Un horario de bitácora cae siempre en una media hora redonda, así
-// que la lista de medias horas es UN selector — y el renglón entero pasó de
-// seis controles a tres.
-//
-// ── La CLAVE no se toca, y por eso no está en pantalla ─────────────────────
-// `bitacora_lecturas.franja` guarda la clave, no el rótulo. Renombrar «Mañana»
-// a «Apertura» tiene que seguir mostrando las lecturas de esa franja, así que
-// el rótulo se edita libremente y la clave viaja escondida. Es
-// [[feedback_un_rotulo_no_es_una_clave]] aplicado a un horario: acá el rótulo
-// NO es el dato.
+// La primera versión usaba `TimePicker12` (hora + minutos + AM/PM = seis
+// selectores por renglón). Medido en iPhone 13: cinco horarios ocupaban más de
+// tres pantallas de alto. Un horario de bitácora cae siempre en una media hora
+// redonda, así que la lista de medias horas es un selector solo.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const hhmm = (t) => String(t || '').slice(0, 5);
@@ -52,7 +48,7 @@ for (let h = 5; h <= 22; h += 1) {
     HORAS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
-function SelectorDeHora({ value, onChange, etiqueta }) {
+function SelectorDeHora({ value, onChange, etiqueta, nombre }) {
     // Si el valor guardado no cae en una media hora (por ejemplo 07:15, puesto
     // antes de que existiera este editor), se agrega a la lista: la alternativa
     // es que el selector muestre vacío y el primer guardado le cambie la hora a
@@ -64,41 +60,14 @@ function SelectorDeHora({ value, onChange, etiqueta }) {
     }, [value]);
 
     return (
-        <label className="flex items-center gap-1.5 min-w-0 col-span-2 sm:col-span-1">
+        <label className="flex items-center gap-1.5 min-w-0">
             <span className="text-label text-content-3 shrink-0">{etiqueta}</span>
-            {/* `clearable={false}`: un horario no puede quedar sin hora, y el
-                botón de limpiar aparecía como una × roja al lado de cada uno —
-                se lee como «quitar», que es lo que hace el otro botón del
-                renglón. `nano` centra el texto y saca el ícono de la izquierda:
-                acá la etiqueta ya dice qué es. */}
+            {/* `clearable={false}`: un horario no puede quedar sin hora. `nano`
+                centra el texto y saca el ícono: la etiqueta ya dice qué es. */}
             <LiquidSelect value={hhmm(value)} onChange={onChange} options={opciones}
-                nano clearable={false} ariaLabel={`Hora ${etiqueta}`}
-                className="min-w-0 flex-1 sm:w-[124px] sm:flex-none" />
+                nano clearable={false} ariaLabel={`${nombre}: hora ${etiqueta}`}
+                className="min-w-0 flex-1 sm:w-[118px] sm:flex-none" />
         </label>
-    );
-}
-
-function Renglon({ fila, onCambio, onQuitar, sinNombre }) {
-    return (
-        // Todo en UNA fila desde `sm`: rótulo, las dos horas y el tacho. Antes
-        // el rótulo se llevaba el ancho entero y las horas iban debajo, así que
-        // cinco horarios ocupaban media pantalla de alto en escritorio y el
-        // campo de texto medía 1.800px para escribir «Mañana».
-        <div data-surface="card" className="p-2 grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(110px,1fr)_auto_auto_auto] items-center gap-2">
-            <PortalInput
-                className="min-w-0"
-                name={`rotulo-${fila.clave}`} compact
-                aria-label="Cómo se llama este horario"
-                value={fila.label || ''} onChange={(e) => onCambio({ label: e.target.value })}
-                placeholder={sinNombre}
-            />
-            <Button variant="ghost" size="sm" iconOnly icon={Trash2} className="sm:order-last"
-                title="Quitar este horario" onClick={onQuitar} />
-            <SelectorDeHora etiqueta="desde" value={fila.desde}
-                onChange={(v) => onCambio({ desde: v })} />
-            <SelectorDeHora etiqueta="hasta" value={fila.hasta}
-                onChange={(v) => onCambio({ hasta: v })} />
-        </div>
     );
 }
 
@@ -110,18 +79,10 @@ function Renglon({ fila, onCambio, onQuitar, sinNombre }) {
 export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
     const esLectura = tipo === 'franjas';
     const lista = filas || [];
+    if (!lista.length) return null;
 
     const cambiar = (i, parche) =>
         onCambiar(lista.map((f, j) => (j === i ? { ...f, ...parche } : f)));
-
-    const quitar = (i) => onCambiar(lista.filter((_, j) => j !== i));
-
-    const agregar = () => onCambiar([...lista, {
-        clave: nuevaClave(lista, esLectura ? 'f' : 't'),
-        label: esLectura ? 'Nueva lectura' : 'Nueva limpieza',
-        desde: '12:00',
-        hasta: esLectura ? '14:00' : '15:00',
-    }]);
 
     return (
         <div className="space-y-2">
@@ -130,35 +91,22 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
                 {esLectura ? 'Lecturas de temperatura' : 'Limpieza'}
             </p>
 
-            {lista.map((f, i) => (
-                <Renglon key={f.clave} fila={f}
-                    sinNombre={esLectura ? 'Mañana' : 'Apertura'}
-                    onCambio={(p) => cambiar(i, p)}
-                    onQuitar={() => quitar(i)} />
-            ))}
-
-            {lista.length === 0 && (
-                <p className="text-label text-content-3">
-                    {esLectura
-                        ? 'Sin lecturas: a esta área no se le pide temperatura.'
-                        : 'Sin limpieza: a esta área no se le pide registro de limpieza.'}
-                </p>
-            )}
-
-            {/* El reglamento pide DOS lecturas al día, una a media mañana y otra
-                a media tarde (RTS 6.2.16); el refrigerador, también dos (6.2.20).
-                Se avisa, no se impide: quien configura puede estar armando el
-                área todavía, y un freno acá lo dejaría sin poder guardar. */}
-            {esLectura && lista.length > 0 && lista.length < 2 && (
-                <p className="text-label text-warning-text font-bold">
-                    El reglamento pide al menos dos lecturas al día: una a media mañana y otra a
-                    media tarde.
-                </p>
-            )}
-
-            <Button variant="ghost" size="sm" icon={Plus} onClick={agregar}>
-                Agregar horario
-            </Button>
+            {/* El rótulo es texto, no un campo: es fijo. Y todo en una fila —
+                antes el campo para escribir «Mañana» medía 1.800px. */}
+            <div className="space-y-1.5">
+                {lista.map((f, i) => (
+                    <div key={f.clave} data-surface="card"
+                        className="p-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <span className="text-body-sm font-bold text-content-1 w-[84px] shrink-0">
+                            {f.label}
+                        </span>
+                        <SelectorDeHora etiqueta="desde" nombre={f.label} value={f.desde}
+                            onChange={(v) => cambiar(i, { desde: v })} />
+                        <SelectorDeHora etiqueta="hasta" nombre={f.label} value={f.hasta}
+                            onChange={(v) => cambiar(i, { hasta: v })} />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

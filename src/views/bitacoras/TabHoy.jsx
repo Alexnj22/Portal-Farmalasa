@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, Droplets, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, ClipboardCheck, Clock, Droplets, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
-import { TIPO_AREA, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
+import { TIPO_AREA, bloquesDeLaRonda, rotularRango, soloLimpieza } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.
@@ -171,6 +172,7 @@ function CasillaLimpieza({ turno, area, puedeAnotar, cerrado, onAnotar }) {
 export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }) {
     const [anotando, setAnotando]   = useState(null);   // { area, franja, lectura? }
     const [limpiando, setLimpiando] = useState(null);   // { area, turno }
+    const [enRonda, setEnRonda]     = useState(false);
 
     const cerrado = Boolean(dia?.cerrado);
 
@@ -181,12 +183,16 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
     const cerrar = useCallback((huboCambio) => {
         setAnotando(null);
         setLimpiando(null);
+        setEnRonda(false);
         if (huboCambio) onRecargar?.();
     }, [onRecargar]);
 
     // `useMemo` y no `||` a secas: un array nuevo en cada render invalidaría el
     // memo de abajo siempre, que es justo lo que el lint marca.
     const areas = useMemo(() => dia?.areas || [], [dia]);
+
+    // Todo lo que se puede anotar ahora, en el orden de la caminata.
+    const ronda = useMemo(() => bloquesDeLaRonda(dia), [dia]);
 
     // Las áreas que hoy no aplican se muestran aparte, pero se muestran: que no
     // aparecieran sería esconder una parte de la sala, y el día que alguien
@@ -234,6 +240,32 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                     Este mes ya está cerrado y firmado. Para anotar o corregir algo hay que reabrirlo
                     desde Cierre de mes, y esa reapertura queda registrada.
                 </Notice>
+            )}
+
+            {/* ── Pasar la ronda ────────────────────────────────────────
+                Medido el 2026-08-25 sobre los primeros 576 registros: el 68% se
+                anotó a menos de tres minutos del anterior, con 29 segundos de
+                promedio. La sala ya camina la vuelta entera de un tirón; esto
+                le da UNA pantalla para toda la vuelta en vez de trece diálogos.
+
+                Aparece con dos o más pendientes: con uno solo, el botón de esa
+                casilla ya está ahí y un segundo camino hacia lo mismo sería
+                ruido. */}
+            {puedeAnotar && !cerrado && ronda.length > 1 && (
+                <div data-surface="card" data-tono="warning"
+                    className="p-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-body-sm font-bold text-content-1">
+                            Hay {ronda.length} registros para anotar
+                        </p>
+                        <p className="text-label text-content-3">
+                            Se llenan todos de una vez, en el orden en que se camina la sala.
+                        </p>
+                    </div>
+                    <Button variant="primary" icon={ClipboardCheck} onClick={() => setEnRonda(true)}>
+                        Pasar la ronda
+                    </Button>
+                </div>
             )}
 
             {conLecturas.map((area) => {
@@ -319,6 +351,9 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                 </Notice>
             )}
 
+            {enRonda && (
+                <PasarLaRonda fecha={dia.fecha} bloques={ronda} onCerrar={cerrar} />
+            )}
             {anotando && (
                 <AnotarLectura
                     area={anotando.area}

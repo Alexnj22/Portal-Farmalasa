@@ -604,3 +604,62 @@ export async function subirFotoDeReceta(file, branchId) {
         || import.meta.env.VITE_SUPABASE_URL;
     return { url: `${base}/storage/v1/object/public/${BUCKET_RECETAS}/${path}`, error: null };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// La ronda — todo lo que se anota de una vuelta, junto
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Los bloques que se pueden anotar AHORA, en el orden en que se camina la sala.
+ *
+ * Medido el 2026-08-25 sobre los primeros 576 registros: el 68% se anotó a
+ * menos de tres minutos del anterior, con 29 segundos de promedio, y 55 vueltas
+ * juntaron cinco o seis registros. La sala ya trabaja por vuelta; esto es la
+ * lista de esa vuelta.
+ *
+ * Entra lo `abierta` y también lo `vencida`: las dos se pueden anotar —la
+ * segunda queda marcada fuera de hora, que es información y no un castigo— y
+ * dejarla afuera obligaría a cerrar la ronda y volver a la casilla suelta justo
+ * en el caso en que más apura. Lo `proxima` NO entra: la base lo rechaza, y
+ * ofrecer un campo que va a ser rechazado es prometer una anotación que no se
+ * puede hacer.
+ */
+export function bloquesDeLaRonda(dia) {
+    const salida = [];
+    for (const area of dia?.areas || []) {
+        if (area.aplica_hoy === false) continue;
+        for (const f of area.franjas || []) {
+            if (f.lectura || (f.estado !== 'abierta' && f.estado !== 'vencida')) continue;
+            salida.push({ clave: `${area.id}:lectura:${f.clave}`, tipo: 'lectura', area, bloque: f });
+        }
+        for (const t of area.limpiezas || []) {
+            if (t.registro || (t.estado !== 'abierta' && t.estado !== 'vencida')) continue;
+            salida.push({ clave: `${area.id}:limpieza:${t.clave}`, tipo: 'limpieza', area, bloque: t });
+        }
+    }
+    return salida;
+}
+
+/** ¿Esta temperatura se sale del rango del área? La base lo vuelve a decidir. */
+export function fueraDeRango(area, temperatura) {
+    const t = temperatura === '' || temperatura === null || temperatura === undefined
+        ? null : Number(temperatura);
+    if (t === null || Number.isNaN(t)) return false;
+    const min = area?.temp_min == null ? null : Number(area.temp_min);
+    const max = area?.temp_max == null ? null : Number(area.temp_max);
+    return (min !== null && t < min) || (max !== null && t > max);
+}
+
+/**
+ * Guardar la ronda entera.
+ *
+ * Devuelve cuántos entraron y CUÁLES no, con su motivo: el RPC guarda cada
+ * renglón por su cuenta, así que una temperatura rechazada no se lleva puestas
+ * las otras cinco que la persona ya tecleó de pie.
+ */
+export async function registrarRonda(items) {
+    if (!items?.length) return { guardados: 0, fallidos: [], error: null };
+    const { data, error } = await supabase.rpc('registrar_ronda_bitacora', { p_items: items });
+    if (error) return { guardados: 0, fallidos: [], error: error.message ?? 'No se pudo guardar la ronda.' };
+    return { guardados: data?.guardados ?? 0, fallidos: data?.fallidos ?? [], error: null };
+}

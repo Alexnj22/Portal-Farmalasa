@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.758.0 — La bitácora se pasa en una vuelta, y avisa antes de que cierre la franja
+
+Pedido del usuario: *«veamos las bitácoras, mejorémoslo, que sea más
+práctico»*. Antes de tocar nada se midió **cómo se llena hoy**, sobre los 576
+registros de las primeras nueve jornadas:
+
+| | |
+|---|---:|
+| registros que la sala anota por día | **13** (6 temperaturas + 7 limpiezas) |
+| se anotaron a menos de 3 min del anterior | **394 de 576 — el 68%** |
+| separación promedio entre uno y el siguiente | **29 segundos** |
+| vueltas que juntaron 5 o 6 registros seguidos | **55** |
+| lecturas que entraron fuera de hora | **45 de 270 — el 17%** |
+
+O sea que la sala **ya trabaja por vuelta** —se camina con el termohigrómetro,
+se mira sala, bodega y refrigerador, se firma la limpieza— y el portal la
+obligaba a ir casilla por casilla: trece diálogos al día, cada uno una
+oportunidad de que suene el teléfono y la vuelta quede a medias.
+
+**«Pasar la ronda».** Una pantalla con todo lo que se puede anotar ahora,
+agrupado **por área y en el orden en que se camina la sala** —no por tipo de
+registro, que obligaría a recorrerla dos veces—. Las temperaturas con sus dos
+campos, las limpiezas como una casilla, y la observación escondida hasta que
+hace falta. Un solo botón: «Anotar 6 registros».
+
+**Lo que se deja en blanco no se manda.** La ronda no es un formulario que haya
+que completar: es la lista de lo que se puede anotar. Si todavía no se pasó por
+el refrigerador, ese renglón queda vacío y sigue pendiente en la grilla — un
+formulario que exige todo lo abierto enseña a inventar el que falta, que es
+exactamente lo que un registro no puede tener.
+
+**Cada renglón se guarda por su cuenta.** `registrar_ronda_bitacora` usa un
+SAVEPOINT por ítem y llama a las dos funciones de siempre —no reimplementa el
+cálculo de «fuera de rango», de «tarde» ni la guarda de acceso—. Con «todo o
+nada», una temperatura rechazada (el clásico: fuera de rango sin acción
+anotada) se llevaría puestos los otros cinco que la persona ya tecleó de pie.
+Se guarda lo que se puede, y lo que no entró se queda en pantalla con su motivo
+y con lo tecleado intacto.
+
+**El aviso de franja por vencerse**, que estaba pendiente desde que se definió
+el módulo. Cada media hora entre las 07:00 y las 19:30, el portal mira qué
+franja **ya abrió y cierra dentro de 45 minutos sin nadie que la haya anotado**,
+y le avisa a la gente de esa sala que puede anotarla. Nadie se olvida a
+propósito de una franja de dos horas: se olvida porque la bitácora es la única
+tarea del día que no la dispara un cliente parado en el mostrador, y el ítem
+6.1.14 del RTS pide que el registro sea CONTEMPORÁNEO — una lectura anotada a
+las 21:00 sobre lo que marcaba el termómetro a la 13:00 no lo es aunque el
+número sea cierto.
+
+**Suena UNA vez por ventana y por día.** El antiduplicado lleva la sucursal, la
+fecha y la hora de cierre, y **no** los minutos que faltan: con el barrido cada
+media hora, la misma franja entraría en dos corridas y sonaría dos veces por lo
+mismo. Sobre trece registros diarios, repetir el aviso es la forma más rápida de
+enseñarle a la sala a ignorar la campana. (Es al revés que el aviso de bultos,
+donde la clave sí lleva los días adentro a propósito: allá el número sube y cada
+día es una noticia nueva.)
+
+Y no se avisa de lo que ya venció —eso sería llegar tarde a decir que se llegó
+tarde—, ni de un mes cerrado y firmado, que la base rechazaría igual.
+
+**De paso quedó medido algo que nadie estaba mirando: la bodega central lleva
+nueve días con CERO registros**, incluido su refrigerador de 2–8 °C, que es la
+cadena de frío. Las seis farmacias están al día; la bodega no anotó nunca. Al
+probar el aviso contra un día real, la única sala que aparecía con pendientes
+era justamente ésa.
+
 ## v2.757.0 — La propuesta de meta sale el 28, con tres días más de venta
 
 Pedido del usuario: *«cambiemos del 25 al 28 el cálculo de meta, para tener una

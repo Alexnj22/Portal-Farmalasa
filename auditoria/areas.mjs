@@ -635,8 +635,9 @@ export const AREAS = [
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas',
                  'recetas', 'receta_items', 'medicos'],
-        edge: ['consultar-profesional-cssp', 'srs-proxy'],
-        crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario'],
+        edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
+        crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
+                'avisar-bitacora-por-vencer-30min'],
         docs: ['docs/PLAN-BITACORAS-SRS-2026-08-16.md'],
     },
     {

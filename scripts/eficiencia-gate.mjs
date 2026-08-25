@@ -130,6 +130,16 @@ const CRONS = [
           + 'puede descubrir es el que más falta hace declarar.',
   },
   {
+    job: 'avisar-bitacora-por-vencer-30min', slug: 'avisar-bitacora-por-vencer', cadencia: '*/30 13-23,0-1 * * *',
+    corridasDia: 26, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: una consulta a la base y, cuando hay algo por '
+          + 'vencerse, un aviso. Cada media hora de 07:00 a 19:30 SV —la ventana en que hay '
+          + 'franjas abiertas— porque lo que vigila dura dos horas: espaciarlo a una hora dejaría '
+          + 'franjas sin aviso. Su antiduplicado NO lleva los minutos adentro, así que suena una '
+          + 'vez por ventana y por día en vez de dos: sobre trece registros diarios, repetir el '
+          + 'mismo aviso es la forma más rápida de enseñar a ignorar la campana.',
+  },
+  {
     job: 'avisar-envios-sin-decidir', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Le recuerda a la sala de '

@@ -312,7 +312,13 @@ const TAPADO = '•••';
 // fuera de la pantalla.
 function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
     if (!nombre && !cuando) return null;
-    const titulo = `Contado por ${nombre || 'desconocido'} · ${fmtDateTime(cuando)}`
+    // Primer nombre + primer apellido, que es el estándar del portal entero
+    // (`nameUtils`). Se normaliza ACÁ y no sólo en quien pasa la prop porque
+    // este componente recibe de dos sitios —la fila de la tabla y la ficha del
+    // teléfono— y basta que uno de los dos se olvide para que el nombre largo
+    // vuelva. Sobre un nombre que ya viene corto no hace nada.
+    const corto = nombre ? shortEmployeeName(nombre) : null;
+    const titulo = `Contado por ${corto || 'desconocido'} · ${fmtDateTime(cuando)}`
         + (ediciones > 0 ? ` · editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}` : '')
         + ' — ver historial';
     return (
@@ -323,9 +329,9 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
         // sigue midiendo 44px.
         <Button variant="ghost" size="xs" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
             <span className="flex items-center gap-1.5 min-w-0">
-                <LiquidAvatar src={fotoUrl} alt="" fallbackText={nombre || '?'}
+                <LiquidAvatar src={fotoUrl} alt="" fallbackText={corto || '?'}
                     className="w-5 h-5 rounded-full shrink-0" />
-                <span className="text-label font-bold text-content-2 truncate">{nombre || 'Desconocido'}</span>
+                <span className="text-label font-bold text-content-2 truncate">{corto || 'Desconocido'}</span>
                 <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
                 {/* `Contador`, no `Badge`. Su propia documentación lo dice: un chip
                     crece con su texto, un contador es circular con un dígito y
@@ -476,7 +482,7 @@ function ItemRow({
             // Reflejarlo acá como si alguien hubiera contado sería mentir sobre
             // quién y cuándo — y es justo el caso de abrir el lápiz y salir.
             if (result.evento !== 'SIN_CAMBIO') {
-                setContadoPorNombre(currentUser?.name ?? contadoPorNombre);
+                setContadoPorNombre(currentUser ? shortEmployeeName(currentUser) : contadoPorNombre);
                 setContadoPorFoto(currentUser?.photo ?? contadoPorFoto);
                 setContadoAt(new Date().toISOString());
                 if (result.evento === 'EDICION' || result.evento === 'BORRADO') setEdiciones((k) => k + 1);
@@ -506,7 +512,7 @@ function ItemRow({
             setSistema(result.sistema_cantidad);
             setEstadoItem('SIN_UBICAR');
             if (result.evento !== 'SIN_CAMBIO') {
-                setContadoPorNombre(currentUser?.name ?? contadoPorNombre);
+                setContadoPorNombre(currentUser ? shortEmployeeName(currentUser) : contadoPorNombre);
                 setContadoPorFoto(currentUser?.photo ?? contadoPorFoto);
                 setContadoAt(new Date().toISOString());
             }
@@ -841,7 +847,11 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             if (recuento) setRevelado(true);
             if (res.evento !== 'SIN_CAMBIO') {
                 setAutor((a) => ({
-                    nombre: currentUser?.name ?? a.nombre,
+                    // El OBJETO y no `.name`: con la cadena ya concatenada hay
+                    // que adivinar dónde termina el nombre y empieza el
+                    // apellido, y con tres palabras es ambiguo. Con
+                    // `first_names`/`last_names` no se adivina nada.
+                    nombre: currentUser ? shortEmployeeName(currentUser) : a.nombre,
                     foto: currentUser?.photo ?? a.foto,
                     cuando: new Date().toISOString(),
                     ediciones: res.evento === 'EDICION' || res.evento === 'BORRADO' ? a.ediciones + 1 : a.ediciones,
@@ -1850,7 +1860,7 @@ export default function ConteoDetailView() {
                     estado_item: payload.estadoItem,
                     sistema_cantidad: result.sistema_cantidad,
                     diferencia: result.diferencia,
-                    contado_por_nombre: user?.name || it.contado_por_nombre,
+                    contado_por_nombre: (user ? shortEmployeeName(user) : null) || it.contado_por_nombre,
                     contado_at: new Date().toISOString(),
                 } : it)));
                 recomputeProductTotals(erpProductId, lines, setLista);
@@ -1869,7 +1879,7 @@ export default function ConteoDetailView() {
                     sistema_cantidad: result.sistema_cantidad,
                     diferencia: result.diferencia,
                     recontado_at: new Date().toISOString(),
-                    recontado_por_nombre: user?.name || it.recontado_por_nombre,
+                    recontado_por_nombre: (user ? shortEmployeeName(user) : null) || it.recontado_por_nombre,
                 } : it)));
                 recomputeProductTotals(erpProductId, lines, setLista);
                 return { ...prev, [erpProductId]: lines };

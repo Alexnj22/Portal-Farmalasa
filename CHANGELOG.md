@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.756.3 — En Conteo, el nombre de quien contó vuelve a ser nombre y apellido
+
+Pedido del usuario: *«en Conteo, que solo salga nombre apellido, eso es un
+estándar que ya está en todo el portal.»* Y sí lo es —`shortEmployeeName` de
+`nameUtils`, primer nombre + primer apellido en sidebar, solicitudes, tarjetas,
+calendarios y avatares—, con dos excepciones escritas: el módulo de Personal y
+lo que SALE del portal (CSV, planilla, contratos).
+
+**Lo raro es de dónde venía el nombre largo: no de la base.** Las tres RPC de
+lectura del conteo ya devuelven el nombre cortado en el servidor
+(`split_part(first_names,' ',1) || ' ' || split_part(last_names,' ',1)`). El
+nombre completo lo escribía **la propia pantalla**, en las cuatro escrituras
+optimistas que pintan la autoría sin esperar a la respuesta:
+`currentUser?.name` es la columna generada `first_names || ' ' || last_names`.
+
+O sea que el defecto tenía una forma que casi garantiza sobrevivir: **el nombre
+salía largo justo después de contar y corto al recargar**. Quien lo ve es quien
+está contando, y sólo hasta la próxima recarga.
+
+Y encima sólo se nota en **8 de las 49 personas** del portal — las que tienen
+más de dos palabras en el nombre (7 con dos nombres, 6 con dos apellidos). Para
+las otras 41 el corto y el completo son la misma cadena.
+
+Dos arreglos, y son a propósito dos:
+
+* **`AutorLinea` normaliza siempre.** Recibe de dos sitios —la fila de la tabla
+  y la ficha del teléfono— y basta que uno se olvide para que el nombre largo
+  vuelva. Sobre un nombre que ya viene corto no hace nada.
+* **Las cuatro escrituras optimistas pasan el OBJETO, no `.name`.** Con la
+  cadena ya concatenada hay que adivinar dónde termina el nombre y empieza el
+  apellido, y con tres palabras es ambiguo —«ANA PEREZ LOPEZ» puede ser 1+2 o
+  2+1, y en producción hay de las dos—. Con `first_names`/`last_names` no se
+  adivina nada, que es justo lo que `nameUtils` pide en su encabezado.
+
+La auditoría cubrió el módulo entero: la lista de conteos, el modal de crear, la
+hoja impresa y el resumen **no muestran nombres de empleado** (la hoja lleva una
+línea de firma en blanco, no un nombre), y **ninguna función de Postgres del
+conteo devuelve `employees.name`** — verificado sobre `pg_proc.prosrc`.
+
+Verificado: `gate:design`, `gate:movil`, `gate:bundle`, `gate:perf` y
+`gate:eficiencia` en verde; 1,805 pruebas pasan (el nombre corto ya estaba
+anclado en `tests/unit/periodoYNombreCorto.test.js`, incluido el caso ambiguo de
+tres palabras). Sin ver en pantalla.
+
 ## v2.756.2 — La tarjeta de Confirmar habla del mismo mes que la fórmula
 
 Reportado: *«en las cards me dice cerró jul, pero no cómo va a cerrar agosto, así

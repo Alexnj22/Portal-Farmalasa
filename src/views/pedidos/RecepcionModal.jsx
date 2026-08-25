@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
+import { clickable } from '../../utils/clickable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
@@ -1670,16 +1671,29 @@ export default function RecepcionModal({
                             left: extraDropCoords.left,
                             width: extraDropCoords.width,
                             zIndex: 99999,
-                        }} className="rounded-xl border border-brand/30 bg-surface-card shadow-2xl overflow-hidden">
-                            {extraResults.map(prod => (
-                                <Button
-                                    variant="primary"
-                                    className="w-full"
-                                    icon={Plus}
-                                    key={prod.id}
-                                    onMouseDown={() => addExtra(prod)}
-                                >{prod.nombre}</Button>
-                            ))}
+                        }} className="rounded-xl border border-border-card bg-surface-card shadow-2xl overflow-hidden">
+                            {/* Una lista de resultados, no una pila de botones de
+                                acción. Eran `variant="primary"`: cuatro barras
+                                azules a todo ancho, con el nombre centrado y en
+                                mayúsculas, que pesan más que el campo donde se
+                                está escribiendo y no se leen como opciones. El
+                                patrón es el mismo del buscador de «Enviar
+                                producto»: fila de tarjeta, texto a la izquierda y
+                                el `+` como pista, no como protagonista. */}
+                            <div className="divide-y divide-divider max-h-72 overflow-y-auto">
+                                {extraResults.map(prod => (
+                                    <button
+                                        key={prod.id}
+                                        type="button"
+                                        data-interactive
+                                        className={`${clickable()} w-full text-left px-3 py-2.5 min-h-[var(--tap-min)] flex items-center gap-2.5`}
+                                        onMouseDown={() => addExtra(prod)}
+                                    >
+                                        <Plus size={14} className="shrink-0 text-content-3" aria-hidden="true" />
+                                        <span className="text-body-sm font-semibold text-content leading-snug">{prod.nombre}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>,
                         document.body
                     )}

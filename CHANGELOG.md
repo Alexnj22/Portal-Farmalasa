@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.2 — El buscador de extras vuelve a ser una lista
+
+Los resultados se pintaban con `variant="primary"`: cuatro barras azules a todo
+ancho, con el nombre centrado y en mayúsculas. Pesaban más que el campo donde se
+está escribiendo, tapaban la lista de atrás y no se leían como opciones sino
+como cuatro acciones distintas.
+
+Ahora es el mismo patrón que el buscador de «Enviar producto»: fila de tarjeta,
+texto a la izquierda, el `+` como pista y no como protagonista, con su tope de
+alto y desplazamiento propio.
+
 ## v2.747.1 — Los extras llegan al reabrir la recepción
 
 `openModal` armaba su lista con `status === 'pendiente'`, y un extra no lo es:

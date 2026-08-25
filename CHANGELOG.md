@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.1 — Los extras llegan al reabrir la recepción
+
+`openModal` armaba su lista con `status === 'pendiente'`, y un extra no lo es:
+nace con su diferencia puesta. O sea que reabrir la pantalla de recepción
+mostraba «Sin productos extra» sobre renglones que sí existían — y con todo
+contado, ni siquiera abría (`if (!rows.length) return`).
+
+Ahora entran los dos juegos. `sortedRows` los sigue sacando de lo que se cuenta;
+acá sólo tenían que llegar.
+
 ## v2.747.0 — El producto que llegó de más es una diferencia, y se resuelve
 
 Reportado desde Salud 1: se agregó un producto por «¿Llegó un producto extra?»,

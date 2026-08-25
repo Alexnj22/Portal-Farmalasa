@@ -1298,7 +1298,16 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = await fetchItems(key, pedidoId, sucId);
-        const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
+        // Lo que queda por contar, MÁS lo que ya se anotó como llegado de más.
+        // Los extras no son «pendientes» —nacen con su diferencia puesta—, así
+        // que este filtro los dejaba afuera y reabrir la pantalla mostraba la
+        // lista de extras vacía sobre renglones que sí existen. `sortedRows`
+        // los saca de lo que se cuenta; acá sólo tienen que llegar.
+        const extrasAnotados = (loaded || []).filter(r => r.es_extra && r.status !== 'anulado');
+        const rows = [
+            ...(loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja),
+            ...extrasAnotados,
+        ];
         if (!rows.length) return;
         const hasFaltaItems = (loaded || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);

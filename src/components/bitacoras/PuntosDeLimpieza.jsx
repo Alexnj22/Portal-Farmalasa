@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Minus, Plus, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
-import { TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacoras';
+import { PUNTOS_POR_AREA, TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los muebles que se limpian dentro de un área.
@@ -25,14 +25,14 @@ import { TIPOS_DE_PUNTO, ajustarPuntos, contarPuntos } from '../../data/bitacora
 // a derecha igual. El portal las numera solo.
 // ═══════════════════════════════════════════════════════════════════════════
 
-function Contador({ label, singular, valor, onCambiar }) {
+function Contador({ label, singular, valor, minimo = 0, onCambiar }) {
     return (
         <div className="flex items-center gap-2">
             <span className="text-body-sm font-bold text-content-2 flex-1 min-w-0 truncate">{label}</span>
             <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" iconOnly icon={Minus}
                     title={`Quitar una ${singular.toLowerCase()}`}
-                    onClick={() => onCambiar(Math.max(0, valor - 1))} />
+                    onClick={() => onCambiar(Math.max(minimo, valor - 1))} />
                 <span className="w-8 text-center text-body font-black tabular-nums">{valor}</span>
                 <Button variant="ghost" size="sm" iconOnly icon={Plus}
                     title={`Agregar una ${singular.toLowerCase()}`}
@@ -51,30 +51,44 @@ function Contador({ label, singular, valor, onCambiar }) {
  * campos de texto para escribir cuatro veces «Vitrina N» era trabajo que no
  * agregaba nada: la sala igual las cuenta de izquierda a derecha.
  */
-export default function PuntosDeLimpieza({ puntos, onCambiar }) {
+export default function PuntosDeLimpieza({ tipoDeArea, puntos, onCambiar }) {
     const lista = puntos || [];
+    const receta = PUNTOS_POR_AREA[tipoDeArea];
+    if (!receta) return null;
+
+    const tipos = TIPOS_DE_PUNTO.filter(t => receta.tipos.includes(t.tipo));
+
+    // Cuántos hay de verdad, contando el mínimo del área: el servicio sanitario
+    // arranca en 1 porque siempre hay al menos uno, aunque nadie lo haya
+    // configurado. Mostrar 0 sería decir que la sala no tiene baño.
+    const cuenta = (tipo) => Math.max(contarPuntos(lista, tipo), receta.minimo);
+    const total = tipos.reduce((n, t) => n + cuenta(t.tipo), 0);
 
     return (
         <div className="space-y-2">
             <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-                <Sparkles size={12} /> Qué se limpia
+                <Sparkles size={12} /> Cuántos hay
             </p>
 
             {/* Una sola columna en el teléfono: a 390px las dos entraban pero
                 el rótulo se cortaba en «V» y «E», que no es un rótulo. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {TIPOS_DE_PUNTO.map(t => (
+                {tipos.map(t => (
                     <div key={t.tipo} data-surface="card" className="px-3 py-2">
-                        <Contador label={t.label} singular={t.singular} valor={contarPuntos(lista, t.tipo)}
+                        <Contador label={t.label} singular={t.singular} valor={cuenta(t.tipo)}
+                            minimo={receta.minimo}
                             onCambiar={(n) => onCambiar(ajustarPuntos(lista, t.tipo, n))} />
                     </div>
                 ))}
             </div>
 
+            {/* Con uno solo no hay nada que elegir: la limpieza se anota con su
+                casilla, como siempre. La lista aparece cuando hay dos o más, que
+                es cuando «se limpiaron todas» deja de ser evidente. */}
             <p className="text-label text-content-3">
-                {lista.length === 0
-                    ? 'Sin detalle: la limpieza se anota con una sola casilla.'
-                    : `Al anotar se marca cuáles de ${lista.length === 1 ? 'la' : 'las'} ${lista.length} se limpiaron.`}
+                {total > 1
+                    ? `Al anotar la limpieza se marca cuáles de los ${total} se limpiaron.`
+                    : 'Con uno solo, la limpieza se anota con una sola casilla.'}
             </p>
         </div>
     );
@@ -90,7 +104,10 @@ export default function PuntosDeLimpieza({ puntos, onCambiar }) {
  */
 export function ListaDePuntos({ puntos, marcadas, onCambiar, compacta = false }) {
     const lista = puntos || [];
-    if (!lista.length) return null;
+    // Con uno solo no hay nada que elegir: marcar el turno ya lo dice todo, y
+    // una lista de un renglón al lado de su propia casilla es la misma pregunta
+    // dos veces. La captura lo manda igual como hecho.
+    if (lista.length < 2) return null;
 
     const todas = lista.every(p => marcadas.has(p.clave));
     const algunas = !todas && lista.some(p => marcadas.has(p.clave));

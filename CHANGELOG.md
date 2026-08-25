@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.763.0 — El termómetro del ambiente no se calibra ni se pregunta dos veces
+
+*«Los termómetros digitales, que sepa, no se calibran, así que no debería de
+salir […] que pase esa info a la primera card, y que se entienda que es tanto
+para bodega como sala de ventas»* (usuario).
+
+**Y la norma lo respalda, lo cual no era obvio.** El artículo que exige
+certificado de calibración vigente —RTS **5.6.14**— vive en la **sección 5**,
+que es *«para laboratorios, droguerías y centros de almacenamiento»*. La
+**sección 6**, la de *«farmacias, botiquines y otros establecimientos que
+dispensan»*, pide calibración en un solo lugar: **6.2.19, el refrigerador**. Y
+la Guía de Verificación de la SRS tiene un único ítem de calibración para una
+farmacia — **2.32, «¿El refrigerador cuenta con termómetro calibrado?»,
+CRÍTICO**; para el ambiente sólo pregunta si **hay** termómetro (2.13). O sea
+que los campos de calibración en la sala y la bodega estaban pidiendo algo que
+a una farmacia no se le exige.
+
+Entonces:
+
+- **La sala de ventas y la bodega perdieron el instrumento y las dos fechas.**
+  Sus tarjetas quedaron en lo que de verdad las distingue: qué momentos llevan,
+  desde cuándo y el interruptor.
+- **El termómetro subió a la primera tarjeta**, ahora «Horarios y termómetro»,
+  con la pista que contesta la pregunta que provocaba verlo repetido: *el mismo
+  para la sala de ventas y la bodega*. Se guarda en todas las áreas de ambiente
+  de la sucursal por el mismo RPC que los horarios — y **el refrigerador queda
+  afuera a propósito**: su termómetro es otro aparato, y es el único que se
+  calibra.
+- **El refrigerador conserva instrumento, última calibración y vencimiento**,
+  que es donde la norma sí los pide.
+
+**Y el servicio sanitario ya se cuenta.** *«Que se asignen cuántos hay, por
+defecto 1»*: cada área pregunta por lo suyo —vitrinas y estantes en el área de
+vitrinas, servicios sanitarios en el baño—, así que la pregunta no se repite en
+las cuatro tarjetas y a la bodega no se le pregunta por unas vitrinas que no
+tiene. El baño arranca en **1** porque siempre hay al menos uno; mostrar 0 sería
+decir que la sala no tiene baño.
+
+Con uno solo no aparece lista al anotar: marcar el turno ya lo dice todo, y una
+lista de un renglón al lado de su propia casilla es la misma pregunta dos veces.
+La lista aparece con dos o más, que es cuando «se limpiaron todas» deja de ser
+evidente.
+
+La pantalla completa bajó de 2.686 a **2.402px** en iPhone 13.
+
+> **Un matiz que conviene tener presente:** si la bodega central llegara a estar
+> licenciada como *centro de almacenamiento* y no como parte de una farmacia, le
+> aplicaría la sección 5 del RTS y ahí su termohigrómetro **sí** necesitaría
+> certificado vigente. El portal hoy no le pide calibración a ningún área de
+> ambiente; si esa licencia existe, hay que decidirlo.
+
 ## v2.762.1 — Las horas que se ofrecen son las que la sucursal abre
 
 *«Los horarios disponibles deben de ser los de cada sucursal, la sucursal ya

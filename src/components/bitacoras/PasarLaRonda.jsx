@@ -153,7 +153,7 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
                     }
                 />
                 <div className="flex items-center gap-1 shrink-0">
-                    {valor.marcada && puntos.length > 0 && (
+                    {valor.marcada && puntos.length > 1 && (
                         <Button variant="ghost" size="sm"
                             icon={abierto ? ChevronDown : ChevronRight}
                             onClick={() => setAbierto(a => !a)}>
@@ -169,7 +169,7 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
                 </div>
             </div>
 
-            {valor.marcada && abierto && puntos.length > 0 && (
+            {valor.marcada && abierto && puntos.length > 1 && (
                 <ListaDePuntos compacta puntos={puntos} marcadas={marcadas}
                     onCambiar={(s) => onCambio({ puntos: s })} />
             )}

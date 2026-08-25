@@ -61,13 +61,14 @@ const unAnoDespues = (fecha) => {
     return d.toISOString().slice(0, 10);
 };
 
-function Area({ area, puedeEditar, conPuntos, onGuardado }) {
+function Area({ area, puedeEditar, onGuardado }) {
     const Icono = ICONO[area.tipo] || Thermometer;
     // Un área que sólo se limpia no tiene termómetro que identificar ni
     // certificado que vencer. Ofrecerle esos dos campos invita a llenarlos con
     // cualquier cosa, y un «calibrado hasta» inventado en el baño ensucia el
     // aviso de calibración vencida, que es un ítem CRÍTICO.
     const sinTemperatura = soloLimpieza(area);
+    const esRefrigerador = area.tipo === 'refrigerador';
     const [activa, setActiva] = useState(area.activa);
     const [instrumento, setInstrumento] = useState(area.instrumento || '');
     const [calibrado, setCalibrado] = useState(area.calibrado_hasta || '');
@@ -167,32 +168,35 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         bloque a mano, así que los dos campos quedaban a distinta
                         altura y la pista de la derecha se metía en la sección de
                         abajo. */}
-                    {/* El instrumento ocupa su propia fila: en tres columnas,
-                        «Termohigrómetro TH-01» se cortaba en «Termohigrómetro
-                        TH». Las dos fechas sí entran de a dos, que además es
-                        como se leen: calibrado el… vence el… */}
-                    {!sinTemperatura && (
+                    {/* ── Sólo el refrigerador pide instrumento y calibración ──
+                        «Los termómetros digitales, que sepa, no se calibran»
+                        (usuario) — y la norma lo respalda: el 5.6.14 que exige
+                        certificado vigente vive en la sección 5 del RTS, que es
+                        para laboratorios, droguerías y centros de
+                        almacenamiento. La sección 6, la de farmacias, pide
+                        calibración en un solo lugar: el refrigerador (6.2.19), y
+                        la guía de la SRS tiene un único ítem de calibración,
+                        el 2.32, CRÍTICO, también del refrigerador. Para el
+                        ambiente sólo exige que HAYA termómetro (guía 2.13).
+
+                        El termómetro del ambiente subió a la tarjeta de la
+                        sucursal: es el mismo aparato para la sala y la bodega. */}
+                    {esRefrigerador && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                             <div className="space-y-1.5 sm:col-span-2">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                                    Instrumento
+                                    Termómetro
                                 </p>
                                 <PortalInput
                                     name={`inst-${area.id}`} icon={Thermometer}
-                                    aria-label="Cómo se identifica el aparato de esta área"
+                                    aria-label="Cómo se identifica el termómetro del refrigerador"
                                     value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
-                                    placeholder="Termohigrómetro TH-01"
+                                    placeholder="Termómetro digital R-01"
                                 />
                                 <p className="text-label text-content-3 ml-1">
-                                    Uno por área, con su certificado vigente
+                                    El del refrigerador, que sí lleva certificado
                                 </p>
                             </div>
-                            {/* La sala tiene el certificado en la mano y sabe
-                                CUÁNDO lo calibraron; lo que el portal necesita
-                                para avisar es cuándo VENCE. Se piden los dos, y
-                                al poner la fecha de calibración se propone el
-                                vencimiento a un año —lo habitual— para no
-                                obligar a hacer esa cuenta de cabeza. */}
                             <div className="space-y-1.5">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
                                     Última calibración
@@ -217,16 +221,12 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         </div>
                     )}
 
-                    {/* Los muebles se preguntan UNA vez por sucursal, no una
-                        por área: «no entiendo porque pregunta vitrinas y
-                        estantes tantas veces, solo 1 vez debe salir» (usuario).
-                        La sucursal tiene cuatro áreas con limpieza y la
-                        pregunta salía cuatro veces, con cuatro respuestas
-                        posibles para un hecho que es uno solo. Vive en el área
-                        de Vitrinas, que es la que los tiene. */}
-                    {conPuntos && (
-                        <PuntosDeLimpieza puntos={puntos} onCambiar={setPuntos} />
-                    )}
+                    {/* Cada área pregunta por LO SUYO: vitrinas y estantes en
+                        el área de vitrinas, cuántos servicios sanitarios en el
+                        baño. Así la pregunta no se repite en las cuatro
+                        tarjetas —era el reclamo— y a la bodega no se le
+                        pregunta por unas vitrinas que no tiene. */}
+                    <PuntosDeLimpieza tipoDeArea={area.tipo} puntos={puntos} onCambiar={setPuntos} />
 
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border-card">
                         <Switch
@@ -299,24 +299,33 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
 
     const [franjas, setFranjas] = useState(() => unir('franjas'));
     const [limpiezas, setLimpiezas] = useState(() => unir('limpiezas'));
+    // El termómetro del ambiente es UNO: el mismo aparato mide la sala y la
+    // bodega, porque es el que se lleva en la mano al caminar la vuelta. El del
+    // refrigerador no entra acá — es otro, y es el único que se calibra.
+    const instrumentoActual = areas.find(a => a.tipo !== 'refrigerador'
+        && (a.franjas || []).length > 0)?.instrumento || '';
+    const [instrumento, setInstrumento] = useState(instrumentoActual);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
     const [ok, setOk] = useState(false);
 
     const sucio = JSON.stringify(franjas) !== JSON.stringify(unir('franjas'))
-        || JSON.stringify(limpiezas) !== JSON.stringify(unir('limpiezas'));
+        || JSON.stringify(limpiezas) !== JSON.stringify(unir('limpiezas'))
+        || instrumento !== instrumentoActual;
 
     const guardar = useCallback(async () => {
         setGuardando(true); setError(null); setOk(false);
-        const { areas: tocadas, error: err } = await aplicarHorarios(branchId, franjas, limpiezas);
+        const { areas: tocadas, error: err } = await aplicarHorarios(
+            branchId, franjas, limpiezas, instrumento.trim());
         setGuardando(false);
         if (err) { setError(err); return; }
         useStaff.getState().appendAuditLog('CONFIGURAR_HORARIOS_BITACORA', String(branchId), {
             sucursal: branchId, areas: tocadas, franjas, limpiezas,
+            instrumento: instrumento.trim() || null,
         });
         setOk(true);
         onCambio?.();
-    }, [branchId, franjas, limpiezas, onCambio]);
+    }, [branchId, franjas, limpiezas, instrumento, onCambio]);
 
     if (!franjas.length && !limpiezas.length) return null;
 
@@ -324,7 +333,7 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
         <section data-surface="card" data-tono={sucio ? 'warning' : undefined} className="p-4 space-y-3">
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <h4 className="text-body font-black text-content flex items-center gap-2">
-                    <Clock size={16} /> Horarios de la sucursal
+                    <Clock size={16} /> Horarios y termómetro
                 </h4>
                 {puedeEditar && sucio && (
                     <Button variant="primary" size="sm" icon={Check} onClick={guardar} loading={guardando}>
@@ -337,6 +346,24 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
                 Valen para todas las áreas: la vuelta se camina una sola vez.
                 {rango && ` Las horas van entre las que abre y cierra la sucursal (${rotularHora12(rango.abre)} a ${rotularHora12(rango.cierra)}).`}
             </p>
+
+            {/* El termómetro del ambiente: uno solo para la sala y la bodega.
+                Lo dice la pista, porque es justo lo que se preguntaba al verlo
+                repetido en las dos tarjetas. */}
+            <div className="space-y-1.5 max-w-md">
+                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                    Termómetro
+                </p>
+                <PortalInput
+                    name="instrumento-sucursal" icon={Thermometer} readOnly={!puedeEditar}
+                    aria-label="Cómo se identifica el termómetro de la sucursal"
+                    value={instrumento} onChange={(e) => setInstrumento(e.target.value)}
+                    placeholder="Termohigrómetro TH-01"
+                />
+                <p className="text-label text-content-3 ml-1">
+                    El mismo para la sala de ventas y la bodega
+                </p>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <EditorDeHorarios tipo="franjas" filas={franjas} rango={rango}
@@ -585,13 +612,6 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
         [areas],
     );
 
-    // Los muebles se preguntan UNA vez. Viven en el área de Vitrinas, que es la
-    // que los tiene; si la sucursal no lleva vitrinas, en la sala de ventas.
-    const idDeLosMuebles = useMemo(() => (
-        areas.find(a => a.tipo === 'vitrinas')?.id
-        ?? areas.find(a => a.tipo === 'sala_ventas')?.id
-        ?? null
-    ), [areas]);
 
     if (cargando) return <LoadingState label="Cargando la configuración…" />;
     if (error) return <Notice variant="danger" icon={AlertTriangle}>{error.message || 'No se pudo cargar.'}</Notice>;
@@ -632,8 +652,7 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
                 {visibles.map(a => (
-                    <Area key={a.id} area={a} puedeEditar={puedeEditar}
-                        conPuntos={a.id === idDeLosMuebles} onGuardado={alGuardar} />
+                    <Area key={a.id} area={a} puedeEditar={puedeEditar} onGuardado={alGuardar} />
                 ))}
             </div>
 

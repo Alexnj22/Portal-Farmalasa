@@ -767,9 +767,26 @@ export function areaNueva(tipo, branchId, areasDeLaSala = []) {
 // Por eso es opcional: un área sin puntos sigue siendo una casilla sola.
 
 export const TIPOS_DE_PUNTO = [
-    { tipo: 'vitrina', label: 'Vitrinas', singular: 'Vitrina' },
-    { tipo: 'estante', label: 'Estantes', singular: 'Estante' },
+    { tipo: 'vitrina',   label: 'Vitrinas',            singular: 'Vitrina' },
+    { tipo: 'estante',   label: 'Estantes',            singular: 'Estante' },
+    { tipo: 'sanitario', label: 'Servicios sanitarios', singular: 'Servicio sanitario' },
 ];
+
+/**
+ * Qué muebles se cuentan en cada área, y con cuántos arranca.
+ *
+ * Cada área pregunta por lo SUYO: en vitrinas, cuántas vitrinas y cuántos
+ * estantes; en el servicio sanitario, cuántos hay. Así la pregunta no se repite
+ * en las cuatro tarjetas —era el reclamo— y tampoco se le pregunta a la bodega
+ * por unas vitrinas que no tiene.
+ *
+ * El baño arranca en 1 porque siempre hay al menos uno; las vitrinas en 0
+ * porque una sucursal puede no tener.
+ */
+export const PUNTOS_POR_AREA = {
+    vitrinas:           { tipos: ['vitrina', 'estante'], minimo: 0 },
+    servicio_sanitario: { tipos: ['sanitario'],          minimo: 1 },
+};
 
 /**
  * Subir o bajar la cantidad de vitrinas (o estantes) de un área.
@@ -823,11 +840,15 @@ export const contarPuntos = (puntos, tipo) => (puntos || []).filter(p => p.tipo 
  * dejaría la sala en el horario nuevo y la bodega en el viejo, que es
  * exactamente el estado que esto viene a hacer imposible.
  */
-export async function aplicarHorarios(branchId, franjas, limpiezas) {
+export async function aplicarHorarios(branchId, franjas, limpiezas, instrumento = null) {
     const { data, error } = await supabase.rpc('aplicar_horarios_bitacora', {
         p_branch_id: Number(branchId),
         p_franjas: franjas || [],
         p_limpiezas: limpiezas || [],
+        // El mismo aparato mide la sala y la bodega. El refrigerador no: su
+        // termómetro es otro, y es el único que la norma manda calibrar en una
+        // farmacia (RTS 6.2.19, guía 2.32 CRÍTICO).
+        p_instrumento: instrumento,
     });
     if (error) return { areas: 0, error: error.message ?? 'No se pudieron guardar los horarios.' };
     return { areas: data ?? 0, error: null };

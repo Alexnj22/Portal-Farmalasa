@@ -82,54 +82,70 @@ export default function AnotarLectura({ area, franja, lectura, fecha, onCerrar }
 
             <LiquidModal.Body className="space-y-4">
                 {corrigiendo && (
-                    <Notice variant="info">
+                    <Notice variant="info" compact>
                         <span className="font-bold">El valor anterior no se borra.</span>
                         <span className="block mt-0.5 font-normal text-content-2">
-                            Queda registrado junto al nuevo, con tu nombre y el motivo del cambio.
+                            Queda junto al nuevo, con tu nombre y el motivo.
                         </span>
                     </Notice>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* `alto` es la variante para llenar DE PIE con una mano —
-                        que es exactamente esto: se lee el termohigrómetro
-                        mirando el aparato, no la pantalla. */}
-                    {/* `type="text"` con la máscara DECIMAL, NO `type="number"`:
-                        el campo numérico del navegador se traga la coma sin
-                        avisar y «24,9» entraba como 249 °C. Ver el comentario
-                        de `applyInputMask` — está medido. */}
-                    <PortalInput
-                        label="Temperatura (°C)" name="temperatura" type="text" inputMode="decimal"
-                        maskType="DECIMAL" icon={Thermometer} alto required
-                        value={temp} onChange={(e) => setTemp(e.target.value)}
-                        placeholder="0.0" inputClassName="tabular-nums"
-                        hasError={fueraDeRango}
-                    />
-                    {area.mide_humedad && (
+                {/* ── Dos campos en una fila, con el rótulo de la COLUMNA ──────
+                    Antes cada campo llevaba su etiqueta larga («HUMEDAD (% HR)»
+                    con «INFORMATIVA» al lado), que en un diálogo angosto se
+                    partía en dos renglones y dejaba los dos campos a distinta
+                    altura. El rótulo corto arriba de la columna dice lo mismo,
+                    entra siempre en una línea, y de paso los alinea con la
+                    ronda — que es la otra pantalla donde se anota esto mismo.
+
+                    `type="text"` con máscara DECIMAL, NUNCA `type="number"`: el
+                    campo numérico del navegador se traga la coma sin avisar y
+                    «24,9» entraba como 249 °C. Está medido. */}
+                <div className={`grid gap-3 ${area.mide_humedad ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className="space-y-1.5">
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                            Temperatura °C
+                        </p>
                         <PortalInput
-                            label="Humedad (% HR)" name="humedad" type="text" inputMode="decimal"
-                            maskType="DECIMAL" icon={Droplets} alto
-                            value={hum} onChange={(e) => setHum(e.target.value)}
-                            placeholder="—" inputClassName="tabular-nums"
-                            helperText="Informativa"
+                            name="temperatura" type="text" inputMode="decimal" maskType="DECIMAL"
+                            icon={Thermometer} required aria-label="Temperatura en grados"
+                            value={temp} onChange={(e) => setTemp(e.target.value)}
+                            inputClassName="tabular-nums" hasError={fueraDeRango}
                         />
+                    </div>
+                    {area.mide_humedad && (
+                        <div className="space-y-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                                Humedad % HR
+                            </p>
+                            <PortalInput
+                                name="humedad" type="text" inputMode="decimal" maskType="DECIMAL"
+                                icon={Droplets} aria-label="Humedad relativa en porcentaje"
+                                value={hum} onChange={(e) => setHum(e.target.value)}
+                                inputClassName="tabular-nums"
+                            />
+                            {/* La norma la pide informativa (RTS 6.2.16): no tiene
+                                rango que cumplir, y decirlo evita que alguien
+                                crea que una humedad alta invalida la lectura. */}
+                            <p className="text-label text-content-3 ml-1">Informativa</p>
+                        </div>
                     )}
                 </div>
 
                 {fueraDeRango && (
                     <>
-                        <Notice variant="danger" icon={AlertTriangle}>
+                        <Notice variant="danger" compact icon={AlertTriangle}>
                             <span className="font-bold">Fuera del rango de {rotularRango(area)}.</span>
                             <span className="block mt-0.5 font-normal text-content-2">
-                                Hay que anotar qué se hizo. Una lectura fuera de rango sin acción al lado
-                                prueba que se vio y no se actuó.
+                                Hay que anotar qué se hizo: una lectura fuera de rango sin acción al
+                                lado prueba que se vio y no se actuó.
                             </span>
                         </Notice>
                         <PortalTextarea
                             label="Qué se hizo" name="accion" required
                             value={accion} onChange={(e) => setAccion(e.target.value)}
-                            rows={3}
-                            placeholder="Se encendió el aire acondicionado y se bajó la persiana. Recontrolado a las 13:40 en 28.1 °C."
+                            rows={2} compact
+                            placeholder="Se encendió el aire y se bajó la persiana. Recontrolado a las 13:40 en 28.1 °C."
                         />
                     </>
                 )}
@@ -138,7 +154,7 @@ export default function AnotarLectura({ area, franja, lectura, fecha, onCerrar }
                     <PortalTextarea
                         label="Motivo de la corrección" name="motivo" required
                         value={motivo} onChange={(e) => setMotivo(e.target.value)}
-                        rows={2}
+                        rows={2} compact
                         placeholder="Se anotó 26 en vez de 28 por error de tipeo."
                     />
                 )}

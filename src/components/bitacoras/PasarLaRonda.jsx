@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, Droplets, MessageSquarePlus, Sparkles, Thermometer } from 'lucide-react';
+import { AlertTriangle, Check, Clock, MessageSquarePlus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, LayoutPanelTop } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
@@ -16,140 +16,145 @@ import { fueraDeRango, registrarRonda, rotularRango } from '../../data/bitacoras
 // De medir cómo se llenaba, no de suponerlo. Sobre los 576 registros de las
 // primeras nueve jornadas: **394 (68%) se anotaron a menos de tres minutos del
 // anterior**, con 29 segundos de promedio, y 55 vueltas juntaron cinco o seis
-// registros seguidos. La sala camina con el termohigrómetro y anota todo de un
-// tirón; el portal la obligaba a abrir y cerrar un diálogo por casilla —trece
-// al día— y cada apertura es una oportunidad de que suene el teléfono y la
-// vuelta quede a medias.
+// registros seguidos.
 //
-// ── El orden de la pantalla es el orden de la CAMINATA ─────────────────────
-// Se agrupa por área —sala de ventas, bodega, refrigerador, vitrinas, baño— y
-// no por tipo de registro, porque quien la llena está parado frente a un
-// termómetro concreto. Una lista con «todas las temperaturas» arriba y «todas
-// las limpiezas» abajo obliga a recorrer la sala dos veces.
+// ── Se agrupa por MOMENTO, no por área (2026-08-25) ────────────────────────
+// La primera versión agrupaba por área —una tarjeta por cada una, con su
+// franja adentro— y el usuario lo corrigió con la frase que ordena todo:
+// «cuando se toma la temperatura, se toma de un solo en ambos casos, o en los
+// 3 si tienen refrigerador». La persona camina UNA vez con el termohigrómetro
+// y anota sala, bodega y refrigerador de esa pasada. El eje de la pantalla es
+// el momento, y las áreas son sus renglones.
+//
+// Y así el número queda en una COLUMNA: tres campos alineados bajo el rótulo
+// «°C» se leen y se llenan de corrido; tres tarjetas con su etiqueta cada una
+// obligan a leer la misma palabra tres veces.
 //
 // ── Lo que se deja en blanco NO se manda ───────────────────────────────────
 // La ronda no es un formulario que haya que completar: es la lista de lo que se
 // puede anotar ahora. Si el refrigerador está en la bodega de al lado y todavía
 // no se pasó por ahí, ese renglón queda vacío y sigue pendiente en la grilla.
-// Un formulario que exige todo lo abierto enseñaría a inventar el que falta,
-// que es exactamente lo que un registro no puede tener.
+// Un formulario que exige todo lo abierto enseñaría a inventar el que falta.
 // ═══════════════════════════════════════════════════════════════════════════
+
+const ICONO_AREA = {
+    sala_ventas:        Store,
+    bodega:             Warehouse,
+    refrigerador:       Snowflake,
+    vitrinas:           LayoutPanelTop,
+    servicio_sanitario: Toilet,
+};
 
 const hhmm = (t) => String(t || '').slice(0, 5);
 
-/** Un renglón de lectura: la franja con sus dos campos. */
+/** Un renglón de temperatura dentro del momento. */
 function RenglonLectura({ item, valor, onCambio, errorServidor }) {
-    const { area, bloque } = item;
+    const { area } = item;
+    const Icono = ICONO_AREA[area.tipo] || Thermometer;
     const fuera = fueraDeRango(area, valor.temp);
     const faltaAccion = fuera && !String(valor.accion || '').trim();
 
     return (
-        <div data-surface="card" data-tono={errorServidor ? 'danger' : undefined} className="p-3 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-                <Thermometer size={14} className="text-content-3 shrink-0" />
-                <p className="text-body-sm font-bold text-content-1">{bloque.label}</p>
-                <span className="text-label text-content-3 tabular-nums">
-                    {hhmm(bloque.desde)}–{hhmm(bloque.hasta)}
-                </span>
-                <Badge variant="chart-1" size="sm" uppercase={false}>{rotularRango(area)}</Badge>
-                {bloque.estado === 'vencida' && (
-                    <Badge variant="warning" size="sm" uppercase={false} icon={Clock}>Se pasó la hora</Badge>
-                )}
-            </div>
+        <>
+            {/* Tres columnas fijas para que los campos queden ALINEADOS entre
+                renglones: el área se encoge, los números no. En el teléfono los
+                dos campos suman 172px y le dejan el resto al nombre. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_84px_84px] items-center gap-2">
+                <div className="min-w-0">
+                    <p className="text-body-sm font-bold text-content-1 truncate flex items-center gap-1.5">
+                        <Icono size={14} className="text-content-3 shrink-0" />
+                        {area.nombre}
+                    </p>
+                    <p className="text-label text-content-3 truncate">{rotularRango(area)}</p>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* `alto`: el campo se llena DE PIE y con una mano, mirando el
-                    aparato y no la pantalla. Y `type="text"` con máscara
-                    DECIMAL, nunca `type="number"`: el campo nativo se traga la
-                    coma sin avisar y «24,9» entraba como 249 °C. */}
+                {/* Sin etiqueta: el encabezado de la columna ya dice qué es
+                    (`PortalInput` lo contempla y el gate exige `aria-label`).
+                    Y sin placeholder: un «0.0» gris se lee como un valor ya
+                    escrito, que en una bitácora es justo lo que no puede pasar. */}
                 <PortalInput
-                    label="Temperatura (°C)" name={`temp-${item.clave}`} type="text" inputMode="decimal"
-                    maskType="DECIMAL" icon={Thermometer} alto
+                    name={`temp-${item.clave}`} type="text" inputMode="decimal" maskType="DECIMAL"
+                    aria-label={`Temperatura de ${area.nombre} en grados`}
                     value={valor.temp || ''} onChange={(e) => onCambio({ temp: e.target.value })}
-                    placeholder="0.0" inputClassName="tabular-nums" hasError={fuera}
+                    inputClassName="tabular-nums text-center px-2" hasError={fuera}
                 />
-                {area.mide_humedad && (
+                {area.mide_humedad ? (
                     <PortalInput
-                        label="Humedad (% HR)" name={`hum-${item.clave}`} type="text" inputMode="decimal"
-                        maskType="DECIMAL" icon={Droplets} alto
+                        name={`hum-${item.clave}`} type="text" inputMode="decimal" maskType="DECIMAL"
+                        aria-label={`Humedad de ${area.nombre} en porcentaje`}
                         value={valor.hum || ''} onChange={(e) => onCambio({ hum: e.target.value })}
-                        placeholder="—" inputClassName="tabular-nums" helperText="Informativa"
+                        inputClassName="tabular-nums text-center px-2"
                     />
+                ) : (
+                    <span className="text-center text-content-3">—</span>
                 )}
             </div>
 
             {fuera && (
-                <>
-                    <Notice variant="danger" compact icon={AlertTriangle}>
-                        <span className="font-bold">Fuera del rango de {rotularRango(area)}.</span>
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            Hay que anotar qué se hizo: una lectura fuera de rango sin acción al lado
-                            prueba que se vio y no se actuó.
-                        </span>
-                    </Notice>
+                <div className="space-y-1.5 pl-1">
+                    <p className="text-label font-bold text-danger-text flex items-start gap-1.5">
+                        <AlertTriangle size={13} className="shrink-0 mt-px" />
+                        Fuera del rango. Hay que anotar qué se hizo: una lectura fuera de rango sin acción
+                        al lado prueba que se vio y no se actuó.
+                    </p>
                     <PortalTextarea
-                        label="Qué se hizo" name={`accion-${item.clave}`} required rows={2}
+                        name={`accion-${item.clave}`} rows={2}
+                        aria-label={`Qué se hizo con la temperatura de ${area.nombre}`}
                         value={valor.accion || ''} onChange={(e) => onCambio({ accion: e.target.value })}
-                        placeholder="Se encendió el aire acondicionado y se bajó la persiana. Recontrolado a las 13:40 en 28.1 °C."
+                        placeholder="Se encendió el aire y se bajó la persiana. Recontrolado a las 13:40."
+                        compact
+                        hasError={faltaAccion}
                     />
-                    {faltaAccion && (
-                        <p className="text-label text-danger-text font-bold">
-                            Sin esto, este renglón no se va a guardar.
-                        </p>
-                    )}
-                </>
+                </div>
             )}
 
             {errorServidor && (
-                <p className="text-label text-danger-text font-bold flex items-start gap-1.5">
+                <p className="text-label text-danger-text font-bold flex items-start gap-1.5 pl-1">
                     <AlertTriangle size={13} className="shrink-0 mt-px" /> {errorServidor}
                 </p>
             )}
-        </div>
+        </>
     );
 }
 
-/** Un renglón de limpieza: una casilla, y la observación sólo si hace falta. */
+/** Un renglón de limpieza: una casilla, y la nota sólo si hace falta. */
 function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
-    const { bloque } = item;
+    const { area, bloque } = item;
+    const Icono = ICONO_AREA[area.tipo] || Sparkles;
     const [conNota, setConNota] = useState(false);
 
     return (
-        <div data-surface="card" data-tono={errorServidor ? 'danger' : undefined} className="p-3 space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+        <>
+            <div className="flex items-center justify-between gap-2">
                 <Checkbox
                     name={`limpieza-${item.clave}`}
                     checked={Boolean(valor.marcada)}
                     onChange={(marcada) => onCambio({ marcada })}
                     label={
-                        <span className="flex flex-wrap items-center gap-2">
-                            <Sparkles size={13} className="text-content-3 shrink-0" />
-                            <span className="font-bold">{bloque.label}</span>
-                            <span className="text-label text-content-3 tabular-nums font-normal">
-                                {hhmm(bloque.desde)}–{hhmm(bloque.hasta)}
-                            </span>
-                            {bloque.estado === 'vencida' && (
-                                <Badge variant="warning" size="sm" uppercase={false}>Se pasó la hora</Badge>
-                            )}
+                        <span className="flex items-center gap-1.5">
+                            <Icono size={13} className="text-content-3 shrink-0" />
+                            {area.nombre}
+                            <span className="font-medium text-content-3">· {bloque.label}</span>
                         </span>
                     }
                 />
                 {valor.marcada && !conNota && (
-                    <Button variant="ghost" size="sm" icon={MessageSquarePlus} onClick={() => setConNota(true)}>
-                        Anotar algo
-                    </Button>
+                    <Button variant="ghost" size="sm" iconOnly icon={MessageSquarePlus}
+                        title="Anotar algo" onClick={() => setConNota(true)} />
                 )}
             </div>
 
-            {/* La observación es opcional a propósito: la norma pide el registro
-                de la limpieza, no su descripción, y un campo obligatorio que no
-                aporta produce «ok» ciento veinte veces — el ruido que hace
-                ilegible un libro. Por eso está escondida hasta que hace falta. */}
+            {/* La nota es opcional a propósito: la norma pide el REGISTRO de la
+                limpieza, no su descripción, y un campo obligatorio que no aporta
+                produce «ok» ciento veinte veces — el ruido que hace ilegible un
+                libro. Por eso está escondida hasta que hace falta. */}
             {valor.marcada && conNota && (
                 <PortalTextarea
-                    label="Observaciones (opcional)" name={`obs-${item.clave}`} rows={2}
+                    name={`obs-${item.clave}`} rows={2}
+                    aria-label={`Observación de la limpieza de ${area.nombre}`}
                     value={valor.obs || ''} onChange={(e) => onCambio({ obs: e.target.value })}
-                    placeholder="Sólo si hay algo que anotar: una gotera, una vitrina que hubo que reacomodar…"
+                    placeholder="Una gotera, una vitrina que hubo que reacomodar…"
+                    compact
                 />
             )}
 
@@ -158,7 +163,7 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
                     <AlertTriangle size={13} className="shrink-0 mt-px" /> {errorServidor}
                 </p>
             )}
-        </div>
+        </>
     );
 }
 
@@ -174,19 +179,28 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
         setValores(v => ({ ...v, [clave]: { ...(v[clave] || {}), ...parche } }));
     }, []);
 
-    // Agrupado por ÁREA y en el orden en que vienen: es el orden de la caminata.
-    const porArea = useMemo(() => {
+    // ── Agrupado por MOMENTO ────────────────────────────────────────────────
+    // La clave es el horario, no el rótulo: dos áreas pueden llamar «Mañana» a
+    // ventanas distintas —la bodega central abre a las 08:00 y las farmacias a
+    // las 07:00— y juntarlas diría una hora que no es la de nadie.
+    const momentos = useMemo(() => {
         const mapa = new Map();
         for (const it of pendientes) {
-            const arr = mapa.get(it.area.id) || { area: it.area, items: [] };
-            arr.items.push(it);
-            mapa.set(it.area.id, arr);
+            const clave = `${it.bloque.desde}|${it.bloque.hasta}`;
+            const g = mapa.get(clave) || {
+                clave, label: it.bloque.label, desde: it.bloque.desde, hasta: it.bloque.hasta,
+                estado: it.bloque.estado, lecturas: [], limpiezas: [],
+            };
+            (it.tipo === 'lectura' ? g.lecturas : g.limpiezas).push(it);
+            // Si algo de ese momento ya venció, el momento entero está vencido:
+            // es la señal que decide si se anota corriendo o con calma.
+            if (it.bloque.estado === 'vencida') g.estado = 'vencida';
+            mapa.set(clave, g);
         }
-        return [...mapa.values()];
+        return [...mapa.values()].sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
     }, [pendientes]);
 
-    // Lo que se va a mandar. Un renglón vacío no viaja: la ronda es lo que se
-    // pudo anotar en esta vuelta, no una lista para completar.
+    // Lo que se va a mandar. Un renglón vacío no viaja.
     const items = useMemo(() => {
         const salida = [];
         for (const it of pendientes) {
@@ -247,19 +261,19 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : cerrar}
-            maxWidth="max-w-2xl" ariaLabel="Pasar la ronda">
+            maxWidth="max-w-lg" ariaLabel="Pasar la ronda">
             <LiquidModal.Header>
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">Pasar la ronda</h3>
                     <p className="text-caption text-content-3">
-                        Todo lo que se puede anotar ahora. Lo que dejes en blanco queda pendiente.
+                        Lo que dejes en blanco queda pendiente.
                     </p>
                 </div>
             </LiquidModal.Header>
 
-            <LiquidModal.Body className="space-y-5">
+            <LiquidModal.Body className="space-y-4">
                 {Object.keys(errores).length > 0 && (
-                    <Notice variant="warning" icon={AlertTriangle}>
+                    <Notice variant="warning" compact icon={AlertTriangle}>
                         <span className="font-bold">Quedaron renglones sin guardar.</span>
                         <span className="block mt-0.5 font-normal text-content-2">
                             Lo demás ya está anotado. Acá abajo está el motivo de cada uno.
@@ -267,28 +281,58 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
                     </Notice>
                 )}
 
-                {porArea.map(({ area, items: filas }) => (
-                    <section key={area.id} className="space-y-2">
-                        <h4 className="text-label font-black uppercase tracking-widest text-content-3">
-                            {area.nombre}
-                        </h4>
-                        {filas.map(it => (
-                            it.tipo === 'lectura' ? (
-                                <RenglonLectura key={it.clave} item={it}
-                                    valor={valores[it.clave] || {}}
-                                    onCambio={(p) => cambiar(it.clave, p)}
-                                    errorServidor={errores[it.clave]} />
-                            ) : (
-                                <RenglonLimpieza key={it.clave} item={it}
-                                    valor={valores[it.clave] || {}}
-                                    onCambio={(p) => cambiar(it.clave, p)}
-                                    errorServidor={errores[it.clave]} />
-                            )
-                        ))}
+                {momentos.map((m) => (
+                    <section key={m.clave} data-surface="card"
+                        data-tono={m.estado === 'vencida' ? 'warning' : undefined}
+                        className="p-3 space-y-3">
+                        <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <h4 className="text-body-sm font-black text-content">{m.label}</h4>
+                            <span className="text-label text-content-3 tabular-nums">
+                                {hhmm(m.desde)}–{hhmm(m.hasta)}
+                            </span>
+                            {m.estado === 'vencida' && (
+                                <Badge variant="warning" size="sm" uppercase={false} icon={Clock}>
+                                    Se pasó la hora
+                                </Badge>
+                            )}
+                        </header>
+
+                        {m.lecturas.length > 0 && (
+                            <div className="space-y-2">
+                                {/* El rótulo de la columna, UNA vez para todos los
+                                    renglones: es lo que permite que los campos no
+                                    lleven etiqueta y queden alineados. */}
+                                <div className="grid grid-cols-[minmax(0,1fr)_84px_84px] gap-2">
+                                    <span />
+                                    <span className="text-label font-black uppercase tracking-widest text-content-3 text-center">°C</span>
+                                    <span className="text-label font-black uppercase tracking-widest text-content-3 text-center">% HR</span>
+                                </div>
+                                {m.lecturas.map(it => (
+                                    <RenglonLectura key={it.clave} item={it}
+                                        valor={valores[it.clave] || {}}
+                                        onCambio={(p) => cambiar(it.clave, p)}
+                                        errorServidor={errores[it.clave]} />
+                                ))}
+                            </div>
+                        )}
+
+                        {m.limpiezas.length > 0 && (
+                            <div className="space-y-1.5 pt-1 border-t border-border-card">
+                                <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5 pt-1">
+                                    <Sparkles size={12} /> Limpieza
+                                </p>
+                                {m.limpiezas.map(it => (
+                                    <RenglonLimpieza key={it.clave} item={it}
+                                        valor={valores[it.clave] || {}}
+                                        onCambio={(p) => cambiar(it.clave, p)}
+                                        errorServidor={errores[it.clave]} />
+                                ))}
+                            </div>
+                        )}
                     </section>
                 ))}
 
-                {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                {error && <Notice variant="danger" compact icon={AlertTriangle}>{error}</Notice>}
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
@@ -297,7 +341,7 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
                 </Button>
                 <Button variant="primary" icon={Check} onClick={guardar} loading={guardando}
                     disabled={!items.length || incompletos.length > 0}>
-                    {items.length ? `Anotar ${items.length} registro${items.length > 1 ? 's' : ''}` : 'Anotar'}
+                    {items.length ? `Anotar ${items.length}` : 'Anotar'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

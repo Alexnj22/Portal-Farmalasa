@@ -663,3 +663,83 @@ export async function registrarRonda(items) {
     if (error) return { guardados: 0, fallidos: [], error: error.message ?? 'No se pudo guardar la ronda.' };
     return { guardados: data?.guardados ?? 0, fallidos: data?.fallidos ?? [], error: null };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Configurar las áreas — plantillas y horarios
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Qué es cada área cuando se la crea, según la norma.
+ *
+ * Los números NO son una preferencia: `temp_max = 30` sale del RTS 6.2.15 —«una
+ * temperatura no mayor a treinta grados Celsius» en sala de venta y bodega— y
+ * el `2 a 8` del refrigerador sale del 6.2.20. La humedad se registra pero no
+ * tiene rango que cumplir: el 6.2.16 dice que «el registro del parámetro de
+ * humedad relativa será informativo». Por eso `hr_min`/`hr_max` quedan en
+ * blanco: un rango inventado convertiría en desvío algo que la norma no exige.
+ */
+export const PLANTILLA_AREA = {
+    sala_ventas:        { nombre: 'Sala de ventas',      temp_min: null, temp_max: 30, mide_humedad: true,  conFranjas: true,  limpiezas: 2 },
+    bodega:             { nombre: 'Bodega',              temp_min: null, temp_max: 30, mide_humedad: true,  conFranjas: true,  limpiezas: 2 },
+    refrigerador:       { nombre: 'Refrigerador',        temp_min: 2,    temp_max: 8,  mide_humedad: false, conFranjas: true,  limpiezas: 0 },
+    vitrinas:           { nombre: 'Vitrinas',            temp_min: null, temp_max: null, mide_humedad: false, conFranjas: false, limpiezas: 1 },
+    servicio_sanitario: { nombre: 'Servicio sanitario',  temp_min: null, temp_max: null, mide_humedad: false, conFranjas: false, limpiezas: 2 },
+};
+
+/** Las franjas por defecto de una sala que abre a las 07:00. */
+export const FRANJAS_POR_DEFECTO = [
+    { clave: 'm', label: 'Mañana',   desde: '07:00', hasta: '09:00' },
+    { clave: 'd', label: 'Mediodía', desde: '12:00', hasta: '14:00' },
+    { clave: 't', label: 'Tarde',    desde: '17:00', hasta: '19:00' },
+];
+
+export const LIMPIEZAS_POR_DEFECTO = [
+    { clave: 'apertura', label: 'Apertura', desde: '07:00', hasta: '10:00' },
+    { clave: 'cierre',   label: 'Cierre',   desde: '17:00', hasta: '20:00' },
+];
+
+/**
+ * Una clave nueva que no choque con las que ya existen.
+ *
+ * La clave es lo que ata un registro a su franja (`bitacora_lecturas.franja`),
+ * así que **no se reusa y no se cambia**: reciclar la clave de una franja
+ * borrada haría que las lecturas viejas reaparezcan bajo la franja nueva, con
+ * su hora y su firma, como si se hubieran tomado ahí.
+ */
+export function nuevaClave(existentes, prefijo = 'f') {
+    const usadas = new Set((existentes || []).map(x => x.clave));
+    let n = usadas.size + 1;
+    while (usadas.has(`${prefijo}${n}`)) n += 1;
+    return `${prefijo}${n}`;
+}
+
+/**
+ * El área nueva, armada para una sucursal.
+ *
+ * Las franjas se COPIAN de un área de temperatura que ya exista en esa sala, y
+ * sólo si no hay ninguna se usan las de por defecto. No es un detalle: la
+ * bodega central abre a las 08:00 y cierra a las 17:00, así que un refrigerador
+ * creado ahí con el horario de las farmacias (17:00–19:00) pediría una lectura
+ * de tarde que nadie puede tomar — y el mes informaría un faltante diario que
+ * en realidad es un error de configuración.
+ */
+export function areaNueva(tipo, branchId, areasDeLaSala = []) {
+    const p = PLANTILLA_AREA[tipo];
+    if (!p) return null;
+    const hermana = areasDeLaSala.find(a => (a.franjas || []).length > 0);
+    const franjas = p.conFranjas
+        ? (hermana?.franjas?.length ? hermana.franjas : FRANJAS_POR_DEFECTO)
+        : [];
+    const limpiezas = LIMPIEZAS_POR_DEFECTO.slice(0, p.limpiezas);
+    return {
+        branch_id: Number(branchId),
+        tipo,
+        nombre: p.nombre,
+        temp_min: p.temp_min,
+        temp_max: p.temp_max,
+        mide_humedad: p.mide_humedad,
+        franjas,
+        limpiezas,
+        activa: true,
+    };
+}

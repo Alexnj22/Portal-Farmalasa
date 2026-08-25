@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.759.0 — La bitácora se anota por momento, y los horarios los cambia el jefe de la sala
+
+Cinco cosas reportadas mirando la pantalla, no el código.
+
+**1 · El diálogo se veía mal, y la causa no era de bitácoras.** `PortalTextarea`
+—el campo de varias líneas de TODO el portal, 40 archivos— nunca declaró el
+estilo de su `::placeholder`, así que el ejemplo salía en **negrita, tamaño de
+cuerpo grande y con el color que le pusiera el navegador**: el campo parecía
+lleno. `PortalInput` tenía ese mismo defecto arreglado desde julio, con la nota
+escrita al lado; a su gemelo nadie se lo aplicó. Corregido en el canónico, más
+una variante `compact` para las notas de dos renglones («qué se hizo», «motivo
+de la corrección»), que no son el cuerpo de un documento sino un comentario al
+margen. Y en el diálogo de la lectura, las etiquetas largas —«HUMEDAD (% HR)»
+con «INFORMATIVA» al lado— se partían en dos renglones y dejaban los dos campos
+a distinta altura: ahora el rótulo va **arriba de la columna**, corto y en una
+línea.
+
+**2 · La ronda se agrupa por MOMENTO, no por área.** Lo ordenó una frase del
+usuario: *«cuando se toma la temperatura, se toma de un solo en ambos casos, o
+en los 3 si tienen refrigerador»*. La persona camina UNA vez con el
+termohigrómetro y anota sala, bodega y refrigerador de esa pasada — el eje es el
+momento y las áreas son sus renglones. Así los números quedan en una **columna
+alineada** bajo el rótulo «°C», que se llena de corrido; antes eran tres
+tarjetas apiladas repitiendo la misma etiqueta. Los momentos se agrupan por
+HORARIO y no por rótulo: la bodega central llama «Mañana» a 08:00–10:00 y las
+farmacias a 07:00–09:00.
+
+**3 · Se puede abrir un refrigerador en una sucursal.** Otra pregunta del
+usuario que no tenía respuesta: existía sólo en la bodega central porque lo
+había puesto la semilla, y abrir uno en una sala exigía tocar la base a mano.
+Ahora Configuración tiene «Agregar un área» — refrigerador, vitrinas, servicio
+sanitario, bodega o sala de ventas—, y el área nueva **copia los horarios de las
+que esa misma sucursal ya lleva**: la bodega central abre a las 08:00 y cierra a
+las 17:00, así que un refrigerador creado ahí con el horario de las farmacias
+(17:00–19:00) pediría una lectura de tarde que nadie puede tomar, y el mes
+informaría un faltante diario que en realidad es un error de configuración.
+
+**4 · Los horarios los cambia el jefe de su sala.** Pedido textual: *«permite
+modificar los horarios por sucursal, para limpieza y servicios sanitarios (que
+lo puedan modificar los jefes)»*. A qué hora se barre no lo dice ninguna norma:
+lo dice el local. Jefe/a y Subjefe/a de Sala reciben `bitacoras_configurar` con
+alcance **BRANCH** — y en la misma migración las policies de `bitacora_areas`
+pasaron a mirar la sala: sólo miraban el permiso, lo cual no se notaba mientras
+los únicos que lo tenían eran cargos de alcance ALL. Dar el permiso sin cerrar
+el alcance no habría fallado: habría funcionado de más, dejando al jefe de
+Salud 1 reescribir las franjas de Salud 4.
+
+Cada hora es **un** selector de medias horas y no tres (hora + minutos + AM/PM):
+medido en iPhone 13, cinco horarios ocupaban más de tres pantallas de alto.
+
+**5 · Sí, la temperatura máxima es la del reglamento** —y estaba desde el
+principio—: **30 °C** para sala de ventas y bodega (RTS 6.2.15, «una temperatura
+no mayor a treinta grados Celsius»), **2 a 8 °C** para el refrigerador (6.2.20),
+y la **humedad es informativa** por la propia norma (6.2.16), así que no tiene
+rango que cumplir y no se le inventa uno. Las plantillas de área nueva nacen con
+esos números escritos, con la cita al lado.
+
+Verificado a mano en un iPhone 13 (WebKit) contra el build: la ronda, el diálogo
+de corrección y la configuración entran sin desborde horizontal y sin ningún
+elemento fuera de la pantalla.
+
 ## v2.758.1 — El atajo del Inicio y el aviso abren la ronda directo
 
 La otra mitad de la vuelta: llegar a ella. `/bitacoras?ronda=1` abre la ronda

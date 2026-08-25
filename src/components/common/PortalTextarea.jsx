@@ -40,6 +40,15 @@ const PortalTextarea = memo(({
     hasError,
     errorMessage,
     maxLength,
+    // `compact`: texto de cuerpo chico en vez de `text-body-xl`. Es la misma
+    // variante que `PortalInput` ya tenía, y faltaba justo donde más se nota:
+    // una NOTA de dos renglones («qué se hizo», «motivo de la corrección») no
+    // es el cuerpo del documento, es un comentario al margen — con el tamaño
+    // grande le gana visualmente a la etiqueta que la pide.
+    // No se puede resolver desde `textareaClassName`: `text-body-xl` y
+    // `text-body-sm` empatan en especificidad y gana la que caiga después en la
+    // hoja, o sea el azar.
+    compact = false,
     className = '',
     textareaClassName = '',
     // Mismo arreglo que `PortalInput` (2026-07-28): la lista fija de props
@@ -92,7 +101,21 @@ const PortalTextarea = memo(({
                     // los demás controles — no sigue el tema y se sale de la
                     // caja del formulario al arrastrarlo. El alto se elige con
                     // `rows`.
-                    className={`w-full bg-transparent resize-none text-body-xl font-bold text-content
+                    /* ── El placeholder no puede leerse como un VALOR ──────────
+                       El mismo defecto que `PortalInput` ya tenía arreglado y
+                       que acá nunca se aplicó: el campo escribe `font-bold` y
+                       `text-body-xl`, y el placeholder los hereda, así que el
+                       ejemplo («Se anotó 26 en vez de 28 por error de tipeo»)
+                       salía en negrita del mismo cuerpo que un texto escrito —
+                       el campo parecía LLENO. Y su color no era de ningún
+                       token: sin `::placeholder` declarado lo pone el
+                       navegador, que es el cromo nativo que el resto del
+                       canónico se ocupa de sacar.
+                       Reportado el 2026-08-25 mirando el diálogo de corregir
+                       una lectura; son 40 archivos con textarea, así que valía
+                       para todo el portal y no para uno. */
+                    className={`w-full bg-transparent resize-none ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold text-content
+                        placeholder:font-medium placeholder:text-content-3
                         outline-none px-4 py-2.5 leading-relaxed ${textareaClassName}`}
                 />
                 {maxLength && (

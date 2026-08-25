@@ -78,6 +78,23 @@ import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
  * `Badge` de estado, un `LiquidSelect` de "copiar desde"). Va al final de la
  * píldora en escritorio y a la hoja de acciones en táctil.
  *
+ * ── `rotuloFijo`: la acción que NO se queda en ícono (2026-08-25) ────────
+ * El texto de las acciones es lo primero que la píldora cede cuando falta
+ * ancho, y eso se escribió pensando en la acción **secundaria y reconocible**
+ * —«Exportar», «Ocultar montos»—, que con su ícono ya se identifica. La regla
+ * nunca distinguió a la PRINCIPAL, y ahí no funciona igual: un botón relleno de
+ * color con un «+» adentro y nada más no dice qué agrega, y es el control que
+ * la pantalla existe para que se apriete. Lo reportó el usuario mirando el
+ * Conteo de inventario, donde el carril de tarjetas de al lado se come el ancho
+ * y el «Agregar producto» quedaba en un «+» mudo.
+ *
+ * Con `rotuloFijo: true` esa acción conserva su rótulo pase lo que pase, y la
+ * píldora cede una RANURA al control de desborde antes que ese texto. Es la
+ * inversión deliberada del orden de cesión, así que es **opt-in y ha de seguir
+ * siendo rara** — misma forma y mismo motivo que `fija` en `Section`. Una barra
+ * con todas las acciones rotuladas ya no puede degradar, y vuelve a ser lo que
+ * §17 dice que no es: una barra de acciones que además filtra.
+ *
  * ── Móvil ────────────────────────────────────────────────────────────────
  * Bajo 720px `FilterBar` **es** la barra flotante (§17.3), con los tres
  * elementos juntos al alcance del pulgar: buscador, filtros y acción principal.
@@ -575,8 +592,9 @@ const FilterBar = memo(({
     // Descriptores, no JSX — ver el encabezado del archivo. Campos: `key`,
     // `icon`, `label`, `onClick`, `variant` ('primary' | 'quiet'), `tone`,
     // `disabled`, `activo` (para un toggle), `as`/`href`/`target`/`rel` (para
-    // una acción que navega), y `soloEscritorio` para la que no tiene sentido
-    // con el pulgar.
+    // una acción que navega), `soloEscritorio` para la que no tiene sentido con
+    // el pulgar, y `rotuloFijo` para la que nunca se queda en ícono suelto (ver
+    // el encabezado del archivo: opt-in, y rara).
     acciones = [],
     // Escotilla para lo que no es un botón: un `Badge` de estado, un select.
     accionesExtra = null,
@@ -917,11 +935,20 @@ const FilterBar = memo(({
     // Las acciones ceden ANTES que una ranura porque esto es la barra de
     // FILTROS: esconder un filtro para dejar tres íconos a la vista invierte
     // lo que §17 dice que la barra es. Una ranura APLICADA no se esconde nunca.
+    //
+    // `rotuloFijo` invierte ese orden para UNA acción: su texto deja de ser lo
+    // que cede primero y pasa a no ceder nunca, así que lo que se estrecha es
+    // el cupo de ranuras. Ver el encabezado del archivo — es opt-in y rara.
     let conTextoAcciones = true;
     let agrupado = false;
+    // Con una acción de rótulo fijo la caja de acciones se mide SIEMPRE con
+    // texto: `anchoIconos` es una estimación de íconos sueltos y describiría
+    // una forma que esta barra ya no puede tomar. Agrupar tampoco: «Otros»
+    // esconde el rótulo que se pidió conservar.
+    const hayRotuloFijo = acciones.some(a => a.rotuloFijo && !a.soloIcono);
     if (piezas) {
         const conTexto = medirCon(cupo, 'texto');
-        conTextoAcciones = conTexto <= disponible && cabenLasTarjetas(conTexto);
+        conTextoAcciones = hayRotuloFijo || (conTexto <= disponible && cabenLasTarjetas(conTexto));
         let forma = conTextoAcciones ? 'texto' : 'iconos';
         if (forma === 'iconos' && puedeAgrupar && medirCon(cupo, forma) > disponible) {
             forma = 'agrupado';
@@ -1019,7 +1046,7 @@ const FilterBar = memo(({
                             // cuando falta ancho: el ícono ya identifica la acción
                             // y el rótulo sigue disponible en el tooltip. Lo
                             // decide la medida de la fila, no el llamador.
-                            const sinTexto = a.soloIcono || !conTextoAcciones;
+                            const sinTexto = a.soloIcono || (!conTextoAcciones && !a.rotuloFijo);
                             const boton = (
                                 <TabBarAction key={a.key} size="sm" icon={a.icon}
                                     variant={a.variant} tone={a.tone}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React, { Suspense } from 'react';
-import { render, cleanup, waitFor } from '@testing-library/react';
+import { render, cleanup, waitFor, fireEvent } from '@testing-library/react';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El alta manual del conteo, después de salir a su propio archivo.
@@ -72,5 +72,105 @@ describe('AddManualItemForm — extraído a su propio archivo', () => {
     it('en modo con lotes también monta — es otra rama del formulario', async () => {
         const container = await montar(false);
         expect(container.querySelectorAll('button, input').length).toBeGreaterThan(0);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// El lector físico, agregado el 2026-08-25 («que se pueda escanear el código
+// ahí también, sea con lector / cámara»).
+//
+// De las dos formas de escanear, ésta es la única que se puede probar acá: la
+// cámara necesita `getUserMedia` y una imagen con barras de verdad, y simularla
+// probaría el simulacro. El lector físico no — es un teclado que escribe rápido,
+// y eso jsdom lo reproduce exacto.
+//
+// Y es la que MÁS necesita una prueba, porque su modo de falla es el silencio:
+// nadie aprieta nada para usarlo, así que si el detector no está armado la
+// pantalla se ve idéntica y la única señal es que pasar la caja no hace nada.
+// Eso se reporta como «el lector no sirve», que se investiga en el lugar
+// equivocado.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('AddManualItemForm — el código entra por el lector', () => {
+    beforeEach(() => { cleanup(); vi.clearAllMocks(); });
+
+    /** Lo que hace un lector: teclas seguidas y un Enter al final. */
+    const pasarElLector = (codigo) => {
+        for (const c of codigo) fireEvent.keyDown(document, { key: c });
+        fireEvent.keyDown(document, { key: 'Enter' });
+    };
+
+    const montar = async () => {
+        const { container } = render(
+            <Suspense fallback={<span>cargando</span>}>
+                <AltaManual branchId={30} onAdd={vi.fn()} onCancel={vi.fn()} simple />
+            </Suspense>,
+        );
+        await waitFor(() => expect(container.textContent).not.toBe('cargando'), { timeout: 5000 });
+        return container;
+    };
+
+    it('una ráfaga del lector sale a buscar ESE código', async () => {
+        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        await montar();
+        pasarElLector('7501234567890');
+        await waitFor(() => {
+            expect(searchActiveProductsForConteo).toHaveBeenCalledWith('7501234567890');
+        }, { timeout: 3000 });
+    });
+
+    it('con UN solo resultado lo elige solo, y lo muestra para poder comprobarlo', async () => {
+        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        searchActiveProductsForConteo.mockResolvedValue({
+            data: [{ id: 991, nombre: 'ACETAMINOFEN 500MG', codigo_barras: '7501234567890', laboratorios: { nombre: 'BAYER' } }],
+            error: null,
+        });
+        const container = await montar();
+        pasarElLector('7501234567890');
+        // El nombre Y el código: la tarjeta existe para poder cotejarla contra
+        // la caja que se tiene en la mano cuando el escaneo eligió sin preguntar.
+        await waitFor(() => {
+            expect(container.textContent).toContain('ACETAMINOFEN 500MG');
+            expect(container.textContent).toContain('7501234567890');
+        }, { timeout: 3000 });
+    });
+
+    it('con NINGÚN resultado no elige nada y lo dice', async () => {
+        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        searchActiveProductsForConteo.mockResolvedValue({ data: [], error: null });
+        const container = await montar();
+        pasarElLector('0000000000000');
+        await waitFor(() => {
+            expect(container.textContent).toContain('no está en el catálogo');
+        }, { timeout: 3000 });
+    });
+
+    // La parte que un `try/finally` mudo se comía: un fallo de red se veía
+    // igual que un código que no existe, y las dos cosas se arreglan en sitios
+    // distintos.
+    it('si la búsqueda revienta, lo dice — no se queda callado', async () => {
+        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        searchActiveProductsForConteo.mockRejectedValue(new Error('network'));
+        const container = await montar();
+        pasarElLector('7501234567890');
+        await waitFor(() => {
+            expect(container.textContent).toContain('No se pudo buscar el código');
+        }, { timeout: 3000 });
+    });
+
+    // Teclear NO es escanear. Es lo que impide que escribir en el buscador de al
+    // lado se lea como una ráfaga y dispare una selección que nadie pidió.
+    it('lo tecleado a ritmo humano no cuenta como escaneo', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const { searchActiveProductsForConteo } = await import('../../src/data/conteoInventario');
+        searchActiveProductsForConteo.mockResolvedValue({ data: [], error: null });
+        await montar();
+        for (const c of 'acetam') {
+            fireEvent.keyDown(document, { key: c });
+            await vi.advanceTimersByTimeAsync(150);   // hueco humano: >80ms
+        }
+        fireEvent.keyDown(document, { key: 'Enter' });
+        await vi.advanceTimersByTimeAsync(600);
+        expect(searchActiveProductsForConteo).not.toHaveBeenCalledWith('acetam');
+        vi.useRealTimers();
     });
 });

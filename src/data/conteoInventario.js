@@ -28,7 +28,11 @@ export function fetchConteoDetalle(conteoId) {
 
 export function searchActiveProductsForConteo(term) {
     return supabase.from('products')
-        .select('id, nombre, laboratorios(nombre)')
+        // `codigo_barras` viaja desde el 2026-08-25: el alta manual lo pinta en
+        // la tarjeta del producto elegido. Cuando el escaneo eligió solo, esa
+        // línea es la única oportunidad de ver que eligió BIEN — comparar el
+        // código de la pantalla contra el de la caja que se tiene en la mano.
+        .select('id, nombre, codigo_barras, laboratorios(nombre)')
         .eq('activo', true)
         .or(filtroProductoOCodigo(term))
         .order('nombre')

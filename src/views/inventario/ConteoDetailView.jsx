@@ -1544,16 +1544,11 @@ export default function ConteoDetailView() {
     const [vencidosItems, setVencidosItems] = useState({});
     const [vencidosLoading, setVencidosLoading] = useState(true);
     // Cuántos productos hay en el área de vencidos SIN filtrar. Es lo que
-    // decide si la pestaña existe, y por eso no puede ser `vencidos.length`:
+    // decide si la pestaña existe, y por eso NO puede ser `vencidos.length`:
     // esa lista sí está filtrada, así que buscar "acetaminofen" haría
     // DESAPARECER la pestaña que se está mirando —y con ella el conteo del
-    // área—, sin decir por qué. Se toma de la primera vuelta, que siempre sale
-    // sin término, sin estado y sin laboratorio, y se vuelve a tomar cada vez
-    // que los tres están limpios; así agregar un producto al área la enciende.
-    const [vencidosTotal, setVencidosTotal] = useState(0);
-    // Y éste es el total CON filtro: el número de la píldora, que es lo que
-    // contesta «en qué pestaña cayó lo que busqué».
-    const [vencidosFiltrados, setVencidosFiltrados] = useState(0);
+    // área—, sin decir por qué. Sale del resumen (`productos_vencidos`), que
+    // es una cifra del conteo entero y no de lo que hay en pantalla.
     // La página y el tamaño viven en la DIRECCIÓN, no en `useState`. Contar es
     // recorrer un anaquel de 1,400 productos de a 25: perder la posición no
     // cuesta un clic, cuesta volver a buscar dónde se iba. Y perderla no es
@@ -1694,11 +1689,6 @@ export default function ConteoDetailView() {
                 laboratorioId, area: 'VENCIDOS',
             });
             setVencidos(pagina.rows);
-            setVencidosFiltrados(pagina.total);
-            // Sin filtro puesto, lo filtrado ES el total del área.
-            if (!searchDiferido && filtro === 'TODOS' && laboratorioId == null) {
-                setVencidosTotal(pagina.total);
-            }
             const ids = pagina.rows.map((r) => r.erp_product_id);
             const lines = await fetchConteoItemsForProducts(id, ids, {
                 search: searchDiferido, filtro, area: 'VENCIDOS',
@@ -1713,6 +1703,30 @@ export default function ConteoDetailView() {
         }
     }, [id, searchDiferido, filtro, laboratorioId, fetchConteoProductsPage,
         fetchConteoItemsForProducts, showToast]);
+
+    // ── El avance se vuelve a preguntar, no se lleva de cabeza ───────────
+    // `resumen` sólo se cargaba al entrar, así que el «84% · faltan 2,141» del
+    // encabezado se quedaba clavado toda la jornada: se contaban doscientos
+    // renglones y el número no se movía. Con el número de las pestañas colgando
+    // de la misma cifra, eso pasó de ser un dato viejo a ser un dato que
+    // contradice lo que se ve abajo.
+    //
+    // Se vuelve a PREGUNTAR en vez de restarle uno acá, y no por comodidad: un
+    // conteo lo llenan varias personas a la vez (`resumen.contadores` existe
+    // por eso), así que una cuenta llevada en este navegador ignoraría lo que
+    // acaban de contar los demás y se iría separando de la verdad sin avisar.
+    //
+    // Con espera, porque contar es teclear seguido: sin ella, una ráfaga de
+    // diez renglones son diez vueltas de una consulta que agrega el conteo
+    // entero. 1,2s es más que el ritmo de tecleo y menos que el de mirar.
+    const relojResumen = useRef(null);
+    useEffect(() => () => clearTimeout(relojResumen.current), []);
+    const refrescarResumen = useCallback(() => {
+        clearTimeout(relojResumen.current);
+        relojResumen.current = setTimeout(() => {
+            fetchConteoResumen(id).then(setResumen).catch(() => { /* el número viejo molesta menos que un aviso */ });
+        }, 1200);
+    }, [id, fetchConteoResumen]);
 
     // Lo que corre cuando cambió el conteo entero y no sólo qué se está mirando.
     const load = useCallback(async () => {
@@ -1842,6 +1856,7 @@ export default function ConteoDetailView() {
                 recomputeProductTotals(erpProductId, lines, setLista);
                 return { ...prev, [erpProductId]: lines };
             });
+            refrescarResumen();
             return result;
         },
         recontar: async (itemId, payload, erpProductId) => {
@@ -1859,6 +1874,7 @@ export default function ConteoDetailView() {
                 recomputeProductTotals(erpProductId, lines, setLista);
                 return { ...prev, [erpProductId]: lines };
             });
+            refrescarResumen();
             return result;
         },
     });
@@ -2011,9 +2027,21 @@ export default function ConteoDetailView() {
     // La pestaña sólo existe si el conteo TIENE área de vencidos: en una sala no
     // la hay, y una pestaña vacía sugiere que falta contar algo. Con una sola,
     // `ViewTabBar` no dibuja pestaña ninguna — la vista se ve como antes.
-    const pestanas = vencidosTotal > 0 ? [
-        { key: 'bodega',   label: 'Inventario',       icon: Package,        cuenta: total },
-        { key: 'vencidos', label: 'Área de vencidos', icon: AlertTriangle,  cuenta: vencidosFiltrados, tono: 'danger' },
+    //
+    // ── El número de la píldora es CUÁNTO FALTA POR CONTAR ────────────────
+    // Decidido con el usuario el 2026-08-25, sobre la pregunta «¿esos números
+    // qué son?». Antes era «cuántos productos hay», que en una pantalla de
+    // contar no se puede accionar: el anaquel entero y el anaquel entero menos
+    // uno se ven casi igual. Con los que faltan, la fila contesta de un vistazo
+    // dónde queda trabajo — y `Contador` no dibuja el cero, así que un anaquel
+    // terminado se anuncia quedándose sin número.
+    //
+    // Sale del RESUMEN y no de la lista de abajo: la lista está filtrada y
+    // paginada, así que su largo cambiaría al buscar. Lo que falta por contar
+    // no depende de lo que se esté mirando.
+    const pestanas = (resumen?.productos_vencidos ?? 0) > 0 ? [
+        { key: 'bodega',   label: 'Inventario',       icon: Package,       cuenta: resumen?.pendientes_bodega ?? 0 },
+        { key: 'vencidos', label: 'Área de vencidos', icon: AlertTriangle, cuenta: resumen?.pendientes_vencidos ?? 0, tono: 'danger' },
     ] : [];
     // En la DIRECCIÓN y no en `useState`: la sesión de sala se cierra sola a los
     // 5 minutos y la aplicación se recarga al publicar una versión — con la
@@ -2023,7 +2051,7 @@ export default function ConteoDetailView() {
     // que las dos RPC de lectura piden la lista ('NORMAL' / 'VENCIDOS'): una
     // dirección compartida dice qué anaquel se está mirando, no un ordinal.
     const [pestana, setPestana] = usePestanaEnUrl(pestanas, 'bodega', 'area');
-    const enVencidos = pestana === 'vencidos' && vencidosTotal > 0;
+    const enVencidos = pestana === 'vencidos' && (resumen?.productos_vencidos ?? 0) > 0;
 
     // Una sola definición de los filtros para los dos sitios donde viven: en el
     // cuerpo con mouse, dentro de la barra flotante con el pulgar.
@@ -2058,6 +2086,12 @@ export default function ConteoDetailView() {
                 label: simple ? 'Agregar producto' : 'Agregar producto/lote',
                 rotulo: 'Agregar',
                 variant: 'primary',
+                // No se queda en «+» a secas. El carril de tarjetas de al lado
+                // se lleva el ancho, así que la píldora cedía el texto —que es
+                // su regla para la acción secundaria— y dejaba un botón relleno
+                // de color sin decir qué agrega. Acá la píldora prefiere mandar
+                // una ranura al desborde.
+                rotuloFijo: true,
                 onClick: () => setShowAddForm(true),
             }] : []}
         >

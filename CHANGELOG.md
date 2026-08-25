@@ -21,6 +21,117 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.756.0 — Conteo: el alta lee el código, y las pestañas dicen cuánto falta
+
+Tres cosas que pidió el usuario mirando **Conteo de inventario** después de
+v2.754.0, y una respuesta a una pregunta suya que resultó ser un cambio.
+
+### El alta de un producto se escanea
+
+*«que se pueda escanear el código ahí también, sea con lector / cámara, y que
+sea más amigable»*.
+
+Quien está de pie frente al anaquel tiene la caja en la mano: leerle el código
+es un gesto, y escribir «acetaminofén 500 mg tabletas» son doce teclas y una
+duda de ortografía. El buscador **ya** miraba `codigo_barras` —lo hace
+`filtroProductoOCodigo`—, así que lo que faltaba no era la consulta sino la
+forma de meter el código sin teclearlo.
+
+Los **dos** caminos, porque las salas no tienen el mismo equipo:
+
+* **La cámara**, con `LectorDeCodigo` —el mismo canónico del buscador de la
+  vista— por `await import()`, así que `@zxing` no vuelve al paquete de una
+  pantalla que se abre de pie frente a un anaquel.
+* **El lector físico**, con `useCapturaDeCarne` y sin ningún botón que apretar:
+  está armado mientras el formulario esté abierto. Obligar a preparar la
+  pantalla antes de cada caja es exactamente el paso que hace que la gente
+  vuelva a teclear. Va con `sinEnter: true` porque hay lectores sin sufijo
+  Enter (lo aprendimos con el ticket de traslado el 24-ago) y con
+  `aceptarTecleado: false`, que acá no protege una credencial sino que impide
+  que escribir «acetaminofen» en el buscador de al lado se lea como un escaneo.
+
+Un código leído se elige solo **únicamente si la respuesta es una**. Con varias,
+elegir por el usuario sería adivinar cuál de dos productos tiene en la mano, y
+un renglón agregado al producto equivocado no falla ni se nota: queda como una
+diferencia de inventario que nadie sabe explicar.
+
+Y más amigable de verdad, no sólo más bonito:
+
+* El título decía **«Producto no listado en el snapshot»**. «Snapshot» es jerga
+  de la tubería y quien cuenta no tiene por qué saber que existe. Ahora dice
+  para qué sirve, que es la duda real de quien lo tiene delante.
+* **El paso 2 no se dibuja hasta que hay producto.** Antes los cuatro campos
+  estaban siempre, deshabilitados, con «Elige un producto primero» adentro:
+  cuatro controles muertos ocupando la mitad del formulario.
+* **El producto elegido se VE** —nombre, laboratorio y código— en vez de ser una
+  línea que se corta dentro de un select. Cuando el escaneo eligió sin
+  preguntar, esa tarjeta es la única oportunidad de ver que eligió bien.
+* Un fallo de red ya no se ve igual que un código inexistente: el `try/finally`
+  sin `catch` se comía el error y las dos cosas se arreglan en sitios distintos.
+
+### El «+» de la píldora vuelve a tener rótulo
+
+*«el botón de más, que diga algo»*. Y tenía razón por un motivo que no estaba
+escrito: `FilterBar` cede el TEXTO de sus acciones cuando falta ancho, y esa
+regla se pensó para la acción **secundaria y reconocible** —«Exportar»,
+«Ocultar montos»—, que con su ícono ya se identifica. Nunca distinguió a la
+PRINCIPAL, y ahí no funciona igual: un botón relleno de color con un «+» adentro
+y nada más no dice qué agrega, y es el control que la pantalla existe para que
+se apriete. En el conteo el carril de tarjetas de al lado se come el ancho, así
+que el «Agregar producto» quedaba mudo.
+
+Nuevo `rotuloFijo` en el descriptor de acción: esa acción conserva su rótulo
+pase lo que pase, y la píldora cede una **ranura** al control de desborde antes
+que ese texto. Es la inversión deliberada del orden de cesión, así que es
+**opt-in y ha de seguir siendo rara** — misma forma y mismo motivo que `fija` en
+`Section`. Hoy la usa una sola acción en todo el portal.
+
+### Los números de las pestañas ahora son cuánto falta
+
+*«los números que están en las pestañas qué son? productos pendientes o qué?»*
+Eran «cuántos productos hay en ese anaquel», y la pregunta ya era la respuesta:
+un número que hay que preguntar qué mide no está midiendo nada útil. En una
+pantalla de contar, además, no se puede accionar — el anaquel entero y el
+anaquel entero menos uno se ven casi igual.
+
+Ahora son **los que faltan por contar**, y como `Contador` no dibuja el cero, un
+anaquel terminado se anuncia quedándose sin número. Salen del resumen y no de la
+lista de abajo: la lista está filtrada y paginada, así que su largo cambiaría al
+buscar, y lo que falta por contar no depende de lo que se esté mirando.
+
+Los trae `get_conteo_resumen`, que gana cuatro cifras —`pendientes_bodega`,
+`pendientes_vencidos`, `productos_bodega`, `productos_vencidos`— sobre el mismo
+barrido que ya hacía. Se cuentan **productos** y no renglones porque la lista de
+abajo se pagina por producto: decir «9» y que al abrir haya 9 tarjetas es lo que
+hace que el número se pueda verificar de un vistazo.
+
+Medido en el conteo abierto de Bodega: 2,716 productos en bodega y 77 en el área
+de vencidos, sobre un total **distinto** de 2,756 — o sea que **37 productos
+viven en los dos anaqueles**. Ése es el motivo de que las dos listas estén
+separadas, dicho en números.
+
+**Y de paso se arregló un número que llevaba clavado toda la jornada.** `resumen`
+sólo se cargaba al entrar, así que el «84% · faltan 2,141» del encabezado no se
+movía aunque se contaran doscientos renglones. Con el número de las pestañas
+colgando de la misma cifra, eso pasó de ser un dato viejo a un dato que
+contradice lo que se ve abajo. Ahora se vuelve a **preguntar** tras cada
+guardado, con 1,2s de espera para que una ráfaga de tecleo no sean diez vueltas.
+Se pregunta en vez de restar uno acá porque un conteo lo llenan varias personas
+a la vez (`resumen.contadores` existe por eso): una cuenta llevada en este
+navegador ignoraría lo que acaban de contar los demás.
+
+### Verificado
+
+`gate:design` (que cazó cuatro voseos y el `try/finally` mudo — §26.7 manda
+tuteo), `gate:movil`, `gate:borradores`, `gate:bundle` (ConteoDetailView 69 kB),
+`gate:perf` y `gate:eficiencia`, todos en verde. Las 1,805 pruebas unitarias
+pasan, con cinco nuevas para el lector físico — y se comprobó que **fallan** al
+desarmarlo (4 de 7), que es lo único que prueba que la prueba sirve. La RPC
+verificada contra producción.
+
+**Sin ver en pantalla y sin probar en sala.** El lector físico está anclado en
+jsdom, no contra un lector real.
+
 ## v2.755.1 — Rehacer una propuesta que nadie confirmó, y septiembre recalculado
 
 La v2.755.0 arregló la fórmula, pero las propuestas de septiembre ya estaban

@@ -132,6 +132,18 @@ despacho de menos y la primera recepción de un grupo. Y el tope de productos po
 solicitud, que sale de `erp_traslado.ms_por_renglon` en cuanto haya solicitudes
 de más de un renglón.
 
+### Medido contra producción — 2026-08-24
+
+De las **395 solicitudes** de traslado que existen, **ninguna tiene `grupo_id`**
+en su `metadata`. El instrumento no está ciego: la misma consulta encuentra las
+otras 16 claves (`items`, `erp_traslado`, `origen_vencidos`…), así que el cero es
+real y no una consulta mal escrita.
+
+O sea: **nadie ha compuesto todavía una solicitud a varias salas.** El paso 4
+—«Agregar y seguir»— está en producción desde v2.678.0 y no lo usó nadie. Y sin
+una solicitud de más de un renglón, `erp_traslado.ms_por_renglon` no tiene de
+dónde salir, así que el tope de productos del paso 4 sigue sin número.
+
 ### Lo que falta probar en sala
 
 Los tres pasos cerrados están en producción y **ninguno se probó con una sala

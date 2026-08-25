@@ -20,6 +20,30 @@ Empezá preguntando cuál de las decisiones ya se tomó.
 
 ---
 
+## Remedido contra producción — 2026-08-24
+
+**Once días y ninguno de los cinco números se movió.** Todos dependen de la misma
+firma que no llegó.
+
+| | 2026-08-13 | 2026-08-24 |
+|---|---:|---:|
+| líneas de venta **sin costo** | 585,044 | **585,341** de 609,431 (96%) |
+| períodos fiscales **cerrados** | 0 | **0** |
+| proveedores con clasificación **confirmada** | 77 | **77** (86 pendientes de 163) |
+| proveedores marcados para **Art. 156** | 0 | **0** |
+| proveedores con **plazo de crédito** cargado | — | **0** de 163 |
+
+**El método de costeo sigue siendo el único nudo.** Sin él no hay paso 4
+completo (el Art. 142-A exige el importe de lo que sale), no hay paso 6 (no hay
+Estado de Resultados) y no hay contabilidad formal. Las 24,090 líneas que sí
+tienen costo son las que lo traen del sync desde que se puso la columna, no
+histórico reconstruido: `reconstruir_costo_de_venta` **sigue sin correr**.
+
+Y el plazo de los 163 proveedores está en **cero filas**, así que las cuentas por
+pagar no pueden calcular ni una fecha de vencimiento.
+
+---
+
 ## El estado del plan, medido el 2026-08-13 al cierre
 
 | paso | estado | qué falta |

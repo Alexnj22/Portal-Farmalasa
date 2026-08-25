@@ -21,6 +21,90 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.750.0 — El sobrante se puede probar en seco, y queda encendido
+
+**«Probar sin mover nada»**, en el bloque del movimiento, para bodega y
+supervisión. La función hace todas las comprobaciones contra el sistema —abre la
+sesión, busca el producto, resuelve la presentación, mide la existencia, reparte
+los lotes— y no escribe una línea. Ese modo existía **desde el día uno**
+(`simulacro` es su valor por omisión) y no había forma de dispararlo desde el
+portal, así que un movimiento pausado era un freno sin salida: la única manera
+de saber si iba a andar era dejarlo andar. El aviso cuenta el lote y la
+presentación que eligió, que es justo lo que hay que mirar.
+
+**Y los dos interruptores del sobrante quedan abiertos.** La duda era si la
+dirección Bodega → sala andaría, y al medirla resultó ser la **más transitada
+del portal**: `trasladar-pedido-erp` la hace en cada despacho de pedido —sesión
+en Bodega, área de vencidos descontada, foto antes/después, desempate contra una
+sala de destino, y la recepción con sesión en la sala— con las mismas piezas de
+`_shared/erp-traslado.ts`. Lo nuevo no es el camino: es que lo recorra esta otra
+función.
+
+**Una vuelta de menos al sistema.** Al conectar el área de vencidos quedaron dos
+lecturas de la misma pantalla —`existenciasDeUbicacion` y `leerUbicacion` sobre
+la ubicación de origen—, que es la más pesada que tiene el sistema. Una sola
+sirve para las dos cosas.
+
+## v2.750.1 — El estado de cada plan sale de producción, y el barrido de RPC cierra limpio
+
+Segunda mitad de la auditoría de planes (v2.747.4). Ahí se movieron los que
+habían terminado; acá se **midió contra producción** el estado real de los once
+que siguen abiertos, y cada uno lleva su tabla con la fecha.
+
+**El hallazgo grande: el barrido de RPC que reciben identidad por parámetro
+—pendiente desde el 2026-08-04— se ejecutó, y el resultado es limpio.** De las 28
+funciones SECURITY DEFINER con `p_employee_id`/`p_user_id`/`p_code` en la firma,
+22 son ejecutables por `authenticated`: 6 cruzan la identidad contra
+`auth_employee_id()`, 6 entran por la guarda del kiosco, 3 preguntan por permiso
+de módulo, y **las 7 restantes son predicados de sólo lectura que no escriben
+nada**. Contestan «¿esta persona puede hacer X?» sobre un id que elige quien
+llama, así que filtran *si otro tiene un permiso* — no sus datos, y no dejan
+actuar en su nombre.
+
+**Y el detector acusó a dos inocentes en la primera pasada.** Buscar sólo
+`auth_employee_id()` marcaba como desprotegidas a `revoke_person_sessions` y
+`unblock_employee` —justo las dos que sí escriben—, cuando las dos abren con
+`IF NOT (SELECT auth_has_module_permission(...)) THEN RAISE`. La guarda correcta
+no siempre es la identidad: a veces es el permiso. Se verificó en rojo y en verde
+antes de creerle el cero: la misma expresión da `escribe = true` en esas dos y
+`false` en las siete.
+
+Lo que la medición encontró en el resto, y que ningún encabezado decía:
+
+- **Bolsas de efectivo**: 111 bolsas, 18 salidas por $4,247.78 — y **7 entregas
+  con 0 confirmadas** y **0 depósitos al banco**. La cadena se corta en la
+  entrega y la última etapa nunca corrió.
+- **Ticket de traslado**: `retiros` y `retiro_bultos` en **0 filas**. El recorrido
+  está construido y nunca se abrió, así que ninguna bolsa estuvo en tránsito.
+- **Solicitud a varias salas**: de **395 solicitudes, ninguna tiene `grupo_id`**.
+  Nadie compuso todavía una a varias salas, y sin una de más de un renglón el
+  tope del paso 4 sigue sin número. El instrumento no está ciego — la misma
+  consulta encuentra las otras 16 claves del `metadata`.
+- **Bitácoras SRS**: en uso real (368 dispensaciones, 258 lecturas, 284
+  limpiezas) y **0 cierres de mes**, que es justamente lo legal.
+- **Contador interno**: los cinco números quietos desde el 13-ago. 585,341 líneas
+  de venta sin costo de 609,431, 0 períodos cerrados, 77 de 163 proveedores
+  clasificados, 0 marcados para el Art. 156 y **0 con plazo de crédito** — o sea
+  que las cuentas por pagar no pueden calcular ni una fecha de vencimiento.
+- **Metas**: A6 bajó solo de 26 personas a **4**; A8 **empeoró** de 33 de 35 a
+  **46 de 49** sin `hire_date`, porque los empleados nuevos entran sin fecha.
+- **Factor y MIN·MAX**: los renglones con factor 0 pasaron de 3 a **4**. La deuda
+  crece sola mientras la decisión del §7 no se toma.
+- **Credencial de carné**: 0 de 15 bloques, **1 terminal registrada de 7**, y
+  `kiosk_pin` sigue con 6 privilegios de lectura para `authenticated`/`anon`.
+- **Blindaje ante terceros**: las 5 fases en cero, 67 policies dejan leer sin
+  preguntar por ningún `auth_*` — y **el archivo nunca se había commiteado**,
+  o sea que vivía a un `git checkout` ajeno de desaparecer.
+- **Lectura de comprobantes**: ya corrió sobre papel real — 16 salidas con foto y
+  **8 con lectura guardada** en `bolsas_operaciones.foto_lectura`.
+
+**El patrón que deja la medición:** de lo que se lee como «pendiente», la mitad
+está construido y esperando a que alguien lo use una primera vez, y tres de esos
+ceros —entregas confirmadas, recorridos, solicitudes agrupadas— son el mismo
+tipo de cero: una etapa final que nadie ejercitó nunca. Un circuito que llega
+hasta el penúltimo paso no está probado, está a medias.
+
+
 ## v2.749.0 — El testigo de índices: la ventana que le faltaba al hallazgo
 
 `npm run indices:testigo`. Sólo lee producción.

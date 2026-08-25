@@ -18,6 +18,29 @@ ocurre chequear.**
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+**El módulo está en uso real, no de prueba.**
+
+| bitácora | filas |
+|---|---:|
+| dispensaciones de regulados | **368** |
+| lecturas de temperatura | **258** |
+| limpiezas | **284** |
+| áreas declaradas | 27 |
+| folios | 6 |
+| correcciones | 2 |
+| **cierres de mes** | **0** |
+
+Lo que falta es lo **legal**: `bitacora_cierres` está en cero. Un mes que no se
+cierra no es un expediente que se le pueda poner al inspector — es una tabla que
+sigue admitiendo cambios. Eso lo hace el regente, no el código.
+
+Y siguen abiertos la consulta al CSSP desde el portal y el aviso de franja por
+vencerse.
+
+---
+
 ## 1 · Lo que la norma pide, ítem por ítem
 
 ### 1.1 · Temperatura y humedad

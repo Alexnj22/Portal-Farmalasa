@@ -19,6 +19,22 @@ módulo del 2026-08-11 (documento visual:
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+`pedido_devolucion`: **3 filas**. Dos en `recibida` (17 y 21-ago) y una en
+`error` (21-ago); **2 llegaron a escribir en el sistema** (`enviado_at` puesto).
+`diferencia_opcion` tiene sus 12 filas, que es la lista única que leen la
+pantalla y la RPC.
+
+O sea que el camino **sí se ejercitó** —tres veces, y una falló—, pero las cuatro
+comprobaciones del final de este documento siguen sin hacerse: nadie comparó
+contra una foto previa de existencia, costo y lotes; la rama «sólo bodega» no se
+probó con un rol acotado; y ni la foto ni el lote de vuelta se verificaron.
+**Tres corridas sueltas no son la prueba controlada** — la del error de agosto 21
+es justamente la que habría que entender antes de la siguiente.
+
+---
+
 ## El problema
 
 El traslado es **todo o nada**: no existe recibir la mitad y volver después por el

@@ -31,6 +31,27 @@ contra el papel. Ahí se confirma o se cae la fórmula del monto de la §5.1.
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+| | |
+|---|---:|
+| bolsas | **111** — 10 abiertas, 44 entregadas, 54 contadas, 3 anuladas |
+| entregas creadas | 7 (22 al 24-ago) |
+| **entregas confirmadas** | **0** |
+| salidas de dinero registradas | 18, por **$4,247.78** |
+| **depósitos al banco** | **0** |
+
+**La cadena se corta en la entrega.** Hay 7 entregas creadas y **ninguna
+confirmada**: el circuito llega hasta «alguien entregó» y nadie del otro lado
+apretó «recibí». Y las 54 contadas nunca llegaron a un depósito, porque
+`depositos_bancarios` está en cero — o sea que la última etapa, la que saca la
+plata del portal y la pone en el banco, **nunca corrió ni una vez**.
+
+Eso es lo que hay que mirar primero, y no se arregla con código: se arregla
+haciendo una entrega y confirmándola.
+
+---
+
 ## 1. Qué se pidió
 
 Cuando una sala confirma un corte, el efectivo se guarda en una bolsa. Dos

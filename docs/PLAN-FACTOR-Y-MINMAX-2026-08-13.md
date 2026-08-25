@@ -6,6 +6,19 @@ escribió una sola fila ni se aplicó ninguna migración. Queda una decisión ab
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+**Once días después, sigue sin aplicarse nada** — que es coherente, porque el §7
+es una decisión y no se tomó. Lo único que cambió es que la deuda creció sola:
+los renglones con **factor 0** eran 3 el 13-ago y hoy son **4**. Ninguno con
+factor nulo.
+
+Es la señal de que esto no se queda quieto esperando: cada producto que entra al
+catálogo con el factor mal escrito suma un caso, y el MIN·MAX de ese producto
+nace roto.
+
+---
+
 ## 1. En cinco líneas
 
 El MIN·MAX **no lee `product_precios.factor`**. Lo saca de un regex sobre el

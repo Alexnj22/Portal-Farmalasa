@@ -270,6 +270,25 @@ nov-2026     $250          $1,000          $42,000     $43,000
 dic-2026     $250          $1,000          $44,000     $45,000
 ```
 
+## Remedido contra producción — 2026-08-24
+
+Los abiertos del encabezado se movieron solos, en direcciones distintas:
+
+| | 2026-08-05 | 2026-08-24 |
+|---|---:|---:|
+| **A6** · personas cuyo cargo no ve `overview` | 26 | **4** |
+| **A8** · empleados activos sin `hire_date` | 33 de 35 | **46 de 49** |
+
+**A6 está prácticamente cerrado** y nadie lo cerró a propósito: quedan 4 personas
+en 14 cargos sin la casilla. **A8 empeoró** — entraron empleados nuevos y ninguno
+trajo fecha de ingreso, así que el período de prueba sigue sin poder calcularse
+para el 94% de la planilla.
+
+Las Fases 4 y 5 (bonos por producto y por laboratorio, liquidación mensual) no se
+empezaron.
+
+---
+
 ## B1. Las cuatro decisiones, cerradas con el usuario (2026-08-05)
 
 1. **El margen es fijo y vive en configuración** — un solo número

@@ -6,6 +6,23 @@ de login (v2.575.3).
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+**Doce días después, nada aplicado y el hallazgo intacto.**
+
+| | |
+|---|---:|
+| bloques del §6 hechos | **0 de 15** |
+| terminales de sala registradas (`kiosk_devices`) | **1** de 7 |
+| privilegios sobre `employees.kiosk_pin` para `authenticated`/`anon` | **6** |
+
+El B4 —registrar las terminales— es el que convierte el plan en algo aplicable,
+y hay **una sola** terminal registrada. El C3 —revocar la lectura del
+`kiosk_pin`— tampoco corrió: la columna sigue siendo legible desde la API por
+cualquiera con sesión, que es el §2.2 de este documento tal como se escribió.
+
+---
+
 ## 1. En una frase
 
 El número de empleado no es un identificador: **es literalmente la contraseña**

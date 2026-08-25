@@ -101,12 +101,45 @@ vacío — y en cuanto hubiera entrado una vez, la función se lo habría escrit
 
 ---
 
-> **Remedido el 2026-08-24.** El pendiente 1 —el barrido de RPC que reciben
-> identidad por parámetro— **sigue sin ejecutarse**, y es el motivo por el que este
-> documento no se cierra. Del §4, `attendance` y `audit_logs` ya no aceptan
-> cualquier fila: sus policies de INSERT preguntan por `auth_`. Lo demás del §4 se
-> rastrea en `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, cuyo contador de
-> policies que no preguntan nada bajó de 83 a **70**.
+> ## El barrido del pendiente 1 se ejecutó — 2026-08-24
+>
+> Llevaba veinte días escrito y sin correr. **Corrió, y el resultado es limpio.**
+>
+> La consulta de arranque de abajo devuelve **28 funciones** SECURITY DEFINER con
+> un `p_employee_id` / `p_user_id` / `p_code` en la firma. De ésas, **22 son
+> ejecutables por `authenticated`** y se reparten así:
+>
+> | | n | |
+> |---|---:|---|
+> | cruzan la identidad contra `auth_employee_id()` | 6 | `block_employee`, `emitir_carne_temporal`, `probar_identidad`, `resolve_pedido_item`, `set_kiosk_pin`, `update_pedido_sucursal_lifecycle` |
+> | entran por la guarda del kiosco (`device_token`) | 6 | las `kiosco_*` más `verify_kiosk_pin` y `verify_kiosk_authorization` |
+> | preguntan por permiso de módulo (`auth_has_module_permission`) | 3 | `revoke_person_sessions`, `unblock_employee` y la propia `block_employee` |
+> | **ni identidad, ni permiso, ni kiosco** | **7** | `empleado_no_disponible`, `hereda_por_ausencia_emp`, `puede_aprobar_modulo`, `puede_confirmar_traslado`, `puede_entregar_de`, `puede_enviar_producto`, `quien_cubre_al_empleado` |
+>
+> **Las siete son predicados de sólo lectura y ninguna escribe.** Verificado con
+> el detector en rojo y en verde: la misma expresión marca `escribe = true` en
+> `revoke_person_sessions` y `unblock_employee`, y `false` en las siete. Contestan
+> *«¿esta persona puede hacer X?»* sobre un `employee_id` que elige quien llama,
+> así que lo que se filtra es **si otro tiene un permiso** — no sus datos, y no
+> deja actuar en su nombre. No es el bug de esta nota a otra escala: es su
+> ausencia.
+>
+> **Y el detector acusó a dos inocentes en la primera pasada.** Buscar sólo
+> `auth_employee_id()` marcaba a `revoke_person_sessions` y `unblock_employee`
+> —las dos que sí escriben— como desprotegidas, cuando las dos empiezan con
+> `IF NOT (SELECT auth_has_module_permission(...)) THEN RAISE`. La guarda correcta
+> no siempre es la identidad: a veces es el permiso. Antes de creerle a un
+> detector, hay que preguntarle también por la forma que no esperabas.
+>
+> **Del §4:** `attendance` y `audit_logs` ya no aceptan cualquier fila —sus
+> policies de INSERT preguntan por `auth_`—. El resto se rastrea en
+> `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, cuyo contador de policies que no
+> preguntan nada bajó de 83 a **70**.
+>
+> **Lo que queda de este documento no es trabajo, son dos decisiones:** si la UI
+> deja de leer `user_metadata` (cosmético, la base ya no le hace caso) y si se
+> borran las 8 cuentas huérfanas de `auth.users`, que hoy no resuelven a ningún
+> empleado y por lo tanto no tienen permisos.
 
 ## Pendientes, por urgencia
 

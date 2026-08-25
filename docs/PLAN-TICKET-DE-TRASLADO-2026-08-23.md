@@ -20,6 +20,16 @@
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+`retiros` **0 filas** · `retiro_bultos` **0 filas**. El recorrido está construido
+y **nunca se usó**: nadie ha abierto uno, así que ninguna bolsa ha estado «en
+tránsito con nombre». Es la prueba que falta, y como el recorrido es lo que
+convierte el ticket en responsabilidad de alguien, hasta que corra una vez el
+resto del circuito es papel.
+
+---
+
 ## El problema, dicho por quien lo tiene
 
 > «las solicitudes de productos entre sucursales y bodega y los traslados entre

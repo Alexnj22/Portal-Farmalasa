@@ -212,6 +212,19 @@ la respuesta honesta es que esto no va.
 
 ---
 
+## Medido contra producción — 2026-08-24
+
+La lectura de boletas **ya corrió sobre papel real**: de las 18 salidas de dinero
+registradas, **16 llevan foto y 8 tienen lectura guardada**. Eso es exactamente
+lo que pedía el primer ítem de la lista de abajo — «correrla una o dos semanas
+contra boletas reales» —, sólo que llevamos cuatro días y ocho casos, no dos
+semanas.
+
+Antes de decidir nada de recetas conviene mirar esas 8: qué campos acertó y
+cuáles no. Están en `bolsas_operaciones.foto_lectura`.
+
+Las recetas siguen **medidas y sin construir**.
+
 ## 4 · Qué queda abierto
 
 - [ ] Correr la lectura de boletas **una o dos semanas contra boletas reales**

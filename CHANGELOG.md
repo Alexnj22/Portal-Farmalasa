@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.5 — Las vitrinas y los estantes se marcan en una rejilla
+
+*«Mejora el orden de vitrinas, que sea más moderno y mejor estructurado»*. Con
+26 muebles configurados —11 vitrinas y 15 estantes— la lista era un muro: las
+casillas fluían en renglones sin estructura y **el visto de la derecha parecía
+pertenecer al nombre que tenía al lado**, no al siguiente.
+
+Ahora se agrupa **por tipo**, cada grupo con su contador y su «Todas / Ninguna»
+propios, y los muebles van en una **rejilla de celdas**: cada casilla vive en su
+caja, así no hay duda de a qué pertenece, y la celda se tiñe al marcarse.
+
+Y dentro del grupo alcanza con el **número**: repetir «Vitrina» once veces era
+la misma palabra ocupando el ancho que necesitaba la casilla. El nombre completo
+sigue viajando en el `aria-label`, así que un lector de pantalla dice «Vitrina
+7» y no «7».
+
 ## v2.766.4 — «Ahora no» cierra el aviso de versión nueva
 
 *«me salió el modal de nueva versión, pero si le doy ahora no, no lo cierra, me

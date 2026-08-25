@@ -109,41 +109,75 @@ export function ListaDePuntos({ puntos, marcadas, onCambiar, compacta = false })
     // dos veces. La captura lo manda igual como hecho.
     if (lista.length < 2) return null;
 
-    const todas = lista.every(p => marcadas.has(p.clave));
-    const algunas = !todas && lista.some(p => marcadas.has(p.clave));
-
-    const alternarTodas = () => onCambiar(todas ? new Set() : new Set(lista.map(p => p.clave)));
-
     const alternar = (clave) => {
         const s = new Set(marcadas);
         if (s.has(clave)) s.delete(clave); else s.add(clave);
         onCambiar(s);
     };
 
-    return (
-        <div className={compacta ? 'space-y-1 pl-7' : 'space-y-1.5'}>
-            {/* «Marcar todas» primero y a propósito: el día normal es que se
-                limpió todo, y en ese día esto es UN toque en vez de seis. */}
-            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-border-card">
-                <Checkbox
-                    name={`todas-${lista[0].clave}`}
-                    checked={todas} indeterminate={algunas}
-                    onChange={alternarTodas}
-                    label={<span className="font-black">Marcar todas</span>}
-                />
-                <span className="text-label font-bold text-content-3 tabular-nums">
-                    {[...marcadas].filter(c => lista.some(p => p.clave === c)).length} de {lista.length}
-                </span>
-            </div>
+    const alternarGrupo = (delGrupo) => {
+        const todas = delGrupo.every(p => marcadas.has(p.clave));
+        const s = new Set(marcadas);
+        delGrupo.forEach(p => (todas ? s.delete(p.clave) : s.add(p.clave)));
+        onCambiar(s);
+    };
 
-            {lista.map(p => (
-                <Checkbox key={p.clave} size="sm"
-                    name={`punto-${p.clave}`}
-                    checked={marcadas.has(p.clave)}
-                    onChange={() => alternar(p.clave)}
-                    label={p.label || 'Sin nombre'}
-                />
-            ))}
+    // Agrupados por tipo: veintiséis casillas seguidas son un muro donde no se
+    // sabe si el visto de la derecha es del nombre que tiene al lado o del
+    // siguiente. Con la vitrina y el estante separados, cada grupo se lee —y se
+    // marca— como una unidad.
+    const grupos = TIPOS_DE_PUNTO
+        .map(t => ({ ...t, items: lista.filter(p => p.tipo === t.tipo) }))
+        .filter(g => g.items.length > 0);
+    const otros = lista.filter(p => !TIPOS_DE_PUNTO.some(t => t.tipo === p.tipo));
+    if (otros.length) grupos.push({ tipo: 'otro', label: 'Otros', singular: '', items: otros });
+
+    // Dentro de un grupo alcanza con el NÚMERO: repetir «Vitrina» once veces es
+    // la misma palabra ocupando el ancho que necesita la casilla.
+    const corto = (p, singular) => {
+        const n = String(p.label || '').replace(singular, '').trim();
+        return singular && n ? n : (p.label || '·');
+    };
+
+    return (
+        <div className={compacta ? 'space-y-3 pl-7' : 'space-y-3'}>
+            {grupos.map(g => {
+                const marcadasDelGrupo = g.items.filter(p => marcadas.has(p.clave)).length;
+                const completo = marcadasDelGrupo === g.items.length;
+                return (
+                    <div key={g.tipo} className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-label font-black uppercase tracking-widest text-content-3">
+                                {g.label}
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <span className={`text-label font-black tabular-nums ${completo ? 'text-success-text' : 'text-content-2'}`}>
+                                    {marcadasDelGrupo} de {g.items.length}
+                                </span>
+                                <Button variant="ghost" size="sm" onClick={() => alternarGrupo(g.items)}>
+                                    {completo ? 'Ninguna' : 'Todas'}
+                                </Button>
+                            </span>
+                        </div>
+
+                        {/* Una rejilla de celdas: cada casilla vive en su caja,
+                            así no hay duda de a qué nombre pertenece. */}
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                            {g.items.map(p => (
+                                <div key={p.clave} data-surface="card"
+                                    data-tono={marcadas.has(p.clave) ? 'success' : undefined}
+                                    className="px-2 py-1.5">
+                                    <Checkbox size="sm" name={`punto-${p.clave}`}
+                                        checked={marcadas.has(p.clave)}
+                                        onChange={() => alternar(p.clave)}
+                                        label={<span className="tabular-nums">{corto(p, g.singular)}</span>}
+                                        aria-label={p.label || 'Sin nombre'} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

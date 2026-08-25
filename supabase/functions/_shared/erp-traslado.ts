@@ -321,6 +321,18 @@ export function disponibleEnBodega(
   // Lo que sale físicamente lo levanta Bodega del estante; lo que puede quedar
   // torcido es el PAPEL, si el sistema descuenta la fila apartada. Eso se
   // comprueba después de despachar releyendo el área de vencidos, y se repone.
+  //
+  // ── Se volvió a medir el 2026-08-25, y el sistema NO cambió ─────────────
+  // Se quitó este tope, se desplegó y se le pidió al sistema el renglón real
+  // que había quedado en error el 24-ago: 2 TERMOMETRO DIGITAL WELLPRO desde
+  // el estante de Bodega, con 18 ahí y 1 sola apartada. Contestó lo mismo,
+  // palabra por palabra: «No hay suficiente stock en las ubicaciones para
+  // descargar el producto TERMOMETRO DIGITAL WELLPRO». Con 18 disponibles la
+  // única forma de que falte stock es que esté entrando por la fila apartada.
+  //
+  // Así que el tope se queda. Volver a probarlo cuesta un renglón y no mueve
+  // nada cuando el sistema rechaza: lo que NO se puede hacer es quitarlo «por
+  // si acaso», porque ahí el rechazo llega después de que Bodega armó la caja.
   const apartado = Number(enVencidos ?? 0);
   const tope = apartado > 0 ? Math.min(existencia, apartado) : existencia;
   return {

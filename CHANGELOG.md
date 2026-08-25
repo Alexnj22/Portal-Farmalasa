@@ -21,6 +21,80 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.755.0 — La meta cuenta el mes que está por cerrar, y la sala se entera el 1
+
+Reportado al revisar la propuesta de septiembre: *«veo que me dice cómo cerró
+julio, no cómo se proyecta cerrar agosto»*. Era exacto, y no en una parte del
+cálculo sino en las dos.
+
+**La fórmula sólo miraba meses COMPLETOS.** La propuesta se genera el 25, así
+que el mes que está por cerrar quedaba afuera del ritmo *y* del factor:
+
+```
+ritmo  = venta de los 3 meses ÷ sus días   → mayo + junio + julio
+factor = cumplimiento del más reciente     → julio
+```
+
+O sea que la meta de septiembre y la meta de agosto se calcularon **contra el
+mismo mes**. Se ve en las notas: las seis de septiembre repiten los porcentajes
+de las de agosto (108.6, 96.0, 104.4, 112.8, 94.0, 103.4). El portal proponía
+con un mes de atraso y nada lo decía, porque una propuesta con un número
+plausible no falla.
+
+Desde acá el mes en curso entra con su venta **proyectada a mes completo**
+(venta ÷ días con dato × días del mes). Al día 25 son 24 días de recorrido: no
+es una adivinanza, es el ritmo medido de casi todo el mes. Dos guardas: sólo se
+proyecta el mes inmediatamente anterior al objetivo —un hueco de datos en un mes
+viejo lo sigue excluyendo—, y hacen falta **20 días mínimo**, porque el botón
+manual se puede apretar cualquier día y con tres días de venta la proyección
+sería ruido con forma de número. El día de hoy nunca cuenta: está a medias por
+definición.
+
+Medido sobre septiembre, el mes que más se mueve es **Salud 5**: venía de julio
+al 103.4% y agosto proyecta 88.2%, o sea que con la fórmula vieja se le pedía
+sostenerse (factor 1.02) cuando la regla de recuperar terreno dice 1.10.
+
+**La fórmula estaba escrita DOS veces.** `generar_propuestas_metas` (la que
+guarda) y `explicar_meta_propuesta` (el panel «De dónde sale») tenían el mismo
+SQL palabra por palabra. Mientras fueran idénticas nadie lo notaba; el día que
+una cambiara, el panel explicaría un cálculo que no es el que se guardó — y ese
+panel **avisa cuando los dos números difieren**, así que la divergencia se
+habría leído como un error de la propuesta. Ahora las dos consultan
+`metas_calculo_propuesta`, que es la única que sabe la fórmula.
+
+**El 1 la sala se entera de cómo cerró y de cuánto le toca.** El widget del
+Inicio pide siempre el mes en curso y el mes lo calcula el servidor: a las 00:00
+del día 1 la tarjeta salta al mes nuevo y el resultado que la sala estuvo
+persiguiendo 30 días **desaparece de la pantalla sin que nadie se lo diga**. La
+meta nueva aparece ahí, en silencio, junto con todo lo demás. Ahora sale un
+aviso con las dos mitades del mismo hecho: cómo terminó lo anterior y qué se le
+pide ahora.
+
+Tres decisiones que no son detalle:
+
+- **No habla en dólares para todos.** El portal ya decidió quién ve montos y
+  quién ve porcentajes (`dash_meta_sala_vista_completa`), y el widget cambia de
+  idioma según eso. De las 35 personas de sala que ven la meta, **28 no tienen
+  ese permiso**. Un aviso único con «vendiste $40,466.52» abriría por la campana
+  justo lo que la pantalla cierra, así que hay dos cuerpos resueltos por persona.
+- **Sólo lo recibe quien puede ver la meta.** En Salud 4 hay un técnico de
+  mantenimiento asignado a la sala sin `dash_meta_sala`; el aviso por sucursal le
+  habría escrito igual.
+- **Ventana del 1 al 5, sin repetirse.** El día 1 a las 08:00 el mes ya está
+  completo —medido sobre mayo, junio y julio, la última factura de cada mes entró
+  a las ~22:00 de ese mismo día—, pero si a un día le falta la fila el resultado
+  saldría bajo y ya estaría dicho. Así que el aviso exige el mes completo y
+  reintenta hasta el 5. El 5 es el último intento y ahí se afloja la otra
+  condición: si la meta nueva todavía no está oficial, sale igual con el
+  resultado solo. Callarse por una meta que nadie confirmó dejaría a la sala sin
+  saber cómo cerró, que es el dato que ya no puede ver en ninguna pantalla. Y el
+  5 es el día en que se congela el mes, así que la campana dice el mismo número
+  que va a decir el histórico para siempre.
+
+De paso, los seis tipos de aviso de Metas caían al ícono genérico de campana.
+Van por prefijo y no uno por uno: el módulo los emite desde SQL, así que la
+lista de allá crece sin pasar por el mapa de íconos.
+
 ## v2.754.0 — Conteo: agregar vive en la píldora y el área de vencidos es su propia pestaña
 
 Dos pedidos de sala sobre **Conteo de inventario**, y el primero destapó un

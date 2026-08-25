@@ -10,6 +10,15 @@ import { ymLabelCorto } from './metasUtils';
 //   ritmo    = (venta m-3 + m-2 + m-1) ÷ (días m-3 + m-2 + m-1)
 //   propuesta = ritmo × días del mes objetivo × factor
 //
+// Desde el 2026-08-25 el mes m-1 puede ser el que TODAVÍA NO CERRÓ, con su venta
+// llevada a mes completo. La propuesta se genera el 25, así que antes de eso los
+// tres meses base eran mayo·junio·julio para una meta de septiembre, y el factor
+// salía de julio — el mismo mes contra el que se había calculado la meta de
+// agosto. El RPC lo marca por mes (`meses_base[].proyectado`) y para el último
+// (`ultimo_proyectado`), y esos dos son los que cambian el texto de acá: si el
+// panel dijera "cerró" sobre un mes en curso, estaría afirmando algo falso con
+// un número correcto.
+//
 // El factor sale de cómo cerró la sala el mes -1, y va al REVÉS de lo que uno
 // esperaría: al que se quedó corto se le pide crecer más (1.10) y al que va bien
 // se le pide sostenerse (1.02). El criterio es recuperar terreno, no premiar.
@@ -59,6 +68,11 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
     const coincide = d != null && montoPropuesto != null
         && Math.abs(Number(d.recalculada) - Number(montoPropuesto)) < 0.01;
 
+    // Sólo puede haber uno —el mes anterior al objetivo—, pero se busca en vez
+    // de asumir la última posición: el día que la fórmula acepte dos, este
+    // texto no se queda hablando del que ya cerró.
+    const mesProyectado = (d?.meses_base || []).find((m) => m.proyectado);
+
     return (
         <div className="mt-1">
             <button
@@ -89,6 +103,9 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                                 {(d.meses_base || []).map((m, i) => (
                                     <span key={m.ym} className="tabular-nums">
                                         {i > 0 && ' · '}{ymLabelCorto(m.ym)} {formatMoney(m.venta)}
+                                        {m.proyectado && (
+                                            <span className="text-content-2 font-black"> proy.</span>
+                                        )}
                                     </span>
                                 ))}
                                 <br />
@@ -96,6 +113,13 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                                 {' entre los '}
                                 <strong className="text-content-2 tabular-nums">{d.suma_dias} días</strong>
                                 {' de esos tres meses. Se divide por días y no por meses, para que uno de 30 y uno de 31 no pesen distinto.'}
+                                {mesProyectado && (
+                                    <span className="block mt-1">
+                                        <strong className="text-content-2">{ymLabelCorto(mesProyectado.ym)}</strong>
+                                        {' todavía no cierra: entra con lo que lleva vendido llevado a mes '}
+                                        {'completo. Dejarlo afuera armaría la meta con el ritmo de hace un mes.'}
+                                    </span>
+                                )}
                             </Paso>
 
                             <Paso n="2" titulo={`Por los ${d.dias_mes} días del mes`} monto={formatMoney(d.sub_ritmo)}>
@@ -109,7 +133,10 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                                     lo desmentía dos líneas más arriba. */}
                                 {d.pct_ultimo != null ? (
                                     <>
-                                        Cerró <strong className="text-content-2">{ymLabelCorto(d.ym_ultimo)}</strong> en{' '}
+                                        {/* Un mes en curso no «cerró»: el número es el mismo,
+                                            pero el verbo sería una afirmación falsa. */}
+                                        {d.ultimo_proyectado ? 'Viene cerrando ' : 'Cerró '}
+                                        <strong className="text-content-2">{ymLabelCorto(d.ym_ultimo)}</strong> en{' '}
                                         <strong className={Number(d.pct_ultimo) >= 100 ? 'text-success-text' : 'text-warning-text'}>
                                             {formatPct(d.pct_ultimo)}
                                         </strong>

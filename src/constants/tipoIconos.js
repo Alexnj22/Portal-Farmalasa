@@ -2,7 +2,7 @@ import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
     Ban, CreditCard, UserCog, Contact, CalendarClock, CalendarX2,
     Package, BarChart2, ClipboardList, Info, Bell,
-    PackagePlus, Trash2, ArrowLeftRight, Wallet,
+    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,6 +78,13 @@ const POR_PREFIJO = [
     ['PEDIDO',  Package],
     ['MINMAX',  BarChart2],
     ['REQUEST', ClipboardList],
+    // Los seis tipos de Metas (`METAS_PROPUESTAS`, `METAS_POR_APROBAR`,
+    // `METAS_AJUSTADA`, `METAS_APROBADAS`, `METAS_RECORDATORIO` y
+    // `METAS_CIERRE_SALA`) caían todos a la campana genérica. Van por prefijo y
+    // no uno por uno porque el módulo los emite desde SQL: la lista de allá
+    // crece sin pasar por acá, y una lista a mano se desincroniza el día que
+    // alguien agrega el séptimo. El `Target` es el mismo ícono del módulo.
+    ['METAS',   Target],
 ];
 
 /** Ícono de un tipo. Nunca devuelve undefined. */

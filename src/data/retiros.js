@@ -106,6 +106,33 @@ export async function firmarEntrega(entregoId) {
     return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 }
 
+/**
+ * El carné leído, resuelto y firmado en UNA llamada.
+ *
+ * No es un atajo: es el arreglo de que el recorrido no puede usar
+ * `identificar_por_carne`. Esa función —la del apoyo de un pedido y la de la
+ * entrega del efectivo— sólo reconoce a la gente de la sala de QUIEN ESCANEA, y
+ * el recorrido es justamente el caso contrario: se está parado en una sala
+ * ajena pidiéndole el carné a alguien que trabaja ahí. Medido el 2026-08-25
+ * contra producción, desde Administración reconocía **5 de 49** carnés, y
+ * ninguno de una sala — o sea, el paso no podía funcionar nunca. Reportado
+ * como «escaneé un carné y me dice que no existe».
+ *
+ * La búsqueda va en la base y no acá porque lleva el tope de intentos y el
+ * registro de quién preguntó por quién; y devuelve la firma ya hecha, para que
+ * traducir un carné en una persona no quede como una llamada suelta.
+ */
+export async function firmarEntregaConCarne(codigo) {
+    const { data, error } = await supabase.rpc('retiro_firmar_carne', {
+        p_valor: String(codigo ?? '').trim(),
+    });
+    if (error) {
+        console.error('retiros: retiro_firmar_carne failed:', error.message);
+        return { ok: false, error: 'No se pudo confirmar el carné.' };
+    }
+    return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+}
+
 /** Soltar una que se cargó por error. Sólo la puede soltar quien la lleva. */
 export async function soltarBulto(requestId) {
     const { data, error } = await supabase.rpc('retiro_soltar', { p_request_id: requestId });

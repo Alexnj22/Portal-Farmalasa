@@ -6,12 +6,12 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
+import EsperaDeCarne from '../../components/common/EsperaDeCarne';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, fetchTrasladoParaImprimir } from '../../data/traslados';
-import { fetchEmployeeByKioskPin } from '../../data/pedidos';
 import {
-    fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, firmarEntrega, soltarBulto,
-    cerrarRetiro, DIAS_PARA_ALARMA,
+    fetchRetiroAbierto, fetchPendientesEnSala, cargarBulto, firmarEntregaConCarne,
+    soltarBulto, cerrarRetiro, DIAS_PARA_ALARMA,
 } from '../../data/retiros';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -73,7 +73,16 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     const [error,     setError]     = useState('');
     const [aviso,     setAviso]     = useState('');
     const [ocupado,   setOcupado]   = useState(false);
-    const [conCamara, setConCamara] = useState(false);
+    /* QUÉ está leyendo la cámara: `null`, `'ticket'` o `'carne'`.
+     *
+     * Era un booleano —«la cámara está abierta»— y con eso el carné se quedó
+     * sin cámara: el botón vivía en la rama del ticket, así que en el modo
+     * firma no había NINGUNA forma de leer un carné sin un lector físico
+     * enchufado. Quien recorre las salas lo hace con el teléfono en la mano,
+     * o sea que el paso que el 25-ago dejó de trabar la carga pasó a ser
+     * imposible de dar. Reportado así: «al escanear el carné no me sale la
+     * cámara». */
+    const [camara,    setCamara]    = useState(null);
     /* El lector deja de leer tickets y pasa a leer un carné.
      *
      * Es un MODO y no «la bolsa que espera firma», que es lo que era antes: la
@@ -180,7 +189,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
     // candado era tirar en silencio la lectura de un lector sin sufijo Enter.
     // La firma de abajo —ésa sí es un carné— lo conserva.
     const { teclas, diagnostico, eventos } = useCapturaDeCarne(
-        abierto && !conCamara && !modoFirma && !ocupado, escanear,
+        abierto && !camara && !modoFirma && !ocupado, escanear,
         { aceptarTecleado: true, sinEnter: true },
     );
 
@@ -188,15 +197,19 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
      *
      * No reintenta ninguna carga —eso era cuando la firma era el candado—: sella
      * lo que ya va encima de esa sala y queda vigente para lo que se escanee
-     * después. Por eso `firmadas: 0` no es un fallo: es firmar de primero. */
+     * después. Por eso `firmadas: 0` no es un fallo: es firmar de primero.
+     *
+     * ── El carné se resuelve en la BASE, y no con la del kiosco ────────────
+     * Acá se llamaba a `identificar_por_carne`, que sólo reconoce a la gente de
+     * la sala de quien escanea. En un recorrido eso es exactamente al revés:
+     * quien lo hace está en una sala ajena y el carné es de alguien de AHÍ.
+     * Medido el 2026-08-25: desde Administración reconocía 5 de 49 carnés y
+     * ninguno de una sala, así que el paso nunca pudo funcionar — se reportó
+     * como «escaneé un carné y me dice que no existe». */
     const leerFirma = useCallback(async (code) => {
         setOcupado(true); setError(''); setAviso('');
         try {
-            const { data, error: e } = await fetchEmployeeByKioskPin(String(code).toUpperCase().trim());
-            if (e)     { setError(mensajeAmigable(e, 'No se pudo confirmar el carné.')); return; }
-            if (!data) { setError('Ese carné no es de nadie.'); return; }
-
-            const r = await firmarEntrega(data.id);
+            const r = await firmarEntregaConCarne(code);
             if (!r?.ok) { setError(r?.error ?? 'No se pudo registrar la firma.'); return; }
 
             setModoFirma(false);
@@ -216,7 +229,8 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         } finally { setOcupado(false); }
     }, [recargar, onCambio, retiro, salaActual, miBranch]);
 
-    const { teclas: teclasCarne } = useCapturaDeCarne(abierto && modoFirma && !ocupado, leerFirma);
+    const { teclas: teclasCarne, manual: carneTecleado } = useCapturaDeCarne(
+        abierto && modoFirma && !camara && !ocupado, leerFirma);
 
     /** El MISMO ticket otra vez, cuando el papel no sirvió.
      *
@@ -354,23 +368,36 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     )}
 
                     {modoFirma ? (
-                        <Notice variant="info" icon={UserCheck}>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="flex-1 min-w-[12rem]">
-                                    Pasa el carné de quien te entrega el producto. Vale para todo lo
-                                    que te lleves de su sala en este recorrido, lo hayas escaneado ya
-                                    o no.
-                                    {teclasCarne > 0 && ' Leyendo…'}
-                                </span>
+                        /* ── El panel canónico de espera de un carné ─────────
+                            Era un `Notice` con tres renglones de texto en
+                            negrita y azul: en el teléfono ocupaba media
+                            pantalla y no se distinguía de un error. El portal
+                            ya tiene UNA forma de pedir un carné —el aro que
+                            late y los puntos de la ráfaga, `EsperaDeCarne`—,
+                            usada en el apoyo de un pedido y en la entrega del
+                            efectivo. Ésta era la tercera pantalla que pide lo
+                            mismo y la única que lo dibujaba distinto. */
+                        <div data-surface="card" className="px-3 py-2 flex flex-col gap-2">
+                            <EsperaDeCarne
+                                teclas={teclasCarne} manual={carneTecleado} ocupado={ocupado}
+                                ayuda={<>Pasa el carné de quien te entrega<br />
+                                    Vale para todo lo que te lleves de su sala</>} />
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                <Button variant="secondary" icon={Camera} disabled={ocupado}
+                                    onClick={() => setCamara('carne')}>Cámara</Button>
                                 <Button variant="secondary" icon={ScanLine} disabled={ocupado}
                                     onClick={() => setModoFirma(false)}>
                                     Volver a los tickets
                                 </Button>
                             </div>
-                        </Notice>
+                        </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
+                            {/* `flex-wrap`: en 390px el renglón de estado y los
+                                dos botones no entran juntos, y sin envolver el
+                                texto se partía en una columna de tres líneas
+                                encajada al lado de los botones. */}
+                            <div className="flex flex-wrap items-center gap-2">
                                 <ScanLine size={18} className="text-chart-1-text shrink-0" />
                                 {/* `teclas` ANTES que `ocupado`, y ése era el
                                     problema: este renglón sólo miraba `ocupado`,
@@ -381,25 +408,30 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                     escanear» no distinguía un lector mudo de uno
                                     que anda. Se probó acá y la prueba no podía
                                     contestar. */}
-                                <p className="text-body-sm text-content-2 flex-1">
+                                <p className="text-body-sm text-content-2 flex-1 min-w-[11rem]">
                                     {teclas > 0 ? 'Leyendo…'
                                         : ocupado ? 'Buscando el ticket…'
                                             : 'Esperando el ticket de la próxima bolsa'}
                                 </p>
-                                {/* «De primero»: el carné se puede pasar ANTES de
-                                    escanear nada, y ahí no hay ninguna bolsa
-                                    pendiente que dispare el aviso de arriba. Sin
-                                    este botón, la mitad del pedido del usuario no
-                                    tendría por dónde entrar. */}
-                                {bolsasSinFirma === 0 && (
-                                    <Button variant="secondary" icon={UserCheck} disabled={ocupado}
-                                        title="Pasar el carné de quien entrega"
-                                        onClick={() => { setModoFirma(true); setError(''); setAviso(''); }}>
-                                        Carné
-                                    </Button>
-                                )}
-                                <Button variant="secondary" icon={Camera} disabled={ocupado}
-                                    onClick={() => setConCamara(true)}>Cámara</Button>
+                                {/* Los dos botones envuelven JUNTOS: sueltos en
+                                    el mismo `flex-wrap`, en 390px uno se queda
+                                    arriba y el otro baja solo a la izquierda. */}
+                                <div className="flex items-center gap-2 ml-auto">
+                                    {/* «De primero»: el carné se puede pasar ANTES
+                                        de escanear nada, y ahí no hay ninguna bolsa
+                                        pendiente que dispare el aviso de arriba. Sin
+                                        este botón, la mitad del pedido del usuario no
+                                        tendría por dónde entrar. */}
+                                    {bolsasSinFirma === 0 && (
+                                        <Button variant="secondary" icon={UserCheck} disabled={ocupado}
+                                            title="Pasar el carné de quien entrega"
+                                            onClick={() => { setModoFirma(true); setError(''); setAviso(''); }}>
+                                            Carné
+                                        </Button>
+                                    )}
+                                    <Button variant="secondary" icon={Camera} disabled={ocupado}
+                                        onClick={() => setCamara('ticket')}>Cámara</Button>
+                                </div>
                             </div>
                             {/* Qué mandó el lector, cuando no alcanzó. Mismo
                                 instrumento que en «Recibir traslado» — y el
@@ -518,11 +550,21 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 </div>
             </CuerpoDialogo>
 
-            {conCamara && (
+            {/* La MISMA cámara para las dos lecturas. Dos lectores montados
+                pelearían por el mismo dispositivo, y el título es lo único que
+                cambia: qué código hay que ponerle enfrente. */}
+            {camara && (
                 <Suspense fallback={null}>
-                    <LectorDeCodigo abierto titulo="Escanear el ticket de la bolsa"
-                        onCerrar={() => setConCamara(false)}
-                        onLeer={(v) => { setConCamara(false); escanear(v); }} />
+                    <LectorDeCodigo abierto
+                        titulo={camara === 'carne'
+                            ? 'Escanear el carné de quien entrega'
+                            : 'Escanear el ticket de la bolsa'}
+                        onCerrar={() => setCamara(null)}
+                        onLeer={(v) => {
+                            const modo = camara;
+                            setCamara(null);
+                            if (modo === 'carne') leerFirma(v); else escanear(v);
+                        }} />
                 </Suspense>
             )}
         </ModalShell>

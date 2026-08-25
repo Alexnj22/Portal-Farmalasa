@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.2 — El carné de quien entrega: cámara, panel canónico y lectura que sí lo encuentra
+
+Tres cosas sobre la misma pantalla, reportadas el mismo día en que la firma
+dejó de trabar la carga: *«intenté llevarme un producto, pero al escanear el
+carné no me sale la cámara, y me salen unos labels enormes»* y, después,
+*«escaneé un carné y me dice que no existe»*.
+
+**El tercero es el que hacía imposible el paso, y no era el lector.** La
+pantalla resolvía el carné con `identificar_por_carne` —la misma que usan el
+apoyo de un pedido y la entrega del efectivo—, que sólo reconoce a quien
+`kiosco_cubre_empleado(e.id, <mi sala>)`. Para el kiosco eso está bien: el
+apoyo de un pedido tiene que ser de tu propia sala. Pero el recorrido es
+exactamente lo contrario: quien lo hace está parado en una sala **ajena** y le
+pide el carné a alguien que trabaja **ahí**, así que su propia sala es la única
+de la que no va a salir ningún carné.
+
+Medido contra producción: desde Administración —la sala de quien reportó— la
+función reconoce **5 de los 49 empleados activos**, y ninguno de los 5 trabaja
+en una sala. O sea que no fallaba a veces; no podía funcionar nunca. Es la
+misma lección que la carga había aprendido esa mañana, una capa más abajo: la
+regla no estaba mal, estaba escrita contra la sala equivocada.
+
+Ahora hay `retiro_firmar_carne`, que traduce el código y firma en una sola
+llamada. La restricción de verdad no se movió de sitio: sigue siendo
+`retiro_firmar`, que estampa sólo las bolsas donde `puede_entregar_de(entrego,
+origen)` — la sala de la **bolsa**, no la de nadie más. Lo que la búsqueda
+conserva es el tope de 20 fallos en 15 minutos **contra el mismo presupuesto**
+que el kiosco, y el registro en `intentos_identidad` de quién preguntó por
+quién y desde dónde.
+
+**Y en el teléfono no había cámara para el carné.** El botón vivía en la rama
+del ticket, así que en el modo firma la única forma de leer un carné era un
+lector físico enchufado — justo lo que no tiene quien recorre las salas.
+Ahora la cámara es una sola y sabe qué está leyendo (`'ticket'` o `'carne'`),
+con el título diciéndolo.
+
+**Los «labels enormes» eran el panel de la firma.** Tres renglones de texto en
+negrita y azul dentro de un aviso: en 390px ocupaba media pantalla y se leía
+como un error. El portal ya tiene **una** forma de pedir un carné —el aro que
+late y los puntos de la ráfaga, `EsperaDeCarne`—, y ésta era la tercera
+pantalla que pedía lo mismo dibujándolo distinto. Y en la rama del ticket el
+renglón de estado se partía en una columna de tres líneas encajada al lado de
+los botones: los dos botones envuelven ahora juntos.
+
 ## v2.767.1 — El conteo cíclico dejó de trabar el portal entero
 
 Reporte del usuario: *«estoy teniendo problemas con los datos Timed out

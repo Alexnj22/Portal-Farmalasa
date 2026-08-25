@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.2 — La limpieza se lee de corrido y los campos dicen su unidad
+
+*«Organiza mejor la limpieza, se ve desorden con el nombre y foto»*. Los dos
+turnos iban uno al lado del otro con su firma debajo, así que en la misma línea
+había dos caras y dos nombres y no se sabía cuál era de cuál. Ahora **cada turno
+es una fila** —estado, quién, acciones— y se leen de corrido.
+
+Las dos acciones (corregir y quitar) **aparecen al apuntar la fila**: siempre
+visibles eran cuatro íconos por área compitiendo con el dato. La matriz sólo se
+pinta en escritorio, donde el hover existe, y `focus-within` las trae también
+con el teclado.
+
+**Y los campos dicen qué son.** Los dejé vacíos y sin unidad, así que se leían
+como manchas negras. Ahora dicen `°C` y `%`.
+
+> **Sobre el fondo del campo: sí, es el canónico.** En Dark LiquidGlass
+> `--surface-input` vale `rgba(6,10,26,0.66)` y es una decisión escrita en
+> `index.css`: antes valía casi el mismo color que la tarjeta —tres centésimas
+> de diferencia— y el campo **desaparecía dentro de ella**. El hueco tiene que
+> hundirse. Lo que faltaba no era el color, era la pista adentro.
+
 ## v2.766.1 — La limpieza se llama Mañana y Tarde
 
 *«Con los botones de apertura / cierre de limpieza, cámbialos por mañana /

@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { AlertTriangle, Check, ClipboardCheck, Clock, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, XCircle } from 'lucide-react';
-import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
@@ -135,6 +134,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
                     aria-label={`Temperatura de ${area.nombre} en ${franja.label}`}
                     value={temp} onChange={(e) => setTemp(e.target.value)}
                     inputClassName="tabular-nums text-center px-1"
+                    placeholder="°C"
                 />
                 {area.mide_humedad && (
                     <PortalInput
@@ -143,6 +143,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
                         aria-label={`Humedad de ${area.nombre} en ${franja.label}`}
                         value={hum} onChange={(e) => setHum(e.target.value)}
                         inputClassName="tabular-nums text-center px-1"
+                        placeholder="%"
                     />
                 )}
                 {/* El botón aparece recién cuando hay algo escrito: una fila de
@@ -184,64 +185,78 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
 
     return (
         <td className="px-3 py-2">
-            <div className="flex flex-wrap items-center gap-1.5">
+            {/* Un renglón por turno, no dos chips uno al lado del otro: con la
+                firma debajo, dos turnos en la misma línea mezclaban dos caras y
+                dos nombres y no se sabía cuál era de cuál. Ahora cada turno es
+                una fila —estado, quién, acciones— y se leen de corrido. */}
+            <div className="flex flex-col gap-1">
                 {turnos.map(t => {
                     const r = t.registro;
+
                     if (r) {
-                        // Quién y a qué hora, a la vista y no en un `title`: es
-                        // el «atribuible» y el «contemporáneo» del RTS 6.1.14, y
-                        // un dato que sólo aparece al pasar el mouse no existe
-                        // para quien mira la pantalla desde el mostrador.
                         return (
-                            <span key={t.clave} className="inline-flex flex-col min-w-0">
-                                <span className="inline-flex items-center gap-1 text-label font-bold text-content-2">
-                                    <Check size={12} className="text-success-text" />
+                            <div key={t.clave} className="group flex items-center gap-2 min-w-0">
+                                <span className="inline-flex items-center gap-1 text-label font-bold text-content-2 w-[92px] shrink-0">
+                                    <Check size={12} className="text-success-text shrink-0" />
                                     {t.label}
                                     <ResumenDePuntos registro={r} />
-                                    {puedeAnotar && !cerrado && (
-                                        <>
-                                            {/* `Pencil` y `XCircle` son los del mapa
-                                                cerrado de DESIGN.md: editar y anular.
-                                                Anular NO es eliminar — la limpieza se
-                                                quita del libro, no se borra un objeto. */}
-                                            <Button variant="ghost" size="sm" iconOnly icon={Pencil}
-                                                title="Corregir esta limpieza"
-                                                onClick={() => onDetalle(area, t, r)} />
-                                            <Button variant="ghost" size="sm" iconOnly icon={XCircle}
-                                                title="Quitar esta limpieza"
-                                                onClick={() => onQuitar(area, t, r)} />
-                                        </>
-                                    )}
                                 </span>
-                                <Firma hora={horaDe(r.registrado_at)} tarde={r.tarde}
-                                    quien={{
-                                        nombre: r.realizada_por_nombre,
-                                        nombres: r.realizada_por_nombres,
-                                        apellidos: r.realizada_por_apellidos,
-                                        foto: r.realizada_por_photo_url,
-                                    }} />
-                                {r.corregida_at && (
-                                    <span className="text-micro text-warning-text font-bold pl-6 truncate">
-                                        corregida
+                                <span className="min-w-0 flex-1">
+                                    <Firma hora={horaDe(r.registrado_at)} tarde={r.tarde}
+                                        quien={{
+                                            nombre: r.realizada_por_nombre,
+                                            nombres: r.realizada_por_nombres,
+                                            apellidos: r.realizada_por_apellidos,
+                                            foto: r.realizada_por_photo_url,
+                                        }} />
+                                </span>
+                                {puedeAnotar && !cerrado && (
+                                    // Las dos acciones aparecen al apuntar la
+                                    // fila: siempre visibles eran cuatro íconos
+                                    // por área compitiendo con el dato. La
+                                    // matriz sólo se pinta en escritorio, donde
+                                    // el hover existe; `focus-within` las trae
+                                    // también con el teclado.
+                                    <span className="flex items-center shrink-0 opacity-0 transition-opacity
+                                        group-hover:opacity-100 group-focus-within:opacity-100">
+                                        {/* `Pencil` y `XCircle` son los del mapa cerrado
+                                            de DESIGN.md: editar y anular. Anular no es
+                                            eliminar — el registro se saca del libro. */}
+                                        <Button variant="ghost" size="sm" iconOnly icon={Pencil}
+                                            title={`Corregir la limpieza de ${t.label}`}
+                                            onClick={() => onDetalle(area, t, r)} />
+                                        <Button variant="ghost" size="sm" iconOnly icon={XCircle}
+                                            title={`Quitar la limpieza de ${t.label}`}
+                                            onClick={() => onQuitar(area, t, r)} />
                                     </span>
                                 )}
-                            </span>
+                                {r.corregida_at && (
+                                    <span className="text-micro text-warning-text font-bold shrink-0">corregida</span>
+                                )}
+                            </div>
                         );
                     }
+
                     if (!puedeAnotar || cerrado || t.estado === 'proxima') {
                         return (
-                            <Badge key={t.clave} variant="neutral" size="sm" uppercase={false}>
-                                {t.label} {t.estado === 'proxima' ? hhmm(t.desde) : '—'}
-                            </Badge>
+                            <div key={t.clave} className="flex items-center gap-2">
+                                <span className="text-label text-content-3 w-[92px] shrink-0">{t.label}</span>
+                                <span className="text-micro text-content-3 tabular-nums">
+                                    {t.estado === 'proxima' ? `desde ${hhmm(t.desde)}` : '—'}
+                                </span>
+                            </div>
                         );
                     }
+
                     return (
-                        <Button key={t.clave} size="sm" icon={Sparkles}
-                            variant={t.estado === 'vencida' ? 'secondary' : 'primary'}
-                            loading={ocupado === t.clave}
-                            onClick={() => registrar(t)}>
-                            {t.label}
-                        </Button>
+                        <div key={t.clave} className="flex">
+                            <Button size="sm" icon={Sparkles}
+                                variant={t.estado === 'vencida' ? 'secondary' : 'primary'}
+                                loading={ocupado === t.clave}
+                                onClick={() => registrar(t)}>
+                                {t.label}
+                            </Button>
+                        </div>
                     );
                 })}
             </div>

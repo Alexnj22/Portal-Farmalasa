@@ -6,6 +6,7 @@
 // de una baja, y desde el cron apply-scheduled-employee-events (vía ADMIN_INVOKE_SECRET).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,28 +49,31 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(supabaseUrl, serviceKey);
 
     // Dos vías de autorización: ADMIN_INVOKE_SECRET (cron / interno) o JWT de
-    // usuario con permisos (SUPERADMIN o staff_list -> can_edit, igual que
+    // usuario con permisos (staff_list -> can_edit, igual que
     // set-employee-password).
+    //
+    // Hasta el 2026-08-24 la segunda vía leía el permiso de
+    // `caller.user_metadata`, que lo escribe el propio navegador. Cualquier
+    // cuenta activa podía declararse `SUPERADMIN` y desactivarle la cuenta a
+    // quien quisiera. El JWT dice QUIÉN sos —eso lo firma Supabase—; el permiso
+    // lo resuelve la base. Fase 0 de
+    // docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
     const adminSecret = Deno.env.get("ADMIN_INVOKE_SECRET");
     let allowed = !!adminSecret && token === adminSecret;
-    let caller: { id: string } | null = null;
+    // La FICHA de quien llama (`employees.id`), no su cuenta de `auth.users`.
+    // Ver abajo, en CANNOT_DISABLE_SELF, por qué la diferencia importa acá.
+    let caller: { id: string; name: string; code: string } | null = null;
 
     if (!allowed) {
-      const { data, error: authErr } = await admin.auth.getUser(token);
-      caller = data?.user ?? null;
-      if (authErr || !caller) return json({ ok: false, error: "INVALID_TOKEN" });
+      caller = await requireActiveEmployeeUser(req, admin);
+      if (!caller) return json({ ok: false, error: "INVALID_TOKEN" });
 
-      const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
-      allowed = meta.systemRole === "SUPERADMIN";
-      if (!allowed && meta.roleId) {
-        const { data: perm } = await admin.from("role_permissions")
-          .select("can_edit")
-          .eq("role_id", meta.roleId)
-          .eq("module_key", "staff_list")
-          .single();
-        allowed = perm?.can_edit === true;
-      }
-      if (!allowed) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS" });
+      const permiso = await permisoDeModulo(admin, caller.id, "staff_list", "can_edit");
+      // «No se pudo averiguar» no es «no podés»: lo primero se reintenta, lo
+      // segundo es una decisión. Contestar lo segundo cuando pasó lo primero
+      // manda a la persona por el camino equivocado y esconde la falla real.
+      if (permiso.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: permiso.roto });
+      if (!permiso.puede) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS" });
     }
 
     const body = await req.json().catch(() => ({}));
@@ -77,6 +81,13 @@ Deno.serve(async (req: Request) => {
     const action = body?.action === "enable" ? "enable" : "disable";
     if (!employeeId) return json({ ok: false, error: "MISSING_FIELDS" });
 
+    // Y este freno recién ahora funciona de verdad. Antes `caller` era el
+    // usuario de `auth.users` y `employeeId` es la FICHA, y para 33 de las 42
+    // personas que usan el portal esos dos ids NO son el mismo valor: entran por
+    // una cuenta `*@staff.local` ligada en `employee_auth_accounts`. O sea que
+    // la comparación daba `false` casi siempre y el candado contra
+    // desactivarse a uno mismo no cerraba para casi nadie. `caller.id` ahora ES
+    // la ficha, resuelta igual que `auth_employee_id()` en la base.
     if (action === "disable" && caller && caller.id === employeeId)
       return json({ ok: false, error: "CANNOT_DISABLE_SELF" });
 

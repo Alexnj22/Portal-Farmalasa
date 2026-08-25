@@ -1,7 +1,7 @@
 // supabase/functions/set-employee-password/index.ts
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 // Contraseña temporal aleatoria (sin caracteres ambiguos) para resets.
 // Reemplaza los valores triviales '1234'/'123456' que permitían tomar cuentas
@@ -30,7 +30,6 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ ok: false, error: "MISSING_AUTH_HEADER", details: "El frontend no envió el JWT." });
 
-    const token = authHeader.replace('Bearer ', '').trim();
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -38,26 +37,32 @@ Deno.serve(async (req: Request) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // 1. Validar token y extraer quién está haciendo la petición
-    const { data: { user: caller }, error: authErr } = await admin.auth.getUser(token);
-    if (authErr || !caller) return json({ ok: false, error: "INVALID_TOKEN", details: "El token expiró o es inválido." });
+    // 1. Quién llama, y si puede — LOS DOS salen de la base, no del token.
+    //
+    // Hasta el 2026-08-24 el permiso se leía de `caller.user_metadata`, que lo
+    // escribe el propio navegador con `supabase.auth.updateUser({ data: … })`.
+    // No hay trigger en `auth.users` que lo impida, así que cualquier cuenta
+    // activa podía ponerse `systemRole: 'SUPERADMIN'` —o un `roleId` prestado de
+    // un cargo que sí tiene el permiso— y cambiarle la contraseña a quien
+    // quisiera. O sea: la función que reparte contraseñas le preguntaba el
+    // permiso a quien la estaba usando.
+    //
+    // El JWT sigue sirviendo para lo único que no se puede falsificar —QUIÉN
+    // sos, que lo firma Supabase—; el permiso lo resuelve la base.
+    // Ver [[feedback_user_metadata_lo_escribe_el_navegador]] y la Fase 0 de
+    // docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
+    const caller = await requireActiveEmployeeUser(req, admin);
+    if (!caller) return json({ ok: false, error: "INVALID_TOKEN", details: "El token expiró, es inválido, o el empleado no está activo." });
 
-    // Verificar permiso: SUPERADMIN tiene acceso total; los demás necesitan staff_list → can_edit
-    const meta = caller.user_metadata || {};
-    const isSuperAdmin = meta.systemRole === 'SUPERADMIN';
-    let canSetPassword = isSuperAdmin;
-
-    if (!canSetPassword && meta.roleId) {
-      const { data: perm } = await admin.from('role_permissions')
-        .select('can_edit')
-        .eq('role_id', meta.roleId)
-        .eq('module_key', 'staff_list')
-        .single();
-      canSetPassword = perm?.can_edit === true;
-    }
-
-    if (!canSetPassword)
-      return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: `Acceso denegado para: ${caller.email}` });
+    const permiso = await permisoDeModulo(admin, caller.id, "staff_list", "can_edit");
+    // `roto` es «no se pudo averiguar», y NO es lo mismo que «no podés»: un
+    // permiso denegado se lee como una decisión y una falla de lectura se
+    // reintenta. Decirle «no tenés permiso» a quien sí lo tiene lo manda por el
+    // camino equivocado y el problema real no se reporta nunca.
+    if (permiso.roto)
+      return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: permiso.roto });
+    if (!permiso.puede)
+      return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: `Acceso denegado para: ${caller.name || caller.code}` });
 
     // 2. Procesar datos
     const body = await req.json().catch(() => ({}));

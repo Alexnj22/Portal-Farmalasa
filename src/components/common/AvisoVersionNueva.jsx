@@ -48,6 +48,12 @@ import {
  * explicó»: el diálogo baja a franja, y la franja del caso bloqueado **no se
  * puede callar** —esa pantalla sigue sin abrir— pero tampoco tapa nada.
  *
+ * Y una vez bajado **no vuelve a subir**, ni siquiera si falla otra pantalla.
+ * Ese era el arreglo a medias: con el bundle viejo, toda vista que se abra por
+ * primera vez falla igual, así que re-subir el diálogo por cada una es un modal
+ * por clic — y quien dijo «ahora no» lo tendría que decir en cada navegación,
+ * que se siente igual que un botón que no funciona.
+ *
  * La prueba que cubría este camino existía y pasaba: sólo miraba que no
  * recargara, nunca que el diálogo se cerrara.
  */

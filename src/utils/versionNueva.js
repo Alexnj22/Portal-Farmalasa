@@ -146,10 +146,18 @@ export function marcarVersionNueva({ version = null, entrada = null, bloqueado =
         version: version ?? estado.version,
         entrada: entrada ?? estado.entrada,
         // Un bloqueo cancela el «ahora no»: ya no es un aviso cortés, es la
-        // explicación de por qué la pantalla no abrió. Y vuelve a SUBIR el
-        // aviso a diálogo aunque se lo hubiera bajado a franja: que otra
-        // pantalla no abra es información nueva, no la misma insistencia.
-        degradado: bloqueado ? false : estado.degradado,
+        // explicación de por qué la pantalla no abrió.
+        //
+        // Pero `degradado` NO se revierte, y esa es la parte que se aprendió
+        // mirándolo en producción. La primera versión volvía a subir el diálogo
+        // ante cada bloqueo nuevo —«otra pantalla que no abre es información
+        // nueva»—, y en un día de muchas publicaciones eso es un modal por
+        // clic: con el bundle viejo, TODA vista que se abra por primera vez
+        // falla igual. O sea que quien dijo «ahora no» lo tenía que volver a
+        // decir en cada navegación, que es indistinguible de que el botón no
+        // funcione. Dicho una vez, alcanza: la franja se queda en pantalla
+        // diciendo lo mismo, y la recarga la sigue apretando una persona.
+        degradado: estado.degradado,
         callado: bloqueado ? false : estado.callado,
         pospuestoHasta: bloqueado ? 0 : estado.pospuestoHasta,
     };

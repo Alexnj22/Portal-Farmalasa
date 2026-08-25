@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.7 — El aviso de versión nueva no vuelve a subir a diálogo
+
+Segunda mitad de v2.766.4, y salió de mirarlo en producción: *«le di en ahora no
+en actualizar por nueva versión, 1 segundo pasa y me vuelve el modal»*.
+
+El diálogo ya bajaba a franja al decir «Ahora no», pero **volvía a subir ante
+cada bloqueo nuevo** —el razonamiento era que otra pantalla que no abre es
+información nueva—. Con el bundle viejo corriendo, eso es falso: **toda** vista
+que se abra por primera vez falla igual, porque su archivo con hash viejo ya no
+existe. En un día de muchas publicaciones el resultado es un modal por clic, y
+quien dijo «ahora no» lo tiene que volver a decir en cada navegación — que se
+siente exactamente igual que un botón que no funciona.
+
+Dicho una vez, alcanza. La franja se queda arriba diciendo lo mismo, no se puede
+callar mientras esa pantalla no abra, y la recarga la sigue apretando una
+persona.
+
+Nota para quien lea esto desde una pestaña vieja: **el arreglo no llega sin una
+recarga**, porque el código con el defecto es justamente el que está corriendo.
+
 ## v2.766.6 — «11 de 26» es un dato, no una falta
 
 *«No debe mostrar como malo que no se limpie todo»* (usuario). El contador de

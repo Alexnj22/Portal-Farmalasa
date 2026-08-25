@@ -207,11 +207,13 @@ describe('«ahora no»', () => {
         expect(e.pospuestoHasta).toBe(0);
     });
 
-    it('otra pantalla que no abre vuelve a subirlo a diálogo', () => {
+    it('dicho una vez alcanza: otra pantalla que no abre NO lo vuelve a subir', () => {
+        // Con el bundle viejo, toda vista que se abra por primera vez falla
+        // igual. Re-subir el diálogo por cada una es un modal por clic.
         marcarVersionNueva({ bloqueado: true });
         posponerAviso(60_000);
         marcarVersionNueva({ bloqueado: true });
-        expect(leerEstadoVersion().degradado).toBe(false);
+        expect(leerEstadoVersion().degradado).toBe(true);
     });
 
     it('un bloqueo cancela el «ahora no»: esa pantalla no abrió', () => {

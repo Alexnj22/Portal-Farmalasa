@@ -102,12 +102,13 @@ describe('cuando una pantalla ya no abrió', () => {
         expect(screen.getByRole('button', { name: /^actualizar$/i })).toBeInTheDocument();
     });
 
-    it('si OTRA pantalla no abre, el diálogo vuelve a subir', () => {
+    it('si OTRA pantalla no abre, el diálogo NO vuelve: la franja ya lo dice', () => {
         render(<AvisoVersionNueva />);
         act(() => { marcarVersionNueva({ bloqueado: true }); });
         fireEvent.click(screen.getByRole('button', { name: /ahora no/i }));
         act(() => { marcarVersionNueva({ bloqueado: true }); });
 
-        expect(screen.getByText(/no puede abrirse hasta que actualices/i)).toBeInTheDocument();
+        expect(screen.queryByText(/no puede abrirse hasta que actualices/i)).toBeNull();
+        expect(screen.getByText(/esa pantalla no abre hasta que actualices/i)).toBeInTheDocument();
     });
 });

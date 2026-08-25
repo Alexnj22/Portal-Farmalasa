@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.765.0 — El día entra en una matriz y se anota en la celda
+
+La maqueta A, construida. *«¿Cómo la podemos mejorar? Que sea más compacta, más
+práctica de llenar»*.
+
+**Lo que había, medido:** **18 tarjetas para 13 registros**. Nueve de ellas no
+decían nada —«Sin lectura», «Sin registrar»— y siete decían *«Todavía no»*, la
+respuesta más repetida de la pantalla. Y todo pesaba igual: lo hecho llevaba un
+borde verde que gritaba y el hueco era una tarjeta pálida, así que quien abría a
+las 12:05 tenía que leer once tarjetas para encontrar las dos que le tocaban.
+
+**En la computadora, una matriz**: áreas en las filas, momentos en las columnas,
+una columna de limpieza. Es la forma del libro de papel que el inspector
+reconoce y la única que contesta de un vistazo la pregunta del regente —«¿nos
+falta alguna?»—. El día completo de una sala entra en **una tarjeta sin rodar**.
+
+**Se anota EN la celda.** La columna del momento que toca trae los campos
+adentro: se teclea el número y se confirma, sin abrir nada. El botón de
+confirmar aparece recién cuando hay algo escrito — seis botones siempre visibles
+son ruido, y el vacío se lee como «acá no hay nada que hacer».
+
+El diálogo queda para las dos veces en que hay algo más que decir: **corregir**
+(que exige motivo) y una lectura **fuera de rango** (que exige la acción
+correctiva). En ese segundo caso **lo tecleado viaja al diálogo**: pedir el
+número otra vez sería castigar a quien encontró el desvío.
+
+**La limpieza se anota tocando su chip.** Con uno o ningún mueble configurado se
+registra de una; con dos o más abre el detalle, porque ahí sí hay algo que
+elegir.
+
+**Lo hecho se calla**: el número en tinta normal, un check chico, y quién y a
+qué hora en letra micro — a la vista y no en un `title`, porque un dato que sólo
+aparece al pasar el mouse no existe para quien mira desde el mostrador (RTS
+6.1.14: atribuible y contemporáneo).
+
+**En el teléfono, la vuelta.** Una banda por momento con su «6 de 6» y la lista
+de lo que falta, y el botón que abre la ronda. La matriz no se muestra ahí: la
+fila es un área cruzada con los momentos, y una ficha por área repetiría el
+nombre y listaría los momentos debajo — la tabla otra vez, más larga. Está
+declarado en `gate:movil` con ese motivo.
+
+Medido contra el build: el día de una sala pasó de **4.400px a 979px** en
+iPhone 13, y en escritorio entra completo sin rodar. Cero desborde horizontal en
+los dos.
+
 ## v2.764.0 — El portal avisa que hay versión nueva en vez de recargarse solo
 
 *«Porque el portal a veces se actualiza solo, puedo estar viendo algo y se

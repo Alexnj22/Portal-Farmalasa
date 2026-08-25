@@ -1,191 +1,129 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Check, ClipboardCheck, Clock, Droplets, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, ClipboardCheck, Clock, Sparkles, Thermometer } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
+import MatrizDelDia from '../../components/bitacoras/MatrizDelDia';
 import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
-import { ResumenDePuntos } from '../../components/bitacoras/PuntosDeLimpieza';
-import { TIPO_AREA, bloquesDeLaRonda, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { bloquesDeLaRonda } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.
 //
-// ── Se pinta la GRILLA COMPLETA, no las lecturas que existen ───────────────
-// Cada franja del día tiene su casilla, tenga lectura o no. Una bitácora que
-// sólo lista lo que se anotó no puede contestar «¿nos falta alguna?», que es la
-// pregunta del inspector — y es la misma lección que dejaron los cortes de caja:
-// vacío y completo se ven idénticos cuando sólo se muestran los registros que
-// hay.
+// ── En escritorio, una MATRIZ; en el teléfono, la vuelta ───────────────────
+// Son dos públicos. En la computadora manda la matriz —áreas en las filas,
+// momentos en las columnas—: es la forma del libro de papel que el inspector
+// reconoce y la única que contesta de un vistazo «¿nos falta alguna?». En el
+// teléfono manda lo que toca AHORA, porque quien lo tiene en la mano está
+// parado frente al termómetro y no va a leer una tabla.
 //
-// ── El estado lo decide la BASE, no esta pantalla ──────────────────────────
+// La versión anterior era una tarjeta por casilla: **18 tarjetas para 13
+// registros**, nueve de ellas sin decir nada («Sin lectura», «Sin registrar») y
+// siete diciendo «Todavía no», que era la respuesta más repetida de la
+// pantalla.
+//
+// ── Se pinta la GRILLA COMPLETA, no las lecturas que existen ───────────────
+// Cada momento de cada área tiene su celda, tenga lectura o no. Una bitácora
+// que sólo lista lo anotado no puede contestar la pregunta del inspector — y es
+// la misma lección que dejaron los cortes de caja: vacío y completo se ven
+// idénticos cuando sólo se muestran los registros que hay.
+//
+// ── El estado lo decide la BASE ────────────────────────────────────────────
 // `abierta`, `proxima`, `vencida` y `hecha` vienen calculados contra la hora de
-// El Salvador. Calcularlos acá con la hora del navegador haría que un equipo
-// con el reloj corrido —o alguien mirando desde otro huso— viera abierta una
-// franja que ya venció, y anotara «a tiempo» algo que no lo está. El ítem
-// 6.1.14 del RTS pide que el registro sea CONTEMPORÁNEO; eso no se puede
-// verificar con un reloj que cada quien tiene distinto.
+// El Salvador. Con el reloj del navegador, un equipo con la hora corrida vería
+// abierta una franja vencida y anotaría «a tiempo» algo que no lo está — y el
+// ítem 6.1.14 del RTS pide que el registro sea CONTEMPORÁNEO.
 // ═══════════════════════════════════════════════════════════════════════════
-
-const ICONO_AREA = {
-    sala_ventas:        Store,
-    bodega:             Warehouse,
-    refrigerador:       Snowflake,
-    vitrinas:           LayoutPanelTop,
-    servicio_sanitario: Toilet,
-};
-
-// El aspecto de cada estado. Vive acá y no repartido por el JSX porque son
-// cuatro estados × dos bloques (lectura y limpieza) y desparramarlos garantiza
-// que uno quede distinto. Los tonos son los del canon de §5.1 —`success`,
-// `warning`, `danger`— no rótulos propios: `data-tono` es un contrato con
-// `index.css`, y un valor inventado no pinta nada y tampoco falla.
-const ASPECTO = {
-    hecha:   { tono: 'success', badge: 'success', rotulo: 'Anotada' },
-    abierta: { tono: 'warning', badge: 'warning', rotulo: 'Toca ahora' },
-    vencida: { tono: 'danger',  badge: 'danger',  rotulo: 'Se pasó la hora' },
-    proxima: { tono: undefined, badge: 'neutral', rotulo: 'Todavía no' },
-};
 
 const hhmm = (t) => String(t || '').slice(0, 5);
 
-const horaDe = (iso) => {
-    if (!iso) return '';
-    // La hora de captura se muestra en hora de El Salvador, que es la que tiene
-    // sentido al lado de una franja definida en hora de El Salvador.
-    const d = new Date(new Date(iso).getTime() - 6 * 3600_000);
-    return d.toISOString().slice(11, 16);
-};
+/** Una banda por momento, para el teléfono: qué falta y qué ya está. */
+function BandaDelMomento({ momento, areas, onRonda, puedeAnotar, cerrado }) {
+    const bloques = [];
+    for (const a of areas) {
+        const f = (a.franjas || []).find(x => x.clave === momento.clave);
+        if (f) bloques.push({ area: a, bloque: f, tipo: 'lectura' });
+        for (const t of a.limpiezas || []) {
+            if (t.desde === momento.desde) bloques.push({ area: a, bloque: t, tipo: 'limpieza' });
+        }
+    }
+    if (!bloques.length) return null;
 
-const num = (v) => (v === null || v === undefined ? null : Number(v));
-
-/** Una casilla de la grilla: la franja con su lectura, o el hueco. */
-function Casilla({ franja, area, puedeAnotar, cerrado, onAnotar, onCorregir }) {
-    const asp = ASPECTO[franja.estado] || ASPECTO.proxima;
-    const l = franja.lectura;
+    const hechos = bloques.filter(b => b.bloque.lectura || b.bloque.registro).length;
+    const vencidos = bloques.filter(b => b.bloque.estado === 'vencida' && !b.bloque.lectura && !b.bloque.registro).length;
+    const abiertos = bloques.filter(b => b.bloque.estado === 'abierta' && !b.bloque.lectura && !b.bloque.registro).length;
+    const completo = hechos === bloques.length;
 
     return (
-        <div data-surface="card" data-tono={asp.tono}
-            className="p-3 flex flex-col gap-2 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    <p className="text-body-sm font-bold text-content-1 truncate">{franja.label}</p>
-                    <p className="text-label text-content-3 tabular-nums">{hhmm(franja.desde)}–{hhmm(franja.hasta)}</p>
-                </div>
-                <Badge variant={asp.badge} size="sm" uppercase={false} className="shrink-0">{asp.rotulo}</Badge>
-            </div>
+        <section data-surface="card"
+            data-tono={completo ? 'success' : (abiertos ? 'warning' : (vencidos ? 'danger' : undefined))}
+            className="p-3 space-y-2">
+            <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <h3 className="text-body-sm font-black text-content">{momento.label}</h3>
+                <span className="text-label text-content-3 tabular-nums">
+                    {hhmm(momento.desde)}–{hhmm(momento.hasta)}
+                </span>
+                <span className="flex-1" />
+                <Badge size="sm" uppercase={false}
+                    icon={completo ? Check : Clock}
+                    variant={completo ? 'success' : (abiertos ? 'warning' : (vencidos ? 'danger' : 'neutral'))}>
+                    {hechos} de {bloques.length}
+                </Badge>
+            </header>
 
-            {l ? (
-                <>
-                    <div className="flex items-baseline gap-3">
-                        <span className={`text-title font-black tabular-nums ${l.fuera_de_rango ? 'text-danger-text' : 'text-content'}`}>
-                            {num(l.temperatura)}<span className="text-body-sm font-bold"> °C</span>
-                        </span>
-                        {l.humedad !== null && l.humedad !== undefined && (
-                            <span className="text-body-sm font-bold text-content-3 tabular-nums">
-                                {num(l.humedad)}% HR
+            {/* Lo hecho, apagado. Lo que falta, con nombre: es lo único que se
+                puede accionar. */}
+            <ul className="space-y-1">
+                {bloques.map(({ area, bloque, tipo }) => {
+                    const listo = bloque.lectura || bloque.registro;
+                    return (
+                        <li key={`${area.id}-${tipo}-${bloque.clave}`}
+                            className="flex items-center gap-2 text-body-sm">
+                            {listo
+                                ? <Check size={14} className="text-success-text shrink-0" />
+                                : <span className="size-3.5 rounded-full border-2 border-border-card shrink-0" />}
+                            <span className={`min-w-0 truncate ${listo ? 'text-content-3' : 'font-bold text-content-1'}`}>
+                                {area.nombre}
+                                {tipo === 'limpieza' && <span className="text-content-3"> · limpieza</span>}
                             </span>
-                        )}
-                    </div>
+                            {bloque.lectura && (
+                                <span className={`ml-auto text-body-sm font-black tabular-nums shrink-0 ${bloque.lectura.fuera_de_rango ? 'text-danger-text' : 'text-content-2'}`}>
+                                    {Number(bloque.lectura.temperatura)} °C
+                                </span>
+                            )}
+                        </li>
+                    );
+                })}
+            </ul>
 
-                    {/* Quién y a qué hora: el «atribuible» y el «contemporáneo»
-                        del RTS 6.1.14, uno al lado del otro. La marca de tarde
-                        no se esconde — es la mitad del valor del registro. */}
-                    <p className="text-label text-content-3 truncate">
-                        {l.registrado_por_nombre || 'Sin nombre'} · <span className="tabular-nums">{horaDe(l.registrado_at)}</span>
-                        {l.tarde && <span className="text-warning-text font-bold"> · fuera de hora</span>}
-                        {l.correcciones > 0 && <span> · {l.correcciones} corrección{l.correcciones > 1 ? 'es' : ''}</span>}
-                    </p>
-
-                    {l.fuera_de_rango && (
-                        <Notice variant="danger" compact icon={AlertTriangle}>
-                            {l.accion_correctiva || 'Fuera de rango sin acción anotada'}
-                        </Notice>
-                    )}
-
-                    {puedeAnotar && !cerrado && (
-                        <Button variant="ghost" size="sm" icon={Pencil} onClick={() => onCorregir(area, franja)}>
-                            Corregir
-                        </Button>
-                    )}
-                </>
-            ) : (
-                <>
-                    <p className="text-body-sm text-content-3">Sin lectura</p>
-                    {puedeAnotar && !cerrado && franja.estado !== 'proxima' && (
-                        <Button variant={franja.estado === 'abierta' ? 'primary' : 'secondary'} size="sm"
-                            icon={Thermometer} onClick={() => onAnotar(area, franja)}>
-                            Anotar
-                        </Button>
-                    )}
-                    {franja.estado === 'proxima' && (
-                        <p className="text-label text-content-3 flex items-center gap-1">
-                            <Clock size={12} /> Se habilita a las <span className="tabular-nums">{hhmm(franja.desde)}</span>
-                        </p>
-                    )}
-                </>
+            {puedeAnotar && !cerrado && !completo && (abiertos > 0 || vencidos > 0) && (
+                <Button variant={abiertos ? 'primary' : 'secondary'} size="sm" icon={ClipboardCheck}
+                    className="w-full" onClick={onRonda}>
+                    Anotar {bloques.length - hechos}
+                </Button>
             )}
-        </div>
-    );
-}
-
-/** El turno de limpieza. Misma anatomía, menos datos. */
-function CasillaLimpieza({ turno, area, puedeAnotar, cerrado, onAnotar }) {
-    const asp = ASPECTO[turno.estado] || ASPECTO.proxima;
-    const r = turno.registro;
-    return (
-        <div data-surface="card" data-tono={asp.tono} className="p-3 flex flex-col gap-2 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    <p className="text-body-sm font-bold text-content-1 truncate">{turno.label}</p>
-                    <p className="text-label text-content-3 tabular-nums">{hhmm(turno.desde)}–{hhmm(turno.hasta)}</p>
-                </div>
-                <Badge variant={asp.badge} size="sm" uppercase={false} className="shrink-0">{asp.rotulo}</Badge>
-            </div>
-            {r ? (
-                <>
-                    <p className="text-body-sm font-bold text-content flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="flex items-center gap-1.5">
-                            <Check size={14} className="text-success-text" /> Realizada
-                        </span>
-                        {/* Cuántos muebles se limpiaron de los que lleva el área.
-                            En rojo si faltó alguno: un registro que sólo sabe
-                            decir «sí» no prueba nada. */}
-                        <ResumenDePuntos registro={r} />
-                    </p>
-                    <p className="text-label text-content-3 truncate">
-                        {r.realizada_por_nombre || 'Sin nombre'} · <span className="tabular-nums">{horaDe(r.registrado_at)}</span>
-                        {r.tarde && <span className="text-warning-text font-bold"> · fuera de hora</span>}
-                    </p>
-                    {r.observaciones && <p className="text-label text-content-2">{r.observaciones}</p>}
-                </>
-            ) : (
-                <>
-                    <p className="text-body-sm text-content-3">Sin registrar</p>
-                    {puedeAnotar && !cerrado && turno.estado !== 'proxima' && (
-                        <Button variant={turno.estado === 'abierta' ? 'primary' : 'secondary'} size="sm"
-                            icon={Sparkles} onClick={() => onAnotar(area, turno)}>
-                            Registrar
-                        </Button>
-                    )}
-                </>
-            )}
-        </div>
+        </section>
     );
 }
 
 export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }) {
-    const [anotando, setAnotando]   = useState(null);   // { area, franja, lectura? }
+    const enTelefono = useMediaQuery(CORTE_TELEFONO);
+    const [anotando, setAnotando]   = useState(null);   // { area, franja, lectura?, valores? }
     const [limpiando, setLimpiando] = useState(null);   // { area, turno }
     const [enRonda, setEnRonda]     = useState(false);
 
     const cerrado = Boolean(dia?.cerrado);
 
-    const abrirAnotar   = useCallback((area, franja) => setAnotando({ area, franja, lectura: null }), []);
-    const abrirCorregir = useCallback((area, franja) => setAnotando({ area, franja, lectura: franja.lectura }), []);
+    const abrirCorregir = useCallback((area, franja) =>
+        setAnotando({ area, franja, lectura: franja.lectura }), []);
+    const abrirFueraDeRango = useCallback((area, franja, valores) =>
+        setAnotando({ area, franja, lectura: null, valores }), []);
     const abrirLimpieza = useCallback((area, turno) => setLimpiando({ area, turno }), []);
 
     const cerrar = useCallback((huboCambio) => {
@@ -195,22 +133,37 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
         if (huboCambio) onRecargar?.();
     }, [onRecargar]);
 
-    // `useMemo` y no `||` a secas: un array nuevo en cada render invalidaría el
-    // memo de abajo siempre, que es justo lo que el lint marca.
     const areas = useMemo(() => dia?.areas || [], [dia]);
+    const activas = useMemo(() => areas.filter(a => a.aplica_hoy !== false), [areas]);
+    const enPausa = useMemo(() => areas.filter(a => a.aplica_hoy === false), [areas]);
 
-    // Todo lo que se puede anotar ahora, en el orden de la caminata.
     const ronda = useMemo(() => bloquesDeLaRonda(dia), [dia]);
 
+    // Los momentos del día: la unión de las franjas de todas las áreas, por
+    // horario. Desde que el reloj es de la sucursal son los mismos para todas,
+    // pero se unen igual — la bodega central tiene los suyos y una sucursal
+    // puede quedar a medio configurar.
+    const momentos = useMemo(() => {
+        const mapa = new Map();
+        for (const a of activas) {
+            for (const f of a.franjas || []) {
+                if (!mapa.has(f.clave)) {
+                    mapa.set(f.clave, {
+                        clave: f.clave, label: f.label, desde: f.desde, hasta: f.hasta,
+                        ahora: f.estado === 'abierta',
+                    });
+                } else if (f.estado === 'abierta') {
+                    mapa.get(f.clave).ahora = true;
+                }
+            }
+        }
+        return [...mapa.values()].sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
+    }, [activas]);
+
     // ── `?ronda=1` abre la vuelta sin pasar por la grilla ───────────────────
-    // Lo usan el atajo del Inicio y el aviso de franja por vencerse. Sin esto,
-    // el aviso deja a la persona mirando la grilla y todavía tiene que
-    // encontrar el botón — que es justo el paso que el aviso venía a evitar.
-    //
-    // El parámetro se CONSUME: si se quedara en la dirección, cerrar el
-    // diálogo lo volvería a abrir en el render siguiente. Y se espera a que el
-    // día esté cargado, porque antes la lista está vacía y no habría nada que
-    // abrir.
+    // Lo usan el atajo del Inicio y el aviso de franja por vencerse. El
+    // parámetro se CONSUME: si se quedara, cerrar el diálogo lo volvería a
+    // abrir en el render siguiente.
     const [params, setParams] = useSearchParams();
     const pidenRonda = params.get('ronda') === '1';
     useEffect(() => {
@@ -220,27 +173,11 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
         if (puedeAnotar && !cerrado && ronda.length > 0) setEnRonda(true);
     }, [pidenRonda, cargando, puedeAnotar, cerrado, ronda.length, setParams]);
 
-    // Las áreas que hoy no aplican se muestran aparte, pero se muestran: que no
-    // aparecieran sería esconder una parte de la sala, y el día que alguien
-    // configure mal los días de la semana nadie lo notaría.
-    //
-    // Y las que SÓLO se limpian —vitrinas, servicio sanitario— van a un bloque
-    // compacto al final. Cada una es un área de verdad, con su cumplimiento
-    // propio y su tabla en el mes impreso, pero darle a cada una un encabezado
-    // grande y una fila entera para una casilla desplaza hacia abajo justo lo
-    // que se abre esta pantalla a hacer: las lecturas de temperatura.
-    const { conLecturas, deLimpieza, enPausa } = useMemo(() => ({
-        conLecturas: areas.filter(a => a.aplica_hoy !== false && !soloLimpieza(a)),
-        deLimpieza:  areas.filter(a => a.aplica_hoy !== false && soloLimpieza(a)),
-        enPausa:     areas.filter(a => a.aplica_hoy === false),
-    }), [areas]);
-
     if (cargando) return <LoadingState label="Cargando la bitácora del día…" />;
 
     // Un rechazo de permiso NO se puede ver como una lista vacía: quien lo sufre
-    // sólo puede reportar «me sale vacía», que es exactamente lo que pasó con el
-    // módulo `sesiones` (§2-bis del checklist de vista nueva). El 42501 tiene
-    // arreglo concreto y por eso se nombra.
+    // sólo puede reportar «me sale vacía». El 42501 tiene arreglo concreto y por
+    // eso se nombra.
     if (error) {
         return (
             <Notice variant="danger" icon={AlertTriangle}>
@@ -260,121 +197,43 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
     }
 
     return (
-        <div className="space-y-5">
-            {cerrado && (
-                <Notice variant="info">
-                    Este mes ya está cerrado y firmado. Para anotar o corregir algo hay que reabrirlo
-                    desde Cierre de mes, y esa reapertura queda registrada.
-                </Notice>
-            )}
-
-            {/* ── Pasar la ronda ────────────────────────────────────────
-                Medido el 2026-08-25 sobre los primeros 576 registros: el 68% se
-                anotó a menos de tres minutos del anterior, con 29 segundos de
-                promedio. La sala ya camina la vuelta entera de un tirón; esto
-                le da UNA pantalla para toda la vuelta en vez de trece diálogos.
-
-                Aparece con dos o más pendientes: con uno solo, el botón de esa
-                casilla ya está ahí y un segundo camino hacia lo mismo sería
-                ruido. */}
-            {puedeAnotar && !cerrado && ronda.length > 1 && (
-                <div data-surface="card" data-tono="warning"
-                    className="p-3 flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                        <p className="text-body-sm font-bold text-content-1">
-                            Hay {ronda.length} registros para anotar
-                        </p>
-                        <p className="text-label text-content-3">
-                            Se llenan todos de una vez, en el orden en que se camina la sala.
-                        </p>
-                    </div>
-                    <Button variant="primary" icon={ClipboardCheck} onClick={() => setEnRonda(true)}>
-                        Pasar la ronda
-                    </Button>
-                </div>
-            )}
-
-            {conLecturas.map((area) => {
-                const Icono = ICONO_AREA[area.tipo] || Thermometer;
-                return (
-                    <section key={area.id} className="space-y-3">
-                        <header className="flex flex-wrap items-center gap-2">
-                            <span className="grid place-items-center size-8 rounded-btn bg-brand/10 text-brand-text shrink-0">
-                                <Icono size={16} />
-                            </span>
-                            <h3 className="text-body-lg font-black text-content">{area.nombre}</h3>
-                            <Badge variant="neutral" size="sm" uppercase={false}>{TIPO_AREA[area.tipo] || area.tipo}</Badge>
-                            <Badge variant="chart-1" size="sm" uppercase={false}>{rotularRango(area)}</Badge>
-                            {area.mide_humedad && (
-                                <Badge variant="neutral" size="sm" uppercase={false} icon={Droplets}>humedad</Badge>
-                            )}
-                            {/* La calibración vencida es un ítem CRÍTICO (RTS
-                                5.6.14) y no lo vigila nadie más: si el aviso no
-                                está pegado al área, no se ve nunca. */}
-                            {area.calibracion_vencida && (
-                                <Badge variant="danger" size="sm" uppercase={false}>Calibración vencida</Badge>
-                            )}
-                        </header>
-
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            {(area.franjas || []).map((f) => (
-                                <Casilla key={f.clave} franja={f} area={area}
-                                    puedeAnotar={puedeAnotar} cerrado={cerrado}
-                                    onAnotar={abrirAnotar} onCorregir={abrirCorregir} />
-                            ))}
-                        </div>
-
-                        {(area.limpiezas || []).length > 0 && (
-                            <>
-                                <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5 pt-1">
-                                    <Sparkles size={13} /> Limpieza y orden
-                                </p>
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                    {area.limpiezas.map((t) => (
-                                        <CasillaLimpieza key={t.clave} turno={t} area={area}
-                                            puedeAnotar={puedeAnotar} cerrado={cerrado}
-                                            onAnotar={abrirLimpieza} />
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </section>
-                );
-            })}
-
-            {deLimpieza.length > 0 && (
-                <section className="space-y-3">
-                    <p className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-                        <Sparkles size={13} /> Sólo limpieza
-                    </p>
-                    {deLimpieza.map((area) => {
-                        const Icono = ICONO_AREA[area.tipo] || Sparkles;
-                        return (
-                            <div key={area.id} className="space-y-2">
-                                <header className="flex flex-wrap items-center gap-2">
-                                    <span className="grid place-items-center size-7 rounded-btn bg-brand/10 text-brand-text shrink-0">
-                                        <Icono size={14} />
-                                    </span>
-                                    <h3 className="text-body font-black text-content">{area.nombre}</h3>
-                                </header>
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                    {(area.limpiezas || []).map((t) => (
-                                        <CasillaLimpieza key={t.clave} turno={t} area={area}
-                                            puedeAnotar={puedeAnotar} cerrado={cerrado}
-                                            onAnotar={abrirLimpieza} />
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </section>
+        <div className="space-y-4">
+            {enTelefono ? (
+                <>
+                    {momentos.map(m => (
+                        <BandaDelMomento key={m.clave} momento={m} areas={activas}
+                            puedeAnotar={puedeAnotar} cerrado={cerrado}
+                            onRonda={() => setEnRonda(true)} />
+                    ))}
+                    {/* Las áreas de sólo limpieza cuyos turnos no caen en ningún
+                        momento de temperatura quedarían invisibles: su vuelta es
+                        la ronda, y este botón la abre igual. */}
+                    {puedeAnotar && !cerrado && ronda.length > 0 && (
+                        <Button variant="primary" icon={ClipboardCheck} className="w-full"
+                            onClick={() => setEnRonda(true)}>
+                            Pasar la ronda · {ronda.length}
+                        </Button>
+                    )}
+                </>
+            ) : (
+                <MatrizDelDia
+                    dia={dia} areas={activas} momentos={momentos}
+                    puedeAnotar={puedeAnotar} cerrado={cerrado}
+                    pendientes={ronda.length}
+                    onRecargar={onRecargar}
+                    onCorregir={abrirCorregir}
+                    onFueraDeRango={abrirFueraDeRango}
+                    onDetalleLimpieza={abrirLimpieza}
+                    onRonda={() => setEnRonda(true)}
+                />
             )}
 
             {enPausa.length > 0 && (
-                <Notice variant="info" compact>
+                <p className="text-label text-content-3 flex items-center gap-1.5">
+                    <Sparkles size={12} />
                     Hoy no se lleva bitácora en {enPausa.map(a => a.nombre).join(', ')} — así está
-                    configurada el área. Los días que no aplican no cuentan como faltantes al cerrar el mes.
-                </Notice>
+                    configurada el área. No cuentan como faltantes al cerrar el mes.
+                </p>
             )}
 
             {enRonda && (
@@ -385,6 +244,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                     area={anotando.area}
                     franja={anotando.franja}
                     lectura={anotando.lectura}
+                    valores={anotando.valores}
                     fecha={dia.fecha}
                     onCerrar={cerrar}
                 />

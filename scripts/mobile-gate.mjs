@@ -113,6 +113,9 @@ const EXCEPCIONES = {
     // columnas —una matriz—, el modo ficha no tiene qué mostrar: una ficha por
     // fila repetiría el nombre de la fila y listaría las columnas debajo, que es
     // exactamente la tabla otra vez, más larga.
+    'src/components/bitacoras/MatrizDelDia.jsx': {
+        'tabla-a-mano': 'La matriz del día: la fila es un ÁREA cruzada con los momentos del día, no un registro que se pueda abrir. Una ficha por área repetiría el nombre y listaría los momentos debajo — que es la tabla otra vez, más larga. En el teléfono no se muestra: `TabHoy` cambia a bandas por momento con el corte canónico (`CORTE_TELEFONO`), que es la vuelta tal como se camina.',
+    },
     'src/views/EncuestaView.jsx': {
         'tabla-a-mano': 'Las tres son matrices de la encuesta: la fila es un bloque cruzado con dos poblaciones (jefes y colaboradores) más su diferencia en puntos. La fila no es un registro que se pueda abrir.',
     },

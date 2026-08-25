@@ -25,11 +25,17 @@ import { corregirLectura, registrarLectura, rotularRango } from '../../data/bita
 
 const hhmm = (t) => String(t || '').slice(0, 5);
 
-export default function AnotarLectura({ area, franja, lectura, fecha, onCerrar }) {
+export default function AnotarLectura({ area, franja, lectura, fecha, valores, onCerrar }) {
     const corrigiendo = Boolean(lectura);
 
-    const [temp, setTemp]       = useState(() => (lectura?.temperatura != null ? String(Number(lectura.temperatura)) : ''));
-    const [hum, setHum]         = useState(() => (lectura?.humedad != null ? String(Number(lectura.humedad)) : ''));
+    // `valores` llega cuando el diálogo se abre DESDE la grilla porque la
+    // temperatura tecleada ahí quedó fuera de rango: lo escrito viaja con él en
+    // vez de perderse. Sin esto, la persona teclea 33.5, el portal le dice que
+    // hay que anotar qué se hizo, y le pide el número otra vez.
+    const [temp, setTemp]       = useState(() => valores?.temp
+        ?? (lectura?.temperatura != null ? String(Number(lectura.temperatura)) : ''));
+    const [hum, setHum]         = useState(() => valores?.hum
+        ?? (lectura?.humedad != null ? String(Number(lectura.humedad)) : ''));
     const [accion, setAccion]   = useState(() => lectura?.accion_correctiva || '');
     const [motivo, setMotivo]   = useState('');
     const [guardando, setGuardando] = useState(false);

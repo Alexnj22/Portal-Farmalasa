@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.1 — El conteo cíclico dejó de trabar el portal entero
+
+Reporte del usuario: *«estoy teniendo problemas con los datos Timed out
+acquiring connection from connection pool»*.
+
+Ese mensaje no lo escribe la base: lo escribe PostgREST cuando su pool se llena
+y una petición espera turno hasta rendirse. Y no se habían acabado las
+conexiones —43 de 60, cero esperando lock— así que el portal caído no era un
+problema de capacidad. **Era una sola función.**
+
+`get_conteo_products_count` llevaba **3,546 llamadas × 5,549 ms = 19,678
+segundos de base en cinco días**: trece veces la siguiente de la lista, y el 92%
+del costo de todas las consultas del portal juntas. Cada cambio de página,
+búsqueda o filtro del conteo cíclico dispara una.
+
+**La causa no estaba en la consulta, estaba en su envoltorio.** La función era
+`LANGUAGE sql` **con `SET search_path`**, que es la peor combinación posible: el
+`SET` impide que Postgres la inlinee, y entonces el cuerpo se planifica una sola
+vez con los argumentos como parámetros, sin llegar a ver nunca los valores. El
+planificador estima el CTE `base` en ~1 fila y elige nested loops sobre CTE
+scans — **~21 millones de comparaciones** donde el plan que conoce los
+argumentos hace dos hash joins.
+
+Medido sobre el conteo abierto (3,407 renglones), intercalado bajo la misma
+carga: **2,606 ms de mediana contra 56 ms**. Cuarenta y seis veces.
+
+Lo que hace grave a un número así no es el conteo: es el **pool**. Una llamada
+de 2.6 s ocupa una ranura de PostgREST 46 veces más tiempo, así que **dos
+personas paginando bastaban para llenarlo**. A partir de ahí toda petición del
+portal esperaba turno detrás y se rendía a los 70 segundos. Eso fue el corte de
+las 14:25–14:32: **161 peticiones caídas** —roles, notificaciones, bolsas,
+bitácoras, permisos— y ninguna de ellas tenía nada malo. El síntoma no señalaba
+al culpable en ningún lado.
+
+**El arreglo obvio no alcanzaba.** `plan_cache_mode = 'force_custom_plan'` a
+secas se probó sobre la función tal cual estaba y quedó igual (2,025 contra
+1,969 ms): mientras sea `LANGUAGE sql` no existe el plan personalizado que
+pedir. Hay que pasarla a `plpgsql`, que sí entra al caché de planes. Es el mismo
+arreglo que llevan `get_ventas_con_receta` y `get_ventas_receta_stats` desde el
+17 de agosto, por esta misma causa — la trampa ya estaba escrita en CLAUDE.md y
+aun así la función nació con ella.
+
+**El cuerpo no cambió: ni una línea.** Lo único que cambia es el plan, y un plan
+distinto de la misma consulta devuelve las mismas filas. Verificado igual antes
+de aplicar, con la candidata creada como función temporal de sesión: **21 de 21
+combinaciones devolvieron el número idéntico** — los 4 filtros × 3 áreas, 6
+búsquedas (nula, vacía, sin resultados, con tildes) y 3 laboratorios.
+
+Un detalle que confirma el diagnóstico y conviene tener presente: en el área de
+vencidos (77 productos) las dos versiones tardan lo mismo, 65 ms. **El plan
+genérico sólo duele cuando el conjunto es grande.** Por eso esto no se vio hasta
+que hubo un conteo de 3,407 renglones abierto, y por eso iba a volver solo en el
+próximo conteo grande.
+
+Quedan **69 funciones `LANGUAGE sql` con parámetros y CTEs** sin esta
+protección. Las siguientes por costo son `get_faltantes_con_stock_en_otra_sala`
+(1,540 s), `get_product_sales_agg` (712 s) y `get_puntos_canjeados` (504 s) — un
+orden de magnitud abajo, pero con el mismo defecto esperando su conteo grande.
+
 ## v2.767.0 — El carné de quien entrega ya no traba el recorrido
 
 Reporte del usuario, parado en La Popular: *«si me voy a llevar un producto de

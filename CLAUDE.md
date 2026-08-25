@@ -282,9 +282,10 @@ convenga automatizar.
 **Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
 final de este archivo): `npm run dev:staging`.
 
-**Una función con parámetros se mide SEIS veces, no una** (2026-08-17). Tres
-trampas de planificación, las tres descubiertas midiendo `get_ventas_receta_stats`
-y ninguna visible leyendo el SQL:
+**Una función con parámetros se mide SEIS veces, no una** (2026-08-17). Cuatro
+trampas de planificación, ninguna visible leyendo el SQL — las tres primeras
+midiendo `get_ventas_receta_stats`, la cuarta el 2026-08-25 después de que
+tumbara el portal entero:
 
 1. **`plpgsql` cambia al plan GENÉRICO en la sexta ejecución.** Las cinco
    primeras llamadas daban 24 ms y la sexta 1,089 ms, con los mismos argumentos.
@@ -294,14 +295,56 @@ y ninguna visible leyendo el SQL:
    'force_custom_plan'`. Cuesta ~3 ms de planificación. Una función que se
    probó una vez y anda "bien" puede estar degradada en producción desde la
    sexta llamada de cada conexión.
-2. **`LANGUAGE sql` se INLINEA en quien la llama y aplana sus CTE.** Mismo
-   cuerpo: 1,011 ms inlineado contra 34 ms con `PREPARE`. `plpgsql` no se
-   inlinea nunca — por eso `get_ventas_con_puntos` y las gemelas de receta lo
-   son. `EXECUTE` dinámico además replanifica siempre, así que tampoco sufre (1).
+2. **`LANGUAGE sql` se INLINEA en quien la llama y aplana sus CTE —
+   *si no tiene cláusula `SET`*.** Mismo cuerpo: 1,011 ms inlineado contra 34 ms
+   con `PREPARE`. `plpgsql` no se inlinea nunca — por eso `get_ventas_con_puntos`
+   y las gemelas de receta lo son. `EXECUTE` dinámico además replanifica siempre,
+   así que tampoco sufre (1). **Esa condición del `SET` es la trampa 4.**
 3. **Un `EXISTS` correlacionado fija la dirección del join.** `EXISTS (… WHERE
    ii.invoice_id = si.id …)` obliga a entrar por las 180,000 facturas del año;
    el mismo predicado como `si.id IN (SELECT ii.invoice_id …)` deja al
    planificador entrar por los 4,013 renglones. 8,471 ms → 31 ms.
+4. **`LANGUAGE sql` CON `SET search_path` es la peor combinación posible, y es
+   la que manda escribir la regla 4 de este archivo.** El `SET` la vuelve
+   opaca —no se inlinea, o sea que (2) no aplica— y además su cuerpo se
+   planifica **una sola vez con los argumentos como `Params`**: nunca ve un
+   valor. No es que caiga al plan genérico en la sexta llamada como (1): **nace
+   genérica y no hay plan personalizado que pedir.**
+
+   Medido en `get_conteo_products_count` el 2026-08-25, intercalado bajo la
+   misma carga: **2,606 ms contra 56 ms** del mismo cuerpo con literales. El
+   planificador estimaba un CTE en ~1 fila y elegía *nested loops sobre CTE
+   scans* — ~21 millones de comparaciones donde el plan bueno hace dos hash
+   joins.
+
+   Dos cosas que **parecen** la corrección y NO lo son, las dos medidas:
+   - **`MATERIALIZED` como cerca no alcanza.** Esa función ya tenía CINCO CTE
+     materializados. La cerca fija el orden de join *a través* de ella; no le
+     arregla la estimación de filas al CTE.
+   - **`plan_cache_mode = 'force_custom_plan'` a secas no hace nada** (2,025 vs
+     1,969 ms). Sin caché de planes, el modo no tiene sobre qué actuar.
+
+   **La corrección es pasarla a `plpgsql`** —que sí entra al caché— y *ahí* sí
+   `SET plan_cache_mode TO 'force_custom_plan'`. El cuerpo no se toca.
+
+   **El tell que ahorra el diagnóstico:** lenta **desde la primera llamada** de
+   toda sesión = es `LANGUAGE sql`, nunca tuvo plan personalizado. Lenta **desde
+   la sexta** = es (1).
+
+   Y el daño no se queda en su pantalla: una lectura de 2.6 s ocupa una ranura
+   del pool de PostgREST 46× más tiempo, así que **dos personas paginando lo
+   llenan** y todo el portal empieza a devolver 504 *Timed out acquiring
+   connection from connection pool* — que nombra conexiones y manda a mirar
+   donde no está el problema. Ver
+   [[feedback_una_consulta_lenta_de_lectura_tumba_el_portal_entero]].
+
+   El barrido de las restantes está en
+   `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`, **y su primera conclusión es que
+   NO se barren**: al medirlas fuera de la ventana del corte, de 19 «caras» sólo
+   tres lo eran. Un promedio de `pg_stat_statements` sobre una ventana con
+   saturación de pool dice quién **esperaba**, no quién estaba **lento**. Y la
+   corrección cuesta +0.54 ms de planificación por llamada, así que en una
+   función barata y frecuente es una **regresión**.
 
 Y **medir con `EXPLAIN (ANALYZE, TIMING OFF)`**: con el timing encendido, la
 instrumentación de un nested loop de 3,655 vueltas inventó 1,146 ms sobre un

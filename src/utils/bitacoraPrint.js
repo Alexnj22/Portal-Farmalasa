@@ -199,7 +199,16 @@ function tablaLimpieza(area) {
         const celdas = turnos.map((t) => {
             const li = (d.limpiezas || []).find(x => x.turno === t.clave);
             if (!li || !li.hecha) return '<td class="falta">—</td>';
-            return `<td class="c">✓<br/><span class="quien">${esc(li.por || '')}${
+            // Cuántos muebles de los que lleva el área. El papel dice el
+            // NÚMERO y, si faltó alguno, su nombre: un «3 de 4» sin decir cuál
+            // obliga a ir a buscarlo a otro lado, y el inspector está parado
+            // enfrente de la vitrina.
+            const total = li.puntos_total ?? 0;
+            const detalle = total
+                ? `<br/><span class="quien">${li.puntos_hechos ?? 0} de ${total}</span>` : '';
+            const faltantes = (li.puntos_faltantes || []).length
+                ? `<br/><span class="quien">falta: ${esc((li.puntos_faltantes || []).join(', '))}</span>` : '';
+            return `<td class="c">✓${detalle}${faltantes}<br/><span class="quien">${esc(li.por || '')}${
                 li.observaciones ? `<br/>${esc(li.observaciones)}` : ''}</span></td>`;
         }).join('');
         return `<tr><td>${esc(diaCorto(d.dia))}</td>${celdas}</tr>`;
@@ -207,7 +216,11 @@ function tablaLimpieza(area) {
     return `<h3>Limpieza y orden — ${esc(area.nombre)}</h3>
     <table><thead><tr><th>Día</th>${cabezas}</tr></thead>
     <tbody>${filas || `<tr><td colspan="${turnos.length + 1}">Sin días en el período</td></tr>`}</tbody></table>
-    <p class="nota">— = sin registrar.</p>`;
+    <p class="nota">— = sin registrar.${
+        (area.puntos || []).length
+            ? ` El área lleva ${(area.puntos || []).length} muebles: ${
+                esc((area.puntos || []).map(p => p.label).join(', '))}.`
+            : ''}</p>`;
 }
 
 /** El libro foliado. */

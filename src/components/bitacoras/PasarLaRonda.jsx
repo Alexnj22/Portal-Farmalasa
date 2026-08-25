@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, MessageSquarePlus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, LayoutPanelTop } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, MessageSquarePlus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, LayoutPanelTop } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
@@ -7,6 +7,7 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
+import { ListaDePuntos } from './PuntosDeLimpieza';
 import { fueraDeRango, registrarRonda, rotularRango } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -117,11 +118,24 @@ function RenglonLectura({ item, valor, onCambio, errorServidor }) {
     );
 }
 
-/** Un renglón de limpieza: una casilla, y la nota sólo si hace falta. */
+/** Un renglón de limpieza: una casilla, sus muebles, y la nota si hace falta. */
 function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
     const { area, bloque } = item;
     const Icono = ICONO_AREA[area.tipo] || Sparkles;
     const [conNota, setConNota] = useState(false);
+    const [abierto, setAbierto] = useState(false);
+
+    const puntos = area.puntos || [];
+    const marcadas = valor.puntos || new Set();
+    const faltan = puntos.length - [...marcadas].filter(c => puntos.some(p => p.clave === c)).length;
+
+    // Marcar el turno marca TODOS sus muebles: el día normal es que se limpió
+    // todo, y ése no puede costar seis toques. Lo que faltó se desmarca abriendo
+    // el detalle — la excepción es la que merece el trabajo.
+    const alternarTurno = (marcada) => onCambio({
+        marcada,
+        puntos: marcada ? new Set(puntos.map(p => p.clave)) : new Set(),
+    });
 
     return (
         <>
@@ -129,7 +143,7 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
                 <Checkbox
                     name={`limpieza-${item.clave}`}
                     checked={Boolean(valor.marcada)}
-                    onChange={(marcada) => onCambio({ marcada })}
+                    onChange={alternarTurno}
                     label={
                         <span className="flex items-center gap-1.5">
                             <Icono size={13} className="text-content-3 shrink-0" />
@@ -138,11 +152,27 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
                         </span>
                     }
                 />
-                {valor.marcada && !conNota && (
-                    <Button variant="ghost" size="sm" iconOnly icon={MessageSquarePlus}
-                        title="Anotar algo" onClick={() => setConNota(true)} />
-                )}
+                <div className="flex items-center gap-1 shrink-0">
+                    {valor.marcada && puntos.length > 0 && (
+                        <Button variant="ghost" size="sm"
+                            icon={abierto ? ChevronDown : ChevronRight}
+                            onClick={() => setAbierto(a => !a)}>
+                            <span className={`tabular-nums ${faltan ? 'text-danger-text font-black' : ''}`}>
+                                {puntos.length - faltan} de {puntos.length}
+                            </span>
+                        </Button>
+                    )}
+                    {valor.marcada && !conNota && (
+                        <Button variant="ghost" size="sm" iconOnly icon={MessageSquarePlus}
+                            title="Anotar algo" onClick={() => setConNota(true)} />
+                    )}
+                </div>
             </div>
+
+            {valor.marcada && abierto && puntos.length > 0 && (
+                <ListaDePuntos compacta puntos={puntos} marcadas={marcadas}
+                    onCambiar={(s) => onCambio({ puntos: s })} />
+            )}
 
             {/* La nota es opcional a propósito: la norma pide el REGISTRO de la
                 limpieza, no su descripción, y un campo obligatorio que no aporta
@@ -217,10 +247,12 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
                     accion: String(v.accion || '').trim() || null,
                 });
             } else if (v.marcada) {
+                const suyos = it.area.puntos || [];
                 salida.push({
                     clave: it.clave, tipo: 'limpieza', area_id: it.area.id, fecha,
                     turno: it.bloque.clave,
                     observaciones: String(v.obs || '').trim() || null,
+                    puntos: suyos.map(p => ({ clave: p.clave, hecho: (v.puntos || new Set()).has(p.clave) })),
                 });
             }
         }

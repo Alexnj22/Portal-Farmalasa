@@ -8,6 +8,7 @@ import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
 import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
+import { ResumenDePuntos } from '../../components/bitacoras/PuntosDeLimpieza';
 import { TIPO_AREA, bloquesDeLaRonda, rotularRango, soloLimpieza } from '../../data/bitacoras';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -146,8 +147,14 @@ function CasillaLimpieza({ turno, area, puedeAnotar, cerrado, onAnotar }) {
             </div>
             {r ? (
                 <>
-                    <p className="text-body-sm font-bold text-content flex items-center gap-1.5">
-                        <Check size={14} className="text-success-text" /> Realizada
+                    <p className="text-body-sm font-bold text-content flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="flex items-center gap-1.5">
+                            <Check size={14} className="text-success-text" /> Realizada
+                        </span>
+                        {/* Cuántos muebles se limpiaron de los que lleva el área.
+                            En rojo si faltó alguno: un registro que sólo sabe
+                            decir «sí» no prueba nada. */}
+                        <ResumenDePuntos registro={r} />
                     </p>
                     <p className="text-label text-content-3 truncate">
                         {r.realizada_por_nombre || 'Sin nombre'} · <span className="tabular-nums">{horaDe(r.registrado_at)}</span>

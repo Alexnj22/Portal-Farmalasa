@@ -8,6 +8,7 @@ import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import EditorDeHorarios from '../../components/bitacoras/EditorDeHorarios';
+import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
 import { PLANTILLA_AREA, TIPO_AREA, areaNueva, crearArea, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -53,6 +54,7 @@ function Area({ area, puedeEditar, onGuardado }) {
     const [calibrado, setCalibrado] = useState(area.calibrado_hasta || '');
     const [franjas, setFranjas] = useState(() => area.franjas || []);
     const [limpiezas, setLimpiezas] = useState(() => area.limpiezas || []);
+    const [puntos, setPuntos] = useState(() => area.puntos || []);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
     const [ok, setOk] = useState(false);
@@ -62,10 +64,11 @@ function Area({ area, puedeEditar, onGuardado }) {
     // sería la misma cuenta escrita más larga.
     const horariosSucios = JSON.stringify(franjas) !== JSON.stringify(area.franjas || [])
         || JSON.stringify(limpiezas) !== JSON.stringify(area.limpiezas || []);
+    const puntosSucios = JSON.stringify(puntos) !== JSON.stringify(area.puntos || []);
     const sucio = activa !== area.activa
         || instrumento !== (area.instrumento || '')
         || calibrado !== (area.calibrado_hasta || '')
-        || horariosSucios;
+        || horariosSucios || puntosSucios;
 
     // El CHECK de la base lo dice también, pero acá se puede decir con palabras:
     // un área encendida sin nada que registrar no tiene sentido, y el error de
@@ -81,6 +84,7 @@ function Area({ area, puedeEditar, onGuardado }) {
             calibrado_hasta: calibrado || null,
             franjas,
             limpiezas,
+            puntos,
         });
         setGuardando(false);
         if (err) { setError(err); return; }
@@ -94,11 +98,11 @@ function Area({ area, puedeEditar, onGuardado }) {
             // Los horarios entran en la bitácora de auditoría enteros: son
             // exactamente lo que decide qué se le va a exigir a la sala, y un
             // «se cambió la configuración» sin decir a qué no sirve de nada.
-            franjas, limpiezas,
+            franjas, limpiezas, puntos,
         });
         setOk(true);
         onGuardado?.();
-    }, [area.id, area.nombre, activa, instrumento, calibrado, franjas, limpiezas, onGuardado]);
+    }, [area.id, area.nombre, activa, instrumento, calibrado, franjas, limpiezas, puntos, onGuardado]);
 
     const vencida = area.calibrado_hasta && area.calibrado_hasta < new Date().toISOString().slice(0, 10);
 
@@ -171,6 +175,13 @@ function Area({ area, puedeEditar, onGuardado }) {
                         <EditorDeHorarios tipo="franjas" filas={franjas} onCambiar={setFranjas} />
                     )}
                     <EditorDeHorarios tipo="limpiezas" filas={limpiezas} onCambiar={setLimpiezas} />
+
+                    {/* Los muebles sólo tienen sentido si el área se limpia:
+                        una lista de vitrinas en un área sin turno de limpieza
+                        no la vería nadie. */}
+                    {limpiezas.length > 0 && (
+                        <PuntosDeLimpieza puntos={puntos} onCambiar={setPuntos} />
+                    )}
 
                     {horariosSucios && (
                         <Notice variant="warning" compact>

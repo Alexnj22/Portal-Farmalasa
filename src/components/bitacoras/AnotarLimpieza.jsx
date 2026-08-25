@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
+import { ListaDePuntos } from './PuntosDeLimpieza';
 import { registrarLimpieza } from '../../data/bitacoras';
 
 // Registrar la limpieza de un turno.
@@ -18,6 +19,11 @@ const hhmm = (t) => String(t || '').slice(0, 5);
 
 export default function AnotarLimpieza({ area, turno, fecha, onCerrar }) {
     const [obs, setObs] = useState('');
+    // Arranca con TODO marcado: el día normal es que se limpió todo, y en ese
+    // día esto son cero toques. Lo que no se hizo se desmarca, que es la
+    // excepción y es la que merece el trabajo.
+    const puntos = useMemo(() => area?.puntos || [], [area]);
+    const [marcadas, setMarcadas] = useState(() => new Set(puntos.map(p => p.clave)));
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
 
@@ -26,11 +32,12 @@ export default function AnotarLimpieza({ area, turno, fecha, onCerrar }) {
         setGuardando(true);
         const { error: err } = await registrarLimpieza({
             areaId: area.id, fecha, turno: turno.clave, observaciones: obs,
+            puntos: puntos.map(p => ({ clave: p.clave, hecho: marcadas.has(p.clave) })),
         });
         setGuardando(false);
         if (err) { setError(err); return; }
         onCerrar(true);
-    }, [area, fecha, turno, obs, onCerrar]);
+    }, [area, fecha, turno, obs, puntos, marcadas, onCerrar]);
 
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
@@ -52,10 +59,14 @@ export default function AnotarLimpieza({ area, turno, fecha, onCerrar }) {
                     </span>
                 </Notice>
 
+                {puntos.length > 0 && (
+                    <ListaDePuntos puntos={puntos} marcadas={marcadas} onCambiar={setMarcadas} />
+                )}
+
                 <PortalTextarea
                     label="Observaciones (opcional)" name="observaciones"
                     value={obs} onChange={(e) => setObs(e.target.value)}
-                    rows={3}
+                    rows={2} compact
                     placeholder="Sólo si hay algo que anotar: una gotera, una vitrina que hubo que reacomodar…"
                 />
 

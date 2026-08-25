@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.760.0 — La limpieza dice qué vitrina y qué estante se limpió
+
+Pedido del usuario: *«en configuración se debe poder configurar cuántas vitrinas
+tiene la sucursal y cuántos estantes. así al desplegar la limpieza se marcan las
+que se limpiaron. o una marca para marcar todas como limpiadas»*.
+
+**Antes de construirlo, qué exige la norma** — porque decide la forma. Se leyeron
+los dos documentos completos: **nada** en el RTS 11.02.04:24 ni en la Guía de
+Verificación de la SRS pide identificar el mueble. Lo que exigen es un
+**procedimiento por escrito** «aplicable a las áreas **y mobiliario**» (RTS
+6.1.11 / guía 1.11, MAYOR), **autorizado por el regente** (6.1.12), con sus
+**registros** (5.5.5), y que el local **se observe limpio** (guía 2.11,
+CRÍTICO). Si el registro es digital: ALCOA y procedimiento de supervisión del
+sistema (6.1.14 y 6.1.15).
+
+O sea que el detalle no lo manda la SRS: lo manda el procedimiento de la
+empresa. Y de ahí sale la regla que ordena el diseño — **el registro tiene que
+poder mostrar lo que el procedimiento promete**. Si el escrito que firmó el
+regente nombra cuatro vitrinas, «Vitrinas ✓» no alcanza cuando el inspector
+cruza los dos papeles. Por eso **es opcional**: un área sin muebles configurados
+sigue siendo una casilla sola, como hasta hoy.
+
+**En Configuración**, cada área con limpieza tiene «Qué se limpia»: dos
+contadores —**Vitrinas** y **Estantes**—, «Agregar otro mueble» para lo que no
+es ninguno de los dos (el mostrador, el refrigerador), y el nombre de cada uno
+editable. Se pide un número porque así se piensa el mobiliario de una sala; lo
+que se guarda es una **lista con clave estable**, por el mismo motivo que las
+franjas: con un número la clave sería la posición, y bajar el contador de 3 a 2
+haría que el registro de ayer hablara de otro mueble.
+
+**Al anotar**, la lista sale con **todo marcado** y arriba de todo está «Marcar
+todas»: el día normal es que se limpió todo, y ese día no puede costar seis
+toques. Lo que faltó se desmarca. En la ronda, la casilla del turno marca sus
+muebles de una y un «3 de 4» en rojo abre el detalle.
+
+**Lo que NO se marcó queda escrito como no hecho, no como ausente.** El registro
+lo arma la base cruzando lo que llega contra la lista del área: un renglón por
+cada mueble, con su `hecho` en verdadero o falso. Si se copiara lo que manda el
+navegador, «la cuarta no se limpió» y «la cuarta no se mandó» serían el mismo
+dato — y ésa es exactamente la diferencia que busca un inspector. Un punto que
+el navegador invente y que no esté en la configuración, no entra.
+
+**Y sale impreso.** El RTS 6.1.14 prefiere el papel, así que el mes lleva el
+«3 de 4» y, cuando faltó alguno, **su nombre**: un número sin decir cuál obliga
+a ir a buscarlo a otro lado, y el inspector está parado enfrente de la vitrina.
+Al pie de la tabla, la lista de muebles que lleva el área.
+
 ## v2.759.0 — La bitácora se anota por momento, y los horarios los cambia el jefe de la sala
 
 Cinco cosas reportadas mirando la pantalla, no el código.

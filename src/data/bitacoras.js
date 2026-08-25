@@ -175,12 +175,17 @@ export async function corregirLectura({ lecturaId, temperatura, humedad = null, 
     return { error: error?.message ?? null };
 }
 
-export async function registrarLimpieza({ areaId, fecha, turno, observaciones = null }) {
+export async function registrarLimpieza({ areaId, fecha, turno, observaciones = null, puntos = [] }) {
     const { data, error } = await supabase.rpc('registrar_limpieza_bitacora', {
         p_area_id: Number(areaId),
         p_fecha: fecha,
         p_turno: turno,
         p_observaciones: observaciones || null,
+        // Lo que se marcó. La BASE arma el registro cruzándolo contra la lista
+        // del área: manda un renglón por cada punto configurado, con su
+        // `hecho` en verdadero o falso. Así «no se limpió» y «no se mandó» no
+        // se confunden, que es justo la diferencia que busca un inspector.
+        p_puntos: puntos || [],
     });
     if (error) return { id: null, error: error.message ?? 'No se pudo guardar la limpieza.' };
     return { id: data, error: null };
@@ -743,3 +748,63 @@ export function areaNueva(tipo, branchId, areasDeLaSala = []) {
         activa: true,
     };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Los puntos de limpieza — qué mueble se limpia dentro de un área
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ── Qué exige la norma, que es lo que decide la forma ──────────────────────
+// NADA en el RTS 11.02.04:24 ni en la Guía de Verificación de la SRS pide
+// identificar el mueble. Lo que exigen es un PROCEDIMIENTO escrito «aplicable a
+// las áreas y mobiliario» (RTS 6.1.11 / guía 1.11, MAYOR), autorizado por el
+// regente (6.1.12), con sus registros (5.5.5), y que el local se vea limpio
+// (guía 2.11, CRÍTICO).
+//
+// O sea que el detalle lo manda el procedimiento de la empresa, no la SRS. Y de
+// ahí sale la regla que importa: **el registro tiene que poder mostrar lo que el
+// procedimiento promete**. Si el escrito que firmó el regente nombra cuatro
+// vitrinas, «Vitrinas ✓» no alcanza cuando el inspector cruza los dos papeles.
+// Por eso es opcional: un área sin puntos sigue siendo una casilla sola.
+
+export const TIPOS_DE_PUNTO = [
+    { tipo: 'vitrina', label: 'Vitrinas', singular: 'Vitrina' },
+    { tipo: 'estante', label: 'Estantes', singular: 'Estante' },
+];
+
+/**
+ * Subir o bajar la cantidad de vitrinas (o estantes) de un área.
+ *
+ * En pantalla se pide un NÚMERO —«¿cuántas vitrinas tiene la sala?»— porque es
+ * como se piensa; lo que se guarda es una lista con clave estable. Con un número
+ * la clave sería la POSICIÓN, y borrar la vitrina 2 correría la 3 a su lugar:
+ * los registros de ayer pasarían a hablar de otro mueble sin que nadie lo note.
+ *
+ * Al bajar la cantidad se quitan las ÚLTIMAS, que es lo que espera quien mueve
+ * un contador. Las que se van dejan de aparecer en los registros nuevos; los
+ * viejos conservan lo que anotaron.
+ */
+export function ajustarPuntos(puntos, tipo, cantidad) {
+    const lista = puntos || [];
+    const n = Math.max(0, Math.min(60, Number(cantidad) || 0));
+    const delTipo = lista.filter(p => p.tipo === tipo);
+    if (n === delTipo.length) return lista;
+
+    if (n > delTipo.length) {
+        const singular = TIPOS_DE_PUNTO.find(t => t.tipo === tipo)?.singular || 'Punto';
+        const nuevos = [];
+        for (let i = delTipo.length; i < n; i += 1) {
+            nuevos.push({
+                clave: nuevaClave([...lista, ...nuevos], 'p'),
+                tipo,
+                label: `${singular} ${i + 1}`,
+            });
+        }
+        return [...lista, ...nuevos];
+    }
+
+    const sobran = new Set(delTipo.slice(n).map(p => p.clave));
+    return lista.filter(p => !sobran.has(p.clave));
+}
+
+/** Cuántos puntos de ese tipo tiene el área. */
+export const contarPuntos = (puntos, tipo) => (puntos || []).filter(p => p.tipo === tipo).length;

@@ -1,4 +1,4 @@
-// F4 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md` — la vista de Conexiones.
+// F4 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md` — la vista de Conexiones.
 //
 // Acá va SÓLO lo propio de esta vista. Los desbordes y los blancos táctiles los
 // mide el barrido oficial (`RUTAS=sesiones … -g "foco"`), y no se reimplementan

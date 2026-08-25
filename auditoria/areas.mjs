@@ -123,7 +123,7 @@ export const AREAS = [
         edge: ['ensure_user_by_code', 'set-employee-password', 'disable-employee-auth',
                'bulk-create-employee-users', 'emitir-carne-temporal'],
         crons: ['purgar-carnes-temporales', 'purge-sesiones-vencidas', 'purge-session-activity-daily'],
-        docs: ['docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md', 'docs/PLAN-SESIONES-SEGURAS-2026-08-08.md',
+        docs: ['docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md', 'docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md',
                'docs/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
     },
     {
@@ -508,7 +508,7 @@ export const AREAS = [
                  'minmax_change_requests', 'minmax_ignored', 'minmax_sync_log'],
         edge: ['auto-calculate-minmax'],
         crons: ['auto-calculate-minmax-monthly'],
-        docs: ['docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
+        docs: ['docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
                'docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md'],
     },
 
@@ -536,7 +536,7 @@ export const AREAS = [
         edge: ['trasladar-pedido-erp', 'devolver-pedido-erp', 'maps-proxy'],
         crons: ['continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
         docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/INCIDENTE-RECEPCION-2026-08-14.md',
-               'docs/PRUEBA-TRASLADO-2026-08-11.md'],
+               'docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md'],
     },
     {
         id: 'traslados',
@@ -555,7 +555,7 @@ export const AREAS = [
                 'avisar-bultos-viejos'],
         crons: ['barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
                 'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
-        docs: ['docs/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
+        docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },
 
     // ═══ COMPRAS Y CONTABILIDAD ═════════════════════════════════════════════
@@ -612,7 +612,7 @@ export const AREAS = [
         tablas: ['corte_z', 'periodos_fiscales', 'contabilidad_config'],
         edge: ['sync-corte-z', 'verificar-csv-libros'],
         crons: ['corte-z-mensual'],
-        docs: ['docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md', 'docs/BLOQUE-D-CIERRE-DE-PERIODO.md',
+        docs: ['docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md', 'docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md',
                'docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md', 'docs/ANEXOS-HACIENDA-2026-08-11.md',
                'docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md'],
     },

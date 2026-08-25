@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 
-// SesionesView.jsx (F4 de docs/PLAN-SESIONES-SEGURAS-2026-08-08.md).
+// SesionesView.jsx (F4 de docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md).
 //
 // `auth.sessions` vive en el esquema `auth` y no está expuesta a PostgREST, así
 // que todo pasa por RPC. `list_sessions` devuelve **json y no SETOF** a

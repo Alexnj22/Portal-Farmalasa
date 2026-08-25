@@ -1,17 +1,33 @@
 # Bolsas de efectivo — control de custodia entre el corte y administración
 
-**Estado: F1 EN PRODUCCIÓN (v2.620.0). F2 a F5 sin implementar.** Escrito el
-2026-08-15 a pedido del usuario.
+> **Estado al 2026-08-24 — el encabezado de abajo quedó viejo y se corrige acá.**
+> Decía «F1 EN PRODUCCIÓN (v2.620.0), F2 a F5 sin implementar», y eso fue cierto
+> hasta el 23-ago. El **24-ago se construyó el circuito entero del dinero**
+> (v2.733.3 → v2.746.1): entregar, contar, cerrar, el **depósito al banco** con su
+> remanente y su archivo, el módulo propio `/bolsas` con las cuatro etapas como
+> pestañas y buscador sobre las cuatro (v2.743.6), y anular una bolsa devuelve su
+> efectivo a la del día (v2.742.4). Medido en producción hoy: **110 bolsas**, y las
+> tablas `bolsas_operaciones`, `bolsas_movimientos`, `bolsas_eventos`,
+> `bolsas_entregas`, `bolsas_entidades`, `bolsas_tipos_salida` y
+> `depositos_bancarios` existen.
+>
+> **Lo que sigue abierto es lo que sólo puede decir una sala**: nada se probó en
+> sala, `depositos_bancarios` tiene **0 filas**, falta enlazar el aporte del
+> depósito al vale real (necesita un motivo nuevo en «Sacar dinero») y decidir qué
+> hacer con los 5 días del 15/16-ago que tienen cero bolsas. Y sigue faltando la
+> **prueba física** del párrafo de abajo, que es la que confirma o tira la fórmula
+> del monto de la §5.1 — construir encima no la reemplaza.
 
-Lo que ya corre: la tabla `bolsas` y sus funciones, los tres papeles del rollo
+**Estado original (2026-08-15): F1 EN PRODUCCIÓN (v2.620.0). F2 a F5 sin
+implementar.** Escrito a pedido del usuario.
+
+Lo que ya corría: la tabla `bolsas` y sus funciones, los tres papeles del rollo
 (`bolsaComprobante.js`), y la baldosa **Bolsas de efectivo** del Inicio — guardar
 la bolsa de un corte confirmado, ver lo que espera el retiro, la alarma de los 4
-días y la etiqueta impresa. **Todavía no hay pantalla propia**: eso llega con el
-retiro (F2) y el conteo (F3).
+días y la etiqueta impresa.
 
-**Falta la prueba física**, y es lo que hay que hacer antes de construir F2 y F3
-encima: cerrar una bolsa real, pegarle la etiqueta y contarla contra el papel.
-Ahí se confirma o se cae la fórmula del monto de la §5.1.
+**Falta la prueba física**: cerrar una bolsa real, pegarle la etiqueta y contarla
+contra el papel. Ahí se confirma o se cae la fórmula del monto de la §5.1.
 
 ---
 

@@ -2,7 +2,7 @@
 /**
  * gate:movil — que no se pueda escribir a mano lo que ya es canónico.
  *
- * Fase 1 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`.
+ * Fase 1 de `docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`.
  *
  * ── Qué NO hace, y es lo importante ─────────────────────────────────────────
  * Este gate **nunca podrá decir «esta vista se ve bien»**. Leer el fuente no

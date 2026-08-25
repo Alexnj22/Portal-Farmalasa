@@ -1,6 +1,17 @@
 # Ticket de traslado y confirmación por escaneo
 
-**Fecha:** 2026-08-23 · **Auditado contra producción:** 2026-08-24 · **Estado:** decidido, sin construir
+**Fecha:** 2026-08-23 · **Auditado contra producción:** 2026-08-24 · **Estado:** **CONSTRUIDO Y EN PRODUCCIÓN**, sin probar en sala
+
+> **Corrección del 2026-08-24 (tarde).** Este encabezado decía «decidido, sin
+> construir» y ya no es cierto: se construyó el mismo día. v2.729.0 → v2.733.0 —
+> la solicitud imprime su ticket, la llegada se confirma **escaneándolo**
+> (v2.731.0), y el recorrido deja la bolsa **en tránsito con nombre** (v2.732.0:
+> quien carga las bolsas responde por ellas); v2.742.0 agregó reimprimir el
+> ticket de un traslado.
+>
+> **Nada de esto se probó en sala.** Falta la prueba de papel, la ticketera de
+> Bodega —la razón por la que se cayó el paso 1— y el ticket del **ENVÍO**, que
+> es el que todavía no existe.
 
 > La auditoría del 24-ago cambió tres cosas del plan original: apareció el
 > código que faltaba (`id_traslado`), se cayó el paso 1 para Bodega (no tiene

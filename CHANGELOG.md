@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.4 — Auditoría de planes: nueve se cierran y tres encabezados decían lo contrario
+
+Repaso de los 43 planes y auditorías vivos de `docs/`, a pedido. **Nueve se
+mueven a `planes-cerrados/`** y el índice de esa carpeta lleva la evidencia de
+cada uno, medida contra producción o contra el código y no leída de su
+encabezado.
+
+Los cierres limpios eran cinco: `PLAN-SESIONES-SEGURAS` (su propia §ESTADO dice
+CERRADO desde el 09-08), `PLAN-CANON-MOVIL` (las cinco fases), `PLAN-CIERRE-MOVIL`
+(F6 lo absorbió `PLAN-MOVIL-2026-08-20` §F6 y F9 sigue en pausa en su propio
+documento), `RETOMAR-FICHAS-Y-DTE` (que se declara REEMPLAZADO en su primera
+línea) y `PLAN-MOBILE-2026-07` — **que este índice ya daba por cerrado el
+2026-08-05 y cuyo archivo se había quedado en la raíz**, o sea que llevaba tres
+semanas contando como plan vivo.
+
+**Los otros cuatro son el hallazgo, porque su encabezado decía lo contrario de lo
+que había pasado:**
+
+| El documento decía | La medición dice |
+|---|---|
+| `PLAN-MINMAX-AJUSTE-A-MANO`: «queda un pendiente que corre contra el 1-sep — ver §10» | su propio §10 dice **HECHO el 21-ago**; hoy hay **1,137 filas con `manual_at`** de 19,045 |
+| `PRUEBA-TRASLADO-2026-08-11`: «falta únicamente ejecutar esta prueba» | **26 despachos en modo real** en `pedido_traslado_erp` entre el 12 y el 24-ago |
+| `RETOMAR-TRASLADOS-2026-08-06`: falta «una prueba con una unidad, ida y vuelta» | **366 `INVENTORY_TRANSFER_REQUEST` en APPROVED** desde el 17-ago |
+| `BLOQUE-D-CIERRE-DE-PERIODO`: «DOCUMENTADO, no ejecutado» | se construyó igual como Paso 3 del contador interno (v2.591.0); `periodos_fiscales` existe |
+
+Y tres planes que **siguen abiertos** también tenían el encabezado viejo, así que
+se corrigió en su lugar en vez de moverlos: `PLAN-BOLSAS-DE-EFECTIVO` decía «F2 a
+F5 sin implementar» cuando el circuito entero del dinero se construyó el 24-ago
+(110 bolsas y ocho tablas en producción, pero **0 depósitos** y nada probado en
+sala); `PLAN-TICKET-DE-TRASLADO` decía «decidido, sin construir» y salió a
+producción el mismo día que se escribió; `RESOLUCION-DIFERENCIAS-PEDIDOS` decía
+«diseñado, sin construir» desde antes de v2.658.0 (`diferencia_opcion`, 12 filas).
+
+A los dos planes de autorización se les anotó el número remedido en vez de una
+impresión: el criterio de salida de `PLAN-CERRAR-AUTORIZACION` —policies que no
+preguntan nada— bajó de **83 a 70**, con D3 y D4 cerrados y **D1 abierto tal
+cual** (`cotizacion_items_write` sigue siendo `FOR ALL` sin preguntar nada), y el
+barrido de RPC que reciben identidad por parámetro de `SEGURIDAD-AUTORIZACION`
+**sigue sin ejecutarse**.
+
+**La lección, y es la razón de este commit:** *la cabecera de un plan envejece
+igual que un checkbox, y cuando envejece miente con más autoridad.* El índice de
+`planes-cerrados/` ya advertía que los `- [ ]` sin marcar de cinco documentos no
+eran trabajo pendiente porque el cierre se había escrito en prosa; lo que faltaba
+era la otra mitad — que la prosa también se queda vieja. Siete de los doce
+documentos revisados a fondo tenían el estado mal escrito, en las dos
+direcciones. Al auditar, el estado sale de producción o del código; el documento
+es la hipótesis, no la evidencia.
+
+Las referencias a los nueve movidos se corrigieron en el código, los tests, los
+gates, `DESIGN.md`, `auditoria/areas.mjs` y los documentos vivos. `CHANGELOG.md`
+también quedó reescrito —lo barrió el commit anterior de otra sesión— y se dejó
+así: la ruta apunta a donde el archivo vive de verdad. Los cambios en `src/` son
+sólo esas rutas dentro de comentarios.
+
 ## v2.747.3 — Los botones del aviso de borrador van al tamaño de los otros avisos
 
 Repaso del trabajo anterior contra el canon, a pedido. De catorce gates, catorce

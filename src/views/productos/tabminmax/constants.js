@@ -61,7 +61,7 @@ export const XYZ_CFG = {
 // Los motivos son los mismos cuatro que acepta el CHECK de
 // `product_stock_params.manual_motivo`, y salieron de las 16 razones que la
 // gente YA escribía en las solicitudes de cambio — no de una lista inventada.
-// Ver docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
+// Ver docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
 export const MOTIVO_AJUSTE = {
     ya_no_rota:   { label: 'Ya no rota',        detalle: 'Se dejó de vender o sólo se trae por encargo' },
     lo_buscan:    { label: 'Lo están buscando', detalle: 'Hay demanda que no aparece porque no hubo producto' },

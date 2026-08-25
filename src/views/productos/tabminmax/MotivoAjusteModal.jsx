@@ -19,7 +19,7 @@ import { MOTIVO_AJUSTE, ERP_NAMES } from './constants';
  *
  * Los cuatro motivos salieron de las 16 razones que la gente YA escribía en las
  * solicitudes de cambio (`minmax_change_requests.reason`), no de una lista
- * inventada — ver docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
+ * inventada — ver docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §2.5.
  */
 export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando, onGuardar, onClose }) {
     // El estado arranca de lo que la fila ya tenía. No hace falta sincronizarlo

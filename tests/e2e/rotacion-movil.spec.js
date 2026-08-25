@@ -1,5 +1,5 @@
 // El remontaje al girar — sus DOS brazos. F9 de
-// `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+// `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 //
 // ── Qué se supo después de escribir la primera versión de esta prueba ─────────
 // El remontaje (v2.526.0) se agregó leyendo el síntoma como «al rotar el

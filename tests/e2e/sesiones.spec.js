@@ -1,4 +1,4 @@
-// F2 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`.
+// F2 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`.
 //
 // Las dos propiedades que el plan exige verificar y que NINGÚN gate puede ver,
 // porque las dos dependen de qué queda en `localStorage` después de un fallo de

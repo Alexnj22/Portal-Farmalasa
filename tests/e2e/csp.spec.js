@@ -1,4 +1,4 @@
-// F0.3 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`.
+// F0.3 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`.
 //
 // La CSP la sirve Vercel desde `vercel.json`, así que `vite preview` NUNCA la
 // manda y en local no se puede comprobar mirando el navegador. Acá se lee la

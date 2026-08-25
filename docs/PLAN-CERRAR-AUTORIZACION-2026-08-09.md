@@ -5,6 +5,14 @@ Cinco defectos encontrados al medir el alcance del bloqueo de personas
 y tienen una forma correcta. El usuario lo pidió así — *«no lo rodees para no
 romperlo, dime: esto está mal, debería ser de esta forma»*.
 
+> **Medido contra producción el 2026-08-24 — el plan avanzó, no cerró.** Su propio
+> criterio de salida (§«Cómo se sabe que terminó») da hoy **70**, contra las 83 del
+> arranque: 13 cerradas. De los defectos con nombre, **D3 y D4 están cerrados** —
+> `audit_logs`, `attendance`, `employees`, `employee_events` y `timesheets` tienen
+> hoy `auth_` en todas sus policies, incluidos los INSERT que aceptaban cualquier
+> fila—. **D1 sigue abierto tal cual**: `cotizacion_items_write` es `FOR ALL` y no
+> pregunta nada. D6 —el resto de las 83— es el grueso de las 70 que quedan.
+
 ## De dónde salen
 
 De las **252 policies** de `public`, **83 no preguntaban nada** — ni permiso ni

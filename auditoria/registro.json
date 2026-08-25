@@ -160,7 +160,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -1505,7 +1505,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
           "hallazgos": []
         }
       },
@@ -1595,7 +1595,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/PRUEBA-TRASLADO-2026-08-11.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md",
           "hallazgos": []
         }
       },
@@ -1688,7 +1688,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/RETOMAR-TRASLADOS-2026-08-06.md, docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md, docs/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
           "hallazgos": []
         }
       },
@@ -1868,7 +1868,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
+          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
           "hallazgos": []
         }
       },

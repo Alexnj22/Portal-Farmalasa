@@ -1,7 +1,20 @@
 # Resolución de diferencias del pedido — diseño para construir
 
-Estado: **diseñado, sin construir.** Sale de la auditoría completa del módulo del
-2026-08-11 (documento visual:
+> **Estado al 2026-08-24 — construido, no probado.** El encabezado decía
+> «diseñado, sin construir» y quedó viejo el 18-ago. **v2.658.0** puso el circuito
+> en producción: la sala propone, bodega acepta o contrapropone, y sin acuerdo
+> decide supervisión. Verificado hoy contra producción: `diferencia_opcion` tiene
+> **12 filas** —la lista única que leen la pantalla y la RPC— y `pedido_devolucion`
+> **3**. El **brazo del sobrante** se cerró el 24-ago (el extra es un sobrante y se
+> escribe al agregarlo, v2.747.0 → v2.747.2).
+>
+> **Sigue abierto:** el cron de 3 días, verlo en pantalla, poder anotar un extra
+> en un pedido ya cerrado, y **las cuatro comprobaciones del final de este
+> documento** —el movimiento real de punta a punta, la rama «sólo bodega», la
+> foto y el lote—, que son las que ninguna prueba sintética puede dar por hechas.
+
+Estado original: **diseñado, sin construir.** Sale de la auditoría completa del
+módulo del 2026-08-11 (documento visual:
 `https://claude.ai/code/artifact/fcb9c249-108c-4849-9a43-caf4ffc5c5b6`).
 
 ---
@@ -155,7 +168,7 @@ entre sala y bodega, y que la devolución dispare su recepción en bodega.
 
 Igual que el traslado el 2026-08-11: **provocar cada rama contra inventario real
 y comparar contra una foto previa** (existencia, costo, precio y lotes en las dos
-salas). Guion en `docs/PRUEBA-TRASLADO-2026-08-11.md`; el regreso en
+salas). Guion en `docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md`; el regreso en
 `scripts/qa/rollback-traslado.mjs`. Nada de esto se da por bueno leyendo código.
 
 ---

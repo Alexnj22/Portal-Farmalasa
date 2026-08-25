@@ -101,6 +101,13 @@ vacío — y en cuanto hubiera entrado una vez, la función se lo habría escrit
 
 ---
 
+> **Remedido el 2026-08-24.** El pendiente 1 —el barrido de RPC que reciben
+> identidad por parámetro— **sigue sin ejecutarse**, y es el motivo por el que este
+> documento no se cierra. Del §4, `attendance` y `audit_logs` ya no aceptan
+> cualquier fila: sus policies de INSERT preguntan por `auth_`. Lo demás del §4 se
+> rastrea en `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, cuyo contador de
+> policies que no preguntan nada bajó de 83 a **70**.
+
 ## Pendientes, por urgencia
 
 ### 1. El mismo patrón en los RPC que reciben identidad por parámetro

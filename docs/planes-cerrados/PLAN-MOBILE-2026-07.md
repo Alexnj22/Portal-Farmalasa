@@ -7,7 +7,7 @@
 > El criterio **4 (touch targets en iPad Mini)** se cerró en v2.523.2 y este
 > encabezado siguió diciendo ⚠️ un día más: la matriz dio **0 de 35 celdas** —
 > la premisa del código era falsa y se midió. Ver F5 de
-> `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+> `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 >
 > **Lo único que queda es la prueba en el teléfono real del usuario**, que es el
 > reporte que originó todo esto y que ningún emulador puede sustituir: F6 del

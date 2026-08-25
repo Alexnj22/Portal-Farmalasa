@@ -1,6 +1,6 @@
 # Prueba en el teléfono real — el guion
 
-F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`. **Es la única fase que no puede
+F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`. **Es la única fase que no puede
 cerrar una sesión de Claude Code sola**: necesita un iPhone de verdad, y el
 motivo no es pereza del instrumento.
 
@@ -86,5 +86,5 @@ prueba esa pieza.
 dice el tamaño real, el inset real y el modo real. Con el nombre de la vista y si
 era vertical / acostado / standalone.
 
-Si algo aparece, va a `docs/PLAN-CIERRE-MOVIL-2026-08-08.md` como fase nueva —
+Si algo aparece, va a `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md` como fase nueva —
 no se arregla a ojo desde una captura sin antes reproducirlo.

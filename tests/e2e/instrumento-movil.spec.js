@@ -1,4 +1,4 @@
-// ¿El INSTRUMENTO puede fallar? — F1 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+// ¿El INSTRUMENTO puede fallar? — F1 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 //
 // El resto de la suite mide la app. Esto mide al medidor, y existe por una
 // regla que este proyecto pagó caro: **un instrumento que no puede fallar no

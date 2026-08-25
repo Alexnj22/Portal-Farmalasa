@@ -466,7 +466,7 @@ y varias de sus cifras ya no son ciertas; acá está el estado real.
 | **B** — que las alarmas suenen | ✅ **Hecho** | incl. las 3 alarmas de CCF y el cron de repaso 22:00 |
 | **C** — que el libro sea mejor que su origen | ✅ **Hecho, menos C4** | C1 y C2 v2.348.0 · C3 v2.348.2 · C5 v2.347.2 · C6 y C7 v2.348.1 · C1b y C8 v2.348.4 |
 | **C4** — `subtotal` a `numeric(14,4)` | ⏸️ **Bloqueado** | espera al contador: ¿2 o 4 decimales? |
-| **D** — el cierre de período | 📄 **Documentado, pendiente de confirmación** | `docs/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado + la deriva MEDIDA + 4 decisiones abiertas |
+| **D** — el cierre de período | 📄 **Documentado, pendiente de confirmación** | `docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado + la deriva MEDIDA + 4 decisiones abiertas |
 | **E3** — anexo de retención de Renta | ✅ Construido, ❌ **sin dato** | hay **0** proveedores marcados `retiene_renta`; el anexo sale vacío hasta que el contador marque cuáles de los 14 candidatos aplican |
 | **Cosas chicas** (Parte 3 §6) | ⬜ **Aprobadas, no hechas** | las 4 |
 | Los DTE de gastos fuera del libro | ✅ **Investigado el 2026-08-05** | el número mezclaba documentos de signo opuesto. Ver «Parte 10» al final |

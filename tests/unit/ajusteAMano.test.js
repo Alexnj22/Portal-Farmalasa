@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { estadoAjuste } from '../../src/views/productos/tabminmax/useMinMaxData';
 
 // Los tres estados de un MIN·MAX que puso una persona
-// (docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §4.3).
+// (docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md §4.3).
 //
 // Existe porque la diferencia entre los estados es la que decide qué mira
 // alguien primero, y ninguno de los tres se puede comprobar mirando la pantalla

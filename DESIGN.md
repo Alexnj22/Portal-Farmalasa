@@ -5577,7 +5577,7 @@ existía como toggle manual).
 > **ninguna lista decía cuál corresponde a qué**: se descubrían leyendo el
 > componente, así que cada vista nueva volvía a decidirlo. Verificada contra el
 > código, no de memoria. El plan que la originó:
-> `docs/PLAN-CANON-MOVIL-2026-08-07.md`.
+> `docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`.
 
 | Necesidad de la vista | Escritorio | En el teléfono (<1024px) |
 |---|---|---|

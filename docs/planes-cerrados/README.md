@@ -46,6 +46,26 @@ descartadas por decisión del usuario, o absorbidas por un plan posterior.
 | `RETENCION-IVA-VENTAS-2026-08-04.md` | 2026-08-04 | Documento de cierre: la retención sobre factura de consumidor **no es un error** (Art. 162 inciso 3.º) y el libro no lleva columna de retención (Art. 83/85 RCT). Su único abierto —¿el total del libro es lo cobrado o el valor de la venta? ($48.95)— es una **pregunta al contador** y vive en `docs/PREGUNTAS-CONTADOR-2026-08-03.md`. |
 | `PROMPT-MODULO-CLIENTES.md` | 2026-08-05 | Prompt **consumido**: `src/views/ClientesView.jsx` existe y la Fase 1 está en prod (v2.317.0). La Fase 2 —propagar la edición al ERP— se rastrea en `docs/RETOMAR-CLIENTES-2026-08-01.md`. |
 
+### Cerrados en la auditoría de planes del 2026-08-24
+
+Nueve documentos, y **cada cierre se verificó contra producción o contra el
+código, no contra lo que decía su encabezado** — que en tres casos decía lo
+contrario de lo que había pasado.
+
+| Documento | Cerrado | Evidencia del cierre |
+|---|---|---|
+| `PLAN-SESIONES-SEGURAS-2026-08-08.md` | 2026-08-09 | Su propia §ESTADO: **CERRADO**, F0–F4 ✅ con versión y verificación medida (el hook devolvió 200 con la actividad fresca y 401 `session idle timeout` envejecida — sin la primera mitad el 401 no probaba nada). F5 no es trabajo pendiente: es «lo que queda anotado y no entra ahora», MFA y la contraseña del carné, las dos con decisión escrita. |
+| `PLAN-CANON-MOVIL-2026-08-07.md` | 2026-08-09 | Cabecera «**las cinco fases cerradas**» con la tabla F0–F4. Lo que dejaba vivo lo nombra él mismo y vive en otros dos documentos: la prueba en el aparato (`PRUEBA-EN-TELEFONO-REAL.md`) y el trabón al girar (`RETOMAR-ROTACION-MOVIL-2026-08-08.md`). |
+| `PLAN-CIERRE-MOVIL-2026-08-08.md` | 2026-08-24 | F1–F5, F7 y F8 ✅. Sus dos abiertos están **absorbidos**: F6 lo remidió y cerró en su mitad medible `PLAN-MOVIL-2026-08-20.md` §F6 —la cañería del notch, con los insets de un iPhone 13 pisados sobre los tokens `--sa-*`— y lo que sólo puede decir el aparato quedó en `PRUEBA-EN-TELEFONO-REAL.md`; F9 sigue **en pausa por decisión** en `RETOMAR-ROTACION-MOVIL-2026-08-08.md`. |
+| `PLAN-MOBILE-2026-07.md` | 2026-07-24 | **Ya figuraba como cerrado en este índice desde el 2026-08-05 y el archivo se había quedado en la raíz.** Su cabecera lo confirma: fases 1–5 ✅ y «los siete criterios de aceptación están cumplidos». |
+| `PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md` | 2026-08-21 | Las cinco fases APLICADAS **y el §10 también** — el único pendiente que la cabecera daba por abierto contra el 1-sep. La migración `20260821161901` marcó 1,129 filas; medido hoy contra producción: **1,137 con `manual_at`** de 19,045, y `product_stock_params_history` sin una sola fila en el barrido, o sea que no se movió ningún MIN ni ningún MAX. |
+| `PRUEBA-TRASLADO-2026-08-11.md` | 2026-08-24 | El guion decía «falta únicamente ejecutar esta prueba». **Se ejecutó**: `pedido_traslado_erp` tiene **26 despachos en modo real** entre el 12 y el 24-ago (más 42 simulacros y 3 errores del 11/12-ago, ya resueltos). |
+| `RETOMAR-TRASLADOS-2026-08-06.md` | 2026-08-24 | Cinco de sus seis pasos estaban hechos el mismo 06-ago; el sexto era «una prueba con una unidad, ida y vuelta». Medido: **366 `INVENTORY_TRANSFER_REQUEST` en APPROVED** desde el 17-ago. El circuito no está probado: está en uso diario. |
+| `RETOMAR-FICHAS-Y-DTE-2026-08-07.md` | 2026-08-09 | Su propio encabezado: «⚠️ **REEMPLAZADO por `RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`**». Se conserva por el historial —el matcher, los duplicados, la migración—. |
+| `BLOQUE-D-CIERRE-DE-PERIODO.md` | 2026-08-13 | Decía «DOCUMENTADO, no ejecutado, pendiente de que Alex lo confirme», y quedó cerrado por los dos lados: `RETOMAR-CONTABILIDAD-2026-08-06.md` §5 lo lista entre los «cerrados por decisión, no por trabajo», y **después se construyó igual** como Paso 3 de `PLAN-CONTADOR-INTERNO-2026-08-12.md` (v2.591.0, cierre de período con pantalla). Verificado en producción: la tabla `periodos_fiscales` existe. |
+
+> **Tres encabezados decían lo contrario de lo que había pasado.** `PLAN-MINMAX-AJUSTE-A-MANO` daba por abierto un §10 que su propio §10 declara HECHO; `PRUEBA-TRASLADO` pedía una prueba que ya había corrido 26 veces; `RETOMAR-TRASLADOS` pedía la primera cuando había 366. Es la misma lección del §«Ojo con los checkboxes» un escalón más arriba: **la cabecera de un plan envejece igual que un checkbox, y cuando envejece miente con más autoridad.** Al auditar, el estado sale de producción o del código — el documento es la hipótesis, no la evidencia.
+
 ## Ojo con los checkboxes
 
 Cinco de estos documentos tienen `- [ ]` sin marcar que **no son trabajo

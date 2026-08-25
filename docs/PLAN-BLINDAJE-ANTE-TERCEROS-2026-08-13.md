@@ -1,22 +1,25 @@
 # Plan de blindaje ante un tercero — sin frenar el trabajo diario
 
-**Fecha**: 2026-08-13 · **Estado**: propuesto, nada aplicado
+**Fecha**: 2026-08-13 · **Estado**: **Fase 0 aplicada y verificada el 2026-08-24**; Fases 1 a 4 sin empezar
 **Origen**: medición de la superficie real de producción (`sacecdkdmsdvgqnrsett`) el 2026-08-13.
 
 ---
 
 ## Medido contra producción — 2026-08-24
 
-**Once días después: las cinco fases siguen en cero.** Y este archivo **nunca se
-commiteó** — vivía sólo en el árbol de trabajo, o sea a un `git checkout` ajeno
+**Al medir, las cinco fases estaban en cero y este archivo nunca se había
+commiteado** — vivía sólo en el árbol de trabajo, o sea a un `git checkout` ajeno
 de desaparecer, que es exactamente el riesgo que CLAUDE.md describe para un árbol
-compartido.
+compartido. Ya está versionado.
 
-Remedido hoy con mi propio criterio (no el del 13-ago, así que los números no son
-comparables directamente): **67 policies** de `public` dejan leer sin preguntar
-por ningún `auth_*` y sin ser de `service_role`. La Fase 0
-—`set-employee-password` / `disable-employee-auth`, la única que hoy permite
-tomar cualquier cuenta del portal— sigue sin tocarse.
+**Ese mismo día se cerró la Fase 0** — la única que permitía tomar cualquier
+cuenta del portal. Está abajo, con sus cinco pruebas y con lo que no se pudo
+probar.
+
+Lo que sigue midiéndose igual: **67 policies** de `public` dejan leer sin
+preguntar por ningún `auth_*` y sin ser de `service_role` (criterio mío, no el
+del 13-ago, así que el número no es comparable directamente con el de arriba).
+Ésa es la Fase 2, y no se tocó.
 
 ---
 
@@ -73,7 +76,63 @@ API REST pública y se puede llamar con `curl` sin abrir el portal jamás.
 
 ---
 
-## Fase 0 — Cortar la escalada de privilegios (hoy, impacto cero)
+## Fase 0 — ✅ APLICADA en producción el 2026-08-24
+
+`set-employee-password` **v35** y `disable-employee-auth` **v10**, las dos con
+`verify_jwt: false` conservado —leído VIVO después del despliegue, no supuesto—.
+El permiso lo resuelve ahora `requireActiveEmployeeUser` + `permisoDeModulo` de
+`_shared/security.ts`, el canónico que ya usaban catorce funciones.
+
+### Impacto cero, medido antes de tocar nada
+
+Las **5 personas** que pasaban el control lo siguen pasando: 1 SUPERADMIN y 4 con
+`staff_list.can_edit` por su **rol principal**. Ninguna depende del rol
+secundario, así que la rama que el helper agrega respecto del código viejo no le
+concede nada a nadie. Los 49 empleados están en `ACTIVO`, así que el chequeo de
+estado que `requireActiveEmployeeUser` añade tampoco deja a nadie afuera.
+
+### Las cuatro pruebas, contra producción
+
+| | qué se pidió | qué contestó |
+|---|---|---|
+| 1 · positivo | admin real, username inexistente | `EMPLOYEE_NOT_FOUND` — la autorización pasó **sin escribirle la contraseña a nadie** |
+| 2 · **espejo** | el mismo admin con el token falseado a `roleId: -999`, `systemRole: 'NADIE'` | `EMPLOYEE_NOT_FOUND` — **pasó igual**, o sea que el permiso ya NO sale del token |
+| 3 · negativo | token basura, las dos funciones | `INVALID_TOKEN` en las dos |
+| 4 · negativo | la llave anónima como sesión | `INVALID_TOKEN` |
+| 5 · positivo | admin real en `disable-employee-auth` sin `employeeId` | `MISSING_FIELDS` — pasó la autorización **sin desactivar a nadie** |
+
+La **2** es la que prueba el arreglo, y hay que leerla al revés de como suena: el
+token decía *«no puedo»* y la función lo dejó pasar igual. Con el código viejo
+eso era `INSUFFICIENT_PERMISSIONS`, porque el permiso salía justamente de ahí. El
+metadata se restauró a su valor original y se confirmó.
+
+Las **3** y **4** están para que el resultado signifique algo: un control que
+sólo sabe decir que sí no es un control.
+
+### Lo que NO se pudo probar, y se dice
+
+- **La negación por FALTA DE PERMISO** (no por identidad). Haría falta una cuenta
+  con sesión válida y **sin** `staff_list.can_edit`, y no hay ninguna a mano: las
+  49 fichas activas son o de los 5 con permiso o de gente sin cuenta de prueba.
+  Lo que sí está probado es que el helper niega —lo usan catorce funciones en
+  producción— y que la identidad se rechaza bien.
+- **El camino del cron.** `apply-scheduled-employee-events-daily` (11:00 UTC,
+  activo) invoca `disable-employee-auth` con `ADMIN_INVOKE_SECRET`. Esa rama **no
+  se tocó** —sigue siendo `token === adminSecret` antes de mirar nada—, pero no
+  se ejercitó: la primera corrida real es la de mañana.
+
+### Y de paso, un candado que no cerraba
+
+`CANNOT_DISABLE_SELF` comparaba `caller.id` —el usuario de `auth.users`— contra
+`employeeId`, que es la **ficha**. Para 33 de las 42 personas que usan el portal
+esos dos ids **no son el mismo valor**: entran por una cuenta `*@staff.local`
+ligada en `employee_auth_accounts`. O sea que el freno contra desactivarse a uno
+mismo daba `false` casi siempre y no frenaba a casi nadie. Ahora `caller.id` ES
+la ficha, resuelta igual que `auth_employee_id()` en la base.
+
+---
+
+### El plan original de esta fase, para el registro
 
 **El problema**: `set-employee-password` y `disable-employee-auth` deciden el
 permiso leyendo `caller.user_metadata`, que **lo escribe el propio navegador**
@@ -367,14 +426,16 @@ máquina, se rompe solo.
 | 3 | contención | ~3 días | fricción diseñada, medida |
 | 4 | vigilancia + gate | ~1 día | **no** |
 
-**Empezar por la Fase 0.** Es la única que hoy permite tomar cualquier cuenta del
-portal, se arregla en dos horas y no la nota nadie.
+~~**Empezar por la Fase 0.**~~ **Hecha el 2026-08-24.** Lo siguiente es la
+**Fase 1** — instalar la tabla de interruptores y el registro de egreso, que no
+bloquea nada y es lo que permite ver quién habría sido bloqueado *antes* de
+bloquearlo.
 
 ---
 
 ## Estado
 
-- [ ] Fase 0 — `set-employee-password`, `disable-employee-auth`
+- [x] **Fase 0** — `set-employee-password`, `disable-employee-auth` · **aplicada y verificada el 2026-08-24** (v35 / v10)
 - [ ] Fase 1 — `security_config`, `export_log`, línea base
 - [ ] Fase 2A/2B/2C/2D — cierre de lecturas
 - [ ] Fase 3 — contención

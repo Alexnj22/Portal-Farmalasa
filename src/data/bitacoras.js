@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bitácoras — capa de datos.
@@ -62,6 +63,9 @@ export async function fetchBitacoraDia(branchId, fecha) {
         p_fecha: fecha,
     });
     if (error) return { dia: null, error };
+    // Las fotos viajan como URL formato-public —el identificador que guarda la
+    // base— y se firman acá: una URL firmada guardada en la base expira.
+    if (data) await signPhotosDeep(data);
     return { dia: data ?? null, error: null };
 }
 
@@ -189,6 +193,38 @@ export async function registrarLimpieza({ areaId, fecha, turno, observaciones = 
     });
     if (error) return { id: null, error: error.message ?? 'No se pudo guardar la limpieza.' };
     return { id: data, error: null };
+}
+
+/**
+ * Corregir una limpieza ya anotada.
+ *
+ * Exige motivo, como la corrección de una lectura: el registro sigue siendo el
+ * mismo y queda dicho que se tocó. El detalle lo vuelve a armar la base contra
+ * la lista del área.
+ */
+export async function corregirLimpieza({ limpiezaId, puntos = [], observaciones = null, motivo }) {
+    const { error } = await supabase.rpc('corregir_limpieza_bitacora', {
+        p_limpieza_id: Number(limpiezaId),
+        p_puntos: puntos || [],
+        p_observaciones: observaciones || null,
+        p_motivo: motivo,
+    });
+    return { error: error?.message ?? null };
+}
+
+/**
+ * Quitar una limpieza anotada por error.
+ *
+ * Borra la fila y el hueco vuelve solo. El rastro va a `audit_logs` con su
+ * motivo —el canon del portal para toda acción de usuario—: un libro que no se
+ * puede corregir termina diciendo algo falso, que es peor que un hueco.
+ */
+export async function anularLimpieza({ limpiezaId, motivo }) {
+    const { error } = await supabase.rpc('anular_limpieza_bitacora', {
+        p_limpieza_id: Number(limpiezaId),
+        p_motivo: motivo,
+    });
+    return { error: error?.message ?? null };
 }
 
 export async function cerrarMes({ branchId, periodo, observaciones = null }) {

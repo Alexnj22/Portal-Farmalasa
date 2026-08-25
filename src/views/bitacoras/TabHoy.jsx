@@ -124,7 +124,12 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
         setAnotando({ area, franja, lectura: franja.lectura }), []);
     const abrirFueraDeRango = useCallback((area, franja, valores) =>
         setAnotando({ area, franja, lectura: null, valores }), []);
-    const abrirLimpieza = useCallback((area, turno) => setLimpiando({ area, turno }), []);
+    // Registrar, corregir o quitar: el mismo diálogo con tres modos. El
+    // registro llega cuando hay algo que corregir o que quitar.
+    const abrirLimpieza = useCallback((area, turno, registro) =>
+        setLimpiando({ area, turno, registro, modo: registro ? 'corregir' : 'registrar' }), []);
+    const abrirQuitarLimpieza = useCallback((area, turno, registro) =>
+        setLimpiando({ area, turno, registro, modo: 'quitar' }), []);
 
     const cerrar = useCallback((huboCambio) => {
         setAnotando(null);
@@ -224,6 +229,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                     onCorregir={abrirCorregir}
                     onFueraDeRango={abrirFueraDeRango}
                     onDetalleLimpieza={abrirLimpieza}
+                    onQuitarLimpieza={abrirQuitarLimpieza}
                     onRonda={() => setEnRonda(true)}
                 />
             )}
@@ -253,6 +259,8 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
                 <AnotarLimpieza
                     area={limpiando.area}
                     turno={limpiando.turno}
+                    registro={limpiando.registro}
+                    modo={limpiando.modo}
                     fecha={dia.fecha}
                     onCerrar={cerrar}
                 />

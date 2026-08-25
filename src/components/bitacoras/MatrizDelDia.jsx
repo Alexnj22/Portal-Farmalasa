@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { AlertTriangle, Check, ClipboardCheck, Clock, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, ClipboardCheck, Clock, LayoutPanelTop, Pencil, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, XCircle } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
+import Firma from './Firma';
 import { ResumenDePuntos } from './PuntosDeLimpieza';
 import { fueraDeRango, registrarLectura, registrarLimpieza, rotularRango, soloLimpieza } from '../../data/bitacoras';
 
@@ -97,11 +98,13 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
                             title="Corregir esta lectura" onClick={() => onCorregir(area, franja)} />
                     )}
                 </div>
-                <p className="text-micro text-content-3 truncate">
-                    {(l.registrado_por_nombre || 'Sin nombre').split(' ').slice(0, 2).join(' ')}
-                    {' · '}<span className="tabular-nums">{horaDe(l.registrado_at)}</span>
-                    {l.tarde && <span className="text-warning-text font-bold"> · tarde</span>}
-                </p>
+                <Firma hora={horaDe(l.registrado_at)} tarde={l.tarde}
+                    quien={{
+                        nombre: l.registrado_por_nombre,
+                        nombres: l.registrado_por_nombres,
+                        apellidos: l.registrado_por_apellidos,
+                        foto: l.registrado_por_photo_url,
+                    }} />
                 {l.fuera_de_rango && (
                     <p className="text-micro text-danger-text font-bold truncate">
                         {l.accion_correctiva || 'Sin acción anotada'}
@@ -159,7 +162,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
 }
 
 /** La limpieza de un área: un chip por turno, y el chip se toca para anotarlo. */
-function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetalle }) {
+function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetalle, onQuitar }) {
     const [ocupado, setOcupado] = useState(null);
     const turnos = area.limpiezas || [];
     if (!turnos.length) return <td className="px-3 py-2 text-content-3 opacity-40">·</td>;
@@ -190,17 +193,38 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
                         // un dato que sólo aparece al pasar el mouse no existe
                         // para quien mira la pantalla desde el mostrador.
                         return (
-                            <span key={t.clave} className="inline-flex flex-col">
+                            <span key={t.clave} className="inline-flex flex-col min-w-0">
                                 <span className="inline-flex items-center gap-1 text-label font-bold text-content-2">
                                     <Check size={12} className="text-success-text" />
                                     {t.label}
                                     <ResumenDePuntos registro={r} />
+                                    {puedeAnotar && !cerrado && (
+                                        <>
+                                            {/* `Pencil` y `XCircle` son los del mapa
+                                                cerrado de DESIGN.md: editar y anular.
+                                                Anular NO es eliminar — la limpieza se
+                                                quita del libro, no se borra un objeto. */}
+                                            <Button variant="ghost" size="sm" iconOnly icon={Pencil}
+                                                title="Corregir esta limpieza"
+                                                onClick={() => onDetalle(area, t, r)} />
+                                            <Button variant="ghost" size="sm" iconOnly icon={XCircle}
+                                                title="Quitar esta limpieza"
+                                                onClick={() => onQuitar(area, t, r)} />
+                                        </>
+                                    )}
                                 </span>
-                                <span className="text-micro text-content-3 pl-4 truncate">
-                                    {(r.realizada_por_nombre || '').split(' ')[0]}
-                                    {' '}<span className="tabular-nums">{horaDe(r.registrado_at)}</span>
-                                    {r.tarde && <span className="text-warning-text font-bold"> · tarde</span>}
-                                </span>
+                                <Firma hora={horaDe(r.registrado_at)} tarde={r.tarde}
+                                    quien={{
+                                        nombre: r.realizada_por_nombre,
+                                        nombres: r.realizada_por_nombres,
+                                        apellidos: r.realizada_por_apellidos,
+                                        foto: r.realizada_por_photo_url,
+                                    }} />
+                                {r.corregida_at && (
+                                    <span className="text-micro text-warning-text font-bold pl-6 truncate">
+                                        corregida
+                                    </span>
+                                )}
                             </span>
                         );
                     }
@@ -227,7 +251,7 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
 
 export default function MatrizDelDia({
     dia, areas, momentos, puedeAnotar, cerrado, onRecargar,
-    onCorregir, onFueraDeRango, onDetalleLimpieza, onRonda, pendientes,
+    onCorregir, onFueraDeRango, onDetalleLimpieza, onQuitarLimpieza, onRonda, pendientes,
 }) {
     const conLecturas = areas.filter(a => !soloLimpieza(a));
     const soloLimp = areas.filter(a => soloLimpieza(a));
@@ -259,9 +283,11 @@ export default function MatrizDelDia({
                 </td>
             )}
             <CeldaLimpieza area={area} fecha={dia.fecha} puedeAnotar={puedeAnotar}
-                cerrado={cerrado} onRecargar={onRecargar} onDetalle={onDetalleLimpieza} />
+                cerrado={cerrado} onRecargar={onRecargar}
+                onDetalle={onDetalleLimpieza} onQuitar={onQuitarLimpieza} />
         </tr>
-    ), [dia.fecha, momentos, puedeAnotar, cerrado, onRecargar, onCorregir, onFueraDeRango, onDetalleLimpieza]);
+    ), [dia.fecha, momentos, puedeAnotar, cerrado, onRecargar, onCorregir,
+        onFueraDeRango, onDetalleLimpieza, onQuitarLimpieza]);
 
     return (
         <div data-surface="card" className="p-3 space-y-3">

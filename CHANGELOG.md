@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.0 — La limpieza se corrige y se quita, y quien anota tiene cara
+
+**La limpieza se puede corregir y se puede quitar.** *«Permite editar / quitar
+limpieza»* (usuario). Hasta hoy, marcarla por error era definitivo — y un libro
+que no se puede corregir termina diciendo algo falso, que es peor que un hueco.
+Las dos exigen **motivo**: tocar un registro ya anotado no puede ser gratis.
+
+- **Corregir** cambia los muebles marcados y la observación, guarda quién y por
+  qué, y la celda queda marcada como corregida.
+- **Quitar** borra la fila y el hueco vuelve solo. El rastro va a `audit_logs`
+  con su motivo, que es el canon del portal para toda acción de usuario.
+  Marcarla como anulada en vez de borrarla obligaba a filtrarla en las tres
+  funciones que la leen —el día, el resumen del mes y el mes impreso— y una de
+  las tres se olvida: el mes seguiría contando como hecha una limpieza que nadie
+  hizo.
+
+**Quien anota tiene cara y nombre completo.** *«SIEMPRE a la par del nombre la
+foto de quien lo hace, y siempre nombre y apellido»*. Es el «atribuible» del RTS
+6.1.14 dicho como se lee en una sala: una cara y dos palabras.
+
+Y el nombre estaba mal: la matriz cortaba `employees.name` a dos palabras, así
+que **«DOLORES CONCEPCION TEJADA HERNANDEZ» salía como «DOLORES CONCEPCION»** —
+dos nombres y ningún apellido. `name` es una columna generada y partirla es
+adivinar dónde estaba la frontera; ahora el día trae `first_names` y
+`last_names` por separado y el nombre lo arma `shortEmployeeName`, que es la
+regla del portal. La foto viaja como URL formato-public y la firma el navegador
+con `signPhotosDeep` — una URL firmada guardada en la base expira.
+
+**Sobre el lápiz: sí, es el canónico.** DESIGN.md fija un mapa cerrado de
+íconos, vigilado por la categoría `icono-semantico` del gate: editar es
+`Pencil` (los otros tres «lápices» de Lucide son otros tres dibujos, y por eso
+se retiraron). Quitar la limpieza usa `XCircle`, que en ese mapa es «anular /
+rechazar» y no `Trash2` — no se borra un objeto, se saca un registro del libro.
+
 ## v2.765.0 — El día entra en una matriz y se anota en la celda
 
 La maqueta A, construida. *«¿Cómo la podemos mejorar? Que sea más compacta, más

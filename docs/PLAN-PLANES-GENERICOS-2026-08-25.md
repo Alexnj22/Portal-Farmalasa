@@ -178,6 +178,36 @@ abren el portal.
 `RETURNS json`). **Hay que corregir la que el portal llama**, y verificar cuál es
 antes de tocar nada.
 
+#### Resultado de la fase 1 — **las tres están sanas, no se tocó ninguna** (2026-08-25)
+
+Medidas con la base en reposo (0 consultas largas, 0 locks), 6 llamadas de
+calentamiento para pasar el escalón del plan genérico, y la candidata `pg_temp`
+enfrentada a la original:
+
+| función | casos | resultado | vieja | nueva | veredicto |
+|---|---|---|---:|---:|---|
+| `get_faltantes_con_stock_en_otra_sala` | 7 sucursales | **7/7 idéntico** | 128–191 ms | 126–216 ms | **sana** — no mejora; en la sala 3 la corrección va **peor** (135 → 216 ms) |
+| `get_product_sales_total` | 5 rangos | **5/5 idéntico** | 15–237 ms | 8–235 ms | **sana** — 1.0×; el único caso que mejora va de 21 a 8 ms |
+| `get_product_sales_agg_jsonb` | 3 rangos | — | 715 ms (1ª–5ª) → **426 ms (6ª–8ª)** | — | **sana** — no hay escalón: *mejora* después de la sexta |
+
+**Las tres fallan la condición 2 del criterio** (divergir 3× contra el cuerpo con
+literales). Se declaran sanas y no se tocan. La fase 1 se cierra **con cero
+migraciones**.
+
+Y los tres números del triage que las habían puesto acá resultaron ser de red y
+serialización, no de base: la del tablero mide **140 ms** de función contra los
+540 ms del log, y `get_product_sales_total` mide 15–237 ms contra 1,972.
+
+> **Conclusión que hay que tener presente: `get_conteo_products_count` era la
+> única.** El triage acertó al descartar 16 de 19; se equivocó al dejar estas
+> tres adentro, y por el mismo motivo — el promedio del log no es el tiempo de
+> la función. **El único juez es medir la función contra su cuerpo con
+> literales.** Todo lo anterior es para elegir a quién medir primero.
+
+**Anotado y fuera de alcance:** `get_product_sales_agg_jsonb` devuelve **1.77 MB
+de JSON** (2,376 productos) en la carga de Ventas sin filtro. Eso no es este
+defecto —es tamaño de respuesta— y se atiende aparte, con su propia verificación.
+
 ### Fase 2 — las que se llaman y están en la frontera *(≈1 sesión)*
 
 `get_ventas_stats` (242 ms), `get_traslado_disponibilidad` (239 ms),
@@ -264,7 +294,7 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 |---|---|
 | 0 · el corte y su causa | **cerrado** — `20260825205448`, v2.767.1, verificado en producción |
 | 0 · triage de las 69 | **cerrado** — medido fuera de la ventana del corte, tabla en §0 |
-| 1 · las tres lentas | abierto |
+| 1 · las tres lentas | **cerrado** — las tres medidas y **declaradas sanas**; cero migraciones |
 | 2 · la frontera | abierto |
 | 3 · las que no se llamaron | abierto |
 | 4 · sincronización | abierto |

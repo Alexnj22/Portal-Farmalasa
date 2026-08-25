@@ -2428,7 +2428,7 @@ const DashboardView = ({ openModal }) => {
                 {/* gap ampliado + before:-inset-1 en mobile: mejora el touch target
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
-                <div className={`bg-surface-card border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
+                <div data-surface="dropdown" className={`px-3 py-2.5 flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
                   {/* Ancho y alto: dos uno-de-N de números. Con
                       `SegmentedControl` cada grupo se anuncia como "3 de 4" en
                       vez de ocho botones sueltos sin relación, y el toque de
@@ -3003,7 +3003,7 @@ const DashboardView = ({ openModal }) => {
             {employees.length === 0 ? (
               <div className="space-y-1.5">
                 {[0,1,2,3].map(i => (
-                  <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-border-card bg-surface-card">
+                  <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-border-card bg-surface-card-hover">
                     <Skel className="w-9 h-9 rounded-full flex-shrink-0" />
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <Skel className="h-3 w-2/3" />

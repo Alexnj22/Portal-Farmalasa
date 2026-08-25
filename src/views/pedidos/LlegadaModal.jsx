@@ -341,7 +341,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             {Array.from({ length: cajasExtra }, (_, i) => {
                                 const d = cajasExtraData[i] ?? {};
                                 return (
-                                    <div key={i} className="p-3 rounded-xl border border-warning/30 bg-surface-card space-y-2">
+                                    <div key={i} data-surface="card" data-tono="warning" className="p-3 space-y-2">
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="text-caption font-bold text-warning-text">Caja extra {i + 1}</span>
                                             <label className="flex items-center gap-1.5 cursor-pointer select-none">

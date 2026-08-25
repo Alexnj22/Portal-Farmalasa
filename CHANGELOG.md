@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.6 — Diez tarjetas menos, y ya nada de escritorio frena a un área
+
+El ratchet baja de **34 a 24**. Lo que cambia no es el número: con esto **las
+nueve áreas que siguen bajo 95 están frenadas EXCLUSIVAMENTE por «flujo»**, que
+son los pendientes de probar en sala. Ya no queda nada que se pueda resolver
+desde el teclado bloqueando a ninguna.
+
+**Cuatro salieron por una regla que estaba medida en el CSS y yo había leído
+mal.** Había dejado los avisos con tinte suave (`border-danger/30`,
+`border-warning/30`) pensando que migrarlos «cambiaría el diseño». El comentario
+de `index.css` dice lo contrario, y con la medición al lado:
+
+> «`index.css` va sin `@layer`, así que `[data-surface="card"]` **le gana a
+> cualquier utilidad de Tailwind**: medido, ni `border-warning/40` ni
+> `ring-2 ring-warning/40` cambiaban nada […] Esta regla existe porque el
+> canónico era INDECORABLE, y eso explicaba las últimas 10 tarjetas escritas a
+> mano.»
+
+O sea que ese borde de color **no se veía** — se veía el del canónico. Dibujar la
+tarjeta entera a mano era la única salida **antes** de que `data-tono` existiera;
+hoy es la desviación. Los cuatro pasan a `data-surface="card" data-tono="danger"`
+o `"warning"`, y el de Turnos a `data-tono` **condicional**, que es el ejemplo
+literal del canon.
+
+**Y tres no eran tarjetas de ninguna clase:**
+
+- el selector de tamaño del tablero y el desplegable de extras de Recepción son
+  **capas flotantes** (`absolute` / `position: fixed` con `zIndex: 99999`), así
+  que su superficie es `dropdown`, no `card`;
+- el enlace al certificado adjunto de una solicitud es una **píldora**, y el
+  esqueleto de la lista del tablero una franja dentro de un widget que ya es
+  tarjeta — los dos con superficie de realce, por §5.1.
+
+**Los 24 que quedan se quedan, y con motivo.** Diez son **controles de
+selección** (`role="radio"`, `aria-pressed`): darles `data-surface="card"` les
+pondría el lift de una tarjeta al pasar el mouse y les pisaría el estado activo,
+que es lo único que comunican. Los otros catorce son tarjetas con `rounded-header`
+y sombras de realce (`--shadow-glow-success-lg`) que el canónico no reproduce, o
+con un tinte `chart-9` que no tiene `data-tono`.
+
+**No se declararon como excepción a propósito.** Las excepciones del gate son
+**por archivo**, y varios de esos archivos tienen a la vez un control legítimo y
+una tarjeta que sí es deuda —`PermissionsView` tiene las dos cosas—, así que
+declararlos taparía hallazgos futuros. Se quedan en el ratchet, que es
+exactamente para lo que existe: deuda conocida que sólo baja. En esta sesión bajó
+de **65 a 24**.
+
 ## v2.747.5 — Cada sentido tiene su propio freno
 
 `traslado_interruptor` ya tenía **cuatro** filas, no dos: `sobrante_enviar` y

@@ -543,7 +543,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 )}
                 {meta.docUrl ? (
                     <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-label font-bold text-content-2 hover:text-brand-text transition-all">
+                        className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-border-card text-label font-bold text-content-2 hover:text-brand-text transition-all">
                         <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                     </a>
                 ) : (
@@ -745,7 +745,7 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
             {req.note && (
                 <div>
                     <Rotulo>Motivo de quien la envió</Rotulo>
-                    <p className="text-body-sm text-content-2 bg-surface-card rounded-2xl p-3 border border-border-card leading-relaxed">{req.note}</p>
+                    <p data-surface="card" className="text-body-sm text-content-2 p-3 leading-relaxed">{req.note}</p>
                 </div>
             )}
 

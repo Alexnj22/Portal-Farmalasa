@@ -231,7 +231,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                         Es matemáticamente imposible cubrir la apertura y cierre de la sucursal respetando las 44 horas semanales con el catálogo y personal actual.
                     </p>
                    
-                    <div className="w-full bg-surface-card rounded-xl p-5 text-left border border-danger/30 mb-4 shadow-sm">
+                    <div data-surface="card" data-tono="danger" className="w-full p-5 text-left mb-4">
                         <h4 className="text-label font-black text-danger-text uppercase tracking-widest mb-3">Problemas Detectados por Gemini:</h4>
                         <ul className="list-disc pl-5 text-body font-bold text-content-2 space-y-1.5 leading-relaxed">
                             {aiResult.warnings.map((w, i) => <li key={i}>{w}</li>)}

@@ -126,7 +126,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
                     {/* Diurnal section */}
                     {otBank.diurnal > 0 && (
-                        <div className="bg-surface-card border border-warning/30 rounded-xl p-2.5 space-y-2">
+                        <div data-surface="card" data-tono="warning" className="p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
                                 <p className="text-micro font-black uppercase tracking-widest text-warning-text">HE Diurnas</p>
                                 <span className="text-body font-black text-warning-text">{otBank.diurnal.toFixed(1)}h</span>

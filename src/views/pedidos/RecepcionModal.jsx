@@ -1671,7 +1671,7 @@ export default function RecepcionModal({
                             left: extraDropCoords.left,
                             width: extraDropCoords.width,
                             zIndex: 99999,
-                        }} className="rounded-xl border border-border-card bg-surface-card shadow-2xl overflow-hidden">
+                        }} data-surface="dropdown" className="overflow-hidden">
                             {/* Una lista de resultados, no una pila de botones de
                                 acción. Eran `variant="primary"`: cuatro barras
                                 azules a todo ancho, con el nombre centrado y en

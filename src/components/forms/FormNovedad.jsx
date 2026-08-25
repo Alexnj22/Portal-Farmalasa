@@ -558,7 +558,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
-                        <div className="mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">
+                        <div data-surface="card" data-tono="danger" className="mt-2 p-3 transition-all hover:bg-surface-card-hover">
                             <Checkbox size="sm"
                                 checked={formData?.hasFiniquito || false}
                                 onChange={(v) => setFormData(prev => ({...prev, hasFiniquito: v}))}

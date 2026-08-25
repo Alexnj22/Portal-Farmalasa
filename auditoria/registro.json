@@ -303,10 +303,10 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
@@ -342,7 +342,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios",
-        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -387,10 +387,10 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "pct": 95,
+          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
@@ -426,7 +426,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
-        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -549,10 +549,10 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 80,
-          "evidencia": "gate:design en verde · 6 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "pct": 86,
+          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "6 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
           ]
         },
         "movil": {
@@ -583,12 +583,12 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
-        "[vista] 6 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -631,11 +631,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -669,7 +667,6 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -714,11 +711,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -753,7 +748,6 @@
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] asignar_aprobador_solicitud(): trigger con GRANT a anon. Sin NEW no se ejecuta — inerte, pero no debería estar",
-        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1564,10 +1558,10 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 83,
-          "evidencia": "gate:design en verde · 5 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "pct": 89,
+          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
             "tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada"
           ]
         },
@@ -1608,7 +1602,7 @@
         "[flujo] falta una ruta real (conductor = creador)",
         "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
         "[seguridad] notificar_decision_diferencia(): trigger con GRANT a anon, inerte fuera de un trigger",
-        "[vista] 5 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],

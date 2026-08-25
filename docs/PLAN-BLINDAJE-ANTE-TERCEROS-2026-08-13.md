@@ -1,6 +1,6 @@
 # Plan de blindaje ante un tercero — sin frenar el trabajo diario
 
-**Fecha**: 2026-08-13 · **Estado**: **Fase 0 aplicada y verificada el 2026-08-24**; Fases 1 a 4 sin empezar
+**Fecha**: 2026-08-13 · **Estado**: **Fases 0 y 1 aplicadas y verificadas el 2026-08-24**; Fases 2 a 4 sin empezar
 **Origen**: medición de la superficie real de producción (`sacecdkdmsdvgqnrsett`) el 2026-08-13.
 
 ---
@@ -12,9 +12,10 @@ commiteado** — vivía sólo en el árbol de trabajo, o sea a un `git checkout`
 de desaparecer, que es exactamente el riesgo que CLAUDE.md describe para un árbol
 compartido. Ya está versionado.
 
-**Ese mismo día se cerró la Fase 0** — la única que permitía tomar cualquier
-cuenta del portal. Está abajo, con sus cinco pruebas y con lo que no se pudo
-probar.
+**Ese mismo día se cerraron la Fase 0 y la Fase 1.** La 0 era la única que
+permitía tomar cualquier cuenta del portal; la 1 instala el interruptor y el
+registro de egreso, sin bloquear a nadie. Las dos están abajo, con sus pruebas y
+con lo que no se pudo probar.
 
 Lo que sigue midiéndose igual: **67 policies** de `public` dejan leer sin
 preguntar por ningún `auth_*` y sin ser de `service_role` (criterio mío, no el
@@ -183,7 +184,59 @@ deploy de edge function, sin DDL.
 
 ---
 
-## Fase 1 — Ver antes de cerrar (una semana, impacto cero)
+## Fase 1 — ✅ INSTALADA en producción el 2026-08-24
+
+Migración `20260825033558`. **Nada bloquea a nadie**: los cuatro interruptores
+nacieron en `observar` y ahí siguen.
+
+| | |
+|---|---|
+| `security_config` | 4 filas, las cuatro en `observar` · 5 policies · RLS activo |
+| `export_log` | append-only · 3 policies · RLS activo |
+| `sec_exige` / `sec_avisa` | `STABLE`, `search_path` fijo, `EXECUTE` revocado a `anon` |
+
+### Se probó primero en el entorno de pruebas, y se le pidió que FALLE
+
+`qvctarsqvlhbzgvwbbbt`, con `execute_sql` y todo dentro de `BEGIN…ROLLBACK`,
+cambiando de rol de verdad (`SET LOCAL role authenticated` + el JWT simulado):
+sin cambiar de rol, RLS ni se evalúa y la prueba no prueba nada.
+
+**Los tres estados se distinguen** — que es la razón de que no sea un booleano:
+
+| estado | `sec_exige` | `sec_avisa` |
+|---|---|---|
+| clave inexistente | false | false |
+| `observar` | false | false |
+| `avisar` | false | **true** ← anota sin bloquear |
+| `exigir` | **true** | **true** |
+
+**Y las policies niegan:**
+
+| se intentó | resultado |
+|---|---|
+| que un NO-superusuario mueva un interruptor | **0 filas** cambiadas |
+| anotar una salida a nombre de OTRO | rechazado |
+| anotar una salida **sin dueño** (`employee_id` nulo) | rechazado |
+| anotar la salida propia | **entró** ← si esto fallara, el registro no serviría |
+| editar o borrar la propia fila del registro | **0 filas**, las dos |
+| `anon` leyendo cualquiera de las dos tablas | **0 filas**, las dos |
+
+Las dos últimas líneas de la tabla de arriba y la fila «anotar la salida propia»
+están para que el resto signifique algo: **un control que sólo sabe decir que no
+es tan inútil como uno que sólo sabe decir que sí.**
+
+### Lo que falta de esta fase, y no es código de base
+
+- **Escribir en `export_log` desde cada exportación** (CSV, ZIP de DTE,
+  impresión masiva). La tabla existe y está vacía; hasta que alguien le escriba,
+  la línea base no empieza a acumularse.
+- **Un mes de datos.** El techo de la Fase 3.3 sale de ahí, y de ningún otro
+  lado: el §1.3 de abajo explica por qué un umbral ingenuo de volumen apagaría
+  el portal —`fetchAllRows` pagina 20,000+ filas como comportamiento normal—.
+
+---
+
+### El plan original de esta fase, para el registro
 
 Nada bloquea todavía. Se instala lo que permite decidir con datos.
 
@@ -426,17 +479,21 @@ máquina, se rompe solo.
 | 3 | contención | ~3 días | fricción diseñada, medida |
 | 4 | vigilancia + gate | ~1 día | **no** |
 
-~~**Empezar por la Fase 0.**~~ **Hecha el 2026-08-24.** Lo siguiente es la
-**Fase 1** — instalar la tabla de interruptores y el registro de egreso, que no
-bloquea nada y es lo que permite ver quién habría sido bloqueado *antes* de
-bloquearlo.
+~~**Empezar por la Fase 0.**~~ ~~Lo siguiente es la **Fase 1**.~~ **Las dos,
+hechas el 2026-08-24.**
+
+Lo siguiente es **escribirle a `export_log` desde cada exportación** y dejar
+pasar un mes. No es la Fase 2: sin línea base, el techo de la Fase 3.3 sería un
+número inventado, y la Fase 2 —cerrar la lectura masiva— tiene su propia trampa
+escrita en el §1.3, que es que este portal se comporta como un scraper por
+diseño.
 
 ---
 
 ## Estado
 
 - [x] **Fase 0** — `set-employee-password`, `disable-employee-auth` · **aplicada y verificada el 2026-08-24** (v35 / v10)
-- [ ] Fase 1 — `security_config`, `export_log`, línea base
+- [x] **Fase 1** — `security_config`, `export_log` **instalados y verificados el 2026-08-24** (`20260825033558`) · falta escribir el registro desde cada exportación y juntar la línea base
 - [ ] Fase 2A/2B/2C/2D — cierre de lecturas
 - [ ] Fase 3 — contención
 - [ ] Fase 4 — vigilancia

@@ -673,11 +673,13 @@ export const AREAS = [
             'src/utils/cajaNegra.js',
             'src/components/forms/FormAuditDetail.jsx',
         ],
-        tablas: ['audit_logs', 'sync_log', 'sync_alert_log', 'backup_sync_log', 'orphan_objects_registry'],
+        tablas: ['audit_logs', 'sync_log', 'sync_alert_log', 'backup_sync_log', 'orphan_objects_registry',
+                 'security_config', 'export_log'],
         edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai'],
         crons: ['check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily'],
-        docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md'],
+        docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
+               'docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md'],
     },
 ];
 

@@ -17,7 +17,9 @@ import { getSignedFileUrl, openStoredFile } from '../../../utils/storageFiles';
 // Por eso el estado `enviada` se pinta en `warning` y no en `success`: salir no
 // es haber llegado.
 
-const MOTIVO_LABEL = { faltante: 'No llegó', danado: 'Dañado', vencido: 'Vencido' };
+const MOTIVO_LABEL = {
+    faltante: 'No llegó', danado: 'Dañado', vencido: 'Vencido', sobrante: 'Llegó de más',
+};
 
 export default function DevolucionBloque({
     dev, isBranch, busyAction, empMap = new Map(), readOnly = false,
@@ -65,15 +67,22 @@ export default function DevolucionBloque({
         error:      'text-danger-text',
     }[dev.estado] ?? 'text-content-2';
 
+    // El sentido cambia las dos puntas de cada rótulo. Un sobrante sale de
+    // BODEGA y entra a la SALA — decir «salió de la sala» ahí manda a buscar el
+    // producto al lugar equivocado.
+    const aLaSala = dev.sentido === 'a_sala';
+    const deDonde = aLaSala ? 'bodega'   : 'la sala';
+    const aDonde  = aLaSala ? 'la sala'  : 'bodega';
+
     const rotulo = {
-        solicitada: 'Devolución pedida',
-        aceptada:   'Aceptada — falta que salga de la sala',
-        enviando:   'Saliendo de la sala…',
-        enviada:    'Salió de la sala — falta que entre a bodega',
-        recibiendo: 'Entrando a bodega…',
-        recibida:   'Entró en bodega',
-        rechazada:  'Devolución rechazada',
-        error:      'La devolución no se pudo mover',
+        solicitada: 'Movimiento pedido',
+        aceptada:   `Acordado — falta que salga de ${deDonde}`,
+        enviando:   `Saliendo de ${deDonde}…`,
+        enviada:    `Salió de ${deDonde} — falta que entre a ${aDonde}`,
+        recibiendo: `Entrando a ${aDonde}…`,
+        recibida:   `Entró en ${aDonde}`,
+        rechazada:  'Movimiento rechazado',
+        error:      'El movimiento no se pudo hacer',
     }[dev.estado] ?? dev.estado;
 
     return (
@@ -89,7 +98,9 @@ export default function DevolucionBloque({
             <div className="flex items-center gap-2 flex-wrap text-caption text-content-3">
                 <span>{dev.viaja
                     ? 'El producto viaja de vuelta a bodega.'
-                    : 'No viaja nada: quedó en bodega desde el principio.'}</span>
+                    : aLaSala
+                        ? 'No viaja nada: el producto ya está en la sala.'
+                        : 'No viaja nada: quedó en bodega desde el principio.'}</span>
                 <EmpChip emp={quienPidio} prefijo="Pedida por" size="xs" />
             </div>
 
@@ -156,7 +167,9 @@ export default function DevolucionBloque({
                 )}
                 {dev.estado === 'enviada' && isBranch && (
                     <p className="text-caption text-content-3 italic">
-                        {dev.viaja ? 'Falta que bodega lo reciba.' : 'Falta que bodega lo confirme.'}
+                        {aLaSala          ? 'Falta que bodega confirme la entrada en tu sala.'
+                         : dev.viaja      ? 'Falta que bodega lo reciba.'
+                         :                  'Falta que bodega lo confirme.'}
                     </p>
                 )}
 
@@ -169,7 +182,8 @@ export default function DevolucionBloque({
                   || (dev.estado === 'error' && !dev.id_traslado && !dev.detalle?.revisar_a_mano)) && !isBranch && (
                     <Button tone="chart-3" icon={Truck} disabled={moviendo}
                         onClick={() => onMover?.(dev.id)}>
-                        {moviendo ? <Loader2 size={10} className="animate-spin" /> : 'Sacarlo de la sala'}
+                        {moviendo ? <Loader2 size={10} className="animate-spin" />
+                                  : (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')}
                     </Button>
                 )}
 

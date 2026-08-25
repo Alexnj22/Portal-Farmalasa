@@ -5,6 +5,7 @@ import {
   // Con alias: más abajo hay una función local `anotar` que reparte cantidades
   // entre lotes. Son dos cosas distintas y no pueden compartir nombre.
   anotar as noCallar,
+  apartadoQueEstorba,
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
@@ -14,6 +15,7 @@ import {
   identificarTrasladoNuevo,
   lectorDeRecepcion,
   leerBien,
+  leerUbicacion,
   nombreCorto,
   norm,
   pendientesDeOrigen,
@@ -25,7 +27,19 @@ import {
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 
-// Devuelve a Bodega lo que quedó de más en la sala después de contar la caja.
+// Cuadra en el sistema lo que la sala contó distinto de lo que salió de Bodega.
+//
+// ── Va en los DOS sentidos, y es el mismo viaje ────────────────────────────
+// `sentido = 'a_bodega'` (faltante, dañado, vencido): sale de la sala, entra a
+// Bodega. Es para lo que nació.
+// `sentido = 'a_sala'` (sobrante): sale de Bodega, entra a la sala. Llegó en
+// físico y no llegó en el sistema, así que el asiento va a buscar la mercadería
+// donde ya está. Es el ESPEJO exacto del faltante —el mismo traslado de papel
+// con el origen y el destino cambiados—, y por eso vive acá y no en una función
+// aparte que se separaría de ésta al primer arreglo.
+//
+// El `sentido` NO se escribe: es una columna generada a partir del motivo, así
+// que no hay forma de guardar una fila que diga «sobrante» y apunte a Bodega.
 //
 // ── El agujero que tapa ─────────────────────────────────────────────────────
 // El traslado del pedido es todo o nada: la recepción ingresa la cantidad
@@ -50,18 +64,19 @@ import {
 // ── Por qué NO vive dentro de `trasladar-pedido-erp` ────────────────────────
 // Aquella tiene el origen clavado en Bodega —lee `es_bodega` del mapa y arma
 // todo alrededor de eso— y despacha 150 a 550 líneas en corridas que se
-// retoman. Ésta va al revés (sale de la sala, entra a Bodega) y son un puñado
-// de renglones con alguien mirando. Meterle un tercer sentido a la función que
-// mueve el pedido entero, que recién estrenó su primera escritura real, es
-// justo el cambio que no se hace en el mismo movimiento.
+// retoman. Ésta son un puñado de renglones con alguien mirando. Meterle un
+// tercer sentido a la función que mueve el pedido entero, que recién estrenó su
+// primera escritura real, es justo el cambio que no se hace en el mismo
+// movimiento.
 //
 // ── Dos sabores, y la fila dice cuál ────────────────────────────────────────
-// `viaja = false` (faltante): el producto NUNCA salió de Bodega. Nada viaja;
-// es un arreglo en el sistema y Bodega lo confirma en el momento.
+// `viaja = false` (faltante, sobrante): NADA se mueve de lugar. Es un arreglo
+// en el sistema y el destino lo confirma en el momento — el faltante porque el
+// producto nunca salió de Bodega, y el sobrante porque ya está en la sala.
 // `viaja = true` (dañado, vencido): el producto está en la sala y vuelve
 // físicamente. Bodega lo confirma CUANDO LO TENGA.
 // La función no decide eso —no puede saber cuándo llegó una caja—: lo dice la
-// pantalla, para que nadie dé por recibido lo que va en el camión.
+// fila, para que nadie dé por recibido lo que va en el camión.
 
 // Una devolución son pocos renglones y hay alguien esperando la respuesta, así
 // que no hay background ni corrida que se retome: si no alcanza el tiempo se
@@ -80,6 +95,7 @@ const MOTIVO_CONCEPTO: Record<string, string> = {
   faltante: "NO LLEGO",
   danado:   "DANADO",
   vencido:  "VENCIDO",
+  sobrante: "LLEGO DE MAS",
 };
 
 interface Devolucion {
@@ -95,7 +111,12 @@ interface Devolucion {
   estado: string;
   id_traslado: string | null;
   solicitada_por: string | null;
+  /** 'a_bodega' | 'a_sala'. Columna generada: sale del motivo, no se escribe. */
+  sentido: string;
 }
+
+/** ¿Este movimiento va hacia la sala en vez de hacia Bodega? */
+const haciaLaSala = (d: { sentido?: string }) => d.sentido === "a_sala";
 
 /** La ubicación de trabajo de una sala (la de vencidos nunca es origen). */
 function ubicacionDeTrabajo(m: { inv_ubicaciones?: unknown } | null): number {
@@ -103,6 +124,22 @@ function ubicacionDeTrabajo(m: { inv_ubicaciones?: unknown } | null): number {
     ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
     : [];
   return Number(lista.find((u) => !u.isVencidos)?.id ?? 0);
+}
+
+/**
+ * El área de vencidos, que sólo Bodega tiene. Devuelve 0 cuando no hay.
+ *
+ * Hace falta desde que este archivo también saca de Bodega: sin lote, el
+ * sistema descarga de ahí primero y la casilla de existencia suma las dos
+ * ubicaciones — o sea que el freno aprobaría mover mercadería apartada. Ver
+ * `apartadoQueEstorba`. Saliendo de una SALA no se usa: una sala tiene una sola
+ * ubicación.
+ */
+function ubicacionDeVencidos(m: { inv_ubicaciones?: unknown } | null): number {
+  const lista = Array.isArray(m?.inv_ubicaciones)
+    ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
+    : [];
+  return Number(lista.find((u) => u.isVencidos)?.id ?? 0);
 }
 
 Deno.serve(async (req) => {
@@ -188,8 +225,11 @@ Deno.serve(async (req) => {
     if (!ubicBodega)
       return json({ ok: false, error: "No se conoce la ubicación de trabajo de la bodega." }, 422);
 
-    // La devolución entra a Bodega, así que la mueve y la recibe Bodega. Es la
-    // misma regla del traslado entre salas: decide quien va a recibir.
+    // Lo maneja Bodega en los dos sentidos: hacia Bodega porque es donde entra
+    // el producto, y hacia la sala porque es de donde SALE —y una sala no puede
+    // sacarse existencia a sí misma desde el estante de Bodega—. Es la misma
+    // regla del traslado entre salas dicha para las dos direcciones: manda
+    // quien tiene el producto del lado que se descarga.
     if (!alcanceTodo && Number(emp?.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
       return json({
         ok: false,
@@ -222,7 +262,8 @@ Deno.serve(async (req) => {
     const { data: devsRaw, error: devErr } = await admin
       .from("pedido_devolucion")
       .select("id, pedido_id, erp_sucursal_id, pedido_item_id, erp_product_id, "
-            + "motivo, viaja, cantidad, clave, estado, id_traslado, detalle, updated_at, solicitada_por")
+            + "motivo, viaja, cantidad, clave, estado, id_traslado, detalle, updated_at, solicitada_por, "
+            + "sentido")
       .in("id", ids);
     if (devErr) throw devErr;
     const devs = (devsRaw ?? []) as (Devolucion & { detalle: Record<string, unknown> | null; updated_at: string })[];
@@ -259,7 +300,7 @@ Deno.serve(async (req) => {
     const pendientes: string[] = [];
 
     // ══════════════════════════════════════════════════════════════════════
-    // PASO 2 · RECIBIR — en Bodega
+    // PASO 2 · RECIBIR — en el lado que recibe (Bodega, o la sala si es sobrante)
     // ══════════════════════════════════════════════════════════════════════
     //
     // Sin esto la devolución deja el producto en tránsito. Es el error exacto
@@ -273,14 +314,52 @@ Deno.serve(async (req) => {
           error: "Ninguna de esas devoluciones tiene un movimiento despachado que recibir.",
         }, 409);
 
-      const cookie = await sesionEn(erpBodega, login);
-
-      // Con qué se comprueba, antes de cargar, si el movimiento ya entró a
-      // Bodega. Lee la cola una vez por lote — ver `lectorDeRecepcion`.
-      const comoVaLaEntrada = lectorDeRecepcion(cookie);
+      // La sesión es la del lado que RECIBE, y la sucursal es estado GLOBAL de
+      // la sesión del sistema: una por destino, abierta cuando hace falta. Un
+      // sobrante entra a la SALA, así que ya no se puede abrir una sola sesión
+      // en Bodega para todo el lote.
+      const entradas = new Map<number, {
+        cookie: string;
+        comoVaLaEntrada: ReturnType<typeof lectorDeRecepcion>;
+        ubic: number;
+      }>();
+      const entradaDe = async (erpDestino: number) => {
+        const ya = entradas.get(erpDestino);
+        if (ya) return ya;
+        const mapaDestino = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpDestino) ?? null;
+        const ubic = ubicacionDeTrabajo(mapaDestino);
+        if (!ubic) throw new Error(`No se conoce la ubicación de trabajo de la sala ${erpDestino}.`);
+        const c = await sesionEn(erpDestino, login);
+        // Con qué se comprueba, antes de cargar, si el movimiento ya entró.
+        // Lee la cola una vez por sala — ver `lectorDeRecepcion`.
+        const nueva = { cookie: c, comoVaLaEntrada: lectorDeRecepcion(c), ubic };
+        entradas.set(erpDestino, nueva);
+        return nueva;
+      };
 
       for (const d of aRecibir) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
+
+        // La sesión se abre ANTES de tomar la fila: si no se puede abrir, la
+        // devolución tiene que quedar como estaba y no en 'recibiendo', que es
+        // el estado del que nadie la vuelve a sacar hasta el rescate.
+        let entrada;
+        try {
+          entrada = await entradaDe(haciaLaSala(d) ? d.erp_sucursal_id : erpBodega);
+        } catch (e) {
+          fallos.push({ clave: d.clave, error: e instanceof Error ? e.message : String(e) });
+          continue;
+        }
+        const { cookie, comoVaLaEntrada } = entrada;
+        const ubicDestino = entrada.ubic;
+
+        // Los avisos nombran las dos puntas, y con el sentido invertido se
+        // cambian de lugar. Un mensaje que diga «no entró a Bodega» sobre un
+        // sobrante manda a buscar el producto al lugar equivocado.
+        const nombreSala = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === Number(d.erp_sucursal_id))?.nombre
+          ?? `la sala ${d.erp_sucursal_id}`;
+        const dondeEntra = haciaLaSala(d) ? nombreSala : "Bodega";
+        const dondeSale  = haciaLaSala(d) ? "Bodega" : nombreSala;
 
         // Se toma la fila ANTES de tocar el sistema. Dos personas de Bodega
         // confirmando a la vez pasarían las dos la lectura de arriba; acá la
@@ -318,7 +397,7 @@ Deno.serve(async (req) => {
               admin.from("pedido_devolucion").update({
                 estado: "error",
                 error_msg: `El movimiento ${d.id_traslado} está anulado en el sistema: el producto no entró `
-                  + `a Bodega. Hay que volver a sacarlo de la sala.`,
+                  + `a ${dondeEntra}. Hay que volver a sacarlo de ${dondeSale}.`,
                 updated_at: new Date().toISOString(),
               }).eq("id", d.id),
               `que ${d.clave} está anulado en el sistema`,
@@ -337,7 +416,7 @@ Deno.serve(async (req) => {
                 aviso: "El sistema ya lo tenía recibido; no se volvió a cargar.",
                 updated_at: new Date().toISOString(),
               }).eq("id", d.id),
-              `que ${d.clave} ya estaba recibido en Bodega`,
+              `que ${d.clave} ya estaba recibido en ${dondeEntra}`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
             await noCallar(
@@ -429,7 +508,7 @@ Deno.serve(async (req) => {
           total: total.toFixed(4),
           fecha: hoySV(),
           concepto,
-          destino: String(ubicBodega),
+          destino: String(ubicDestino),
           id_traslado: String(d.id_traslado),
         }), { extra: { Referer: RECIBIR } }));
 
@@ -439,14 +518,14 @@ Deno.serve(async (req) => {
           // 'enviada' sin preguntar deja la fila lista para un reintento sobre
           // producto ya cargado — la otra mitad del hueco.
           if (await estadoDeRecepcion(cookie, String(d.id_traslado)) === "recibido") {
-            // El producto YA entró a Bodega y esta fila es la única prueba.
+            // El producto YA entró al destino y esta fila es la única prueba.
             await noCallar(
               admin.from("pedido_devolucion").update({
                 estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
                 aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
                 updated_at: new Date().toISOString(),
               }).eq("id", d.id),
-              `que ${d.clave} entró a Bodega pese al fallo del sistema`,
+              `que ${d.clave} entró a ${dondeEntra} pese al fallo del sistema`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
             await noCallar(
@@ -470,7 +549,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Camino de éxito: el producto está adentro de Bodega. Sin esta
+        // Camino de éxito: el producto está adentro del destino. Sin esta
         // anotación la fila sigue 'recibiendo', ninguna corrida la vuelve a
         // tomar hasta el rescate, y la devolución figura como en tránsito sobre
         // existencia que ya entró.
@@ -514,7 +593,7 @@ Deno.serve(async (req) => {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // PASO 1 · ENVIAR — sale de la sala hacia Bodega
+    // PASO 1 · ENVIAR — sale del origen que el sentido nombra
     // ══════════════════════════════════════════════════════════════════════
     const aEnviar = devs.filter((d) =>
       d.estado === "aceptada"
@@ -531,13 +610,20 @@ Deno.serve(async (req) => {
     // para armar cajas, y confundirlos movería una cantidad distinta.
     const { data: items, error: itemsErr } = await admin
       .from("pedido_items")
-      .select("id, factor, erp_presentacion_id, products ( nombre ), presentaciones!erp_presentacion_id ( tipo )")
+      .select("id, factor, erp_presentacion_id, dispatch_tipo, es_extra, "
+            + "products ( nombre ), presentaciones!erp_presentacion_id ( tipo )")
       .in("id", aEnviar.map((d) => d.pedido_item_id));
     if (itemsErr) throw itemsErr;
     const porItem = new Map((items ?? []).map((r: Record<string, unknown>) => [Number(r.id), {
       factor: r.factor == null ? 0 : Number(r.factor),
       nombre: String((r.products as { nombre?: string } | null)?.nombre ?? r.id),
-      tipo: String((r.presentaciones as { tipo?: string } | null)?.tipo ?? ""),
+      // Un renglón que el pedido despachó tiene su `erp_presentacion_id`. Uno
+      // que la sala anotó porque llegó de más NO: nunca hubo línea de pedido, y
+      // la presentación es la que eligió quien contó. Sin este respaldo, todo
+      // sobrante de un producto extra fallaba con «no guardó presentación».
+      tipo: String((r.presentaciones as { tipo?: string } | null)?.tipo
+                   ?? "") || String(r.dispatch_tipo ?? ""),
+      esExtra: r.es_extra === true,
     }]));
 
     // Quién pidió cada devolución, para el concepto. Es la mitad del acuerdo que
@@ -594,37 +680,45 @@ Deno.serve(async (req) => {
       ]),
     );
 
-    // Una sesión por sala: la sucursal es estado GLOBAL de la sesión del
-    // sistema, y estas devoluciones salen de la sala, no de Bodega.
-    const porSala = new Map<number, typeof aEnviar>();
+    // Una sesión por sala que ENVÍA: la sucursal es estado GLOBAL de la sesión
+    // del sistema. El origen ya no es siempre la sala — un sobrante sale de
+    // Bodega—, así que se agrupa por el origen de cada fila y no por su
+    // `erp_sucursal_id`, que es SIEMPRE la sala del pedido en los dos sentidos.
+    const porOrigen = new Map<number, typeof aEnviar>();
     for (const d of aEnviar) {
-      const lista = porSala.get(d.erp_sucursal_id) ?? [];
+      const origen = haciaLaSala(d) ? erpBodega : d.erp_sucursal_id;
+      const lista = porOrigen.get(origen) ?? [];
       lista.push(d);
-      porSala.set(d.erp_sucursal_id, lista);
+      porOrigen.set(origen, lista);
     }
 
-    for (const [erpSala, lista] of porSala) {
-      const mapaSala = (mapas ?? []).find((m) => m.erp_sucursal_id === erpSala) ?? null;
-      const ubicSala = ubicacionDeTrabajo(mapaSala);
-      if (!ubicSala) {
-        for (const d of lista) fallos.push({ clave: d.clave, error: `No se conoce la ubicación de la sala ${erpSala}.` });
+    for (const [erpOrigen, lista] of porOrigen) {
+      const mapaOrigen = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpOrigen) ?? null;
+      const ubicOrigen = ubicacionDeTrabajo(mapaOrigen);
+      if (!ubicOrigen) {
+        for (const d of lista) fallos.push({ clave: d.clave, error: `No se conoce la ubicación de la sala ${erpOrigen}.` });
         continue;
       }
+      const nombreOrigen = String(mapaOrigen?.nombre ?? `la sala ${erpOrigen}`);
 
-      const cookie = await sesionEn(erpSala, login);
+      const cookie = await sesionEn(erpOrigen, login);
       // La foto de los pendientes: el movimiento nuevo es el que no estaba. El
       // `insert` no devuelve el id y el listado ignora el orden que se le pide.
-      let conocidos = await pendientesDeOrigen(cookie, ubicSala);
-      // Lo que hay de verdad en el área de trabajo de la sala. Ver
+      let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
+      // Lo que hay de verdad en el área de trabajo del origen. Ver
       // `existenciasDeUbicacion`: la casilla de la pantalla suma vencidos.
-      //
-      // Acá NO hace falta el cuarto argumento de `disponibleEnBodega` —lo
-      // apartado en el área de vencidos, de donde el sistema descarga primero—
-      // porque el origen de una devolución es siempre una SALA, y una sala
-      // tiene una sola ubicación (`erp_sucursal_map.inv_ubicaciones`: sólo
-      // Bodega trae dos). El día que una sala tenga su propia área de vencidos,
-      // este es el lugar.
-      const enUbicacion = await existenciasDeUbicacion(cookie, erpSala, ubicSala);
+      const enUbicacion = await existenciasDeUbicacion(cookie, erpOrigen, ubicOrigen);
+
+      // El cuarto argumento de `disponibleEnBodega` —lo apartado en el área de
+      // vencidos, de donde el sistema descarga PRIMERO— sólo existe saliendo de
+      // Bodega: una sala tiene una sola ubicación
+      // (`erp_sucursal_map.inv_ubicaciones`: sólo Bodega trae dos). Antes acá
+      // decía que el origen era siempre una sala y por eso no hacía falta; con
+      // el sobrante saliendo de Bodega, dejarlo afuera aprobaría mover
+      // mercadería apartada que el sistema después rechaza.
+      const ubicVencidos = ubicacionDeVencidos(mapaOrigen);
+      const lecturaEstante  = ubicVencidos ? await leerUbicacion(cookie, erpOrigen, ubicOrigen)   : null;
+      const lecturaVencidos = ubicVencidos ? await leerUbicacion(cookie, erpOrigen, ubicVencidos) : null;
 
       for (const d of lista) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
@@ -634,6 +728,14 @@ Deno.serve(async (req) => {
           fallos.push({ clave: d.clave, error: "El renglón del pedido no guardó presentación o factor." });
           continue;
         }
+
+        // A dónde entra. `erp_sucursal_id` es SIEMPRE la sala del pedido —en
+        // los dos sentidos—, así que el destino no se lee de ahí: se deduce del
+        // sentido, igual que el origen de arriba.
+        const erpDestino  = haciaLaSala(d) ? d.erp_sucursal_id : erpBodega;
+        const nombreDestino = String(
+          (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpDestino)?.nombre ?? `la sala ${erpDestino}`,
+        );
 
         // `fallar` es lo único que le cuenta a alguien por qué una devolución no
         // salió. Si su propia escritura falla, la fila queda en 'enviando' y
@@ -666,8 +768,8 @@ Deno.serve(async (req) => {
           if (!tomada) continue;   // otra persona se la llevó
         }
 
-        const f = await traerFila(cookie, d.erp_product_id, ubicSala);
-        if (!f.encontrado) { await fallar(`${it.nombre} ya no tiene existencia en la sala.`); continue; }
+        const f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
+        if (!f.encontrado) { await fallar(`${it.nombre} ya no tiene existencia en ${nombreOrigen}.`); continue; }
 
         const pres = await resolverPresentacion(cookie, f, it.tipo, it.factor);
         if (!pres) {
@@ -679,13 +781,14 @@ Deno.serve(async (req) => {
         // El tope sale de los LOTES: la casilla de existencia trae la del primer
         // lote, no la del producto (ver `disponibleEnBodega`). Acá el reparto de
         // abajo también sabe cubrir con varios, así que un tope por un solo lote
-        // frenaría producto que sí está en la sala.
+        // frenaría producto que sí está en el estante.
         const hay = disponibleEnBodega(
           f, Number(pres.unidad),
           enUbicacion ? (enUbicacion.get(Number(d.erp_product_id)) ?? 0) : null,
+          apartadoQueEstorba(lecturaEstante, lecturaVencidos, Number(d.erp_product_id)),
         );
         if (Number(d.cantidad) > hay.paquetes) {
-          await fallar(`De ${it.nombre} ${hayEnTexto(hay, "la sala")}: alcanzan para `
+          await fallar(`De ${it.nombre} ${hayEnTexto(hay, nombreOrigen)}: alcanzan para `
             + `${hay.paquetes} y la devolución son ${d.cantidad}.`);
           continue;
         }
@@ -694,6 +797,12 @@ Deno.serve(async (req) => {
         // Vuelve con el MISMO lote con el que llegó. Es lo que de verdad está en
         // la sala, y devolver un lote distinto del que salió deja las dos salas
         // cuadradas en total y torcidas por lote — que es peor, porque no se ve.
+        //
+        // Hacia la sala vale lo mismo por el otro lado: un sobrante de un
+        // renglón que SÍ se despachó son unidades de más del mismo lote, y
+        // `lotesDeIda` las nombra. Un producto que llegó de más nunca se
+        // despachó, así que no tiene ninguno y cae directo al reparto por
+        // vencimiento de abajo — que es lo correcto, no un respaldo.
         const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
         const avisos: string[] = [];
 
@@ -724,7 +833,7 @@ Deno.serve(async (req) => {
             if (!numero) continue;
             const lote = f.lotes.find((x) => norm(x.numero) === norm(numero));
             if (!lote) {
-              avisos.push(`el lote ${numero} con el que llegó ya no está en la sala`);
+              avisos.push(`el lote ${numero} del despacho ya no está en ${nombreOrigen}`);
               continue;
             }
             const toma = Math.min(resto, cabeEn(lote));
@@ -747,14 +856,16 @@ Deno.serve(async (req) => {
               if (toma <= 0) continue;
               anotar(lote, toma);
               usados.add(lote.id);
-              avisos.push(`se devolvieron ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
-                + `que no es con el que llegó`);
+              avisos.push(`salieron ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
+                + (haciaLaSala(d)
+                    ? `elegido por vencimiento: un producto que llegó de más no tiene lote de despacho que citar`
+                    : `que no es con el que llegó`));
             }
           }
 
           if (resto > 0) {
-            await fallar(`Ningún lote de ${it.nombre} en la sala alcanza para las ${d.cantidad} de la `
-              + `devolución: faltan ${resto}. Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`);
+            await fallar(`Ningún lote de ${it.nombre} en ${nombreOrigen} alcanza para las ${d.cantidad} del `
+              + `movimiento: faltan ${resto}. Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`);
             continue;
           }
         }
@@ -802,8 +913,8 @@ Deno.serve(async (req) => {
           total: total.toFixed(4),
           fecha: hoySV(),
           concepto,
-          origen: String(ubicSala),          // la UBICACIÓN de donde sale
-          id_suc_destino: String(erpBodega), // la SALA que recibe
+          origen: String(ubicOrigen),        // la UBICACIÓN de donde sale
+          id_suc_destino: String(erpDestino), // la SALA que recibe
           id_ubicacion_destino: "0",
           numero_vale: vale,
         }), { extra: { Referer: TRASLADO } }));
@@ -813,7 +924,7 @@ Deno.serve(async (req) => {
         // `conocidos` se actualiza aunque esta devolución falle — los traslados
         // que aparecieron existen, y dejarlos como «no estaban» haría que la
         // siguiente los cuente como candidatos suyos.
-        const despues = await pendientesDeOrigen(cookie, ubicSala);
+        const despues = await pendientesDeOrigen(cookie, ubicOrigen);
 
         let idTraslado: string | null;
         let candidatos: string[];
@@ -833,7 +944,7 @@ Deno.serve(async (req) => {
           conocidos = despues;
           if (!id) {
             await fallar(
-              `El sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`
+              `El sistema no aceptó el movimiento: ${resp.msg || "sin detalle"}`
               + (nuevos.length ? ` · aparecieron ${nuevos.length} traslado(s) nuevo(s) en esa ubicación (${nuevos.join(", ")}): comprobar antes de reintentar` : ""),
             );
             continue;
@@ -847,13 +958,13 @@ Deno.serve(async (req) => {
           // uno que caiga entre las dos fotos aparece como candidato. Desempatan
           // el destino y el producto. Ver `identificarTrasladoNuevo`.
           ({ id: idTraslado, candidatos } = await identificarTrasladoNuevo(
-            cookie, conocidos, despues, html, erpBodega, [it.nombre],
+            cookie, conocidos, despues, html, erpDestino, [it.nombre],
           ));
           conocidos = despues;
         }
 
-        // El producto YA SALIÓ de la sala. Esta fila es la única prueba de que
-        // salió y del número con el que Bodega puede recibirlo: si no se
+        // El producto YA SALIÓ del origen. Esta fila es la única prueba de que
+        // salió y del número con el que el destino puede recibirlo: si no se
         // escribe, el movimiento existe en el sistema y no existe para el
         // portal — nadie sabe que hay que ir a buscarlo.
         await noCallar(
@@ -872,8 +983,10 @@ Deno.serve(async (req) => {
             concepto,
             existencia_previa: f.existencia,
             regulado: f.regulado,
-            erp_sucursal_origen: erpSala,
-            erp_ubicacion_origen: ubicSala,
+            erp_sucursal_origen: erpOrigen,
+            erp_ubicacion_origen: ubicOrigen,
+            erp_sucursal_destino: erpDestino,
+            sentido: d.sentido,
           },
           // El movimiento ENTRÓ igual; lo único que falta es su número para
           // poder recibirlo desde el portal. Se dice, no se calla.
@@ -889,6 +1002,7 @@ Deno.serve(async (req) => {
         hechas.push({
           clave: d.clave, producto: it.nombre, cantidad: d.cantidad,
           id_traslado: idTraslado, renglones, avisos, viaja: d.viaja,
+          sentido: d.sentido, de: nombreOrigen, a: nombreDestino,
         });
       }
     }

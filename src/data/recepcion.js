@@ -43,6 +43,56 @@ export function fetchLastDispatchInfo(productId) {
         .order('id', { ascending: false }).limit(1);
 }
 
-export function insertPedidoRecepcionExtras(rows) {
-    return supabase.from('pedido_recepcion_extras').insert(rows);
+/**
+ * Anotar un producto que llegó y NO venía en el pedido.
+ *
+ * Se escribe EN EL MOMENTO, no al confirmar. Antes la lista de extras vivía en
+ * `useState` dentro de `RecepcionModal`, que se monta como
+ * `{modal && <RecepcionModal/>}`: cualquier cierre lo desmontaba y se llevaba
+ * lo anotado sin un error, sin un aviso y sin borrador. Medido el 2026-08-24 en
+ * Salud 1 — se agregó un producto extra, se confirmó el pedido y
+ * `pedido_recepcion_extras` seguía con su única fila del 19-ago.
+ *
+ * Y `pedido_recepcion_extras` era además una tabla de sólo escritura: nadie la
+ * leía, ni en `src/` ni en ninguna función de la base. Hoy el extra nace como
+ * un RENGLÓN del pedido con `error_tipo = 'sobrante'`, que es lo que es —llegó
+ * en físico y no llegó en el sistema—, y por eso aparece solo en Diferencias
+ * con sus dos salidas.
+ *
+ * `cantidad` va en PAQUETES de `factor`, igual que el resto de los renglones:
+ * no hay ninguna división que redondear.
+ */
+export function agregarExtraAPedido({ pedidoId, sucursalId, productId, cantidad, factor, tipo, nota }) {
+    return supabase.rpc('agregar_extra_a_pedido', {
+        p_pedido_id: pedidoId,
+        p_sucursal_id: sucursalId,
+        p_erp_product_id: productId,
+        p_cantidad: cantidad,
+        p_factor: factor,
+        p_tipo: tipo ?? null,
+        p_nota: nota ?? null,
+    });
+}
+
+/**
+ * Corregir lo anotado: la cantidad, la presentación o la nota.
+ *
+ * Existe porque el extra se escribe al agregarlo. Sin esto habría que elegir
+ * entre guardar al final (y perderlo al cerrar) o no poder corregirlo. La base
+ * lo rechaza en cuanto la diferencia tiene una propuesta en curso: ahí la
+ * cantidad es la que aceptó la otra parte.
+ */
+export function actualizarExtraDePedido({ itemId, cantidad, factor, tipo, nota }) {
+    return supabase.rpc('actualizar_extra_de_pedido', {
+        p_item_id: itemId,
+        p_cantidad: cantidad,
+        p_factor: factor,
+        p_tipo: tipo ?? null,
+        p_nota: nota ?? null,
+    });
+}
+
+/** Se anula —no se borra—: `pedido_item_eventos` cae en cascada con el renglón. */
+export function quitarExtraDePedido(itemId) {
+    return supabase.rpc('quitar_extra_de_pedido', { p_item_id: itemId });
 }

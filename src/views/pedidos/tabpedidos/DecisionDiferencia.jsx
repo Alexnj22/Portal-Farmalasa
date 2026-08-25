@@ -288,12 +288,6 @@ export default function DecisionDiferencia({
                     );
                 })()}
 
-                {estado === 'acordada' && op?.mueve === 'traslado_a_sala' && (
-                    <Notice variant="warning" icon={ArrowLeftRight} compact>
-                        Falta que salga el traslado de bodega a la sala.
-                    </Notice>
-                )}
-
                 {turno !== 'yo' && ESPERA[turno] && estado !== 'acordada' && (
                     <Espera texto={ESPERA[turno]} />
                 )}

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.0 — El producto que llegó de más es una diferencia, y se resuelve
+
+Reportado desde Salud 1: se agregó un producto por «¿Llegó un producto extra?»,
+se confirmó el pedido, y no salió en ninguna parte. Eran tres agujeros, uno
+detrás del otro.
+
+**No se guardaba.** La lista de extras vivía en `useState` dentro de
+`RecepcionModal`, que se monta como `{modal && <RecepcionModal/>}`: cualquier
+cierre lo desmontaba y se llevaba lo anotado sin un error y sin dejar nada
+escrito. Que `saveExtras()` corrió lo prueba la propia base —el `try` de
+«Confirmar todo» llegó hasta el final y escribió `diferencias_reportadas_at`—,
+así que no falló: salió por su primera línea, `if (!extras.length) return`. Ya
+estaba vacía. Hoy el extra se escribe **apenas se agrega**, y corregirlo o
+quitarlo también escribe.
+
+**Y aunque se hubiera guardado, no salía en ningún lado.** Iba a
+`pedido_recepcion_extras`, una tabla que **nadie lee**: ni una línea de `src/`,
+ni una de las 554 funciones de producción. Tenía una sola fila en toda su vida,
+del 19-ago. Hoy un extra nace como un **renglón del pedido** con
+`error_tipo = 'sobrante'` —que es lo que es: llegó en físico y no llegó en el
+sistema— y cae solo en Diferencias con las dos salidas que el catálogo ya
+ofrecía: que bodega le pase la cantidad, o devolver el producto.
+
+**Y la cantidad habría quedado mal.** `saveExtras` armaba el factor desde los
+renglones DEL pedido, y un extra por definición no está ahí: caía a `?? 1`, así
+que un producto que viene en caja de 50 se habría guardado 50× arriba. Ahora la
+cantidad va en paquetes de `factor`, igual que cualquier otro renglón: no hay
+ninguna división que redondear.
+
+**El brazo del traslado, que llevaba una semana pintando un aviso vacío.**
+`decidir_diferencia_pedido` implementaba `mueve = 'devolucion'` y nada más; para
+`traslado_a_sala` dejaba el acuerdo escrito y el portal decía «Falta que salga
+el traslado de bodega a la sala», que nadie podía atender. No hacía falta una
+máquina nueva: es el **espejo** del faltante. Un faltante hace un traslado de
+papel sala → Bodega; un sobrante hace el mismo traslado Bodega → sala, y tampoco
+viaja nada porque el producto ya está en la sala. `devolver-pedido-erp` va hoy
+en los dos sentidos, con `sentido` como columna **generada** a partir del motivo
+— así no existe una fila que diga «sobrante» y apunte a Bodega.
+
+Saliendo de Bodega hay algo que saliendo de una sala no: el **área de vencidos**,
+de donde el sistema descarga primero. El freno ahora la descuenta
+(`apartadoQueEstorba`); sin eso aprobaría mover mercadería apartada que el
+sistema después rechaza. Antes el comentario decía que no hacía falta «porque el
+origen es siempre una SALA», y eso dejó de ser cierto en este mismo cambio.
+
+**De paso, un bug de producción.** `cerrar_item_por_devolucion` escribía
+`resolucion_tipo = 'devolver_bodega'` fijo, y ése es el valor de un DAÑADO. Un
+faltante se acuerda con `regresar_traslado`, así que al recibirlo en Bodega su
+tipo quedaba reescrito con una opción **que no existe** en el catálogo de
+«faltante»: `opcionElegida()` devolvía null y la pantalla no podía nombrar con
+qué se resolvió. **2 de las 3 devoluciones reales** lo tenían. Reparadas, y la
+función ya no pisa lo que las dos partes acordaron.
+
 ## v2.746.1 — La deuda de borradores queda en CERO
 
 Los tres que faltaban: la ficha del cliente, la del proveedor y la entrada de

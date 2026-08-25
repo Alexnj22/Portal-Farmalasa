@@ -19,7 +19,8 @@ import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts,
-    searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
+    searchAvailableProducts, fetchLastDispatchInfo,
+    agregarExtraAPedido, actualizarExtraDePedido, quitarExtraDePedido,
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -420,7 +421,26 @@ export default function RecepcionModal({
     const [showSearch, setShowSearch] = useState(false);
 
     // ── Extras ─────────────────────────────────────────────────────────────────
-    const [extras,       setExtras]       = useState([]);
+    //
+    // Ya NO viven sólo en memoria. Un extra se escribe apenas se agrega —nace
+    // como un renglón del pedido con `error_tipo = 'sobrante'`—, así que esta
+    // lista se siembra de lo que ya está anotado y reabrir la pantalla lo
+    // encuentra. Antes era `useState([])` puro y este modal se monta como
+    // `{modal && <RecepcionModal/>}`: cualquier cierre se llevaba lo anotado
+    // sin un error y sin dejar nada escrito.
+    const [extras, setExtras] = useState(() =>
+        rows.filter(r => r.es_extra && r.status !== 'anulado').map(r => ({
+            id: r.id,
+            erp_product_id: r.erp_product_id,
+            nombre: r.products?.nombre ?? '',
+            fPres: Number(r.dispatch_factor) || Number(r.factor) || 1,
+            fQty:  Number(r.cantidad_recibida) || 1,
+            nota:  r.nota_diferencia ?? '',
+            // Con una propuesta en curso la cantidad es la que aceptó la otra
+            // parte: se muestra, no se toca.
+            bloqueado: r.resolucion_status != null,
+        })));
+    const [extraError, setExtraError] = useState(null);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
     const [extraBusy,    setExtraBusy]    = useState(false);
@@ -450,7 +470,13 @@ export default function RecepcionModal({
     });
 
     // ── Sorted all rows ─────────────────────────────────────────────────────────
-    const sortedRows = useMemo(() => [...rows].sort((a, b) => {
+    //
+    // Sin los extras. Un producto que llegó de más también es un renglón del
+    // pedido —por eso puede tener diferencia—, pero NO es algo que contar
+    // contra lo enviado: no se envió. Dejarlo acá lo metía en `filasPorContar`
+    // y «Confirmar» lo mandaba a `receive_pedido_sucursal`, que le pisaría la
+    // cantidad y el tipo de diferencia. Su pantalla es la de extras.
+    const sortedRows = useMemo(() => rows.filter(r => !r.es_extra).sort((a, b) => {
         const la = a.products?.laboratorios?.nombre ?? '';
         const lb = b.products?.laboratorios?.nombre ?? '';
         return la.localeCompare(lb, 'es') || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es');
@@ -687,9 +713,68 @@ export default function RecepcionModal({
         return () => clearTimeout(t);
     }, [extraSearch, screen, rows, extras]);
 
+    // ── Guardar lo anotado, sin ventana de pérdida ──────────────────────────────
+    //
+    // Cada cambio se escribe con un respiro de 400 ms para no mandar un viaje
+    // por tecla. Ese respiro es la ÚNICA ventana en la que algo se puede
+    // perder, así que se vacía a mano en los dos lugares donde la pantalla se
+    // puede ir: al volver de la pantalla de extras y antes de confirmar.
+    const guardando = useRef({});
+    const pendientes = useRef({});
+
+    const escribirExtra = useCallback(async (e) => {
+        if (!e?.id || !e.fQty) return;
+        const label = (presMap[e.erp_product_id] ?? []).find(o => o.factor === e.fPres)?.label ?? null;
+        const { error } = await actualizarExtraDePedido({
+            itemId: e.id, cantidad: e.fQty, factor: e.fPres, tipo: label, nota: e.nota,
+        });
+        if (error) setExtraError(mensajeAmigable(error));
+        else setExtraError(null);
+    }, [presMap]);
+
+    const editarExtra = useCallback((ei, cambios) => {
+        setExtras(prev => {
+            const siguiente = prev.map((x, j) => (j === ei ? { ...x, ...cambios } : x));
+            const e = siguiente[ei];
+            if (e?.id) {
+                pendientes.current[e.id] = e;
+                clearTimeout(guardando.current[e.id]);
+                guardando.current[e.id] = setTimeout(() => {
+                    const porEscribir = pendientes.current[e.id];
+                    delete pendientes.current[e.id];
+                    delete guardando.current[e.id];
+                    escribirExtra(porEscribir);
+                }, 400);
+            }
+            return siguiente;
+        });
+    }, [escribirExtra]);
+
+    /** Vaciar los respiros pendientes AHORA y esperar a que queden escritos. */
+    const asentarExtras = useCallback(async () => {
+        const porEscribir = Object.values(pendientes.current);
+        Object.values(guardando.current).forEach(clearTimeout);
+        guardando.current = {};
+        pendientes.current = {};
+        await Promise.all(porEscribir.map(escribirExtra));
+    }, [escribirExtra]);
+
+    const borrarExtra = useCallback(async (ei) => {
+        const e = extras[ei];
+        if (!e) return;
+        clearTimeout(guardando.current[e.id]);
+        delete guardando.current[e.id];
+        delete pendientes.current[e.id];
+        setExtras(prev => prev.filter((_, j) => j !== ei));
+        if (!e.id) return;
+        const { error } = await quitarExtraDePedido(e.id);
+        if (error) setExtraError(mensajeAmigable(error));
+    }, [extras]);
+
     const addExtra = useCallback(async (prod) => {
         if (extras.some(e => e.erp_product_id === prod.id)) return;
         setExtraSearch(''); setExtraResults([]);
+        setExtraError(null);
 
         let opts = presMap[prod.id] ? [...presMap[prod.id]] : [];
         if (opts.length === 0) opts = await fetchPresOpts(prod.id);
@@ -705,12 +790,23 @@ export default function RecepcionModal({
 
         if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
         const defF = opts[0]?.factor ?? 1;
+        const label = opts[0]?.label ?? null;
+
+        // Se escribe ANTES de pintarlo. Si la base lo rechaza —el producto sí
+        // venía en el pedido, o esta sala no es la que recibe— hay que decirlo
+        // en el momento y no dejar en la lista algo que no quedó anotado.
+        const { data: nuevoId, error } = await agregarExtraAPedido({
+            pedidoId: pedido.id, sucursalId, productId: prod.id,
+            cantidad: 1, factor: defF, tipo: label, nota: null,
+        });
+        if (error) { setExtraError(mensajeAmigable(error)); return; }
+
         setExtras(prev => [...prev, {
-            erp_product_id: prod.id, nombre: prod.nombre,
-            fPres: defF, fQty: 1, nota: '',
+            id: Number(nuevoId), erp_product_id: prod.id, nombre: prod.nombre,
+            fPres: defF, fQty: 1, nota: '', bloqueado: false,
         }]);
         setTimeout(() => extrasEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
-    }, [extras, presMap]);
+    }, [extras, presMap, pedido?.id, sucursalId]);
 
     // ── Build p_items payload for a set of rows ─────────────────────────────────
     const buildPItems = useCallback((rowsToProcess) => {
@@ -744,30 +840,6 @@ export default function RecepcionModal({
             return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo, cantidad_problema: cantProb };
         });
     }, [fQtyVals, fPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals]);
-
-    const saveExtras = useCallback(async () => {
-        if (!extras.length) return;
-        const erpFactorMap = {};
-        rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
-        // Un producto de más que no queda escrito es un producto que nadie va a
-        // buscar: el `error` se miraba en ningún lado y el modal se cerraba
-        // igual. Lanza, y quien recibe se entera en la misma pantalla.
-        const { error } = await insertPedidoRecepcionExtras(
-            extras.map(e => {
-                const ef = erpFactorMap[e.erp_product_id] ?? 1;
-                return {
-                    pedido_id: pedido.id, erp_sucursal_id: sucursalId,
-                    erp_product_id: e.erp_product_id,
-                    cantidad: Math.round(e.fQty * e.fPres / ef),
-                    // Un producto de más no tiene contra qué compararse: nadie
-                    // lo despachó. La nota es la que escriba quien recibe.
-                    nota: e.nota || null,
-                    reported_by: user?.id ?? null,
-                };
-            })
-        );
-        if (error) throw error;
-    }, [extras, rows, pedido?.id, sucursalId, user]);
 
     // ── Meter al inventario lo que se acaba de confirmar ────────────────────────
     // Cada producto viaja en su propio traslado, así que dar por recibidos los
@@ -891,14 +963,14 @@ export default function RecepcionModal({
             ...(todoOk ? { todo_ok: true } : {}),
         });
         if (regDone && espDone) {
-            await saveExtras();
+            await asentarExtras();
             onConfirmed?.({ hasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
             onClose();
         } else {
             setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
         }
     }, [confirmedEspecialIds, selectedEspecial, especialItems, accessibleHojaNums, allRecibidas,
-        pedido, sucursalId, saveExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
+        pedido, sucursalId, asentarExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
 
     const cerrarHoja = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
         const newRec = [...new Set([...allRecibidas, selectedHoja])].sort((a, b) => a - b);
@@ -917,7 +989,7 @@ export default function RecepcionModal({
             ...(todoOk ? { todo_ok: true } : {}),
         });
         if (regDone && espDone) {
-            await saveExtras();
+            await asentarExtras();
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length,
             });
@@ -928,7 +1000,7 @@ export default function RecepcionModal({
             setScreen('cajas'); setSelectedHoja(null); setProdSearch(''); setShowSearch(false);
         }
     }, [allRecibidas, selectedHoja, pedido, sucursalId, accessibleHojaNums, especialItems,
-        confirmedEspecialIds, saveExtras, extras, onConfirmed, onClose]);
+        confirmedEspecialIds, asentarExtras, extras, onConfirmed, onClose]);
 
     // ── Confirm a single box (or all if no caja map) ────────────────────────────
     const handleConfirmarCaja = useCallback(async () => {
@@ -969,7 +1041,7 @@ export default function RecepcionModal({
                 await cerrarHoja({ itemsCount: p_items.length, hasDiff: newAnyDiff });
             } else {
                 // No caja map — single confirm, original behavior
-                await saveExtras();
+                await asentarExtras();
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                     sucursal_id: sucursalId, items_count: p_items.length, extras_count: extras.length,
                 });
@@ -983,7 +1055,7 @@ export default function RecepcionModal({
         }
     }, [
         alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja,
-        pedido, sucursalId, user, anyHasDiff, saveExtras, onConfirmed, onClose,
+        pedido, sucursalId, user, anyHasDiff, asentarExtras, onConfirmed, onClose,
         ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso,
     ]);
 
@@ -1026,7 +1098,7 @@ export default function RecepcionModal({
             } else if (alcance === 'hoja') {
                 await cerrarHoja({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
             } else {
-                await saveExtras();
+                await asentarExtras();
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, items_count: p_items.length, todo_ok: true });
                 onConfirmed?.({ hasDiff: false, allDone: true });
                 onClose();
@@ -1037,7 +1109,7 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [alcance, filasPorContar, pedido, sucursalId, user, anyHasDiff,
-        cerrarEspecial, cerrarHoja, saveExtras, onConfirmed, onClose,
+        cerrarEspecial, cerrarHoja, asentarExtras, onConfirmed, onClose,
         ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso]);
 
     // ── Confirmar de una vez todo lo que se puede (Todo OK) ────────────────────
@@ -1111,7 +1183,7 @@ export default function RecepcionModal({
             if (!ing.ok) avisarIngresoFallido(ing.error);
             else if (ing.enCurso) avisarIngresoEnCurso(p_items.length);
 
-            await saveExtras();
+            await asentarExtras();
             for (const { hoja: h, items } of hojasConfirmadas) {
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
                     sucursal_id: sucursalId, hoja: h, items_count: items, todo_ok: true,
@@ -1138,7 +1210,7 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [accessibleHojaNums, allRecibidas, itemIdsByHoja, sortedRows, pedido, sucursalId, user,
-        anyHasDiff, initHojasRecibidas, saveExtras, extras, onConfirmed, onClose, hojasAlertadas,
+        anyHasDiff, initHojasRecibidas, asentarExtras, extras, onConfirmed, onClose, hojasAlertadas,
         especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems,
         yaRecibido, ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso]);
 
@@ -1146,7 +1218,7 @@ export default function RecepcionModal({
     const handleFinalizar = useCallback(async () => {
         setSaving(true); setSaveError(null);
         try {
-            await saveExtras();
+            await asentarExtras();
             if (extras.length > 0) {
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                     sucursal_id: sucursalId, extras_count: extras.length,
@@ -1159,7 +1231,7 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [saveExtras, extras, pedido?.id, sucursalId, anyHasDiff, faltaCajas, hasFaltaItems, onConfirmed, onClose]);
+    }, [asentarExtras, extras, pedido?.id, sucursalId, anyHasDiff, faltaCajas, hasFaltaItems, onConfirmed, onClose]);
 
     // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
     // mismo tick del cierre desmontaba el componente antes de que
@@ -1449,7 +1521,12 @@ export default function RecepcionModal({
     // ════════════════════════════════════════════════════════════════
     // SCREEN: EXTRAS — dedicated screen for extra products
     // ════════════════════════════════════════════════════════════════
-    const goBackFromExtras = () => setScreen(prevScreen ?? (hayHojas ? 'cajas' : 'items'));
+    // Se vacía el respiro pendiente ANTES de irse: es la única ventana en la
+    // que un cambio recién tecleado todavía no está escrito.
+    const goBackFromExtras = () => {
+        asentarExtras();
+        setScreen(prevScreen ?? (hayHojas ? 'cajas' : 'items'));
+    };
 
     if (screen === 'extras') {
         return (
@@ -1462,7 +1539,7 @@ export default function RecepcionModal({
                             <p className="text-label text-content-3 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
-                                    : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
+                                    : `${extras.length} producto${extras.length !== 1 ? 's' : ''} anotado${extras.length !== 1 ? 's' : ''} · queda guardado solo`}
                             </p>
                         </div>
                         <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={goBackFromExtras} />
@@ -1489,6 +1566,12 @@ export default function RecepcionModal({
                                 <span />
                             </div>
                         </div>
+
+                        {extraError && (
+                            <div className="mx-5 mt-3 flex items-center gap-2 text-danger text-body-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+                                <AlertTriangle size={13} /> {extraError}
+                            </div>
+                        )}
 
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
@@ -1517,10 +1600,11 @@ export default function RecepcionModal({
                                             <div>
                                                 <LiquidSelect
                                                     value={String(e.fPres)}
-                                                    onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
+                                                    onChange={v => editarExtra(ei, { fPres: Number(v) })}
                                                     options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
                                                     compact
                                                     clearable={false}
+                                                    disabled={e.bloqueado}
                                                 />
                                             </div>
 
@@ -1528,11 +1612,15 @@ export default function RecepcionModal({
                                                 aria-label="Cantidad recibida" compact
                                                 tono={eSinCant ? 'danger' : 'chart-9'}
                                                 type="number" min={0} value={e.fQty}
-                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                disabled={e.bloqueado}
+                                                onChange={ev => editarExtra(ei, { fQty: Math.max(0, parseInt(ev.target.value) || 0) })}
+                                                onBlur={asentarExtras}
                                                 inputClassName="text-center font-bold tabular-nums"
                                             />
 
-                                            <Button variant="ghost" icon={Trash2} iconOnly onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))} />
+                                            <Button variant="ghost" icon={Trash2} iconOnly disabled={e.bloqueado}
+                                                title={e.bloqueado ? 'Ya se está resolviendo: no se puede quitar' : 'Quitar'}
+                                                onClick={() => borrarExtra(ei)} />
                                         </div>
                                         {(eSinCant || e.nota) && (
                                             <div className="px-5 pb-2">
@@ -1540,7 +1628,9 @@ export default function RecepcionModal({
                                                     aria-label="Nota del renglón"
                                                     type="text"
                                                     value={e.nota}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
+                                                    disabled={e.bloqueado}
+                                                    onChange={ev => editarExtra(ei, { nota: ev.target.value })}
+                                                    onBlur={asentarExtras}
                                                     placeholder="Nota (opcional)…"
                                                     tono="brand"
                                                     compact

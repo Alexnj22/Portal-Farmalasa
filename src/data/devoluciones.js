@@ -35,14 +35,17 @@ export const MOTIVOS = [
 ];
 
 /** Si el producto viaja de verdad o si es sólo un arreglo de papeles. */
-export const viajaPorMotivo = (motivo) => motivo !== 'faltante';
+// Ni el faltante ni el sobrante se suben a ningún camión: uno nunca salió de
+// Bodega y el otro ya está en la sala. Es la misma regla que el CHECK
+// `pedido_devolucion_viaja_segun_motivo` de la base.
+export const viajaPorMotivo = (motivo) => motivo !== 'faltante' && motivo !== 'sobrante';
 
 const SELECT = `
     id, pedido_id, erp_sucursal_id, pedido_item_id, erp_product_id,
     motivo, viaja, cantidad, nota, evidencia_urls, estado,
     solicitada_por, solicitada_at, decidida_por, decidida_at, decision_nota, motivo_rechazo,
     clave, id_traslado, aviso, error_msg, enviado_at, recibido_at, recibido_por,
-    detalle
+    detalle, sentido
 `;
 
 /** Las devoluciones de un pedido/sala, para pintarlas junto a su renglón. */

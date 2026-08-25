@@ -1442,18 +1442,18 @@ export function usePedidosData({ searchTerm = '' }) {
             });
 
             if (data?.devolucion_id) {
+                // Los dos sentidos salen por acá desde el 2026-08-24: el
+                // sobrante hace el mismo traslado de papel con el origen y el
+                // destino cambiados. Lo único que cambia es cómo se cuenta.
+                const aLaSala = data?.mueve === 'traslado_a_sala';
                 const r = await moverDevoluciones([data.devolucion_id], { simulacro: false });
                 useToastStore.getState().showToast(
-                    r.ok ? 'Salió de la sala' : 'Quedaron de acuerdo, pero no salió',
-                    r.ok ? 'Falta que bodega confirme la entrada.'
+                    r.ok ? (aLaSala ? 'Salió de bodega' : 'Salió de la sala')
+                         : 'Quedaron de acuerdo, pero no salió',
+                    r.ok ? (aLaSala ? 'Falta confirmar la entrada en la sala.'
+                                    : 'Falta que bodega confirme la entrada.')
                          : (r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.'),
                     r.ok ? 'success' : 'warning',
-                );
-            } else if (data?.estado === 'acordada' && data?.mueve === 'traslado_a_sala') {
-                useToastStore.getState().showToast(
-                    'Quedaron de acuerdo',
-                    'Falta que salga el traslado de bodega a la sala.',
-                    'warning',
                 );
             } else if (data?.estado === 'escalada') {
                 useToastStore.getState().showToast(

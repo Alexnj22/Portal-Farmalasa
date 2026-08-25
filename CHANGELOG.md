@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.747.3 — Los botones del aviso de borrador van al tamaño de los otros avisos
+
+Repaso del trabajo anterior contra el canon, a pedido. De catorce gates, catorce
+en verde —incluidos los cinco que no había corrido: `ux`, `data`, `doc`,
+`permisos`, `pdf` y `bundle`— y una desviación real encontrada.
+
+**`AvisoDeBorrador` dejaba sus botones en el tamaño por defecto de `Button`
+(`md`).** Los otros tres avisos con acción del portal usan un tamaño explícito y
+menor: `sm` en `FormClienteDetail`, `xs` en `CompletarRenglon`. Un `Notice` es
+compacto y `md` lo estira. Van a `sm`, que es el del aviso más parecido — otro
+formulario de detalle. El blanco de dedo no se pierde: `--tap-min` vive dentro
+del `max()` de cada tamaño, así que en táctil sigue midiendo 44px.
+
+Lo que el repaso confirmó, y vale escribirlo porque no era obvio:
+
+- **el fondo de las franjas anidadas era el canon, no una invención.** DESIGN.md
+  §5.1 lo dice con esas palabras: *«No anides tarjetas. Una franja DENTRO de una
+  tarjeta es `bg-surface-card-hover` + borde, no otra `data-surface="card"`»*;
+- **el texto cumple §26** aunque ningún gate lo mire: `copy-vacio` y `copy-trato`
+  sólo revisan el `message:` de un objeto y el `title`/`subtitle` de un
+  `EmptyState`, así que un `Notice` pasa en verde diga lo que diga. Verificado a
+  mano: prosa con verbo conjugado → lleva punto (§26.5), botones en infinitivo
+  (§26.6), sin voseo (§26.7);
+- **`Notice` era el componente correcto** — §15.6 lo define como «el del medio
+  entre `AlertModal` (interrumpe) y los banners de página», con `role="status"`
+  y no `alert`, que es justo lo que una oferta necesita.
+
+Y una alarma propia que resultó falsa: parecía que `grid place-items-center` era
+minoritario en el repo (4 usos contra 30). Eran 24 — el grep sólo contaba los que
+coincidían dentro del mismo `className`. `HojaMovil.jsx` usa el mismo patrón
+exacto.
+
 ## v2.747.2 — El buscador de extras vuelve a ser una lista
 
 Los resultados se pintaban con `variant="primary"`: cuatro barras azules a todo
@@ -6229,7 +6261,7 @@ sólo mira 365 días atrás y esa fecha ya quedó fuera de la ventana.
 
 ## v2.698.7 — La categoría «Ajustado a mano», con sus tres estados
 
-Fase 4 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`, y la que cierra el
+Fase 4 de `docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`, y la que cierra el
 círculo: desde v2.698.5 publicar deja quietas las filas que ajustó una persona,
 pero **no había dónde verlas**. Un mecanismo que aparta trabajo y no lo muestra
 es un silencio nuevo, sólo que del otro lado.
@@ -6325,7 +6357,7 @@ de bitácora, 4 que anotan algo que ya pasó afuera, 3 falsos positivos del gate
 
 ## v2.698.5 — Publicar deja de pisar lo que puso una persona
 
-Fases 2 y 3 de `docs/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`. Hasta hoy,
+Fases 2 y 3 de `docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md`. Hasta hoy,
 publicar los borradores del recálculo era un barrido: copiaba el número
 propuesto sobre el vigente sin mirar si esa fila la había corregido alguien.
 Medido contra producción: de 969 pares producto·sala ajustados a mano antes del
@@ -19309,7 +19341,7 @@ verdad en el sistema de origen**: todo lo verificado fue con guardas que cortan
 antes o con transacciones revertidas. Falta esa prueba, y es la única que
 importa, porque es la primera vez que se mueve inventario real.
 
-Se deja escrito el guion —`docs/PRUEBA-TRASLADO-2026-08-11.md`— y sobre todo el
+Se deja escrito el guion —`docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md`— y sobre todo el
 **camino de vuelta**, `scripts/qa/rollback-traslado.mjs`, escrito *antes* de
 mover nada a propósito: si la ida se corta a la mitad, el regreso ya existe y no
 hay que improvisarlo con producto repartido entre dos salas. Lee las líneas
@@ -23390,7 +23422,7 @@ Baseline apretado de 26 a **12**, que son las que sí hay que migrar.
 
 ## v2.531.0 — Conexiones: ver quién tiene sesión abierta y cerrarla
 
-F4 y última de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Módulo nuevo
+F4 y última de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Módulo nuevo
 **Conexiones** en el grupo Sistema: qué dispositivos tienen sesión abierta,
 cuándo se usaron por última vez, desde dónde, y un botón para cerrar una a
 distancia.
@@ -23491,7 +23523,7 @@ puede, y volver a pedírselo en cada visita del día es acoso.
 
 ## v2.529.0 — El límite de inactividad pasa a decidirlo el servidor
 
-F3 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Hasta hoy los 5 minutos del
+F3 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Hasta hoy los 5 minutos del
 empleado, las 12 horas de gestión y los 30 días de la app vivían **sólo en
 `localStorage`**: con el token en la mano y `curl`, no existían. Ahora los
 decide Postgres.
@@ -23557,7 +23589,7 @@ Las dos cosas son del panel.
 
 ## v2.528.0 — Leaflet y el código de barras salen del CDN, y la CSP pasa a bloquear de verdad
 
-F0 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Cierra el camino **concreto**
+F0 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Cierra el camino **concreto**
 por el que un tercero llegaba al token de sesión — que no era un XSS
 hipotético, era código ajeno corriendo dentro del origen del portal.
 
@@ -23666,7 +23698,7 @@ pausa de memoria.
 
 ## v2.527.0 — Cerrar sesión sin red ahora es cierto, y la clase del dispositivo es de la sesión
 
-F2 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`, la primera fase de la
+F2 de `docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md`, la primera fase de la
 auditoría de sesiones. Cuatro cambios en `AuthContext.jsx`, tres de ellos
 arreglos de agujeros que no necesitaban ningún atacante para abrirse.
 
@@ -24092,7 +24124,7 @@ De paso, los dos últimos controles mudos que quedaban: el botón «Limpiar» de
 barra flotante y las píldoras de filtro activo, los dos en `FilterBar`. Barrido
 de 18 pantallas con pestañas y diálogos: todo en cero.
 
-F9 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F9 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.525.1 — El acuse llega a las pantallas más internas: 12 a 0
 
@@ -24269,7 +24301,7 @@ De paso, una trampa de la prueba que vale más que el arreglo: disparar
 La primera verificación dio «sigue inalcanzable» con el arreglo ya funcionando.
 Un evento por tick, como un arrastre de verdad.
 
-Primer hallazgo de F8 en `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+Primer hallazgo de F8 en `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.524.9 — Revertir los dos intentos de arreglar la rotación
 
@@ -24366,7 +24398,7 @@ Y queda anotado el error de método de v2.524.6: se leyó «lag» y «media pant
 blanca» como dos síntomas de una causa de rendimiento, sin pedir la captura
 primero. La captura reencuadró el problema en un minuto.
 
-F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.524.6 — Rotar el teléfono: un recálculo por cuadro, no uno por evento
 
@@ -24409,7 +24441,7 @@ el evento que causa el problema. Por eso esta versión sale con lo que se sostie
 solo (coalescer trabajo que se hacía de más es correcto lo reproduzca o no) y el
 resto espera una prueba en el teléfono.
 
-F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.524.5 — El filo corre en la mantenida, y la hoja se cierra animada
 
@@ -24520,7 +24552,7 @@ de 220ms, así que **pisar la variable y medir en el mismo tick devuelve el valo
 viejo** — la primera verificación dijo «sigue asomando» cuando el arreglo ya
 estaba puesto.
 
-F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.524.3 — El hueco al final del teléfono: la safe-area se contaba dos veces
 
@@ -24555,7 +24587,7 @@ Verificado pisando `--sa-bottom: 34px` —la misma técnica que usa
 `#main-scroll` pasa de 50px a **0**, la vista mantiene sus 141, y el aire entre
 el último renglón y la barra queda en **12px**.
 
-F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`, primer hallazgo del teléfono real.
+F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`, primer hallazgo del teléfono real.
 
 ## v2.524.2 — La fila de conteos ES una tarjeta, y la mantenida se acusa
 
@@ -24657,7 +24689,7 @@ fantasma (v2.521.3) y del informe que se borraba a sí mismo (v2.523.0). Los tre
 tapaban trabajo real: éste escondía **11 blancos táctiles** en el diálogo de
 Personal, que aparecieron en cuanto la ruta pudo terminar.
 
-F2 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F2 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.524.0 — Mantener presionada una fila de conteos abre sus opciones
 
@@ -24814,7 +24846,7 @@ recursos de WebKit, no de una vista.
 Verificado: las **diez** pantallas de Pedidos y MIN·MAX —las dos vistas, sus seis
 pestañas y sus dos diálogos— en cero.
 
-F3 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F3 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.523.2 — El iPad Mini también tiene dedo: la premisa del código era falsa
 
@@ -24852,7 +24884,7 @@ gráfico que quedaban en el tablero del teléfono. Los `<44` de la columna de
 escritorio no cuentan y nunca contaron: puntero fino, `--tap-min` vale 0 ahí a
 propósito.
 
-F5 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F5 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.523.1 — El correlativo recortado de Observaciones: 13 a 0
 
@@ -24878,7 +24910,7 @@ entre acortar una etiqueta y romper un dato.
 Verificado con las **siete** pantallas de Facturación —la vista, sus cuatro
 pestañas y sus dos diálogos— en cero.
 
-F3 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F3 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.523.0 — El acuse del toque llega a cero en las 37 vistas
 
@@ -24935,7 +24967,7 @@ arrancar cada corrida**. La segunda corrida borraba el informe de la primera y
 sólo sobrevivía la última — invisible mientras se miraba una sola, y fatal justo
 para una referencia que compara ocho.
 
-F2 y F4 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F2 y F4 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.522.1 — Los gates de diseño entran a CI, y el barrido corre de noche
 
@@ -24971,7 +25003,7 @@ pidió (`informe-dark.json`, `informe-liquid-pest-mod-a.json`); con un
 `informe.json` fijo, la corrida de referencia —ocho, entre mitades y temas— sólo
 conservaba la última y no había nada contra qué comparar.
 
-F7 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+F7 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`.
 
 ## v2.522.0 — recharts sale de las otras cuatro vistas, y el ratchet del bundle deja de aflojarse solo
 
@@ -25107,7 +25139,7 @@ intercepciones porque el service worker se comía la petición.
 Lleva su prueba de vida: si el medidor no ve NADA, las cuatro comprobaciones
 pasarían por vacío. Cero hallazgos y cero datos se ven igual.
 
-Primera fase de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`. El número contra el que
+Primera fase de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`. El número contra el que
 trabaja el resto del plan pasa a ser **40**, no 77.
 
 ## v2.521.2 — recharts sale del Inicio: 204 a 103 kB, y el gate:bundle vuelve a verde
@@ -26816,7 +26848,7 @@ completo en dos renglones, y en iPhone 13 la tabla cae a fichas sin desborde
 
 ## v2.498.0 — El barrido entra a las pestañas internas, y el checklist de vista nueva
 
-Fases 2, 3 y 4 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`.
+Fases 2, 3 y 4 de `docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`.
 
 **El barrido medía una pestaña por vista.** Era el hueco de cobertura más grande
 —37 archivos de vista declaran pestañas propias— y no había por dónde agarrarlas:
@@ -27341,7 +27373,7 @@ y pasando de página en los dos sentidos.
 
 ## v2.490.0 — gate:movil — que no se pueda escribir a mano lo que ya es canónico
 
-Fase 1 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`. Cuatro reglas, ratchet con
+Fase 1 de `docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`. Cuatro reglas, ratchet con
 baseline, y en el pre-commit cuando el commit toca `src/views` o
 `src/components`.
 
@@ -27476,7 +27508,7 @@ las del layout del tablero son texto (`general`, `sales_branch_2`), no enteros.
 
 ## v2.489.5 — El canon móvil deja de mentir: DESIGN.md §32 al día
 
-Fase 0 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`, y bloqueaba a las demás: no
+Fase 0 de `docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`, y bloqueaba a las demás: no
 tiene sentido montar gates que hagan cumplir un estándar que afirma cosas falsas.
 
 **Dos afirmaciones que el código desmentía:**
@@ -27536,7 +27568,7 @@ Dos detalles que no son cosméticos:
 
 ## v2.489.3 — Plan del canon móvil: qué variante le toca a cada elemento, y quién lo verifica
 
-`docs/PLAN-CANON-MOVIL-2026-08-07.md`. El plan de julio arregla lo que hay; éste
+`docs/planes-cerrados/PLAN-CANON-MOVIL-2026-08-07.md`. El plan de julio arregla lo que hay; éste
 existe para que no vuelva a pasar en lo que venga.
 
 Sale de tres cosas medidas esta semana, y las tres son de gobierno:
@@ -29651,7 +29683,7 @@ que nadie lo haya escrito antes, en vez de mirar primero y escribir después.
 
 ## v2.452.1 — El traslado, probado contra el sistema — y dos bugs que solo aparecieron ahí
 
-Paso 6 y último de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Una unidad de
+Paso 6 y último de `docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md`. Una unidad de
 acetaminofén de Salud 1 a Salud 2 y de vuelta, **neto cero**: 1891 → 1890 →
 1891 en Salud 1 y 1468 → 1469 → 1468 en Salud 2, con los dos traslados en
 FINALIZADA y ninguno colgado en tránsito.
@@ -29684,7 +29716,7 @@ pedidos simultáneos.
 
 ## v2.452.0 — Traslados entre salas: la vista completa, de la lista de faltantes al kardex
 
-Pasos 4 y 5 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Con esto el circuito está
+Pasos 4 y 5 de `docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md`. Con esto el circuito está
 armado de punta a punta; falta la prueba con una unidad real.
 
 **El pedido nace donde aparece el problema.** La lista «Sin existencia, puedes
@@ -29777,7 +29809,7 @@ pulgar?— y está escrita en el plan, no resuelta acá.
 
 ## v2.450.1 — Traslados entre salas: el permiso propio y el aprobador por sala de origen
 
-Pasos 2 y 3 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Todavía no hay pantalla:
+Pasos 2 y 3 de `docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md`. Todavía no hay pantalla:
 esto es la base sobre la que se apoya.
 
 **La primera solicitud donde quien aprueba no es un rol fijo.** En una carga o
@@ -36281,7 +36313,7 @@ Solo documentación. No cambia una línea de la aplicación.
 
 ### Bloque D documentado, con la deriva medida en vez de afirmada
 
-`docs/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado, pendiente de confirmación.
+`docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado, pendiente de confirmación.
 Lo que agrega respecto del plan es la evidencia:
 
 Documentos que entran a un mes **después** de que el mes cerró: mayo 87 ($718.55),

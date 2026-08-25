@@ -42,8 +42,14 @@ export default function AvisoDeBorrador({ cuando, onRecuperar, onDescartar, clas
             className={className}
             action={
                 <span className="flex items-center gap-1.5">
-                    <Button variant="secondary" onClick={onRecuperar}>Recuperar</Button>
-                    <Button variant="secondary" iconOnly title="Descartar lo guardado"
+                    {/* `size="sm"`, como los otros avisos con acción del portal
+                        (`FormClienteDetail`, `CompletarRenglon`): un `Notice` es
+                        compacto y el tamaño por defecto de `Button` es `md`. El
+                        blanco de dedo no se pierde — `--tap-min` va dentro del
+                        `max()` de cada tamaño, así que en táctil sigue siendo de
+                        44px. */}
+                    <Button size="sm" variant="secondary" onClick={onRecuperar}>Recuperar</Button>
+                    <Button size="sm" variant="secondary" iconOnly title="Descartar lo guardado"
                             onClick={onDescartar}><X size={14} strokeWidth={3} /></Button>
                 </span>
             }

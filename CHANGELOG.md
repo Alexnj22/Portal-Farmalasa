@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.752.1 — El portal avisa cuando ya se puede elegir el techo
+
+Cierra la Fase 1 del blindaje. El registro de lo que sale empezó hoy y su valor
+aparece **dentro de un mes** — que es exactamente el plazo en el que uno se
+olvida. Sin este aviso, el trabajo de hoy quedaría esperando a que alguien se
+acuerde.
+
+Cron mensual `recordar-linea-base-egreso-mensual` (día 1, 9:00 SV). Cuando
+`export_log` cumple 30 días, enciende la campana de quien puede mover un
+interruptor de seguridad —SUPERADMIN y los cuatro cargos con `sesiones.can_edit`—
+diciendo cuántos días y cuántas salidas lleva anotadas.
+
+**Se apaga cuando alguien DECIDE, no cuando alguien lo LEE.** La condición de
+corte es `security_config.techo_exportacion.updated_by IS NOT NULL`: las filas
+nacieron sembradas por la migración con autor nulo, así que un autor puesto
+significa que una persona movió ese interruptor **en la dirección que sea** — y
+decidir que no va techo también es decidir. Un aviso que se apaga al leerlo
+vuelve a aparecer y se termina ignorando; uno que se apaga con la decisión
+desaparece cuando el trabajo está hecho.
+
+El freno contra una corrida repetida es aparte y mira `notifications` de los
+últimos 20 días. **No** es ahí donde vive la memoria del aviso, a propósito:
+`notifications` se purga, y un freno que se purga deja de frenar sin avisar.
+
+Los cinco casos, verificados en el entorno de pruebas: sin salidas → 0 · un día
+de línea base → 0 · **31 días → avisa** · corrida repetida → 0 · alguien ya
+decidió → 0.
+
+**Y la primera corrida de esa prueba dio 0 justo en el caso que tenía que
+avisar.** No era el código: en el entorno de pruebas nadie tenía el permiso, así
+que todo daba cero por falta de destinatario y los cinco casos se veían
+idénticos. Cero hallazgos y cero datos se ven igual — hubo que darle un
+destinatario para que la prueba probara algo.
+
 ## v2.752.0 — Queda anotado lo que sale del portal
 
 Las **once salidas** del portal —los CSV, los ZIP de documentos, la planilla del

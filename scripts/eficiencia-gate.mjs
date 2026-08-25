@@ -169,6 +169,10 @@ const CRONS = [
   // Su volumen es irrelevante para el presupuesto (una corrida por día o menos),
   // pero están declarados igual: lo que el gate cuida en ellos es que SIGAN
   // EXISTIENDO y que no fallen en silencio.
+  // SQL puro (`slug: null`): no llama a ninguna función ni sale a ningún lado.
+  // Está declarado igual para que el cruce contra producción avise si alguien lo
+  // apaga — y apagarlo sería justamente perder el recordatorio.
+  { job: 'recordar-linea-base-egreso-mensual',  slug: null,                          cadencia: '0 15 1 * *', corridasDia: 0.033, sistema: 0, motivo: 'Mira export_log y avisa. No toca el sistema de origen.' },
   { job: 'sincronizar-fichas-clientes-2130-sv', slug: 'sincronizar-fichas-clientes', cadencia: '30 3 * * *', corridasDia: 1, sistema: null, motivo: 'Corrida nocturna de fichas.' },
   { job: 'regularizar-dte-2230-sv',             slug: 'regularizar-dte',             cadencia: '30 4 * * *', corridasDia: 1, sistema: null, motivo: 'Envío nocturno a Hacienda.' },
   { job: 'cortes-caja-repaso-diario',           slug: 'sync-cortes-caja',            cadencia: '40 5 * * *', corridasDia: 1, sistema: null, motivo: 'Repaso del día, con movimientos forzados.' },

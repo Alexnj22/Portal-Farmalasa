@@ -265,11 +265,42 @@ Dos cosas que aparecieron al cablearlo y que valen más que el cableado:
 el egreso queda como `sin-declarar`, que es un hallazgo visible en la propia
 tabla en vez de un hueco silencioso.
 
+### El portal avisa solo cuando la línea base sirve
+
+Migración `20260825035442`, cron `recordar-linea-base-egreso-mensual`
+(día 1, 15:00 UTC = 9:00 SV). Un mes es exactamente el plazo en el que uno se
+olvida, y sin este aviso el trabajo de hoy quedaría esperando a que alguien se
+acuerde.
+
+**Se apaga cuando alguien DECIDE, no cuando alguien lo LEE.** La condición de
+corte es `security_config.techo_exportacion.updated_by IS NOT NULL`: las filas
+nacieron sembradas por la migración, con autor nulo, así que un autor puesto
+significa que una persona movió ese interruptor —en la dirección que sea, y
+decidir que **no** va techo también es decidir—. Un aviso que se apaga al leerlo
+vuelve a aparecer y se termina ignorando; uno que se apaga con la decisión
+desaparece cuando el trabajo está hecho.
+
+Verificado en el entorno de pruebas, los cinco casos:
+
+| situación | avisos |
+|---|---:|
+| nadie exportó nada todavía | 0 |
+| línea base de 1 día | 0 |
+| **línea base de 31 días** | **1** |
+| corrida repetida el mismo día | 0 |
+| alguien ya movió el interruptor | 0 |
+
+**Y la primera corrida de esa prueba dio 0 en el caso que tenía que avisar.** No
+era el código: en el entorno de pruebas **nadie tenía el permiso**, así que todo
+daba cero por falta de destinatario. Cero hallazgos y cero datos se ven igual —
+hubo que darle un destinatario para que la prueba probara algo.
+
 ### Lo que falta de esta fase
 
-**Un mes de datos.** El techo de la Fase 3.3 sale de ahí, y de ningún otro lado:
-el §1.3 de abajo explica por qué un umbral ingenuo de volumen apagaría el portal
-—`fetchAllRows` pagina 20,000+ filas como comportamiento normal—.
+**Un mes de datos**, y ahora el portal lo dice solo. El techo de la Fase 3.3 sale
+de ahí y de ningún otro lado: el §1.3 de abajo explica por qué un umbral ingenuo
+de volumen apagaría el portal —`fetchAllRows` pagina 20,000+ filas como
+comportamiento normal—.
 
 ---
 

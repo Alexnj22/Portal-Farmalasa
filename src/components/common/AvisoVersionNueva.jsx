@@ -36,16 +36,30 @@ import {
  *    intacto.
  *
  * En los dos casos: **nadie recarga salvo la persona**. Es la regla entera.
+ *
+ * ── El orden de estas tres salidas ES la corrección (2026-08-25) ───────────
+ * «se vuelve a la franja» lo decía este comentario y no lo hacía el código: la
+ * rama de `bloqueado` devolvía el diálogo ANTES de mirar si se lo había
+ * pospuesto, y `bloqueado` no se apaga solo. O sea que «Ahora no» volvía a
+ * pintar el mismo diálogo, idéntico, y la única salida visible quedaba siendo
+ * «Actualizar» — justo la que se lleva lo que se estaba llenando. El usuario lo
+ * reportó así: *«si le doy ahora no, no lo cierra, me obliga a actualizar
+ * siempre»*. Hoy `degradado` es lo que separa «hay que explicarlo» de «ya se
+ * explicó»: el diálogo baja a franja, y la franja del caso bloqueado **no se
+ * puede callar** —esa pantalla sigue sin abrir— pero tampoco tapa nada.
+ *
+ * La prueba que cubría este camino existía y pasaba: sólo miraba que no
+ * recargara, nunca que el diálogo se cerrara.
  */
 export default function AvisoVersionNueva() {
-    const [v, setV] = useState(() => ({ hay: false, bloqueado: false, callado: false, version: null }));
+    const [v, setV] = useState(() => ({ hay: false, bloqueado: false, degradado: false, callado: false, version: null }));
 
     useEffect(() => suscribirVersionNueva(setV), []);
     useEffect(() => iniciarVigilanciaDeVersion(), []);
 
     if (!v.hay) return null;
 
-    if (v.bloqueado) {
+    if (v.bloqueado && !v.degradado) {
         return (
             <ConfirmModal
                 isOpen
@@ -73,7 +87,10 @@ export default function AvisoVersionNueva() {
     // `callado` y no una comparación de horas: leer el reloj durante el render
     // es impuro y encima no despertaría solo cuando el plazo venciera. Quien
     // cuenta el tiempo es `posponerAviso`, que vuelve a avisar al terminar.
-    if (v.callado) return null;
+    //
+    // El caso bloqueado no se calla: se bajó de diálogo a franja, y esa franja
+    // es lo único que queda en pantalla explicando por qué la pantalla no abrió.
+    if (v.callado && !v.bloqueado) return null;
 
     return createPortal(
         <div
@@ -96,14 +113,21 @@ export default function AvisoVersionNueva() {
                     Hay una versión nueva
                 </span>
                 <span className="text-micro font-medium text-content-3 leading-tight mt-1">
-                    Actualizá cuando termines lo que estás haciendo.
+                    {v.bloqueado
+                        ? 'Esa pantalla no abre hasta que actualices. Guarda lo que estés llenando.'
+                        : 'Actualizá cuando termines lo que estás haciendo.'}
                 </span>
             </div>
 
             <div className="flex items-center gap-1 shrink-0 ml-auto">
-                <Button variant="ghost" size="sm" onClick={() => posponerAviso()}>
-                    Ahora no
-                </Button>
+                {/* Sin «Ahora no» en el caso bloqueado: el aviso ya está en su
+                    forma mínima, así que el botón no tendría nada que cerrar —y
+                    un botón que no hace nada es de lo que venía el reporte. */}
+                {!v.bloqueado && (
+                    <Button variant="ghost" size="sm" onClick={() => posponerAviso()}>
+                        Ahora no
+                    </Button>
+                )}
                 <Button variant="primary" size="sm" onClick={actualizarAhora}>
                     Actualizar
                 </Button>

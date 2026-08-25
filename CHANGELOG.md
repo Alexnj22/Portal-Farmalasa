@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.766.5 — «Ahora no» cierra el aviso de versión nueva
+## v2.766.4 — «Ahora no» cierra el aviso de versión nueva
 
 *«me salió el modal de nueva versión, pero si le doy ahora no, no lo cierra, me
 obliga a actualizar siempre»*. Era cierto, y el defecto estaba en el ORDEN de

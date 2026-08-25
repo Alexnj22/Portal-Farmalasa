@@ -77,4 +77,37 @@ describe('cuando una pantalla ya no abrió', () => {
         fireEvent.click(screen.getByRole('button', { name: /ahora no/i }));
         expect(recargar).not.toHaveBeenCalled();
     });
+
+    // La prueba de arriba pasaba con el diálogo ABIERTO: sólo miraba que no
+    // recargara. Reportado por el usuario: «si le doy ahora no, no lo cierra,
+    // me obliga a actualizar siempre». Lo que hay que anclar es el cierre.
+    it('«Ahora no» CIERRA el diálogo — no lo vuelve a pintar igual', () => {
+        render(<AvisoVersionNueva />);
+        act(() => { marcarVersionNueva({ bloqueado: true }); });
+
+        fireEvent.click(screen.getByRole('button', { name: /ahora no/i }));
+
+        expect(screen.queryByText(/no puede abrirse hasta que actualices/i)).toBeNull();
+        expect(screen.queryByRole('button', { name: /ahora no/i })).toBeNull();
+        expect(recargar).not.toHaveBeenCalled();
+    });
+
+    it('lo que queda es la franja: el aviso baja de forma, no desaparece', () => {
+        render(<AvisoVersionNueva />);
+        act(() => { marcarVersionNueva({ bloqueado: true }); });
+        fireEvent.click(screen.getByRole('button', { name: /ahora no/i }));
+
+        expect(screen.getByText('Hay una versión nueva')).toBeInTheDocument();
+        expect(screen.getByText(/esa pantalla no abre hasta que actualices/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^actualizar$/i })).toBeInTheDocument();
+    });
+
+    it('si OTRA pantalla no abre, el diálogo vuelve a subir', () => {
+        render(<AvisoVersionNueva />);
+        act(() => { marcarVersionNueva({ bloqueado: true }); });
+        fireEvent.click(screen.getByRole('button', { name: /ahora no/i }));
+        act(() => { marcarVersionNueva({ bloqueado: true }); });
+
+        expect(screen.getByText(/no puede abrirse hasta que actualices/i)).toBeInTheDocument();
+    });
 });

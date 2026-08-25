@@ -195,6 +195,25 @@ describe('«ahora no»', () => {
         expect(e.pospuestoHasta).toBeGreaterThan(Date.now());
     });
 
+    it('sobre un bloqueo BAJA el diálogo a franja, y ahí se queda', () => {
+        // Callarlo por un rato no serviría: `bloqueado` no se apaga solo, así
+        // que al vencer el plazo volvería el mismo diálogo.
+        marcarVersionNueva({ bloqueado: true });
+        posponerAviso(60_000);
+        const e = leerEstadoVersion();
+        expect(e.bloqueado).toBe(true);
+        expect(e.degradado).toBe(true);
+        expect(e.callado).toBe(false);
+        expect(e.pospuestoHasta).toBe(0);
+    });
+
+    it('otra pantalla que no abre vuelve a subirlo a diálogo', () => {
+        marcarVersionNueva({ bloqueado: true });
+        posponerAviso(60_000);
+        marcarVersionNueva({ bloqueado: true });
+        expect(leerEstadoVersion().degradado).toBe(false);
+    });
+
     it('un bloqueo cancela el «ahora no»: esa pantalla no abrió', () => {
         marcarVersionNueva({ version: '2.763.0', entrada: 'index-bbb222.js' });
         posponerAviso(60_000);

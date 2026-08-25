@@ -99,7 +99,7 @@ export async function consultarPublicada(fetchImpl) {
 // venciera. Acá el plazo lo cumple un temporizador que vuelve a avisar, y el
 // componente sólo lee un sí o un no. `pospuestoHasta` se queda para poder
 // mirarlo desde afuera.
-let estado = { hay: false, bloqueado: false, callado: false, version: null, entrada: null, pospuestoHasta: 0 };
+let estado = { hay: false, bloqueado: false, degradado: false, callado: false, version: null, entrada: null, pospuestoHasta: 0 };
 const oyentes = new Set();
 let temporizadorPosponer = null;
 
@@ -146,7 +146,10 @@ export function marcarVersionNueva({ version = null, entrada = null, bloqueado =
         version: version ?? estado.version,
         entrada: entrada ?? estado.entrada,
         // Un bloqueo cancela el «ahora no»: ya no es un aviso cortés, es la
-        // explicación de por qué la pantalla no abrió.
+        // explicación de por qué la pantalla no abrió. Y vuelve a SUBIR el
+        // aviso a diálogo aunque se lo hubiera bajado a franja: que otra
+        // pantalla no abra es información nueva, no la misma insistencia.
+        degradado: bloqueado ? false : estado.degradado,
         callado: bloqueado ? false : estado.callado,
         pospuestoHasta: bloqueado ? 0 : estado.pospuestoHasta,
     };
@@ -156,8 +159,27 @@ export function marcarVersionNueva({ version = null, entrada = null, bloqueado =
     avisar();
 }
 
-/** «Ahora no». No se olvida: vuelve a aparecer. */
+/**
+ * «Ahora no». No se olvida: vuelve a aparecer.
+ *
+ * Son dos gestos distintos porque son dos avisos distintos:
+ *
+ *  · **Franja** — se calla un rato y el temporizador la trae de vuelta.
+ *  · **Diálogo** (`bloqueado`) — **baja a franja y se queda ahí**. Callarlo por
+ *    un rato no serviría de nada: `bloqueado` no se apaga solo, así que al
+ *    vencer el plazo volvería el MISMO diálogo. Peor todavía era lo que hacía
+ *    hasta hoy —el componente pintaba el diálogo antes de mirar `callado`—, o
+ *    sea que «Ahora no» no cerraba nada y la única salida visible era
+ *    actualizar. Reportado por el usuario: *«si le doy ahora no, no lo cierra,
+ *    me obliga a actualizar siempre»*. Vuelve a subir a diálogo sólo si otra
+ *    pantalla no abre.
+ */
 export function posponerAviso(ms = POSPONER_MS) {
+    if (estado.bloqueado) {
+        estado = { ...estado, degradado: true };
+        avisar();
+        return;
+    }
     estado = { ...estado, callado: true, pospuestoHasta: Date.now() + ms };
     avisar();
     if (temporizadorPosponer) clearTimeout(temporizadorPosponer);
@@ -225,7 +247,7 @@ export function iniciarVigilanciaDeVersion() {
 
 /** Sólo para las pruebas: deja el módulo como recién cargado. */
 export function _reiniciarParaPruebas() {
-    estado = { hay: false, bloqueado: false, callado: false, version: null, entrada: null, pospuestoHasta: 0 };
+    estado = { hay: false, bloqueado: false, degradado: false, callado: false, version: null, entrada: null, pospuestoHasta: 0 };
     ultimaConsulta = 0;
     if (temporizadorPosponer) { clearTimeout(temporizadorPosponer); temporizadorPosponer = null; }
     oyentes.clear();

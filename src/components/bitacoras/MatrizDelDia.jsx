@@ -185,23 +185,32 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
 
     return (
         <td className="px-3 py-2">
-            {/* Un renglón por turno, no dos chips uno al lado del otro: con la
-                firma debajo, dos turnos en la misma línea mezclaban dos caras y
-                dos nombres y no se sabía cuál era de cuál. Ahora cada turno es
-                una fila —estado, quién, acciones— y se leen de corrido. */}
-            <div className="flex flex-col gap-1">
+            {/* ── Una REJILLA, no una fila de chips ────────────────────────
+                Reportado dos veces: «no se entiende cuál es mañana y tarde».
+                El primer intento puso un renglón por turno, pero el nombre
+                seguía viajando adentro del estado —a veces como texto con un
+                check, a veces como el rótulo de un botón—, así que arrancaba en
+                una columna distinta en cada fila y la vista no tenía dónde
+                apoyarse.
+                Ahora el nombre del turno es una COLUMNA de ancho fijo: Mañana y
+                Tarde quedan uno debajo del otro, siempre en el mismo lugar, y
+                lo que cambia —el check con la firma, o el botón— vive en la
+                columna de al lado. El botón dice «Registrar», no el nombre del
+                turno: repetirlo era la mitad de la confusión. */}
+            <div className="flex flex-col gap-1.5">
                 {turnos.map(t => {
                     const r = t.registro;
+                    return (
+                        <div key={t.clave}
+                            className="group grid grid-cols-[70px_minmax(0,1fr)_auto] items-center gap-2">
+                            <span className={`text-label font-black truncate ${r ? 'text-content-2' : 'text-content-3'}`}>
+                                {t.label}
+                            </span>
 
-                    if (r) {
-                        return (
-                            <div key={t.clave} className="group flex items-center gap-2 min-w-0">
-                                <span className="inline-flex items-center gap-1 text-label font-bold text-content-2 w-[92px] shrink-0">
-                                    <Check size={12} className="text-success-text shrink-0" />
-                                    {t.label}
+                            {r ? (
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                    <Check size={13} className="text-success-text shrink-0" />
                                     <ResumenDePuntos registro={r} />
-                                </span>
-                                <span className="min-w-0 flex-1">
                                     <Firma hora={horaDe(r.registrado_at)} tarde={r.tarde}
                                         quien={{
                                             nombre: r.realizada_por_nombre,
@@ -210,14 +219,29 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
                                             foto: r.realizada_por_photo_url,
                                         }} />
                                 </span>
-                                {puedeAnotar && !cerrado && (
-                                    // Las dos acciones aparecen al apuntar la
-                                    // fila: siempre visibles eran cuatro íconos
-                                    // por área compitiendo con el dato. La
-                                    // matriz sólo se pinta en escritorio, donde
-                                    // el hover existe; `focus-within` las trae
-                                    // también con el teclado.
-                                    <span className="flex items-center shrink-0 opacity-0 transition-opacity
+                            ) : (!puedeAnotar || cerrado || t.estado === 'proxima') ? (
+                                <span className="text-micro text-content-3 tabular-nums">
+                                    {t.estado === 'proxima' ? `desde ${hhmm(t.desde)}` : '—'}
+                                </span>
+                            ) : (
+                                <span className="flex">
+                                    <Button size="sm" icon={Sparkles}
+                                        variant={t.estado === 'vencida' ? 'secondary' : 'primary'}
+                                        loading={ocupado === t.clave}
+                                        onClick={() => registrar(t)}>
+                                        Registrar
+                                    </Button>
+                                </span>
+                            )}
+
+                            {/* Las acciones aparecen al apuntar la fila: siempre
+                                visibles eran cuatro íconos por área compitiendo
+                                con el dato. La matriz sólo se pinta en
+                                escritorio, donde el hover existe; `focus-within`
+                                las trae también con el teclado. */}
+                            <span className="flex items-center justify-end shrink-0 min-w-[56px]">
+                                {r && puedeAnotar && !cerrado && (
+                                    <span className="flex items-center opacity-0 transition-opacity
                                         group-hover:opacity-100 group-focus-within:opacity-100">
                                         {/* `Pencil` y `XCircle` son los del mapa cerrado
                                             de DESIGN.md: editar y anular. Anular no es
@@ -230,32 +254,10 @@ function CeldaLimpieza({ area, fecha, puedeAnotar, cerrado, onRecargar, onDetall
                                             onClick={() => onQuitar(area, t, r)} />
                                     </span>
                                 )}
-                                {r.corregida_at && (
-                                    <span className="text-micro text-warning-text font-bold shrink-0">corregida</span>
+                                {r?.corregida_at && (
+                                    <span className="text-micro text-warning-text font-bold">corregida</span>
                                 )}
-                            </div>
-                        );
-                    }
-
-                    if (!puedeAnotar || cerrado || t.estado === 'proxima') {
-                        return (
-                            <div key={t.clave} className="flex items-center gap-2">
-                                <span className="text-label text-content-3 w-[92px] shrink-0">{t.label}</span>
-                                <span className="text-micro text-content-3 tabular-nums">
-                                    {t.estado === 'proxima' ? `desde ${hhmm(t.desde)}` : '—'}
-                                </span>
-                            </div>
-                        );
-                    }
-
-                    return (
-                        <div key={t.clave} className="flex">
-                            <Button size="sm" icon={Sparkles}
-                                variant={t.estado === 'vencida' ? 'secondary' : 'primary'}
-                                loading={ocupado === t.clave}
-                                onClick={() => registrar(t)}>
-                                {t.label}
-                            </Button>
+                            </span>
                         </div>
                     );
                 })}

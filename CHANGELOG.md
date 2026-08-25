@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.766.5 — «Ahora no» cierra el aviso de versión nueva
+
+*«me salió el modal de nueva versión, pero si le doy ahora no, no lo cierra, me
+obliga a actualizar siempre»*. Era cierto, y el defecto estaba en el ORDEN de
+tres líneas: el aviso pintaba el diálogo antes de mirar si se lo había
+pospuesto, y la marca de «esta pantalla no abrió» no se apaga sola. O sea que
+«Ahora no» sí cambiaba el estado —y no recargaba nada, que era lo que la prueba
+verificaba— pero volvía a pintar el mismo diálogo, idéntico. La única salida
+visible quedaba siendo «Actualizar», justo la que se lleva lo que se está
+llenando: exactamente lo que este aviso existe para evitar.
+
+Ahora **el diálogo baja a franja**. Sigue diciendo que esa pantalla no abre
+hasta actualizar —eso no cambió, y por eso la franja del caso bloqueado no se
+puede callar—, pero ocupa una línea arriba en vez de tapar la pantalla, y quien
+estaba llenando algo lo termina y guarda. El diálogo vuelve a subir sólo si
+**otra** pantalla no abre: eso es información nueva, no la misma insistencia.
+
+La prueba que cubría este camino existía y pasaba. Sólo miraba que no recargara,
+nunca que el diálogo se cerrara — así que el botón muerto entró con su prueba en
+verde.
+
+## v2.766.3 — El turno de limpieza es una columna, no un rótulo suelto
+
+Reportado dos veces: *«no se entiende cuál es mañana y tarde»*. El intento
+anterior puso un renglón por turno, pero el nombre seguía viajando **adentro
+del estado** —a veces como texto con un check, a veces como el rótulo de un
+botón—, así que arrancaba en una columna distinta en cada fila y la vista no
+tenía dónde apoyarse.
+
+Ahora el nombre del turno es una **columna de ancho fijo**: Mañana y Tarde
+quedan uno debajo del otro, siempre en el mismo lugar, en todas las áreas. Lo
+que cambia —el check con la firma, o el botón— vive en la columna de al lado. Y
+el botón dice **«Registrar»**, no el nombre del turno: repetirlo era la mitad de
+la confusión.
+
 ## v2.766.2 — La limpieza se lee de corrido y los campos dicen su unidad
 
 *«Organiza mejor la limpieza, se ve desorden con el nombre y foto»*. Los dos

@@ -808,3 +808,27 @@ export function ajustarPuntos(puntos, tipo, cantidad) {
 
 /** Cuántos puntos de ese tipo tiene el área. */
 export const contarPuntos = (puntos, tipo) => (puntos || []).filter(p => p.tipo === tipo).length;
+
+/**
+ * Poner el mismo reloj en todas las áreas de una sucursal.
+ *
+ * «Las lecturas y la limpieza se hacen al mismo tiempo en ambas áreas»
+ * (usuario): la persona camina una vez con el termohigrómetro y mira la sala y
+ * la bodega en la misma pasada. Lo que se comparte es la HORA de cada momento;
+ * qué momentos lleva cada área no se toca — las vitrinas se limpian una vez y
+ * la sala dos, y unificar la lista le habría duplicado la obligación a las
+ * vitrinas sin que nadie lo decidiera.
+ *
+ * Va por RPC y no por N updates: tiene que ser todo o nada. Un fallo a la mitad
+ * dejaría la sala en el horario nuevo y la bodega en el viejo, que es
+ * exactamente el estado que esto viene a hacer imposible.
+ */
+export async function aplicarHorarios(branchId, franjas, limpiezas) {
+    const { data, error } = await supabase.rpc('aplicar_horarios_bitacora', {
+        p_branch_id: Number(branchId),
+        p_franjas: franjas || [],
+        p_limpiezas: limpiezas || [],
+    });
+    if (error) return { areas: 0, error: error.message ?? 'No se pudieron guardar los horarios.' };
+    return { areas: data ?? 0, error: null };
+}

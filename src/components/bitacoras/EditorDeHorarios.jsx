@@ -81,6 +81,9 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
     const lista = filas || [];
     if (!lista.length) return null;
 
+    // Sin `onCambiar` es un LECTOR, no un editor: quien no puede configurar
+    // igual necesita ver a qué hora se le exige cada cosa.
+    const soloLectura = typeof onCambiar !== 'function';
     const cambiar = (i, parche) =>
         onCambiar(lista.map((f, j) => (j === i ? { ...f, ...parche } : f)));
 
@@ -100,10 +103,18 @@ export default function EditorDeHorarios({ tipo, filas, onCambiar }) {
                         <span className="text-body-sm font-bold text-content-1 w-[84px] shrink-0">
                             {f.label}
                         </span>
-                        <SelectorDeHora etiqueta="desde" nombre={f.label} value={f.desde}
-                            onChange={(v) => cambiar(i, { desde: v })} />
-                        <SelectorDeHora etiqueta="hasta" nombre={f.label} value={f.hasta}
-                            onChange={(v) => cambiar(i, { hasta: v })} />
+                        {soloLectura ? (
+                            <span className="text-body-sm font-bold text-content-2 tabular-nums">
+                                {hhmm(f.desde)} – {hhmm(f.hasta)}
+                            </span>
+                        ) : (
+                            <>
+                                <SelectorDeHora etiqueta="desde" nombre={f.label} value={f.desde}
+                                    onChange={(v) => cambiar(i, { desde: v })} />
+                                <SelectorDeHora etiqueta="hasta" nombre={f.label} value={f.hasta}
+                                    onChange={(v) => cambiar(i, { hasta: v })} />
+                            </>
+                        )}
                     </div>
                 ))}
             </div>

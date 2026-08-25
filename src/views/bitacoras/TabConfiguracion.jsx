@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Droplets, LayoutPanelTop, Plus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
+import { AlertTriangle, Check, Clock, Droplets, LayoutPanelTop, Plus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -10,7 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import EditorDeHorarios from '../../components/bitacoras/EditorDeHorarios';
 import PuntosDeLimpieza from '../../components/bitacoras/PuntosDeLimpieza';
 import { LoadingState } from '../../components/common/StateViews';
-import { PLANTILLA_AREA, TIPO_AREA, areaNueva, crearArea, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
+import { PLANTILLA_AREA, TIPO_AREA, aplicarHorarios, areaNueva, crearArea, fetchAreas, guardarArea, rotularRango, soloLimpieza } from '../../data/bitacoras';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -40,8 +40,6 @@ const ICONO = {
     vitrinas: LayoutPanelTop, servicio_sanitario: Toilet,
 };
 
-const hhmm = (t) => String(t || '').slice(0, 5);
-
 /**
  * Un año después de una fecha, sin que el huso la mueva.
  *
@@ -67,30 +65,18 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
     const [instrumento, setInstrumento] = useState(area.instrumento || '');
     const [calibrado, setCalibrado] = useState(area.calibrado_hasta || '');
     const [calibradoEl, setCalibradoEl] = useState(area.calibrado_el || '');
-    const [franjas, setFranjas] = useState(() => area.franjas || []);
-    const [limpiezas, setLimpiezas] = useState(() => area.limpiezas || []);
     const [puntos, setPuntos] = useState(() => area.puntos || []);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
     const [ok, setOk] = useState(false);
 
-    // Los horarios se comparan por su JSON: son listas cortas y el orden importa
-    // (es el orden en que se pintan), así que una comparación campo por campo
-    // sería la misma cuenta escrita más larga.
-    const horariosSucios = JSON.stringify(franjas) !== JSON.stringify(area.franjas || [])
-        || JSON.stringify(limpiezas) !== JSON.stringify(area.limpiezas || []);
     const puntosSucios = JSON.stringify(puntos) !== JSON.stringify(area.puntos || []);
     const sucio = activa !== area.activa
         || instrumento !== (area.instrumento || '')
         || calibrado !== (area.calibrado_hasta || '')
         || calibradoEl !== (area.calibrado_el || '')
-        || horariosSucios || puntosSucios;
+        || puntosSucios;
 
-    // El CHECK de la base lo dice también, pero acá se puede decir con palabras:
-    // un área encendida sin nada que registrar no tiene sentido, y el error de
-    // Postgres («viola la restricción bitacora_areas_con_algo_que_registrar»)
-    // no le explica nada a nadie.
-    const sinNadaQueRegistrar = activa && franjas.length === 0 && limpiezas.length === 0;
 
     const guardar = useCallback(async () => {
         setGuardando(true); setError(null); setOk(false);
@@ -99,8 +85,6 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
             instrumento: instrumento.trim() || null,
             calibrado_hasta: calibrado || null,
             calibrado_el: calibradoEl || null,
-            franjas,
-            limpiezas,
             puntos,
         });
         setGuardando(false);
@@ -113,15 +97,11 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
             area: area.nombre ?? null, activa,
             instrumento: instrumento.trim() || null,
             calibrado_hasta: calibrado || null, calibrado_el: calibradoEl || null,
-            // Los horarios entran en la bitácora de auditoría enteros: son
-            // exactamente lo que decide qué se le va a exigir a la sala, y un
-            // «se cambió la configuración» sin decir a qué no sirve de nada.
-            franjas, limpiezas, puntos,
+            puntos,
         });
         setOk(true);
         onGuardado?.();
-    }, [area.id, area.nombre, activa, instrumento, calibrado, calibradoEl,
-        franjas, limpiezas, puntos, onGuardado]);
+    }, [area.id, area.nombre, activa, instrumento, calibrado, calibradoEl, puntos, onGuardado]);
 
     const vencida = area.calibrado_hasta && area.calibrado_hasta < new Date().toISOString().slice(0, 10);
 
@@ -151,20 +131,22 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                 )}
             </header>
 
-            {!puedeEditar && (
-                <div className="flex flex-wrap gap-2">
-                    {(area.franjas || []).map(f => (
-                        <Badge key={f.clave} variant="chart-1" size="sm" uppercase={false}>
-                            {f.label} {hhmm(f.desde)}–{hhmm(f.hasta)}
-                        </Badge>
-                    ))}
-                    {(area.limpiezas || []).map(t => (
-                        <Badge key={t.clave} variant="chart-3" size="sm" uppercase={false}>
-                            Limpieza {t.label} {hhmm(t.desde)}–{hhmm(t.hasta)}
-                        </Badge>
-                    ))}
-                </div>
-            )}
+            {/* Qué momentos lleva ESTA área — se muestran, no se editan: la
+                hora es de la SUCURSAL y se cambia arriba, una vez para todas. La hora no se repite acá: es la
+                Repetir la hora en cada área era la mitad de la tarjeta
+                diciendo lo mismo cuatro veces. */}
+            <div className="flex flex-wrap gap-2">
+                {(area.franjas || []).map(f => (
+                    <Badge key={f.clave} variant="chart-1" size="sm" uppercase={false}>
+                        {f.label}
+                    </Badge>
+                ))}
+                {(area.limpiezas || []).length > 0 && (
+                    <Badge variant="chart-3" size="sm" uppercase={false} icon={Sparkles}>
+                        {(area.limpiezas || []).map(t => t.label).join(' · ')}
+                    </Badge>
+                )}
+            </div>
 
             <p className="text-label text-content-3">
                 Lleva bitácora desde el {area.vigente_desde}. Los días anteriores no cuentan como faltantes.
@@ -228,14 +210,6 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         </div>
                     )}
 
-                    {/* Los horarios. Sólo se ofrecen las lecturas cuando el
-                        área mide temperatura: un baño con «franja de mañana»
-                        pediría una lectura que no existe. */}
-                    {!sinTemperatura && (
-                        <EditorDeHorarios tipo="franjas" filas={franjas} onCambiar={setFranjas} />
-                    )}
-                    <EditorDeHorarios tipo="limpiezas" filas={limpiezas} onCambiar={setLimpiezas} />
-
                     {/* Los muebles se preguntan UNA vez por sucursal, no una
                         por área: «no entiendo porque pregunta vitrinas y
                         estantes tantas veces, solo 1 vez debe salir» (usuario).
@@ -245,24 +219,6 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         de Vitrinas, que es la que los tiene. */}
                     {conPuntos && (
                         <PuntosDeLimpieza puntos={puntos} onCambiar={setPuntos} />
-                    )}
-
-                    {horariosSucios && (
-                        <Notice variant="warning" compact>
-                            <span className="font-bold">El horario nuevo rige también para los días
-                            de este mes que ya pasaron.</span>
-                            <span className="block mt-0.5 font-normal text-content-2">
-                                La grilla y el mes impreso se arman con la configuración de hoy. Lo
-                                ya anotado no se toca, y el resumen de un mes cerrado y firmado
-                                tampoco: ése queda congelado.
-                            </span>
-                        </Notice>
-                    )}
-
-                    {sinNadaQueRegistrar && (
-                        <Notice variant="danger" compact icon={AlertTriangle}>
-                            Un área encendida necesita al menos un horario. Agrega uno o apaga el área.
-                        </Notice>
                     )}
 
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border-card">
@@ -275,7 +231,7 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                         />
                         {sucio && (
                             <Button variant="primary" size="sm" icon={Check} onClick={guardar}
-                                loading={guardando} disabled={sinNadaQueRegistrar}>
+                                loading={guardando}>
                                 Guardar
                             </Button>
                         )}
@@ -296,6 +252,97 @@ function Area({ area, puedeEditar, conPuntos, onGuardado }) {
                     {area.calibrado_hasta ? ` · calibrado hasta ${area.calibrado_hasta}` : ' · sin fecha de calibración'}
                 </p>
             )}
+        </section>
+    );
+}
+
+/**
+ * El reloj de la sucursal: a qué hora se toma cada lectura y cada limpieza.
+ *
+ * ── Por qué está acá arriba y no en cada área ──────────────────────────────
+ * «Las lecturas y la limpieza se hacen al mismo tiempo en ambas áreas»
+ * (usuario). La persona camina UNA vez con el termohigrómetro y mira la sala y
+ * la bodega en la misma pasada: no hay dos relojes. Preguntarlo por área hacía
+ * la misma pregunta cuatro veces y permitía cuatro respuestas distintas para un
+ * hecho que es uno solo — y dos áreas con el horario corrido parten la ronda en
+ * dos.
+ *
+ * Lo que se comparte es la HORA. Qué momentos lleva cada área no se toca: las
+ * vitrinas se limpian una vez al día y la sala dos, y unificar la lista le
+ * habría duplicado la obligación a las vitrinas sin que nadie lo decidiera.
+ */
+function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
+    // La unión de los momentos que hoy existen en la sucursal, con la primera
+    // hora que aparece. Después de guardar, todas las áreas quedan iguales —
+    // que es el punto; antes de guardar puede haber diferencias, y mostrar la
+    // primera es la única respuesta honesta sin inventar una.
+    const unir = useCallback((campo) => {
+        const mapa = new Map();
+        for (const a of areas) {
+            for (const f of a[campo] || []) if (!mapa.has(f.clave)) mapa.set(f.clave, { ...f });
+        }
+        return [...mapa.values()];
+    }, [areas]);
+
+    const [franjas, setFranjas] = useState(() => unir('franjas'));
+    const [limpiezas, setLimpiezas] = useState(() => unir('limpiezas'));
+    const [guardando, setGuardando] = useState(false);
+    const [error, setError] = useState(null);
+    const [ok, setOk] = useState(false);
+
+    const sucio = JSON.stringify(franjas) !== JSON.stringify(unir('franjas'))
+        || JSON.stringify(limpiezas) !== JSON.stringify(unir('limpiezas'));
+
+    const guardar = useCallback(async () => {
+        setGuardando(true); setError(null); setOk(false);
+        const { areas: tocadas, error: err } = await aplicarHorarios(branchId, franjas, limpiezas);
+        setGuardando(false);
+        if (err) { setError(err); return; }
+        useStaff.getState().appendAuditLog('CONFIGURAR_HORARIOS_BITACORA', String(branchId), {
+            sucursal: branchId, areas: tocadas, franjas, limpiezas,
+        });
+        setOk(true);
+        onCambio?.();
+    }, [branchId, franjas, limpiezas, onCambio]);
+
+    if (!franjas.length && !limpiezas.length) return null;
+
+    return (
+        <section data-surface="card" data-tono={sucio ? 'warning' : undefined} className="p-4 space-y-3">
+            <header className="flex flex-wrap items-center justify-between gap-3">
+                <h4 className="text-body font-black text-content flex items-center gap-2">
+                    <Clock size={16} /> Horarios de la sucursal
+                </h4>
+                {puedeEditar && sucio && (
+                    <Button variant="primary" size="sm" icon={Check} onClick={guardar} loading={guardando}>
+                        Guardar
+                    </Button>
+                )}
+            </header>
+
+            <p className="text-label text-content-3">
+                Valen para todas las áreas: la vuelta se camina una sola vez.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <EditorDeHorarios tipo="franjas" filas={franjas}
+                    onCambiar={puedeEditar ? setFranjas : undefined} />
+                <EditorDeHorarios tipo="limpiezas" filas={limpiezas}
+                    onCambiar={puedeEditar ? setLimpiezas : undefined} />
+            </div>
+
+            {sucio && (
+                <Notice variant="warning" compact>
+                    <span className="font-bold">El horario nuevo rige también para los días de este
+                    mes que ya pasaron.</span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        La grilla y el mes impreso se arman con la configuración de hoy. Lo ya
+                        anotado no se toca, y el resumen de un mes cerrado y firmado tampoco.
+                    </span>
+                </Notice>
+            )}
+            {ok && !sucio && <Notice variant="success" compact>Guardado en todas las áreas.</Notice>}
+            {error && <Notice variant="danger" compact icon={AlertTriangle}>{error}</Notice>}
         </section>
     );
 }
@@ -559,6 +606,11 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
                 hora del ancho de la pantalla para elegir «7:00 AM»— y obligaba
                 a rodar cuatro áreas de largo. `items-start` para que una
                 tarjeta corta (el baño) no se estire al alto de una larga. */}
+            {branchId && areas.length > 0 && (
+                <HorariosDeLaSucursal branchId={branchId} areas={areas}
+                    puedeEditar={puedeEditar} onCambio={alGuardar} />
+            )}
+
             {branchId && (
                 <Refrigerador branchId={branchId} areas={areas}
                     puedeEditar={puedeEditar} onCambio={alGuardar} />

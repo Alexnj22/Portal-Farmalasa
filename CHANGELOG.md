@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.762.0 — El reloj es de la sucursal, no de cada área
+
+*«Las lecturas y la limpieza se hacen al mismo tiempo en ambas áreas»*
+(usuario). Es obvio en cuanto se dice: la persona camina **una** vez con el
+termohigrómetro y mira la sala y la bodega en la misma pasada — no hay dos
+relojes. Configurarlo por área hacía la misma pregunta cuatro veces, permitía
+cuatro respuestas distintas para un hecho que es uno solo y, peor, dos áreas con
+el horario corrido parten la ronda en dos.
+
+**Los horarios subieron a una tarjeta de la sucursal**: las tres lecturas a la
+izquierda, los turnos de limpieza a la derecha. Cada área muestra ahora sólo
+**qué momentos lleva** —Mañana · Mediodía · Tarde · Apertura·Cierre— sin repetir
+la hora: repetirla en cada tarjeta era la mitad de la tarjeta diciendo lo mismo
+cuatro veces.
+
+**Lo que se comparte es la HORA, no la lista.** Cada área conserva qué momentos
+tiene: la sala de ventas se limpia en apertura y cierre, las vitrinas sólo en
+apertura. Unificar la lista le habría duplicado la obligación a las vitrinas sin
+que nadie lo decidiera. `aplicar_horarios_bitacora` actualiza los renglones
+existentes por su clave y no agrega ni quita ninguno — verificado en una
+transacción revertida: cambió «Mañana» y «Cierre» en las cuatro áreas de Salud 1
+y las vitrinas siguieron con una sola limpieza.
+
+**Y va por RPC, no por cuatro updates desde el navegador**, porque tiene que ser
+todo o nada: un fallo a la mitad dejaría la sala en el horario nuevo y la bodega
+en el viejo, que es exactamente el estado que este cambio viene a hacer
+imposible. Su guarda mira `bitacoras_configurar` —no `bitacoras`, que es otro
+permiso— y respeta el alcance por sala.
+
+Las tarjetas de área quedaron a un tercio: chips de momentos, instrumento, las
+dos fechas de calibración y el interruptor. La pantalla completa bajó de 3.442 a
+2.686px en iPhone 13.
+
 ## v2.761.1 — El aviso largo de Configuración se fue a donde se usa
 
 Preguntado por el usuario: *«¿es necesario esto? ¿se puede acortar? ¿cómo se ve

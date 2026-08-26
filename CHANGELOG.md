@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.794.1 — La relectura del área de vencidos vale para las cuatro funciones
+
+Cierra la deuda que dejó v2.793.1. Al quitar el tope, las cuatro funciones que
+despachan desde Bodega siguieron **leyendo** el área de vencidos para calcular un
+número que sólo UNA usaba. Las otras tres pagaban la vuelta al sistema y tiraban
+la respuesta — un dato que viaja y no se lee no da error, y es exactamente cómo
+un control se apaga sin que nadie se entere.
+
+**Se eligió darle un consumidor, no quitarle la lectura.** El gasto ya estaba
+hecho; lo que faltaba era alguien que leyera la respuesta. Hoy las cuatro relen
+el área de vencidos al cerrar la corrida y avisan si bajó:
+
+| función | dónde queda el aviso |
+|---|---|
+| `trasladar-pedido-erp` | `pedido_traslado_linea.aviso` (ya lo hacía) |
+| `enviar-producto-erp` | `envio_linea.aviso` |
+| `aplicar-traslado-inventario` | `metadata.erp_traslado.avisos` |
+| `devolver-pedido-erp` | `pedido_devolucion.aviso` |
+
+El texto vive en **`avisoDelAreaDeVencidos`**, una sola vez: cuatro copias de una
+frase se desincronizan solas, que es la lección que encabeza `erp-traslado.ts` y
+la que costó nueve renglones sin número el 18-ago.
+
+**Tres cosas del orden que no son estilo:**
+
+1. En `aplicar-traslado-inventario` la relectura va **después** de marcar la
+   solicitud `APPROVED`. El producto ya salió de la sala: si esa lectura se
+   cuelga —reintenta, puede tardar minutos— y la función muere por el techo de
+   la Edge Function, la solicitud se quedaría en `PENDING` con la mercadería
+   afuera y quien la viera la despacharía de nuevo. Un aviso perdido cuesta una
+   comprobación a mano; una solicitud sin cerrar cuesta un despacho doble.
+2. En `enviar-producto-erp` va **después** de soltar el candado, por lo mismo:
+   caduca a los 3 minutos y no puede quedar tomado por una lectura que sólo
+   agrega un aviso.
+3. Saliendo de una sala no se ejecuta nada: una sala tiene una sola ubicación,
+   así que la condición ni se evalúa.
+
+**«No se pudo comprobar» tiene su propia frase, distinta de «no bajó».** Un
+`null` de la lectura leído como «todo bien» es como este control se apagaría sin
+avisar. Anclado en `tests/unit/existenciasDeUbicacion.test.js`, en rojo y en
+verde: que dispare cuando el área bajó, que calle cuando no, y que un producto
+ausente del reporte cuente como cero y no como «no sé».
+
 ## v2.794.0 — el conteo en vivo se entera de lo que llegó después
 
 Lo levantó el usuario con una pregunta sobre el conteo abierto de La Popular:

@@ -3,6 +3,7 @@ import {
     existenciasDelReporte,
     lecturaDelReporte,
     apartadoQueEstorba,
+    avisoDelAreaDeVencidos,
     disponibleEnBodega,
 } from '../../supabase/functions/_shared/erp-traslado.ts';
 import real from './fixtures/inventario-bodega-2026-08-19.json';
@@ -254,5 +255,58 @@ describe('apartadoQueEstorba — sólo lo que no se puede distinguir', () => {
         for (const f of ['0000-00-00', '', null, undefined]) {
             expect(apartadoQueEstorba(lectura([prod(9, 5, f)]), lectura([prod(9, 2, f)]), 9)).toBe(2);
         }
+    });
+});
+
+// ── El aviso de después de despachar ─────────────────────────────────────────
+//
+// Es lo ÚNICO que queda mirando desde que se quitó el tope (2026-08-26): si el
+// sistema volviera a descontar la fila apartada en vez de la del estante, la
+// mercadería sale igual —la levanta Bodega a mano— pero el PAPEL queda torcido,
+// y sin este aviso eso se esconde en el kardex.
+//
+// Se prueba en rojo y en verde antes de creerle un `null`: un detector que
+// nunca dispara y uno que no tiene nada que reportar se leen igual desde afuera.
+describe('avisoDelAreaDeVencidos — el aviso de después de despachar', () => {
+    const lectura = (filas) => lecturaDelReporte({ inventario: filas });
+    const prod = (id, cantidad) => ({
+        id_producto: String(id),
+        detalles: [{ detalle: '1x1', cantidad, fecha_vencimiento: '0000-00-00' }],
+    });
+    const termometro = { pid: 1545, producto: 'TERMOMETRO DIGITAL WELLPRO', antes: 1 };
+
+    it('el caso normal: el área no bajó, no hay nada que decir', () => {
+        expect(avisoDelAreaDeVencidos(termometro, lectura([prod(1545, 1)]))).toBeNull();
+    });
+
+    it('en ROJO: bajó, y el aviso dice cuánto, cuánto queda y qué hacer', () => {
+        const nota = avisoDelAreaDeVencidos(termometro, lectura([prod(1545, 0)]));
+        expect(nota).toContain('descontó 1 del ÁREA DE VENCIDOS');
+        expect(nota).toContain('quedan 0');
+        expect(nota).toContain('reponer');
+    });
+
+    // Que el producto desaparezca del reporte es CERO en esa ubicación, no «no
+    // sé»: el reporte trae el área entera.
+    it('desaparecer del reporte cuenta como cero, no como sin dato', () => {
+        expect(avisoDelAreaDeVencidos(termometro, lectura([prod(999, 4)]))).toContain('quedan 0');
+    });
+
+    // La distinción que hace que el control no se apague solo: un `null` de
+    // `leerUbicacion` no puede leerse como «todo bien».
+    it('sin lectura NO dice que está bien: dice que no se pudo comprobar', () => {
+        const nota = avisoDelAreaDeVencidos(termometro, null);
+        expect(nota).toContain('No se pudo comprobar');
+        expect(nota).not.toContain('descontó');
+    });
+
+    it('si el área SUBIÓ tampoco hay nada que decir', () => {
+        expect(avisoDelAreaDeVencidos(termometro, lectura([prod(1545, 3)]))).toBeNull();
+    });
+
+    // «1 apartadas» lo lee Bodega, y se nota.
+    it('el singular y el plural', () => {
+        expect(avisoDelAreaDeVencidos(termometro, null)).toContain('1 apartada de');
+        expect(avisoDelAreaDeVencidos({ ...termometro, antes: 3 }, null)).toContain('3 apartadas de');
     });
 });

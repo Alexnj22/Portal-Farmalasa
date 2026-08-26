@@ -6,6 +6,8 @@ import {
   // entre lotes. Son dos cosas distintas y no pueden compartir nombre.
   anotar as noCallar,
   apartadoQueEstorba,
+  avisoDelAreaDeVencidos,
+  type RenglonEnRiesgo,
   armarConcepto,
   disponibleEnBodega,
   estadoDeRecepcion,
@@ -771,6 +773,11 @@ Deno.serve(async (req) => {
       // más al sistema por cada sala de origen, sobre la pantalla más pesada
       // que tiene.
       const enUbicacion = lecturaEstante?.unidades ?? null;
+      // Los renglones que salieron de un producto con existencia apartada
+      // INDISTINGUIBLE. Al terminar con esta sala se relee el área de vencidos y
+      // se comprueba que no bajó — es lo único para lo que sirve hoy
+      // `apartadoQueEstorba`, que desde el 2026-08-26 ya no acota el despacho.
+      const enRiesgo: (RenglonEnRiesgo & { id: string; clave: string; avisoPrevio: string })[] = [];
 
       for (const d of lista) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
@@ -840,6 +847,9 @@ Deno.serve(async (req) => {
           apartadoQueEstorba(lecturaEstante, lecturaVencidos, Number(d.erp_product_id)),
         );
         if (Number(d.cantidad) > hay.paquetes) {
+          // Lo apartado en el área de vencidos ya no achica este número: el
+          // sistema respeta la ubicación desde el 26-ago (ver
+          // `disponibleEnBodega`). Si falta, falta en el estante.
           await fallar(`De ${it.nombre} ${hayEnTexto(hay, nombreOrigen)}: alcanzan para `
             + `${hay.paquetes} y la devolución son ${d.cantidad}.`);
           continue;
@@ -1056,6 +1066,37 @@ Deno.serve(async (req) => {
           id_traslado: idTraslado, renglones, avisos, viaja: d.viaja,
           sentido: d.sentido, de: nombreOrigen, a: nombreDestino,
         });
+        if (hay.desdeVencidos > 0) {
+          enRiesgo.push({
+            id: String(d.id), clave: String(d.clave), pid: Number(d.erp_product_id),
+            producto: String((it as { nombre?: string }).nombre ?? d.erp_product_id),
+            antes: hay.desdeVencidos,
+            // Se SUMA al aviso que ya se escribió, no lo pisa.
+            avisoPrevio: avisos.join(" · "),
+          });
+        }
+      }
+
+      // ── Que el área de vencidos quede como estaba ────────────────────────
+      // El producto YA salió. Si el sistema descontó la fila apartada en vez de
+      // la del estante, lo que queda torcido es el PAPEL y hay que reponer esa
+      // existencia. Se relee UNA vez por sala de origen y sólo si algún renglón
+      // de riesgo salió — saliendo de una sala `ubicVencidos` es 0 y esto ni se
+      // evalúa. Ver `avisoDelAreaDeVencidos`.
+      if (enRiesgo.length && ubicVencidos) {
+        const despuesVencidos = await leerUbicacion(cookie, erpOrigen, ubicVencidos);
+        for (const r of enRiesgo) {
+          const nota = avisoDelAreaDeVencidos(r, despuesVencidos);
+          if (!nota) continue;
+          await noCallar(
+            admin.from("pedido_devolucion").update({
+              aviso: [r.avisoPrevio, nota].filter(Boolean).join(" · "),
+              updated_at: new Date().toISOString(),
+            }).eq("id", r.id),
+            `el aviso del área de vencidos de ${r.clave}`,
+            (m) => fallos.push({ clave: r.clave, error: m }),
+          );
+        }
       }
     }
 

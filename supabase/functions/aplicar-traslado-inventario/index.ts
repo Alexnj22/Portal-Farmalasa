@@ -54,9 +54,12 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 // 2026-08-11. El módulo se armó copiando de este archivo, así que la extracción
 // es literal — no cambia una coma de comportamiento.
 import {
+  anotar,
   armarConcepto,
   conSala,
   apartadoQueEstorba,
+  avisoDelAreaDeVencidos,
+  type RenglonEnRiesgo,
   disponibleEnBodega,
   estadoDeRecepcion,
   leerUbicacion,
@@ -617,6 +620,12 @@ Deno.serve(async (req) => {
     // Lo que no frena el envío pero hay que poder leer después: un lote que la
     // solicitud reservó y ya no está, o uno que se despachó en su lugar.
     const avisosTraslado: string[] = [];
+    // Los renglones que salen de un producto con existencia apartada en el área
+    // de vencidos que el sistema no puede distinguir de la del estante. Después
+    // de escribir el traslado se relee esa área y se comprueba que no bajó —ver
+    // `avisoDelAreaDeVencidos`—. Es lo único para lo que sirve hoy
+    // `apartadoQueEstorba`: desde el 2026-08-26 ya no acota el despacho.
+    const enRiesgo: RenglonEnRiesgo[] = [];
     let total = 0;
     let unidades = 0;
     let cortadoEn = -1;
@@ -722,6 +731,9 @@ Deno.serve(async (req) => {
           error: `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
             + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
+
+      if (hay.desdeVencidos > 0)
+        enRiesgo.push({ pid: Number(l.erp_product_id), producto: nombre, antes: hay.desdeVencidos });
 
       // ── Los lotes ────────────────────────────────────────────────────────
       // Solo los regulados llevan control de lote; para el resto el selector
@@ -1006,6 +1018,47 @@ Deno.serve(async (req) => {
       .eq("id", sol.id)
       .eq("status", "PENDING");          // no pisar si otro la resolvió en el medio
     if (updErr) throw updErr;
+
+    // ── Que el área de vencidos quede como estaba ────────────────────────────
+    //
+    // El sistema puede descontar la fila apartada en vez de la del estante
+    // cuando las dos son indistinguibles. Lo que sale físicamente lo levanta la
+    // sala del estante, así que lo que queda torcido es el PAPEL: el área de
+    // vencidos pierde una unidad que sigue estando en su caja. Se relee UNA vez
+    // y sólo si algún renglón de riesgo salió — en un despacho normal esto no se
+    // ejecuta. Ver `avisoDelAreaDeVencidos`.
+    //
+    // **Va DESPUÉS de marcar la solicitud APPROVED, y eso no es estilo.** El
+    // producto ya salió de la sala: si esta lectura se cuelga —`leerUbicacion`
+    // reintenta y puede tardar minutos— y la función muere por el techo de la
+    // Edge Function, la solicitud se quedaría en PENDING con la mercadería
+    // afuera, y quien la vea la despacharía de nuevo. Un aviso que se pierde
+    // cuesta una comprobación a mano; una solicitud que no se cierra cuesta un
+    // despacho doble.
+    if (enRiesgo.length && ubicVencidos) {
+      const despuesVencidos = await leerUbicacion(cookie, erpOrigen, ubicVencidos);
+      const notas = enRiesgo
+        .map((r) => avisoDelAreaDeVencidos(r, despuesVencidos))
+        .filter((n): n is string => !!n);
+      if (notas.length) {
+        avisosTraslado.push(...notas);
+        // Se reescribe `avisos` con la lista completa. La solicitud ya es
+        // APPROVED y este es el único escritor que le queda, así que no hay
+        // carrera que perder; si esta segunda escritura fallara, lo único que
+        // se pierde es el aviso — el traslado y su número ya están guardados.
+        // Pero no puede fallar en SILENCIO: el aviso dice que hay que reponer
+        // una existencia, y perderlo sin rastro es peor que no haberlo buscado.
+        await anotar(
+          admin.from("approval_requests")
+            .update({
+              metadata: { ...meta, erp_traslado: { ...aplicado, avisos: avisosTraslado } },
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", sol.id),
+          `el aviso del área de vencidos de la solicitud ${sol.id}`,
+        );
+      }
+    }
 
     return json({ ok: true, aplicado });
 

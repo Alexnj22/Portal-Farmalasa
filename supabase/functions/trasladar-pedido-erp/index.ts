@@ -5,6 +5,7 @@ import {
   anotar,
   armarConcepto,
   apartadoQueEstorba,
+  avisoDelAreaDeVencidos,
   disponibleEnBodega,
   estadoDeRecepcion,
   leerUbicacion,
@@ -1257,23 +1258,13 @@ Deno.serve(async (req) => {
       // de vencidos pierde una unidad que sigue estando en su caja.
       //
       // Se relee UNA vez, y sólo si algún renglón de riesgo salió: en un
-      // despacho normal esto no cuesta nada. Y se AVISA en vez de corregir
-      // solo: reponerlo son cuatro movimientos en el sistema y ninguno debería
-      // pasar sin que Bodega lo vea.
+      // despacho normal esto no cuesta nada. El texto vive en
+      // `avisoDelAreaDeVencidos` porque las CUATRO funciones que despachan
+      // desde Bodega hacen esta misma comprobación.
       if (conRiesgo.length && ubicVencidos) {
         const despues = await leerUbicacion(cookie, erpOrigen, ubicVencidos);
-        // Sin lectura no se inventa un veredicto: quien mire la tarjeta tiene
-        // que poder distinguir «no bajó» de «no se pudo comprobar».
         for (const r of conRiesgo) {
-          const ahora = despues ? (despues.unidades.get(r.pid) ?? 0) : null;
-          const nota = ahora === null
-            ? `No se pudo comprobar el área de vencidos después de despachar. Había ${r.antes} `
-              + `apartada${r.antes === 1 ? "" : "s"} de ${r.producto}; conviene mirarlo.`
-            : ahora < r.antes
-            ? `El sistema descontó ${r.antes - ahora} del ÁREA DE VENCIDOS en vez del estante: `
-              + `había ${r.antes} apartada${r.antes === 1 ? "" : "s"} de ${r.producto} y quedan ${ahora}. `
-              + `La mercadería salió del estante, así que hay que reponer esa existencia apartada.`
-            : null;
+          const nota = avisoDelAreaDeVencidos(r, despues);
           if (!nota) continue;
           await anotar(
             admin.from("pedido_traslado_linea")

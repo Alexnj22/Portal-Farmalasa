@@ -6,6 +6,8 @@ import {
   armarConcepto,
   conSala,
   apartadoQueEstorba,
+  avisoDelAreaDeVencidos,
+  type RenglonEnRiesgo,
   disponibleEnBodega,
   estadoDeRecepcion,
   leerUbicacion,
@@ -356,6 +358,11 @@ Deno.serve(async (req) => {
 
       const hechas: Record<string, unknown>[] = [];
       const fallos: { producto: string; error: string }[] = [];
+      // Los renglones que salieron de un producto con existencia apartada
+      // INDISTINGUIBLE. Al terminar se relee el área de vencidos y se comprueba
+      // que no bajó — es lo único para lo que sirve hoy `apartadoQueEstorba`,
+      // que desde el 2026-08-26 ya no acota el despacho.
+      const enRiesgo: (RenglonEnRiesgo & { id: string; avisoPrevio: string })[] = [];
       let cortadoEn = -1;
 
       /* Cuánto tarda cada renglón contra el sistema. No es diagnóstico de
@@ -557,6 +564,15 @@ Deno.serve(async (req) => {
 
         msPorRenglon.push(Date.now() - arranqueRenglon);
         hechas.push({ producto: nombre, cantidad: l.cantidad, id_traslado: idTraslado, avisos });
+        if (hay.desdeVencidos > 0) {
+          enRiesgo.push({
+            id: String(l.id), pid: Number(l.erp_product_id), producto: nombre,
+            antes: hay.desdeVencidos,
+            // El aviso se SUMA al que ya se escribió —el lote que no era el
+            // reservado, por ejemplo—, no lo pisa.
+            avisoPrevio: avisos.join(" · "),
+          });
+        }
       }
 
       // Se suelta el candado en cuanto termina la corrida: lo que quedó se
@@ -566,6 +582,32 @@ Deno.serve(async (req) => {
         admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "despachando" }),
         "la salida del envío del despacho",
       );
+
+      // ── Que el área de vencidos quede como estaba ──────────────────────────
+      // El producto YA salió. Si el sistema descontó la fila apartada en vez de
+      // la del estante, lo que queda torcido es el PAPEL y hay que reponer esa
+      // existencia. Se relee UNA vez y sólo si algún renglón de riesgo salió: en
+      // un envío normal esto no se ejecuta. Ver `avisoDelAreaDeVencidos`.
+      //
+      // Va DESPUÉS de soltar el candado a propósito: `leerUbicacion` reintenta y
+      // puede tardar minutos, y el candado caduca a los 3 — dejarlo tomado por
+      // una lectura que sólo agrega un aviso trabaría a quien quiera reintentar
+      // lo que no salió.
+      if (enRiesgo.length && ubicVencidos) {
+        const despuesVencidos = await leerUbicacion(cookie, erpOrigen, ubicVencidos);
+        for (const r of enRiesgo) {
+          const nota = avisoDelAreaDeVencidos(r, despuesVencidos);
+          if (!nota) continue;
+          await anotar(
+            admin.from("envio_linea").update({
+              aviso: [r.avisoPrevio, nota].filter(Boolean).join(" · "),
+              updated_at: new Date().toISOString(),
+            }).eq("id", r.id),
+            `el aviso del área de vencidos de ${r.producto}`,
+            (m) => fallos.push({ producto: r.producto, error: m }),
+          );
+        }
+      }
 
       // El aviso al destino sale AHORA, con los vales en la mano, y sólo si
       // algo salió de verdad. Avisar de una caja que no salió manda a alguien a

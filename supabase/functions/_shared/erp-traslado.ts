@@ -484,6 +484,48 @@ export function apartadoQueEstorba(
     : 0;
 }
 
+/** Un renglón que YA salió, de un producto cuya fila apartada el sistema podría
+ *  confundir con la del estante. `antes` es lo que había apartado al verificar. */
+export type RenglonEnRiesgo = { pid: number; producto: string; antes: number };
+
+/**
+ * Después de despachar: ¿el área de vencidos bajó cuando no tenía que bajar?
+ *
+ * Es la ÚNICA razón por la que `apartadoQueEstorba` sigue existiendo. Hasta el
+ * 2026-08-25 ese número acotaba el despacho; hoy no acota nada y lo que queda es
+ * esto — releer el área de vencidos al cerrar la corrida y comprobar que sigue
+ * como estaba. Si el sistema volviera a descontar la fila que no era, lo que se
+ * pierde es el PAPEL: la mercadería la levanta Bodega del estante igual, pero la
+ * unidad apartada figura salida y sigue en su caja.
+ *
+ * Devuelve `null` cuando no hay nada que decir, que es el caso normal.
+ *
+ * **Se AVISA en vez de corregir solo**: reponerlo son cuatro movimientos en el
+ * sistema y ninguno debería pasar sin que Bodega lo vea.
+ *
+ * Y «no se pudo leer» tiene su propia frase, distinta de «no bajó»: quien mire
+ * la tarjeta tiene que poder distinguir las dos cosas. Un `null` de
+ * `leerUbicacion` leído como «todo bien» es exactamente cómo un control se
+ * apaga sin que nadie se entere.
+ *
+ * Vive acá y no en cada función porque son CUATRO las que despachan desde
+ * Bodega, y cuatro copias de un texto se desincronizan solas — es la lección de
+ * los parsers que encabeza este archivo.
+ */
+export function avisoDelAreaDeVencidos(
+  r: RenglonEnRiesgo, despues: LecturaUbicacion | null,
+): string | null {
+  const ahora = despues ? (despues.unidades.get(r.pid) ?? 0) : null;
+  const apartadas = (n: number) => `${n} apartada${n === 1 ? "" : "s"}`;
+  if (ahora === null)
+    return `No se pudo comprobar el área de vencidos después de despachar. Había `
+      + `${apartadas(r.antes)} de ${r.producto}; conviene mirarlo.`;
+  if (ahora >= r.antes) return null;
+  return `El sistema descontó ${r.antes - ahora} del ÁREA DE VENCIDOS en vez del estante: `
+    + `había ${apartadas(r.antes)} de ${r.producto} y quedan ${ahora}. `
+    + `La mercadería salió del estante, así que hay que reponer esa existencia apartada.`;
+}
+
 /**
  * «en bodega hay 5 unidades en 2 lotes» — la mitad de la frase que es igual en
  * todos lados. La otra mitad (qué se pedía) la pone quien avisa, porque no es lo

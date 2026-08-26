@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.772.0 — El rechazo lo firma quien rechazó, y el motivo se pide una sola vez
+
+Dos reportes de la misma pantalla.
+
+### «sale que los firma alguien más»
+
+*«el de la imagen lo hizo Josué, pero sale que fue Cendy.»*
+
+Y no era esa tarjeta: **los 12 rechazos de traslado de la historia tienen la
+misma firma equivocada**. Medido el 2026-08-26, en TODOS `approver_id` es
+exactamente `metadata.destinatarios[0]` — el primero de los seis a quienes se
+les enruta el aviso.
+
+El campo lo escribe `asignar_aprobador_solicitud` al CREAR la solicitud, y
+mientras está pendiente eso es correcto: dice a quién se le pidió. En cuanto se
+decide deja de serlo, y cada camino tenía que acordarse de pisarlo:
+`rejectRequest` lo pisaba, las Edge Functions lo pisan, y `rechazarTraslado`
+—que es un UPDATE desde el navegador— no.
+
+**Por eso vivió desde el día uno: no falla nada.** El campo está lleno, con un
+uuid válido, de una persona real que además tenía permiso para rechazarlo. Sólo
+que no fue esa. Y el nombre no se queda en la tarjeta: el aviso «🚫 No te lo
+pueden enviar» que le llega a quien pidió sale firmado por la misma persona
+equivocada, porque `notificar_resolucion_traslado` usa `NEW.approver_id` como
+`created_by`.
+
+La corrección no es agregar la línea que faltaba en ese camino, que es lo que ya
+se había hecho tres veces en los otros: **la firma sale de la base y no de quien
+la llame**. Trigger `firmar_quien_decide`, `BEFORE UPDATE OF status` sobre la
+transición `PENDING → APPROVED/REJECTED`, con `auth_employee_id()` — la MISMA
+cuenta que hace la policy para decidir si esa persona podía. Verificado en las
+tres ramas: el actor firma, `CANCELLED` no se toca (retirar la propia solicitud
+no es una decisión) y sin empleado autenticado tampoco, porque ahí quien escribe
+es una Edge Function con `service_role` que ya resolvió al actor desde su JWT y
+pisarlo con NULL borraría la única firma buena.
+
+**Los rechazos anteriores a hoy no se pueden corregir**: nadie guardó al actor
+en ninguna parte —no hay fila en `audit_logs` ni en `notifications`—, así que su
+firma queda como está y hay que saber leerla.
+
+### «me pregunta el motivo dos veces»
+
+*«antes de confirmar y rechazar me pregunta motivo, y al rechazar me pregunta de
+nuevo, mejor uno solo. si es confirmar no necesita motivo, solo al rechazar.»*
+
+Era un solo campo con dos caras: se abría a la vista como «Nota para quien la
+envió» (opcional), y al apretar «Rechazar» cambiaba de rótulo a «Motivo de
+rechazo» **y se vaciaba**. Desde afuera eso son dos preguntas por lo mismo, y la
+segunda borra lo que se contestó en la primera.
+
+Ahora el campo aparece sólo cuando hace falta —un rechazo, o un parcial que deja
+producto afuera— y en los dos es obligatorio. Aprobar no pide nada. La nota
+opcional de quien aprueba se cae con esto a propósito: su precio era preguntar
+dos veces.
+
 ## v2.771.0 — El portal dice «aquí», y el conteo de bolsas dice si cuadra
 
 *«¿esto es canónico de la voz del portal? verifica el gate de voz»* y después

@@ -209,8 +209,10 @@ export const personasDe = (req, empleadosPorId) => {
  * creó la solicitud, así que no hace falta cruzar contra el padrón de salas.
  *
  * Sólo mientras está PENDIENTE. Una vez decidida, `approver_id` deja de ser un
- * destinatario y pasa a ser quien realmente la resolvió —lo escribe la función
- * que despacha, con su propio id— y ahí el nombre y la cara son el dato.
+ * destinatario y pasa a ser quien realmente la resolvió —lo firma el trigger
+ * `firmar_quien_decide` con `auth_employee_id()`, en la base y no en el
+ * navegador— y ahí el nombre y la cara son el dato. Los rechazos anteriores al
+ * 2026-08-26 conservan el primer destinatario: nadie guardó al actor.
  */
 export const salaQueEspera = (req) => {
     if (req?.type !== 'INVENTORY_TRANSFER_REQUEST' || req?.status !== 'PENDING') return null;

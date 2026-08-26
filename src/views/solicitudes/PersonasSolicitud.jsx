@@ -161,7 +161,10 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
 
     // Un traslado pendiente lo espera la SALA que tiene el producto, no una
     // persona. Ya decidido, `aprobador` vuelve a ser quien de verdad lo
-    // resolvió: la función que despacha escribe su id en `approver_id`.
+    // resolvió: lo firma el trigger `firmar_quien_decide` con
+    // `auth_employee_id()`. Antes lo escribía cada camino por su cuenta, y el
+    // rechazo del traslado no lo escribía: quedaba el primer destinatario del
+    // enrutado, o sea un nombre real y equivocado.
     const esperaSala = salaQueEspera(req);
 
     const rotulo = pendiente ? 'Pendiente de'

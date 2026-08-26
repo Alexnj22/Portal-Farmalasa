@@ -448,8 +448,12 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 onClick={() => confirmar('approve')}>
                                 {parcial ? 'Aplicar lo marcado' : 'Aprobar'}
                             </Button>
+                            {/* La nota NO se borra al entrar: si venía escrita
+                                es porque el parcial la exigía, y es la misma
+                                explicación. Volviéndola a pedir en blanco, el
+                                motivo se escribe dos veces. */}
                             <Button variant="destructive" icon={X} disabled={ocupado}
-                                onClick={() => { setModo('reject'); setNota(''); }}>Rechazar</Button>
+                                onClick={() => setModo('reject')}>Rechazar</Button>
                         </>
                     )}
                     {decidible && modo === 'reject' && (
@@ -546,26 +550,31 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
 
                     {extra}
 
-                    {/* La nota vive con el detalle y no detrás de un paso.
-                        Sacar el segundo toque de «Aprobar» habría costado la
-                        nota opcional a quien aprueba —el único canal para
-                        decirle algo a quien mandó la solicitud—, así que en vez
-                        de aparecer al entrar en un modo, está desde que se abre.
-                        Obligatoria en los dos casos en que la decisión no se
-                        explica sola: un rechazo, y un parcial. */}
-                    {decidible && (
+                    {/* El motivo se pide UNA vez, y sólo cuando hace falta.
+                        Hasta el 2026-08-26 este campo estaba a la vista desde
+                        que se abría el detalle, con el rótulo «Nota para quien
+                        la envió», y al apretar «Rechazar» cambiaba de rótulo y
+                        se vaciaba. Desde afuera eso son DOS preguntas por lo
+                        mismo: «antes de confirmar y rechazar me pregunta
+                        motivo, y al rechazar me pregunta de nuevo». Y aprobar
+                        nunca necesitó una: la decisión se explica sola.
+
+                        Queda entonces en los dos casos en que no se explica
+                        sola —un rechazo y un parcial—, y en los dos es
+                        obligatoria. La nota opcional de quien aprueba se cayó
+                        con esto a propósito: nadie la escribía y su precio era
+                        preguntar dos veces. */}
+                    {decidible && (modo === 'reject' || parcial) && (
                         <div ref={bloqueDecision}>
                             <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
-                                {modo === 'reject' ? 'Motivo de rechazo'
-                                    : parcial ? 'Por qué no entra todo'
-                                    : 'Nota para quien la envió'}
-                                {(modo === 'reject' || parcial) && <span className="text-danger ml-1">*</span>}
+                                {modo === 'reject' ? 'Motivo de rechazo' : 'Por qué no entra todo'}
+                                <span className="text-danger ml-1">*</span>
                             </label>
                             <PortalTextarea
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 rows={3}
-                                placeholder={modo === null && !parcial ? 'Opcional...' : 'Explicá el motivo...'}
+                                placeholder="Explicá el motivo..."
                                 readOnly={ocupado}
                                 textareaClassName="disabled:opacity-50"
                             />

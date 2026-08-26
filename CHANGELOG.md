@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.784.0 — Personal: la vista deja de estar pegada, y la pestaña y la página se van a la dirección
+
+Salió de un reporte de una línea —*«verifica la vista, que sea canónica,
+mejórala, visualmente se ve todo pegado»*— y el «pegado» resultó ser medible.
+Medido en producción a **1280 con el menú abierto**, que es el portátil más
+común:
+
+| | antes | ahora |
+|---|---:|---:|
+| la tabla pedía / el marco daba | 948 / 870 px | 870 / 870 |
+| **columna «Acciones» fuera del marco** | **78 px** | 0 |
+| el carril pedía / recibía | 772 / 392 px | 872 / 872 |
+| **tarjetas de estado que no se veían** | **2 de 5** | 0 |
+| alto de fila (`--row-h` pide 38) | 45 px | 38 |
+
+Tres cosas, y ninguna daba error:
+
+- **El chevron de «ver perfil» no existía a 1280.** La columna de Acciones
+  quedaba 78px afuera: el lápiz cortado por la mitad y el chevron directamente
+  invisible. Hay `overflow-x: auto`, así que técnicamente se podía deslizar, y
+  por eso nadie lo reportó como roto — se veía como que esa columna no estaba.
+  El comentario del código decía que `dense` ya lo había resuelto «de sobra»;
+  estaba equivocado desde que se escribió. Los 78px salen de acortar dos
+  encabezados («Cargos Asignados» → **Cargos**, «Estado operativo» →
+  **Estado**: el rótulo va en versalitas con `tracking-widest`, así que cada
+  palabra de más se cobra en ancho de COLUMNA) y de la celda del empleado.
+  No se escondió ningún dato.
+- **«Practicantes» no se veía nunca en un portátil.** El carril y la píldora de
+  filtros compartían renglón desde `lg`, mucho antes de que hubiera lugar: el
+  carril recibía 392px para 772 de tarjetas. Ahora comparten renglón desde
+  `2xl`, que es donde de verdad entran las dos.
+- **La foto era exactamente del alto de la fila.** `md:h-11` son 44px dentro de
+  una fila que a 1280 `--row-h` pone en 38 — o sea que el avatar no dejaba aire,
+  la estiraba a 45px y le ganaba a la densidad automática de `index.css`. Ahora
+  sale de `--row-h` y encoge cuando la pantalla encoge.
+
+Y cuatro cosas que ya tenían canónico en el repo y esta vista resolvía por su
+cuenta:
+
+- **La pestaña y la página viven en la DIRECCIÓN** (`usePestanaEnUrl` /
+  `usePaginaEnUrl`). Cuál de las cinco vistas está abierta es una pestaña
+  —«Practicantes» ni siquiera lista los mismos registros— y estaba en `useState`:
+  cualquier recarga devolvía a «Todos» sin decir nada, y acá la recarga llega
+  sola (la sesión de sala se cierra a los 5 minutos, el service worker recarga al
+  publicar). Ahora es `/personal?tab=practicantes&pag=3`. De paso se fue el
+  `setCurrentPage(1)` dentro de un `useEffect`, que el lint marcaba como render
+  en cascada.
+- **El CSV lo escribe `exportCsv`**, no la vista. Era una de las cuatro salidas
+  que se armaban el archivo a mano, y no era sólo duplicación: salía separado por
+  COMA y con `\n` mientras todo el resto del portal escribe `;` + CRLF + BOM —
+  el directorio de personal era el único CSV que Excel en es-SV abría en una sola
+  columna.
+- **El tooltip de «Información pendiente» es `LiquidTooltip`.** Estaba escrito a
+  mano: `createPortal` propio, medición propia y la flechita dibujada con estilos
+  en línea. O sea el hallazgo de DESIGN.md §15.10 con un ejemplar más, cinco
+  meses después de haberlo cerrado. El recorte contra el borde derecho de la
+  pantalla es justamente lo que un tooltip a mano nunca trae.
+- Con eso, dos excepciones del `gate:design` sobre esta vista (`z-index` y
+  `capa-flotante`) **se borran**: existían por ese tooltip. Una excepción que
+  sobrevive a su motivo deja de proteger y pasa a esconder.
+
 ## v2.783.1 — El ojo que faltaba en las tarjetas del historial de traslados
 
 Corregido por el usuario mirando la pantalla de v2.783.0: «¿por qué si se toca,

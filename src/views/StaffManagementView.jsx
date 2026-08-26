@@ -1,9 +1,8 @@
-import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
   Users,
@@ -55,20 +54,28 @@ import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 
+import LiquidTooltip from '../components/common/LiquidTooltip';
+import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { exportCsv } from '../utils/csvExport';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { SIN_ASIGNAR } from '../data/constants';
-import { registrarEgreso } from '../data/egreso';
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las sucursales' }];
 
 // Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
 // porque la píldora de filtros tiene que ofrecer todo lo que cuenta en su badge:
 // las tarjetas son el atajo visual, no el único acceso (§17).
+//
+// Los valores son SLUGS y no los rótulos de estado (`'Activo'`, `'En Apoyo'`)
+// porque desde v2.782.0 viajan en la dirección: `?tab=En+Apoyo` es feo de
+// compartir y se rompe al escribirlo a mano. El slug es además estable si
+// mañana cambia el rótulo — que es la regla de «un rótulo no es una clave».
 const STAT_FILTER_OPTIONS = [
-    { value: 'ALL',          label: 'Todos' },
-    { value: 'Activo',       label: 'Activos' },
-    { value: 'En Apoyo',     label: 'Apoyo' },
-    { value: 'Otros',        label: 'Otros' },
-    { value: 'PRACTICANTES', label: 'Practicantes' },
+    { value: 'todos',        label: 'Todos' },
+    { value: 'activos',      label: 'Activos' },
+    { value: 'apoyo',        label: 'Apoyo' },
+    { value: 'otros',        label: 'Otros' },
+    { value: 'practicantes', label: 'Practicantes' },
 ];
 
 // Código de empleado es numérico crudo (ej. "201") — si se mezcla con nombre/rol/
@@ -145,42 +152,38 @@ const isPendingData = (emp) => {
   return getPendingItems(emp).length > 0;
 };
 
+// El tooltip estaba escrito a mano: `createPortal` propio, medición propia de
+// la posición, y la flechita dibujada con `var(--tooltip-bg)` e inline styles.
+// O sea el hallazgo de DESIGN.md §15.10 —30 tooltips a mano contra 2 usos del
+// canónico— con un ejemplar más, cinco meses después de haberlo cerrado. El
+// recorte contra el borde derecho de la pantalla es la parte que un tooltip a
+// mano nunca trae, y el canónico lo hace con el ancho REAL ya montado.
+//
+// `variant="rich"` porque el contenido es una LISTA de faltantes, no una nota
+// de una línea.
 const PendingBadge = ({ emp }) => {
-  const [pos, setPos] = useState(null);
-  const ref = useRef(null);
   const items = useMemo(() => getPendingItems(emp), [emp]);
 
-  const show = () => {
-    if (!ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    setPos({ top: r.top + window.scrollY - 10, left: r.left + window.scrollX + r.width / 2 });
-  };
-  const hide = () => setPos(null);
-
   return (
-    <div ref={ref} onMouseEnter={show} onMouseLeave={hide}
-      className="flex items-center shrink-0 cursor-default">
-      <AlertCircle size={13} strokeWidth={2.5} className="text-warning" />
-      {pos && createPortal(
-        <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
-          className="animate-in fade-in duration-[var(--dur-fast)] min-w-[190px]">
-          <div data-surface="tooltip" className="px-3 py-2.5">
-            <p className="text-micro font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
-            <ul className="space-y-1">
-              {items.map((item, i) => (
-                <li key={i} className="flex items-baseline gap-1.5 text-label whitespace-nowrap">
-                  <span className="w-1 h-1 rounded-full bg-warning shrink-0 self-center" />
-                  <span className="font-bold">{item.label}</span>
-                  <span className="text-content-tooltip-2 font-medium">— {item.hint}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="w-2 h-2 rotate-45 mx-auto -mt-1" style={{ background: 'var(--tooltip-bg)', borderRight: '1px solid var(--tooltip-border)', borderBottom: '1px solid var(--tooltip-border)' }} />
-        </div>,
-        document.body
-      )}
-    </div>
+    <LiquidTooltip
+      variant="rich"
+      content={
+        <>
+          <p className="text-micro font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
+          <ul className="space-y-1">
+            {items.map((item, i) => (
+              <li key={i} className="flex items-baseline gap-1.5 text-label whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-warning shrink-0 self-center" />
+                <span className="font-bold">{item.label}</span>
+                <span className="text-content-tooltip-2 font-medium">— {item.hint}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      }
+    >
+      <AlertCircle size={13} strokeWidth={2.5} className="text-warning shrink-0" />
+    </LiquidTooltip>
   );
 };
 
@@ -319,10 +322,18 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
     // portal ya pone en la fila.
     <DataRow index={staggerIndex} onClick={() => onOpenEmployee(emp)}
       className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
-      <DataCell className="w-[360px]">
+      <DataCell className="w-[300px]">
         <div className="flex items-center gap-3">
+          {/* El avatar SALE de `--row-h`, no de un tamaño fijo.
+              Medido en producción el 2026-08-26 a 1280px: `md:h-11` son 44px
+              dentro de una fila que a ese ancho `--row-h` pone en **38** — así
+              que el avatar no dejaba aire, la dejaba a 45px y le ganaba a la
+              densidad automática de `index.css`. Ése es literalmente el «se ve
+              todo pegado»: la foto tocaba el borde de arriba y el de abajo.
+              Restarle 12px la deja en 32px con puntero cómodo (el mismo que ya
+              usa Nómina) y la hace encoger cuando la pantalla encoge. */}
           <div className="relative shrink-0">
-            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
+            <div className="h-[calc(var(--row-h)-12px)] w-[calc(var(--row-h)-12px)] rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
@@ -331,10 +342,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 </span>
             )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Disponible"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Disponible"></span>
             )}
             {isAbsent && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Ausencia"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-warning border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Ausencia"></span>
             )}
           </div>
 
@@ -458,10 +469,10 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 
   return (
     <DataRow index={staggerIndex}>
-      <DataCell className="w-[360px]">
+      <DataCell className="w-[300px]">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-chart-3/10 border border-chart-3/30 flex items-center justify-center text-chart-3-text shrink-0">
-            <GraduationCap size={18} strokeWidth={2} />
+          <div className="h-[calc(var(--row-h)-12px)] w-[calc(var(--row-h)-12px)] rounded-xl bg-chart-3/10 border border-chart-3/30 flex items-center justify-center text-chart-3-text shrink-0">
+            <GraduationCap size={16} strokeWidth={2} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
@@ -550,9 +561,14 @@ const StaffManagementView = ({
 
 
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [activeStatFilter, setActiveStatFilter] = useState('ALL');
+
+  // Cuál de las cinco vistas está abierta ES una pestaña —«Practicantes» ni
+  // siquiera lista los mismos registros— y una pestaña vive en la DIRECCIÓN
+  // (canon: `usePestanaEnUrl`, DESIGN.md §14). En `useState` se perdía con
+  // cualquier recarga, y acá la recarga llega sola: la sesión de sala se cierra
+  // a los 5 minutos y el service worker recarga al publicar. Quien estaba en
+  // Practicantes volvía a Todos sin que nada fallara.
+  const [activeStatFilter, setActiveStatFilter] = usePestanaEnUrl(STAT_FILTER_OPTIONS, 'todos');
   const [showPracticanteModal, setShowPracticanteModal] = useState(false);
   const [editingPracticante, setEditingPracticante] = useState(null);
   const [practicanteToDelete, setPracticanteToDelete] = useState(null);
@@ -561,10 +577,6 @@ const StaffManagementView = ({
   const normalizedSearch = (searchTerm || '').trim();
 
   useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
-
-  useEffect(() => {
-    setCurrentPage(1);  
-  }, [normalizedSearch, selectedBranch, itemsPerPage, activeStatFilter]);
 
   const branchOptions = useMemo(() => {
     return [
@@ -636,7 +648,7 @@ const StaffManagementView = ({
   }, [practicantesBranchFiltered, normalizedSearch]);
 
   const sortedPracticantes = useMemo(() => {
-    if (activeStatFilter !== 'PRACTICANTES') return [];
+    if (activeStatFilter !== 'practicantes') return [];
     const list = [...practicantesSearchFiltered];
     list.sort((a, b) => {
       const branchA = (branchMap.get(Number(a.branch_id)) || '').toLowerCase();
@@ -652,15 +664,15 @@ const StaffManagementView = ({
     return list;
   }, [practicantesSearchFiltered, activeStatFilter, branchMap]);
 
-  const isPracticantesView = activeStatFilter === 'PRACTICANTES';
+  const isPracticantesView = activeStatFilter === 'practicantes';
 
   const filteredEmployees = useMemo(() => {
     return searchFilteredEmployees.filter(emp => {
       const statusEff = getEffectiveStatus(emp);
-      return activeStatFilter === 'ALL' ||
-        (activeStatFilter === 'Activo' && statusEff === 'Activo') ||
-        (activeStatFilter === 'En Apoyo' && statusEff === 'En Apoyo') ||
-        (activeStatFilter === 'Otros' && !['Activo', 'En Apoyo'].includes(statusEff));
+      return activeStatFilter === 'todos' ||
+        (activeStatFilter === 'activos' && statusEff === 'Activo') ||
+        (activeStatFilter === 'apoyo' && statusEff === 'En Apoyo') ||
+        (activeStatFilter === 'otros' && !['Activo', 'En Apoyo'].includes(statusEff));
     });
   }, [searchFilteredEmployees, activeStatFilter]);
 
@@ -714,7 +726,16 @@ const StaffManagementView = ({
   }, [filteredEmployees, sortConfig, branchMap]);
 
   const totalItems = isPracticantesView ? sortedPracticantes.length : sortedEmployees.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+  // La POSICIÓN en la lista también vive en la dirección (canon:
+  // `usePaginaEnUrl`). Con 47 fichas la página 3 no parece gran cosa, pero la
+  // recarga llega sola —sesión de sala a los 5 minutos, service worker al
+  // publicar— y volver a la 1 sin aviso es el mismo silencio que la pestaña.
+  // El hook además corrige la dirección cuando el filtro deja la página fuera
+  // de rango, que es lo que hacía el `setCurrentPage(1)` dentro de un efecto
+  // (y que además el lint marcaba como render en cascada).
+  const { page: currentPage, pageSize: itemsPerPage, totalPages, setPage, setPageSize, resetPage } =
+    usePaginaEnUrl({ total: totalItems });
 
   const paginatedEmployees = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -726,7 +747,7 @@ const StaffManagementView = ({
     return sortedPracticantes.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedPracticantes, currentPage, itemsPerPage]);
 
-  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'ALL';
+  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'todos';
 
   const handleOpenNewEmployee = () => {
     openModal?.('newEmployee');
@@ -793,55 +814,60 @@ const StaffManagementView = ({
     navigate(`/personal/empleado/${emp.id}`);     // 🚨 Magia del Router: Cambiamos la URL a la ficha del empleado
   };
 
+  // Cambiar de lista —buscar, cambiar de sucursal, cambiar de vista— vuelve a
+  // la página 1: la posición vieja ya no señala nada. Va en el handler y no en
+  // un `useEffect`, que es lo que hacía antes y disparaba un render en cascada.
+  const handleSearchChange = useCallback((valor) => {
+    setSearchTerm(valor);
+    resetPage();
+  }, [setSearchTerm, resetPage]);
+
+  const handleBranchChange = useCallback((valor) => {
+    setSelectedBranch(valor);
+    resetPage();
+  }, [setSelectedBranch, resetPage]);
+
+  const handleStatFilterChange = useCallback((valor) => {
+    setActiveStatFilter(valor);
+    resetPage();
+  }, [setActiveStatFilter, resetPage]);
+
   const clearFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedBranch('ALL');
-    setActiveStatFilter('ALL');
-  }, [setSearchTerm, setSelectedBranch]);
+    setActiveStatFilter('todos');
+    resetPage();
+  }, [setSearchTerm, setSelectedBranch, setActiveStatFilter, resetPage]);
 
   const handleSort = useCallback((key) => {
     setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
   }, []);
 
-  const escapeCsv = (val) => {
-    if (val === null || val === undefined) return '';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
-  };
-
+  // El canónico es `exportCsv` (`utils/csvExport.js`) y esta vista era una de las
+  // cuatro que se armaba el archivo a mano (CLAUDE.md, §«toda salida de datos se
+  // anota»). No era sólo duplicación: el archivo a mano salía separado por COMA
+  // y con `\n`, y todo el resto del portal escribe `;` + CRLF + BOM — o sea que
+  // el directorio de personal era el único CSV que Excel en es-SV abría en una
+  // sola columna. El canónico además anota el egreso él mismo, así que la
+  // llamada suelta a `registrarEgreso` se va: dos anotaciones del mismo archivo
+  // serían dos filas para una sola descarga.
   const handleExportCSV = () => {
     const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
 
-    const rows = sortedEmployees.map(emp => {
-      const branch = branchMap.get(Number(emp.branchId || emp.branch_id)) || SIN_ASIGNAR;
-      const status = getEffectiveStatus(emp);
+    const rows = sortedEmployees.map(emp => ([
+      emp.code,
+      emp.name,
+      branchMap.get(Number(emp.branchId || emp.branch_id)) || SIN_ASIGNAR,
+      emp.role,
+      emp.secondary_role,
+      getEffectiveStatus(emp),
+      emp.phone,
+      emp.dui,
+      emp.hire_date,
+      emp.birth_date,
+    ]));
 
-      return [
-        escapeCsv(emp.code),
-        escapeCsv(emp.name),
-        escapeCsv(branch),
-        escapeCsv(emp.role),
-        escapeCsv(emp.secondary_role),
-        escapeCsv(status),
-        escapeCsv(emp.phone),
-        escapeCsv(emp.dui),
-        escapeCsv(emp.hire_date),
-        escapeCsv(emp.birth_date)
-      ].join(',');
-    });
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `Directorio_Personal_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    registrarEgreso('personal', { formato: 'csv', filas: rows.length, detalle: { archivo: 'directorio' } });
+    exportCsv(headers, rows, `Directorio_Personal_${new Date().toISOString().split('T')[0]}.csv`, 'personal');
   };
 
   // D3.9 (2026-07-27): esta barra estaba reescrita a mano. Los dos botones de
@@ -852,7 +878,7 @@ const StaffManagementView = ({
   const filtersContent = (
     <ViewTabBar
       searchValue={searchTerm}
-      onSearchChange={setSearchTerm}
+      onSearchChange={handleSearchChange}
       placeholder="Buscar por nombre, código o cargo..."
     />
   );
@@ -895,32 +921,41 @@ const StaffManagementView = ({
             Las tarjetas ya traen `flex-1 basis-0 min-w-[150px]` del canónico
             `StatCard` (148 mínimo, 200 máximo), y `CarrilCards` las mantiene en
             UNA fila: las que no entran se alcanzan deslizando, en vez de envolver
-            y empujar la tabla hacia abajo un alto distinto en cada monitor. */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            y empujar la tabla hacia abajo un alto distinto en cada monitor.
+
+            El corte es `2xl` y no `lg`, y eso se midió. A `lg` (1024) las dos
+            columnas se prendían mucho antes de que hubiera lugar: a **1280 con
+            el menú abierto el carril recibía 392px para 772px de tarjetas** —o
+            sea que «Otros» salía cortada y «Practicantes» no se veía— y a 1440
+            seguía faltando la última. Deslizar es la salida cuando no queda
+            otra, no la forma normal de llegar a un filtro que la vista ofrece
+            como atajo principal. Desde 1536 las dos entran y vuelven al
+            renglón compartido, que es lo que el usuario pidió. */}
+        <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-3">
           <CarrilCards className="flex-1" ariaLabel="Resumen del personal">
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}
-              active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
+              active={activeStatFilter === 'todos'} onClick={() => handleStatFilterChange('todos')}
               loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={ShieldCheck} color="emerald" label="Activos" value={stats.active}
-              active={activeStatFilter === 'Activo'} onClick={() => setActiveStatFilter('Activo')}
+              active={activeStatFilter === 'activos'} onClick={() => handleStatFilterChange('activos')}
               loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={Briefcase} color="cyan" label="Apoyo" value={stats.support}
-              active={activeStatFilter === 'En Apoyo'} onClick={() => setActiveStatFilter('En Apoyo')}
+              active={activeStatFilter === 'apoyo'} onClick={() => handleStatFilterChange('apoyo')}
               loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={UserMinus} color="amber" label="Otros" value={stats.inactive}
-              active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
+              active={activeStatFilter === 'otros'} onClick={() => handleStatFilterChange('otros')}
               loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={GraduationCap} color="violet" label="Practicantes" value={practicantesSearchFiltered.length}
-              active={isPracticantesView} onClick={() => setActiveStatFilter('PRACTICANTES')}
+              active={isPracticantesView} onClick={() => handleStatFilterChange('practicantes')}
               loading={practicantesLoading && practicantes.length === 0}
             />
           </CarrilCards>
@@ -935,7 +970,7 @@ const StaffManagementView = ({
                                 siendo el atajo, no el único camino. */}
                             <FilterBar
                                 onClear={clearFilters}
-                                activeCount={[selectedBranch !== 'ALL', activeStatFilter !== 'ALL'].filter(Boolean).length}
+                                activeCount={[selectedBranch !== 'ALL', activeStatFilter !== 'todos'].filter(Boolean).length}
                                 acciones={accionesPersonal}
                             >
                                 {/* La ranura es del ALCANCE, no del catálogo.
@@ -949,19 +984,19 @@ const StaffManagementView = ({
                                 <FilterBar.Section active={selectedBranch !== 'ALL'} label="sucursal">
                                     <FilterBar.Sucursal
                                         value={selectedBranch}
-                                        onChange={setSelectedBranch}
+                                        onChange={handleBranchChange}
                                         options={branchOptions}
                                     />
                                 </FilterBar.Section>
                                 )}
 
-                                <FilterBar.Section active={activeStatFilter !== 'ALL'}
-                                    onClear={() => setActiveStatFilter('ALL')} label="estado">
+                                <FilterBar.Section active={activeStatFilter !== 'todos'}
+                                    onClear={() => handleStatFilterChange('todos')} label="estado">
                                     <FilterBar.Opciones
                                         label="Estado"
                                         icon={ShieldCheck}
                                         value={activeStatFilter}
-                                        onChange={val => setActiveStatFilter(val || 'ALL')}
+                                        onChange={val => handleStatFilterChange(val || 'todos')}
                                         options={STAT_FILTER_OPTIONS}
                                         ancho="150px"
                                     />
@@ -976,16 +1011,40 @@ const StaffManagementView = ({
                         </Notice>
         )}
 
-        {/* `dense`: cinco columnas pedían 893px contra los 868 del marco a 1280 y
-            la de **Acciones** quedaba fuera — los botones de la fila existían y
-            no se alcanzaban. `px-6` → `px-3` devuelve ~12px por columna, de
-            sobra para 25. Misma tabla que usa el tablero de personal. */}
+        {/* `dense`: `px-6` → `px-3` devuelve ~12px por columna. Misma tabla que
+            usa el tablero de personal.
+
+            ⚠️ El `dense` solo NO alcanzaba, y la nota que decía «de sobra para
+            25» estaba equivocada desde que se escribió. Medido en producción el
+            2026-08-26 a 1280: la tabla pedía **948px en un marco de 870**, o sea
+            que **78px de la columna Acciones quedaban fuera** — el lápiz cortado
+            por la mitad y el chevron de «ver perfil» directamente invisible. Hay
+            `overflow-x: auto`, así que técnicamente se podía deslizar, y por eso
+            nadie lo reportó como roto: se veía como que esa columna no existía.
+            Es exactamente el caso de DESIGN.md §14 · DataTable («el ancla de una
+            fila no puede depender del ancho de la ventana»).
+
+            Los 78px salen de la celda del empleado —de 360px declarados a 300—
+            más los 12 que devuelve el avatar al derivarse de `--row-h`. Se toca
+            eso y no `hideBelow` sobre Sucursal porque acá la sucursal es cómo
+            está ORDENADA la lista: esconderla a 1280 dejaría los grupos sin
+            rótulo. El nombre completo sigue entero en el `title` cuando no
+            entra. */}
         <DataTable dense
           columns={[
             { key: 'name',   label: isPracticantesView ? 'Practicante' : 'Empleado', sortable: !isPracticantesView },
             { key: 'branch', label: 'Sucursal',         sortable: !isPracticantesView },
-            { key: 'role',   label: isPracticantesView ? 'Tipo' : 'Cargos Asignados', sortable: !isPracticantesView },
-            { key: 'status', label: 'Estado operativo', sortable: !isPracticantesView },
+            /* «Cargos» y «Estado», no «Cargos Asignados» / «Estado operativo».
+               El rótulo del encabezado va en `text-micro font-black uppercase
+               tracking-widest`, así que cada palabra de más se cobra en ancho de
+               COLUMNA: medido a 1280, esos dos encabezados pedían 168 y 163px
+               para mostrar una píldora de ~70. Acortarlos devuelve los 60px que
+               le faltaban a la columna de Acciones sin esconder ni un dato — que
+               es preferible a mandar Sucursal a `hideBelow`, porque la lista
+               está ORDENADA por sucursal y sin esa columna los grupos quedan sin
+               rótulo. */
+            { key: 'role',   label: isPracticantesView ? 'Tipo' : 'Cargos', sortable: !isPracticantesView },
+            { key: 'status', label: 'Estado', sortable: !isPracticantesView },
             { key: 'actions',label: 'Acciones',         align: 'right' },
           ]}
           sortKey={sortConfig.key}
@@ -1020,10 +1079,10 @@ const StaffManagementView = ({
         {totalItems > 0 && (
           <TablePagination
             pageSize={itemsPerPage}
-            onPageSizeChange={setItemsPerPage}
+            onPageSizeChange={setPageSize}
             page={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={setPage}
             total={totalItems}
             unit={isPracticantesView ? 'practicantes' : 'empleados'}
           />

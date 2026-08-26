@@ -435,11 +435,26 @@ const EXCEPTIONS = {
   // dejarla junta. Se excepciona con motivo para que la categoría llegue a 0 y
   // quede BLOQUEANTE: a partir de acá, cualquier zIndex inline NUEVO falla.
   'src/views/DashboardView.jsx': ['color', 'z-index'],
-  // 'capa-flotante': su portal anclado es el tooltip de la grilla de asistencia
-  // (`data-surface="tooltip"`), no un menú. Un tooltip aparece PORQUE estás
-  // hovereando algo y se va al salir: apagarle el hover del fondo sería
-  // pelearse consigo mismo.
-  'src/views/StaffManagementView.jsx': ['color', 'z-index', 'capa-flotante'],
+  // `z-index` y `capa-flotante` se fueron el 2026-08-26: los dos existían por el
+  // tooltip de «Información pendiente», que esta vista se escribía a mano con su
+  // propio `createPortal` y un `zIndex: 99999` inline. Ahora es `LiquidTooltip`
+  // —el canónico de §15.10— y el portal lo pone él, con su propia excepción
+  // escrita cuatro líneas más abajo. Una excepción que sobrevive a su motivo
+  // deja de proteger y pasa a esconder: el día que alguien escriba un `zIndex`
+  // nuevo acá, el gate tiene que verlo.
+  //
+  // `carril-pildora`: la MISMA excepción medida que ClientesView, sólo que a
+  // medias — el corte se subió de `lg` a `2xl` en vez de partirlo siempre, así
+  // que desde 1536 las dos vuelven al renglón compartido que pide §17.0. El
+  // número, medido en producción el 2026-08-26 (`/personal`, menú abierto): a
+  // **1280 el carril recibía 392px para 772 de tarjetas** y a 1440 seguía sin
+  // entrar la quinta, o sea que «Otros» salía cortada y «Practicantes» —una de
+  // las cinco vistas de la pantalla, no un adorno— no se veía nunca en un
+  // portátil. Con el corte en `2xl` mide 872 a 1280 y 1032 a 1440: las cinco
+  // enteras, desborde 0 en los tres anchos. Lo que la regla evita —que la
+  // píldora le descuente 314px al carril en silencio— acá no puede pasar,
+  // porque debajo de 1536 no comparten renglón.
+  'src/views/StaffManagementView.jsx': ['color', 'carril-pildora'],
   // 'capa-flotante': es EL tooltip canónico. Mismo motivo que arriba.
   'src/components/common/LiquidTooltip.jsx': ['capa-flotante'],
   'src/components/common/LiquidWeekPicker.jsx': ['z-index'],

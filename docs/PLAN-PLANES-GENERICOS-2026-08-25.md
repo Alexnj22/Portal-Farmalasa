@@ -40,6 +40,26 @@ top 19", se habrían tocado funciones sanas y al menos una habría quedado peor.
 > Es la misma familia que [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]]:
 > el instrumento contestó, pero no contestó lo que se le preguntó.
 
+### Después de medir doce: el defecto era de UNA
+
+Cerradas las fases 1 y 2, el marcador es **12 funciones medidas contra su
+candidata, 12 declaradas sanas, 0 migraciones**. Sumando la fase 0:
+`get_conteo_products_count` **era la única de las 69**.
+
+Eso cambia la expectativa de lo que queda, y conviene decirlo antes de empezarlo:
+las fases 3 y 4 son casi con seguridad **un ejercicio de declarar sanas**, no de
+corregir. Eso no las vuelve inútiles —lo que no está medido y escrito se vuelve
+a mirar dentro de tres meses— pero sí cambia cuánto esfuerzo merecen: barrido
+por tiempo absoluto primero, y medición a fondo sólo para las que crucen 200 ms.
+
+Y explica de dónde salía el defecto. No es que `LANGUAGE sql` con `SET` sea malo
+por sí solo: **hace falta además que el plan bueno dependa de los argumentos**.
+En las doce sanas, el plan genérico resulta ser tan bueno como el personalizado
+porque su forma no cambia con los valores. En `get_conteo_products_count` sí
+cambiaba —el tamaño del conteo decide entre hash join y nested loop— y ahí los
+21 millones de comparaciones. **La condición 2 del criterio de §2 no es un
+trámite: es la pregunta entera.**
+
 ---
 
 ## 1 · Qué es el defecto, exactamente
@@ -219,6 +239,54 @@ Se miden todas; se corrigen **sólo** las que crucen el criterio de §2. Lo
 esperable es que la mayoría se declare sana — y ese resultado también hay que
 escribirlo, porque es lo que evita que la próxima sesión las vuelva a mirar.
 
+#### Resultado de la fase 2 — **las nueve están sanas, cero migraciones** (2026-08-26)
+
+Barrido con argumentos reales, base en reposo. **Siete quedaron bajo 200 ms**, o
+sea que fallan la condición 1 y no hace falta medirlas a fondo:
+
+| función | caso | filas | ms |
+|---|---|---:|---:|
+| `get_ventas_stats` | un año, sala 6 | 1 | 150 |
+| `get_product_drill_summary` | producto top, mes | 1 | 78 |
+| `get_invoice_observations` | julio completo | 0 | 74 |
+| `get_product_trend` | producto top, un año | 3 | 38 |
+| `get_ventas_stats` | mes en curso, 7 salas | 1 | 30 |
+| `get_cuentas_por_pagar` | desde enero | 106 | 25 |
+| `get_top_supplier_per_product` | 300 productos (la tanda real) | 217 | 19 |
+| `get_minmax_contexto_producto` | producto top, sala 6 | 1 | 1.4 |
+
+Las **dos que cruzaron los 200 ms** se midieron a fondo contra su candidata
+`pg_temp`, y ninguna tiene el defecto:
+
+| función | casos | resultado | vieja | corregida |
+|---|---|---|---:|---:|
+| `get_libro_compras_completo` | 4 rangos | **4/4 idéntico** | 1,598 ms (julio) · 5,742 ms (4 meses) | 1,617 · 6,007 — **igual o peor** |
+| `get_traslado_disponibilidad` | 5 solicitudes | **5/5 idéntico** | 213–249 ms | 222–297 — **peor en las cinco** |
+
+**Anotado y fuera de alcance: `get_libro_compras_completo` es lenta de verdad,
+pero por su SQL y no por su plan** — 1.6 s en un mes y **5.7 s en cuatro**
+(1,968 filas). Y es de **cierre fiscal**, o sea el peor momento para eso. Es otro
+trabajo, con su propia verificación de columnas (ver la regla «replicar un
+reporte = comparar TODAS sus columnas»). El sospechoso a mirar primero es su
+`LEFT JOIN LATERAL` contra `purchase_dte_documents`, que compara tres formas
+normalizadas del código de generación con funciones sobre las dos columnas —
+eso no puede entrar por índice. **Es una hipótesis, no una medición.**
+
+#### El instrumento quedó hecho, y es lo que se lleva la fase 2
+
+La candidata ya **no se escribe a mano**: se genera desde el catálogo con
+`pg_get_functiondef`, cambiando sólo el envoltorio. Eso es `medir.mjs` de §3.2 en
+su forma mínima, y probado ya sobre las dos formas de retorno:
+
+- `RETURNS TABLE`/`SETOF` → `BEGIN RETURN QUERY <cuerpo>; END`
+- escalar → `DECLARE v <tipo>; BEGIN SELECT (<cuerpo>) INTO v; RETURN v; END`
+
+Dos trampas que costaron un intento cada una y hay que dejar escritas:
+`rtrim(texto)` **sólo quita espacios, no saltos de línea** —el `;` final del
+cuerpo sobrevivía y rompía el `END`—, y **la forma del retorno decide el
+envoltorio**: `RETURN QUERY` sobre una función escalar falla con *«cannot use
+RETURN QUERY in a non-SETOF function»*.
+
 ### Fase 3 — las 19 que no se llamaron nunca *(≈1 sesión)*
 
 `get_libro_compras_declarable`, `get_ccf_con_problema`, `get_corte_z_dias`,
@@ -295,7 +363,7 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 | 0 · el corte y su causa | **cerrado** — `20260825205448`, v2.767.1, verificado en producción |
 | 0 · triage de las 69 | **cerrado** — medido fuera de la ventana del corte, tabla en §0 |
 | 1 · las tres lentas | **cerrado** — las tres medidas y **declaradas sanas**; cero migraciones |
-| 2 · la frontera | abierto |
+| 2 · la frontera | **cerrado** — las nueve medidas y **declaradas sanas**; cero migraciones |
 | 3 · las que no se llamaron | abierto |
 | 4 · sincronización | abierto |
 | 5 · el gate | abierto |
@@ -308,6 +376,19 @@ fase 0 — es contra esto que se compara cualquier fase futura:
 | antes | 12,932 ms | 175 | 33,536 |
 | después | **320 ms** | **0** | 1,508 |
 
-⚠️ Ese "después" son 40 minutos de tráfico de noche. **Hay que volver a medirlo
-un día hábil a las 14:00**, que es cuando el portal tiene carga real y cuando
-ocurrió el corte.
+✅ **Remedido un día hábil completo (2026-08-26).** Ese "después" eran 40 minutos
+de tráfico de noche; ahora hay 17 horas y **155,000 peticiones: cero 522, cero
+504, cero 5xx**, con p95 entre 51 y 285 ms. Contra el mismo horario del día
+anterior: 15:00 UTC del 25 fueron 7,530 peticiones con p95 de **374 ms**; el 26
+fueron 12,427 con **285 ms** — 65% más tráfico y 24% menos espera.
+
+⚠️ **Aparte, el 25-ago 22:08–22:14 hubo un segundo bache, de otra forma y sin
+explicación cerrada:** p95 de 17.8 s y **cuatro peticiones muertas a los 90 s
+con estado 522** (Cloudflare sin alcanzar al origen) — `bolsas`,
+`employee_rosters`, `reclamar_push_del_equipo`, `get_bolsas_con_diferencia`. La
+lista de lentas era ancha y ajena al conteo (`upsert_product_precios_batch` 20 s,
+`roles` 21 s, `refresh_inventory_grouped_mv` 17 s), y los registros de Postgres
+no mostraron nada grave: checkpoints normales, sin `FATAL`, sin «too many
+connections», sin deadlock. **No volvió a pasar en 17 horas.** Queda anotado como
+transitorio de plataforma sin confirmar — si se repite, ésta es la huella que hay
+que buscar.

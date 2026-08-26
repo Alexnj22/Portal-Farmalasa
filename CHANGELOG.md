@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.794.2 — La cifra no se separa de su signo
+
+> «mira el de diferencia, sale cortado.»
+
+Dentro de la píldora de una diferencia, el «−» se iba a un renglón y
+«$1,044.66» al de abajo. Se leía como dos cosas, y una de ellas es la que dice
+si faltó o sobró dinero.
+
+La causa es que `{signo}{monto}` son dos nodos de texto y el «−» (U+2212) es un
+operador matemático: el navegador puede cortar después de él. Con `Faltó
+$149.90` pasaba lo mismo por el espacio del medio. Se arregla con UNA cadena y
+`whitespace-nowrap` — no ensanchando la columna, porque el corte vuelve en
+cuanto el monto crece un dígito. Corregidas las seis de bolsas: las tres
+píldoras de diferencia, el «Sin resolver» en cero, la cifra grande del cuadre de
+la tanda y lo que salió en vales.
+
+El `nowrap` va en cada cifra y **no** en `Badge`: hay píldoras del portal con
+frases enteras adentro —«Aún faltan: #1, #2 — se solicitará otro reenvío»— que
+sí tienen que envolver, y forzarlas a una línea las haría desbordar la tarjeta
+en el teléfono. Lo que no se parte es un número, no toda píldora.
+
 ## v2.794.1 — La relectura del área de vencidos vale para las cuatro funciones
 
 Cierra la deuda que dejó v2.793.1. Al quitar el tope, las cuatro funciones que

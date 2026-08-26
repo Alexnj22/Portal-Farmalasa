@@ -69,15 +69,30 @@ const COLUMNAS = [
 
 /* La diferencia con su signo y su tono. El cero se dice «Cuadró» y no «$0.00»,
  * igual que en la franja del conteo: quien mira esto quiere una respuesta, no
- * una cifra que hay que interpretar. */
+ * una cifra que hay que interpretar.
+ *
+ * ── Una cifra NO se separa de su signo ─────────────────────────────────────
+ * «mira el de diferencia, sale cortado» (usuario, 2026-08-26): dentro de la
+ * píldora, el «−» se iba a un renglón y «$1,044.66» al de abajo. Se leía como
+ * dos cosas, y una de ellas es la que dice si faltó o sobró dinero.
+ *
+ * La causa es que `{signo}{monto}` son dos nodos de texto y el «−» (U+2212) es
+ * un operador matemático: el navegador puede cortar después de él. Se arregla
+ * con UNA cadena y `whitespace-nowrap`, no ensanchando la columna — el corte
+ * vuelve en cuanto el monto crece un dígito.
+ *
+ * `nowrap` va acá y no en `Badge`: hay píldoras del portal con frases enteras
+ * adentro («Aún faltan: #1, #2 — se solicitará otro reenvío») que SÍ tienen que
+ * envolver, y forzarlas a una línea las haría desbordar la tarjeta en el
+ * teléfono. Lo que no se parte es un número, no toda píldora. */
 function Diferencia({ valor, size = 'sm' }) {
     const dif = Number(valor || 0);
     if (Math.abs(dif) < 0.01) {
         return <Badge variant="success" size={size} icon={CheckCircle2}>Cuadró</Badge>;
     }
     return (
-        <Badge variant={dif < 0 ? 'danger' : 'warning'} size={size} dot>
-            {dif < 0 ? '−' : '+'}{formatMoney(Math.abs(dif))}
+        <Badge variant={dif < 0 ? 'danger' : 'warning'} size={size} dot className="whitespace-nowrap">
+            {`${dif < 0 ? '−' : '+'}${formatMoney(Math.abs(dif))}`}
         </Badge>
     );
 }
@@ -114,7 +129,7 @@ function SinResolver({ conteo }) {
     return (
         <span className="inline-flex flex-col items-end gap-0.5">
             {Math.abs(pendiente) < 0.01 ? (
-                <Badge variant="success" size="sm" icon={CheckCircle2}>{formatMoney(0)}</Badge>
+                <Badge variant="success" size="sm" icon={CheckCircle2} className="whitespace-nowrap">{formatMoney(0)}</Badge>
             ) : (
                 <Diferencia valor={pendiente} />
             )}
@@ -299,7 +314,7 @@ function Detalle({ conteo, onClose }) {
                                 ? <span className="text-success-text">Cuadró</span>
                                 : (
                                     <span className={firmada < 0 ? 'text-danger-text' : 'text-warning-text'}>
-                                        {firmada < 0 ? '−' : '+'}{formatMoney(Math.abs(firmada))}
+                                        {`${firmada < 0 ? '−' : '+'}${formatMoney(Math.abs(firmada))}`}
                                     </span>
                                 )}
                         </Cifra>
@@ -310,7 +325,7 @@ function Detalle({ conteo, onClose }) {
                         </div>
                         <div className="mt-1.5">
                             {Math.abs(pendiente) < 0.01 && Number(c.descuadradas || 0) > 0 ? (
-                                <Badge variant="success" size="md" icon={CheckCircle2}>{formatMoney(0)}</Badge>
+                                <Badge variant="success" size="md" icon={CheckCircle2} className="whitespace-nowrap">{formatMoney(0)}</Badge>
                             ) : (
                                 <Diferencia valor={pendiente} size="md" />
                             )}

@@ -497,9 +497,15 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                 {cuadra
                     ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadró</Badge>
                     : (
-                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
-                            {dif < 0 ? 'Faltó' : 'Sobró'}
-                            {verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}
+                        // `whitespace-nowrap`: una cifra no se separa de su rótulo
+                        // ni de su signo. «mira el de diferencia, sale cortado»
+                        // (usuario, 2026-08-26) — dentro de la píldora el «−» se
+                        // iba a un renglón y el monto al de abajo, y se leía como
+                        // dos cosas. Va acá y no en `Badge`: hay píldoras del
+                        // portal con frases enteras adentro que SÍ deben envolver.
+                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot
+                            className="whitespace-nowrap">
+                            {`${dif < 0 ? 'Faltó' : 'Sobró'}${verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}`}
                         </Badge>
                     )}
                 {!cuadra && verMontos && (
@@ -616,8 +622,9 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                 cuadraLoEscrito
                     ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadra</Badge>
                     : (
-                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
-                            {dif < 0 ? 'Faltan' : 'Sobran'} {formatMoney(Math.abs(dif))}
+                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot
+                            className="whitespace-nowrap">
+                            {`${dif < 0 ? 'Faltan' : 'Sobran'} ${formatMoney(Math.abs(dif))}`}
                         </Badge>
                     )
             )}
@@ -1887,8 +1894,9 @@ export default function CircuitoDeBolsas({
                                 <Bolsa key={b.id} bolsa={b} sala={nombreSala[b.branch_id]}
                                     rotuloMonto="Debía haber"
                                     personas={personas} onAbrir={setAbierta} verMontos={verMontos}>
-                                    <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
-                                        {dif < 0 ? 'Faltó' : 'Sobró'} {formatMoney(Math.abs(dif))}
+                                    <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot
+                                        className="whitespace-nowrap">
+                                        {`${dif < 0 ? 'Faltó' : 'Sobró'} ${formatMoney(Math.abs(dif))}`}
                                     </Badge>
                                     <span className="text-caption text-content-3">
                                         Contada el {selloDeTiempo(b.contado_at)}
@@ -2072,10 +2080,9 @@ export default function CircuitoDeBolsas({
                                             Cuadra
                                         </div>
                                     ) : (
-                                        <div className={`text-title font-black tabular-nums leading-none mt-1
+                                        <div className={`text-title font-black tabular-nums leading-none mt-1 whitespace-nowrap
                                             ${cuadreDeLaTanda.diferencia < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
-                                            {cuadreDeLaTanda.diferencia < 0 ? '−' : '+'}
-                                            {formatMoney(Math.abs(cuadreDeLaTanda.diferencia))}
+                                            {`${cuadreDeLaTanda.diferencia < 0 ? '−' : '+'}${formatMoney(Math.abs(cuadreDeLaTanda.diferencia))}`}
                                         </div>
                                     )}
                                     {descuadradas.length > 0 && (
@@ -2250,9 +2257,9 @@ export default function CircuitoDeBolsas({
                                 {cuadra
                                     ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadró</Badge>
                                     : (
-                                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
-                                            {dif < 0 ? 'Faltó' : 'Sobró'}
-                                            {verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}
+                                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot
+                                            className="whitespace-nowrap">
+                                            {`${dif < 0 ? 'Faltó' : 'Sobró'}${verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}`}
                                         </Badge>
                                     )}
                                 {b.dif_at && (

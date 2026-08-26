@@ -233,8 +233,8 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                                 <span className="text-caption text-content-3">
                                     Salió en {vivas.length} {vivas.length === 1 ? 'vale' : 'vales'}
                                 </span>
-                                <span className="text-label tabular-nums text-content-2">
-                                    −{formatMoney(Math.abs(saldo - Number(bolsa.monto_inicial || 0)))}
+                                <span className="text-label tabular-nums text-content-2 whitespace-nowrap">
+                                    {`−${formatMoney(Math.abs(saldo - Number(bolsa.monto_inicial || 0)))}`}
                                 </span>
                             </div>
                         )}

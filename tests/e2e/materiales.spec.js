@@ -159,7 +159,7 @@ test.describe('§17.0 · carril y píldora', () => {
     // Los dos que el ratchet deja abiertos. Se mide a los dos anchos que §17.0
     // exige: angostar la tarjeta a 148px destapa truncamientos.
     const VISTAS = [
-        { nombre: 'AttendanceAudit', url: '/audit' },
+        { nombre: 'AttendanceAudit', url: '/auditoria-de-tiempos' },
         { nombre: 'TabInventario',   url: '/productos', tab: 'Inventario' },
     ];
 

@@ -52,7 +52,7 @@ test.describe('Campana · WebKit iPhone 13', () => {
                 type: i < 3 ? 'REQUEST_PENDING' : 'SYSTEM',
                 title: `Notificación de prueba ${i + 1}`,
                 body: 'Un cuerpo de dos renglones para que la tarjeta tenga el alto que tiene de verdad cuando llega una solicitud.',
-                link: '/requests',
+                link: '/solicitudes',
                 metadata: i < 3
                     ? { request_id: REQ_REAL, request_type: 'INVENTORY_DISCARD_REQUEST' }
                     : {},

@@ -1211,7 +1211,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             items), así que un nombre largo empujaba el botón de cerrar
                                             sesión fuera de la fila. El `truncate` de adentro no alcanza:
                                             recorta el texto, no devuelve el espacio del contenedor. */}
-                                        <Link to="/profile"
+                                        <Link to="/mi-perfil"
                                             className={`flex-1 min-w-0 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
                                                 <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-realce)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
@@ -1248,7 +1248,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         onCopySuPin={handleCopySuPin}
                                     />
                                     <div className="relative w-11 h-11">
-                                        <Link to="/profile"
+                                        <Link to="/mi-perfil"
                                             onMouseEnter={(e) => {
                                                 const rect = e.currentTarget.getBoundingClientRect();
                                                 const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
@@ -1346,7 +1346,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <NotificationBell variant="mobile" />
                                 </React.Suspense>
                                 <div className="relative w-11 h-11">
-                                    <Link to="/profile" aria-label="Mi perfil"
+                                    <Link to="/mi-perfil" aria-label="Mi perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
@@ -1558,7 +1558,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ) : flyout.type === 'user' ? (
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-[var(--dur-fast)]">
                                 <Link
-                                    to="/profile"
+                                    to="/mi-perfil"
                                     onClick={() => setFlyout(null)}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         bg-[#0D2040]/80 border border-[#1E3A6E]/60

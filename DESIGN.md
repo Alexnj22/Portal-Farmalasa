@@ -6425,9 +6425,17 @@ que nadie revisaba** y que el usuario sí mira.
 ### 33.2 Renombrar una ruta: la vieja no se borra, redirige
 
 Un favorito del navegador **no vive en ninguna tabla** y no hay forma de medir a
-quién le rompés el enlace. Las notificaciones sí se pueden medir —el día del
-cambio eran 0 de 4,428 las que nombraban las rutas viejas— pero eso es la mitad
-del universo.
+quién le rompés el enlace.
+
+Las notificaciones sí se pueden medir, y ahí está la prueba de que la
+redirección no es opcional: `/dashboard` y `/overview` no las nombraba ninguna
+—0 de 4,428— pero **`/requests` la nombran 3,064**, que es la ruta más
+enlazada de toda la tabla. Sin el puente, esas 3,064 notificaciones ya enviadas
+llevarían al 404. (Medir una ruta y concluir sobre las demás es
+`feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta` en miniatura.)
+
+De paso apareció que **3 notificaciones apuntan a `/home`**, que no existe ni
+existió: ésas ya llevaban al 404 antes de todo esto.
 
 Y si la ruta vieja tenía parámetros, **la redirección los conserva**. Un
 `<Navigate to="/personal">` suelto desde `/dashboard/empleado/:id` deja a quien
@@ -6444,12 +6452,39 @@ Corre en el pre-commit cuando el commit toca `src/App.jsx` o
 quinta que no se ve venir: **que ningún ítem del menú apunte a una ruta que ya
 no existe** — eso no da error, se ve como una pantalla rota al tocar el menú.
 
-`HEREDADAS` es la deuda del día que se escribió: 18 rutas en inglés que ya
-estaban en producción, **cada una con el nombre en español que le corresponde
-anotado al lado**, para que renombrarla sea una decisión ya tomada y no una
-discusión de vocabulario cada vez. **Sólo baja**: agregar una entrada nueva
-también hace fallar el gate, porque esa lista es un inventario de lo que hay que
-arreglar y no un lugar donde esconder lo que se acaba de escribir.
+`HEREDADAS` nació con 18 rutas en inglés y **quedó vacía el mismo día**: el
+usuario las mandó arreglar todas («corrige los que ya están mal»). Se queda
+vacía a propósito — es la estructura que hace fallar a una ruta nueva en inglés,
+y borrarla dejaría a la próxima sin nada contra qué chocar. **Sólo baja**:
+agregar una entrada también hace fallar el gate, porque esa lista es un
+inventario de lo que hay que arreglar y no un lugar donde esconder lo que se
+acaba de escribir.
+
+Las 17 renombradas (más `/dashboard` e `/overview` un rato antes):
+
+| era | es |
+|---|---|
+| `/announcements` | `/comunicaciones` |
+| `/audit` | `/auditoria-de-tiempos` |
+| `/auditview` | `/auditoria-del-sistema` |
+| `/branches` | `/sucursales` |
+| `/ios-test` | `/prueba-ios` |
+| `/my-announcements` | `/mis-avisos` |
+| `/my-documents` | `/mis-documentos` |
+| `/orphan-objects` | `/objetos-huerfanos` |
+| `/payroll` | `/nomina` |
+| `/permissions` | `/permisos` |
+| `/profile` | `/mi-perfil` |
+| `/requests` | `/solicitudes` |
+| `/requests-personales` | `/solicitudes-personales` |
+| `/roles` | `/cargos` |
+| `/schedules` | `/horarios` |
+| `/sync-health` | `/actualizacion-de-datos` |
+| `/vacation-plan` | `/vacaciones` |
+
+`/monitor` se quedó: «monitor» es palabra española y la vista se llama «Monitor
+en tiempo real». `/roles` pasó a `/cargos` porque el portal dice **cargo** —
+`roles` es el nombre de la tabla, no el del negocio (§26).
 
 ### 33.4 De la primera corrida, dos de tres hallazgos eran del detector
 

@@ -90,7 +90,7 @@ export function useDecidirSolicitud({ onAplicado } = {}) {
                     body: aprobo
                         ? `Tu propuesta para ${fila.product_name} (${ERP_NAMES[fila.erp_sucursal_id] ?? fila.erp_sucursal_id}) fue aplicada: MIN ${fila.requested_min} · MAX ${fila.requested_max}.`
                         : `Tu propuesta para ${fila.product_name} fue rechazada.${nota ? ' Motivo: ' + nota : ''}`,
-                    link: '/requests',
+                    link: '/solicitudes',
                     push: true,
                     metadata: {
                         status: aprobo ? 'APPROVED' : 'REJECTED',

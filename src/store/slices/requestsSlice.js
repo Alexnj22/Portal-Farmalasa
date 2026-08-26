@@ -566,7 +566,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
          * personal— el aviso «tu solicitud fue aprobada» lo mandaba a una
          * pantalla que le rebota. Y es el aviso que más se toca: es el que
          * cierra el asunto. */
-        link: esOperativa(requestType) ? '/requests' : '/requests-personales',
+        link: esOperativa(requestType) ? '/solicitudes' : '/solicitudes-personales',
         push: true,
         metadata: {
             requestType,
@@ -744,7 +744,7 @@ const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, empl
             type: 'SYSTEM',
             title: 'Cobertura de horario reducida',
             body: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} empleado${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
-            link: '/schedules',
+            link: '/horarios',
             push: true,
             branchId: branchId != null ? Number(branchId) : null,
         });
@@ -1382,7 +1382,7 @@ export const createRequestsSlice = (set, get) => ({
                     type: 'REQUEST_PENDING',
                     title: 'Solicitud pendiente de aprobación final',
                     body: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final.`,
-                    link: '/requests',
+                    link: '/solicitudes',
                     push: true,
                 });
                 useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
@@ -1419,7 +1419,7 @@ export const createRequestsSlice = (set, get) => ({
                     type: 'REQUEST_PENDING',
                     title: 'Nueva solicitud pendiente',
                     body: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}.`,
-                    link: '/requests',
+                    link: '/solicitudes',
                     push: true,
                 });
                 useToastStore.getState().showToast(

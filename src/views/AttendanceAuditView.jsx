@@ -1193,7 +1193,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
   const accionesAsistencia = !hayAccionQuincena ? [] : quincenaCerrada ? [{
     key: 'planilla', icon: ArrowRight, label: 'Ver planilla', tone: 'success',
-    onClick: () => navigate('/payroll'),
+    onClick: () => navigate('/nomina'),
   }] : [{
     key: 'cerrar',
     icon: isClosingQuincena ? Loader2 : LockKeyhole,

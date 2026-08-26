@@ -102,9 +102,9 @@ test.describe('Gráficos lazy', () => {
         const errores = vigilarConsola(page);
         await entrar(page);
 
-        await page.goto('/branches');
-        await page.locator('a[href^="/branches/"], [role="button"]').first().click();
-        await expect(page).toHaveURL(/\/branches\/\d+/, { timeout: 20_000 });
+        await page.goto('/sucursales');
+        await page.locator('a[href^="/sucursales/"], [role="button"]').first().click();
+        await expect(page).toHaveURL(/\/sucursales\/\d+/, { timeout: 20_000 });
 
         await page.getByRole('button', { name: /Gastos/i }).first().click();
         // Los EJES, no las barras: una sucursal sin pagos registrados da una
@@ -126,7 +126,7 @@ test.describe('Gráficos lazy', () => {
         // Se entra por Horarios y no por el Inicio: acá el botón de expandir
         // lleva `title="Expandir Análisis"`, o sea nombre accesible. El del
         // Inicio es `iconOnly` sin título y no hay por dónde agarrarlo.
-        await page.goto('/schedules');
+        await page.goto('/horarios');
         await page.getByRole('button', { name: /Expandir Análisis/i }).first()
             .click({ timeout: 30_000 });
 

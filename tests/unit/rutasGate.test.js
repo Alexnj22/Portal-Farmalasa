@@ -83,15 +83,34 @@ describe('gate:rutas', () => {
     });
 
     it('caza una entrada de HEREDADAS que ya se arregló', () => {
-        // `/payroll` renombrada a `/nomina` y la entrada de deuda sin borrar:
-        // una lista que nombra deuda saldada deja de ser creíble, y la próxima
-        // que sobre nadie la mira.
-        const { ok, salida } = correr(s => s
-            .replace('<Route path="payroll"', '<Route path="nomina"')
-            .replace("    '/payroll':           'Nómina',", "    '/nomina':            'Nómina',"));
+        // Hoy la lista de deuda está VACÍA —las 18 se renombraron el mismo día
+        // que nació el gate—, así que este chequeo no tendría contra qué
+        // dispararse y quedaría sin prueba justo el día que vuelva a hacer
+        // falta. Se le inyecta una lista que nombra una ruta que ya no existe.
+        const app = path.join(tmp, `App-heredada.jsx`);
+        fs.writeFileSync(app, fs.readFileSync(APP_REAL, 'utf8'));
+        const env = {
+            ...process.env,
+            RUTAS_GATE_APP: app,
+            RUTAS_GATE_HEREDADAS: JSON.stringify({ '/payroll': 'se renombró a /nomina el 2026-08-26' }),
+        };
+        let salida = '', ok = true;
+        try { salida = execFileSync('node', [GATE], { env, encoding: 'utf8', cwd: RAIZ }); }
+        catch (e) { ok = false; salida = (e.stdout || '') + (e.stderr || ''); }
         expect(ok).toBe(false);
         expect(salida).toContain('HEREDADAS que ya no existen');
         expect(salida).toContain('/payroll');
+    });
+
+    it('NO acusa a `monitor` ni a `prueba-ios` de estar en inglés', () => {
+        // `monitor` es palabra española (RAE) y `ios` es el nombre de una
+        // plataforma, no una palabra. Las dos las acusaba el regex, que es la
+        // misma familia de falso positivo que los otros dos de la primera
+        // corrida.
+        const { ok, salida } = correr();
+        expect(ok).toBe(true);
+        expect(salida).not.toContain('/monitor');
+        expect(salida).not.toContain('/prueba-ios');
     });
 
     // ── Los dos falsos positivos de la primera corrida ───────────────────────

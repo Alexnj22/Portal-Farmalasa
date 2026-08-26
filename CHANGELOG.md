@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.781.0 — Las 17 direcciones que quedaban en inglés pasan a español
+
+*«corrige los que ya están mal»*. La deuda que el gate había declarado el día
+anterior queda saldada: `HEREDADAS` nació con 18 entradas y quedó **vacía**.
+
+| era | es |
+|---|---|
+| `/announcements` | `/comunicaciones` |
+| `/audit` | `/auditoria-de-tiempos` |
+| `/auditview` | `/auditoria-del-sistema` |
+| `/branches` | `/sucursales` |
+| `/ios-test` | `/prueba-ios` |
+| `/my-announcements` | `/mis-avisos` |
+| `/my-documents` | `/mis-documentos` |
+| `/orphan-objects` | `/objetos-huerfanos` |
+| `/payroll` | `/nomina` |
+| `/permissions` | `/permisos` |
+| `/profile` | `/mi-perfil` |
+| `/requests` | `/solicitudes` |
+| `/requests-personales` | `/solicitudes-personales` |
+| `/roles` | `/cargos` |
+| `/schedules` | `/horarios` |
+| `/sync-health` | `/actualizacion-de-datos` |
+| `/vacation-plan` | `/vacaciones` |
+
+`/roles` pasó a `/cargos` y no a `/roles` porque el portal dice **cargo**:
+`roles` es el nombre de la tabla, no el del negocio.
+
+**Las 17 viejas quedan como redirección, y acá está la prueba de que no era
+opcional.** Cuando se renombró `/dashboard` no la nombraba ninguna notificación
+guardada —0 de 4,428— y era tentador concluir que los favoritos son el único
+riesgo. Al medir las 17: **`/requests` la nombran 3,064 notificaciones ya
+enviadas**, la ruta más enlazada de toda la tabla. Sin el puente, esos 3,064
+avisos llevarían al 404. Y `/branches/:id` conserva el id — sin eso, el favorito
+de una sala abre el listado de las ocho.
+
+De paso apareció que **3 notificaciones apuntan a `/home`**, una ruta que no
+existe ni existió: ésas ya llevaban al 404 desde antes.
+
+**Dos hallazgos más eran del detector.** El regex de palabras en inglés acusó a
+`/monitor` —que es palabra española y la vista se llama «Monitor en tiempo
+real»— y a `/prueba-ios`, donde `ios` es el nombre de una plataforma y no una
+palabra. Con los dos de la corrida anterior van **cuatro falsos positivos en dos
+días** del mismo detector; los cuatro quedaron anclados en
+`tests/unit/rutasGate.test.js`.
+
+Y como la lista de deuda quedó vacía, el chequeo que vigila «una entrada que ya
+se arregló» se quedaba sin nada contra qué dispararse: se le agregó una
+inyección por variable de entorno para que la prueba pueda seguir fabricando ese
+caso. Un chequeo sin prueba es un chequeo que nadie sabe si funciona el día que
+vuelve a hacer falta.
+
+1865 pruebas en verde.
+
 ## v2.780.0 — La dirección, la pestaña y el menú de una vista tienen su regla y su candado
 
 Continuación del reporte de la barra de direcciones. El usuario pidió revisar

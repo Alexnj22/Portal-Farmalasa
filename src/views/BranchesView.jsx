@@ -427,7 +427,7 @@ const BranchCard = memo(({
                     {/* Abre la ficha de la sucursal: es un destino, no una acción. Como
                                         `<button>` no se podía abrir en otra pestaña. El `onClick`
                                         se queda solo para dejar la sucursal activa en el store. */}
-                                    <Link to={`/branches/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
+                                    <Link to={`/sucursales/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
                                         className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]">
                         <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
@@ -665,7 +665,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
 
     const handleViewProfile = useCallback((branch) => {
         if (setActiveBranch) setActiveBranch(branch);
-        navigate(`/branches/${branch.id}`); 
+        navigate(`/sucursales/${branch.id}`); 
     }, [setActiveBranch, navigate]);
 
     const handleDeleteClick = useCallback((branch, count) => {

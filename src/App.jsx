@@ -114,7 +114,7 @@ const BranchProfileWrapper = ({ openModal }) => {
     const branch = branches.find(b => String(b.id) === String(id));
 
     if (!branch) {
-        return <Navigate to="/branches" replace />;
+        return <Navigate to="/sucursales" replace />;
     }
 
     return (
@@ -199,6 +199,15 @@ const PermissionGuard = ({ moduleKey, children }) => {
 const IrAPersonales = () => {
     const { search, hash } = useLocation();
     return <Navigate to={`/requests-personales${search}${hash}`} replace />;
+};
+
+// Igual que `IrAFichaDePersonal`, para la ficha de una sucursal: vivía bajo
+// `/branches/:id` y sin conservar el id el favorito de una sala abre el listado
+// de las ocho.
+const IrAFichaDeSucursal = () => {
+    const { id } = useParams();
+    const { search, hash } = useLocation();
+    return <Navigate to={`/sucursales/${id}${search}${hash}`} replace />;
 };
 
 // La ficha de una persona vivía bajo `/dashboard/empleado/:id`. Un `<Navigate>`
@@ -663,9 +672,9 @@ function MainApp() {
                                         y los favoritos de quien la usaba: sin ella, el aviso de
                                         una solicitud aprobada llevaría al 404. */}
                                     <Route path="my-requests" element={<IrAPersonales />} />
-                                    <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
-                                    <Route path="my-documents" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
-                                    <Route path="profile" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="mis-avisos" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
+                                    <Route path="mis-documentos" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
+                                    <Route path="mi-perfil" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
 
                                     {/* ── Gestión de personal ── */}
                                     <Route path="personal">
@@ -699,18 +708,18 @@ function MainApp() {
                                     {/* ── Operaciones ── */}
                                     <Route path="inicio" element={<PermissionGuard moduleKey="overview"><DashboardView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
-                                    <Route path="audit" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
-                                    <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
+                                    <Route path="auditoria-de-tiempos" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
+                                    <Route path="horarios" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
                                     {/* Dos ámbitos, un componente. Cada ruta con SU módulo:
                                         `requests` es el centro de la sala, `requests_personales`
                                         son las que hablan de una persona. Que sean rutas
                                         distintas con guardianes distintos es lo que impide que
                                         abrirle una a alguien le abra la otra. */}
-                                    <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView ambito="sucursal" /></PermissionGuard>} />
-                                    <Route path="requests-personales" element={<PermissionGuard moduleKey="requests_personales"><RequestsView ambito="personales" /></PermissionGuard>} />
-                                    <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
-                                    <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="solicitudes" element={<PermissionGuard moduleKey="requests"><RequestsView ambito="sucursal" /></PermissionGuard>} />
+                                    <Route path="solicitudes-personales" element={<PermissionGuard moduleKey="requests_personales"><RequestsView ambito="personales" /></PermissionGuard>} />
+                                    <Route path="vacaciones" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
+                                    <Route path="nomina" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="comunicaciones" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="cortes" element={<PermissionGuard moduleKey="cortes_caja"><CortesView /></PermissionGuard>} />
@@ -745,27 +754,27 @@ function MainApp() {
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}
-                                    <Route path="branches">
+                                    <Route path="sucursales">
                                         <Route index element={
                                             <PermissionGuard moduleKey="branches">
                                                 <BranchesView
                                                     setView={setView}
-                                                    setActiveBranch={(b) => navigate(`/branches/${b.id}`)}
+                                                    setActiveBranch={(b) => navigate(`/sucursales/${b.id}`)}
                                                     openModal={openModal}
                                                 />
                                             </PermissionGuard>
                                         } />
                                         <Route path=":id" element={<PermissionGuard moduleKey="branches"><BranchProfileWrapper openModal={openModal} /></PermissionGuard>} />
                                     </Route>
-                                    <Route path="roles" element={<PermissionGuard moduleKey="roles"><RolesView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="permissions" element={<PermissionGuard moduleKey="permissions"><PermissionsView /></PermissionGuard>} />
-                                    <Route path="auditview" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="ios-test" element={<PermissionGuard moduleKey="ios_test"><IOSTestView /></PermissionGuard>} />
+                                    <Route path="cargos" element={<PermissionGuard moduleKey="roles"><RolesView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="permisos" element={<PermissionGuard moduleKey="permissions"><PermissionsView /></PermissionGuard>} />
+                                    <Route path="auditoria-del-sistema" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="prueba-ios" element={<PermissionGuard moduleKey="ios_test"><IOSTestView /></PermissionGuard>} />
                                     <Route path="impresion" element={<PermissionGuard moduleKey="impresion"><ImpresionView /></PermissionGuard>} />
                                     <Route path="carnes-del-dia" element={<PermissionGuard moduleKey="carne_temporal"><CarnesDelDiaView /></PermissionGuard>} />
-                                    <Route path="sync-health" element={<PermissionGuard moduleKey="sync_health"><SyncHealthView /></PermissionGuard>} />
+                                    <Route path="actualizacion-de-datos" element={<PermissionGuard moduleKey="sync_health"><SyncHealthView /></PermissionGuard>} />
                                     <Route path="sesiones" element={<PermissionGuard moduleKey="sesiones"><SesionesView /></PermissionGuard>} />
-                                    <Route path="orphan-objects" element={<PermissionGuard moduleKey="orphan_objects"><OrphanObjectsView /></PermissionGuard>} />
+                                    <Route path="objetos-huerfanos" element={<PermissionGuard moduleKey="orphan_objects"><OrphanObjectsView /></PermissionGuard>} />
                                     <Route path="mantenimiento" element={<PermissionGuard moduleKey="maintenance"><MaintenanceView /></PermissionGuard>} />
 
                                     {/* ── Fallbacks ── */}
@@ -781,6 +790,29 @@ function MainApp() {
                                         4,428), pero un favorito del navegador no está en ninguna
                                         tabla y no hay forma de medirlo. Sin esto, el que tenía
                                         guardada la pantalla de personal caía en el 404. */}
+                                    {/* Las 17 que quedaban en inglés, renombradas el 2026-08-26 a
+                                        pedido del usuario («corrige los que ya están mal»). Mismo
+                                        motivo que arriba: el favorito de alguien no vive en ninguna
+                                        tabla. `/branches/:id` conserva el id — sin eso, el favorito
+                                        de una sala abre el listado de las ocho. */}
+                                    <Route path="announcements" element={<Navigate to="/comunicaciones" replace />} />
+                                    <Route path="audit" element={<Navigate to="/auditoria-de-tiempos" replace />} />
+                                    <Route path="auditview" element={<Navigate to="/auditoria-del-sistema" replace />} />
+                                    <Route path="branches" element={<Navigate to="/sucursales" replace />} />
+                                    <Route path="ios-test" element={<Navigate to="/prueba-ios" replace />} />
+                                    <Route path="my-announcements" element={<Navigate to="/mis-avisos" replace />} />
+                                    <Route path="my-documents" element={<Navigate to="/mis-documentos" replace />} />
+                                    <Route path="orphan-objects" element={<Navigate to="/objetos-huerfanos" replace />} />
+                                    <Route path="payroll" element={<Navigate to="/nomina" replace />} />
+                                    <Route path="permissions" element={<Navigate to="/permisos" replace />} />
+                                    <Route path="profile" element={<Navigate to="/mi-perfil" replace />} />
+                                    <Route path="requests-personales" element={<Navigate to="/solicitudes-personales" replace />} />
+                                    <Route path="requests" element={<Navigate to="/solicitudes" replace />} />
+                                    <Route path="roles" element={<Navigate to="/cargos" replace />} />
+                                    <Route path="schedules" element={<Navigate to="/horarios" replace />} />
+                                    <Route path="sync-health" element={<Navigate to="/actualizacion-de-datos" replace />} />
+                                    <Route path="vacation-plan" element={<Navigate to="/vacaciones" replace />} />
+                                    <Route path="branches/:id" element={<IrAFichaDeSucursal />} />
                                     <Route path="dashboard" element={<Navigate to="/personal" replace />} />
                                     <Route path="dashboard/empleado/:id" element={<IrAFichaDePersonal />} />
                                     <Route path="overview" element={<Navigate to="/inicio" replace />} />
@@ -847,15 +879,15 @@ const ROUTE_TITLES = {
     '/inicio':            'Inicio',
     '/personal':          'Gestión de personal',
     '/monitor':           'Monitor en tiempo real',
-    '/audit':             'Auditoría de tiempos',
-    '/schedules':         'Horarios',
-    '/requests':          'Solicitudes de sucursal',
-    '/requests-personales': 'Solicitudes personales',
-    '/vacation-plan':     'Plan anual de vacaciones',
-    '/payroll':           'Nómina',
+    '/auditoria-de-tiempos':             'Auditoría de tiempos',
+    '/horarios':         'Horarios',
+    '/solicitudes':          'Solicitudes de sucursal',
+    '/solicitudes-personales': 'Solicitudes personales',
+    '/vacaciones':     'Plan anual de vacaciones',
+    '/nomina':           'Nómina',
     '/bonificaciones':    'Bonificaciones',
     '/entrevistas':       'Entrevistas',
-    '/announcements':     'Centro de comunicaciones',
+    '/comunicaciones':     'Centro de comunicaciones',
     '/ventas':            'Ventas',
     '/cortes':            'Cortes de caja',
     '/bolsas':            'Bolsas de efectivo',
@@ -886,20 +918,20 @@ const ROUTE_TITLES = {
     '/corte-z':           'Corte Z',
     '/conteo-inventario': 'Conteo de inventario',
     '/bitacoras':         'Bitácoras',
-    '/branches':          'Sucursales',
-    '/roles':             'Jerarquía institucional',
-    '/permissions':       'Permisos de acceso',
-    '/auditview':         'Auditoría de sistema',
+    '/sucursales':          'Sucursales',
+    '/cargos':             'Jerarquía institucional',
+    '/permisos':       'Permisos de acceso',
+    '/auditoria-del-sistema':         'Auditoría de sistema',
     '/mantenimiento':     'Mantenimiento',
-    '/sync-health':       'Actualización de datos',
+    '/actualizacion-de-datos':       'Actualización de datos',
     '/sesiones':          'Conexiones',
-    '/orphan-objects':    'Objetos huérfanos',
-    '/ios-test':          'Vista de prueba iOS',
+    '/objetos-huerfanos':    'Objetos huérfanos',
+    '/prueba-ios':          'Vista de prueba iOS',
     '/carnes-del-dia':    'Carnés del día',
     '/impresion':         'Prueba de impresión',
-    '/my-announcements':  'Mis avisos',
-    '/my-documents':      'Mis documentos',
-    '/profile':           'Mi perfil',
+    '/mis-avisos':  'Mis avisos',
+    '/mis-documentos':      'Mis documentos',
+    '/mi-perfil':           'Mi perfil',
     '/kiosk':             'Reloj',
     '/login':             'Portal FarmaSalud',
 };

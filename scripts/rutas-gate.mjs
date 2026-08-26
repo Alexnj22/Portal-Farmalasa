@@ -65,6 +65,11 @@ import { join } from 'node:path';
 // y una pestaña que no copia su encabezado, y comprobar que falla por las dos.
 const APP = process.env.RUTAS_GATE_APP || 'src/App.jsx';
 const MODULOS = process.env.RUTAS_GATE_MODULOS || 'src/constants/moduleMap.js';
+// `RUTAS_GATE_HEREDADAS` (JSON) reemplaza la lista de deuda. Existe SÓLO para
+// que la prueba pueda fabricar el caso «una entrada de deuda que ya se
+// arregló»: hoy la lista está vacía y ese chequeo no tendría contra qué
+// dispararse, o sea que quedaría sin prueba justo el día que vuelva a hacer
+// falta.
 
 // ── Rutas que NO son una vista del portal ────────────────────────────────────
 // El kiosco corre sin sesión y es su propia aplicación; login y no-access son
@@ -78,33 +83,31 @@ const FUERA_DE_ALCANCE = new Set(['/kiosk', '/login', '/no-access', '/raw-test']
 // discusión de vocabulario cada vez. Al renombrar una, se borra de acá.
 //
 // NO se agregan entradas nuevas. Ver el encabezado de este archivo.
-const HEREDADAS = {
-  '/announcements':       'la vista se titula «Centro de comunicaciones»',
-  '/audit':               'la vista se titula «Auditoría de tiempos»',
-  '/auditview':           'la vista se titula «Auditoría de sistema»',
-  '/branches':            'la vista se titula «Sucursales»',
-  '/ios-test':            'la vista se titula «Vista de prueba iOS»',
-  '/monitor':             'la vista se titula «Monitor en tiempo real»',
-  '/my-announcements':    'la vista se titula «Mis avisos»',
-  '/my-documents':        'la vista se titula «Mis documentos»',
-  '/orphan-objects':      'la vista se titula «Objetos huérfanos»',
-  '/payroll':             'la vista se titula «Nómina»',
-  '/permissions':         'la vista se titula «Permisos de acceso»',
-  '/profile':             'la vista se titula «Mi perfil»',
-  '/requests':            'la vista se titula «Solicitudes de sucursal»',
-  '/requests-personales': 'mitad inglés y mitad español, que es peor que las dos',
-  '/roles':               'la vista se titula «Jerarquía institucional»',
-  '/schedules':           'la vista se titula «Horarios»',
-  '/sync-health':         'la vista se titula «Actualización de datos»',
-  '/vacation-plan':       'la vista se titula «Plan anual de vacaciones»',
-};
+// Al escribirse este gate eran DIECIOCHO rutas en inglés. El usuario las mandó
+// arreglar todas el mismo día («corrige los que ya están mal»), así que la lista
+// nació y quedó vacía en la misma sesión — y se queda acá, vacía, a propósito:
+// es la estructura que hace que una entrada NUEVA falle el gate, y borrarla
+// significaría que la próxima ruta en inglés no tendría contra qué chocar.
+//
+// Formato, para el día que haga falta: `'/ruta': 'motivo o nombre en español'`.
+const HEREDADAS = process.env.RUTAS_GATE_HEREDADAS
+  ? JSON.parse(process.env.RUTAS_GATE_HEREDADAS)
+  : {};
 
 // ── Redirecciones legadas ────────────────────────────────────────────────────
 // Un `<Route>` cuyo elemento es un `<Navigate>` NO es una vista: es el puente
 // que deja vivo un favorito viejo. Se detectan solas por el elemento, así que
 // esta lista no hace falta — queda documentado que se excluyen a propósito.
 
-const PALABRAS_EN_INGLES = /(^|-)(dashboard|overview|audit|auditview|schedule|schedules|request|requests|payroll|announcement|announcements|branch|branches|role|roles|permission|permissions|monitor|profile|my|orphan|objects|sync|health|ios|test|staff|employee|detail|vacation|plan|settings|home|users|user|list|new|edit|view)($|-)/;
+// Dos palabras que NO están en esta lista aunque lo parezcan:
+//   · `monitor` es española (RAE), y la vista se llama «Monitor en tiempo
+//     real». El regex la acusaba.
+//   · `ios` es el nombre de una plataforma, no una palabra: `/prueba-ios`
+//     es español con un nombre propio adentro, igual que «Corte Z».
+// Las dos eran falsos positivos de este mismo regex, de la misma familia
+// que los otros dos de la primera corrida. Un detector que acusa al que
+// hizo bien el trabajo es un detector que se termina desactivando.
+const PALABRAS_EN_INGLES = /(^|-)(dashboard|overview|audit|auditview|schedule|schedules|request|requests|payroll|announcement|announcements|branch|branches|role|roles|permission|permissions|profile|my|orphan|objects|sync|health|test|staff|employee|detail|vacation|plan|settings|home|users|user|list|new|edit|view)($|-)/;
 
 const leer = (p) => readFileSync(p, 'utf8');
 

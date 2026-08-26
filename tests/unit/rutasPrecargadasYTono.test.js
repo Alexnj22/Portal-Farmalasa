@@ -81,7 +81,7 @@ describe('precargar al pasar el mouse', () => {
     it('si la descarga falla, no propaga: el `lazy()` lo reintenta al navegar', async () => {
         // Un rechazo sin capturar acá sería un error no manejado por pasar el
         // mouse sobre un menú.
-        expect(() => prefetchRuta('/announcements')).not.toThrow();
+        expect(() => prefetchRuta('/comunicaciones')).not.toThrow();
         await new Promise(r => setTimeout(r, 0));
     });
 });

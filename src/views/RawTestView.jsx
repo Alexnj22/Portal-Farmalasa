@@ -74,7 +74,7 @@ export default function RawTestView() {
                     {/* Enlace y no botón: sin el shell no hay navegación, y en la
                         app agregada a inicio tampoco hay barra de direcciones. Sin
                         esto, entrar acá era un camino de ida. */}
-                    <a href="/ios-test" style={{ color: '#6e46e6', textDecoration: 'none' }}>← /ios-test</a>
+                    <a href="/prueba-ios" style={{ color: '#6e46e6', textDecoration: 'none' }}>← /ios-test</a>
                     <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>
                         {sinVidrio ? 'sin vidrio' : 'v10'}
                     </span>

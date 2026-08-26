@@ -369,7 +369,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             iconOnly
                             size="lg"
                             variant="secondary"
-                            onClick={() => navigate('/branches')}
+                            onClick={() => navigate('/sucursales')}
                             title="Volver a sucursales"
                         />
 

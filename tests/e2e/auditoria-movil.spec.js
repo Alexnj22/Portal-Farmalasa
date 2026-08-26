@@ -21,13 +21,13 @@ const SALIDA = 'test-results/auditoria-movil';
 // Las que el personal usa en tienda primero, que es el orden que pide la fase 4.
 const VISTAS = [
     { id: 'inicio',      url: '/' },
-    { id: 'solicitudes', url: '/requests-personales' },
+    { id: 'solicitudes', url: '/solicitudes-personales' },
     { id: 'monitor',     url: '/monitor' },
     { id: 'pedidos',     url: '/pedidos' },
     { id: 'productos',   url: '/productos' },
     { id: 'ventas',      url: '/ventas' },
     { id: 'personal',    url: '/staff' },
-    { id: 'asistencia',  url: '/audit' },
+    { id: 'asistencia',  url: '/auditoria-de-tiempos' },
 ];
 
 test.use({ ...devices['iPhone 13'] });
@@ -215,7 +215,7 @@ test.describe('Auditoría móvil · WebKit iPhone 13', () => {
     const VISTAS_CON_BUSCADOR = [
         { id: 'monitor',    url: '/monitor' },
         { id: 'personal',   url: '/staff' },
-        { id: 'asistencia', url: '/audit' },
+        { id: 'asistencia', url: '/auditoria-de-tiempos' },
     ];
 
     // Qué se mide del campo activo, sea cual sea la pieza que lo dibuja.

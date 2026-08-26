@@ -875,7 +875,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                             {/* ── Fila fijada: avisos sin leer ── */}
                             {annUnread > 0 && (
                                 <button
-                                    onClick={() => { setIsOpen(false); navigate('/my-announcements'); }}
+                                    onClick={() => { setIsOpen(false); navigate('/mis-avisos'); }}
                                     className={`shrink-0 w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
                                         ${hasUrgentAnn
                                             ? (isDark ? 'bg-danger/[0.08] border-danger/40 hover:bg-danger/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')

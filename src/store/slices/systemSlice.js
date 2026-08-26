@@ -505,7 +505,7 @@ export const createSystemSlice = (set, get) => ({
                                         `Farmalasa · ${titulo}`,
                                         a.message || a.title || 'Tienes un aviso nuevo',
                                         `announcement-${a.id}`,
-                                        () => { window.location.href = '/my-announcements'; },
+                                        () => { window.location.href = '/mis-avisos'; },
                                     );
                                 }
                             } catch { /* ignore */ }

@@ -2748,7 +2748,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias activas" icon={UserX} category="personal"
-          action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -2789,7 +2789,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
-          action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver todas <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -2813,7 +2813,7 @@ const DashboardView = ({ openModal }) => {
                   iconBoxClass="bg-warning/10 border-warning/30"
                   title={getEmpName(r.employee_id)}
                   subtitle={nombreDeTipo(r.type)}
-                  onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}
+                  onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</span>} />
               ))}
@@ -2834,7 +2834,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={puedeAbrir('/branches')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/branches')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/sucursales')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/sucursales')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
@@ -2864,7 +2864,7 @@ const DashboardView = ({ openModal }) => {
                     const puede = canManage('dash_branches');
                     const Caja = puede ? Link : 'div';
                     return (
-                      <Caja key={b.id} {...(puede ? { to: `/branches/${b.id}` } : {})}
+                      <Caja key={b.id} {...(puede ? { to: `/sucursales/${b.id}` } : {})}
                         className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${puede?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
                         <AlertTriangle size={13} className="text-warning-text shrink-0"/>
                         <div className="flex-1 min-w-0"><p className="text-label font-black text-content-2 truncate">{b.name}</p><p className="text-micro text-warning-text font-semibold">{issue}</p></div>
@@ -2940,7 +2940,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos recientes" icon={Megaphone} category="general"
-          action={puedeAbrir('/announcements')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/announcements')}>Ver todos <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/comunicaciones')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/comunicaciones')}>Ver todos <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -2958,7 +2958,7 @@ const DashboardView = ({ openModal }) => {
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
                   subtitle={new Date(a.date).toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})}
-                  onClick={puedeAbrir('/announcements')?()=>navigate('/announcements'):undefined}
+                  onClick={puedeAbrir('/comunicaciones')?()=>navigate('/comunicaciones'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
               ))}
@@ -3825,8 +3825,8 @@ const DashboardView = ({ openModal }) => {
                     cálculo que falló, no como la hora del día. Un cero con
                     motivo tiene que decir el motivo. */}
                 <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiPresent===0?'Sin marcaciones aún':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={puedeAbrir('/branches')?()=>navigate('/branches'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={puedeAbrir('/sucursales')?()=>navigate('/sucursales'):undefined}/>
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
@@ -3843,8 +3843,8 @@ const DashboardView = ({ openModal }) => {
             : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)"/>
                 <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
               </div>
         )}
           </>);

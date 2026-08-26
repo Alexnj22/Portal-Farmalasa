@@ -346,7 +346,7 @@ export const createVacationPlanSlice = (set, get) => ({
                         type: 'REQUEST_DECIDED',
                         title: '🌴 Vacaciones confirmadas',
                         body: `Tus vacaciones han sido confirmadas del ${fmtDate(plan.start_date)} al ${fmtDate(plan.end_date)} (${plan.days} días). ¡Disfrútalas!`,
-                        link: '/requests-personales',
+                        link: '/solicitudes-personales',
                         push: true,
                         metadata: { status: 'APPROVED', startDate: plan.start_date, endDate: plan.end_date, days: plan.days },
                     });

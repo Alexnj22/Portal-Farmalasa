@@ -1111,7 +1111,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
                                             </h3>
-                                            <Button icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva solicitud</Button>
+                                            <Button icon={Plus} onClick={() => navigate('/solicitudes', { state: { prefillEmployeeId: emp.id } })}>Nueva solicitud</Button>
                                         </div>
 
                                         {isLoadingEmpReqs ? (

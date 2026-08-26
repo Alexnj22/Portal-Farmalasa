@@ -52,6 +52,46 @@ const PROXY_DTE   = `${BASE}/proxydte.php`;
 
 export { BASE, ANULAR };
 
+/** Estado de los tres campos editables, leído de la pantalla del ERP. */
+export type Ficha = { cliente: string | null; clienteNombre: string; credito: string | null; vendedor: string | null };
+
+export function parsearFicha(html: string): Ficha {
+  /* `-?` porque **CLIENTES VARIOS es `value='-1'`**, y el `\d+` de antes no lo
+   * leía: la ficha volvía con `cliente: null` para toda venta a consumidor sin
+   * nombre. Eso no era cosmético — ver la guarda del cambio de pago. */
+  const cli = html.match(/id="id_cliente"[\s\S]*?<option value='(-?\d+)'\s+selected>\s*([^<]*?)\s*<\/option>/);
+  const selCred = html.match(/id="credito"([\s\S]*?)<\/select>/);
+  const cred = selCred?.[1].match(/<option value="(\d)"\s+selected>/);
+  const vend = html.match(/Cod\. Vendedor<\/label>[\s\S]*?<input[^>]*value="([^"]*)"/);
+  return {
+    cliente: cli?.[1] ?? null,
+    clienteNombre: cli?.[2] ?? "",
+    credito: cred?.[1] ?? null,
+    // El input vacío da `""`, no `null`. Con `?? null` un campo en blanco
+    // pasaba por "leído", que es la mitad de por qué la guarda de abajo nunca
+    // se disparó.
+    vendedor: vend?.[1]?.trim() || null,
+  };
+}
+
+export async function leerFicha(cookie: string, erpId: string): Promise<Ficha> {
+  const html = await pedir(cookie, `${BASE}/reimprimir_factura.php?id_factura=${encodeURIComponent(erpId)}`);
+  const ficha = parsearFicha(html);
+  /* La pantalla se dibuja IGUAL cuando la venta no carga: el combo de forma de
+   * pago no queda vacío, queda en su valor por defecto —«Efectivo»—. Así que
+   * «pude leer la forma de pago» NO prueba que haya una venta detrás; lo
+   * prueban el cliente y el vendedor.
+   *
+   * La guarda vieja pedía los TRES en null y por eso nunca se disparó. Con
+   * 0000065840_COF (Salud 2, 26-ago) la pantalla llegó sin cliente, sin
+   * vendedor y sin total, el combo dijo «Efectivo» por defecto, y como el
+   * cambio pedido era JUSTAMENTE a efectivo la comprobación posterior dio
+   * por bueno un cambio que nunca ocurrió. */
+  if (ficha.cliente === null && ficha.vendedor === null)
+    throw new Error(`La pantalla de la venta ${erpId} no trae sus datos, así que no se toca.`);
+  return ficha;
+}
+
 // Una factura anulada no es un documento vivo. Son DOS estados, no uno: medido
 // el 2026-08-06, 975 facturas en 'DTE INVALIDADO EN MH' contra 14 en 'NULA'.
 // 'NULA' es el paso intermedio —anulada en el ERP, todavía sin invalidar ante

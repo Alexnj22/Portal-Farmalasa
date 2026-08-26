@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.794.3 — Un cambio de datos no se aplica sobre una pantalla vacía
+
+Sale de una pregunta de sala: *«¿por qué si confirmé la solicitud que pasara a
+efectivo, no lo cambió? ¿y por qué no me avisó de error?»*. Las dos respuestas
+estaban en el mismo sitio y ninguna era la esperada.
+
+**La venta que se iba a cambiar era de CLIENTES VARIOS, y el portal no sabía
+leer ese cliente.** En la pantalla del sistema, CLIENTES VARIOS vale `-1`, y el
+lector sólo aceptaba dígitos: devolvía «no hay cliente». Cambiar la forma de
+pago manda cliente **y** pago juntos, así que el cliente viajó **en blanco** —
+que no significa «no lo toques», significa «dejala sin cliente». Después de eso,
+`0000065840_COF` (Salud 2) aparece en el sistema sin cliente, sin vendedor y sin
+total. Medido contra tres ventas intactas de la misma sala y contra otra
+CLIENTES VARIOS a la que sólo se le cambió el vendedor —que no manda el
+cliente—: esa quedó perfecta.
+
+**Y por eso no avisó de error.** Cuando la venta no carga, esa pantalla no
+vuelve vacía: vuelve con sus valores por defecto, y el de la forma de pago es
+**Efectivo**. El cambio pedido era justamente a efectivo, así que la
+comprobación posterior comparó «efectivo» contra «efectivo» y dio el cambio por
+aplicado. Si se hubiera pedido tarjeta, habría fallado a la vista.
+
+Cuatro cosas, todas de la misma familia:
+
+- **CLIENTES VARIOS se lee** (`-1`), y un vendedor en blanco es «no hay», no
+  cadena vacía — con eso la guarda de «esta pantalla no trae la venta» empieza
+  a funcionar por primera vez: pedía los tres campos vacíos y la forma de pago
+  nunca lo está.
+- **Un dato que no se pudo leer ya no se reemplaza por uno por defecto.** El
+  cambio de cliente mandaba `credito ?? "0"` — o sea, le ponía EFECTIVO a una
+  venta de tarjeta si no lograba leerla. Ahora se avisa y no se escribe.
+- **Después de escribir se comprueba que no se haya llevado nada por delante.**
+  Se miraba sólo el campo pedido; hoy, si la venta se queda sin cliente, sin
+  vendedor o sin forma de pago, eso es daño y se dice.
+- Las dos páginas reales quedaron ancladas en `tests/unit/fichaDeLaVenta.test.js`.
+  Escritas a mano no sirven: el defecto depende de cómo dibuja el sistema esa
+  pantalla cuando no encuentra la venta.
+
+Queda pendiente reponer el cliente y el vendedor de `0000065840_COF` en el
+sistema, que es una escritura y se decide aparte.
+
 ## v2.794.2 — La cifra no se separa de su signo
 
 > «mira el de diferencia, sale cortado.»

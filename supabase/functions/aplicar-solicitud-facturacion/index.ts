@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import {
   BASE, ANULAR, login, pedir, leerRespuesta, formatearDui, estaAnulada, enviarDteAlMH,
-  RechazoMH,
+  RechazoMH, leerFicha,
 } from "../_shared/erp-dte.ts";
 
 // Aplica en el ERP la solicitud que el supervisor acaba de aprobar.
@@ -79,29 +79,6 @@ const ERP_A_PAGO: Record<string, string> = Object.fromEntries(
   Object.entries(PAGO_A_ERP).map(([k, v]) => [v, k]),
 );
 
-/** Estado de los tres campos editables, leído de la pantalla del ERP. */
-type Ficha = { cliente: string | null; clienteNombre: string; credito: string | null; vendedor: string | null };
-
-function parsearFicha(html: string): Ficha {
-  const cli = html.match(/id="id_cliente"[\s\S]*?<option value='(\d+)'\s+selected>\s*([^<]*?)\s*<\/option>/);
-  const selCred = html.match(/id="credito"([\s\S]*?)<\/select>/);
-  const cred = selCred?.[1].match(/<option value="(\d)"\s+selected>/);
-  const vend = html.match(/Cod\. Vendedor<\/label>[\s\S]*?<input[^>]*value="([^"]*)"/);
-  return {
-    cliente: cli?.[1] ?? null,
-    clienteNombre: cli?.[2] ?? "",
-    credito: cred?.[1] ?? null,
-    vendedor: vend?.[1] ?? null,
-  };
-}
-
-async function leerFicha(cookie: string, erpId: string): Promise<Ficha> {
-  const html = await pedir(cookie, `${REIMPRIMIR}?id_factura=${encodeURIComponent(erpId)}`);
-  const ficha = parsearFicha(html);
-  if (ficha.cliente === null && ficha.credito === null && ficha.vendedor === null)
-    throw new Error(`No se pudieron leer los datos de la factura ${erpId}.`);
-  return ficha;
-}
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
@@ -570,9 +547,18 @@ Deno.serve(async (req) => {
       // su valor ACTUAL leído recién, no con el que traía la solicitud. Si no,
       // aplicar un cambio de cliente pisaría un cambio de pago hecho en el
       // medio por otra persona.
+      //
+      // Y el `?? "0"` que había acá era una bomba: si la forma de pago no se
+      // pudo leer, mandaba «0» — o sea EFECTIVO— sobre una venta que podía ser
+      // de tarjeta. Un dato que no se pudo leer no se reemplaza por un valor
+      // por defecto: se avisa y no se escribe.
+      if (antes.credito === null) return json({
+        ok: false,
+        error: "No se pudo leer la forma de pago de la venta, así que no se toca.",
+      }, 502);
       cuerpo = await pedir(cookie, REIMPRIMIR, new URLSearchParams({
         process: "cambiar_datos", id_cliente: a,
-        credito: String(antes.credito ?? "0"), id_factura: erpId,
+        credito: antes.credito, id_factura: erpId,
       }));
     }
 
@@ -591,8 +577,18 @@ Deno.serve(async (req) => {
       const destino = PAGO_A_ERP[String(meta.new_pago ?? "").toLowerCase()];
       if (!destino) return json({ ok: false, error: `Forma de pago desconocida: ${meta.new_pago}` }, 422);
       a = destino;
+      // `cambiar_datos` manda cliente Y pago juntos, así que el cliente viaja
+      // tal cual está. Mandarlo VACÍO no significa «no lo cambies»: significa
+      // «dejala sin cliente» — y eso le borró el cliente Y el vendedor a una
+      // venta real (0000065840_COF, Salud 2, 26-ago), porque el lector no sabía
+      // leer el `-1` de CLIENTES VARIOS y devolvía `null`. El `-1` ya se lee;
+      // esta guarda es para que un `null` nunca vuelva a viajar como "".
+      if (antes.cliente === null) return json({
+        ok: false,
+        error: "No se pudo leer el cliente de la venta, así que no se toca.",
+      }, 502);
       cuerpo = await pedir(cookie, REIMPRIMIR, new URLSearchParams({
-        process: "cambiar_datos", id_cliente: String(antes.cliente ?? ""),
+        process: "cambiar_datos", id_cliente: antes.cliente,
         credito: destino, id_factura: erpId,
       }));
     }
@@ -622,6 +618,23 @@ Deno.serve(async (req) => {
         ok: false,
         error: `Se pidió el cambio pero la factura quedó en «${quedo}», no en «${a}».`,
       }, 502);
+
+    /* Y que el cambio no se haya llevado por delante lo que no tocaba.
+     *
+     * Cambiar la forma de pago le borró el cliente y el vendedor a
+     * 0000065840_COF, y nadie se enteró porque sólo se miraba el campo pedido.
+     * Un dato que ESTABA y ahora no está es daño, no un cambio. */
+    for (const [nombre, viejoValor, nuevoValor] of [
+      ["el cliente",  antes.cliente,  despues.cliente],
+      ["el vendedor", antes.vendedor, despues.vendedor],
+      ["la forma de pago", antes.credito, despues.credito],
+    ] as [string, string | null, string | null][]) {
+      if (viejoValor !== null && nuevoValor === null)
+        return json({
+          ok: false,
+          error: `El cambio se aplicó pero la venta se quedó sin ${nombre}. Revisala antes de volver a intentarlo.`,
+        }, 502);
+    }
 
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
     const aplicado = {

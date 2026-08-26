@@ -58,6 +58,7 @@ import LiquidTooltip from '../components/common/LiquidTooltip';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { exportCsv } from '../utils/csvExport';
+import { soloPersonalEnPlanilla, soloNoEmpleados, rotuloTipoFicha, esFichaQueNoEsEmpleado } from '../utils/tipoDeFicha';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { SIN_ASIGNAR } from '../data/constants';
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las sucursales' }];
@@ -76,6 +77,13 @@ const STAT_FILTER_OPTIONS = [
     { value: 'apoyo',        label: 'Apoyo' },
     { value: 'otros',        label: 'Otros' },
     { value: 'practicantes', label: 'Practicantes' },
+    // Sin tarjeta a propósito, y está medido: el carril tiene 870px a 1280 y
+    // `StatCard` pide 150 de mínimo, así que una SEXTA tarjeta vuelve a cortar
+    // el carril — que es justo lo que v2.784.0 acababa de arreglar. Las
+    // tarjetas son «el atajo visual, no el único acceso» (§17); ésta es la vista
+    // rara —tres fichas, y sólo le interesa a Administración— así que vive en la
+    // píldora. Igual viaja en la dirección: `/personal?tab=externos`.
+    { value: 'externos',     label: 'Externos y sistema' },
 ];
 
 // Código de empleado es numérico crudo (ej. "201") — si se mezcla con nombre/rol/
@@ -362,7 +370,13 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               <p className="font-black text-content text-body-sm md:text-body truncate transition-colors group-hover:text-brand-text tracking-tight" title={fullName}>
                 {fullName}
               </p>
-              {isPendingData(emp) && <PendingBadge emp={emp} />}
+              {/* Una ficha que no es una persona lo DICE, y en la fila. Es la
+                  vista donde alguien podría confundirla con personal — que es
+                  literalmente el problema que `tipo_ficha` vino a resolver. */}
+              {esFichaQueNoEsEmpleado(emp) && (
+                <Badge variant="neutral" size="sm" className="shrink-0">{rotuloTipoFicha(emp)}</Badge>
+              )}
+              {isPendingData(emp) && !esFichaQueNoEsEmpleado(emp) && <PendingBadge emp={emp} />}
 
               {birthdayInfo && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} role="img" title={birthdayInfo.tooltip}>
@@ -591,13 +605,21 @@ const StaffManagementView = ({
     return m;
   }, [branches]);
 
+  // Acá vivía el único freno que tenía el portal contra las fichas que no son
+  // personas: `e.system_role !== 'SUPERADMIN'`, escrito a mano y en ESTE archivo.
+  // O sea que protegía una pantalla. Verificado el 2026-08-26: Horarios y el
+  // Plan de Vacaciones leen `employees` en crudo, así que el plan anual —Art.
+  // 177 CT— listaba a «QA Testing» y al «Contador Externo» como personal con
+  // derecho a vacaciones, y la planilla les generaba renglón en $0.
+  //
+  // Hoy la respuesta la da el DATO (`employees.tipo_ficha`) y el reparto se hace
+  // más abajo, al elegir la vista: las tres fichas que no son empleados siguen
+  // siendo alcanzables —hay que poder administrarlas— pero en su propia vista y
+  // fuera de todo conteo de personal.
   const scopeFilteredEmployees = useMemo(() => {
-    // La cuenta SUPERADMIN ("Administrador del Sistema") es una cuenta técnica de
-    // acceso, no un empleado real — nunca debe listarse en Gestión de Personal.
-    const withoutSystemAccount = (employees || []).filter(e => e.system_role !== 'SUPERADMIN');
     return getScope('staff_list') !== 'ALL'
-        ? withoutSystemAccount.filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
-        : withoutSystemAccount;
+        ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
+        : (employees || []);
   }, [employees, getScope, user?.branchId]);
 
   const staffBranchFiltered = useMemo(() => {
@@ -612,15 +634,24 @@ const StaffManagementView = ({
     return searchEmployees(normalizedSearch, staffBranchFiltered, branchMap);
   }, [staffBranchFiltered, normalizedSearch, branchMap]);
 
+  // «47 Total» era mentira: contaba a QA Testing y al Contador Externo. Las
+  // personas en planilla son 46. Un conteo de cabezas que incluye una cuenta de
+  // pruebas no es un redondeo — es el número que se reporta.
+  const enPlanilla = useMemo(
+    () => soloPersonalEnPlanilla(searchFilteredEmployees), [searchFilteredEmployees]);
+
+  const noEmpleados = useMemo(
+    () => soloNoEmpleados(searchFilteredEmployees), [searchFilteredEmployees]);
+
   const stats = useMemo(() => {
-    const total = searchFilteredEmployees.length;
-    const active = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'Activo').length;
-    const support = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'En Apoyo').length;
-    const inactive = searchFilteredEmployees.filter(
+    const total = enPlanilla.length;
+    const active = enPlanilla.filter((emp) => getEffectiveStatus(emp) === 'Activo').length;
+    const support = enPlanilla.filter((emp) => getEffectiveStatus(emp) === 'En Apoyo').length;
+    const inactive = enPlanilla.filter(
       (emp) => !['Activo', 'En Apoyo'].includes(getEffectiveStatus(emp))
     ).length;
     return { total, active, support, inactive };
-  }, [searchFilteredEmployees]);
+  }, [enPlanilla]);
 
   // ── Practicantes (horas sociales) — misma búsqueda/alcance/sucursal que
   // empleados, pero en pipeline propio: la tabla `practicantes` está separada
@@ -665,16 +696,21 @@ const StaffManagementView = ({
   }, [practicantesSearchFiltered, activeStatFilter, branchMap]);
 
   const isPracticantesView = activeStatFilter === 'practicantes';
+  const isExternosView = activeStatFilter === 'externos';
 
   const filteredEmployees = useMemo(() => {
-    return searchFilteredEmployees.filter(emp => {
+    // La vista «Externos y sistema» es la ÚNICA que muestra fichas que no son
+    // personal contratado. Las otras cuatro parten de `enPlanilla`, así que
+    // ninguna cuenta ni exporta una cuenta técnica.
+    if (isExternosView) return noEmpleados;
+    return enPlanilla.filter(emp => {
       const statusEff = getEffectiveStatus(emp);
       return activeStatFilter === 'todos' ||
         (activeStatFilter === 'activos' && statusEff === 'Activo') ||
         (activeStatFilter === 'apoyo' && statusEff === 'En Apoyo') ||
         (activeStatFilter === 'otros' && !['Activo', 'En Apoyo'].includes(statusEff));
     });
-  }, [searchFilteredEmployees, activeStatFilter]);
+  }, [enPlanilla, noEmpleados, isExternosView, activeStatFilter]);
 
   const sortedEmployees = useMemo(() => {
     const list = [...filteredEmployees];
@@ -854,7 +890,12 @@ const StaffManagementView = ({
   const handleExportCSV = () => {
     const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
 
-    const rows = sortedEmployees.map(emp => ([
+    // `soloPersonalEnPlanilla` otra vez, aunque la vista ya filtre: el archivo se
+    // llama «Directorio_Personal» y sale del portal —queda anotado en
+    // `export_log` y termina en el correo de alguien—. Que su contenido dependa
+    // de qué pestaña estaba abierta es cómo una cuenta de pruebas se cuela en un
+    // documento de personal. Acá el filtro no es de pantalla: es del documento.
+    const rows = soloPersonalEnPlanilla(sortedEmployees).map(emp => ([
       emp.code,
       emp.name,
       branchMap.get(Number(emp.branchId || emp.branch_id)) || SIN_ASIGNAR,
@@ -903,7 +944,9 @@ const StaffManagementView = ({
     // táctil sigue rotulado.
     // Sin `tone`: lo pone `TONO_POR_ICONO` a partir del ícono, que es lo que hace
     // que `Download` se vea igual acá que en cualquier otra vista.
-    ...(canDownload ? [{ key: 'exportar', icon: Download, label: 'Exportar',
+    // En «Externos y sistema» no se ofrece: lo único que exporta esta vista es
+    // el directorio de PERSONAL, y ahí no hay ninguno.
+    ...(canDownload && !isExternosView ? [{ key: 'exportar', icon: Download, label: 'Exportar',
       soloIcono: true, onClick: handleExportCSV }] : []),
   ];
 
@@ -1054,7 +1097,9 @@ const StaffManagementView = ({
           skeletonRows={8}
           empty={{
             icon: isPracticantesView ? GraduationCap : Search,
-            message: isPracticantesView ? 'Sin practicantes registrados' : 'No hay nadie aquí',
+            message: isPracticantesView ? 'Sin practicantes registrados'
+              : isExternosView ? 'Sin cuentas externas ni del sistema'
+              : 'No hay nadie aquí',
             subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
             action: hasActiveFilters ? { label: 'Limpiar filtros', onClick: clearFilters } : undefined,
           }}
@@ -1084,7 +1129,7 @@ const StaffManagementView = ({
             totalPages={totalPages}
             onPageChange={setPage}
             total={totalItems}
-            unit={isPracticantesView ? 'practicantes' : 'empleados'}
+            unit={isPracticantesView ? 'practicantes' : isExternosView ? 'fichas' : 'empleados'}
           />
         )}
       </div>

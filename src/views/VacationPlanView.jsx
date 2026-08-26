@@ -24,6 +24,7 @@ import RangeDatePicker from '../components/common/RangeDatePicker';
 import { smartFilter } from '../utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
+import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -404,7 +405,12 @@ const VacationPlanView = () => {
 
     const employeeOptions = useMemo(() => {
         const now = new Date();
-        let emps = (employees || []).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
+        // `soloPersonalEnPlanilla` primero: el plan anual de vacaciones es un
+        // documento con peso legal (Art. 177 CT) y hasta el 2026-08-26 listaba
+        // a «QA Testing» y al «Contador Externo» como personal con derecho a
+        // vacaciones, porque acá se leía `employees` en crudo. Ver
+        // `utils/tipoDeFicha.js`.
+        let emps = soloPersonalEnPlanilla(employees).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
         if (branchFilter !== 'ALL') {
             emps = emps.filter(e => String(e.branch_id || e.branchId) === String(branchFilter));
         }

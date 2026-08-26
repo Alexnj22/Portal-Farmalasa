@@ -18,7 +18,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
-import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
+import { EL_SALVADOR_GEO, distritosDe } from '../../data/elSalvadorGeo';
 import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -48,7 +48,17 @@ const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emerg
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'PRACTICAS', label: 'Prácticas / aprendizaje' }, { value: 'SERVICIOS', label: 'Servicios profesionales' }];
+// «Prácticas» (contrato de aprendizaje, Art. 61-70) se quitó el 2026-08-26:
+// el usuario confirmó que no contratan aprendices pagados. Ojo con la
+// diferencia si alguna vez vuelve — el formulario de practicantes NO es esto:
+// ése es una pasantía estudiantil (institución, tutor, convenio, horas
+// requeridas), y el aprendizaje es un contrato LABORAL pagado, con salario
+// mínimo reducido por año y registro ante el Ministerio de Trabajo.
+//
+// Se deja fuera de la lista pero el valor 'PRACTICAS' sigue reconociéndose al
+// LEER una ficha vieja: quitarlo de golpe dejaría el tipo de contrato en blanco
+// en quien lo tuviera, sin que nadie lo note.
+const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'SERVICIOS', label: 'Servicios profesionales' }];
 // "Prácticas" = Contrato de Aprendizaje (Art. 61-70 CT): igual que Temporal
 // tiene fecha de fin obligatoria, pero su base legal no es el Art. 25 (plazo
 // fijo) sino el régimen especial de aprendices — por eso NO usa
@@ -405,7 +415,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
                 nursing_license_number: '', pharmacist_license_number: '',
                 employee_documents: [],
-                department: '', municipality: '', education_level: '', profession: '',
+                department: '', municipality: '', distrito: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
                 has_maestria: false, maestria_title: '',
@@ -510,6 +520,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return items;
     }, [formData]);
 
+    // Distritos del municipio elegido. Si el municipio cambia, el distrito que
+    // había deja de pertenecerle — se limpia en `handleSelectChange`, no acá:
+    // un `useEffect` que borra un campo al ver otro cambiar borra también
+    // cuando el formulario se HIDRATA con una ficha existente.
+    const distritoOpts = useMemo(
+        () => distritosDe(formData?.municipality).map(d => ({ value: d, label: d })),
+        [formData?.municipality]);
+
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
@@ -567,9 +585,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     };
 
     const handleSelectChange = (name, value) => {
+        // Cambiar de municipio deja huérfano al distrito: el que estaba elegido
+        // pertenece a otro municipio, y guardarlo así sería una dirección que
+        // no existe. Se limpia acá —en el gesto que lo invalida— y no en un
+        // `useEffect`, que también se dispararía al hidratar una ficha ya
+        // guardada y borraría un dato bueno.
+        if (name === 'municipality' && value !== formData?.municipality) {
+            setFormData(prev => ({ ...prev, municipality: value, distrito: '' }));
+            return;
+        }
+        if (name === 'department' && value !== formData?.department) {
+            setFormData(prev => ({ ...prev, department: value, municipality: '', distrito: '' }));
+            return;
+        }
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
-            if (name === 'department') newData.municipality = '';
             if (name === 'has_disability' && !value) {
                 newData.disability_type = '';
                 newData.disability_grade = '';
@@ -1663,10 +1693,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <div className="relative z-base">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Distrito</span>
+                                        <span>Municipio</span>
                                         {formData.department && !formData.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                    <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Municipio...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                </div>
+
+                                {/* El TERCER nivel. Desde la Ley Especial para la
+                                    Reestructuración Municipal (vigente 1-may-2024) el país
+                                    tiene 14 departamentos, 44 municipios y 262 distritos —
+                                    los distritos son los municipios de antes. El catálogo
+                                    ya existía: se construyó para la ficha fiscal del
+                                    cliente, que es lo que pide el ERP. */}
+                                <div className="relative z-base">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Distrito</span>
+                                        {formData.municipality && !formData.distrito && <Badge variant="warning" uppercase={false}>Pendiente</Badge>}
+                                    </label>
+                                    <LiquidSelect value={formData.distrito} onChange={(val) => handleSelectChange('distrito', val)} options={distritoOpts} placeholder={formData.municipality ? 'Distrito...' : 'Elija municipio'} disabled={!formData.municipality} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
@@ -1692,10 +1736,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </div>
                                                         <div>
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
-                                                                <span>Distrito</span>
+                                                                <span>Municipio</span>
                                                                 {addr.department && !addr.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                             </label>
-                                                            <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                            <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Municipio...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div className="md:col-span-2">
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
@@ -2090,7 +2134,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Distrito</label>
-                                                        <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Distrito...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                        <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Municipio...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
@@ -2288,7 +2332,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LockedField label="Área de Trabajo" value={selectedBranch?.name || formData.branch_id} />
                                         <LockedField label="Cargo Principal" value={roles?.find(r => String(r.id) === String(formData.role_id))?.name || formData.role} />
                                         <LockedField label="Cargo Secundario" value={roles?.find(r => String(r.id) === String(formData.secondary_role_id))?.name || formData.secondary_role || 'Sin cargo secundario'} />
-                                        <LockedField label="Fecha de Contratación" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de inicio de labores" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -2318,7 +2362,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                         )}
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Contratación</label>
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de inicio de labores</label>
                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                             </div>
@@ -2376,7 +2420,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
-                                        <LockedField label="Fecha de Inicio de Contrato" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de contratación" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -2385,7 +2429,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Inicio de Contrato</label>
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de contratación</label>
                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} />
                                             </div>
@@ -2459,6 +2503,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <p className="text-caption font-black uppercase tracking-widest text-content-3">Dónde y cuándo se firmó</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Art. 23 nº9 — «forma, PERÍODO y lugar de pago». Vivía en
+                                        Nómina, junto al banco y la cuenta, y no es un dato
+                                        bancario: es una cláusula del contrato, y además la que
+                                        decide cuándo el pago se vuelve exigible (Art. 130). */}
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cada cuánto se le paga</label>
+                                        <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
+                                    </div>
                                     <PortalInput
                                         label="Lugar de la firma" name="contrato_lugar_celebracion"
                                         value={formData.contrato_lugar_celebracion} onChange={handleChange}
@@ -2539,7 +2591,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
-                                <PortalInput label="NUP (AFP)" name="afp_number" value={formData.afp_number} onChange={handleChange} icon={Hash} placeholder="12 dígitos" maskType="AFP" hasError={afpIncomplete} errorMessage="Debe tener 12 dígitos" />
+                                {/* El NUP quedó homologado al DUI en enero de 2023: es con el
+                                    número de DUI que uno se afilia y hace cualquier trámite de
+                                    pensiones. Así que dejó de ser un campo que se teclea — se
+                                    muestra el DUI, que se captura en Datos Personales y ahí sí
+                                    se le comprueba el dígito verificador.
+
+                                    El valor viejo NO se borra ni se pisa: si una ficha trae un
+                                    NUP anterior distinto del DUI, se sigue viendo. Borrarlo
+                                    sería decidir por alguien que ese número ya no importa. */}
+                                <div className="relative z-content">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
+                                    <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-3 gap-2`}>
+                                        <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
+                                        <span className="text-body-xl font-bold text-content-2 truncate">
+                                            {formData.dui || '—'}
+                                        </span>
+                                    </div>
+                                    <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                        Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
+                                        {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
+                                    </p>
+                                </div>
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
@@ -2558,15 +2631,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <PortalInput label="Número de Cuenta" name="account_number" value={formData.account_number} onChange={handleChange} icon={CreditCard} placeholder="0000-0000-00" maskType="ACCOUNT" />
 
-                                {/* Art. 23 nº9 CT — «forma, PERÍODO y lugar de pago». El
-                                    banco, el tipo y el número de cuenta son la forma y el
-                                    lugar; cada cuánto se paga faltaba, y es lo que decide
-                                    cuándo el pago se vuelve exigible. Sin valor por
-                                    defecto: vacío es «no se pactó» y se ve. */}
-                                <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cada cuánto se le paga</label>
-                                    <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
-                                </div>
                             </div>
                         </div>
 

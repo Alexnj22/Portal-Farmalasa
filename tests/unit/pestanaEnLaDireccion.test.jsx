@@ -52,12 +52,26 @@ describe('de dónde sale la pestaña activa', () => {
             .toBe('anuladas');
     });
 
-    it('acepta pestañas como texto, como `key` y como `id`', () => {
-        // Las dos formas conviven en el repo —`ViewTabBar` pide `key`, las del
-        // tablero se escribieron con `id`— y el hook no es motivo para reescribir
-        // ninguna de las dos listas.
+    it('acepta pestañas como texto, como `key`, como `id` y como `value`', () => {
+        // Las TRES formas conviven en el repo —`ViewTabBar` pide `key`, las del
+        // tablero se escribieron con `id`, las opciones de `FilterBar` usan
+        // `value`— y el hook no es motivo para reescribir ninguna de esas listas.
         expect(montar([{ key: 'a' }, { key: 'b' }], { url: '/x?tab=b' }).result.current[0]).toBe('b');
         expect(montar([{ id: 'a' }, { id: 'b' }], { url: '/x?tab=b' }).result.current[0]).toBe('b');
+        expect(montar([{ value: 'a' }, { value: 'b' }], { url: '/x?tab=b' }).result.current[0]).toBe('b');
+    });
+
+    it('con `value`, una lista sin claves reconocibles NO deja la vista clavada', () => {
+        // La regresión que esto ancla, y su modo de falla: antes de reconocer
+        // `value`, una lista de opciones de `FilterBar` producía `claves` VACÍO.
+        // Con eso `activa` era siempre el default y la dirección se ignoraba —
+        // pero el clic SÍ escribía el `?tab=` en la barra. La URL decía una cosa
+        // y la pantalla mostraba otra, y no fallaba nada. Pasó en `/personal`.
+        const opciones = [
+            { value: 'todos', label: 'Todos' },
+            { value: 'externos', label: 'Externos y sistema' },
+        ];
+        expect(montar(opciones, { url: '/x?tab=externos' }).result.current[0]).toBe('externos');
     });
 
     it('sin pestañas visibles no inventa una', () => {

@@ -4,6 +4,7 @@ import {
     fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping,
     fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank,
 } from '../../data/payroll';
+import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -220,7 +221,14 @@ export const createPayrollSlice = (set, get) => ({
             const period = get().payrollPeriods.find(p => p.id === periodId);
             if (!period) throw new Error('Período no encontrado');
 
+            // `esPersonalEnPlanilla` primero, y no es cosmético: acá se GENERA la
+            // planilla. Sin ese filtro, «QA Testing» y el «Contador Externo»
+            // recibían su renglón de nómina —en $0, porque no tienen salario
+            // base, y de paso entraban al aviso de «sin salario base»—. Una
+            // cuenta de pruebas con renglón en la planilla es justo el registro
+            // que no puede existir. Ver `utils/tipoDeFicha.js`.
             const employees = (get().employees || []).filter(e => {
+                if (!esPersonalEnPlanilla(e)) return false;
                 if ((e.status || '').toUpperCase() === 'INACTIVO') return false;
                 if (branchId && String(e.branchId || e.branch_id) !== String(branchId)) return false;
                 return true;

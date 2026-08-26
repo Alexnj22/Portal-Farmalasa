@@ -17,6 +17,7 @@ import TabStaff from './branch-tabs/TabStaff';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useAuth } from '../context/AuthContext';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -106,8 +107,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [liveBranch?.id, refreshKey, getBranchHistory]);
 
+    // `soloPersonalEnPlanilla`: esto se pinta como «N Activos» de la sala, o sea
+    // un conteo de cabezas. «QA Testing» está asignada a Salud 1 y el «Contador
+    // Externo» a Administración, así que las dos inflaban el número de su sala.
+    // Ver `utils/tipoDeFicha.js`.
     const currentStaff = useMemo(() => {
-        return (employees || []).filter(e =>
+        return soloPersonalEnPlanilla(employees).filter(e =>
             (String(e.branchId) === String(liveBranch?.id) || String(e.branch_id) === String(liveBranch?.id)) &&
             (e.status || '').toUpperCase() !== 'INACTIVO'
         );

@@ -38,6 +38,7 @@ import { fetchRostersForWeekByEmployees } from '../data/requests';
 import { upsertWeeklyRoster, upsertBulkWeeklyRosters } from '../data/system';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -536,7 +537,10 @@ const SchedulesView = ({ openModal, setView }) => {
             if (r.includes('DEPENDIENTE')) return 4;
             return 5;
         };
-        return employees
+        // Un horario se le publica a una PERSONA. Una cuenta técnica o un
+        // servicio externo no tienen turno que cubrir, y aparecían acá porque
+        // se leía `employees` en crudo. Ver `utils/tipoDeFicha.js`.
+        return soloPersonalEnPlanilla(employees)
             .filter(e => String(e.branchId || e.branch_id) === String(filterBranch) && (e.status || '').toUpperCase() !== 'INACTIVO')
             .sort((a, b) => {
                 const wA = roleWeight(a.role), wB = roleWeight(b.role);

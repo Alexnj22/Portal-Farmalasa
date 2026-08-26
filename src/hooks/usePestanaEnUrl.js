@@ -30,11 +30,21 @@ import { useSearchParams } from 'react-router-dom';
 export function usePestanaEnUrl(pestanas, porDefecto, param = 'tab') {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // `key` o `id`: las dos formas conviven en el repo (`ViewTabBar` pide `key`,
-    // las pestañas del tablero se escribieron con `id`), y el hook no es motivo
-    // para reescribir ninguna de las dos listas.
+    // `key`, `id` o `value`: las TRES formas conviven en el repo (`ViewTabBar`
+    // pide `key`, las pestañas del tablero se escribieron con `id`, y las
+    // opciones de `FilterBar` usan `value`), y el hook no es motivo para
+    // reescribir ninguna de esas listas.
+    //
+    // `value` faltaba, y su ausencia no daba error: con una lista de opciones de
+    // `FilterBar`, el `map` devolvía `undefined` en cada elemento, `.filter`
+    // los borraba y `claves` quedaba VACÍO. Con eso `claves.includes(cruda)` es
+    // siempre falso, así que la dirección se ignoraba y la vista se quedaba
+    // clavada en la primera pestaña — mientras el clic SÍ escribía el `?tab=` en
+    // la barra de direcciones. O sea: la URL decía una cosa y la pantalla
+    // mostraba otra, sin nada que fallara. Medido en `/personal` el 2026-08-26,
+    // el mismo día que esa vista adoptó el hook.
     const claves = (pestanas || [])
-        .map(p => (typeof p === 'string' ? p : (p?.key ?? p?.id)))
+        .map(p => (typeof p === 'string' ? p : (p?.key ?? p?.id ?? p?.value)))
         .filter(Boolean);
 
     // El default explícito sólo manda si sigue visible: un permiso puede haberle

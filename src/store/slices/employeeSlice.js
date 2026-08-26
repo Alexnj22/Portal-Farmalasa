@@ -607,6 +607,10 @@ export const createEmployeeSlice = (set, get) => ({
 
                 department: formData.department || null,
                 municipality: formData.municipality || null,
+                // Tercer nivel territorial: los 262 distritos de la
+                // reestructuración municipal de 2024. Mismo catálogo que la
+                // ficha fiscal del cliente.
+                distrito: formData.distrito || null,
                 education_level: formData.education_level || null,
                 profession: normalizeCatalogValue(formData.profession),
                 education_grade_completed: formData.education_grade_completed || null,
@@ -943,6 +947,7 @@ export const createEmployeeSlice = (set, get) => ({
             // editar un expediente guardaría un formato distinto del que dejó
             // el alta y la misma columna tendría dos formas.
             if (updatedData.periodo_pago !== undefined) dbPayload.periodo_pago = updatedData.periodo_pago || null;
+            if (updatedData.distrito !== undefined) dbPayload.distrito = updatedData.distrito || null;
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
             if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;

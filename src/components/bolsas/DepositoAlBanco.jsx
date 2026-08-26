@@ -5,7 +5,6 @@ import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import SegmentedControl from '../common/SegmentedControl';
 import { fetchBancos, fetchPersonasDeAdministracion, registrarDeposito } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -40,7 +39,7 @@ import { useToastStore } from '../../store/toastStore';
  * Cambiar $300 de moneda por $300 en billete no mueve ningún total. Preguntarlo
  * sería un campo que no cambia ninguna cuenta.
  *
- * ── Tiene DOS salidas, y por eso se llama «Finalizar» ─────────────────────
+ * ── No elige un destino: REPARTE ──────────────────────────────────────────
  * «esa bolsa que está pendiente de depósito, fue un dinero que se agarró. que
  * en vez de que sí o sí sea depósito, diga finalizar o algo, y pregunte si es
  * depósito, o entrega en efectivo y a quién (que sólo salga admin)» (usuario,
@@ -50,6 +49,22 @@ import { useToastStore } from '../../store/toastStore';
  * entregó en mano se quedaba para siempre en «pendiente de depósito»: la única
  * forma de sacarla de ahí era registrar un depósito que nunca ocurrió. Un
  * pendiente que no se puede cerrar con la verdad enseña a cerrarlo con mentira.
+ *
+ * La primera corrección fue un control de dos opciones EXCLUYENTES, y duró lo
+ * que el usuario tardó en preguntar: «¿qué pasa si una parte va en efectivo y
+ * otra en depósito?». Con el excluyente no se podía —salvo que la parte en mano
+ * fuera al Gerente General, porque eso ya es el remanente—, o sea que el modelo
+ * estaba mal desde el principio: **un cierre no elige un destino, reparte lo
+ * contado en hasta tres partes**, y las tres pueden convivir el mismo día.
+ *
+ *     contado + lo que entró de afuera
+ *       − al banco    (exige banco)
+ *       − en mano     (exige a quién, y sólo administración)
+ *       = remanente   (siempre del Gerente General)
+ *
+ * Por eso no hay control de «a dónde va»: hay DOS montos, y cada uno pide lo
+ * suyo sólo si es mayor que cero. El destino lo deriva el servidor del reparto;
+ * es un rótulo del archivo, no algo que alguien elija.
  *
  * La lista de a quién se le entrega sale del SERVIDOR
  * (`get_personas_de_administracion`) y no de un filtro escrito acá: «admin» no
@@ -71,12 +86,9 @@ import { useToastStore } from '../../store/toastStore';
 export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
 
-    /* Arranca en BANCO porque es el caso normal: la entrega en mano es la
-     * excepción del día que alguien retiró el efectivo antes de que llegara. */
-    const [destino, setDestino] = useState('BANCO');
-    const alBanco = destino === 'BANCO';
     const [entregadoA, setEntregadoA] = useState('');
     const [admins, setAdmins] = useState([]);
+    const [montoEfectivo, setMontoEfectivo] = useState('');
     const [monto, setMonto] = useState('');
     const [banco, setBanco] = useState('');
     const [bancos, setBancos] = useState([]);
@@ -104,10 +116,16 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
 
     const nAporte = Number(String(aporte).replace(',', '.')) || 0;
     const nMonto = Number(String(monto).replace(',', '.')) || 0;
+    const nEfectivo = Number(String(montoEfectivo).replace(',', '.')) || 0;
     const disponible = Math.round((contado + nAporte) * 100) / 100;
-    const remanente = Math.round((disponible - nMonto) * 100) / 100;
-    const noAlcanza = nMonto > 0 && remanente < 0;
+    const reparto = Math.round((nMonto + nEfectivo) * 100) / 100;
+    const remanente = Math.round((disponible - reparto) * 100) / 100;
+    const noAlcanza = remanente < 0;
     const faltaNota = nAporte > 0 && !aporteNota.trim();
+    /* Cada parte pide lo suyo, y sólo si esa parte existe: un cierre entero al
+     * banco no pregunta a quién, y uno entero en mano no pregunta banco. */
+    const faltaBanco = nMonto > 0 && !banco;
+    const faltaQuien = nEfectivo > 0 && !entregadoA;
 
     const cerrar = useCallback(async () => {
         setError(null);
@@ -115,23 +133,27 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
         const { data, error: err } = await registrarDeposito({
             bolsaIds: bolsas.map((b) => b.id),
             monto: nMonto,
-            bancoId: Number(banco),
+            montoEfectivo: nEfectivo,
+            bancoId: banco ? Number(banco) : null,
             aporte: nAporte,
             aporteNota: aporteNota.trim() || null,
             nota: nota.trim() || null,
-            llevadoPor: alBanco ? (llevadoPor || null) : null,
-            destino,
-            entregadoA: alBanco ? null : (entregadoA || null),
+            llevadoPor: nMonto > 0 ? (llevadoPor || null) : null,
+            entregadoA: entregadoA || null,
         });
         setGuardando(false);
         if (err) { setError(mensajeAmigable(err, 'No se pudo cerrar el efectivo.')); return; }
-        showToast(alBanco ? 'Depósito cerrado' : 'Efectivo entregado',
-            `${data?.folio} · ${formatMoney(data?.monto_deposito)} ${alBanco ? 'al banco' : 'en mano'}`,
-            'success');
+        /* El aviso dice el REPARTO, no una de sus mitades: con $10,000 al banco
+         * y $6,000 en mano, decir sólo uno de los dos es decir la mitad. */
+        showToast('Efectivo cerrado', [
+            data?.folio,
+            Number(data?.monto_deposito) > 0 ? `${formatMoney(data.monto_deposito)} al banco` : null,
+            Number(data?.monto_efectivo) > 0 ? `${formatMoney(data.monto_efectivo)} en mano` : null,
+        ].filter(Boolean).join(' · '), 'success');
         onHecho?.(data);
         onClose?.();
-    }, [bolsas, nMonto, banco, nAporte, aporteNota, llevadoPor, nota, destino, entregadoA,
-        alBanco, showToast, onHecho, onClose]);
+    }, [bolsas, nMonto, nEfectivo, banco, nAporte, aporteNota, llevadoPor, nota, entregadoA,
+        showToast, onHecho, onClose]);
 
     /* El rótulo que se muestra ES el de la fila, y lo que se guarda es su id.
      * Así el banco elegido coincide con la base por construcción — la regla
@@ -207,70 +229,72 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                     </div>
                 </div>
 
-                {/* La PRIMERA pregunta, porque cambia todas las de abajo: un
-                    depósito pide banco y quién lo lleva; una entrega en mano
-                    pide a quién. Preguntarlo después obligaría a volver a
-                    revisar lo ya escrito. */}
-                <div className="space-y-1.5">
-                    <label className="text-caption font-bold text-content-2">A dónde va</label>
-                    <SegmentedControl
-                        size="sm"
-                        value={destino}
-                        onChange={setDestino}
-                        label="A dónde va el efectivo"
-                        options={[
-                            { value: 'BANCO', label: 'Al banco', icon: Landmark },
-                            { value: 'EFECTIVO', label: 'En efectivo', icon: HandCoins },
-                        ]}
-                    />
-                </div>
-
+                {/* ── El reparto ─────────────────────────────────────────────
+                    DOS renglones, no una elección. Cada uno pide lo suyo sólo si
+                    lleva monto, así que un cierre entero al banco no pregunta a
+                    quién y uno entero en mano no pregunta banco — pero uno
+                    repartido pide las dos cosas, que es lo que el control
+                    excluyente de la primera versión hacía imposible. */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                         <label htmlFor="dep-monto" className="text-caption font-bold text-content-2">
-                            {alBanco ? 'Cuánto va al banco' : 'Cuánto se entrega'}
+                            Al banco
                         </label>
                         <PortalInput
                             id="dep-monto" name="dep-monto"
                             inputMode="decimal" maskType="DECIMAL"
                             value={monto} onChange={(e) => setMonto(e.target.value)}
-                            placeholder={String(contado.toFixed(2))}
+                            placeholder="0.00"
                             inputClassName="tabular-nums"
                         />
                     </div>
+                    {/* A qué banco. Obligatorio en cuanto esa parte lleva monto,
+                        y el servidor lo exige igual: un depósito sin banco no se
+                        puede cuadrar contra ningún estado de cuenta, que es lo
+                        único para lo que ese registro existe. */}
+                    <div className="space-y-1.5">
+                        <label className="text-caption font-bold text-content-2">
+                            A qué banco
+                        </label>
+                        <LiquidSelect
+                            value={banco} onChange={setBanco}
+                            options={opcionesBanco} placeholder="Elige el banco…"
+                            icon={Building2}
+                            disabled={nMonto <= 0}
+                        />
+                    </div>
+                </div>
 
-                    {/* A qué banco. Es obligatorio y el servidor también lo
-                        exige: un depósito sin banco no se puede cuadrar contra
-                        ningún estado de cuenta, que es lo único para lo que
-                        este registro existe. Y es el dato que le falta al
-                        aviso que sale hacia el Gerente General al cerrar. */}
-                    {alBanco ? (
-                        <div className="space-y-1.5">
-                            <label className="text-caption font-bold text-content-2">
-                                A qué banco
-                            </label>
-                            <LiquidSelect
-                                value={banco} onChange={setBanco}
-                                options={opcionesBanco} placeholder="Elige el banco…"
-                                icon={Building2}
-                            />
-                        </div>
-                    ) : (
-                        /* Sólo administración, y la lista la decide el servidor.
-                           Efectivo que cambia de manos sin decir a las de quién
-                           es exactamente lo que este circuito existe para
-                           evitar. */
-                        <div className="space-y-1.5">
-                            <label className="text-caption font-bold text-content-2">
-                                A quién se le entrega
-                            </label>
-                            <LiquidSelect
-                                value={entregadoA} onChange={setEntregadoA}
-                                options={opcionesAdmin} placeholder="Elige a quién…"
-                                icon={HandCoins}
-                            />
-                        </div>
-                    )}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                        <label htmlFor="dep-efectivo" className="text-caption font-bold text-content-2">
+                            En efectivo
+                        </label>
+                        <PortalInput
+                            id="dep-efectivo" name="dep-efectivo"
+                            inputMode="decimal" maskType="DECIMAL"
+                            value={montoEfectivo} onChange={(e) => setMontoEfectivo(e.target.value)}
+                            placeholder="0.00"
+                            inputClassName="tabular-nums"
+                        />
+                    </div>
+                    {/* Sólo administración, y la lista la decide el servidor:
+                        efectivo que cambia de manos sin decir a las de quién es
+                        exactamente lo que este circuito existe para evitar.
+
+                        Se puede elegir con el monto en CERO a propósito — es la
+                        bolsa cuyo efectivo se retiró en la sala antes de llegar:
+                        no hay nada que mover y sí hay a quién nombrar. */}
+                    <div className="space-y-1.5">
+                        <label className="text-caption font-bold text-content-2">
+                            A quién se le entrega
+                        </label>
+                        <LiquidSelect
+                            value={entregadoA} onChange={setEntregadoA}
+                            options={opcionesAdmin} placeholder="Elige a quién…"
+                            icon={HandCoins} clearable
+                        />
+                    </div>
                 </div>
 
                 {/* El aporte es la excepción: sólo aparece si hace falta llevar
@@ -315,10 +339,18 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                             <span>Entra de afuera</span><span>+ {formatMoney(nAporte)}</span>
                         </div>
                     )}
-                    <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>{alBanco ? 'Al banco' : 'En efectivo'}</span>
-                        <span className="whitespace-nowrap">{`− ${formatMoney(nMonto)}`}</span>
-                    </div>
+                    {nMonto > 0 && (
+                        <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
+                            <span>Al banco</span>
+                            <span className="whitespace-nowrap">{`− ${formatMoney(nMonto)}`}</span>
+                        </div>
+                    )}
+                    {nEfectivo > 0 && (
+                        <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
+                            <span>En efectivo</span>
+                            <span className="whitespace-nowrap">{`− ${formatMoney(nEfectivo)}`}</span>
+                        </div>
+                    )}
                     <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
                         <span className="text-subtitle font-bold text-content">Remanente</span>
                         <span className={`text-title-sm font-black tabular-nums ${noAlcanza ? 'text-danger-text' : 'text-content'}`}>
@@ -329,7 +361,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
 
                 {noAlcanza && (
                     <Notice variant="danger">
-                        No alcanza: hay {formatMoney(disponible)} y se quieren llevar {formatMoney(nMonto)}.
+                        No alcanza: hay {formatMoney(disponible)} y se están repartiendo {formatMoney(reparto)}.
                     </Notice>
                 )}
 
@@ -341,7 +373,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                 {/* Sólo tiene sentido yendo al banco: es el tramo en que el
                     efectivo está en la calle, fuera de las dos puntas. En una
                     entrega en mano quien lo recibe YA es el destino. */}
-                {alBanco && (
+                {nMonto > 0 && (
                     <div className="space-y-1.5">
                         <label className="text-caption font-bold text-content-2">
                             Quién lo lleva al banco
@@ -398,16 +430,16 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
 
             <LiquidModal.Footer>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                {/* El monto CERO se acepta en una entrega en mano y no en un
-                    depósito: es el caso de la bolsa cuyo efectivo se retiró
-                    antes de llegar a administración, que hay que poder cerrar
-                    diciendo la verdad. Un depósito de $0 al banco no es ningún
-                    hecho. El servidor pone la misma regla. */}
-                <Button variant="primary" icon={alBanco ? Landmark : HandCoins} loading={guardando}
-                    disabled={noAlcanza || faltaNota || nMonto < 0
-                        || (alBanco ? (nMonto <= 0 || !banco) : !entregadoA)}
+                {/* Se puede cerrar con TODO en cero: es la bolsa cuyo efectivo
+                    se retiró en la sala antes de llegar a administración, y hay
+                    que poder cerrarla diciendo la verdad. Lo que no se puede es
+                    repartir más de lo que hay, ni mover una parte sin decir a
+                    dónde va. El servidor pone las mismas reglas. */}
+                <Button variant="primary" loading={guardando}
+                    icon={nEfectivo > 0 && nMonto <= 0 ? HandCoins : Landmark}
+                    disabled={noAlcanza || faltaNota || faltaBanco || faltaQuien}
                     onClick={cerrar}>
-                    {alBanco ? 'Cerrar el depósito' : 'Registrar la entrega'}
+                    Cerrar el efectivo
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

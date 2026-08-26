@@ -50,6 +50,7 @@ const COLUMNAS = [
     { key: 'banco', label: 'A dónde', hideBelow: 'lg' },
     { key: 'total_contado', label: 'Contado', align: 'right', hideBelow: 'sm' },
     { key: 'monto_deposito', label: 'Al banco', align: 'right' },
+    { key: 'monto_efectivo', label: 'En mano', align: 'right', hideBelow: 'sm' },
     { key: 'remanente', label: 'Remanente', align: 'right' },
     { key: 'cuantas', label: 'Bolsas', align: 'right', hideBelow: 'md' },
 ];
@@ -91,14 +92,21 @@ function Detalle({ deposito, nombreSala, onClose }) {
                             <span>Entró de afuera</span><span>+ {formatMoney(d.aporte)}</span>
                         </div>
                     )}
-                    <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span className="min-w-0">
-                            {d.destino === 'EFECTIVO'
-                                ? `En efectivo${d.entregado_a ? ` · ${d.entregado_a}` : ''}`
-                                : `Al banco${d.banco ? ` · ${d.banco}` : ''}`}
-                        </span>
-                        <span className="shrink-0 whitespace-nowrap">{`− ${formatMoney(d.monto_deposito)}`}</span>
-                    </div>
+                    {/* Las DOS restas, cada una sólo si existe. Un cierre
+                        repartido las muestra las dos; uno que fue entero a un
+                        lado no dibuja un renglón en cero. */}
+                    {Number(d.monto_deposito) > 0 && (
+                        <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
+                            <span className="min-w-0">Al banco{d.banco ? ` · ${d.banco}` : ''}</span>
+                            <span className="shrink-0 whitespace-nowrap">{`− ${formatMoney(d.monto_deposito)}`}</span>
+                        </div>
+                    )}
+                    {Number(d.monto_efectivo) > 0 && (
+                        <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
+                            <span className="min-w-0">En efectivo{d.entregado_a ? ` · ${d.entregado_a}` : ''}</span>
+                            <span className="shrink-0 whitespace-nowrap">{`− ${formatMoney(d.monto_efectivo)}`}</span>
+                        </div>
+                    )}
                     <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
                         <span className="text-subtitle font-bold text-content">Remanente</span>
                         <span className="text-title-sm font-black tabular-nums text-content">
@@ -214,8 +222,9 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
 
     const totales = useMemo(() => lista.reduce((a, d) => ({
         banco: a.banco + Number(d.monto_deposito || 0),
+        efectivo: a.efectivo + Number(d.monto_efectivo || 0),
         remanente: a.remanente + Number(d.remanente || 0),
-    }), { banco: 0, remanente: 0 }), [lista]);
+    }), { banco: 0, efectivo: 0, remanente: 0 }), [lista]);
 
     return (
         <section className="space-y-2">
@@ -239,7 +248,9 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
             </div>
             {!plegada && (<>
             <p className="text-caption text-content-3 px-1">
-                Lo que se llevó al banco, para cuadrar contra el estado de cuenta.
+                Cada cierre del efectivo contado: lo que fue al banco —para cuadrar contra el
+                estado de cuenta— y lo que se entregó en mano.
+                {totales.efectivo >= 0.01 && ` En mano: ${formatMoney(totales.efectivo)}.`}
                 {totales.remanente >= 0.01 && ` En remanentes: ${formatMoney(totales.remanente)}.`}
             </p>
 
@@ -267,13 +278,13 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                             </span>
                         </DataCell>
                         <DataCell hideBelow="lg">
-                            {d.destino === 'EFECTIVO' ? (
+                            {/* Un cierre repartido nombra los dos lados: decir
+                                sólo uno sería decir la mitad de a dónde fue. */}
+                            {[d.banco, d.entregado_a && `en mano · ${d.entregado_a}`].filter(Boolean).length ? (
                                 <span className="text-caption text-content-2">
-                                    En mano{d.entregado_a ? ` · ${d.entregado_a}` : ''}
+                                    {[d.banco, d.entregado_a && `en mano · ${d.entregado_a}`].filter(Boolean).join(' + ')}
                                 </span>
-                            ) : d.banco
-                                ? <span className="text-caption text-content-2">{d.banco}</span>
-                                : <span className="text-content-3">—</span>}
+                            ) : <span className="text-content-3">—</span>}
                         </DataCell>
                         <DataCell align="right" hideBelow="sm">
                             <span className="tabular-nums text-content-2">
@@ -281,9 +292,14 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                             </span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="font-bold tabular-nums text-content">
-                                {formatMoney(d.monto_deposito)}
-                            </span>
+                            {Number(d.monto_deposito) > 0
+                                ? <span className="font-bold tabular-nums text-content">{formatMoney(d.monto_deposito)}</span>
+                                : <span className="text-content-3 tabular-nums">—</span>}
+                        </DataCell>
+                        <DataCell align="right" hideBelow="sm">
+                            {Number(d.monto_efectivo) > 0
+                                ? <span className="font-bold tabular-nums text-content">{formatMoney(d.monto_efectivo)}</span>
+                                : <span className="text-content-3 tabular-nums">—</span>}
                         </DataCell>
                         <DataCell align="right">
                             {Number(d.remanente) >= 0.01 ? (

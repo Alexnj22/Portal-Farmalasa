@@ -302,27 +302,31 @@ export async function fetchBancos() {
  * Cierra el efectivo contado. El total NO se manda: lo suma el servidor sobre
  * las bolsas, porque es la cifra contra la que se decidió cuánto sale.
  *
- * ── Tiene DOS salidas, no una ──────────────────────────────────────────────
- * «que en vez de que sí o sí sea depósito, diga finalizar o algo, y pregunte si
- * es depósito, o entrega en efectivo y a quién» (usuario, 2026-08-26).
+ * ── No elige un destino: REPARTE ───────────────────────────────────────────
+ * «¿qué pasa si una parte va en efectivo y otra en depósito?» (usuario,
+ * 2026-08-26). Con una elección excluyente no se podía, y ése era el defecto
+ * del modelo: un cierre reparte lo contado en hasta tres partes, y las tres
+ * pueden convivir el mismo día.
  *
- * `destino: 'BANCO'` exige el banco —un depósito sin banco no se cuadra contra
- * ningún estado de cuenta, que es para lo único que ese registro existe—; y
- * `'EFECTIVO'` exige a quién se le entrega, que sólo puede ser administración.
- * Las dos las vuelve a comprobar el servidor.
+ *     contado + aporte − monto (al banco) − montoEfectivo (en mano) = remanente
+ *
+ * Cada parte exige lo suyo y sólo si lleva monto: el banco no se cuadra contra
+ * ningún estado de cuenta sin decir cuál, y el efectivo en mano sólo va a
+ * administración. Las dos las vuelve a comprobar el servidor, que además
+ * DERIVA el destino del reparto — no se manda desde acá.
  *
  * El aviso al Gerente General lo manda la BASE al cerrar, no esta función.
  */
 export function registrarDeposito({
-    bolsaIds, monto, bancoId, aporte = 0, aporteNota = null, nota = null,
-    llevadoPor = null, destino = 'BANCO', entregadoA = null,
+    bolsaIds, monto, montoEfectivo = 0, bancoId, aporte = 0, aporteNota = null,
+    nota = null, llevadoPor = null, entregadoA = null,
 }) {
     return supabase.rpc('registrar_deposito_bancario', {
         p_bolsa_ids: bolsaIds,
         p_monto: monto,
+        p_monto_efectivo: montoEfectivo,
         p_aporte: aporte,
         p_aporte_nota: aporteNota,
-        p_destino: destino,
         p_entregado_a: entregadoA,
         // A quién se le entrega el remanente ya NO viaja desde acá: siempre es
         // el Gerente General y lo resuelve el servidor. Mandarlo sería dejar

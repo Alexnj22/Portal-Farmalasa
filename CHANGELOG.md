@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.797.1 — Un cierre se reparte entre el banco y la mano
+
+> «¿qué pasa si una parte va en efectivo y otra en depósito?»
+
+No se podía — salvo que la parte en mano fuera al Gerente General, porque eso ya
+es el remanente; a cualquier otro de administración, en absoluto. El defecto era
+del modelo que había salido una hora antes: **«a dónde va» se preguntó como UNA
+elección, y un cierre no elige un destino, reparte.**
+
+Ahora son dos montos que conviven:
+
+```
+contado + lo que entró de afuera
+  − al banco     (exige banco)
+  − en mano      (exige a quién, y sólo administración)
+  = remanente    (siempre del Gerente General)
+```
+
+Cada parte pide lo suyo **sólo si lleva monto**: un cierre entero al banco no
+pregunta a quién, uno entero en mano no pregunta banco, y uno repartido pide las
+dos cosas. Se puede cerrar con todo en cero — es la bolsa cuyo efectivo se
+retiró en la sala antes de llegar a administración, que hay que poder cerrar
+diciendo la verdad.
+
+`destino` deja de ser algo que alguien elige y pasa a **derivarse** del reparto
+(`MIXTO`, `BANCO`, `EFECTIVO`): es un rótulo del archivo, no un dato. La
+bitácora, el aviso al Gerente General y el archivo dicen el reparto entero — con
+$10,000 al banco y $6,000 en mano, nombrar sólo uno es decir la mitad.
+
+Y se dropea la firma de nueve parámetros que había durado una hora: dos
+sobrecargas de la misma función es cómo se cuela una puerta sin candado.
+
 ## v2.797.0 — Un cambio aprobado que no se quedó avisa solo
 
 Cierra el circuito que dejó abierto v2.794.3. Ahí se corrigió **por qué** un

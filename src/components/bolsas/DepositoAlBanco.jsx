@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, Banknote, Landmark } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Banknote, Building2, Landmark } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { registrarDeposito } from '../../data/bolsas';
+import { fetchBancos, registrarDeposito } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
@@ -38,17 +38,39 @@ import { useToastStore } from '../../store/toastStore';
  * ── El cambio de moneda no se pide ─────────────────────────────────────────
  * Cambiar $300 de moneda por $300 en billete no mueve ningún total. Preguntarlo
  * sería un campo que no cambia ninguna cuenta.
+ *
+ * ── El aviso al Gerente General lo manda la BASE ───────────────────────────
+ * «al darle en depositar al banco, que llegue una notificación al gerente
+ * general con: el monto a depositar, quien y a que banco. el remanente que le
+ * queda» (usuario, 2026-08-26).
+ *
+ * No sale de acá a propósito: `registrar_deposito_bancario` lo emite dentro de
+ * la misma transacción que guarda el depósito. Si lo mandara este archivo, un
+ * aviso perdido sería indistinguible de un depósito que no se hizo — y el
+ * monto del aviso podría no ser el que quedó guardado. Lo que sí es de acá es
+ * el BANCO, que hasta hoy no existía como dato en ninguna parte.
  */
 export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
 
     const [monto, setMonto] = useState('');
+    const [banco, setBanco] = useState('');
+    const [bancos, setBancos] = useState([]);
     const [aporte, setAporte] = useState('');
     const [aporteNota, setAporteNota] = useState('');
     const [llevadoPor, setLlevadoPor] = useState('');
     const [nota, setNota] = useState('');
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
+
+    /* El catálogo se pide al ABRIR y no al montar la vista: son tres filas y
+     * sólo hacen falta cuando alguien va a cerrar un depósito. */
+    useEffect(() => {
+        if (!abierto) return;
+        let vivo = true;
+        fetchBancos().then((filas) => { if (vivo) setBancos(filas); });
+        return () => { vivo = false; };
+    }, [abierto]);
 
     const contado = useMemo(
         () => bolsas.reduce((a, b) => a + Number(b.contado || 0), 0),
@@ -68,6 +90,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
         const { data, error: err } = await registrarDeposito({
             bolsaIds: bolsas.map((b) => b.id),
             monto: nMonto,
+            bancoId: Number(banco),
             aporte: nAporte,
             aporteNota: aporteNota.trim() || null,
             nota: nota.trim() || null,
@@ -79,7 +102,15 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
             `${data?.folio} · ${formatMoney(data?.monto_deposito)} al banco`, 'success');
         onHecho?.(data);
         onClose?.();
-    }, [bolsas, nMonto, nAporte, aporteNota, llevadoPor, nota, showToast, onHecho, onClose]);
+    }, [bolsas, nMonto, banco, nAporte, aporteNota, llevadoPor, nota, showToast, onHecho, onClose]);
+
+    /* El rótulo que se muestra ES el de la fila, y lo que se guarda es su id.
+     * Así el banco elegido coincide con la base por construcción — la regla
+     * «un rótulo no es una clave» de CLAUDE.md. */
+    const opcionesBanco = useMemo(
+        () => bancos.map((b) => ({ value: String(b.id), label: b.nombre })),
+        [bancos],
+    );
 
     /* La lista de quién LLEVA el efectivo al banco sale del maestro de personal,
      * no de un texto escrito acá — un rótulo escrito a mano se desincroniza del
@@ -138,17 +169,35 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                     </div>
                 </div>
 
-                <div className="space-y-1.5">
-                    <label htmlFor="dep-monto" className="text-caption font-bold text-content-2">
-                        Cuánto va al banco
-                    </label>
-                    <PortalInput
-                        id="dep-monto" name="dep-monto"
-                        inputMode="decimal" maskType="DECIMAL"
-                        value={monto} onChange={(e) => setMonto(e.target.value)}
-                        placeholder={String(contado.toFixed(2))}
-                        inputClassName="tabular-nums"
-                    />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                        <label htmlFor="dep-monto" className="text-caption font-bold text-content-2">
+                            Cuánto va al banco
+                        </label>
+                        <PortalInput
+                            id="dep-monto" name="dep-monto"
+                            inputMode="decimal" maskType="DECIMAL"
+                            value={monto} onChange={(e) => setMonto(e.target.value)}
+                            placeholder={String(contado.toFixed(2))}
+                            inputClassName="tabular-nums"
+                        />
+                    </div>
+
+                    {/* A qué banco. Es obligatorio y el servidor también lo
+                        exige: un depósito sin banco no se puede cuadrar contra
+                        ningún estado de cuenta, que es lo único para lo que
+                        este registro existe. Y es el dato que le falta al
+                        aviso que sale hacia el Gerente General al cerrar. */}
+                    <div className="space-y-1.5">
+                        <label className="text-caption font-bold text-content-2">
+                            A qué banco
+                        </label>
+                        <LiquidSelect
+                            value={banco} onChange={setBanco}
+                            options={opcionesBanco} placeholder="Elige el banco…"
+                            icon={Building2}
+                        />
+                    </div>
                 </div>
 
                 {/* El aporte es la excepción: sólo aparece si hace falta llevar
@@ -242,7 +291,8 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                         <Notice variant="info" icon={Banknote}>
                             El remanente de <b className="font-bold">{formatMoney(remanente)}</b>
                             {' '}se le entrega a <b className="font-bold">{gerente.name}</b>, Gerente General.
-                            {' '}Quedas registrado como quien lo entregó.
+                            {' '}Quedas registrado como quien lo entregó, y al cerrar se le avisa
+                            {' '}con el monto, el banco y quién lo lleva.
                         </Notice>
                     ) : (
                         <Notice variant="warning" icon={AlertTriangle}>
@@ -270,7 +320,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
             <LiquidModal.Footer>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" icon={Landmark} loading={guardando}
-                    disabled={nMonto <= 0 || noAlcanza || faltaNota}
+                    disabled={nMonto <= 0 || !banco || noAlcanza || faltaNota}
                     onClick={cerrar}>
                     Cerrar el depósito
                 </Button>

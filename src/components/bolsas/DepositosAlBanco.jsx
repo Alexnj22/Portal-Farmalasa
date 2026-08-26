@@ -44,6 +44,9 @@ const COLUMNAS = [
     // el estado de cuenta. Los días van en `Días`, que es un RANGO derivado de
     // las bolsas que quedaron adentro.
     { key: 'dias', label: 'Días', hideBelow: 'md' },
+    // El banco. Los depósitos anteriores al 2026-08-26 se cerraron sin
+    // registrarlo, así que su celda dice «—» y no miente con un nombre.
+    { key: 'banco', label: 'Banco', hideBelow: 'lg' },
     { key: 'total_contado', label: 'Contado', align: 'right', hideBelow: 'sm' },
     { key: 'monto_deposito', label: 'Al banco', align: 'right' },
     { key: 'remanente', label: 'Remanente', align: 'right' },
@@ -88,7 +91,8 @@ function Detalle({ deposito, nombreSala, onClose }) {
                         </div>
                     )}
                     <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>Al banco</span><span>− {formatMoney(d.monto_deposito)}</span>
+                        <span className="min-w-0">Al banco{d.banco ? ` · ${d.banco}` : ''}</span>
+                        <span className="shrink-0">− {formatMoney(d.monto_deposito)}</span>
                     </div>
                     <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
                         <span className="text-subtitle font-bold text-content">Remanente</span>
@@ -233,7 +237,7 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                 /* El toque de la fila va a un destino de verdad —la cuenta del
                    depósito y sus bolsas—, no a la hoja genérica. */
                 movil={{ usarAccionDeFila: true }}
-                minWidth="480px"
+                minWidth="560px"
                 empty={{ icon: Landmark, message: 'Sin depósitos en estas fechas' }}
             >
                 {lista.map((d, i) => (
@@ -249,6 +253,11 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                             <span className="text-caption text-content-2 tabular-nums">
                                 {rangoDeDias(d)}
                             </span>
+                        </DataCell>
+                        <DataCell hideBelow="lg">
+                            {d.banco
+                                ? <span className="text-caption text-content-2">{d.banco}</span>
+                                : <span className="text-content-3">—</span>}
                         </DataCell>
                         <DataCell align="right" hideBelow="sm">
                             <span className="tabular-nums text-content-2">

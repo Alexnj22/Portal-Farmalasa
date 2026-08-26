@@ -111,6 +111,17 @@ const EXCEPCIONES = {
     'producto. Lo que hay en pantalla en cualquier momento es un solo renglón; ' +
     'el conteo entero ya está en la base. Verificado el 2026-08-17.',
 
+  'src/components/bolsas/DepositoAlBanco.jsx':
+    'Llegó a 6 controles el 2026-08-26 al agregarle el banco. Restaurar un ' +
+    'borrador acá sería PEOR que perderlo: el campo que importa es cuánto va ' +
+    'al banco, y ese número es una decisión tomada contra el `contado` de ese ' +
+    'momento —que sale de las bolsas seleccionadas, no del formulario—. Si en ' +
+    'el medio se contó otra bolsa, el mismo monto restaurado da otro remanente ' +
+    'y no falla nada: es exactamente el número que el encabezado de ese archivo ' +
+    'dice que nunca se teclea a ciegas. Lo que se pierde son cuatro campos ' +
+    'cortos que se vuelven a escribir en quince segundos, y el total se vuelve ' +
+    'a mostrar solo al reabrir.',
+
   'src/views/dashboard/PedirTrasladoModal.jsx':
     'Lo que se arma NO vive en este formulario: los renglones están en el store ' +
     '`useComposicionTraslado`, justamente para que cerrar el modal —que es lo que ' +

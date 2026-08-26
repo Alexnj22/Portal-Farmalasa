@@ -101,6 +101,7 @@ const ACTION_LABEL = {
     PEDIDO_REENVIO:  'Confirmar llegada',
     PEDIDO_PROBLEMA: 'Ver detalle',
     CORTE_NUEVO:     'Revisar el corte',
+    DEPOSITO_BANCO:  'Ver el depósito',
 };
 
 /* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya

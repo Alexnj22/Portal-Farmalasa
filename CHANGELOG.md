@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.782.0 — El depósito dice a qué banco va, y el Gerente General se entera
+
+«al darle en depositar al banco, que llegue una notificación al gerente general
+con: el monto a depositar, quien y a que banco. el remanente que le queda»
+(usuario, 2026-08-26).
+
+El aviso pedía cuatro datos y el depósito guardaba tres. El monto, quién lo
+lleva y el remanente ya estaban; **el banco no existía como dato en ninguna
+parte** — ni columna, ni catálogo, ni campo en la pantalla. O sea que el aviso
+no se podía escribir sin agregarlo primero, y de paso el archivo de depósitos
+tampoco podía contestar «¿a cuál banco fue la plata del martes?».
+
+**El banco sale de una tabla, no de un campo de texto.** `bancos` nace con las
+tres instituciones que dijo el usuario, con el nombre estandarizado: Banco
+Davivienda, Banco Atlántida y BAC Credomatic. Escrito libre, el mismo banco
+termina como «davivienda», «Davivienda» y «BANCO DAVIVIENDA», y sumar por banco
+deja de ser posible sin adivinar — es la regla «una lista de opciones que existe
+como tabla no se escribe a mano», aplicada antes de que exista la lista a mano.
+Se retira un banco con `activo = false`, nunca con un DELETE: los depósitos
+viejos lo apuntan.
+
+Elegirlo es **obligatorio**, en la pantalla y en el servidor. Un depósito sin
+banco no se puede cuadrar contra ningún estado de cuenta, que es lo único para
+lo que este registro existe.
+
+**El aviso lo manda la BASE, no el navegador.** Sale dentro de la misma
+transacción que guarda el depósito, como ya lo hace el conteo que no cuadra. Si
+saliera del `.jsx`, un aviso perdido sería indistinguible de un depósito que no
+se hizo, y el monto avisado podría no ser el que quedó guardado. Llega con
+sonido al teléfono —es efectivo saliendo del portal y un remanente que le van a
+poner en la mano— y dice:
+
+> **Depósito al banco · $22,400.00**
+> DEP-260826-1 · Banco Davivienda · lo lleva Ana López. Remanente de $250.35
+> para Rutilio Aleman.
+
+Tres detalles que no son adorno:
+
+- **El destinatario se resuelve por el CARGO**, no por una lista de personas.
+  Una lista escrita a mano se queda vieja el día que cambia quien ocupa el
+  puesto, y ese día el efectivo se movería sin que nadie se entere.
+- **Quién es el que LLEVA el efectivo**, que es el que lo tiene en la mano. Ese
+  campo es opcional, y cuando no está el aviso no se calla: dice quién cerró.
+- **El remanente NOMBRA a quien se lo queda** en vez de decir «para ti». Si
+  algún día hay dos Gerentes Generales activos, el aviso les llega a los dos y
+  sólo uno recibe el dinero.
+
+El archivo de depósitos también muestra el banco, que es la columna que le
+faltaba para cuadrar contra el estado de cuenta. Los depósitos anteriores a hoy
+se cerraron sin registrarlo y dicen «—», que es la verdad.
+
+**Y de paso, el vecino que estaba abierto.** `bolsas_entidades` —el catálogo de
+remesadoras— resultó ser la ÚNICA de las 161 tablas cuyo `bloqueo_global` quedó
+PERMISIVO: 160 restrictivas, 1 permisiva. Una policy permisiva `FOR ALL` no
+bloquea nada —se suma con OR a las demás—, así que cualquier sesión no bloqueada
+podía escribir ese catálogo. Nadie escribe ahí desde el portal, así que volverla
+restrictiva no le quita nada a nadie.
+
 ## v2.781.3 — Personal vuelve a abrir: el permiso por columna lo declara la vista
 
 Entrar a Personal devolvía **403 «permission denied for table employees»** y el

@@ -2,7 +2,7 @@ import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
     Ban, CreditCard, UserCog, Contact, CalendarClock, CalendarX2,
     Package, BarChart2, ClipboardList, Info, Bell,
-    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target,
+    PackagePlus, Trash2, ArrowLeftRight, Wallet, Target, Landmark,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +69,9 @@ export const ICONO_POR_TIPO = {
     // mismo trabajo visto dos veces, no dos asuntos.
     CORTE_NUEVO:      Wallet,
     CORTE_PENDIENTE:  Wallet,
+    // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
+    // banco»: el aviso lleva a esa sección y tiene que verse como ella.
+    DEPOSITO_BANCO:   Landmark,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

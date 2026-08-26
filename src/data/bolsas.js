@@ -279,10 +279,35 @@ export async function fetchPorDepositar() {
 }
 
 /**
+ * Las instituciones a las que se lleva el efectivo.
+ *
+ * Sale de la tabla por el mismo motivo que los tipos de salida y las
+ * remesadoras: una lista de opciones que existe como tabla no se escribe a
+ * mano. Escrita en el `.jsx`, el banco nuevo aparece en la base y no en la
+ * pantalla — o al revés, y ahí se registra un id que el servidor rechaza.
+ *
+ * Son tres filas: se traen enteras y sin paginar, que es lo que CLAUDE.md
+ * permite para un catálogo que nunca cruza las 1000.
+ */
+export async function fetchBancos() {
+    const { data, error } = await supabase.from('bancos')
+        .select('id, nombre')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error('bolsas: fetchBancos failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
  * Cierra el depósito. El total NO se manda: lo suma el servidor sobre las
  * bolsas, porque es la cifra contra la que se decidió cuánto llevar.
+ *
+ * `bancoId` es OBLIGATORIO desde el 2026-08-26 y el servidor lo exige: un
+ * depósito sin banco no se puede cuadrar contra ningún estado de cuenta, que es
+ * para lo único que este registro existe. Y es el dato que el aviso al Gerente
+ * General necesita — el aviso lo manda la BASE al cerrar, no esta función.
  */
-export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = null, nota = null, llevadoPor = null }) {
+export function registrarDeposito({ bolsaIds, monto, bancoId, aporte = 0, aporteNota = null, nota = null, llevadoPor = null }) {
     return supabase.rpc('registrar_deposito_bancario', {
         p_bolsa_ids: bolsaIds,
         p_monto: monto,
@@ -293,6 +318,7 @@ export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = nu
         // abierta la puerta a registrar que el efectivo se le dio a otro.
         p_nota: nota,
         p_llevado_por: llevadoPor,
+        p_banco_id: bancoId,
     });
 }
 

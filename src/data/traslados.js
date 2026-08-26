@@ -396,7 +396,12 @@ export async function fetchTrasladosHistorial({ branchId = null, limite = 200, s
         // guardaba el motivo pero no de quién era la firma, así que el registro
         // no decía quién decidió — reportado: «no sale el proceso de
         // aprobaciones».
-        .select('id, employee_id, approver_id, note, approver_note, status, metadata, created_at, updated_at')
+        /* `type` viaja aunque la consulta ya filtre por él: el detalle que abre
+         * una tarjeta es `DetalleSolicitud`, y ése decide QUÉ bloque pintar
+         * mirando `req.type`. Sin la columna, un traslado se abría sin su
+         * recorrido ni sus renglones —el componente devuelve `null` para un
+         * tipo que no reconoce, o sea un diálogo casi vacío y sin error. */
+        .select('id, type, employee_id, approver_id, note, approver_note, status, metadata, created_at, updated_at')
         .eq('type', 'INVENTORY_TRANSFER_REQUEST')
         .in('status', ['APPROVED', 'REJECTED'])
         .order('updated_at', { ascending: false })

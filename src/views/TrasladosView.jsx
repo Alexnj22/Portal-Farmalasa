@@ -250,11 +250,31 @@ export default function TrasladosView() {
      * mezcla sobre lo que haya. El mapa NO va en las dependencias a propósito —
      * lo que el efecto escribe volvería a dispararlo. */
     useEffect(() => {
-        const faltan = [...new Set([...(porRecibir ?? []), ...(historial ?? [])]
+        /* Los envíos cerrados entran acá desde el 2026-08-26: su detalle
+         * también dice quién lo mandó y quién lo recibió, y sin pedirlos esas
+         * dos caras salían en «Sin registro» justamente para los cargos que el
+         * maestro esconde. */
+        const faltan = [...new Set([...(porRecibir ?? []), ...(historial ?? []), ...(enviosCerrados ?? [])]
             .flatMap(f => [f.employee_id, f.approver_id])
             .filter(id => id && !(employees ?? []).some(e => e.id === id)))];
         if (faltan.length > 0) resolverPersonas(faltan);
-    }, [porRecibir, historial, employees, resolverPersonas]);
+    }, [porRecibir, historial, enviosCerrados, employees, resolverPersonas]);
+
+    /* El maestro otra vez, pero como MAPA por id.
+     *
+     * Lo pide `DetalleSolicitud` —el detalle que abre una tarjeta del
+     * historial—, que busca con `.get(String(id))`. No sale de `personaPor`:
+     * aquél es un buscador que además resuelve por correo y por usuario, que es
+     * lo que necesitan las tarjetas. Misma receta que `NotificacionDetalle`, y
+     * con el mismo respaldo detrás del maestro para los cargos que esconde. */
+    const empleadosPorId = useMemo(() => {
+        const m = new Map();
+        (employees ?? []).forEach(e => m.set(String(e.id), e));
+        Object.entries(personasDeSolicitudes || {}).forEach(([id, p]) => {
+            if (!m.has(id)) m.set(id, p);
+        });
+        return m;
+    }, [employees, personasDeSolicitudes]);
 
     // El recorte por sucursal lo hace la CONSULTA, no esta pantalla. Estaba acá
     // y miraba los dos extremos del traslado, que es lo correcto para un
@@ -552,6 +572,7 @@ export default function TrasladosView() {
                                    estructura. */
                                 porSucursal={alcanceTodas && !sala}
                                 personaPor={personaPor}
+                                empleadosPorId={empleadosPorId}
                                 vacio={{
                                     icon: History,
                                     title: busqueda.trim() || tipo

@@ -1,9 +1,26 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { Ban, PackageCheck, CornerUpLeft } from 'lucide-react';
 import Badge from '../../components/common/Badge';
-import { EmptyState } from '../../components/common/StateViews';
+import Button from '../../components/common/Button';
+import EvidenciaFotos from '../../components/common/EvidenciaFotos';
+import CuerpoDialogo from '../../components/common/CuerpoDialogo';
+import ModalShell from '../../components/common/ModalShell';
+import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { ChipPersona } from '../solicitudes/PersonasSolicitud';
+import { clickable } from '../../utils/clickable';
 import { fmtFechaLarga, piezasDe, renglonesDe, resumenItems } from './trasladoTexto';
+
+/* El detalle de un traslado ES el detalle de una solicitud —vive en
+ * `approval_requests` y su tipo es `INVENTORY_TRANSFER_REQUEST`—, así que se
+ * REUSA el canónico de las tres pantallas de solicitudes en vez de escribir acá
+ * una cuarta copia. Es el mismo razonamiento escrito en `NotificacionDetalle`, y
+ * la historia de ese archivo es justamente que las copias se separan: la que
+ * vivía en `RequestsView` cubría diez tipos y la de `EmployeeRequestsView` dos.
+ *
+ * Va por `lazy` porque el detalle sólo hace falta cuando alguien TOCA una
+ * tarjeta: el historial se abre para mirar la lista, y la mayoría de las veces
+ * eso es todo lo que se hace. */
+const DetalleSolicitud = lazy(() => import('../solicitudes/DetalleSolicitud'));
 
 /**
  * El historial de traslados, en TARJETAS y agrupado.
@@ -96,7 +113,7 @@ function Renglones({ renglones }) {
  * archivo se consulta para saber QUIÉN, y una cara sola no se cita en una
  * conversación.
  */
-export function TarjetaHistorial({ fila, personaPor }) {
+export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
     const m = fila.metadata ?? {};
     const rechazado = esRechazado(fila);
     const motivo = rechazado
@@ -108,7 +125,22 @@ export function TarjetaHistorial({ fila, personaPor }) {
     const resolvio = personaPor?.(fila.approver_id);
 
     return (
-        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full">
+        /* La tarjeta ABRE el traslado (2026-08-26).
+         *
+         * Reportado así: «al tocar la card no se abre el modal con toda la
+         * información de ese traslado». No era un `onClick` roto — no había
+         * ninguno: cuando el historial era `DataTable`, el detalle completo lo
+         * daba la ficha del teléfono, y al pasar a tarjetas el 24-ago esa
+         * puerta se fue con la tabla. Desde entonces lo que la tarjeta no
+         * dibuja no existe en ninguna pantalla: los lotes que salieron, la
+         * constancia de lo aplicado, la nota de quien decidió, las fotos.
+         *
+         * `clickable()` y no un `onClick` a secas: pone el rol, el foco, el
+         * Enter/Espacio y el `data-interactive` que le da el acuse al toque
+         * (§1.6) — que en el teléfono es la ÚNICA señal de que entró. */
+        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full"
+            {...clickable(onAbrir ? () => onAbrir(fila) : null,
+                { label: `Ver el traslado de ${m.origen_branch_name ?? 'otra sala'} a ${m.branch_name ?? 'otra sala'}` })}>
             <div className="flex items-start gap-2">
                 {rechazado
                     ? <Ban size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -173,7 +205,7 @@ export function TarjetaHistorial({ fila, personaPor }) {
 }
 
 /** Un envío cerrado — otra pregunta, así que otra tarjeta. Y el mismo compacto. */
-export function TarjetaEnvioCerrado({ envio }) {
+export function TarjetaEnvioCerrado({ envio, onAbrir }) {
     const lineas = envio.lineas ?? [];
     const acept = lineas.filter(l => l.estado === 'aceptada').length;
     const devue = lineas.filter(l => String(l.estado).startsWith('devuelta')).length;
@@ -182,7 +214,13 @@ export function TarjetaEnvioCerrado({ envio }) {
         .map(l => `${l.descripcion ?? l.erp_product_id} (${l.motivo_rechazo ?? 'sin motivo'})`);
 
     return (
-        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full">
+        /* Se abre igual que la de al lado. Un envío cerrado guarda por renglón
+         * su estado, su motivo de devolución y la nota escrita a mano, y
+         * guarda además las FOTOS de la avería — nada de eso cabe en la
+         * tarjeta, y hasta hoy no se veía en ninguna parte. */
+        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full"
+            {...clickable(onAbrir ? () => onAbrir(envio) : null,
+                { label: `Ver el envío de ${envio.origen_branch_name ?? 'otra sala'} a ${envio.branch_name ?? 'otra sala'}` })}>
             <div className="flex items-start gap-2">
                 {devue > 0
                     ? <CornerUpLeft size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -225,6 +263,163 @@ export function TarjetaEnvioCerrado({ envio }) {
     );
 }
 
+/* ─── Lo que la tarjeta no puede dibujar ──────────────────────────────────── */
+
+/**
+ * El traslado entero, en un diálogo.
+ *
+ * El cuerpo es `DetalleSolicitud` y no un bloque escrito acá: un traslado es
+ * una solicitud de `approval_requests`, y ese componente ya pinta sus dos
+ * personas con cara y hora, el recorrido, los renglones con sus lotes, la
+ * constancia de lo que se aplicó, el motivo de quien lo pidió y —cuando fue un
+ * rechazo— el motivo real, que vive en `metadata.rejection_reason` y no en
+ * `approver_note`.
+ *
+ * **Sin recorrido propio adentro.** El cuerpo de `CuerpoDialogo` ya se desplaza
+ * solo, en las dos anatomías. Un segundo contenedor con `overflow-y-auto` deja
+ * dos recorridos anidados y en el teléfono el dedo queda trabado en el de
+ * adentro — es exactamente lo que se corrigió en `NotificacionDetalle` el
+ * 2026-08-14.
+ */
+function DialogoTraslado({ fila, empleadosPorId, onCerrar }) {
+    const rechazado = esRechazado(fila);
+    return (
+        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-xl" zClass="z-toast"
+            surface={null} ariaLabel="Detalle del traslado">
+            <CuerpoDialogo
+                titulo="Traslado entre salas"
+                subtitulo={`${rechazado ? 'Rechazado' : 'Recibido'} · ${fmtFechaLarga(fila.updated_at ?? fila.created_at)}`}
+                icono={rechazado ? Ban : PackageCheck}
+                tono={rechazado ? 'danger' : 'success'}
+                anchoEscritorio="max-w-xl"
+                pie={<Button variant="secondary" onClick={onCerrar}>Cerrar</Button>}>
+                <Suspense fallback={<SkeletonText lines={6} />}>
+                    <DetalleSolicitud req={fila} employeesById={empleadosPorId} />
+                </Suspense>
+            </CuerpoDialogo>
+        </ModalShell>
+    );
+}
+
+/* Qué pasó con cada renglón de un envío ya cerrado.
+ *
+ * NO se reusa el `ESTADO_ROTULO` de `FilasEnvio`: aquél está escrito en segunda
+ * persona —«se la quedaron», «te la devuelven»— porque acompaña a una tarjeta
+ * que le habla a UNA de las dos salas y le dice qué le toca hacer. El historial
+ * lo mira cualquiera de las siete, y muchas veces ninguna de las dos: ahí «te la
+ * devuelven» nombra a un «te» que no existe. */
+const DESENLACE_RENGLON = {
+    aceptada: { texto: 'Se quedó',      tono: 'success' },
+    devuelta: { texto: 'Devuelta',      tono: 'danger'  },
+    devuelta_recibida: { texto: 'Volvió al origen', tono: 'danger' },
+};
+
+/** El envío entero, con su renglón por renglón y la evidencia. */
+function DialogoEnvio({ envio, personaPor, onCerrar }) {
+    const lineas = envio.lineas ?? [];
+    const mando   = personaPor?.(envio.employee_id);
+    const decidio = personaPor?.(envio.approver_id);
+    const fotos = Array.isArray(envio.evidencia_urls) ? envio.evidencia_urls : [];
+
+    return (
+        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-xl" zClass="z-toast"
+            surface={null} ariaLabel="Detalle del envío">
+            <CuerpoDialogo
+                titulo="Envío a otra sala"
+                subtitulo={fmtFechaLarga(envio.updated_at ?? envio.created_at)}
+                icono={CornerUpLeft}
+                anchoEscritorio="max-w-xl"
+                pie={<Button variant="secondary" onClick={onCerrar}>Cerrar</Button>}>
+                <div className="space-y-2.5 text-left">
+                    <div data-surface="card" className="px-3 py-2.5">
+                        <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Recorrido</p>
+                        <p className="text-body-sm font-bold text-content-2">
+                            {envio.origen_branch_name ?? '—'}
+                            {/* De qué ESTANTE salió: dos envíos de Bodega se ven
+                                iguales si sólo se nombra la sala. */}
+                            {envio.origen_vencidos ? ' · Área de Vencidos' : ''}
+                            <span className="text-content-3 font-medium"> → </span>
+                            {envio.branch_name ?? '—'}
+                        </p>
+                        <p className="text-caption text-content-2 mt-0.5">
+                            <span className="font-bold">{envio.motivo_tipo ?? 'Sin motivo'}</span>
+                            {envio.reason && envio.reason !== envio.motivo_tipo ? ` · ${envio.reason}` : ''}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">
+                            Qué llevaba
+                        </p>
+                        <div className="flex flex-col gap-1">
+                            {lineas.map(l => {
+                                const d = DESENLACE_RENGLON[l.estado];
+                                return (
+                                    <div key={l.posicion} data-surface="card"
+                                        className="px-3 py-2 flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-label font-bold text-content leading-snug">
+                                                {l.descripcion ?? `Producto ${l.erp_product_id}`}
+                                            </p>
+                                            <p className="text-micro text-content-3">
+                                                {l.cantidad} × {l.presentacion_tipo}
+                                                {Number.isFinite(Number(l.unidades))
+                                                    ? ` · ${l.unidades} ${Number(l.unidades) === 1 ? 'unidad' : 'unidades'}`
+                                                    : ''}
+                                            </p>
+                                            {/* El motivo elegido y la aclaración
+                                                escrita a mano son dos cosas: la
+                                                segunda explica a la primera. */}
+                                            {l.motivo_rechazo && (
+                                                <p className="text-micro text-danger-text font-semibold mt-0.5">
+                                                    {l.motivo_rechazo}
+                                                    {l.nota_rechazo ? ` — ${l.nota_rechazo}` : ''}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <Badge variant={d?.tono ?? 'neutral'} size="sm">
+                                            {d?.texto ?? l.estado}
+                                        </Badge>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* La avería no entra sin foto, así que acá SIEMPRE hay algo
+                        que mirar cuando el motivo fue ése — y hasta hoy no se
+                        veía en ninguna pantalla del historial. */}
+                    <EvidenciaFotos urls={fotos} />
+
+                    {envio.approver_note && (
+                        <div className="px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">
+                                Nota de quien lo recibió
+                            </p>
+                            <p className="text-body-sm text-content-2 font-medium leading-relaxed">
+                                {envio.approver_note}
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-divider">
+                        <span className="flex items-center gap-1.5 min-w-0" role="img"
+                            aria-label={[mando?.name && `Lo mandó ${mando.name}`,
+                                         decidio?.name && `lo recibió ${decidio.name}`].filter(Boolean).join(', ')}>
+                            <ChipPersona persona={mando} vacio="Sin registro" />
+                            <span className="text-content-3 text-micro shrink-0">→</span>
+                            <ChipPersona persona={decidio} vacio="Sin registro" />
+                        </span>
+                        <span className="text-micro text-content-3 tabular-nums shrink-0">
+                            {fmtFechaLarga(envio.updated_at ?? envio.created_at)}
+                        </span>
+                    </div>
+                </div>
+            </CuerpoDialogo>
+        </ModalShell>
+    );
+}
+
 /** El encabezado de un corte, con su cuenta. */
 function Titulo({ children, cuenta, tono = 'text-content-2' }) {
     return (
@@ -241,7 +436,7 @@ function Titulo({ children, cuenta, tono = 'text-content-2' }) {
 const REJILLA = 'grid grid-cols-1 gap-2 xl:grid-cols-2';
 
 /** Los dos bloques del desenlace, dentro de una sucursal o del todo. */
-function PorDesenlace({ filas, personaPor }) {
+function PorDesenlace({ filas, personaPor, onAbrir }) {
     const recibidos = filas.filter(f => !esRechazado(f));
     const rechazados = filas.filter(esRechazado);
     return (
@@ -251,7 +446,7 @@ function PorDesenlace({ filas, personaPor }) {
                     <Titulo cuenta={recibidos.length} tono="text-success-text">Recibidos</Titulo>
                     <div className={REJILLA}>
                         {recibidos.map(f => (
-                            <TarjetaHistorial key={f.id} fila={f} personaPor={personaPor} />
+                            <TarjetaHistorial key={f.id} fila={f} personaPor={personaPor} onAbrir={onAbrir} />
                         ))}
                     </div>
                 </div>
@@ -261,7 +456,7 @@ function PorDesenlace({ filas, personaPor }) {
                     <Titulo cuenta={rechazados.length} tono="text-danger-text">Rechazados</Titulo>
                     <div className={REJILLA}>
                         {rechazados.map(f => (
-                            <TarjetaHistorial key={f.id} fila={f} personaPor={personaPor} />
+                            <TarjetaHistorial key={f.id} fila={f} personaPor={personaPor} onAbrir={onAbrir} />
                         ))}
                     </div>
                 </div>
@@ -273,14 +468,21 @@ function PorDesenlace({ filas, personaPor }) {
 /**
  * El historial entero: tarjetas, cortadas por sucursal y por desenlace.
  *
- * @param filas         traslados cerrados, ya filtrados por la vista
- * @param envios        envíos cerrados, ya filtrados
- * @param porSucursal   cortar por sala de origen (sólo con alcance de todas)
- * @param personaPor    id → persona, con el respaldo que usa la vista
+ * @param filas          traslados cerrados, ya filtrados por la vista
+ * @param envios         envíos cerrados, ya filtrados
+ * @param porSucursal    cortar por sala de origen (sólo con alcance de todas)
+ * @param personaPor     id → persona, con el respaldo que usa la vista
+ * @param empleadosPorId el mismo maestro como MAPA, que es lo que pide
+ *                       `DetalleSolicitud` — busca con `.get(String(id))`, y
+ *                       `personaPor` resuelve además por correo y por usuario
  */
 export default function HistorialTraslados({
-    filas = [], envios = [], porSucursal = false, personaPor, vacio,
+    filas = [], envios = [], porSucursal = false, personaPor, empleadosPorId, vacio,
 }) {
+    /* Qué está abierto: un traslado, un envío, o nada. UNO solo y en el
+     * contenedor —no un estado por tarjeta—: el diálogo es de la pantalla, y con
+     * el estado adentro cada una de las cuarenta y ocho cargaría el suyo. */
+    const [abierto, setAbierto] = useState(null);   // { tipo: 'traslado'|'envio', dato }
     /* El orden de las salas NO es alfabético: es por cuántos traslados cerró
      * cada una. Quien abre esta pestaña con las siete a la vista busca dónde
      * pasó algo, y una lista alfabética esconde a la que más movió detrás de la
@@ -325,12 +527,14 @@ export default function HistorialTraslados({
                             {sala}
                             <span className="text-content-3 font-bold"> · {deLaSala.length}</span>
                         </p>
-                        <PorDesenlace filas={deLaSala} personaPor={personaPor} />
+                        <PorDesenlace filas={deLaSala} personaPor={personaPor}
+                            onAbrir={f => setAbierto({ tipo: 'traslado', dato: f })} />
                     </div>
                 ))
             ) : (
                 <div className="flex flex-col gap-3">
-                    <PorDesenlace filas={filas} personaPor={personaPor} />
+                    <PorDesenlace filas={filas} personaPor={personaPor}
+                        onAbrir={f => setAbierto({ tipo: 'traslado', dato: f })} />
                 </div>
             ))}
 
@@ -349,16 +553,31 @@ export default function HistorialTraslados({
                                     <span className="text-content-3"> · {deLaSala.length}</span>
                                 </p>
                                 <div className={REJILLA}>
-                                    {deLaSala.map(e => <TarjetaEnvioCerrado key={e.id} envio={e} />)}
+                                    {deLaSala.map(e => (
+                                        <TarjetaEnvioCerrado key={e.id} envio={e}
+                                            onAbrir={x => setAbierto({ tipo: 'envio', dato: x })} />
+                                    ))}
                                 </div>
                             </div>
                         ))
                     ) : (
                         <div className={REJILLA}>
-                            {envios.map(e => <TarjetaEnvioCerrado key={e.id} envio={e} />)}
+                            {envios.map(e => (
+                                <TarjetaEnvioCerrado key={e.id} envio={e}
+                                    onAbrir={x => setAbierto({ tipo: 'envio', dato: x })} />
+                            ))}
                         </div>
                     )}
                 </div>
+            )}
+
+            {abierto?.tipo === 'traslado' && (
+                <DialogoTraslado fila={abierto.dato} empleadosPorId={empleadosPorId}
+                    onCerrar={() => setAbierto(null)} />
+            )}
+            {abierto?.tipo === 'envio' && (
+                <DialogoEnvio envio={abierto.dato} personaPor={personaPor}
+                    onCerrar={() => setAbierto(null)} />
             )}
         </div>
     );

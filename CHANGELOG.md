@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.783.0 — El historial de traslados abre el detalle al tocar la tarjeta
+
+Reportado así: «en `/traslados?tab=historial`, al tocar la card no se abre el
+modal con toda la información de ese traslado».
+
+No era un `onClick` roto — no había ninguno. Cuando el historial era un
+`DataTable`, el detalle completo lo daba la ficha del teléfono; el 24-ago pasó a
+tarjetas (v2.744.0) y esa puerta se fue con la tabla. Desde entonces **lo que la
+tarjeta no dibuja no existe en ninguna pantalla**: los lotes que salieron, la
+constancia de lo que se aplicó, la hora de cada firma, la nota de quien decidió
+y las fotos de evidencia estaban guardados y no se veían en ninguna parte.
+
+**El traslado** abre `DetalleSolicitud`, que es el canónico de las tres
+pantallas de solicitudes — no una cuarta copia. Un traslado ES una solicitud de
+`approval_requests`, así que ese componente ya pinta sus dos personas con cara,
+cargo y hora, el recorrido, los renglones con sus lotes, el «Aplicado» y el
+motivo real del rechazo (que vive en `metadata.rejection_reason` y no en
+`approver_note`, y por eso 6 de 11 rechazos no lo mostraban en ningún lado).
+Para eso la consulta del historial ahora trae la columna `type`: sin ella el
+detalle no reconoce el tipo y devuelve un diálogo casi vacío, sin error.
+
+**El envío cerrado** abre su propio diálogo: recorrido —con el área de vencidos
+cuando salió de ahí—, motivo, **renglón por renglón** con qué se quedó y qué se
+devolvió, el motivo de la devolución con su aclaración escrita a mano, la nota
+de quien lo recibió y **las fotos de la avería**, que el circuito exige al
+enviar y que hasta hoy no se veían en ninguna pantalla.
+
+Los rótulos por renglón NO se reusan de las tarjetas vivas: aquéllos están
+escritos en segunda persona —«se la quedaron», «te la devuelven»— porque le
+hablan a una de las dos salas, y el historial lo mira cualquiera de las siete.
+
+Las tarjetas se vuelven clicables por `clickable()` y no con un `onClick` suelto:
+así traen el rol, el foco, el Enter/Espacio y el `data-interactive` que da el
+acuse al toque, que en el teléfono es la única señal de que entró.
+
+Medido contra producción en escritorio 1280 y en WebKit iPhone 13: 130 tarjetas
+de traslado y 6 de envío, un recibido, un rechazado —con su motivo— y un envío
+abiertos en las dos anatomías. `gate:design`, `gate:movil`, `gate:perf`,
+`gate:eficiencia` y `gate:auditoria` en verde.
+
 ## v2.782.1 — El gate de borradores vuelve a cero: los 6 controles eran cuatro formularios
 
 `npm run gate:borradores` estaba en rojo señalando

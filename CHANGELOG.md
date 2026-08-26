@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.793.1 — El área de vencidos deja de trabar el estante
+
+*«intenta de nuevo, se supone que ya lo corrigieron»*. Se intentó, y esta vez sí.
+
+Desde el 18 de agosto el sistema **no descargaba del estante mientras quedara
+algo apartado en el área de vencidos**: entraba por ahí y, si lo apartado no
+cubría lo pedido, contestaba «No hay suficiente stock en las ubicaciones»
+ignorando la ubicación que se le nombra. El portal se defendió con un tope: no
+dejaba despachar más de lo apartado. Con eso, **un termómetro con 18 en el
+estante y 1 unidad apartada sólo podía salir de a uno**.
+
+**El 26-ago se remidió, con los renglones reales que estaban trabados.** Se
+soltó el tope y salieron los tres:
+
+| traslado | renglón | unidades | estante |
+|---|---|---:|---|
+| 34003 | P141-PO-H1-I85887 · La Popular | 3 | 18 → 15 |
+| 34004 | P137-S1-H1-I83796 · Salud 1 | 2 | 15 → 13 |
+| 34005 | P134-PO-H1-I82655 · La Popular | 2 | 13 → 11 |
+
+**El área de vencidos quedó en 1 antes y en 1 después, intacta en las tres.** Y
+eso —no que el traslado entrara— es la prueba: el sistema ya descuenta de la
+ubicación que se le nombra. El tope se quitó, así que el techo vuelve a ser lo
+que hay en el estante, que es lo que Bodega puede levantar de verdad. Eran **26
+unidades trabadas en cuatro productos**: el termómetro, BEBELAC 2, la rodillera
+L y la tobillera M.
+
+**Lo que NO se quitó es la relectura**, y ésa es la mitad que importa. El
+renglón de un producto con existencia apartada indistinguible se sigue marcando,
+y al cerrar la corrida se relee el área de vencidos para comprobar que no bajó.
+Si el sistema volviera atrás, lo que se pierde es el PAPEL —la mercadería sale
+del estante igual— y el aviso lo dice en el acto en vez de dejarlo escondido en
+el kardex. Antes esa red estaba de más, porque el tope no dejaba llegar hasta
+ahí; ahora es lo único que queda mirando.
+
+**Y probarlo no costó nada las dos veces que dio que no.** El rechazo es previo
+a la escritura: el 25-ago se hizo el mismo experimento, contestó lo mismo
+palabra por palabra, y el inventario quedó igual —18 y 1—. Un freno se saca con
+una medición, no con una suposición, y ésta se puede repetir cuando haga falta.
+
+Se redesplegaron las cuatro funciones que comparten esa cuenta
+(`trasladar-pedido-erp`, `enviar-producto-erp`, `aplicar-traslado-inventario` y
+`devolver-pedido-erp`), cada una con su `verify_jwt` leído antes.
+
+**Queda anotado como deuda:** las otras tres siguen leyendo el área de vencidos
+para calcular un número que ya no usan. O se les agrega la relectura de cierre
+—que es lo que le da sentido— o se les quita esa vuelta al sistema.
+
 ## v2.793.0 — Acreditaciones tiene su propia sección, y el ISSS y la AFP no se tramitan igual
 
 Punto 3 de la revisión con Talento Humano. «Vehículo y Acreditaciones» pasa a

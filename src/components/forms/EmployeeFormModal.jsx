@@ -1589,14 +1589,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
 
                             {isMinor ? (
-                                renderDocUploadArea('DOCUMENTO_IDENTIDAD')
+                                renderDocUploadArea('DOCUMENTO_IDENTIDAD', { showExpiry: false })
                             ) : duiEnUnArchivo ? (
                                 <div>
                                     <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
                                         <span>Documento completo (las dos caras)</span>
                                         {!getDocEntry('DUI_COMPLETO').url && <span className="text-warning font-black">Pendiente</span>}
                                     </label>
-                                    {renderDocUploadArea('DUI_COMPLETO')}
+                                    {renderDocUploadArea('DUI_COMPLETO', { showExpiry: false })}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1605,7 +1605,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Frente</span>
                                             {!getDocEntry('DUI_FRENTE').url && <span className="text-warning font-black">Pendiente</span>}
                                         </label>
-                                        {renderDocUploadArea('DUI_FRENTE')}
+                                        {renderDocUploadArea('DUI_FRENTE', { showExpiry: false })}
                                     </div>
                                     <div>
                                         <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">

@@ -39,13 +39,13 @@ const SALIDA = 'barridos/escritorio';
 // la leen de ahí. Duplicarla tiene un costo conocido —se desincroniza— y por eso
 // la prueba de abajo lo verifica en vez de confiar.
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'overview', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',
     'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
     'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
-    'profile', 'dashboard',
+    'profile', 'personal',
 ];
 
 // 1440 es el portátil más común y el ancho donde apareció el defecto de Ventas.

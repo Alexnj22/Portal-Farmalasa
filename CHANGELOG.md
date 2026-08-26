@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.779.0 — La dirección dice lo que abre: el listado es /personal y el tablero es /inicio
+
+Reporte del usuario, mirando la barra de direcciones: *«¿por qué dice dashboard
+si es empleados? el inicio no debería ser dashboard?»*.
+
+Tenía razón, y el código ya lo admitía: el comentario de `ROUTE_TITLES` decía
+literalmente **«el path es legado: la ruta es el listado»**. Las dos direcciones
+decían lo contrario de lo que abrían:
+
+| dirección | qué abría de verdad | cómo lo llama el menú |
+|---|---|---|
+| `/dashboard` | el listado de empleados | «Personal → Listado» |
+| `/overview` | el tablero de widgets | «Inicio» |
+
+El encabezado de cada pantalla ya decía lo correcto —«Gestión de personal» e
+«Inicio»—, así que el único lugar donde sobrevivía el nombre viejo era la barra
+de direcciones. Que es, justamente, el único lugar donde el usuario lo vio.
+
+Ahora **`/personal`** e **`/inicio`**. Se eligió el español y no `/dashboard`
+para el tablero porque el menú ya dice «Inicio»: dejar la dirección en inglés
+habría cambiado una contradicción por otra —dos nombres para la misma
+pantalla—, y la regla del portal es no hablarle al usuario en la jerga de
+adentro.
+
+**Las direcciones viejas no se borran, redirigen.** Ninguna notificación
+guardada las nombra (medido: **0 de 4,428**), pero un favorito del navegador no
+vive en ninguna tabla y no hay forma de medirlo. `/dashboard` → `/personal`,
+`/overview` → `/inicio`, y `/dashboard/empleado/:id` conserva el id: un
+`<Navigate>` suelto habría dejado a quien tenía guardado el expediente de
+alguien mirando el listado completo sin entender por qué, que es peor que un
+404 porque parece que funcionó.
+
+Se actualizaron además las nueve pruebas de navegador que nombraban las rutas
+viejas. Andaban igual por la redirección, pero una prueba que llega por un
+rebote mide otra cosa que la que llega directo.
+
 ## v2.778.0 — Las diferencias sin resolver se pueden aislar
 
 *«en las finalizadas, no veo las pendientes por diferencia, ¿cómo las filtro?»*

@@ -6,14 +6,14 @@ import { MEDIR } from './medicion-movil.js';
 // significa correrlo entero para ver si quedó bien. Esto mira LAS QUE SE LE
 // PIDAN, con el mismo instrumento, para poder iterar en veinte segundos:
 //
-//   RUTAS=overview,minmax npx playwright test --project=webkit-movil -g foco
+//   RUTAS=inicio,minmax npx playwright test --project=webkit-movil -g foco
 //
 // La foto sale del viewport y no de la página completa a propósito: acá se
 // mira, y una página de 14.000px reducida a 2.000 no deja ver de qué se habla.
 const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 const SALIDA = 'test-results/foco-movil';
-const RUTAS = (process.env.RUTAS || 'overview').split(',').map(r => r.trim()).filter(Boolean);
+const RUTAS = (process.env.RUTAS || 'inicio').split(',').map(r => r.trim()).filter(Boolean);
 
 test.use({ ...devices['iPhone 13'] });
 

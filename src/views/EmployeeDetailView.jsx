@@ -448,7 +448,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             variant="secondary"
                             onClick={() => {
                                 if (typeof setView === 'function') setView('dashboard');
-                                else navigate('/dashboard');
+                                else navigate('/personal');
                             }}
                             title="Volver a personal"
                         />

@@ -56,7 +56,7 @@ const NO_TOCAR = /(anul|elimin|borrar|quitar|descart|publicar|guardar|enviar|sin
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
     'staff', 'branches', 'clientes', 'proveedores', 'productos', 'payroll',
     'cotizaciones', 'facturacion', 'facturas-compra', 'pedidos', 'minmax',
-    'requests', 'vacation-plan', 'announcements', 'metas', 'roles', 'overview',
+    'requests', 'vacation-plan', 'announcements', 'metas', 'roles', 'inicio',
 ];
 
 // Cuántos disparadores por ruta. Acota el tiempo, y lo que quede afuera se

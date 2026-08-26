@@ -117,7 +117,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const goToProfile = (emp) => {
         if (emp) {
             if (setActiveEmployee) setActiveEmployee(emp);
-            navigate(`/dashboard/empleado/${emp.id}`);
+            navigate(`/personal/empleado/${emp.id}`);
         }
     };
 

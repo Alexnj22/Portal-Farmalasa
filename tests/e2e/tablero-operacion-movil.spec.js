@@ -70,9 +70,9 @@ test.describe('Tablero · pestaña Operación · WebKit iPhone 13', () => {
         await page.waitForTimeout(6000);
         if (/\/login/.test(page.url())) throw new Error('No se pudo iniciar sesión.');
 
-        // El tablero de widgets vive en /overview. `/dashboard` es Gestión de
+        // El tablero de widgets vive en /inicio. `/personal` es Gestión de
         // Personal — se perdió un rato acá antes de notarlo.
-        await page.goto('/overview');
+        await page.goto('/inicio');
         await page.waitForFunction(
             () => document.body.innerText.includes('Personalizar'), null, { timeout: 30_000 },
         ).catch(() => {});

@@ -17,11 +17,11 @@ import { CalendarCheck,
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 export const MODULE_MAP = {
-    overview:          { path: '/overview',        label: 'Inicio',                   icon: Home          },
+    overview:          { path: '/inicio',          label: 'Inicio',                   icon: Home          },
     emp_announcements: { path: '/my-announcements',label: 'Mis avisos',               icon: Bell          },
     emp_profile:       { path: '/profile',         label: 'Mi perfil',                icon: User          },
     emp_documents:     { path: '/my-documents',   label: 'Mis documentos',           icon: FolderOpen    },
-    staff_list:        { path: '/dashboard',       label: 'Listado',                  icon: User          },
+    staff_list:        { path: '/personal',        label: 'Listado',                  icon: User          },
     // «Monitor real-time» era la única etiqueta del menú en inglés, y el
     // encabezado de la vista ya decía «Monitor en tiempo real».
     monitor:           { path: '/monitor',         label: 'Monitor en tiempo real',   icon: Monitor       },
@@ -89,7 +89,7 @@ export const MODULE_MAP = {
 
 
 // Ruta actual → key del módulo. AppLayout compara por el PRIMER SEGMENTO porque
-// varios paths no coinciden con su key (staff_list → /dashboard,
+// varios paths no coinciden con su key (staff_list → /personal,
 // time_audit → /audit), y las vistas de detalle cuelgan
 // del mismo segmento (/branches/:id).
 export function moduleKeyForPath(pathname) {

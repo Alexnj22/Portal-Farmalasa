@@ -56,12 +56,12 @@ const abrirModal = async (page) => {
 
 const ESCENARIOS = [
     { id: 'login',       url: '/login', sinSesion: true },
-    { id: 'tablero',     url: '/overview' },
+    { id: 'tablero',     url: '/inicio' },
     { id: 'ventas',      url: '/ventas' },
     { id: 'solicitudes', url: '/requests-personales' },
     { id: 'pedidos',     url: '/pedidos' },
-    { id: 'menu',        url: '/overview', accion: abrirMenu },
-    { id: 'modal',       url: '/overview', accion: abrirModal },
+    { id: 'menu',        url: '/inicio', accion: abrirMenu },
+    { id: 'modal',       url: '/inicio', accion: abrirModal },
 ];
 
 test.describe('Matriz de verificación final · fase 5', () => {

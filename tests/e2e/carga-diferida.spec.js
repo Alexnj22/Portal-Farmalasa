@@ -76,7 +76,7 @@ test.describe('lo diferido llega cuando se lo pide', () => {
 
     test('el buscador de inventario abre su panel, que ya no viaja con el Inicio', async ({ page }) => {
         const errores = vigilarConsola(page);
-        await page.goto('/overview');
+        await page.goto('/inicio');
 
         // La baldosa se queda en el chunk del Inicio: tiene que estar SIN pedir
         // nada. Si esto falla, lo que se rompió es el azulejo, no el diferido.

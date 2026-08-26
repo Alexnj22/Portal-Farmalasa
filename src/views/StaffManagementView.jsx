@@ -790,7 +790,7 @@ const StaffManagementView = ({
   // 🚨 3. AQUÍ HACEMOS QUE AL CLICKEAR "VER PERFIL", CAMBIE LA URL EN VEZ DEL ESTADO LOCAL
   const handleOpenEmployee = (emp) => {
     if (setActiveEmployee) setActiveEmployee(emp); // Seteamos por si algún modal necesita saber quién está activo
-    navigate(`/dashboard/empleado/${emp.id}`);     // 🚨 Magia del Router: Cambiamos la URL a la ficha del empleado
+    navigate(`/personal/empleado/${emp.id}`);     // 🚨 Magia del Router: Cambiamos la URL a la ficha del empleado
   };
 
   const clearFilters = useCallback(() => {

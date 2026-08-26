@@ -62,13 +62,13 @@ const INFORME_PARCIAL = `${SALIDA_INFORMES}/informe-${ETIQUETA}.parcial.json`;
 // en vez de una hora: las dos primeras versiones del recorrido de pestañas se
 // descubrieron rotas después de 20 minutos de corrida.
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'overview', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'inicio', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',
     'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
     'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
-    'profile', 'dashboard',
+    'profile', 'personal',
     // ── Las 16 que faltaban (F4, 2026-08-21) ────────────────────────────────
     // La lista tenía 38 rutas y `App.jsx` declara **65**. Descontando comodines,
     // login, el kiosco pre-sesión, las de prueba y las que llevan `:id`,
@@ -105,7 +105,7 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 //
 // La salida honesta es partirlo, no seguir parcheándolo:
 //
-//   RUTAS=overview,ventas,compras,productos,pedidos,minmax,clientes,proveedores,\
+//   RUTAS=inicio,ventas,compras,productos,pedidos,minmax,clientes,proveedores,\
 //   facturacion,facturas-compra,cotizaciones,conteo-inventario,libro-compras-completo,\
 //   libros-iva,resumen-fiscal,corte-z,ventas-perdidas,staff PESTANAS=1 MODALES=1 …
 //
@@ -383,7 +383,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 //     Lo que sí se ve es la estructura, porque el DOM existe
                 //     aunque no se pinte. Medido en las mismas ocho rutas:
                 //
-                //       llenas   overview 166 · branches 176
+                //       llenas   inicio 166 · branches 176
                 //       vacías   cotizaciones 13 · sesiones 16 · corte-z 21
                 //
                 //     El corte va en 60: tres veces el chasis vacío y menos de

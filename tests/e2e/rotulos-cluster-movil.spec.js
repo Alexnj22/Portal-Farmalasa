@@ -32,14 +32,14 @@ const SALIDA = 'barridos';
 const INFORME = `${SALIDA}/rotulos-cluster.json`;
 
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'overview', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'inicio', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'facturas-sala', 'cotizaciones',
     'conteo-inventario', 'libro-compras-completo', 'libros-iva', 'resumen-fiscal',
     'corte-z', 'ventas-perdidas', 'inventario', 'gestion-stock', 'traslados',
     'staff', 'monitor', 'audit', 'auditview', 'schedules', 'payroll', 'requests',
     'vacation-plan', 'announcements', 'encuesta', 'encuesta-admin', 'metas',
     'branches', 'laboratorios', 'roles', 'permissions', 'sync-health', 'requests-personales',
-    'my-documents', 'my-announcements', 'profile', 'dashboard',
+    'my-documents', 'my-announcements', 'profile', 'personal',
 ];
 
 // Se ejecuta DENTRO de la página: mide cada botón del clúster y devuelve el

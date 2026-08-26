@@ -153,7 +153,7 @@ const EmployeeProfileWrapper = ({ openModal, setView, setActiveEmployeeGlobal })
     }, [emp, setActiveEmployeeGlobal]);
 
     if (!emp) {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/personal" replace />;
     }
 
     // Interceptamos openModal para asegurar que pasa el evento correcto
@@ -168,7 +168,7 @@ const EmployeeProfileWrapper = ({ openModal, setView, setActiveEmployeeGlobal })
             key={id}
             activeEmployee={emp}
             setView={(viewName) => {
-                if (viewName === 'dashboard') navigate('/dashboard');
+                if (viewName === 'dashboard') navigate('/personal');
                 else setView(viewName);
             }}
             activeTab={activeTab}
@@ -199,6 +199,17 @@ const PermissionGuard = ({ moduleKey, children }) => {
 const IrAPersonales = () => {
     const { search, hash } = useLocation();
     return <Navigate to={`/requests-personales${search}${hash}`} replace />;
+};
+
+// La ficha de una persona vivía bajo `/dashboard/empleado/:id`. Un `<Navigate>`
+// suelto a `/personal` perdería el `:id` y dejaría a quien tenía guardado el
+// expediente de alguien mirando el listado completo, sin entender por qué —
+// que es peor que un 404, porque parece que funcionó. Esto conserva el id, la
+// consulta y el ancla.
+const IrAFichaDePersonal = () => {
+    const { id } = useParams();
+    const { search, hash } = useLocation();
+    return <Navigate to={`/personal/empleado/${id}${search}${hash}`} replace />;
 };
 
 // ============================================================================
@@ -657,14 +668,14 @@ function MainApp() {
                                     <Route path="profile" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
 
                                     {/* ── Gestión de personal ── */}
-                                    <Route path="dashboard">
+                                    <Route path="personal">
                                         <Route index element={
                                             <PermissionGuard moduleKey="staff_list">
                                                 <StaffManagementView
                                                     setView={setView}
                                                     setActiveEmployee={(emp) => {
                                                         setActiveEmployee(emp);
-                                                        navigate(`/dashboard/empleado/${emp.id}`);
+                                                        navigate(`/personal/empleado/${emp.id}`);
                                                     }}
                                                     openModal={openModal}
                                                     searchTerm={searchTerm}
@@ -686,7 +697,7 @@ function MainApp() {
                                     </Route>
 
                                     {/* ── Operaciones ── */}
-                                    <Route path="overview" element={<PermissionGuard moduleKey="overview"><DashboardView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="inicio" element={<PermissionGuard moduleKey="overview"><DashboardView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="audit" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
@@ -758,8 +769,23 @@ function MainApp() {
                                     <Route path="mantenimiento" element={<PermissionGuard moduleKey="maintenance"><MaintenanceView /></PermissionGuard>} />
 
                                     {/* ── Fallbacks ── */}
-                                    <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
-                                    <Route path="staff" element={<Navigate to="/dashboard" replace />} />
+                                    {/* `/dashboard` era el LISTADO DE PERSONAL y `/overview` el
+                                        tablero: los dos nombres decían lo contrario de lo que
+                                        abrían, y el comentario de ROUTE_TITLES lo admitía desde
+                                        que se escribió («el path es legado»). Se renombraron el
+                                        2026-08-26 a `/personal` e `/inicio`, que es como los
+                                        llama el menú.
+
+                                        Las viejas se quedan como redirección y no se borran:
+                                        ninguna notificación guardada las nombra (medido: 0 de
+                                        4,428), pero un favorito del navegador no está en ninguna
+                                        tabla y no hay forma de medirlo. Sin esto, el que tenía
+                                        guardada la pantalla de personal caía en el 404. */}
+                                    <Route path="dashboard" element={<Navigate to="/personal" replace />} />
+                                    <Route path="dashboard/empleado/:id" element={<IrAFichaDePersonal />} />
+                                    <Route path="overview" element={<Navigate to="/inicio" replace />} />
+                                    <Route path="employee-detail" element={<Navigate to="/personal" replace />} />
+                                    <Route path="staff" element={<Navigate to="/personal" replace />} />
                                     {/* D3.7 — antes esto era un <Navigate> silencioso al primer módulo con
                                         permiso: el usuario aterrizaba en otra pantalla sin saber si el
                                         enlace estaba roto o si le faltaba acceso. */}
@@ -818,8 +844,8 @@ export default function App() {
 //
 // Faltaban además 19 rutas, que caían al genérico «Portal FarmaSalud».
 const ROUTE_TITLES = {
-    '/overview':          'Inicio',
-    '/dashboard':         'Gestión de personal',   // el path es legado: la ruta es el listado
+    '/inicio':            'Inicio',
+    '/personal':          'Gestión de personal',
     '/monitor':           'Monitor en tiempo real',
     '/audit':             'Auditoría de tiempos',
     '/schedules':         'Horarios',
@@ -884,8 +910,8 @@ const AppWithToast = () => {
     useEffect(() => {
         const path = location.pathname;
         const base = '/' + path.split('/')[1];
-        const isDashboardEmployee = path.startsWith('/dashboard/empleado/');
-        const label = isDashboardEmployee
+        const esFichaDePersonal = path.startsWith('/personal/empleado/');
+        const label = esFichaDePersonal
             ? 'Perfil de empleado'
             : (ROUTE_TITLES[base] ?? null);
         document.title = label ? `${label} — FarmaSalud` : 'Portal FarmaSalud';

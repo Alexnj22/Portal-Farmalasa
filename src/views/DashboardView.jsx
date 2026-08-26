@@ -3820,7 +3820,7 @@ const DashboardView = ({ openModal }) => {
           employees.length === 0
             ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={puedeAbrir('/dashboard')?()=>navigate('/dashboard'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={puedeAbrir('/personal')?()=>navigate('/personal'):undefined}/>
                 {/* `0% del total` cuando nadie marcó todavía se lee como un
                     cálculo que falló, no como la hora del día. Un cero con
                     motivo tiene que decir el motivo. */}

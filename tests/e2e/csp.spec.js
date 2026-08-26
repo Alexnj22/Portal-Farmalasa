@@ -91,7 +91,7 @@ test.describe('F0.3 · CSP en enforce', () => {
 
         // Un paseo por las vistas principales para que se ejerciten los chunks
         // lazy, los estilos en línea y las llamadas a Supabase bajo la política.
-        for (const ruta of ['/overview', '/pedidos', '/productos', '/inventario']) {
+        for (const ruta of ['/inicio', '/pedidos', '/productos', '/inventario']) {
             await page.goto(ruta);
             await page.waitForTimeout(2_500);
         }

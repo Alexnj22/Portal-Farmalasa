@@ -991,16 +991,34 @@ export default function CircuitoDeBolsas({
      * Con las etapas apiladas esto era abrir la sección y hacer scroll; con
      * pestañas es cambiar de pestaña, que además deja la dirección apuntando a
      * donde quedó el trabajo. El aviso lo dice igual, porque quien mira el
-     * teléfono puede no ver moverse la fila de arriba. */
+     * teléfono puede no ver moverse la fila de arriba.
+     *
+     * ── Pero SÓLO cuando no queda nada esperando ────────────────────────────
+     * «al momento de confirmar recepcion, que no me lleve a conteo, a no ser
+     * que le de en confirmar todas» (usuario, 2026-08-26).
+     *
+     * El argumento de arriba vale para el caso que lo escribió —recibir todo—,
+     * y se cae solo en el que existe desde que se puede recibir de menos:
+     * quedan seis de Salud 1 y las tres de Salud 3, y la pestaña se cambia
+     * igual. Ahí no hay ninguna etapa vacía que explicar; hay trabajo a medio
+     * hacer del que se saca a quien lo está haciendo, y volver cuesta un toque
+     * más y perder el scroll.
+     *
+     * O sea que la regla no es «recibir lleva a contar» sino «llevar a contar
+     * cuando acá ya no queda nada que hacer» — que es lo mismo el día que se
+     * recibe todo, y lo contrario el día que se recibe una parte. Se mide
+     * contra lo que la pantalla muestra (`enCamino`, ya recortado por período y
+     * búsqueda), que es contra lo que también cuenta el botón de «todas». */
     const recibir = useCallback(async (lista) => {
+        const quedanEsperando = enCamino.length - lista.length;
         const ok = await correr('recibir',
             () => recibirBolsas(lista.map((b) => b.id)),
             lista.length === 1
                 ? 'Recepción confirmada · ya está en «Por contar»'
                 : `Recepción de ${lista.length} bolsas confirmada · ya están en «Por contar»`);
         if (!ok) return;
-        onIrAEtapa?.('contar');
-    }, [correr, onIrAEtapa]);
+        if (quedanEsperando <= 0) onIrAEtapa?.('contar');
+    }, [correr, onIrAEtapa, enCamino]);
 
     /* Contar una bolsa la MARCA. La bolsa se queda en «Por contar» con su monto
      * escrito hasta que se confirma la tanda entera — «debe pasar hasta que se

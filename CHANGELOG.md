@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.4 — Recibir de menos ya no cambia de pestaña
+
+*«al momento de confirmar recepcion, que no me lleve a conteo, a no ser que le
+de en confirmar todas»* (usuario).
+
+Confirmar la recepción llevaba **siempre** a «Por contar». El motivo escrito
+era bueno: si la etapa se queda vacía, no cambiar de pestaña se ve como que las
+bolsas se borraron. Pero ese argumento vale para el caso que lo escribió
+—recibir todo— y se cae solo en el que existe desde v2.767.3: quedan seis de
+Salud 1 y las tres de Salud 3, y la pestaña se cambia igual. Ahí no hay ninguna
+etapa vacía que explicar; hay trabajo a medio hacer del que se saca a quien lo
+está haciendo, y volver cuesta un toque más y perder el scroll.
+
+Así que la regla dejó de ser «recibir lleva a contar» y pasó a ser **«llevar a
+contar cuando acá ya no queda nada que hacer»** — que es lo mismo el día que se
+recibe todo, y lo contrario el día que se recibe una parte. Se mide contra lo
+que la pantalla muestra, que es contra lo que también cuenta el botón de
+«todas».
+
+El aviso no cambió: sigue diciendo «ya están en «Por contar»», que es lo que
+hace falta saber cuando uno se queda donde estaba.
+
 ## v2.767.3 — Recepción parcial: el botón de la sala obedece a las casillas
 
 *«no puedo recepcionar parcialmente, si selecciono 6 en salud 1, no cambia a

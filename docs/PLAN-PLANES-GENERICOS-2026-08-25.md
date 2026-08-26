@@ -40,21 +40,21 @@ top 19", se habrían tocado funciones sanas y al menos una habría quedado peor.
 > Es la misma familia que [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]]:
 > el instrumento contestó, pero no contestó lo que se le preguntó.
 
-### Después de medir treinta: el defecto era de UNA
+### Después de medir cuarenta: el defecto era de UNA
 
-Cerradas las fases 1, 2 y 3, el marcador es **30 funciones medidas contra su
-candidata, 30 declaradas sanas, 0 migraciones**. Sumando la fase 0:
+Cerradas las fases 1 a 4, el marcador es **40 funciones medidas, 40 declaradas
+sanas, 0 migraciones**. Sumando la fase 0:
 `get_conteo_products_count` **era la única de las 69**.
 
-Eso cambia la expectativa de lo que queda, y conviene decirlo antes de empezarlo:
-la fase 4 es casi con seguridad **un ejercicio de declarar sanas**, no de
-corregir. Eso no las vuelve inútiles —lo que no está medido y escrito se vuelve
-a mirar dentro de tres meses— pero sí cambia cuánto esfuerzo merecen: barrido
-por tiempo absoluto primero, y medición a fondo sólo para las que crucen 200 ms.
+Las cuatro fases resultaron ser **un ejercicio de declarar sanas**, no de
+corregir. Eso no las vuelve inútiles —lo que no está medido y escrito se vuelve a
+mirar dentro de tres meses— pero sí dice cuánto esfuerzo merece una auditoría así:
+**barrido por tiempo absoluto primero, medición a fondo sólo para lo que cruce
+200 ms**. De 40 funciones, sólo 13 cruzaron, y ninguna resultó tener el defecto.
 
 Y explica de dónde salía el defecto. No es que `LANGUAGE sql` con `SET` sea malo
 por sí solo: **hace falta además que el plan bueno dependa de los argumentos**.
-En las treinta sanas, el plan genérico resulta ser tan bueno como el personalizado
+En las cuarenta sanas, el plan genérico resulta ser tan bueno como el personalizado
 porque su forma no cambia con los valores. En `get_conteo_products_count` sí
 cambiaba —el tamaño del conteo decide entre hash join y nested loop— y ahí los
 21 millones de comparaciones. **La condición 2 del criterio de §2 no es un
@@ -384,6 +384,54 @@ Lo probable es que la conclusión de esta fase sea **"no se tocan, y acá está 
 medición que lo justifica"**. Escribirlo igual: una decisión sin registro se
 vuelve a discutir.
 
+#### Resultado de la fase 4 — **las 10 están sanas, cero migraciones** (2026-08-26)
+
+**No se llamó a ninguna.** Escriben en tablas calientes, y llamarlas con datos de
+prueba —incluso dentro de una transacción que se revierte— toma locks sobre
+`inventory` y `products` mientras el cron corre cada minuto. Se midieron por lo
+que **producción ya ejecuta**, sobre una ventana de `pg_stat_statements` de 17.5 h
+que empieza DESPUÉS del incidente, o sea limpia por construcción:
+
+| función | llamadas | ms prom | ms mín–máx | veredicto |
+|---|---:|---:|---:|---|
+| `upsert_product_precios_batch` | 105 | **236.9** | 168–576 | **cruza el umbral** |
+| `sync_inventory_batch` | 499 | 109.0 | 2–662 | sana |
+| `cola_espejo_portal_erp` | 105 | 9.2 | 1–47 | sana |
+| `upsert_products_minimal` | 525 | 5.6 | 0.6–78 | sana |
+| `sync_laboratorios_batch` | 105 | 4.0 | 2.5–18 | sana |
+| `sync_purchase_receipt_items_batch` | 525 | 3.5 | 0.5–368 | sana |
+| `insert_missing_products` | 4,248 | 3.3 | 0.4–108 | sana |
+| `sync_presentaciones_batch` | 105 | 3.2 | 1.7–32 | sana |
+| `sync_purchase_receipts_batch` | 525 | 2.5 | 0.6–128 | sana |
+| `sync_suppliers_batch` | 525 | 1.5 | 0.4–33 | sana |
+
+**Y para la que cruza no hace falta medirla: hay una prueba estructural, y vale
+para las diez.** El único parámetro de `upsert_product_precios_batch` es
+`p_rows jsonb`, y el planificador estima `jsonb_array_elements` en **exactamente
+100 filas pase lo que pase**:
+
+| payload | filas reales | filas estimadas |
+|---|---:|---:|
+| literal de 3 elementos | 3 | **100** |
+| literal de 100 | 100 | **100** |
+| literal de 5,000 | 5,000 | **100** |
+| como parámetro `$1` | — | **100** |
+
+O sea que **conocer el valor no le aporta nada al planificador**: el plan
+personalizado y el genérico son el mismo por construcción, y `force_custom_plan`
+sólo agregaría el costo de replanificar. **Ninguna de las diez puede mejorar con
+esta corrección**, y eso es más fuerte que una medición porque no depende de qué
+datos había ese día.
+
+Es también la regla general que faltaba: **una función cuyos únicos parámetros
+son un payload `json`/`jsonb` NO puede tener este defecto.** Sirve como filtro de
+descarte inmediato en cualquier auditoría futura.
+
+**Anotado, fuera de alcance:** `upsert_product_precios_batch` tarda 237 ms de
+media y llega a 576. No es un plan malo — es trabajo real sobre un lote grande.
+Si alguna vez molesta, el camino es el tamaño del lote o el `IS DISTINCT FROM`,
+no el envoltorio.
+
 ### Fase 5 — el gate, para que no vuelva *(≈media sesión)*
 
 Sección nueva en `gate:perf` (que ya mide contra producción):
@@ -423,7 +471,7 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 | 1 · las tres lentas | **cerrado** — las tres medidas y **declaradas sanas**; cero migraciones |
 | 2 · la frontera | **cerrado** — las nueve medidas y **declaradas sanas**; cero migraciones |
 | 3 · las que no se llamaron | **cerrado** — 18 medidas, **18 sanas**; cero migraciones |
-| 4 · sincronización | abierto |
+| 4 · sincronización | **cerrado** — 10 medidas, **10 sanas**; prueba estructural, cero migraciones |
 | 5 · el gate | abierto |
 
 **Medición base del portal**, tomada hoy sobre tráfico real antes y después de la
@@ -447,6 +495,11 @@ con estado 522** (Cloudflare sin alcanzar al origen) — `bolsas`,
 lista de lentas era ancha y ajena al conteo (`upsert_product_precios_batch` 20 s,
 `roles` 21 s, `refresh_inventory_grouped_mv` 17 s), y los registros de Postgres
 no mostraron nada grave: checkpoints normales, sin `FATAL`, sin «too many
-connections», sin deadlock. **No volvió a pasar en 17 horas.** Queda anotado como
-transitorio de plataforma sin confirmar — si se repite, ésta es la huella que hay
-que buscar.
+connections», sin deadlock. **No volvió a pasar en 17 horas.**
+
+✅ **Explicado el 26-ago:** `pg_stat_statements_info.stats_reset` marca
+**2026-08-25 22:28:24 UTC**, o sea que la base **se reinició** justo después del
+bache. Eso encaja con todo lo observado — los 522 a los 90 s, las conexiones
+agotadas y el corte de tráfico— y no fue algo que hiciéramos nosotros. Truco que
+vale para la próxima: **`stats_reset` es un detector de reinicios**, y cuesta una
+consulta.

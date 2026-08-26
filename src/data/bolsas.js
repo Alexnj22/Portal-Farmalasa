@@ -337,6 +337,32 @@ export async function fetchDepositos({ desde, hasta } = {}) {
     return data || [];
 }
 
+/**
+ * Las TANDAS de conteo de un período, con sus bolsas adentro.
+ *
+ * «el filtro no puede ser por conteos? así como los depósitos de banco? así se
+ * ve más ordenado y más estructurado todo» (usuario, 2026-08-26).
+ *
+ * Confirmar un conteo movía N bolsas a CONTADA y no dejaba nada que las uniera:
+ * para saber qué se contó el lunes había que agrupar de memoria por la hora.
+ * Desde `bolsas_conteos` es una fila con folio, sus tres cifras y sus firmas —
+ * o sea la misma clase de objeto que un depósito, que es lo que se pidió.
+ *
+ * Y es donde se lee la respuesta a «¿lo conté yo?»: `contaron` trae a todos los
+ * que contaron alguna de sus bolsas, y `cerrado_por` a quien firmó la tanda. No
+ * son la misma persona, y hasta hoy la pantalla mostraba uno solo.
+ *
+ * Sin permiso el servidor devuelve `null` —no una lista vacía—, así que acá se
+ * distingue «no puedo verlos» de «no hay ninguno».
+ */
+export async function fetchConteos({ desde, hasta } = {}) {
+    const { data, error } = await supabase.rpc('get_conteos', {
+        p_desde: desde || null, p_hasta: hasta || null,
+    });
+    if (error) { console.error('bolsas: fetchConteos failed:', error.message); return []; }
+    return data || [];
+}
+
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */
 /**
  * Saldar la diferencia de una bolsa, con su causa escrita y —desde el

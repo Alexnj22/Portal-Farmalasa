@@ -49,6 +49,10 @@ const DepositoAlBanco = lazy(() => import('../../components/bolsas/DepositoAlBan
  * alguien va a cuadrar contra el banco. */
 const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlBanco'));
 
+/* Y el archivo de los conteos: la misma `DataTable`, así que comparten chunk en
+ * cuanto se abre cualquiera de los dos. */
+const ConteosDeBolsas = lazy(() => import('../../components/bolsas/ConteosDeBolsas'));
+
 /* El editor de la foto se baja al ELEGIR el archivo, no al abrir la pantalla:
  * la enorme mayoría de los conteos no adjunta nada. Es el mismo canónico y el
  * mismo motivo que en `SalidaDeBolsa`. */
@@ -149,20 +153,28 @@ const diasDesde = (f) => Math.max(0, Math.round(
 const DIAS_DE_ALARMA = 4;
 
 
-/* «Hoy» / «Ayer» y si no la fecha corta. Es el MISMO rótulo que usa el diálogo
- * de entrega para agrupar por día — dos formas distintas de nombrar el mismo día
- * en dos pantallas del mismo circuito obligan a traducir mentalmente. */
-const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
-const rotularDia = (fecha) => {
-    const hoy = hoySV();
-    if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return fechaCorta(fecha);
-};
+/* ── El día SIEMPRE dice su fecha ───────────────────────────────────────────
+ *
+ * «que salga siempre la fecha, no ayer. para hoy que ponga en subtexto la
+ * fecha» (usuario, 2026-08-26).
+ *
+ * «Ayer» era cierto el día que se escribió y falso cualquier otro. Quien cuenta
+ * el dinero lo hace con el sobre en la mano, y el sobre dice una FECHA: leer
+ * «Ayer» en la pantalla obliga a una resta mental para saber si es ese sobre o
+ * el otro. Y la palabra se pudre sola — la pantalla queda abierta cruzando la
+ * medianoche y sigue diciendo «Ayer» sobre el día de antes de ayer, sin que
+ * nada falle ni nadie se entere.
+ *
+ * «Hoy» se queda porque no COMPITE con la fecha: se dice además de ella, con la
+ * fecha de subtexto. Es el único rótulo relativo que no puede envejecer mal, y
+ * es el que contesta la pregunta que sí se hace («¿esto es de la tanda de hoy?»).
+ *
+ * Es el MISMO rótulo que usa el diálogo de entrega — dos formas distintas de
+ * nombrar el mismo día en dos pantallas del mismo circuito obligan a traducir
+ * mentalmente. */
+const esHoy = (fecha) => fecha === hoySV();
+const rotularDia = (fecha) => (esHoy(fecha) ? 'Hoy' : fechaCorta(fecha));
+const subrotuloDia = (fecha) => (esHoy(fecha) ? fechaCorta(fecha) : null);
 
 /* ── Qué se ve plegado dentro de «Finalizadas», y por qué se recuerda ───────
  *
@@ -191,8 +203,22 @@ const rotularDia = (fecha) => {
  * navegador configurado para bloquear datos de sitio, el acceso LANZA — y una
  * pantalla de dinero no se puede quedar en blanco por una preferencia.
  */
-const CLAVE_PLEGADO = 'bolsas:etapas-cerradas';
-const CERRADAS_LA_PRIMERA_VEZ = ['depositos'];
+/* La clave cambió de nombre al entrar «Conteos» (2026-08-26). No es un detalle:
+ * el default nuevo —«Contadas» cerrada— sólo lo estrena quien no tiene todavía
+ * una preferencia guardada, y todo el que ya usó la pantalla la tiene. Con la
+ * clave vieja, el cambio no lo habría visto justamente quien lo pidió. */
+const CLAVE_PLEGADO = 'bolsas:etapas-cerradas-v2';
+
+/* «Contadas» pasa a arrancar CERRADA, y es la mitad del pedido de estructura:
+ * «el filtro no puede ser por conteos? así como los depósitos de banco? así se
+ * ve más ordenado y más estructurado todo» (usuario, 2026-08-26).
+ *
+ * Lo que se abre primero ahora es «Conteos» —una fila por tanda firmada, con su
+ * cuadre y sus firmas—, y la lista de las 122 bolsas de a una pasa a ser el
+ * detalle, que es el orden en que se pregunta: primero «¿qué se contó?» y sólo
+ * después «¿cuál de todas?». Dejar las dos abiertas habría agregado una lista
+ * sin sacar la otra, que es lo contrario de ordenar. */
+const CERRADAS_LA_PRIMERA_VEZ = ['contadas', 'depositos'];
 
 function usePlegado() {
     const [cerradas, setCerradas] = useState(() => {
@@ -267,7 +293,27 @@ const diferenciaDe = (b) => (contadoDe(b) == null ? null : Math.round((Number(co
  */
 function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionada, onSeleccionar, children, alarma, onAbrir, verMontos }) {
     const dias = diasDesde(bolsa.fecha);
-    const quien = personas.get(bolsa.contado_por || bolsa.recibida_por || bolsa.entregada_por || bolsa.cerrada_por);
+    /* ── Quién, y QUÉ hizo ──────────────────────────────────────────────────
+     * Era una cadena de `||` sobre cuatro columnas que pintaba una cara sin
+     * decir de qué. Mientras el circuito entero lo hacía una persona daba
+     * igual; desde que recibir, contar y depositar los pueden hacer tres,
+     * miente:
+     *
+     *   «yo lo puedo recibir, pero no conté yo ni deposité yo»
+     *   (usuario, 2026-08-26)
+     *
+     * Y `conteo_marcado_por` —quien acaba de contarla, que es el dato más
+     * fresco que tiene la bolsa— ni siquiera estaba en la cadena: una bolsa
+     * contada por otro seguía mostrando al que la recibió.
+     *
+     * Ahora sale el ÚLTIMO acto y va con su verbo. Un nombre solo no dice
+     * nada; «Contó Carlos» sobre una bolsa que uno recibió es exactamente la
+     * distinción que se pidió. */
+    const firma = ((f) => f('Contó', bolsa.conteo_marcado_por) || f('Contó', bolsa.contado_por)
+        || f('Recibió', bolsa.recibida_por) || f('Entregó', bolsa.entregada_por)
+        || f('Guardó', bolsa.cerrada_por)
+    )((verbo, id) => (id && personas.get(id) ? { verbo, quien: personas.get(id) } : null));
+    const quien = firma?.quien;
     const vales = Number(bolsa.vales || 0);
     // El renglón de abajo no se dibuja vacío: sin etiquetas, sin firma y sin
     // pie sería una caja de altura cero que igual se cobra su `gap`.
@@ -348,7 +394,9 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                             fallbackText={iniciales(quien.name)}
                             className="w-5 h-5 rounded-full shrink-0 text-micro"
                         />
-                        <span className="text-caption text-content-3 truncate">{quien.name}</span>
+                        <span className="text-caption text-content-3 truncate">
+                            {firma.verbo} {quien.name}
+                        </span>
                     </span>
                 )}
                 {/* Frena el clic: la tarjeta abre el detalle, y un boton de
@@ -853,6 +901,14 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                     <div className="text-micro font-black uppercase tracking-widest text-content-3">
                                         {rotularDia(d.fecha)}
                                     </div>
+                                    {/* Bajo «HOY» va su fecha, que es lo que dice
+                                        el sobre. Los otros días ya SON la fecha,
+                                        así que ahí no hay nada que agregar. */}
+                                    {subrotuloDia(d.fecha) && (
+                                        <div className="text-micro text-content-3 tabular-nums">
+                                            {subrotuloDia(d.fecha)}
+                                        </div>
+                                    )}
                                     <div className="text-title-sm font-bold tabular-nums text-content mt-0.5">
                                         {formatMoney(suma(d.lista))}
                                     </div>
@@ -926,8 +982,15 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                             <div key={d.fecha ?? 'todo'} className="space-y-1.5">
                                 {d.fecha && (
                                     <div className="flex items-baseline justify-between gap-3 px-1">
-                                        <span className="text-subtitle font-bold text-content-2">
-                                            {rotularDia(d.fecha)}
+                                        <span className="min-w-0">
+                                            <span className="text-subtitle font-bold text-content-2">
+                                                {rotularDia(d.fecha)}
+                                            </span>
+                                            {subrotuloDia(d.fecha) && (
+                                                <span className="text-caption text-content-3 tabular-nums">
+                                                    {' '}· {subrotuloDia(d.fecha)}
+                                                </span>
+                                            )}
                                         </span>
                                         {/* Con un solo día su cuenta sería la de la sala,
                                             palabra por palabra, así que ahí se calla: repetir
@@ -1073,7 +1136,11 @@ export default function CircuitoDeBolsas({
         setPorDepositar(paraBanco || []);
         setLeidoEn(Date.now());
         setCargando(false);
-        const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por, b.dif_por]);
+        // `conteo_marcado_por` faltaba, y es la firma que más se mira: la de
+        // quien está contando AHORA. Sin ella su nombre no llegaba al padrón y
+        // la tarjeta caía al acto anterior — o sea, mostraba al que recibió.
+        const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por,
+            b.conteo_marcado_por, b.contado_por, b.dif_por]);
         const gente = await fetchPersonasDeBolsas(firmas);
         setPersonas(new Map(gente.map((p) => [p.id, p])));
     }, [desde, hasta]);
@@ -1109,7 +1176,8 @@ export default function CircuitoDeBolsas({
             b.folio, nombreSala[b.branch_id], b.fecha, rotularDia(b.fecha), b.hora, b.caja,
             String(b.monto_inicial ?? ''), String(b.saldo ?? ''), String(b.contado ?? ''),
             nombrePersona.get(b.cerrada_por), nombrePersona.get(b.entregada_por),
-            nombrePersona.get(b.recibida_por), nombrePersona.get(b.contado_por));
+            nombrePersona.get(b.recibida_por), nombrePersona.get(b.contado_por),
+            nombrePersona.get(b.conteo_marcado_por));
     }, [busqueda, nombreSala, nombrePersona]);
 
     /* Con alcance de una sala la pantalla es UNA etapa, así que todo lo que se
@@ -2096,6 +2164,23 @@ export default function CircuitoDeBolsas({
                         Depósito al banco
                     </Button>
                 </div>
+            )}
+
+            {/* ── El archivo de los CONTEOS ────────────────────────────────
+                Va ANTES de «Contadas» y arranca abierto, porque es la pregunta
+                que se hace primero: qué tandas se firmaron, con qué cuadre y
+                quién las contó. La lista bolsa por bolsa quedó abajo como el
+                detalle, que es lo que era.
+
+                Detrás de `bolsas_ver_montos` va la sección ENTERA y no sólo las
+                cifras, igual que los depósitos: «CNT-260826-1 · 43 bolsas» sin
+                montos no contesta ninguna de las preguntas por las que existe. */}
+            {verMontos && (
+                <Suspense fallback={null}>
+                    <ConteosDeBolsas desde={desde} hasta={hasta} nombreSala={nombreSala}
+                        plegada={cerradas.has('conteos')}
+                        onPlegar={() => plegar('conteos')} />
+                </Suspense>
             )}
 
             {/* ── 4. Contadas ───────────────────────────────────────────── */}

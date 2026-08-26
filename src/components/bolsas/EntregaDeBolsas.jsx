@@ -74,20 +74,23 @@ import { useToastStore } from '../../store/toastStore';
  * (`bolsas_tipos_salida.pide_receptor`), no en un `if` escrito acá.
  */
 
+/* ── El día SIEMPRE dice su fecha ───────────────────────────────────────────
+ *
+ * «que salga siempre la fecha, no ayer» (usuario, 2026-08-26). El motivo largo
+ * está en `CircuitoDeBolsas`, junto al mismo par de funciones: quien entrega el
+ * efectivo tiene el sobre en la mano y el sobre dice una fecha, así que «Ayer»
+ * obliga a una resta mental — y deja de ser cierto solo, sin que nada falle,
+ * apenas la pantalla cruza la medianoche abierta.
+ *
+ * Las dos pantallas del circuito lo dicen igual a propósito: dos formas de
+ * nombrar el mismo día obligan a traducir entre una y otra. */
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-const correrDia = (fecha, dias) => {
-    const d = new Date(`${fecha}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dias);
-    return d.toISOString().slice(0, 10);
-};
-const rotularDia = (fecha) => {
-    const hoy = hoySV();
-    if (fecha === hoy) return 'Hoy';
-    if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    });
-};
+const fechaDelDia = (fecha) => new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+});
+const esHoy = (fecha) => fecha === hoySV();
+const rotularDia = (fecha) => (esHoy(fecha) ? 'Hoy' : fechaDelDia(fecha));
+const subrotuloDia = (fecha) => (esHoy(fecha) ? fechaDelDia(fecha) : null);
 
 export default function EntregaDeBolsas({
     abierto, bolsas, saldoDe, nombreSala, verMontos = false, onClose, onHecho,
@@ -237,13 +240,20 @@ export default function EntregaDeBolsas({
                                     size="sm"
                                     checked={dias.has(d.fecha)}
                                     onChange={() => alternarDia(d.fecha)}
-                                    aria-label={`Entregar las bolsas del ${rotularDia(d.fecha)}`}
+                                    aria-label={`Entregar las bolsas del ${fechaDelDia(d.fecha)}`}
                                 />
                             </span>
                             <span className="min-w-0 flex-1">
                                 <span className="flex items-baseline justify-between gap-2">
-                                    <span className="text-label font-bold text-content capitalize">
-                                        {rotularDia(d.fecha)}
+                                    <span className="min-w-0 capitalize">
+                                        <span className="text-label font-bold text-content">
+                                            {rotularDia(d.fecha)}
+                                        </span>
+                                        {subrotuloDia(d.fecha) && (
+                                            <span className="text-caption text-content-3">
+                                                {' '}· {subrotuloDia(d.fecha)}
+                                            </span>
+                                        )}
                                     </span>
                                     {/* La cifra sólo para quien tiene el permiso.
                                         Lo que la sala coteja contra lo físico es

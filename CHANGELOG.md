@@ -21,6 +21,173 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.790.0 — Distrito, las dos fechas con su nombre, el NUP que es el DUI, y sin prácticas
+
+Cuatro puntos de la revisión con Talento Humano, y uno destapó un rótulo cruzado
+que llevaba tiempo ahí.
+
+**Punto 4 — el distrito.** El catálogo de los 262 ya existía: se construyó para
+la ficha fiscal del cliente. Pero al conectarlo apareció que **el campo rotulado
+«Distrito» estaba guardando el municipio**. Desde la Ley Especial para la
+Reestructuración Municipal —vigente desde el 1-may-2024— el país tiene 14
+departamentos, **44 municipios** («Chalatenango Norte», «San Salvador Centro»…)
+y **262 distritos**, que son los municipios de antes. El formulario ofrecía los
+44 bajo el rótulo «Distrito»: decía una cosa y guardaba otra.
+
+Ahora son los tres niveles en cascada, y **cambiar de municipio limpia el
+distrito**: el que estaba elegido pertenece a otro municipio, y guardarlo así
+sería una dirección que no existe. Se limpia en el gesto que lo invalida y no en
+un `useEffect`, que también se dispararía al hidratar una ficha ya guardada y
+borraría un dato bueno.
+
+**Punto 13 — las dos fechas.** «Fecha de contratación» pasa a **inicio de
+labores** (Art. 23 nº5, la que cuenta para antigüedad, vacaciones y los 30 días
+de prueba del Art. 28) e «Inicio de contrato» pasa a **fecha de contratación**
+(Art. 23 nº13, cuándo se firmó). Cambia el rótulo, no el significado.
+
+**Punto 14 — el NUP es el DUI.** Desde enero de 2023 quedó homologado al
+documento de identidad: es con el DUI que uno se afilia y hace trámites de
+pensiones. Dejó de ser un campo que se teclea — se muestra el DUI, que se
+captura en Datos Personales y ahí sí se le comprueba el dígito verificador.
+
+**El valor viejo no se borra ni se pisa.** Si una ficha trae un NUP anterior
+distinto del DUI, se sigue viendo. Borrarlo sería decidir por alguien que ese
+número ya no importa.
+
+Y **«cada cuánto se le paga» se fue de Nómina al contrato**: no es un dato
+bancario, es una cláusula — y además la que decide cuándo el pago se vuelve
+exigible (Art. 130).
+
+**Punto 7 — sin «Prácticas».** El usuario confirmó que no contratan aprendices
+pagados. El valor sigue reconociéndose al LEER una ficha vieja: quitarlo de
+golpe dejaría el tipo de contrato en blanco en quien lo tuviera, sin que nadie
+lo note. Queda anotado en el código que el formulario de practicantes NO es esta
+figura — ése es una pasantía estudiantil; el aprendizaje del Art. 61-70 es un
+contrato laboral pagado.
+
+## v2.789.0 — Personal: una ficha dice si es una persona en planilla
+
+Reporte del usuario: *«hay unos "usuarios" que no son empleados, por ejemplo el
+de QA u otros. por temas legales, ¿no crees que no deberían estar ahí?»*. Tenía
+razón, y era más grande que la vista de Personal.
+
+**Lo que había.** `employees` no distinguía a una persona contratada de una
+cuenta técnica ni de un servicio externo, y el único freno era un `.filter()`
+—`system_role !== 'SUPERADMIN'`— escrito dentro de `StaffManagementView`. O sea
+que protegía **una pantalla**. Verificado: `SchedulesView` y `VacationPlanView`
+leen `employees` en crudo, y `generatePayrollEntries` filtra sólo por estado y
+sucursal. Consecuencias medidas:
+
+| | antes | ahora |
+|---|---|---|
+| «Total» en Personal | 47 | **45** |
+| Plan Anual de Vacaciones (Art. 177 CT) | listaba a QA Testing y al Contador Externo | sólo personal en planilla |
+| Planilla | les generaba renglón en $0 y entraban al aviso de «sin salario base» | fuera |
+| Horarios | aparecían como personal con turno | fuera |
+| «N Activos» de cada sala | QA inflaba Salud 1, el Contador inflaba Administración | fuera |
+| `Directorio_Personal.csv` | los exportaba | sólo planilla, en cualquier pestaña |
+
+Y las cuatro fichas estaban `ACTIVO` con **`contract_type = 'INDEFINIDO'`**: el
+registro afirmaba que una cuenta de pruebas era personal permanente de Salud 1 y
+que un contador externo tenía contrato indefinido. La segunda es la que hace
+daño de verdad — un proveedor externo anotado como personal indefinido argumenta
+EN CONTRA de la empresa en una inspección, no a favor.
+
+**Lo que hay.** La columna `employees.tipo_ficha` (`empleado` /
+`servicio_externo` / `tecnica`) y un solo lugar donde se pregunta:
+`src/utils/tipoDeFicha.js`. Lo usan Personal, Nómina, Horarios, el Plan de
+Vacaciones, el detalle de sucursal y el CSV. El default es `empleado` a
+propósito y no es simetría: marcar de menos deja a una persona real fuera de la
+planilla y del ISSS —y eso no da error, sólo una ausencia que nadie ve—; marcar
+de más pone una cuenta en una lista donde se ve y se corrige.
+
+Las tres fichas que no son empleados siguen siendo administrables, en su propia
+vista: `/personal?tab=externos`, con su badge en la fila («Cuenta del sistema»,
+«Servicio externo»). Va en la píldora y no como sexta tarjeta porque el carril
+mide 870px a 1280 y `StatCard` pide 150 de mínimo: una tarjeta más lo vuelve a
+cortar, que es lo que v2.784.0 acababa de arreglar.
+
+### Dos defectos propios que aparecieron al verificar
+
+- **`usePestanaEnUrl` ignoraba las listas de `FilterBar`.** Reconocía `key` e
+  `id` pero no `value`, así que con una lista de opciones el `map` daba
+  `undefined`, `.filter(Boolean)` lo borraba y `claves` quedaba **vacío** — con
+  eso la dirección se ignoraba y la vista se quedaba clavada en la primera
+  pestaña, **mientras el clic sí escribía el `?tab=` en la barra**. La URL decía
+  una cosa y la pantalla otra, sin que nada fallara. O sea que la mitad de
+  v2.784.0 nunca funcionó. Anclado en `tests/unit/pestanaEnLaDireccion.test.jsx`
+  con la regresión probada: sin el arreglo, las dos pruebas nuevas fallan.
+- **La primera migración dejó el portal sin login ~9 minutos** (21:58→22:07
+  UTC). `employees_safe` es `security_invoker`, y desde esa misma tarde el
+  permiso de `employees` es POR COLUMNA: agregarle `tipo_ficha` a la vista sin
+  su `GRANT` hizo que **toda** lectura respondiera `permission denied for column
+  tipo_ficha` — no la columna: la vista entera. Ninguna cuenta de portal inició
+  sesión dentro de la ventana; las sesiones ya abiertas sí pudieron ver errores.
+  Corregido en `20260826220709`. **Con permiso por columna, una columna nueva
+  nace sin permiso, y el GRANT va en la MISMA migración.**
+
+## v2.788.0 — El conteo se firma por tanda, y cada acto dice quién lo hizo
+
+Tres cosas que pidió el usuario sobre `/bolsas?tab=contar`, y las tres salieron
+de la misma raíz: la pantalla contaba el recorrido del dinero como si lo hiciera
+una sola persona.
+
+> «si yo edwin lo acepto, los demás que tienen permiso no pueden ayudar a
+> contar… no sólo quien acepta lo puede contar. yo lo puedo recibir, pero no
+> conté yo ni deposité yo.»
+
+**Contar dejó de ser cosa de dos cargos.** Era literal: `bolsas_conteo` con
+permiso de EDITAR lo tenían Gerente General y Supervisor/a de Ventas y nadie
+más. Administración y Talento Humano veían la pestaña «Por contar» con sus
+bolsas y sus montos, y no les salía ni «Cuadra» ni «No cuadra» — la pantalla les
+mostraba el trabajo y les escondía la forma de hacerlo, sin decir por qué.
+Jefe/a de Compras queda afuera a propósito: cuenta sin ver montos, o sea que
+contaría a ciegas.
+
+**Cada acto dice su verbo y su nombre.** La tarjeta resolvía la cara con una
+cadena de `||` sobre cuatro columnas y la pintaba sin decir de qué: quien recibía
+aparecía como si hubiera contado. Y `conteo_marcado_por` —quien acaba de
+contarla, el dato más fresco que tiene una bolsa— ni siquiera estaba en la
+cadena, así que una bolsa contada por otro seguía mostrando al que la recibió.
+Ahora sale el ÚLTIMO acto con su verbo: «Contó Carlos», «Recibió Edwin»,
+«Guardó…». La bitácora también lo dice: el renglón del conteo nombra a quien
+contó esa bolsa, no sólo a quien apretó «Confirmar».
+
+**El conteo pasa a ser un hecho con folio, como el depósito.**
+
+> «el filtro no puede ser por conteos? así como los depósitos de banco? así se
+> ve más ordenado y más estructurado todo.»
+
+Confirmar una tanda movía N bolsas a CONTADA y no dejaba nada que las uniera:
+para saber qué se contó el lunes había que acordarse de una bolsa de ese día,
+abrirla, mirar la hora y agrupar de memoria — y aun así no se veía el cuadre de
+la tanda, que es el número por el que se firma. Ahora `bolsas_conteos` guarda
+una fila por tanda: folio `CNT-260826-1`, los días que cubre, lo que debía
+haber, lo que se contó, la diferencia, cuántas no cuadraron, **quiénes contaron
+y quién firmó** — que son dos actos distintos y hasta hoy se guardaba uno solo.
+Se mira en «Finalizadas» con la misma tabla que los depósitos, y cada fila abre
+su detalle bolsa por bolsa con quién contó cada una. Las tres tandas que ya
+habían pasado se reconstruyeron del sello de la transacción (122 bolsas, 122
+ligadas); la del 21-ago se cerró por otro camino y no tiene evento, así que su
+firma queda vacía en vez de inventarse un nombre.
+
+Con eso, «Contadas» pasa a arrancar plegada: primero se pregunta «¿qué se
+contó?» y sólo después «¿cuál de todas?».
+
+**Y el día siempre dice su fecha.**
+
+> «que salga siempre la fecha, no ayer. para hoy que ponga en subtexto la
+> fecha.»
+
+«Ayer» era cierto el día que se escribió y falso cualquier otro. Quien cuenta
+tiene el sobre en la mano y el sobre dice una FECHA, así que la palabra obligaba
+a una resta mental para saber si era ese sobre o el otro — y se pudría sola: la
+pantalla queda abierta cruzando la medianoche y sigue diciendo «Ayer» sobre el
+día de antes de ayer, sin que nada falle ni nadie se entere. «Hoy» se queda
+porque no compite con la fecha: se dice además de ella, con la fecha de
+subtexto. Vale igual en el diálogo de entrega, que es la otra pantalla del mismo
+circuito.
+
 ## v2.787.0 — El DUI se sube al inicio y llena media ficha
 
 Punto 1 de la revisión con Talento Humano: subir el DUI de los dos lados y que

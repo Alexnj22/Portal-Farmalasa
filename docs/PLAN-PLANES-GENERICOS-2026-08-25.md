@@ -568,12 +568,34 @@ Pesan **376 kB** entre los cuatro. **No necesitó la verificación columna por
 columna** que exige la regla del libro, porque un índice no puede cambiar el
 resultado — sólo el camino. Ésa fue la razón para empezar por acá.
 
-**Queda el resto de la ganancia, y es una reescritura.** El `OR` entre la rama
-del sello y la de los tres códigos impide un plan estable: con los índices
-puestos, el planificador **todavía elige el barrido** en algunas formas de la
-consulta. Normalizar los documentos UNA vez y cruzarlos por hash midió
-**671 → 457 ms** sobre el paso de emparejado. Eso sí cambia el cuerpo, así que
-antes hay que comparar todas las columnas del reporte.
+#### La reescritura se probó y es PEOR — cerrado (2026-08-26)
+
+Quedaba proponer normalizar los documentos UNA vez y cruzarlos, porque el paso de
+emparejado había medido **671 → 457 ms**. Se construyó la candidata completa como
+función temporal de sesión y se comparó como manda la regla del libro:
+
+| | filas | tiempo |
+|---|---:|---:|
+| original, con los índices puestos | 699 | **684 ms** |
+| la reescritura | 699 | **3,873 ms** — 5.7× PEOR |
+
+**Resultado idéntico**: `EXCEPT ALL` en las dos direcciones sobre la fila
+completa da **0 y 0**, o sea que las 22 columnas coinciden. La reescritura es
+correcta; simplemente es más lenta.
+
+**Y el motivo es la lección que hay que llevarse: aquel 671 → 457 ms se midió
+ANTES de poner los índices.** Al aplicarlos, el `LATERAL` original pasó a entrar
+por ellos, mientras que la candidata materializa 1,920 documentos y 5,760 claves
+en cada llamada y después filtra sobre un CTE que no se puede indexar.
+
+> **Una optimización propuesta se mide contra el baseline de HOY, no contra el
+> que la motivó.** Arreglar una cosa cambia el piso de todas las demás, y una
+> mejora medida contra un piso viejo está inflada — acá, hasta darse vuelta de
+> signo. Es el mismo error que el promedio contaminado de §0, en el eje del
+> tiempo en vez del de la carga.
+
+**Conclusión: los índices eran la corrección, y el libro queda cerrado.** No hay
+reescritura pendiente.
 
 ### 7.2 · El payload de Ventas — **no era el problema** ❌
 

@@ -654,6 +654,17 @@ export const createEmployeeSlice = (set, get) => ({
                 // entrega el patrono. Vacío es una lista vacía, no null — la
                 // columna es NOT NULL y el CHECK exige que sea un array.
                 herramientas_entregadas: normalizeHerramientas(formData.herramientas_entregadas),
+                // Art. 23 nº9 desarmado en sus tres partes: la estipulación
+                // (Art. 126, que decide el plazo del Art. 130), el medio y el
+                // lugar. Ver `utils/contrato.js`.
+                forma_estipulacion_salario: formData.forma_estipulacion_salario || null,
+                medio_pago: formData.medio_pago || null,
+                lugar_pago: formData.lugar_pago ? formData.lugar_pago.trim().toUpperCase() : null,
+                // Art. 18: cuándo se remitió el tercer ejemplar. No aplica a
+                // servicios profesionales — es un contrato civil.
+                mtps_remitido_fecha: formData.mtps_remitido_fecha || null,
+                isss_estado: formData.isss_estado || null,
+                afp_estado: formData.afp_estado || null,
                 base_salary: formData.base_salary ? parseFloat(formData.base_salary) : null,
                 has_motorcycle: !!formData.has_motorcycle,
                 has_car: !!formData.has_car,
@@ -948,6 +959,12 @@ export const createEmployeeSlice = (set, get) => ({
             // el alta y la misma columna tendría dos formas.
             if (updatedData.periodo_pago !== undefined) dbPayload.periodo_pago = updatedData.periodo_pago || null;
             if (updatedData.distrito !== undefined) dbPayload.distrito = updatedData.distrito || null;
+            if (updatedData.forma_estipulacion_salario !== undefined) dbPayload.forma_estipulacion_salario = updatedData.forma_estipulacion_salario || null;
+            if (updatedData.medio_pago !== undefined) dbPayload.medio_pago = updatedData.medio_pago || null;
+            if (updatedData.lugar_pago !== undefined) dbPayload.lugar_pago = updatedData.lugar_pago ? updatedData.lugar_pago.trim().toUpperCase() : null;
+            if (updatedData.mtps_remitido_fecha !== undefined) dbPayload.mtps_remitido_fecha = updatedData.mtps_remitido_fecha || null;
+            if (updatedData.isss_estado !== undefined) dbPayload.isss_estado = updatedData.isss_estado || null;
+            if (updatedData.afp_estado !== undefined) dbPayload.afp_estado = updatedData.afp_estado || null;
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
             if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;
@@ -1096,16 +1113,46 @@ export const createEmployeeSlice = (set, get) => ({
         const base64 = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
         const newPin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
 
+        // ── La fecha de fin NO se borra a ciegas ────────────────────────────
+        //
+        // Esto escribía `contract_end_date: null` SIEMPRE. Con un contrato
+        // indefinido está bien —no tiene fin— pero recontratar a PLAZO dejaba
+        // un temporal sin fecha de fin y sin base legal, y el Art. 25 presume
+        // indefinido exactamente eso: un plazo sin justificar. O sea que el
+        // portal producía un contrato que afirma algo que la ley no reconoce, y
+        // sin dar ningún error.
+        //
+        // Y un contrato nuevo es un contrato nuevo: sus fechas de celebración
+        // arrancan de cero, y con ellas el plazo del Art. 18. Antes no se
+        // escribían, así que la ficha recontratada conservaba la firma del
+        // contrato ANTERIOR — y el aviso del Ministerio contaba ocho días desde
+        // una fecha que ya no correspondía a nada.
+        const tipo = rehireData.contract_type || 'INDEFINIDO';
+        const aPlazo = tipo === 'TEMPORAL';
         const dbPayload = {
             status: 'ACTIVO',
             branch_id: parseInt(rehireData.branch_id, 10),
             role_id: parseInt(rehireData.role_id, 10),
             secondary_role_id: rehireData.secondary_role_id ? parseInt(rehireData.secondary_role_id, 10) : null,
             hire_date: rehireData.hire_date,
-            contract_type: rehireData.contract_type || 'INDEFINIDO',
+            contract_type: tipo,
             weekly_contracted_hours: parseInt(rehireData.weekly_contracted_hours, 10) || 44,
             base_salary: rehireData.base_salary ? parseFloat(rehireData.base_salary) : null,
-            contract_end_date: null,
+            contract_end_date: aPlazo ? (rehireData.contract_end_date || null) : null,
+            contract_temporal_legal_basis: aPlazo ? (rehireData.contract_temporal_legal_basis || null) : null,
+            contract_temporal_reason: aPlazo ? (rehireData.contract_temporal_reason || null) : null,
+            // El contrato nuevo se firma de nuevo. Si el formulario no lo dice,
+            // se toma la fecha de reingreso: es la que la persona puede
+            // afirmar, y dejarla en blanco arrastraría la firma del contrato
+            // viejo.
+            contrato_fecha_celebracion: rehireData.contrato_fecha_celebracion || rehireData.hire_date || null,
+            contrato_lugar_celebracion: rehireData.contrato_lugar_celebracion
+                ? String(rehireData.contrato_lugar_celebracion).trim().toUpperCase()
+                : (emp.contrato_lugar_celebracion || null),
+            // El acuse es del contrato ANTERIOR: no vale para éste, y dejarlo
+            // haría que el portal diga «ya se remitió» sobre algo que nunca se
+            // remitió. Los ocho días del Art. 18 arrancan otra vez.
+            mtps_remitido_fecha: null,
             kiosk_pin: newPin,
         };
 

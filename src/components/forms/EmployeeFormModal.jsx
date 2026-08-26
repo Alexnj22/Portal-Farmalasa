@@ -4,6 +4,8 @@ import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
 import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
+import { estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
+         FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
@@ -12,7 +14,8 @@ const CLAVE_BORRADOR = 'alta_empleado';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2 } from 'lucide-react';
+import Notice from '../common/Notice';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -428,6 +431,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0],
                 contract_end_date: '', contract_temporal_legal_basis: '', contract_temporal_reason: '', weekly_contracted_hours: '44', base_salary: '',
                 afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
+                forma_estipulacion_salario: '', medio_pago: '', lugar_pago: '',
+                mtps_remitido_fecha: '', contrato_prorrogas: [],
+                isss_estado: '', afp_estado: '',
                 // Art. 23 CT — los cuatro numerales que faltaban. Ninguno
                 // arranca con un valor puesto: `contract_type` y
                 // `weekly_contracted_hours` ya enseñaron que un default se
@@ -2449,6 +2455,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
+                                {esContratoCivil(formData.contract_type) && (
+                                    <div className="md:col-span-3 animate-in fade-in zoom-in-95">
+                                        <Notice variant="warning" icon={ShieldAlert}>
+                                            <span className="font-black">{ART20_ADVERTENCIA}</span>
+                                            {' '}Además: se le retiene el <span className="font-black">10% de renta</span>, y
+                                            no lleva ISSS ni AFP a cargo de la empresa, ni aguinaldo, ni vacaciones, ni
+                                            indemnización. Tampoco se remite al Ministerio de Trabajo.
+                                        </Notice>
+                                    </div>
+                                )}
+
                                 {formData.contract_type === 'TEMPORAL' && (
                                     <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in-95">
                                         <div className="relative z-content">
@@ -2477,18 +2494,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
 
                             <div className={`grid grid-cols-1 gap-4 mt-4 ${hoursMode === 'OTRO' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-                                <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas semanales</label>
-                                    <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
-                                </div>
+                                {/* La jornada NO se le fija a un contrato civil. Fijarle
+                                    horas a alguien por servicios profesionales es escribir el
+                                    indicio de subordinación del Art. 20 dentro del propio
+                                    contrato — y ese artículo presume contrato de trabajo con
+                                    prestar servicios más de dos días seguidos o probando
+                                    subordinación. Talento Humano pidió «horas mensuales»; la
+                                    respuesta de la ley es que no hay horas. */}
+                                {!esContratoCivil(formData.contract_type) && (
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas semanales</label>
+                                        <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
+                                    </div>
+                                )}
                                 {hoursMode === 'OTRO' && (
                                     <div className="relative z-content animate-in fade-in zoom-in-95">
                                         <PortalInput label="Horas (Otro)" name="weekly_contracted_hours" value={formData.weekly_contracted_hours === OTRO_HOURS_SENTINEL ? '' : formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="Ej. 36" hasError={hoursInvalid} errorMessage={`Entre ${MIN_WEEKLY_HOURS} y ${MAX_WEEKLY_HOURS}`} />
                                     </div>
                                 )}
                                 {isEditMode
-                                    ? <LockedField label="Salario Base" value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} />
-                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} inputMode="decimal" maskType="DECIMAL" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
+                                    ? <LockedField label={esContratoCivil(formData.contract_type) ? "Honorario" : "Salario Base"} value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} />
+                                    : <PortalInput label={esContratoCivil(formData.contract_type) ? "Honorario" : "Salario Base"} name="base_salary" value={formData.base_salary} onChange={handleChange} inputMode="decimal" maskType="DECIMAL" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>
 
@@ -2523,6 +2549,90 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
                             </div>
+
+                            {/* ── CÓMO SE PAGA (Art. 23 nº9) ────────────────────────
+                                Talento Humano lo pidió como «forma, período y lugar», que
+                                es como lo nombra el numeral. Al mirar la ley resultaron ser
+                                cosas distintas: la FORMA DE ESTIPULACIÓN es un catálogo
+                                cerrado del Art. 126 y decide cuándo el pago se vuelve
+                                exigible (Art. 130); el MEDIO es otra cosa, y la ley no lo
+                                enumera —pide moneda de curso legal y prohíbe vales—. */}
+                            <div className="mt-4 pt-4 border-t border-divider">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Banknote size={14} className="text-content-3" strokeWidth={2.5} />
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-3">Cómo se paga</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Forma de estipulación</label>
+                                        <LiquidSelect value={formData.forma_estipulacion_salario} onChange={(val) => handleSelectChange('forma_estipulacion_salario', val)} options={FORMA_ESTIPULACION_OPTIONS} placeholder="Seleccionar…" icon={Clock} {...portalSelectProps} />
+                                        {/* El plazo del Art. 130 al lado de la opción elegida:
+                                            es lo que vuelve esto una decisión y no un
+                                            desplegable más. */}
+                                        {PLAZO_DE_PAGO[formData.forma_estipulacion_salario] && (
+                                            <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                                Se vuelve exigible: {PLAZO_DE_PAGO[formData.forma_estipulacion_salario]}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Medio de pago</label>
+                                        <LiquidSelect value={formData.medio_pago} onChange={(val) => handleSelectChange('medio_pago', val)} options={MEDIO_PAGO_OPTIONS} placeholder="Seleccionar…" icon={Banknote} {...portalSelectProps} />
+                                        <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                            El salario se paga en moneda de curso legal. No se puede pagar con vales, fichas ni cupones.
+                                        </p>
+                                    </div>
+                                    <PortalInput
+                                        label="Lugar de pago" name="lugar_pago"
+                                        value={formData.lugar_pago} onChange={handleChange}
+                                        icon={MapPin} placeholder="Ej. Salud 1" colSpan={2} />
+                                </div>
+                            </div>
+
+                            {/* ── EL EJEMPLAR DEL MINISTERIO (Art. 18) ──────────────
+                                Tres ejemplares, y el tercero a la Dirección General de
+                                Trabajo dentro de los OCHO días siguientes a la celebración,
+                                modificación o prórroga. El mismo artículo dice que omitirlo
+                                NO afecta la validez del contrato: por eso esto es un aviso
+                                con cuenta regresiva y no un candado. Un candado sobre algo
+                                que la ley no anula produce el atajo, no el cumplimiento. */}
+                            {(() => {
+                                const mtps = estadoRemisionMtps(formData);
+                                if (!mtps.aplica) {
+                                    return (
+                                        <p className="mt-4 pt-4 border-t border-divider text-label text-content-3 font-medium leading-snug">
+                                            <span className="font-black">Ministerio de Trabajo:</span> {mtps.motivo}
+                                        </p>
+                                    );
+                                }
+                                return (
+                                    <div className="mt-4 pt-4 border-t border-divider">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <FileText size={14} className="text-content-3" strokeWidth={2.5} />
+                                            <p className="text-caption font-black uppercase tracking-widest text-content-3">Ejemplar del Ministerio de Trabajo</p>
+                                        </div>
+                                        {mtps.remitido ? (
+                                            <Notice variant="success" icon={CheckCircle2}>
+                                                Remitido el {new Date(mtps.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}.
+                                            </Notice>
+                                        ) : (
+                                            <Notice variant={mtps.vencido ? 'danger' : 'warning'} icon={AlertTriangle}>
+                                                {mtps.vencido
+                                                    ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Se remite igual: no haberlo hecho a tiempo no invalida el contrato.`
+                                                    : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${new Date(mtps.limite + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long' })}).`}
+                                            </Notice>
+                                        )}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                            <div className="relative z-content">
+                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha en que se remitió</label>
+                                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                    <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Art. 23 nº10 CT — «cantidad, calidad y estado de las

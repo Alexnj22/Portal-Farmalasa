@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.792.0 — Cómo se paga, el ejemplar del Ministerio, y la recontratación que dejaba un plazo sin justificar
+
+Puntos 11, 8, 9 y 10 de la revisión con Talento Humano, ya en pantalla.
+
+**11 — «forma, período y lugar de pago» eran tres cosas.** El Art. 23 nº9 los
+nombra juntos y es fácil leerlos como uno. La **forma de estipulación** (Art.
+126) es un catálogo cerrado y **no es una etiqueta**: el Art. 130 hace depender
+de ella cuándo el pago se vuelve exigible, así que la pantalla muestra ese plazo
+al lado de la opción elegida — al vencer el período, o dentro de los dos días de
+la entrega, o al liquidar cada quince días. Es lo que la vuelve una decisión y
+no un desplegable más.
+
+El **medio de pago** tiene dos opciones y **ninguna es un vale**: la ley pide
+moneda de curso legal (Art. 120) y prohíbe expresamente fichas, vales, pagarés y
+cupones (Art. 30 nº9). Lo que la ley prohíbe no se ofrece en un desplegable.
+
+**9 — el ejemplar del Ministerio, con cuenta regresiva.** Art. 18: tres
+ejemplares y el tercero a la Dirección General de Trabajo dentro de los **ocho
+días** siguientes a la celebración. La pantalla dice cuántos quedan y hasta
+cuándo; si venció, lo dice y **agrega que se remite igual**, porque el propio
+artículo aclara que omitirlo no afecta la validez del contrato. Es un aviso, no
+un candado: un candado sobre algo que la ley no anula produce el atajo.
+
+**8 — servicios profesionales resultó no ser un contrato de trabajo.** Es civil,
+y eso arrastra más de lo que se pidió: el salario pasa a **honorario**, se
+retiene el 10% de renta, no lleva ISSS ni AFP a cargo de la empresa, ni
+aguinaldo, ni vacaciones, ni indemnización, y **no se remite al Ministerio**.
+
+Se pidió cambiar las horas semanales por mensuales. La respuesta de la ley es
+que **no hay horas**: el Art. 20 presume contrato de trabajo con prestar
+servicios más de dos días seguidos o probando subordinación, así que fijarle
+jornada a alguien por servicios profesionales es escribir el indicio de
+subordinación dentro del propio contrato. El selector de horas desaparece y la
+pantalla lo explica. No lo bloquea: quién es subordinado es una decisión de la
+empresa y su abogado, no del formulario.
+
+**10 — la recontratación dejaba un contrato que la ley no reconoce.** Escribía
+`contract_end_date: null` **siempre**. Con un indefinido está bien; recontratar
+a plazo dejaba un temporal **sin fecha de fin y sin base legal**, que es
+exactamente lo que el Art. 25 presume indefinido. Sin ningún error.
+
+Y tampoco escribía las fechas del contrato nuevo, así que la ficha recontratada
+conservaba la firma del **anterior** — y el aviso del Ministerio contaba ocho
+días desde una fecha que ya no correspondía a nada. Ahora el contrato nuevo se
+firma de nuevo, y el acuse viejo se limpia: decir «ya se remitió» sobre algo que
+nunca se remitió es peor que no decir nada.
+
+8 pruebas nuevas en `utils/contrato.js`, y la que más importa es que un contrato
+de servicios profesionales **no tenga** plazo con el Ministerio: devolverle «te
+quedan 8 días» sería inventarle una obligación que no tiene.
+
 ## v2.791.0 — El conteo se filtra desde la píldora, y la diferencia dice lo que falta resolver
 
 Dos correcciones sobre lo que salió en v2.788.0, las dos del usuario mirando la

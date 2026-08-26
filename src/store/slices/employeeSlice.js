@@ -667,7 +667,16 @@ export const createEmployeeSlice = (set, get) => ({
 
                 contract_type: formData.contract_type || 'INDEFINIDO',
                 contract_start_date: formData.contract_start_date || null,
-                contract_end_date: formData.contract_type === 'TEMPORAL' ? (formData.contract_end_date || null) : null,
+                // TEMPORAL y SERVICIOS los dos tienen plazo. La base legal y el
+                // motivo, en cambio, son del Art. 25 —que es laboral— así que
+                // sólo aplican al temporal.
+                contract_end_date: (formData.contract_type === 'TEMPORAL' || formData.contract_type === 'SERVICIOS')
+                    ? (formData.contract_end_date || null) : null,
+                contrato_prorrogas: Array.isArray(formData.contrato_prorrogas)
+                    ? formData.contrato_prorrogas.filter(p => p?.hasta).map(p => ({
+                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim(),
+                      }))
+                    : [],
                 contract_temporal_legal_basis: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_legal_basis || null) : null,
                 contract_temporal_reason: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_reason || null) : null,
                 weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
@@ -1008,7 +1017,15 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.contrato_fecha_celebracion !== undefined) dbPayload.contrato_fecha_celebracion = updatedData.contrato_fecha_celebracion || null;
             if (updatedData.herramientas_entregadas !== undefined) dbPayload.herramientas_entregadas = normalizeHerramientas(updatedData.herramientas_entregadas);
             
-            if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL') {
+            if (updatedData.contrato_prorrogas !== undefined) {
+                dbPayload.contrato_prorrogas = Array.isArray(updatedData.contrato_prorrogas)
+                    ? updatedData.contrato_prorrogas.filter(p => p?.hasta).map(p => ({
+                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim() }))
+                    : [];
+            }
+            // Servicios profesionales también tiene plazo: sólo se limpia la
+            // fecha de fin en los tipos que de verdad no la tienen.
+            if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL' && updatedData.contract_type !== 'SERVICIOS') {
                 dbPayload.contract_end_date = null;
                 dbPayload.contract_temporal_legal_basis = null;
                 dbPayload.contract_temporal_reason = null;

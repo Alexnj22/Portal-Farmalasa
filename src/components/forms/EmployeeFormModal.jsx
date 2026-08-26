@@ -1009,6 +1009,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...prev,
         herramientas_entregadas: (prev.herramientas_entregadas || []).map((h, i) => i === idx ? { ...h, ...patch } : h),
     }));
+    // Una prórroga arranca donde termina el contrato vigente: `desde` se toma
+    // del fin actual y no se pide, porque es un dato que el portal ya sabe y
+    // pedirlo invita a escribir uno que no coincide con la cadena.
+    const agregarProrroga = () => setFormData(prev => ({
+        ...prev,
+        contrato_prorrogas: [...(prev.contrato_prorrogas || []), { desde: prev.contract_end_date || null, hasta: null, motivo: '' }],
+    }));
+    const actualizarProrroga = (idx, patch) => setFormData(prev => {
+        const lista = (prev.contrato_prorrogas || []).map((p, i) => i === idx ? { ...p, ...patch } : p);
+        // El fin del contrato pasa a ser el de la última prórroga con fecha: si
+        // no, la ficha diría que venció mientras la prórroga dice que sigue.
+        const ultima = [...lista].reverse().find(p => p.hasta);
+        return { ...prev, contrato_prorrogas: lista, contract_end_date: ultima?.hasta ?? prev.contract_end_date };
+    });
+    const quitarProrroga = (idx) => setFormData(prev => ({
+        ...prev, contrato_prorrogas: (prev.contrato_prorrogas || []).filter((_, i) => i !== idx),
+    }));
+
     const removeHerramienta = (idx) => setFormData(prev => ({ ...prev, herramientas_entregadas: (prev.herramientas_entregadas || []).filter((_, i) => i !== idx) }));
 
     // Aviso visual de vencimiento — la fecha puede venir tecleada a mano o
@@ -1125,7 +1143,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const hoursMode = isCustomHours(formData?.weekly_contracted_hours) ? 'OTRO' : String(formData?.weekly_contracted_hours || '44');
     const customHoursNum = Number(formData?.weekly_contracted_hours);
     const hoursInvalid = hoursMode === 'OTRO' && (formData?.weekly_contracted_hours === '' || isNaN(customHoursNum) || customHoursNum < MIN_WEEKLY_HOURS || customHoursNum > MAX_WEEKLY_HOURS);
-    const contractHasEndDate = formData?.contract_type === 'TEMPORAL' || formData?.contract_type === 'PRACTICAS';
+    // Un contrato civil de servicios profesionales tiene plazo: se pacta hasta
+    // cuándo. Faltaba —y encima esto seguía nombrando 'PRACTICAS', que ya no
+    // existe como tipo—, así que a un contrato de servicios no se le pedía
+    // fecha de fin y quedaba abierto sin que nadie lo notara.
+    const contractHasEndDate = formData?.contract_type === 'TEMPORAL' || esContratoCivil(formData?.contract_type);
     const contractDatesInvalid = contractHasEndDate && !!formData?.contract_start_date && !!formData?.contract_end_date
         && new Date(`${formData.contract_end_date}T00:00:00`) <= new Date(`${formData.contract_start_date}T00:00:00`);
     // Art. 25/23.4: un contrato a plazo sin la base legal + motivo documentados
@@ -2794,6 +2816,52 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 NO afecta la validez del contrato: por eso esto es un aviso
                                 con cuenta regresiva y no un candado. Un candado sobre algo
                                 que la ley no anula produce el atajo, no el cumplimiento. */}
+                            {/* ── PRÓRROGAS ─────────────────────────────────────────
+                                Se acumulan, no se pisan: cada prórroga vuelve a disparar los
+                                8 días del Art. 18, y en una disputa importa la cadena
+                                completa — un contrato prorrogado cinco veces sobre labor
+                                permanente es exactamente lo que el Art. 25 presume
+                                indefinido. Guardar sólo la última borraría esa evidencia. */}
+                            {contractHasEndDate && (
+                                <div className="mt-4 pt-4 border-t border-divider">
+                                    <div className="flex items-center justify-between gap-3 mb-3">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+                                            <CalendarClock size={12} strokeWidth={2.5} /> Prórrogas
+                                        </p>
+                                        <Button variant="ghost" icon={Plus} onClick={agregarProrroga}
+                                            disabled={!formData.contract_end_date}
+                                            title={formData.contract_end_date ? 'Registrar una prórroga' : 'Primero la fecha de fin'}>
+                                            Prorrogar
+                                        </Button>
+                                    </div>
+                                    {(formData.contrato_prorrogas || []).length === 0 ? (
+                                        <p className="text-label text-content-3 font-medium">Sin prórrogas.</p>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            {(formData.contrato_prorrogas || []).map((pr, idx) => (
+                                                <div key={idx} data-surface="card" className="p-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                                                        <div className="relative z-content">
+                                                            <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 block">Nuevo fin</label>
+                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                                <LiquidDatePicker value={pr.hasta} onChange={(date) => actualizarProrroga(idx, { hasta: date })} />
+                                                            </div>
+                                                        </div>
+                                                        <PortalInput aria-label="Motivo" compact value={pr.motivo || ''}
+                                                            onChange={(e) => actualizarProrroga(idx, { motivo: e.target.value })}
+                                                            placeholder="Motivo de la prórroga" />
+                                                        <Button variant="ghost" icon={X} title="Quitar prórroga" iconOnly onClick={() => quitarProrroga(idx)} />
+                                                    </div>
+                                                    <p className="text-micro text-content-3 font-medium mt-2 leading-snug">
+                                                        Desde {pr.desde || '—'}. Prorrogar vuelve a abrir los 8 días para remitir el ejemplar al Ministerio.
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {(() => {
                                 const mtps = estadoRemisionMtps(formData);
                                 if (!mtps.aplica) {
@@ -2820,12 +2888,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${new Date(mtps.limite + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long' })}).`}
                                             </Notice>
                                         )}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 items-start">
                                             <div className="relative z-content">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha en que se remitió</label>
                                                 <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
                                                     <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
                                                 </div>
+                                            </div>
+                                            {/* El acuse sellado, adjunto. La fecha sola dice que
+                                                se mandó; el papel es lo que lo prueba. */}
+                                            <div>
+                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Acuse sellado</label>
+                                                {renderDocUploadArea('ACUSE_MTPS', { showExpiry: false })}
                                             </div>
                                         </div>
                                     </div>

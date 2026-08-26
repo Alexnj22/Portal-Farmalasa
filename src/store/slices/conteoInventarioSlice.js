@@ -211,6 +211,26 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data || null;
     },
 
+    // Lo que llegó a la sala DESPUÉS de crear el conteo.
+    //
+    // El snapshot de `crear_conteo_inventario` se toma una vez, así que un
+    // conteo abierto ayer no tiene renglón para un producto que entró hoy: no
+    // se puede contar y no sale en ningún faltante ni sobrante. Con
+    // `fuente_sistema = 'VIVO'` eso contradice lo que la pantalla promete —el
+    // número del sistema de los renglones que YA están sí se relee al capturar.
+    //
+    // Nunca lanza: es una puesta al día de fondo, y un aviso de error sobre la
+    // cara de alguien que está contando no le dice qué hacer. Si falla, el
+    // conteo sigue exactamente como estaba y queda en consola.
+    sincronizarConteoEnVivo: async (conteoId) => {
+        const { data, error } = await supabase.rpc('sincronizar_conteo_en_vivo', { p_conteo_id: conteoId });
+        if (error) {
+            console.error('[conteo] no se pudo traer lo que llegó después:', error);
+            return { agregados: 0, productos: [] };
+        }
+        return data || { agregados: 0, productos: [] };
+    },
+
     // Líneas (lote/presentación) de UN producto dentro del conteo — se piden
     // solo al expandir su fila de grupo. Un producto real nunca tiene miles
     // de lotes, pero se acota igual por seguridad.

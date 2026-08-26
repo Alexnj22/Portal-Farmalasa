@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.794.0 — el conteo en vivo se entera de lo que llegó después
+
+Lo levantó el usuario con una pregunta sobre el conteo abierto de La Popular:
+
+> «si la tengo en vivo, y la inicié ayer pero ahora llegaron nuevos productos
+> (productos que no estaban ayer) ¿se actualizan y agregan?»
+
+No se agregaban. La lista de renglones es una foto que se toma UNA vez, al
+crear el conteo, y nada la volvía a mirar. La otra mitad sí estaba en vivo —el
+número del sistema de un renglón que ya está se vuelve a leer en el momento en
+que alguien escribe la cantidad—, así que la pantalla prometía algo que cumplía
+a medias.
+
+**Medido ese día en el conteo abierto de La Popular** (creado el 25-ago 16:26
+UTC, 1,991 renglones): **12 productos con existencia y 93 unidades sin un
+renglón donde anotarse** — 56 de una crema, 20 de un sobre bebible. No se podían
+contar, y no salían en ningún faltante ni en ningún sobrante.
+
+**Y el «Agregar» a mano no servía para esto**, que es lo que lo hacía difícil de
+ver: ese camino inserta con el sistema en CERO —está escrito para «apareció algo
+que el libro no tiene»—, así que meter ahí un producto que sí había llegado lo
+habría registrado como sobrante por su cantidad completa. Un número inventado,
+sin error y sin aviso.
+
+Ahora la pantalla del conteo trae lo que llegó después: al entrar, y al volver a
+la pestaña. Sólo agrega — nunca toca ni quita un renglón que alguien ya contó —
+y **avisa cuántos entraron**: los renglones nuevos suben el «faltan N» del
+encabezado, y sin el aviso alguien que llevaba doscientos contados vería el
+número subir solo y lo leería como un error del portal. Cada alta queda en la
+bitácora del renglón.
+
+Tres decisiones que no son obvias:
+
+- **Sólo los conteos en vivo.** En uno de hoja el número del sistema es el que se
+  imprimió; un renglón que nadie imprimió no tendría contra qué compararse, y
+  quien camina el anaquel con el papel en la mano no lo vería.
+- **Sólo entra lo que HAY.** Un grupo en cero no «llegó» a la sala: materializarlo
+  sube el «faltan N» con trabajo que no existe.
+- **Un conteo manual o cíclico no crece con productos nuevos.** Su alcance es una
+  lista elegida —o sorteada— al crear el conteo; agrandar una muestra sorteada
+  rompe justo lo que la hace auditable. Sí entra un lote nuevo de un producto que
+  ya está en la muestra.
+
+**Y una lección de medición que costó una migración de más.** La función tardaba
+188 ms parejos. La primera hipótesis —un `LEFT JOIN` que el alcance mantenía
+vivo— era razonable y **estaba equivocada**: sacarlo no movió el número ni un
+milisegundo, y sólo el instrumento lo dijo. El costo real era un `Nested Loop
+Anti Join` con **2,558,585 comparaciones**, porque el planificador empujaba dos
+predicados adentro del index scan y ahí, como expresiones sin estadísticas,
+estimaba 1 fila donde hay 1,991. Otras dos correcciones que también parecían la
+buena dieron 223 y 225 ms. La que sirvió fue un CTE `MATERIALIZED`: **188 ms →
+24 ms**.
+
+Falta la primera corrida real en sala.
+
 ## v2.793.3 — El conteo se lee sala por sala, con cara y sin texto cortado
 
 Cinco correcciones del usuario mirando la pantalla de conteos y la de una bolsa.

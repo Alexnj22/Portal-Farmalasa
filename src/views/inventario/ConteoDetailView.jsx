@@ -1521,6 +1521,7 @@ export default function ConteoDetailView() {
     const recontarConteoItem = useStaffStore((s) => s.recontarConteoItem);
     const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
     const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
+    const sincronizarConteoEnVivo = useStaffStore((s) => s.sincronizarConteoEnVivo);
 
     // El MISMO corte que usa FilterBar para colapsar a hoja inferior: si
     // divergen, el segmentado se dibujaría en riel dentro de la hoja. Por eso
@@ -1753,6 +1754,45 @@ export default function ConteoDetailView() {
     }, [cargarCabecera, showToast]);
     useEffect(() => { cargarPagina(); }, [cargarPagina]);
     useEffect(() => { cargarVencidos(); }, [cargarVencidos]);
+
+    // ── Lo que llegó a la sala DESPUÉS de crear el conteo ────────────────
+    // El snapshot se toma una sola vez, así que un conteo abierto ayer no tiene
+    // renglón para un producto que entró hoy: no se puede contar, y no sale en
+    // ningún faltante ni en ningún sobrante. En un conteo `VIVO` eso contradice
+    // lo que la pantalla promete — el número del sistema de los renglones que
+    // YA están sí se vuelve a leer al capturar.
+    //
+    // La RPC decide sola si aplica (sólo conteos abiertos, en vivo y con
+    // permiso de contar); acá no se repite esa regla, porque dos verdades que
+    // dicen lo mismo se separan el día que una cambia.
+    //
+    // Y se AVISA. Los renglones nuevos suben el «faltan N» del encabezado: sin
+    // el aviso, alguien que llevaba 200 contados ve el número subir solo y lo
+    // lee como un error del portal.
+    const loadRef = useRef(load);
+    useEffect(() => { loadRef.current = load; }, [load]);
+    useEffect(() => {
+        let vivo = true;
+        const traer = () => {
+            sincronizarConteoEnVivo(id).then((r) => {
+                if (!vivo || !r?.agregados) return;
+                const n = r.agregados;
+                showToast(
+                    'Llegaron productos nuevos',
+                    `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sala después de empezar el conteo. Ya se pueden contar.`,
+                    'info');
+                loadRef.current?.();
+            });
+        };
+        traer();
+        // Contar toma horas y la pantalla se deja abierta: volver a ella es el
+        // momento natural para preguntar de nuevo. Se elige el foco de la
+        // pestaña y no un reloj porque un reloj escribiría también mientras
+        // nadie mira.
+        const alVolver = () => { if (document.visibilityState === 'visible') traer(); };
+        document.addEventListener('visibilitychange', alVolver);
+        return () => { vivo = false; document.removeEventListener('visibilitychange', alVolver); };
+    }, [id, sincronizarConteoEnVivo, showToast]);
 
     // Cambiar de filtro vuelve a la primera página, y tiene que pasar en el
     // MISMO evento que el cambio. Como efecto aparte llegaba tarde: la vuelta

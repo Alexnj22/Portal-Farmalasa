@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.797.0 — Un cambio aprobado que no se quedó avisa solo
+
+Cierra el circuito que dejó abierto v2.794.3. Ahí se corrigió **por qué** un
+cambio se dio por aplicado sin serlo; esto cubre lo que ninguna corrección de
+código puede evitar: que el sistema revierta un dato por su cuenta.
+
+Ya pasó, y rápido. El crédito de `0000056702_COF` (Salud 3, 25-ago) volvió solo
+a tarjeta **cinco minutos** después de aplicarse — dentro de la ventana en que
+el portal ya había releído la venta y la había dado por buena.
+
+Cada hora, a los :20, el portal repasa los cambios de vendedor y de forma de
+pago aprobados hace más de dos horas y compara contra **lo que dice el portal
+hoy**. Si el dato volvió a ser el de antes, le avisa a quien lo confirmó y a
+quien lo pidió, con el número de la venta y la sala.
+
+Tres decisiones que lo hacen creíble:
+
+- **Se compara contra el portal, no contra el sistema.** Desde v2.794.0 el sync
+  trae de vuelta cualquier dato que cambie, así que si el portal sigue diciendo
+  lo de antes, el cambio no está. Preguntar afuera sería una petición por venta
+  y por hora para saber lo mismo.
+- **Sólo vendedor y forma de pago.** Son valores exactos. El cliente se guarda
+  como NOMBRE y compararlo por texto inventaría alarmas — y un aviso que se
+  equivoca se termina apagando.
+- **Sólo ventas del mes en curso**, que son las que el repaso de cada hora
+  vuelve a leer. Sobre una más vieja el portal no tiene cómo enterarse, y
+  avisar de algo que no se pudo medir es peor que callarse.
+
+La primera corrida encontró **las dos** que ya se sabían: la de Salud 2 que
+quedó en tarjeta debiendo ser efectivo, y la de Salud 3 que volvió de crédito a
+tarjeta. Y el aviso dice nombres, no claves: «Jonathan Melgar», no «303»;
+«Crédito», no «credito».
+
 ## v2.796.0 — El efectivo contado se finaliza al banco o en mano
 
 > «esa bolsa que está pendiente de depósito, fue un dinero que se agarró. que en

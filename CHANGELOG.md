@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.768.0 — Las tarjetas de bolsa: la cifra manda
+
+*«podemos mejorar las cards? los montos los veo pequenos, mejorala ux, que sea
+mas moderno, con la informacion mas a la vista»* (usuario).
+
+**El monto estaba en 11px, el mismo tamaño que el folio.** El número contra el
+que se cuenta el dinero, que es la razón de ser de esta pantalla, era el texto
+más chico de la tarjeta y estaba arrimado a la esquina. Y encima repetido: el
+pie decía otra vez «Debe haber $180.57» debajo. O sea que el arreglo anterior a
+que la cifra fuera chiquita había sido decirla dos veces en vez de agrandarla.
+
+Ahora es **20px, negra y tabular**, con su rótulo arriba en versalitas, y es lo
+único grande de la tarjeta. El rótulo cambia con la etapa porque el mismo número
+significa cosas distintas: `EN LA BOLSA` mientras está en la sala o en camino,
+`DEBE HABER` cuando toca contarla, `DEBÍA HABER` en el archivo. Una cifra grande
+y sola invita a leerla como «lo contado».
+
+**Y la tarjeta quedó más corta, no más larga.** Tres cosas se decían dos veces y
+ahora se dicen una:
+
+- «Debe haber $X» del pie: la dice la tarjeta, grande. Sin ese texto los dos
+  botones entran en el renglón de las etiquetas en vez de ocupar uno propio, así
+  que se ahorra un renglón por bolsa.
+- «1 vale por $400.00 adentro»: ya estaba como etiqueta, y debajo del número va
+  `de $580.57 guardados`, que es lo que explica por qué debe haber menos de lo
+  que se guardó.
+- El nombre de la sala junto al folio: el encabezado del grupo lo dice siempre y
+  el folio empieza con sus iniciales. Ese lugar es el que le dejó sitio al folio
+  para crecer a 14px. Sigue apareciendo en «Diferencias por resolver», que es la
+  única lista sin encabezado de sala.
+
+Y una bolsa ya contada que **cuadró** ya no dice «se contaron $703.11» al lado
+de un $703.11 grande: queda la insignia `Cuadró` sola. El monto contado se
+escribe sólo cuando difiere, que es cuando aporta algo.
+
 ## v2.767.5 — Contar dejó de recargar la pantalla en cada bolsa
 
 *«al dar en cuadra, por que actualiza? hace que pierda el flujo y eficiencia»*

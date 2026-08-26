@@ -221,12 +221,45 @@ const saldoDe = (b) => Number(b.saldo ?? b.monto_inicial ?? 0);
 const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
 const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - saldoDe(b)) * 100) / 100);
 
-/** Una bolsa, con lo que hay que saber de ella en cualquier etapa. */
-function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma, onAbrir, verMontos }) {
+/**
+ * Una bolsa, con lo que hay que saber de ella en cualquier etapa.
+ *
+ * ── La cifra es lo primero que se lee ──────────────────────────────────────
+ * «los montos los veo pequenos, mejorala ux, que sea mas moderno, con la
+ * informacion mas a la vista» (usuario, 2026-08-26).
+ *
+ * Estaba en `text-label` —11px, el MISMO tamaño que el folio— arrimada a la
+ * esquina, y encima repetida abajo por el pie («Debe haber $180.57»). O sea que
+ * el número contra el que se cuenta el dinero, que es la razón de ser de esta
+ * pantalla, era el texto más chico de la tarjeta y estaba dos veces.
+ *
+ * Ahora es `text-title` —20px, casi el doble— con su rótulo arriba en
+ * versalitas, y es lo único grande de la tarjeta. El pie dejó de repetirla, así
+ * que la tarjeta además quedó MÁS corta que antes: los botones subieron al
+ * renglón de la gente en vez de ocupar uno propio.
+ *
+ * El rótulo lo pone la etapa (`rotuloMonto`) porque el mismo número significa
+ * cosas distintas según dónde esté: en la sala es lo que hay guardado, en «Por
+ * contar» es contra lo que se cuenta, y en el archivo es lo que debía haber.
+ * Sin rótulo, una cifra grande y sola invita a leerla como «lo contado».
+ *
+ * La sala dejó de ir junto al folio, y se pasa sólo donde hace falta. Dentro de
+ * una etapa el encabezado del grupo la dice siempre —y el folio empieza con sus
+ * iniciales—, así que ahí era la tercera vez en la misma pantalla; ese lugar es
+ * el que le dejó sitio al folio para crecer. En «Diferencias por resolver», que
+ * es una lista suelta sin encabezado de sala, sí se pasa, y va al renglón de
+ * contexto con la fecha y la caja, que es donde vive lo demás que ubica.
+ */
+function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionada, onSeleccionar, children, alarma, onAbrir, verMontos }) {
     const dias = diasDesde(bolsa.fecha);
     const quien = personas.get(bolsa.contado_por || bolsa.recibida_por || bolsa.entregada_por || bolsa.cerrada_por);
+    const vales = Number(bolsa.vales || 0);
+    // El renglón de abajo no se dibuja vacío: sin etiquetas, sin firma y sin
+    // pie sería una caja de altura cero que igual se cobra su `gap`.
+    const hayMeta = vales > 0 || (alarma && dias >= DIAS_DE_ALARMA)
+        || (!bolsa.etiqueta_impresa_at && bolsa.estado === 'ABIERTA') || quien || children;
     return (
-        <div data-surface="card" className="flex flex-col gap-1.5 p-3 group"
+        <div data-surface="card" className="flex flex-col gap-2 p-3 group"
             {...(onAbrir ? clickable(() => onAbrir(bolsa), { label: `Ver el detalle de la bolsa ${bolsa.folio}` }) : {})}>
             <div className="flex items-start gap-2">
                 {/* `Checkbox` y no la casilla nativa: la nativa se pinta con el
@@ -235,7 +268,7 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                     siempre»). Frena el clic porque la tarjeta entera abre el
                     detalle. */}
                 {onSeleccionar && (
-                    <span className="mt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <span className="mt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                             size="sm"
                             checked={seleccionada}
@@ -245,35 +278,43 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                     </span>
                 )}
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-label font-bold text-content truncate">{bolsa.folio}</span>
-                        {sala && <span className="text-caption text-content-2 truncate">{sala}</span>}
-                    </div>
+                    <div className="text-body-lg font-black text-content truncate">{bolsa.folio}</div>
                     <div className="text-caption text-content-3 truncate tabular-nums">
+                        {sala ? `${sala} · ` : ''}
                         Corte del {fechaCorta(bolsa.fecha)} · {hhmm(bolsa.hora)}
                         {bolsa.caja ? ` · ${bolsa.caja}` : ''}
                     </div>
                 </div>
-                {/* La cifra grande es lo que DEBE HABER en billetes. Cuando salió
-                    dinero, lo guardado va abajo: si sólo se mostrara el monto
-                    inicial, la pantalla estaría prometiendo plata que ya no está
-                    adentro. Sin `bolsas_ver_montos` no hay cifra — queda el ojo,
-                    que es lo que dice que la tarjeta se abre. */}
-                <div className="text-right shrink-0">
-                    <div className="text-label font-bold tabular-nums text-content flex items-center gap-1.5 justify-end">
-                        {verMontos && formatMoney(saldoDe(bolsa))}
-                        {onAbrir && <OjoDeTarjeta size={13} />}
-                    </div>
-                    {verMontos && Number(bolsa.vales || 0) > 0 && (
-                        <div className="text-caption text-content-3 tabular-nums">
-                            de {formatMoney(bolsa.monto_inicial)}
+                {/* La cifra es el SALDO: lo que debe haber en billetes hoy.
+                    Cuando salió dinero, lo guardado va abajo —si sólo se
+                    mostrara el monto inicial, la pantalla prometería plata que
+                    ya no está adentro—. Sin `bolsas_ver_montos` no hay cifra ni
+                    rótulo: queda el ojo, que es lo que dice que la tarjeta se
+                    abre. El ojo va arriba a la derecha como en todas
+                    (`OjoDeTarjeta`), o sea a la altura del rótulo. */}
+                <div className="flex items-start gap-1.5 shrink-0">
+                    {verMontos && (
+                        <div className="text-right">
+                            <div className="text-micro font-black uppercase tracking-widest text-content-3 whitespace-nowrap">
+                                {rotuloMonto}
+                            </div>
+                            <div className="text-title font-black tabular-nums text-content leading-none mt-1">
+                                {formatMoney(saldoDe(bolsa))}
+                            </div>
+                            {vales > 0 && (
+                                <div className="text-caption text-content-3 tabular-nums mt-1 whitespace-nowrap">
+                                    de {formatMoney(bolsa.monto_inicial)} guardados
+                                </div>
+                            )}
                         </div>
                     )}
+                    {onAbrir && <OjoDeTarjeta size={14} className="mt-0.5" />}
                 </div>
             </div>
 
+            {hayMeta && (
             <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
-                {Number(bolsa.vales || 0) > 0 && (
+                {vales > 0 && (
                     <Badge variant="info" size="sm">
                         {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'}
                         {verMontos ? ` · ${formatMoney(bolsa.vales)}` : ''}
@@ -301,15 +342,28 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                     <span className="contents" onClick={(e) => e.stopPropagation()}>{children}</span>
                 )}
             </div>
+            )}
         </div>
     );
 }
 
 /** El conteo de UNA bolsa: cuadra de un toque, o se escribe lo que se contó. */
-/* Antes de contar hay que saber contra qué. La tarjeta muestra la cifra sola y
- * arriba a la derecha; cuando la bolsa tiene vales adentro eso no alcanza —el
- * dinero que debe haber ya no es el que se guardó, y quien cuenta necesita
- * saber cuánto se llevaron los papeles sin abrir el detalle—.
+/* Acá NO va ninguna cifra que la tarjeta ya diga.
+ *
+ * Este pie repetía «Debe haber $180.57 · 1 vale por $400.00 adentro» debajo de
+ * una tarjeta que mostraba $180.57 arriba a la derecha y el vale como etiqueta.
+ * Se escribió porque la cifra de la tarjeta era chiquita y estaba sola, o sea
+ * que el arreglo fue decir el mismo número otra vez en vez de agrandarlo. Hoy
+ * la tarjeta lo dice a 20px, con su rótulo y con lo guardado debajo, así que el
+ * pie se queda con lo único que es suyo: los dos botones.
+ *
+ * Ganancia que no se ve al leerlo: sin ese texto los botones entran en el
+ * renglón de las etiquetas y la gente, y la tarjeta pierde un renglón entero
+ * —treinta bolsas, treinta renglones menos de scroll—.
+ *
+ * Ya contada, el pie dice el VEREDICTO. Y el monto contado sólo cuando NO
+ * cuadra: si cuadró, «se contaron $703.11» repite palabra por palabra la cifra
+ * grande de arriba, que es de dónde salía el problema.
  *
  * Va detrás de `bolsas_ver_montos` como toda cifra de esta pantalla. Jefe/a de
  * Compras cuenta dinero y no ve montos: es una decisión vieja del usuario, no un
@@ -317,7 +371,6 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
 function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMontos }) {
     const [abierto, setAbierto] = useState(false);
     const [valor, setValor] = useState('');
-    const vales = Number(bolsa.vales || 0);
 
     const guardar = () => {
         const n = Number(String(valor).replace(',', '.'));
@@ -336,7 +389,7 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
         const dif = Math.round((Number(bolsa.conteo_marcado) - saldoDe(bolsa)) * 100) / 100;
         const cuadra = Math.abs(dif) < 0.01;
         return (
-            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap w-full">
+            <>
                 {cuadra
                     ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadró</Badge>
                     : (
@@ -345,7 +398,7 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
                             {verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}
                         </Badge>
                     )}
-                {verMontos && (
+                {!cuadra && verMontos && (
                     <span className="text-caption text-content-2 tabular-nums">
                         Se contaron <b className="text-content">{formatMoney(bolsa.conteo_marcado)}</b>
                     </span>
@@ -356,25 +409,13 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
                         Contar de nuevo
                     </Button>
                 </div>
-            </div>
+            </>
         );
     }
 
     if (!abierto) {
         return (
-            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap w-full">
-                {verMontos && (
-                    <span className="text-caption text-content-2 tabular-nums">
-                        Debe haber <b className="text-content">{formatMoney(saldoDe(bolsa))}</b>
-                        {vales > 0 && (
-                            <span className="text-content-3">
-                                {' '}· {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'}
-                                {' '}por {formatMoney(vales)} adentro
-                            </span>
-                        )}
-                    </span>
-                )}
-                <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
+            <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
                 <Button variant="secondary" size="sm" icon={Scale} onClick={() => setAbierto(true)}>
                     No cuadra
                 </Button>
@@ -396,7 +437,6 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
                     onClick={() => onContar(bolsa, saldoDe(bolsa))}>
                     Cuadra
                 </Button>
-                </div>
             </div>
         );
     }
@@ -1128,7 +1168,8 @@ export default function CircuitoDeBolsas({
         for (const b of lista) {
             const nodo = (
                 <Bolsa
-                    key={b.id} bolsa={b} sala={nombreSala[b.branch_id]} personas={personas}
+                    key={b.id} bolsa={b} personas={personas}
+                    rotuloMonto={extra?.rotuloMonto}
                     seleccionada={elegidas.has(b.id)}
                     onSeleccionar={extra?.elegible ? alternar : null}
                     alarma={extra?.alarma}
@@ -1425,6 +1466,7 @@ export default function CircuitoDeBolsas({
                             const dif = diferenciaDe(b);
                             return (
                                 <Bolsa key={b.id} bolsa={b} sala={nombreSala[b.branch_id]}
+                                    rotuloMonto="Debía haber"
                                     personas={personas} onAbrir={setAbierta} verMontos={verMontos}>
                                     <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
                                         {dif < 0 ? 'Faltó' : 'Sobró'} {formatMoney(Math.abs(dif))}
@@ -1592,6 +1634,7 @@ export default function CircuitoDeBolsas({
                     </div>
                 )}
                 grupos={conNodo(porContar, {
+                    rotuloMonto: 'Debe haber',
                     pie: (b) => (puedeContar ? (
                         <Conteo bolsa={b}
                             ocupado={ocupado === `contar-${b.id}`}
@@ -1658,6 +1701,7 @@ export default function CircuitoDeBolsas({
                         ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas: una diferencia no se esconde por mover el período.`
                         : ''}`}
                 grupos={conNodo(contadas, {
+                    rotuloMonto: 'Debía haber',
                     pie: (b) => {
                         const dif = diferenciaDe(b);
                         const cuadra = Math.abs(dif ?? 0) < 0.01;

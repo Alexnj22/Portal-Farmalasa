@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.791.0 — El conteo se filtra desde la píldora, y la diferencia dice lo que falta resolver
+
+Dos correcciones sobre lo que salió en v2.788.0, las dos del usuario mirando la
+pantalla.
+
+**«el filtro no puede ser por conteos?» era la PÍLDORA, no una tabla más.**
+
+> «en el filtro me refería del filterpill.»
+
+La tabla de conteos se queda —contesta «¿qué tandas se firmaron?»—, pero lo que
+faltaba era poder recortar la pantalla POR una: elegir `CNT-260826-1` en la
+píldora deja en «Contadas» sus 43 bolsas en vez de las 122 del mes, y la tabla
+se queda con esa fila. La ranura va entre sucursal y fecha porque una tanda es
+una entidad (§17), sale sólo en «Finalizadas» y sólo si hay conteos — un
+selector vacío promete un recorte que no existe.
+
+Prender la tanda apaga «Sin resolver» y al revés: son dos cortes distintos de la
+misma lista, y el segundo no se aplicaría —«Sin resolver» sale de otra consulta,
+sin período y sin la tanda en sus filas—. Dos filtros prendidos donde uno no hace
+nada es peor que uno solo, porque nadie puede notar cuál ganó.
+
+Las tandas ahora las carga el motor y no la sección: con cada una pidiendo lo
+suyo, la ranura del filtro se quedaba sin opciones justo cuando la sección
+estaba plegada.
+
+**La columna dice lo que falta resolver, no lo que faltó al contar.**
+
+> «si las diferencias son justificadas debe de decir 0 no?»
+
+Y tenía dos números de la misma pantalla dándole la razón: la baldosa decía
+«0 · Sin resolver · todo cuadrado» y la tabla, dos centímetros más abajo,
+«−$4,592.24». Los dos ciertos, contestando preguntas distintas y sin decir cuál
+— así es como se aprende a no creerle a ninguno de los dos.
+
+La columna pasa a llamarse **«Sin resolver»** y muestra lo que nadie explicó
+todavía. Lo firmado no se pierde: baja a subtexto («11 resueltas · −$4,592.24 al
+contar»), que es lo que va a buscar quien audite la tanda meses después. Y el
+cero de «nunca hubo diferencia» se distingue del cero de «se resolvieron»: el
+primero dice «Cuadró», el segundo dice `$0.00` con cuántas se resolvieron
+debajo. Decir «Cuadró» sobre una tanda que tuvo once bolsas descuadradas sería
+cambiar una media verdad por otra. El detalle muestra las dos cifras, una debajo
+de la otra.
+
+Medido al escribirlo: las 15 bolsas descuadradas de las tres tandas están las 15
+resueltas, y las tres quedan en $0.00 pendiente.
+
 ## v2.790.0 — Distrito, las dos fechas con su nombre, el NUP que es el DUI, y sin prácticas
 
 Cuatro puntos de la revisión con Talento Humano, y uno destapó un rótulo cruzado

@@ -20,7 +20,7 @@ const CAMPOS = `
     entregada_por, entregada_at, recibida_por, recibida_at,
     contado, contado_por, contado_at,
     conteo_marcado, conteo_marcado_por, conteo_marcado_at,
-    dif_via, dif_causa, dif_por, dif_at, dif_foto_url, deposito_id
+    dif_via, dif_causa, dif_por, dif_at, dif_foto_url, deposito_id, conteo_id
 `;
 
 /**

@@ -16,7 +16,7 @@ import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
-    fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos, marcarConteoBolsa,
+    fetchConteos, fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos, marcarConteoBolsa,
     recibirBolsas, resolverDiferenciaBolsa, subirComprobante,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -1026,6 +1026,7 @@ export default function CircuitoDeBolsas({
     etapa = 'sala', busqueda = '',
     desde, hasta, sala, nombreSala, soloSinResolver = false,
     onAcciones, onMetricas, onConteos, onAmpliarPeriodo, onIrAEtapa,
+    conteoId = '', onTandas,
 }) {
     // `user` es para la RUTA de la foto de respaldo en el bucket, nada más: la
     // firma de quién resolvió la pone el servidor con `auth_employee_id()`.
@@ -1065,6 +1066,12 @@ export default function CircuitoDeBolsas({
      * diferencias: efectivo confirmado que no se depositó es un pendiente,
      * y un pendiente no puede desaparecer por mover unas fechas. */
     const [porDepositar, setPorDepositar] = useState([]);
+    /* Las TANDAS de conteo del período. Se cargan acá y no dentro de
+     * `ConteosDeBolsas` porque las necesitan DOS: la sección que las lista y la
+     * ranura de la píldora que filtra por una. Si cada una pidiera lo suyo, la
+     * ranura quedaría vacía con la sección plegada — o sea, un filtro sin
+     * opciones justo cuando más se busca. */
+    const [tandas, setTandas] = useState([]);
     const [depositando, setDepositando] = useState(false);
     const { cerradas, alternar: plegar } = usePlegado();
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
@@ -1116,11 +1123,13 @@ export default function CircuitoDeBolsas({
         // pendientes fuera de estas fechas» necesita saber que existen: son las
         // que el filtro esconde, y esconderlas sin decirlo es justo lo que no
         // puede pasar con dinero esperando en una sala.
-        const [vivas, contadas, conDif] = await Promise.all([
+        const [vivas, contadas, conDif, lasTandas] = await Promise.all([
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
             fetchBolsasConDiferencia(),
+            fetchConteos({ desde, hasta }),
         ]);
+        setTandas(lasTandas || []);
         const paraBanco = await fetchPorDepositar();
         // Una diferencia puede estar además dentro del rango: se deduplica por
         // id para no dibujar la misma bolsa dos veces en «Contadas».
@@ -1341,9 +1350,19 @@ export default function CircuitoDeBolsas({
      * `contadas`: esa lista viene de su propia consulta y no la acota el
      * período, que es justamente lo que hace falta — una diferencia no se
      * esconde por mover unas fechas, y el aviso de la etapa ya lo promete. */
+    /* Y desde el 2026-08-26 se puede recortar por TANDA. «el filtro no puede ser
+     * por conteos?» (usuario) era la ranura de la píldora, no la tabla: elegir
+     * CNT-260826-1 deja en pantalla sus 43 bolsas en vez de las 122 del mes.
+     *
+     * Recorta `contadas` y NO `sinResolver`: esa lista viene de otra consulta
+     * —sin período, para que una diferencia no se esconda— y sus filas no
+     * traen la tanda. Por eso la vista apaga un filtro al prender el otro: son
+     * dos cortes distintos de la misma lista, y prendidos a la vez uno de los
+     * dos no haría nada sin decirlo. */
     const archivo = useMemo(
-        () => (soloSinResolver ? sinResolver : contadas),
-        [soloSinResolver, sinResolver, contadas],
+        () => (soloSinResolver ? sinResolver
+            : (conteoId ? contadas.filter((b) => String(b.conteo_id) === String(conteoId)) : contadas)),
+        [soloSinResolver, sinResolver, contadas, conteoId],
     );
 
     // Entregadas hace más de un día y todavía sin recibir. Se mide contra
@@ -1636,6 +1655,17 @@ export default function CircuitoDeBolsas({
     }), [enSala.length, enCamino.length, porContar.length, contadas.length, enCaminoViejas.length]);
 
     useEffect(() => { onConteos?.(conteos); }, [conteos, onConteos]);
+
+    /* Las tandas suben para llenar la ranura de la píldora, que vive en la
+     * vista. Sube el par `{value,label}` ya armado y no las filas: la vista no
+     * tiene por qué saber cómo se lee una tanda, y el rótulo se escribe una
+     * sola vez. */
+    const opcionesDeTanda = useMemo(() => tandas.map((t) => ({
+        value: String(t.id),
+        label: `${t.folio} · ${t.cuantas} ${Number(t.cuantas) === 1 ? 'bolsa' : 'bolsas'}`,
+    })), [tandas]);
+    useEffect(() => { onTandas?.(opcionesDeTanda); }, [opcionesDeTanda, onTandas]);
+    useEffect(() => () => onTandas?.(VACIO), [onTandas]);
 
     // ── El carril, publicado a la píldora de la vista ──────────────────────
     // «necesita cards la vista» (usuario, 2026-08-20).
@@ -2177,7 +2207,8 @@ export default function CircuitoDeBolsas({
                 montos no contesta ninguna de las preguntas por las que existe. */}
             {verMontos && (
                 <Suspense fallback={null}>
-                    <ConteosDeBolsas desde={desde} hasta={hasta} nombreSala={nombreSala}
+                    <ConteosDeBolsas lista={tandas} cargando={cargando} nombreSala={nombreSala}
+                        conteoId={conteoId}
                         plegada={cerradas.has('conteos')}
                         onPlegar={() => plegar('conteos')} />
                 </Suspense>

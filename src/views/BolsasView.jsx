@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Package } from 'lucide-react';
+import { Package, Scale } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -131,6 +131,24 @@ const BolsasView = () => {
      * Ver la nota larga de la píldora sobre por qué acá no hay ranura de
      * estado — y por qué éste es la excepción. */
     const [soloSinResolver, setSoloSinResolver] = useState(false);
+    /* ── La ranura de TANDA, y por qué apaga a la otra ──────────────────────
+     * «el filtro no puede ser por conteos? así como los depósitos de banco?»
+     * (usuario, 2026-08-26) — y al ver la tabla lo precisó: «me refería del
+     * filterpill». O sea la ranura de la píldora, no una sección más.
+     *
+     * Elegir CNT-260826-1 deja en pantalla sus 43 bolsas en vez de las 122 del
+     * mes, y la tabla de conteos se queda con esa fila. Las opciones las
+     * publica el motor: es él quien tiene las tandas cargadas.
+     *
+     * Prender una APAGA «Sin resolver» y al revés, porque son dos cortes
+     * distintos de la misma lista y el segundo no se aplicaría — «Sin resolver»
+     * sale de otra consulta, sin período y sin la tanda en sus filas. Dos
+     * filtros prendidos donde uno no hace nada es peor que uno solo: nadie
+     * puede notar cuál ganó. */
+    const [conteo, setConteo] = useState('');
+    const [tandas, setTandas] = useState(VACIO);
+    const verSoloSinResolver = () => { setSoloSinResolver((v) => !v); setConteo(''); };
+    const verTanda = (v) => { setConteo(v || ''); if (v) setSoloSinResolver(false); };
 
     /* Lo que el motor publica hacia arriba: es él quien tiene las bolsas
      * cargadas, y pedirlas otra vez acá para poder contarlas sería cargar la
@@ -160,7 +178,10 @@ const BolsasView = () => {
     const correr = useCallback((dir) => verPeriodo(correrPeriodo(periodo, dir)),
         [periodo, verPeriodo]);
 
-    const limpiar = () => { setSala(''); setPeriodo(ULTIMOS_30()); setBusqueda(''); setSoloSinResolver(false); };
+    const limpiar = () => {
+        setSala(''); setPeriodo(ULTIMOS_30()); setBusqueda('');
+        setSoloSinResolver(false); setConteo('');
+    };
 
     /* Ir a una etapa, y opcionalmente con el filtro puesto. Lo usa el aviso de
      * «hay N sin resolver»: mandaba a «Finalizadas» y ahí las dejaba repartidas
@@ -241,11 +262,11 @@ const BolsasView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             acciones={acciones}
-                            activeCount={[sala, !periodoIntacto, soloSinResolver].filter(Boolean).length}>
+                            activeCount={[sala, !periodoIntacto, soloSinResolver, conteo].filter(Boolean).length}>
                             {etapa === 'finalizadas' && (
                                 <FilterBar.Chip
                                     active={soloSinResolver}
-                                    onToggle={() => setSoloSinResolver((v) => !v)}
+                                    onToggle={verSoloSinResolver}
                                     tone="danger"
                                 >
                                     Sin resolver{sinCuadrar ? ` (${sinCuadrar})` : ''}
@@ -254,6 +275,28 @@ const BolsasView = () => {
                             {alcanceTodos && (
                                 <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                                     <FilterBar.Sucursal value={sala} onChange={setSala} options={salaOptions} />
+                                </FilterBar.Section>
+                            )}
+
+                            {/* La tanda es una ENTIDAD, así que va entre el
+                                ámbito y el tiempo (§17). Sólo en «Finalizadas»,
+                                que es la única etapa donde hay conteos
+                                firmados: en las otras tres no significaría nada
+                                y sería una ranura que no filtra. Y sólo si hay
+                                alguna — un selector vacío promete un recorte que
+                                no existe. */}
+                            {etapa === 'finalizadas' && tandas.length > 0 && (
+                                <FilterBar.Section active={!!conteo} onClear={() => setConteo('')} label="conteo">
+                                    <FilterBar.Opciones
+                                        options={tandas}
+                                        value={conteo}
+                                        onChange={verTanda}
+                                        label="Conteo"
+                                        icon={Scale}
+                                        placeholder="Conteos"
+                                        umbral={0}
+                                        ancho="200px"
+                                    />
                                 </FilterBar.Section>
                             )}
 
@@ -283,6 +326,8 @@ const BolsasView = () => {
                     desde={desde} hasta={hasta}
                     sala={sala} nombreSala={nombreSala}
                     soloSinResolver={etapa === 'finalizadas' && soloSinResolver}
+                    conteoId={etapa === 'finalizadas' ? conteo : ''}
+                    onTandas={setTandas}
                     onAcciones={setAcciones}
                     onMetricas={setMetricas}
                     onConteos={setConteos}

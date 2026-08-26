@@ -21,6 +21,164 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.770.1 — Los libros de compras cargan al doble de velocidad
+
+Los dos libros de compras cruzan cada compra contra los documentos por **tres
+formas normalizadas** del código de generación, dentro de un `LEFT JOIN LATERAL`.
+El índice único que ya existía sobre ese código **no servía para eso**: la
+consulta lo envuelve en `left(upper(...), 20)`, o sea una función sobre la
+columna indexada, y eso lo deja inservible.
+
+Medido sobre julio: un `Seq Scan` de la tabla de documentos ejecutado **467
+veces** —una por compra— que se llevaba **142,815 de los 148,530 buffers**, el
+**96% del trabajo**. La tabla tiene 1,920 filas: eran ~900,000 visitas de fila
+para resolver 699 renglones.
+
+Cuatro índices de expresión, uno por cada forma que la consulta compara:
+
+| | antes | ahora | |
+|---|---:|---:|---|
+| libro completo, un mes | 1,598 ms | **660 ms** | 2.4× |
+| libro declarable, un mes | 1,931 ms | **983 ms** | 2.0× |
+| libro completo, cuatro meses | 5,742 ms | **2,542 ms** | 2.3× |
+
+Pesan **376 kB** entre los cuatro, sobre una tabla que recibe 13 inserciones cada
+17 horas — mantenerlos no cuesta nada.
+
+**Las filas son las mismas: 699, 873 y 1,968.** Y no hace falta verificarlo
+columna por columna como exige la regla del libro, porque **un índice no puede
+cambiar el resultado de una consulta** — sólo el camino para llegar a él. Ésa es
+justamente la razón para empezar por acá y no por reescribir el cuerpo.
+
+Queda pendiente el resto de la ganancia, y es una reescritura: el `OR` entre la
+rama del sello y la de los tres códigos impide un plan estable por índice. Con
+los índices puestos, el planificador **todavía elige el barrido** en algunas
+formas de la consulta. Normalizar los documentos UNA vez y cruzarlos por hash
+midió 671 → 457 ms sobre el paso de emparejado. Eso sí cambia el cuerpo, así que
+necesita la verificación columna por columna del reporte antes de tocarse.
+
+Sale de la auditoría de `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`, donde estos
+dos libros habían quedado anotados como «lentos por su SQL, no por su plan».
+
+## v2.770.0 — El portal dice «aquí», y el gate de voz ahora lo mira
+
+*«¿esto es canónico de la voz del portal? verifica el gate de voz»* y después
+*«aca no se usa. es aqui.»* (usuario, mirando el detalle de una bolsa).
+
+**No era canónico, y el gate estaba en verde.** Medido antes de tocar nada, el
+portal decía **«acá» 40 veces contra 22 de «aquí»** en texto de pantalla — o sea
+que la forma que el usuario no quiere era la mayoritaria, y ninguna de las dos
+estaba decidida: §26 no las mencionaba. Es la misma deriva que esa sección abre
+describiendo para los estados vacíos: cada quien resolvió lo mismo a su manera
+porque no había dónde mirar.
+
+Barridas las 40. Lo vigila la categoría **`copy-aqui`** de `gate:design`,
+bloqueante en cero, sobre las líneas que no son comentario (DESIGN.md §26.7c).
+
+### Y el gate tenía tres huecos, los tres del mismo tipo
+
+Verde ahí significaba «no encontré», no «no hay»:
+
+1. **`copy-vacio` conocía una lista cerrada de arranques.** «No salió nada de
+   acá» pasaba, siendo la misma falta que «No hay registros» con otro verbo.
+   Ahora entra cualquier `No <algo>` **menos los errores** (`No se pudo…`,
+   `No puedes…`), que §26.8 manda escribir así. Medido antes de excluirlos:
+   `^No` a secas acusaba a 13 y **once eran errores correctos**.
+2. **Las tres reglas de vocabulario miraban el renglón entero.** Un `// …`
+   después de código, un `/** … */` de una línea o un `{/* … */}` de JSX caían
+   en un renglón que empieza con código y se leían como pantalla: de los 7
+   primeros hallazgos de `copy-aqui`, **los 7 eran comentarios**. Ahora se
+   recorta el comentario dentro del renglón.
+3. **La lista de voseo tenía ocho agujeros.** Los destapó el barrido:
+   «Descargá la hoja o el CSV, aplicalo, y registralo acá» estaba en verde.
+   Corregidos a tuteo `Actualizá`, `Completá`, `Contá` (×2), `Dejá` (×2),
+   `Descargá`, `confirmá`, `tocá` y `pausás`, y los nueve entran ahora a la
+   lista. El barrido descarta el futuro (`confirmará`, `dejará`), que suena
+   igual de agudo y es correcto.
+
+Además, dos textos que el gate sí podía ver y ahora ve: «No salió nada de acá»
+pasó a **«Sin salidas»** (§26.1) y el botón «Ya lo revisé» a **«Marcar
+revisado»** (§26.6: un botón dice qué va a pasar, no describe un estado).
+
+`copy-aqui` se probó devolviéndole un «acá» a Traslados y comprobando que
+fallara: **antes de creerle un cero a un detector, hay que fabricarle la
+regresión que debería cazar.**
+
+### Lo que queda abierto
+
+El gate no ve el texto que vive **dentro de funciones de Postgres**, que es el
+mismo hueco que ya mordió con «anaquel». Auditado `pg_proc.prosrc`: hay ~17
+funciones que le escriben al usuario sin tildes ni ñ —«contrasena», «carne»,
+«recepcion», «decision», «Periodo invalido»— y una de ellas es la que estampa
+«se lo lleva Fulano (usuario y contrasena)» en la bitácora de cada entrega. Va
+aparte porque son migraciones.
+
+## v2.769.0 — Bodega reparte por impulso, producto nuevo o encargo
+
+*«en los traslados entre sala, que bodega tenga la opcion de envio de Producto
+por encargo. ademas las opciones deben ser segun si son de las salas a bodega, o
+de las salas a las salas o de bodega a las salas: de salas a salas es por baja
+rotacion nada mas. de salas a bodega, es por baja rotacion o por proximos a
+vencer. de bodega a las salas es, para impulso, producto nuevo o encargo.»*
+
+La regla por dirección ya existía desde el 24-ago y es la única del circuito: el
+motivo decide, y la dirección es una consecuencia suya. Lo que cambia es la fila
+de **Bodega hacia una sala**.
+
+| motivo | a Bodega | de Bodega a una sala | entre salas |
+|---|---|---|---|
+| Baja rotación | sí | **ya no** | sí |
+| Próximo a vencer | sí | sí | no |
+| Producto nuevo | no | sí | no |
+| **Impulso** | no | **sí** | no |
+| **Encargo** | no | **sí** | no |
+| Retiro del mercado | sí | no | no |
+| Avería | sí | no | no |
+
+**De Bodega todo es reparto, y el reparto tiene tres formas** que se parecen
+sólo por fuera. *Producto nuevo* es «llegó la compra». *Impulso* lo decide
+Bodega: el producto ya existe, no se vende donde está, y se manda a la sala
+donde puede salir — nadie lo pidió. *Encargo* es al revés: alguien lo pidió, y
+va para esa sala y ninguna otra. Sin ese rótulo el encargo viajaba disfrazado de
+reparto y el día que se pregunte cuántos se atendieron no hay dónde mirarlo.
+
+**Y por eso «Baja rotación» sale de esa dirección**: entre salas quiere decir
+*me sobra y allá se vende*, hacia Bodega *me sobra, hazte cargo*, y desde Bodega
+no quiere decir ninguna de las dos porque Bodega no vende. Lo que hacía era
+nombrar el impulso con la etiqueta equivocada.
+
+**Dos filas NO se tocaron, y esa fue la decisión del día.** Tomadas al pie de la
+letra, las tres listas del pedido borraban tres motivos:
+
+- **«Próximo a vencer» de Bodega a una sala se queda.** De él depende el área de
+  vencidos de Bodega como ORIGEN (v2.745.0): 77 productos y 512 unidades que
+  sólo pueden salir con ese rótulo. Quitarlo no habría dado ningún error —
+  habría dejado esa área sin forma de despachar.
+- **«Retiro del mercado» y «Avería» hacia Bodega se quedan.** Sin ellos, un lote
+  retirado por la SRS y un frasco quebrado vuelven a salir rotulados «Baja
+  rotación», que es el motivo que obliga a mentir por el que se abrieron el
+  24-ago. Y con «Avería» se iba la foto obligatoria.
+
+**La consecuencia que hay que conocer.** Hasta hoy «Baja rotación» estaba en las
+tres listas, y de eso dependía algo que no se ve: una composición que saca de
+Bodega y de una sala a la vez sale como dos envíos con el MISMO motivo, así que
+la pantalla ofrece la intersección — y nunca quedaba vacía. Ahora puede quedar
+vacía en un caso exacto: **destino una sala, orígenes Bodega + alguna sala**. Es
+correcto que quede vacía —uno es reparto y el otro es sobrante—, así que son dos
+envíos. La pantalla lo dice **al agregar** el renglón que rompe la intersección,
+y también si se elige el destino después, con un aviso que explica por qué y qué
+hacer: nunca con un desplegable vacío y un botón apagado.
+
+`validar_envio_producto` no cambió: nunca tuvo la tabla escrita adentro, se la
+pregunta a `motivos_envio_por_direccion()`.
+
+- Migración `20260826161530_envios_bodega_reparte_por_impulso_nuevo_o_encargo`
+- `src/data/envios.js` — `MOTIVOS_ENVIO` (7) y `motivosEnvioPorDireccion`
+- `src/views/dashboard/EnviarProductoModal.jsx` — `motivosParaOrigenes`,
+  `sinMotivoPosible` y el freno al agregar el renglón
+- `tests/unit/direccionDelEnvio.test.js` — 13 pruebas; la que anclaba «la
+  intersección nunca queda vacía» ahora ancla el caso exacto en que sí
+
 ## v2.768.0 — Las tarjetas de bolsa: la cifra manda
 
 *«podemos mejorar las cards? los montos los veo pequenos, mejorala ux, que sea

@@ -926,6 +926,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const [verPendientes, setVerPendientes] = useState(false);
     const [duiEnUnArchivo, setDuiEnUnArchivo] = useState(false);
     const [duiLeido, setDuiLeido] = useState(null);
+    // El fallo de lectura se queda EN LA PANTALLA, no en un toast.
+    //
+    // Pasó de verdad el 2026-08-26: un PDF real tumbó la función por memoria y
+    // el usuario reportó «subí un dui, pero no me detectó nada». El aviso era
+    // un toast — se fue solo y quedó una pantalla en la que no había pasado
+    // nada, que es indistinguible de «todavía está pensando». Un fallo que hay
+    // que adivinar es un fallo que se reporta como «no funciona».
+    const [duiFallo, setDuiFallo] = useState(null);
     const [leyendoDui, setLeyendoDui] = useState(false);
 
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
@@ -976,22 +984,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             // adivinar.
             if (category === 'DUI_COMPLETO' && stored) {
                 // Un archivo alcanza: `leer-dui` acepta uno o dos.
+                setDuiFallo(null);
                 setLeyendoDui(true);
                 try {
                     const { data, error } = await supabase.functions.invoke('leer-dui', { body: { frente: stored } });
                     if (error || !data?.ok) {
-                        useToastStore.getState().showToast(
-                            'No se pudo leer el documento',
-                            data?.error === 'NO_ES_DUI'
-                                ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.'
-                                : 'Escribe los datos a mano; el documento quedó guardado.',
-                            'warning');
+                        setDuiFallo(data?.details || (data?.error === 'NO_ES_DUI'
+                            ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.'
+                            : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
                     } else {
+                        setDuiFallo(null);
                         setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
                     }
                 } catch (errLectura) {
                     console.error('leer-dui:', errLectura);
-                    useToastStore.getState().showToast('No se pudo leer el documento', 'Escribe los datos a mano; el documento quedó guardado.', 'warning');
+                    setDuiFallo('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
                 } finally {
                     setLeyendoDui(false);
                 }
@@ -1002,6 +1009,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 const urlOtra = getDocEntry(otra).url;
                 if (urlOtra && stored) {
                     const guardadaOtra = getStoragePathFromUrl(urlOtra);
+                    setDuiFallo(null);
                     setLeyendoDui(true);
                     try {
                         const caras = category === 'DUI_FRENTE'
@@ -1011,14 +1019,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         if (error || !data?.ok) {
                             // Que no se pueda leer NO es un error del alta: el
                             // documento ya quedó subido y los campos se teclean.
-                            // Avisar con un error rojo asustaría por nada.
-                            useToastStore.getState().showToast(
-                                'No se pudo leer el documento',
-                                data?.error === 'NO_ES_DUI'
-                                    ? 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.'
-                                    : 'Escribe los datos a mano; el documento quedó guardado.',
-                                'warning');
+                            setDuiFallo(data?.details || (data?.error === 'NO_ES_DUI'
+                                ? 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.'
+                                : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
                         } else {
+                            setDuiFallo(null);
                             setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
                         }
                     } catch (errLectura) {
@@ -1027,10 +1032,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         // al subir documento», que manda a mirar donde no está
                         // el problema y además borraría la subida buena.
                         console.error('leer-dui:', errLectura);
-                        useToastStore.getState().showToast(
-                            'No se pudo leer el documento',
-                            'Escribe los datos a mano; el documento quedó guardado.',
-                            'warning');
+                        setDuiFallo('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
                     } finally {
                         setLeyendoDui(false);
                     }
@@ -1619,6 +1621,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <p className="mt-3 text-label font-bold text-brand-text flex items-center gap-2">
                                     <Loader2 size={14} className="animate-spin" /> Leyendo el documento…
                                 </p>
+                            )}
+
+                            {duiFallo && !leyendoDui && (
+                                <div className="mt-3">
+                                    <Notice variant="warning" icon={AlertTriangle}>
+                                        {duiFallo}
+                                    </Notice>
+                                </div>
                             )}
 
                             {duiLeido && !leyendoDui && (() => {

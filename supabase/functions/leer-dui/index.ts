@@ -1,7 +1,36 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
-import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
+// El base64 se hace por trozos y NO con `encode()` de std.
+//
+// Medido el 2026-08-26 con un PDF real de un DUy: la función murió con
+// «Memory limit exceeded» (HTTP 546). Convertir el archivo entero de una sola
+// vez arma un string binario completo MÁS su base64 —dos copias enteras en
+// memoria además del buffer— y un PDF de pocos megas ya no entra.
+//
+// Por trozos alineados a 3 bytes el pico es de kilobytes. La alineación importa:
+// el base64 de trozos concatenados sólo es igual al base64 del todo si cada
+// trozo es múltiplo de 3; con cualquier otro tamaño saldría un archivo corrupto
+// que el modelo no puede leer y que NO da error — devolvería «no lo pude leer»
+// y nadie sabría por qué.
+const TROZO = 3 * 4096
+
+function aBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf)
+  const partes: string[] = []
+  for (let i = 0; i < bytes.length; i += TROZO) {
+    const trozo = bytes.subarray(i, Math.min(i + TROZO, bytes.length))
+    let binario = ''
+    for (let j = 0; j < trozo.length; j++) binario += String.fromCharCode(trozo[j])
+    partes.push(btoa(binario))
+  }
+  return partes.join('')
+}
+
+// Tope por archivo. Un DUI escaneado pesa menos de esto con holgura; más que
+// esto suele ser un PDF con las páginas en altísima resolución, y conviene
+// decirlo en vez de morir sin explicación.
+const TOPE_BYTES = 12 * 1024 * 1024
 
 // ════════════════════════════════════════════════════════════════════════════
 // Lee el DUI de una persona y devuelve lo que el documento dice.
@@ -148,7 +177,14 @@ Deno.serve(async (req: Request) => {
     for (const cara of caras) {
       const { data, error } = await admin.storage.from(cara.bucket).download(cara.path)
       if (error) return json({ ok: false, error: "DOWNLOAD_FAILED", details: error.message })
-      inlineData.push({ mimeType: data.type || 'image/jpeg', data: encode(await data.arrayBuffer()) })
+      const buf = await data.arrayBuffer()
+      if (buf.byteLength > TOPE_BYTES) {
+        return json({
+          ok: false, error: "ARCHIVO_MUY_GRANDE",
+          details: `El archivo pesa ${(buf.byteLength / 1024 / 1024).toFixed(1)} MB y el tope es ${TOPE_BYTES / 1024 / 1024} MB. Vuelve a escanearlo con menos resolución.`,
+        })
+      }
+      inlineData.push({ mimeType: data.type || 'image/jpeg', data: aBase64(buf) })
     }
 
     const crudo = await callGemini({ prompt: PROMPT, inlineData, jsonOutput: true })

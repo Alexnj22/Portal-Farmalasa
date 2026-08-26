@@ -125,64 +125,63 @@ describe('disponibleEnBodega — qué número usa', () => {
     });
 });
 
-// ── El área de vencidos manda sobre el estante ───────────────────────────────
+// ── El área de vencidos dejó de mandar sobre el estante (2026-08-26) ─────────
 //
-// Medido contra el sistema el 2026-08-23 con el TERMOMETRO DIGITAL WELLPRO
-// (1545), 26 en el estante y 1 apartado en el área de vencidos:
+// Entre el 18 y el 25 de agosto el sistema descargaba primero de vencidos y NO
+// pasaba al estante en el mismo envío, ignorando el `origen` que se le manda.
+// Medido con el TERMOMETRO DIGITAL WELLPRO (1545), 26 en el estante y 1
+// apartado: pedir 8 → «No hay suficiente stock en las ubicaciones»; pedir 1 →
+// entra y sale de VENCIDOS; pedir 7 con vencidos vacío → entra del estante.
+// Antes del freno que hubo acá, el renglón se aprobaba, Bodega armaba la caja
+// y el sistema la rechazaba: 8 termómetros llegaron a Salud 3 sin movimiento.
 //
-//   pedir 8 → «No hay suficiente stock en las ubicaciones» (nada escrito)
-//   pedir 1 → entra, y la unidad sale del ÁREA DE VENCIDOS (queda en cero)
-//   pedir 7, ya con vencidos vacío → entra, y sale del estante
+// El 2026-08-26 se remidió y **ya no pasa**. Con 18 en el estante y 1 apartada
+// sin fecha de los dos lados, entraron los tres renglones que estaban trabados
+// —3, 2 y 2 unidades, traslados 34003/34004/34005— y el estante bajó 18 → 11
+// con el área de vencidos en 1 antes y 1 después, INTACTA en los tres.
 //
-// O sea: el sistema descarga primero de vencidos y NO pasa al estante en el
-// mismo envío, e ignora el `origen` que se le manda —que es el del ESTANTE, y
-// va explícito en el payload—. Antes de este freno el renglón se aprobaba,
-// Bodega armaba la caja y el sistema la rechazaba: 8 termómetros llegaron a
-// Salud 3 sin un movimiento en el sistema.
-//
-// El tope es CERO y no «lo apartado»: un pedido se calcula sin mirar esa área,
-// así que llevarse de ahí —aunque el sistema lo acepte— es despachar como
-// normal lo que Bodega separó por vencer.
-describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', () => {
+// Entonces el techo volvió a ser lo que hay en el estante. Lo apartado se sigue
+// informando en `desdeVencidos`, pero ya no acota: sólo marca el renglón para
+// que al cerrar la corrida se relea el área de vencidos y se compruebe que no
+// bajó. Es la red por si el sistema vuelve atrás.
+describe('disponibleEnBodega — lo apartado en vencidos ya no achica el techo', () => {
     const sinLote = { regulado: false, lotes: [], existencia: 27, presentaciones: [], encontrado: true, vence: '' };
     const conLotes = { regulado: true, existencia: 10, presentaciones: [], encontrado: true, vence: '',
                        lotes: [{ id: '1', numero: 'A', vence: '', stock: 50 }] };
 
-    // El tope es lo apartado: 1 pasa —y después se comprueba que el área de
-    // vencidos no haya bajado—, 2 no, porque el sistema rechaza el envío entero
-    // DESPUÉS de que Bodega armó la caja, y ahí la mercadería viaja sin
-    // registrarse.
-    it('el caso real: con 26 en el estante y 1 apartado, pasa 1 y no 2', () => {
-        const hay = disponibleEnBodega(sinLote, 1, 26, 1);
-        expect(hay.paquetes).toBe(1);
-        expect(hay.desdeVencidos).toBe(1);   // cuántas hay apartadas, para poder decirlo
+    // El caso real del 26-ago: 18 en el estante, 1 apartada, y salieron las 3
+    // que pedía el renglón. Lo apartado se informa, no frena.
+    it('el caso real: con 18 en el estante y 1 apartada, el techo son 18', () => {
+        const hay = disponibleEnBodega(sinLote, 1, 18, 1);
+        expect(hay.paquetes).toBe(18);
+        expect(hay.desdeVencidos).toBe(1);   // se informa, para poder releer después
     });
 
-    it('con el área de vencidos vacía el techo vuelve a ser el estante', () => {
+    it('con el área de vencidos vacía es exactamente lo mismo', () => {
         expect(disponibleEnBodega(sinLote, 1, 26, 0).paquetes).toBe(26);
         expect(disponibleEnBodega(sinLote, 1, 26, 0).desdeVencidos).toBe(0);
         expect(disponibleEnBodega(sinLote, 1, 26, null).paquetes).toBe(26);
+        expect(disponibleEnBodega(sinLote, 1, 26, 1).paquetes).toBe(26);
     });
 
-    // Nunca más de lo apartado (el sistema rechazaría) ni más de lo que hay en
-    // el estante (no habría qué levantar).
-    it('se toma el MENOR de los dos', () => {
-        expect(disponibleEnBodega(sinLote, 1, 300, 1).paquetes).toBe(1);
+    // Lo que sí sigue mandando es el estante: no se puede levantar lo que no
+    // está, por mucho que haya apartado del otro lado.
+    it('el techo es el estante, aunque lo apartado sea mayor', () => {
         expect(disponibleEnBodega(sinLote, 1, 2, 300).paquetes).toBe(2);
+        expect(disponibleEnBodega(sinLote, 1, 300, 1).paquetes).toBe(300);
     });
 
-    // El factor se aplica DESPUÉS del tope: 3 apartadas en cajas de 5 no
-    // completan ni una caja, así que no sale ninguna.
-    it('el factor se aplica sobre el tope, no sobre el estante', () => {
-        expect(disponibleEnBodega(sinLote, 5, 26, 3).paquetes).toBe(0);
-        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(3);
+    // El factor se aplica sobre el estante: 26 unidades en cajas de 5 son 5
+    // cajas, y lo apartado no cambia esa cuenta.
+    it('el factor se aplica sobre el estante', () => {
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).paquetes).toBe(5);
+        expect(disponibleEnBodega(sinLote, 5, 26, 3).unidades).toBe(26);
         expect(disponibleEnBodega(sinLote, 5, 26, 3).desdeVencidos).toBe(3);
     });
 
-    // Con lote el portal NOMBRA de cuál descargar, así que el sistema no elige.
-    // Medido el mismo día: el producto 2621, con 2 apartadas en vencidos,
-    // despachó 3 en la misma corrida en que el termómetro fue rechazado.
-    it('con control de lote el área de vencidos no achica nada', () => {
+    // Con lote el portal NOMBRA de cuál descargar, así que el sistema no elige
+    // ni cuando el defecto existía: ese camino nunca pasó por acá.
+    it('con control de lote el área de vencidos ni se informa', () => {
         expect(disponibleEnBodega(conLotes, 10, 3, 1).paquetes).toBe(5);
         expect(disponibleEnBodega(conLotes, 10, 3, 1).desdeVencidos).toBe(0);
     });
@@ -197,8 +196,12 @@ describe('disponibleEnBodega — con algo apartado en vencidos no sale nada', ()
 // (28). El único que salió del área de vencidos fue el TERMOMETRO, cuyas dos
 // filas son idénticas y SIN FECHA.
 //
-// Por eso el freno mira eso y no «hay algo apartado»: con lo segundo quedaban
-// sin despachar 32 productos que llevaban meses saliendo bien.
+// Por eso mira eso y no «hay algo apartado»: con lo segundo quedaban sin
+// despachar 32 productos que llevaban meses saliendo bien.
+//
+// Desde el 26-ago este número ya no frena nada —el sistema respeta la
+// ubicación—: marca el renglón para releer el área de vencidos al cerrar la
+// corrida. La condición no cambia: sobre los 32 no habría nada que releer.
 describe('apartadoQueEstorba — sólo lo que no se puede distinguir', () => {
     const lectura = (filas) => lecturaDelReporte({ inventario: filas });
     const prod = (id, cantidad, fecha) => ({

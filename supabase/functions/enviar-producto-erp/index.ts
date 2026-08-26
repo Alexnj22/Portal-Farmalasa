@@ -408,14 +408,12 @@ Deno.serve(async (req) => {
           apartadoQueEstorba(lecturaOrigen, lecturaVencidos, Number(l.erp_product_id)),
         );
         if (Number(l.cantidad) > hay.paquetes) {
+          // Lo apartado en el área de vencidos ya no achica este número: el
+          // sistema respeta la ubicación desde el 26-ago (ver
+          // `disponibleEnBodega`). Si falta, falta en el estante.
           await fallar(
-            hay.desdeVencidos > 0
-              ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el ` +
-                `área de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de ` +
-                `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. El envío lleva ` +
-                `${l.cantidad}. Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
-              : `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
-                `el envío lleva ${l.cantidad}.`,
+            `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
+            `el envío lleva ${l.cantidad}.`,
           );
           continue;
         }

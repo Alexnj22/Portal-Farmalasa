@@ -1075,18 +1075,11 @@ Deno.serve(async (req) => {
             enUbicacion ? (enUbicacion.get(Number(ln.erp_product_id)) ?? 0) : null,
             apartadoQueEstorba(lecturaEstante, lecturaVencidos, Number(ln.erp_product_id)),
           );
+          // Lo apartado en el área de vencidos ya NO achica este número: el
+          // sistema respeta la ubicación desde el 26-ago (ver
+          // `disponibleEnBodega`). Si falta, falta en el estante.
           if (Number(ln.cantidad) > hay.paquetes) {
-            await fallar(
-              hay.desdeVencidos > 0
-                // «No hay» se leería como que el estante está vacío, y no lo
-                // está: lo que pasa es que la salida se lleva primero lo
-                // apartado, y un pedido no debe llevarse eso.
-                ? `De ${it.nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el `
-                  + `área de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de `
-                  + `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. Se pidieron `
-                  + `${ln.cantidad}. Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
-                : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
-            );
+            await fallar(`Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`);
             continue;
           }
 
@@ -1423,15 +1416,10 @@ Deno.serve(async (req) => {
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
-            // El apartado se pregunta PRIMERO: con algo apartado el tope es 0,
-            // así que «no tiene existencia» ganaría siempre y diría justo lo
-            // contrario de lo que pasa — el estante puede estar lleno.
-            detalle: hay.desdeVencidos > 0
-              ? `Hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área de vencidos `
-                + `que el sistema no distingue de las del estante —ninguna tiene fecha de vencimiento—, y por `
-                + `eso rechaza el envío si se piden más de ${hay.paquetes}. El pedido lleva ${it.cantidad}. `
-                + `Dá de baja esa existencia apartada y el producto vuelve a salir completo.`
-              : hay.unidades <= 0
+            // Lo apartado en el área de vencidos ya no achica este número: el
+            // sistema respeta la ubicación desde el 26-ago. Lo que falta,
+            // falta en el estante.
+            detalle: hay.unidades <= 0
               ? "Ya no tiene existencia en bodega."
               : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
           });

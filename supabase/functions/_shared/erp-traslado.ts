@@ -286,58 +286,42 @@ export function disponibleEnBodega(
   // consulta secundaria dejaría de despachar por algo que no es del pedido.
   const existencia = enLaUbicacion == null ? f.existencia : enLaUbicacion;
 
-  // ── Y hay una segunda mitad, que costó tres despachos rechazados ─────────
+  // ── Hubo una segunda mitad, y el 2026-08-26 dejó de existir ──────────────
   //
-  // Leer bien el estante NO alcanza, porque el sistema **no descarga del
-  // estante mientras quede algo en el área de vencidos**: entra por ahí, y si
-  // lo apartado no cubre lo pedido no pasa a la otra ubicación — contesta «No
-  // hay suficiente stock en las ubicaciones». El `origen` que se le manda lo
-  // ignora.
-  //
-  // Medido el 2026-08-23 sobre el TERMOMETRO DIGITAL WELLPRO (1545), con 26 en
-  // el estante y 1 apartado en vencidos:
+  // Entre el 18 y el 25 de agosto el sistema **no descargaba del estante
+  // mientras quedara algo en el área de vencidos**: entraba por ahí, y si lo
+  // apartado no cubría lo pedido no pasaba a la otra ubicación — «No hay
+  // suficiente stock en las ubicaciones». El `origen` del payload, que es el
+  // del ESTANTE, lo ignoraba. Medido sobre el TERMOMETRO DIGITAL WELLPRO
+  // (1545), con 26 en el estante y 1 apartado:
   //
   //   pedir 8 → rechazado          pedir 2 y 3 → rechazados (18 y 19-ago)
   //   pedir 1 → ENTRA, y la unidad sale del ÁREA DE VENCIDOS (quedó en cero)
   //   pedir 7 con vencidos ya vacío → entra, y sale del estante
   //
-  // Y el `origen` que se le manda es el del ESTANTE —el mismo campo que la
-  // pantalla de traslado ofrece a mano— y lo ignora SÓLO en este caso: cuando
-  // las dos filas son indistinguibles. Con fecha lo respeta siempre; ver
-  // `apartadoQueEstorba`.
+  // Mientras duró, acá hubo un tope de `min(existencia, apartado)`. Se volvió a
+  // medir el 25-ago —igual, palabra por palabra— y el **26-ago YA NO**: se
+  // soltó el tope y se despacharon los TRES renglones que estaban trabados,
+  // contra el mismo producto y con **1 apartada sin fecha** de los dos lados:
   //
-  // `enVencidos` no es «cuánto hay apartado»: es cuánto puede salir por error,
-  // y lo calcula `apartadoQueEstorba` —ahí está medido por qué la condición es
-  // «sin fecha de los dos lados» y no «hay algo apartado»—. Con la segunda,
-  // este freno dejaba sin despachar 32 productos que llevaban meses saliendo
-  // bien del estante.
+  //   traslado 34003 · P141-PO · 3 unidades      estante 18 → 15
+  //   traslado 34004 · P137-S1 · 2 unidades      estante 15 → 13
+  //   traslado 34005 · P134-PO · 2 unidades      estante 13 → 11
+  //   área de vencidos: 1 antes y 1 después, INTACTA en las tres
   //
-  // El tope entonces es LO APARTADO, no cero. Frenar del todo dejaba sin
-  // despachar productos que sí se pueden mandar, y lo que de verdad hay que
-  // evitar es el caso caro: pedir más de lo que la fila equivocada aguanta, que
-  // el sistema rechaza entero **después** de que Bodega armó la caja — así
-  // viajaron 8 termómetros a Salud 3 sin un movimiento en el sistema.
+  // Así que el tope se fue: hoy el techo vuelve a ser lo que hay en el estante,
+  // que es lo que de verdad se puede levantar.
   //
-  // Lo que sale físicamente lo levanta Bodega del estante; lo que puede quedar
-  // torcido es el PAPEL, si el sistema descuenta la fila apartada. Eso se
-  // comprueba después de despachar releyendo el área de vencidos, y se repone.
-  //
-  // ── Se volvió a medir el 2026-08-25, y el sistema NO cambió ─────────────
-  // Se quitó este tope, se desplegó y se le pidió al sistema el renglón real
-  // que había quedado en error el 24-ago: 2 TERMOMETRO DIGITAL WELLPRO desde
-  // el estante de Bodega, con 18 ahí y 1 sola apartada. Contestó lo mismo,
-  // palabra por palabra: «No hay suficiente stock en las ubicaciones para
-  // descargar el producto TERMOMETRO DIGITAL WELLPRO». Con 18 disponibles la
-  // única forma de que falte stock es que esté entrando por la fila apartada.
-  //
-  // Así que el tope se queda. Volver a probarlo cuesta un renglón y no mueve
-  // nada cuando el sistema rechaza: lo que NO se puede hacer es quitarlo «por
-  // si acaso», porque ahí el rechazo llega después de que Bodega armó la caja.
+  // **Lo que NO se fue es `desdeVencidos`**, y por eso `apartadoQueEstorba`
+  // sigue existiendo. Ya no acota nada: marca el renglón como de riesgo para
+  // que, al terminar la corrida, se relea el área de vencidos y se compruebe
+  // que no bajó. Si el sistema alguna vez vuelve atrás, lo que se pierde es el
+  // PAPEL —la mercadería la levanta Bodega del estante igual—, y esa relectura
+  // lo dice en el acto en vez de dejarlo escondido en el kardex.
   const apartado = Number(enVencidos ?? 0);
-  const tope = apartado > 0 ? Math.min(existencia, apartado) : existencia;
   return {
-    paquetes: Math.floor(tope / u),
-    unidades: tope,
+    paquetes: Math.floor(existencia / u),
+    unidades: existencia,
     lotes: 0,
     desdeVencidos: apartado,
   };
@@ -451,8 +435,15 @@ export function lecturaDelReporte(payload: unknown): LecturaUbicacion | null {
 }
 
 /**
- * Cuánto de lo apartado en el área de vencidos puede terminar saliendo por
- * error — que es lo ÚNICO que hay que frenar.
+ * Cuánto de lo apartado en el área de vencidos podría terminar saliendo por
+ * error — hoy es una MARCA, no un freno.
+ *
+ * Hasta el 2026-08-25 este número acotaba cuánto se dejaba despachar
+ * (`disponibleEnBodega`). El 26-ago el sistema pasó a respetar la ubicación
+ * —tres traslados medidos, el área de vencidos intacta en los tres— y el tope
+ * se quitó. Lo que queda es esto: señalar el renglón para que, al cerrar la
+ * corrida, se relea el área de vencidos y se compruebe que no bajó. Si el
+ * sistema volviera atrás, el aviso sale en el acto en vez de quedar escondido.
  *
  * ── Lo que se midió, y lo que NO era ────────────────────────────────────────
  * El 2026-08-23 pareció que la salida entraba siempre por el área de vencidos.
@@ -471,9 +462,10 @@ export function lecturaDelReporte(payload: unknown): LecturaUbicacion | null {
  * producto, mismo lote GENERICO, misma presentación, «0000-00-00» en las dos.
  * Sin fecha no hay con qué distinguirlas y la salida agarra la que no es.
  *
- * Por eso el freno mira exactamente eso —sin fecha de los DOS lados— y no «hay
- * algo apartado»: frenar por lo segundo dejaba sin despachar 32 productos que
- * llevaban meses saliendo bien.
+ * Por eso la marca mira exactamente eso —sin fecha de los DOS lados— y no «hay
+ * algo apartado»: cuando esto frenaba, lo segundo dejaba sin despachar 32
+ * productos que llevaban meses saliendo bien. Como marca vale igual: avisar
+ * sobre los 32 sería avisar sobre nada.
  *
  * Y el área de vencidos también guarda AVERÍAS, que no vencen y por eso nunca
  * van a tener fecha: esta condición no se va a limpiar sola.

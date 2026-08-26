@@ -716,13 +716,11 @@ Deno.serve(async (req) => {
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
-          error: hay.desdeVencidos > 0
-            ? `De ${nombre} hay ${hay.desdeVencidos} apartada${hay.desdeVencidos === 1 ? "" : "s"} en el área `
-              + `de vencidos que el sistema no distingue de las del estante —ninguna tiene fecha de `
-              + `vencimiento—, y por eso rechaza el envío si se piden más de ${hay.paquetes}. Se pidieron `
-              + `${l.cantidad}. Dá de baja esa existencia apartada, o pedila desde el área de vencidos.`
-            : `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
-              + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
+          // Lo apartado en el área de vencidos ya no achica este número: el
+          // sistema respeta la ubicación desde el 26-ago (ver
+          // `disponibleEnBodega`). Si falta, falta en el estante.
+          error: `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
+            + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
       // ── Los lotes ────────────────────────────────────────────────────────

@@ -282,14 +282,17 @@ export async function fetchPorDepositar() {
  * Cierra el depósito. El total NO se manda: lo suma el servidor sobre las
  * bolsas, porque es la cifra contra la que se decidió cuánto llevar.
  */
-export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = null, recibidoPor = null, nota = null }) {
+export function registrarDeposito({ bolsaIds, monto, aporte = 0, aporteNota = null, nota = null, llevadoPor = null }) {
     return supabase.rpc('registrar_deposito_bancario', {
         p_bolsa_ids: bolsaIds,
         p_monto: monto,
         p_aporte: aporte,
         p_aporte_nota: aporteNota,
-        p_recibido_por: recibidoPor,
+        // A quién se le entrega el remanente ya NO viaja desde acá: siempre es
+        // el Gerente General y lo resuelve el servidor. Mandarlo sería dejar
+        // abierta la puerta a registrar que el efectivo se le dio a otro.
         p_nota: nota,
+        p_llevado_por: llevadoPor,
     });
 }
 

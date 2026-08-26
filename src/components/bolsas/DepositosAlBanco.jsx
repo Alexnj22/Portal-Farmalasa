@@ -37,10 +37,27 @@ const hhmm = (h) => String(h || '').slice(0, 5);
 const COLUMNAS = [
     { key: 'folio', label: 'Depósito' },
     { key: 'fecha', label: 'Fecha' },
+    // «podré ver por ejemplo cada conteo? los días y el monto que se llevó al
+    // banco / se contó?» (usuario, 2026-08-26). La fila decía sólo lo que fue
+    // al banco, así que no se podía leer de un vistazo cuánto se había contado
+    // ni de qué días era esa plata — las dos preguntas de quien cuadra contra
+    // el estado de cuenta. Los días van en `Días`, que es un RANGO derivado de
+    // las bolsas que quedaron adentro.
+    { key: 'dias', label: 'Días', hideBelow: 'md' },
+    { key: 'total_contado', label: 'Contado', align: 'right', hideBelow: 'sm' },
     { key: 'monto_deposito', label: 'Al banco', align: 'right' },
     { key: 'remanente', label: 'Remanente', align: 'right' },
     { key: 'cuantas', label: 'Bolsas', align: 'right', hideBelow: 'md' },
 ];
+
+/* El rango de días que cubre un depósito, dicho corto. Un solo día se dice
+ * «17 ago» y no «17 ago → 17 ago», que sería decir dos veces lo mismo. */
+const rangoDeDias = (d) => {
+    if (!d?.dia_desde) return '—';
+    const corto = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV',
+        { day: 'numeric', month: 'short' });
+    return d.dia_desde === d.dia_hasta ? corto(d.dia_desde) : `${corto(d.dia_desde)} → ${corto(d.dia_hasta)}`;
+};
 
 /** El detalle: la cuenta que se hizo y qué bolsas se fueron adentro. */
 function Detalle({ deposito, nombreSala, onClose }) {
@@ -88,6 +105,13 @@ function Detalle({ deposito, nombreSala, onClose }) {
                     </p>
                 )}
 
+                {d.llevado_por && (
+                    <p className="text-caption text-content-2">
+                        <span className="font-bold text-content">Lo llevó al banco: </span>
+                        {d.llevado_por}.
+                    </p>
+                )}
+
                 {Number(d.remanente) >= 0.01 && (
                     <p className="text-caption text-content-2">
                         <span className="font-bold text-content">El remanente </span>
@@ -100,6 +124,35 @@ function Detalle({ deposito, nombreSala, onClose }) {
                     <p className="text-caption text-content-2">
                         <span className="font-bold text-content">Nota: </span>{d.nota}
                     </p>
+                )}
+
+                {/* Qué días entraron, y cuánto de cada uno. Va ANTES de las
+                    bolsas porque es la pregunta que se hace primero: con 43
+                    bolsas, la lista de a una no responde «¿cuánto entró del
+                    martes?». Sale de las bolsas del depósito, así que no puede
+                    dejar de coincidir con ellas. */}
+                {(d.por_dia?.length || 0) > 1 && (
+                    <div className="space-y-1.5">
+                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                            Por día
+                        </h4>
+                        <div data-surface="card" className="px-4 py-3 space-y-1.5">
+                            {d.por_dia.map((x) => (
+                                <div key={x.fecha}
+                                    className="flex items-baseline justify-between gap-3 tabular-nums">
+                                    <span className="text-caption text-content-2">
+                                        {fechaLarga(x.fecha)}
+                                        <span className="text-content-3">
+                                            {' '}· {x.cuantas} {Number(x.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                                        </span>
+                                    </span>
+                                    <span className="text-label font-bold text-content shrink-0">
+                                        {formatMoney(x.contado)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
 
                 <div className="space-y-1.5">
@@ -189,6 +242,19 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                             <span className="font-bold text-content">{d.folio}</span>
                         </DataCell>
                         <DataCell>{fechaLarga(d.fecha)}</DataCell>
+                        {/* Los días que cubre y lo contado. Van ANTES de «Al
+                            banco» porque es el orden de la cuenta: de qué días
+                            es la plata, cuánta se contó, cuánta se llevó. */}
+                        <DataCell hideBelow="md">
+                            <span className="text-caption text-content-2 tabular-nums">
+                                {rangoDeDias(d)}
+                            </span>
+                        </DataCell>
+                        <DataCell align="right" hideBelow="sm">
+                            <span className="tabular-nums text-content-2">
+                                {formatMoney(d.total_contado)}
+                            </span>
+                        </DataCell>
                         <DataCell align="right">
                             <span className="font-bold tabular-nums text-content">
                                 {formatMoney(d.monto_deposito)}

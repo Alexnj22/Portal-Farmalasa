@@ -21,6 +21,133 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.777.0 — El expediente cumple el Art. 23 y se puede enlazar con la ficha que ya existe
+
+El personal se va a cargar de nuevo desde cero, y eso abría dos preguntas: si
+el formulario alcanza para lo que exige la ley, y qué pasa con el historial de
+la gente que ya trabaja aquí.
+
+**Lo que el Art. 23 del Código de Trabajo pedía y no había dónde guardar.** El
+formulario cubría once de los catorce numerales —incluido el 4º, el que más se
+rompe: un contrato a plazo sin base legal ni motivo escrito lo presume
+indefinido la ley—. Faltaban cuatro datos:
+
+| numeral | qué pide | dónde quedó |
+|---|---|---|
+| 2º | número, **lugar y fecha de expedición** del documento | junto al DUI, en Datos Personales |
+| 9º | forma, **período** y lugar de pago | «Cada cuánto se le paga», en Nómina |
+| 10º | cantidad, calidad y **estado** de las herramientas entregadas | lista propia en Laboral |
+| 13º | **lugar y fecha de celebración** del contrato | «Dónde y cuándo se firmó», en Laboral |
+
+El 13º no es el 5º. `contract_start_date` es *cuándo empieza a trabajar*; se
+firma un día y se empieza otro, y en una disputa la fecha que cuenta para el
+plazo es la de la firma. Por eso son campos distintos y no uno derivado del
+otro.
+
+Ninguno arranca con valor por defecto, y eso es deliberado: `contract_type` y
+`weekly_contracted_hours` figuran hoy en las 49 fichas con `INDEFINIDO` y `44`
+sin que nadie los haya escrito —son el default de la columna—, o sea que el
+expediente afirma un plazo y una jornada que nunca se pactaron. **Un campo
+vacío se ve; un default se confunde con un dato.** Los cuatro se avisan en
+«Información Pendiente» y ninguno bloquea Guardar: el contrato se firma después
+de crear el expediente, y una traba ahí produce el atajo, no el cumplimiento.
+
+También se agregó el **examen médico previo del Art. 117** como documento del
+expediente cuando la persona es menor de edad. El aviso amarillo ya decía que
+era requisito para admitirlo y que se repite cada año hasta los 18; faltaba
+dónde guardar la constancia. Con fecha de vencimiento entra además al aviso
+diario, que es lo que convierte «cada año» en algo que alguien recuerda.
+
+**Enlazar con la ficha que ya existe.** Al dar de alta hay un campo nuevo: si
+la persona ya trabajaba aquí, se elige su ficha y lo escrito en el formulario
+se guarda **sobre** ella en vez de crear una segunda. No hay historial que
+mover, porque nunca se despega.
+
+La alternativa —crear la ficha nueva y mudarle el historial— se midió y se
+descartó: **`employees.id` está referenciado por 129 columnas en ~70 tablas.**
+Veinte son `ON DELETE CASCADE`, entre ellas `approval_requests.employee_id`
+(las solicitudes, 547 filas) y `notifications` (4,359), así que borrar la ficha
+vieja **borraría** justo lo que se quiere conservar; otras quince son
+`RESTRICT` sobre tablas con filas y harían fallar el borrado. Y un barrido de
+129 columnas falla en silencio: la que se escapa queda huérfana o se va en
+cascada, sin error.
+
+Absorbiendo, el camino es uno que el portal ya recorre todos los días —es
+exactamente un `UPDATE` de empleado, con su misma policy, su mismo trigger de
+auditoría y sus mismas validaciones—. Los detalles que sí hubo que resolver:
+
+- **El código y el DUI se comprueban excluyendo a la ficha destino.** Si no, su
+  propio código se leería como choque contra sí misma y nadie podría enlazarse
+  conservando el suyo. Lo mismo con el headcount del cargo: esa persona ya
+  ocupa la plaza.
+- **La foto no se borra.** El alta escribe `photo_url: null` y la llena en un
+  segundo paso, porque subir el archivo necesita el id de la fila. Al absorber
+  eso sería un borrado, y quien enlaza sin adjuntar foto nueva no está pidiendo
+  quitarle la que tenía.
+- **Las sucursales asignadas se reemplazan, no se suman**, para que nadie quede
+  con acceso a salas que el formulario ya no dice.
+- **La lista reemplaza en vez de agregar**: un append dejaría dos tarjetas de
+  la misma persona hasta la próxima recarga, que es el duplicado que esto viene
+  a cerrar.
+- **Queda escrito con qué ficha se enlazó** (`PERSONAL_ENLAZADO`). Como la fila
+  no se duplica, sin ese asiento la absorción sería indistinguible de una
+  edición cualquiera.
+
+**Lo que se leyó y lo que no.** El lugar y la fecha de expedición viajan con el
+número del documento —los tres son el mismo dato del Art. 23 nº2— así que se
+leen por `get_employee_identidad`, detrás de la llave del expediente, y no por
+`employees_safe`. Entraron también a `SENSITIVE_FIELDS`, que es lo que los deja
+fuera del borrador y del padrón cacheado: dejar dos de los tres en el disco de
+una computadora compartida sería la misma media medida que el 2026-08-24 dejó
+el DUI completo en el borrador mientras el padrón sí lo filtraba.
+
+Los otros cuatro son cláusulas del contrato, no secretos, y siguen el corte que
+esa vista ya usa para el dinero: la categoría se publica (`account_type`,
+`afp_institution`), el número no. «Quincenal» es categoría; el monto sigue en
+su RPC.
+
+Migración `20260826171310`.
+
+## v2.776.0 — El depósito dice quién lo lleva y qué días cubre
+
+Tres cosas sobre el depósito al banco.
+
+**El remanente ya no se elige.** *«el remanente siempre es a Gerente General.
+así que no debe haber opción»* (usuario). Era un desplegable con las 49
+personas, y preguntar una respuesta que ya está decidida hace dos daños a la
+vez: le pide a alguien que acierte algo que el portal sabe, y deja abierta la
+puerta a registrar que el efectivo se le entregó a otro. Ahora **lo resuelve el
+servidor** por el cargo, y la pantalla sólo lo DICE — «El remanente de $124.86
+se le entrega a Rutilio Aleman, Gerente General» — porque una cifra de efectivo
+que cambia de manos sin decir a las de quién es justo lo que este circuito
+existe para evitar.
+
+Si no hay ningún Gerente General activo, la pantalla lo avisa antes de escribir
+el monto y el servidor rechaza el cierre. **No escribe un `null` en silencio**:
+eso sería convertir «no encontré» en «no se le entregó a nadie».
+
+**Y ahora pregunta quién lo lleva al banco.** *«que pregunte quién lo lleva a
+depositar»*. No es quien cierra: quien cierra está sentado en administración, y
+quien lleva es la persona que agarra el efectivo y sale a la calle. **Ese tramo
+—el único en que el dinero no está en ninguna de las dos puntas— no lo cubría
+ningún registro.** Columna nueva `depositos_bancarios.llevado_por`, y sale en el
+detalle del archivo.
+
+**El archivo dice de qué días es la plata.** *«podré ver por ejemplo cada
+conteo? los días y el monto que se llevó al banco / se contó?»* Lo contado ya se
+guardaba pero no salía en la fila, y los días no salían en ninguna parte. Ahora
+la tabla lleva **Días** (un rango, «17 ago → 23 ago») y **Contado** junto a «Al
+banco», y el detalle abre con el **desglose por día**: con 43 bolsas, la lista
+de a una no responde «¿cuánto entró del martes?». Las dos cifras salen de las
+bolsas que quedaron adentro del depósito, así que no pueden dejar de coincidir
+con él.
+
+Nota de método: la firma vieja de `registrar_deposito_bancario` (seis
+argumentos) se borró al crear la de siete. Con todos sus defaults, una llamada
+de seis quedaría ambigua — y aunque no lo fuera, la vieja se quedaría con sus
+permisos propios. Es la lección de `update_proveedor_manual`, donde la
+revocación alcanzó a una sola de dos sobrecargas.
+
 ## v2.775.0 — Los avisos apagados se dicen a la cara, una vez al día
 
 *«sé más agresivo con las notificaciones para que lo acepten»* (usuario).

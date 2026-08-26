@@ -298,3 +298,25 @@ export async function contarPorVencer({ erpSucursalId }) {
 export function insertMovimientoInventario(payload) {
     return insertApprovalRequestSilent(payload);
 }
+
+/**
+ * ¿La sala está contando?
+ *
+ * La regla la aplica el trigger `frenar_ajuste_si_hay_conteo_abierto` sobre
+ * `approval_requests` — el alta es un INSERT directo del navegador, así que un
+ * `if` acá sería una sugerencia. Esto existe para lo OTRO: avisar antes de que
+ * alguien arme una solicitud entera que va a rebotar al enviarla.
+ *
+ * Nunca lanza. Si no se puede preguntar, el formulario se abre igual y el
+ * trigger sigue frenando lo que tenga que frenar: la falla segura de una
+ * ADVERTENCIA es no darla, no cerrar la puerta.
+ */
+export async function fetchSucursalEnConteo(branchId) {
+    if (branchId == null) return { en_conteo: false };
+    const { data, error } = await supabase.rpc('sucursal_en_conteo', { p_branch_id: Number(branchId) });
+    if (error) {
+        console.error('[ajuste] no se pudo preguntar si la sala está contando:', error);
+        return { en_conteo: false };
+    }
+    return data ?? { en_conteo: false };
+}

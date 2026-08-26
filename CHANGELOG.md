@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.795.0 — no se ajusta el inventario de una sala que está contando
+
+Pedido del usuario:
+
+> «una validación más, que no permita hacer solicitudes de ajuste de inventario
+> si tiene un conteo activo.»
+
+Es el mismo motivo por el que el portal ya prohibía abrir dos conteos en la
+misma sala: **el número se movería debajo de quien está contando**. Y desde
+v2.794.0 es peor que un desorden de papeles — la existencia se relee en el
+momento de capturar, así que una carga aprobada a media jornada le cambia el
+«sistema» a todos los renglones que faltan y la diferencia deja de significar lo
+que dice. Nadie lo notaría: no hay error, no falta una fila, y el conteo cierra
+«cuadrando».
+
+Ahora, con un conteo abierto en la sala, «Ajuste de inventario» **no ofrece la
+operación**: dice que la sala está contando y por qué. El selector de sucursal
+se queda, así que quien atiende varias salas cambia a otra y sigue trabajando.
+
+**La regla vive en la base, no en la pantalla.** El alta de estas solicitudes es
+una escritura directa del navegador, así que un `if` en el formulario sería una
+sugerencia: lo que frena de verdad es un trigger. La pantalla existe para
+avisar ANTES — buscar productos, cargar lotes y escribir la causa para que
+rebote al enviar es trabajo perdido, y un freno que llega al final es el que
+enseña a buscarle la vuelta.
+
+Tres decisiones del alcance:
+
+- **Sólo cargar y descargar** — la familia que la pantalla llama «Ajuste de
+  inventario». Los traslados entre salas **no** se frenan: dejar a una sala sin
+  poder pedirle producto a otra durante todo un conteo es otra decisión, y no es
+  la que se pidió.
+- **«Activo» es abierto**, el mismo criterio con el que se bloquea un segundo
+  conteo. Uno ya finalizado no acepta captura y su ajuste es otro camino.
+- **Una solicitud sin sala se rechaza.** «No sé de qué sala es» no puede ser la
+  puerta por la que se cuela justo lo que la regla frena. Las 28 que hay la
+  traen todas.
+
+Verificado con la misma solicitud real en las dos direcciones: apuntada a una
+sala sin conteo entra, apuntada a La Popular rebota con el mensaje escrito para
+quien lo lee. Y el freno llega antes que las otras cuatro validaciones de la
+tabla, así que quien no puede seguir lee **por qué**, no un reclamo por un campo
+del formulario.
+
 ## v2.794.3 — Un cambio de datos no se aplica sobre una pantalla vacía
 
 Sale de una pregunta de sala: *«¿por qué si confirmé la solicitud que pasara a

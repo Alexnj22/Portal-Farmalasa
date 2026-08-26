@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     AlertTriangle, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, Loader2,
-    PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
+    ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
@@ -19,7 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import useBorrador from '../../hooks/useBorrador';
 import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
-    fetchPerecederos, insertMovimientoInventario,
+    fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '../../data/inventoryMovements';
 
 // Widget «Ajuste de Inventario».
@@ -298,6 +298,21 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const [motivo, setMotivo]     = useState('');
     const [fotos, setFotos]       = useState([]);   // File[] sin subir todavía
     const [subiendo, setSubiendo] = useState(false);
+
+    // ── Mientras la sala cuenta, no se le mueve el inventario ────────────
+    // La regla la aplica el trigger `frenar_ajuste_si_hay_conteo_abierto`: el
+    // alta es un INSERT directo contra `approval_requests`, así que la pantalla
+    // no puede ser la guarda. Lo que SÍ le toca a la pantalla es decirlo antes
+    // — buscar productos, cargar lotes y escribir la causa para que rebote al
+    // enviar es trabajo perdido, y un freno que llega al final es el que enseña
+    // a buscarle la vuelta.
+    const [enConteo, setEnConteo] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        setEnConteo(null);
+        fetchSucursalEnConteo(branchId).then((r) => { if (vivo) setEnConteo(r); });
+        return () => { vivo = false; };
+    }, [branchId]);
     const [enviando, setEnviando] = useState(false);
     const [error, setError]       = useState('');
     const [listo, setListo]       = useState(false);
@@ -670,6 +685,17 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             </div>
         );
     }
+
+    // El selector de sucursal se queda: quien tiene varias salas puede cambiar
+    // a otra y seguir trabajando. Lo que se retira es la lista de operaciones.
+    if (enConteo?.en_conteo) return (
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
+            {selectorSucursal}
+            <EmptyState icon={ClipboardList} compact
+                title="La sala está contando"
+                subtitle={`Hay un conteo de inventario abierto en ${enConteo.sala}. Mientras se cuenta no se puede cargar ni descargar producto: el número cambiaría debajo de quien está contando. Cierra el conteo y vuelve a intentarlo.`} />
+        </div>
+    );
 
     if (!op) return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">

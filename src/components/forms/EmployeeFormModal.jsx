@@ -528,8 +528,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      *  2. El número de artículo es jerga de adentro. Es la misma regla que rige
      *     todo el resto del portal (no se nombra el ERP, no se dice «sync»): el
      *     artículo le importa a quien escribe el código, no a quien completa la
-     *     ficha. Sigue estando, pero en el `title` de cada uno — a mano para
-     *     quien lo necesite, fuera de la vista de quien no.
+     *     ficha. Se probó dejarlo en el `title` de cada chip y el gate lo cazó
+     *     con razón: un tooltip sobre algo que no es un control no se alcanza
+     *     con el teclado NI existe en el teléfono, así que era esconderlo
+     *     fingiendo conservarlo. El artículo vive en `utils/expediente.js`,
+     *     donde lo lee quien lo necesita.
      */
     const pendientes = useMemo(() => faltantesDelExpediente(formData), [formData]);
 
@@ -1439,7 +1442,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <ul className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in">
                             {[...pendientes, ...vencimientos].map(f => (
                                 <li key={f.campo}
-                                    title={f.art ? `Código de Trabajo, Art. ${f.art}` : undefined}
                                     className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
                                     {f.label}
                                 </li>

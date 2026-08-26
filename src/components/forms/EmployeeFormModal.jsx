@@ -2852,37 +2852,76 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <Button variant="ghost" icon={Plus} onClick={addHerramienta}>Agregar</Button>
                             </div>
 
-                            {(formData.herramientas_entregadas || []).length === 0 && (
-                                <p className="text-label text-content-3 font-medium">No se le entregó nada todavía.</p>
-                            )}
+                            {(formData.herramientas_entregadas || []).length === 0 ? (
+                                <div data-surface="card" className="p-4 text-center">
+                                    <Wrench size={20} className="text-content-3 mx-auto mb-2" strokeWidth={2} />
+                                    <p className="text-label text-content-2 font-bold">No se le entregó nada todavía</p>
+                                    <p className="text-micro text-content-3 font-medium mt-0.5 leading-snug">
+                                        Gabacha, llaves, teléfono, lector… lo que tenga que devolver el día que se vaya.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Cada renglón es una ENTREGA, no una fila de tabla: la
+                                        cantidad al frente y el estado como distintivos que se
+                                        tocan, que es como se lee un acta. Los distintivos
+                                        llevan blanco de dedo de 44pt (§32), así que la entrega
+                                        se puede anotar desde el teléfono.
 
-                            <div className="flex flex-col gap-3">
-                                {(formData.herramientas_entregadas || []).map((item, idx) => (
-                                    <div key={idx} data-surface="card" className="p-3">
-                                        <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_1fr_auto] gap-3 items-end">
-                                            <PortalInput
-                                                aria-label="Qué se entregó" compact
-                                                value={item.descripcion || ''}
-                                                onChange={(e) => updateHerramienta(idx, { descripcion: e.target.value })}
-                                                placeholder="Qué se entregó" />
-                                            <PortalInput
-                                                aria-label="Cantidad" compact type="number" inputMode="numeric"
-                                                value={item.cantidad ?? ''}
-                                                onChange={(e) => updateHerramienta(idx, { cantidad: e.target.value })}
-                                                placeholder="Cant." />
-                                            <div className="relative z-content">
-                                                <LiquidSelect
-                                                    value={item.estado || ''}
-                                                    onChange={(val) => updateHerramienta(idx, { estado: val })}
-                                                    options={ESTADO_HERRAMIENTA_OPTIONS}
-                                                    placeholder="En qué estado..."
-                                                    {...portalSelectProps} />
-                                            </div>
-                                            <Button variant="ghost" icon={X} title="Quitar" iconOnly onClick={() => removeHerramienta(idx)} />
-                                        </div>
+                                        Y cuando falta alguno de los tres, LO DICE: el Art. 23
+                                        nº10 pide cantidad, calidad y estado, y sin el estado de
+                                        entrega no hay con qué comparar el día que se devuelve —
+                                        que es para lo que el numeral existe. */}
+                                    <div className="flex flex-col gap-2">
+                                        {(formData.herramientas_entregadas || []).map((item, idx) => {
+                                            const incompleto = !item.descripcion || item.cantidad === '' || item.cantidad == null || !item.estado;
+                                            return (
+                                                <div key={idx} data-surface="card" className="p-3">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="shrink-0 w-14">
+                                                            <PortalInput
+                                                                aria-label="Cantidad" compact type="number" inputMode="numeric"
+                                                                value={item.cantidad ?? ''}
+                                                                onChange={(e) => updateHerramienta(idx, { cantidad: e.target.value })}
+                                                                placeholder="1" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                                            <PortalInput
+                                                                aria-label="Qué se entregó" compact
+                                                                value={item.descripcion || ''}
+                                                                onChange={(e) => updateHerramienta(idx, { descripcion: e.target.value })}
+                                                                placeholder="Qué se entregó" />
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                {ESTADO_HERRAMIENTA_OPTIONS.map(op => (
+                                                                    <button
+                                                                        key={op.value} type="button"
+                                                                        onClick={() => updateHerramienta(idx, { estado: op.value })}
+                                                                        aria-pressed={item.estado === op.value}
+                                                                        className={`min-h-[var(--tap-min)] px-3 rounded-full text-micro font-black uppercase tracking-wide border transition-all active:scale-[0.97] ${
+                                                                            item.estado === op.value
+                                                                                ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
+                                                                                : 'bg-surface-card text-content-2 border-border-card hover:border-brand/40'}`}>
+                                                                        {op.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <Button variant="ghost" icon={X} title="Quitar" iconOnly onClick={() => removeHerramienta(idx)} />
+                                                    </div>
+                                                    {incompleto && (
+                                                        <p className="text-micro text-warning-text font-bold mt-2 leading-snug">
+                                                            Falta la cantidad, la descripción o el estado. Sin el estado de entrega no hay con qué comparar el día que se devuelve.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
-                            </div>
+                                    <p className="text-micro text-content-3 font-bold mt-3">
+                                        {(formData.herramientas_entregadas || []).length} entrega{(formData.herramientas_entregadas || []).length === 1 ? '' : 's'} registrada{(formData.herramientas_entregadas || []).length === 1 ? '' : 's'}.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </>
                 )}

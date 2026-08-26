@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
+import LiquidAvatar from '../common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import { formatMoney } from '../../utils/formatNumber';
@@ -43,6 +44,8 @@ const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
     hour12: true, timeZone: 'America/El_Salvador',
 }) : '');
 const hhmm = (h) => String(h || '').slice(0, 5);
+const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
+    .map((p) => p[0]).join('').toUpperCase();
 
 const COLUMNAS = [
     { key: 'folio', label: 'Conteo' },
@@ -62,12 +65,7 @@ const COLUMNAS = [
 
 /* Quiénes contaron, en una línea. Con más de dos se dice el número: tres
  * nombres completos en una celda de tabla no se leen, se estorban. */
-const quienesContaron = (c) => {
-    const gente = c?.contaron || [];
-    if (!gente.length) return null;
-    if (gente.length <= 2) return gente.join(' y ');
-    return `${gente.length} personas`;
-};
+
 
 /* La diferencia con su signo y su tono. El cero se dice «Cuadró» y no «$0.00»,
  * igual que en la franja del conteo: quien mira esto quiere una respuesta, no
@@ -130,21 +128,49 @@ function SinResolver({ conteo }) {
     );
 }
 
-/* Las columnas de las bolsas de una tanda. Mismo canónico que la tabla de
- * afuera, y por el mismo motivo: 25 tarjetas apiladas con la cifra a la derecha
- * y el resto en prosa no se pueden comparar entre sí — que es lo único que se
- * hace acá. Con columnas, «¿cuál de Salud 1 no cuadró?» se contesta de un
- * vistazo. */
+/* Las columnas de las bolsas de una sala. La SALA no está: es el encabezado de
+ * la sección, y repetirla en cada renglón sería decir seis veces lo mismo — que
+ * es exactamente el ancho que le faltaba a las otras siete.
+ *
+ * Todo va `whitespace-nowrap` salvo la causa. Sin eso `LP-1116` se parte en dos
+ * renglones y «EDWIN NUÑEZ» en dos más: la tabla intenta caber a la fuerza en
+ * vez de ofrecer su barra de desplazamiento, y el resultado es una fila de tres
+ * pisos donde nada se alinea con nada. `minWidth` es lo que le dice que puede
+ * desbordar. */
 const COLUMNAS_BOLSA = [
     { key: 'folio', label: 'Bolsa' },
-    { key: 'sala', label: 'Sala', hideBelow: 'sm' },
     { key: 'dia', label: 'Día' },
     { key: 'esperado', label: 'Debía haber', align: 'right', hideBelow: 'md' },
     { key: 'contado', label: 'Contado', align: 'right' },
     { key: 'dif', label: 'Diferencia', align: 'right' },
-    { key: 'conto', label: 'La contó', hideBelow: 'lg' },
+    { key: 'conto', label: 'La contó', hideBelow: 'md' },
     { key: 'causa', label: 'Causa', hideBelow: 'lg' },
 ];
+
+/**
+ * Una persona: SIEMPRE la cara con el nombre completo.
+ *
+ * «que SIEMPRE LA FOTO CON NOMBRE Y APELLIDO» (usuario, 2026-08-26). Un nombre
+ * suelto en una columna de tabla se lee como un dato más; con la cara al lado
+ * se reconoce sin leerlo, que es lo que hace falta cuando la pregunta es «¿y
+ * ésta quién la contó?».
+ *
+ * Sin foto NO se cae a texto pelado: `LiquidAvatar` pinta las iniciales, así
+ * que la columna mantiene su forma y la fila no cambia de alto según quién sea.
+ */
+function Persona({ nombre, foto, className = '' }) {
+    if (!nombre) return <span className="text-content-3">—</span>;
+    return (
+        <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
+            <LiquidAvatar
+                src={foto} alt={nombre}
+                fallbackText={iniciales(nombre)}
+                className="w-5 h-5 rounded-full shrink-0 text-micro"
+            />
+            <span className="text-caption text-content-2 whitespace-nowrap">{nombre}</span>
+        </span>
+    );
+}
 
 /* Una cifra del cuadre, con su rótulo arriba en versalitas. Es la misma forma
  * que la franja de «Por contar» — que se lea igual acá que allá es lo que
@@ -155,7 +181,7 @@ function Cifra({ rotulo, children, fuerte = false }) {
             <div className="text-micro font-black uppercase tracking-widest text-content-3">
                 {rotulo}
             </div>
-            <div className={`tabular-nums leading-none mt-1 ${fuerte
+            <div className={`tabular-nums leading-none mt-1 whitespace-nowrap ${fuerte
                 ? 'text-display font-black text-content' : 'text-title font-bold text-content-2'}`}>
                 {children}
             </div>
@@ -163,24 +189,84 @@ function Cifra({ rotulo, children, fuerte = false }) {
     );
 }
 
+/** La tabla de bolsas de UNA sala. */
+function BolsasDeLaSala({ bolsas }) {
+    return (
+        <DataTable
+            columns={COLUMNAS_BOLSA}
+            minWidth="820px"
+            empty={{ icon: Package, message: 'Sin bolsas' }}
+        >
+            {(bolsas || []).map((b, i) => {
+                const dif = Math.round((Number(b.contado || 0) - Number(b.esperado || 0)) * 100) / 100;
+                const cuadra = Math.abs(dif) < 0.01;
+                return (
+                    <DataRow key={b.id} index={i}>
+                        <DataCell>
+                            <span className="font-bold text-content whitespace-nowrap">{b.folio}</span>
+                        </DataCell>
+                        <DataCell>
+                            <span className="text-caption text-content-2 tabular-nums whitespace-nowrap">
+                                {fechaLarga(b.fecha)} · {hhmm(b.hora)}
+                            </span>
+                        </DataCell>
+                        <DataCell align="right" hideBelow="md">
+                            <span className="tabular-nums text-content-2 whitespace-nowrap">
+                                {formatMoney(b.esperado)}
+                            </span>
+                        </DataCell>
+                        <DataCell align="right">
+                            <span className="font-bold tabular-nums text-content whitespace-nowrap">
+                                {formatMoney(b.contado)}
+                            </span>
+                        </DataCell>
+                        <DataCell align="right">
+                            {/* La que cuadró se dice con una raya y no con una
+                                insignia verde: en una lista de 25 donde cuatro
+                                fallaron, veintiún «✓ Cuadró» tapan a las cuatro
+                                que importan. */}
+                            {cuadra
+                                ? <span className="text-content-3 tabular-nums">—</span>
+                                : <Diferencia valor={dif} />}
+                        </DataCell>
+                        <DataCell hideBelow="md">
+                            <Persona nombre={b.contado_por} foto={b.contado_por_foto} />
+                        </DataCell>
+                        <DataCell hideBelow="lg">
+                            {b.dif_causa ? (
+                                <span className="text-caption text-content-2">
+                                    {b.dif_causa}
+                                    {b.dif_por ? <span className="text-content-3"> · {b.dif_por}</span> : null}
+                                </span>
+                            ) : (
+                                <span className="text-content-3">—</span>
+                            )}
+                        </DataCell>
+                    </DataRow>
+                );
+            })}
+        </DataTable>
+    );
+}
+
 /**
- * El detalle: el cuadre que se firmó, quién hizo qué, y bolsa por bolsa.
+ * El detalle: el cuadre que se firmó, quién hizo qué, y **sala por sala**.
  *
- * ── Ancho, y con columnas (2026-08-26) ─────────────────────────────────────
- * «el modal de abrir uno, no lo puedes hacer más ancho y poner más columnas,
- * para que esté mejor estructurado» (usuario).
+ * ── Por qué está seccionado por sucursal (2026-08-26) ──────────────────────
+ * «necesito tener totales diario por sucursal, que esté seccionado por
+ * sucursal» (usuario).
  *
- * Nació en `max-w-lg` con las bolsas como tarjetas apiladas, y con 25 adentro
- * eso son 25 bloques de dos renglones donde lo único comparable —la cifra— vive
- * en la esquina y todo lo demás es prosa. El cuadre entraba en cuatro renglones
- * verticales usando un tercio del ancho de la pantalla.
+ * El desglose «Por día» sumaba las seis salas en una cifra por fecha, que es la
+ * pregunta de quien mira la tanda entera. Pero el conteo se HACE sala por sala
+ * y día por día —es el proceso que el propio usuario dictó el 24-ago— así que
+ * la cifra contra la que se cuadra el trabajo real no estaba en ninguna parte:
+ * había que sumar de memoria las cuatro filas de Salud 1 en una lista de 25.
  *
- * Ahora es `max-w-5xl`: el cuadre son cuatro cifras en fila, «Por día» es una
- * franja, y las bolsas son la misma `DataTable` de afuera. Lo que ganó no es
- * espacio sino comparación: puestas en columnas se leen de arriba abajo, que es
- * como se busca cuál de las 25 no cuadró.
+ * Ahora cada sala es una sección con su total, sus días y su tabla. La columna
+ * «Sala» desapareció de las filas —la dice el encabezado— y ese ancho es
+ * justamente el que les faltaba a las demás para no partirse en dos renglones.
  */
-function Detalle({ conteo, nombreSala, onClose }) {
+function Detalle({ conteo, onClose }) {
     const c = conteo;
     const abiertas = Number(c.descuadradas || 0) - Number(c.resueltas || 0);
     const firmada = Number(c.diferencia || 0);
@@ -193,12 +279,12 @@ function Detalle({ conteo, nombreSala, onClose }) {
                     <h3 className="text-body font-bold text-content">{c.folio}</h3>
                     <p className="text-caption text-content-3">
                         {rangoDeDias(c.dia_desde, c.dia_hasta)} · {c.cuantas} {Number(c.cuantas) === 1 ? 'bolsa' : 'bolsas'}
-                        {' '}· lo firmó {c.cerrado_por || '—'} · {selloDeTiempo(c.cerrado_at)}
+                        {' '}· {selloDeTiempo(c.cerrado_at)}
                     </p>
                 </div>
             </LiquidModal.Header>
 
-            <LiquidModal.Body className="space-y-4">
+            <LiquidModal.Body className="space-y-5">
                 {/* Las cuatro cifras en UNA fila, en el orden en que se leen:
                     lo que debía haber, lo que se contó, la resta, y lo que
                     todavía no explicó nadie. La última es la que manda y por eso
@@ -232,113 +318,83 @@ function Detalle({ conteo, nombreSala, onClose }) {
                     </div>
                 </div>
 
-                {/* Las dos firmas, dichas por separado y con su verbo. Es la
-                    corrección del pedido: contar y firmar son dos actos y
-                    pueden ser dos personas. */}
-                <p className="text-caption text-content-2">
-                    <span className="font-bold text-content">
-                        {(c.contaron?.length || 0) === 1 ? 'La contó: ' : 'La contaron: '}
+                {/* Las dos firmas, con su cara y su verbo. Contar y firmar son
+                    dos actos y pueden ser dos personas — que es el pedido que
+                    dio origen a toda esta pantalla. */}
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <span className="flex items-center gap-2 flex-wrap">
+                        <span className="text-caption font-bold text-content">
+                            {(c.contaron?.length || 0) === 1 ? 'La contó' : 'La contaron'}
+                        </span>
+                        {(c.contaron || []).length
+                            ? c.contaron.map((p) => (
+                                <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
+                            ))
+                            : <span className="text-content-3">—</span>}
                     </span>
-                    {(c.contaron || []).join(', ') || '—'}
-                    {c.cerrado_por ? ` · la firmó ${c.cerrado_por}.` : '.'}
-                    {Number(c.descuadradas) > 0 && (
-                        <>
-                            {' '}
-                            <span className="font-bold text-content">
-                                {Number(c.descuadradas) === 1 ? 'Una bolsa no cuadró' : `${c.descuadradas} bolsas no cuadraron`}
-                            </span>
-                            {abiertas > 0
-                                ? ` · ${abiertas === 1 ? 'falta anotar una causa' : `faltan ${abiertas} causas por anotar`}.`
-                                : ' · todas tienen su causa anotada.'}
-                        </>
-                    )}
-                </p>
+                    <span className="flex items-center gap-2">
+                        <span className="text-caption font-bold text-content">La firmó</span>
+                        <Persona nombre={c.cerrado_por} foto={c.cerrado_por_foto} />
+                    </span>
+                </div>
 
-                {/* Qué días entraron y cuánto de cada uno, en franja. Va ANTES
-                    de las bolsas porque es la pregunta que se hace primero: con
-                    25 bolsas, la lista de a una no responde «¿cuánto se contó
-                    del martes?». */}
-                {(c.por_dia?.length || 0) > 1 && (
-                    <div data-surface="card" className="flex flex-wrap gap-x-10 gap-y-4 px-4 py-3">
-                        {c.por_dia.map((x) => (
-                            <div key={x.fecha}>
-                                <div className="text-micro font-black uppercase tracking-widest text-content-3">
-                                    {fechaLarga(x.fecha)}
-                                </div>
-                                <div className="text-title-sm font-bold tabular-nums text-content mt-0.5">
-                                    {formatMoney(x.contado)}
-                                </div>
-                                <div className="text-micro text-content-3 tabular-nums">
-                                    {x.cuantas} {Number(x.cuantas) === 1 ? 'bolsa' : 'bolsas'}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {Number(c.descuadradas) > 0 && (
+                    <p className="text-caption text-content-2">
+                        <span className="font-bold text-content">
+                            {Number(c.descuadradas) === 1 ? 'Una bolsa no cuadró' : `${c.descuadradas} bolsas no cuadraron`}
+                        </span>
+                        {abiertas > 0
+                            ? ` · ${abiertas === 1 ? 'falta anotar una causa' : `faltan ${abiertas} causas por anotar`}.`
+                            : ' · todas tienen su causa anotada.'}
+                    </p>
                 )}
 
-                <DataTable
-                    columns={COLUMNAS_BOLSA}
-                    minWidth="720px"
-                    empty={{ icon: Package, message: 'Esta tanda no tiene bolsas' }}
-                >
-                    {(c.bolsas || []).map((b, i) => {
-                        const dif = Math.round((Number(b.contado || 0) - Number(b.esperado || 0)) * 100) / 100;
-                        const cuadra = Math.abs(dif) < 0.01;
-                        return (
-                            <DataRow key={b.id} index={i}>
-                                <DataCell>
-                                    <span className="font-bold text-content">{b.folio}</span>
-                                </DataCell>
-                                <DataCell hideBelow="sm">
-                                    <span className="text-caption text-content-2">
-                                        {nombreSala?.[b.branch_id] || '—'}
+                {/* ── Sala por sala ─────────────────────────────────────────
+                    Encabezado con su total, la franja de sus días, y su tabla.
+                    Es el orden en que se cuenta: se toma la sala, se apilan sus
+                    días, y recién ahí se abre bolsa por bolsa. */}
+                {(c.por_sala || []).map((s) => (
+                    <section key={s.branch_id} className="space-y-2">
+                        <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
+                            <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                {s.sala}
+                            </h4>
+                            <span className="text-caption text-content-3 tabular-nums">
+                                {s.cuantas} {Number(s.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                                {' '}· <b className="text-label font-bold text-content">{formatMoney(s.contado)}</b>
+                                {Number(s.descuadradas) > 0 && (
+                                    <span className="text-danger-text">
+                                        {' '}· {s.descuadradas} sin cuadrar
                                     </span>
-                                </DataCell>
-                                <DataCell>
-                                    <span className="text-caption text-content-2 tabular-nums whitespace-nowrap">
-                                        {fechaLarga(b.fecha)} · {hhmm(b.hora)}
-                                    </span>
-                                </DataCell>
-                                <DataCell align="right" hideBelow="md">
-                                    <span className="tabular-nums text-content-2">{formatMoney(b.esperado)}</span>
-                                </DataCell>
-                                <DataCell align="right">
-                                    <span className="font-bold tabular-nums text-content">{formatMoney(b.contado)}</span>
-                                </DataCell>
-                                <DataCell align="right">
-                                    {/* La que cuadró se dice con una raya y no
-                                        con una insignia verde: en una lista de
-                                        25 donde cuatro fallaron, veintiún «✓
-                                        Cuadró» tapan a las cuatro que importan. */}
-                                    {cuadra
-                                        ? <span className="text-content-3 tabular-nums">—</span>
-                                        : <Diferencia valor={dif} />}
-                                </DataCell>
-                                <DataCell hideBelow="lg">
-                                    <span className="text-caption text-content-2">{b.contado_por || '—'}</span>
-                                </DataCell>
-                                <DataCell hideBelow="lg">
-                                    {b.dif_causa ? (
-                                        /* Sin `title`: §15.10 — el tooltip nativo
-                                           no existe en el teléfono, que es donde
-                                           la columna se colapsa. La causa es
-                                           corta («$15 saco Dra.») y entra
-                                           entera; si algún día no entrara, el
-                                           lugar de leerla es la bolsa. */
-                                        <span className="text-caption text-content-2">
-                                            {b.dif_causa}
-                                            {b.dif_por ? (
-                                                <span className="text-content-3"> · {b.dif_por}</span>
-                                            ) : null}
-                                        </span>
-                                    ) : (
-                                        <span className="text-content-3">—</span>
-                                    )}
-                                </DataCell>
-                            </DataRow>
-                        );
-                    })}
-                </DataTable>
+                                )}
+                            </span>
+                        </div>
+
+                        {/* Los días de ESTA sala. Con uno solo se calla: su cifra
+                            sería la del encabezado, palabra por palabra, y
+                            repetirla dos renglones seguidos enseña a no leer
+                            ninguna de las dos. */}
+                        {(s.dias?.length || 0) > 1 && (
+                            <div data-surface="card" className="flex flex-wrap gap-x-10 gap-y-3 px-4 py-3">
+                                {s.dias.map((d) => (
+                                    <div key={d.fecha}>
+                                        <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                            {fechaLarga(d.fecha)}
+                                        </div>
+                                        <div className="text-title-sm font-bold tabular-nums text-content mt-0.5">
+                                            {formatMoney(d.contado)}
+                                        </div>
+                                        <div className="text-micro text-content-3 tabular-nums">
+                                            {d.cuantas} {Number(d.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <BolsasDeLaSala bolsas={s.bolsas} />
+                    </section>
+                ))}
             </LiquidModal.Body>
         </LiquidModal>
     );
@@ -355,7 +411,7 @@ function Detalle({ conteo, nombreSala, onClose }) {
  * Ahora las carga `CircuitoDeBolsas`, que es quien ya carga todo lo demás.
  */
 export default function ConteosDeBolsas({
-    lista = [], cargando = false, nombreSala, conteoId = '', plegada, onPlegar,
+    lista = [], cargando = false, conteoId = '', plegada, onPlegar,
 }) {
     const [abierto, setAbierto] = useState(null);
 
@@ -427,9 +483,21 @@ export default function ConteosDeBolsas({
                             </span>
                         </DataCell>
                         <DataCell hideBelow="lg">
-                            {quienesContaron(c)
-                                ? <span className="text-caption text-content-2">{quienesContaron(c)}</span>
-                                : <span className="text-content-3">—</span>}
+                            {/* Con más de dos, la cara de las dos primeras y el
+                               resto en número: tres avatares con nombre no
+                               entran en una celda, y el detalle los lista. */}
+                            {(c.contaron || []).length ? (
+                                <span className="inline-flex items-center gap-2 flex-wrap">
+                                    {c.contaron.slice(0, 2).map((p) => (
+                                        <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
+                                    ))}
+                                    {c.contaron.length > 2 && (
+                                        <span className="text-caption text-content-3">
+                                            +{c.contaron.length - 2}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : <span className="text-content-3">—</span>}
                         </DataCell>
                         <DataCell align="right" hideBelow="sm">
                             <span className="tabular-nums text-content-2">
@@ -456,7 +524,7 @@ export default function ConteosDeBolsas({
             </>)}
 
             {abierto && (
-                <Detalle conteo={abierto} nombreSala={nombreSala} onClose={() => setAbierto(null)} />
+                <Detalle conteo={abierto} onClose={() => setAbierto(null)} />
             )}
         </section>
     );

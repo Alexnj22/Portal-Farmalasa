@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.793.3 — El conteo se lee sala por sala, con cara y sin texto cortado
+
+Cinco correcciones del usuario mirando la pantalla de conteos y la de una bolsa.
+
+**El detalle va seccionado por sucursal, con sus totales diarios.**
+
+> «necesito tener totales diario por sucursal, que esté seccionado por
+> sucursal.»
+
+«Por día» sumaba las seis salas en una cifra por fecha, que es la pregunta de
+quien mira la tanda entera. Pero el conteo se HACE sala por sala y día por día
+—es el proceso que el propio usuario dictó el 24-ago— así que la cifra contra la
+que se cuadra el trabajo real no estaba en ninguna parte: había que sumar de
+memoria las cuatro filas de Salud 1 en una lista de 25. Ahora cada sala es una
+sección con su total, su franja de días y su tabla.
+
+**Siempre la cara con el nombre completo.**
+
+> «que SIEMPRE LA FOTO CON NOMBRE Y APELLIDO.»
+
+En «La contó» de cada bolsa, en las firmas de la tanda, en la columna
+«Contaron» de la lista y en cada renglón del historial de una bolsa. Sin foto
+se pintan las iniciales, así que la fila no cambia de alto según quién sea. Las
+URLs se firman con `signPhotosDeep` — el bucket de fotos es privado y la cruda
+expira.
+
+**El texto deja de partirse.**
+
+> «que quepa el texto, o haces más ancho el modal o lo corriges.»
+
+`LP-1116` se partía en dos renglones y «EDWIN NUÑEZ» en dos más: la tabla
+intentaba caber a la fuerza en vez de ofrecer su barra de desplazamiento, y el
+resultado era una fila de tres pisos donde nada se alineaba con nada. Ahora todo
+va en una línea salvo la causa, y la columna «Sala» desapareció de las filas —la
+dice el encabezado de la sección—, que es justo el ancho que le faltaba a las
+demás.
+
+**Y la voz del portal en el historial de una bolsa.**
+
+> «¿tiene la voz del portal? ¿qué le pasó no es historial? ¿nació? ¿qué es un
+> bebé? el texto se corta. sigo sin ver foto.»
+
+Las cinco tenían razón:
+
+- **«DEPOSITAR» salía en código.** Es la acción más frecuente de la bitácora —68
+  eventos— y encabezaba el historial de cada bolsa ya depositada: la línea más
+  visible de la pantalla escrita en la jerga de la tubería. Ahora dice «Se
+  depositó». Lo mismo `REABRIR`, que tenía su rótulo escrito para `ABRIR` — un
+  valor que nunca llega.
+- **«Qué le pasó» → «Historial».**
+- **«Nació al confirmarse el corte» → «Al confirmarse el corte».** El rótulo de
+  esa misma línea ya dice «Se guardó»: la metáfora no agregaba nada y sonaba a
+  otra cosa. Se corrigió el disparador y las 132 notas ya escritas.
+- **El renglón envuelve en vez de cortarse.** Estaba en `truncate` y «se lo
+  lleva Carlos Renderos (usuario y contraseña)» terminaba en «(u…» — justo el
+  pedazo que dice CÓMO se probó la identidad, que es la mitad del control.
+- **Y lleva la cara de quien hizo cada cosa.**
+
 ## v2.793.2 — Más de un contacto de emergencia, la entrega de herramientas legible, y enlazar trae su foto
 
 Los tres puntos que faltaban de la revisión con Talento Humano. Con esto quedan

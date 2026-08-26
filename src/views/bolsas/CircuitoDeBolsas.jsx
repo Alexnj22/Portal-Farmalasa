@@ -2218,7 +2218,7 @@ export default function CircuitoDeBolsas({
                 montos no contesta ninguna de las preguntas por las que existe. */}
             {verMontos && (
                 <Suspense fallback={null}>
-                    <ConteosDeBolsas lista={tandas} cargando={cargando} nombreSala={nombreSala}
+                    <ConteosDeBolsas lista={tandas} cargando={cargando}
                         conteoId={conteoId}
                         plegada={cerradas.has('conteos')}
                         onPlegar={() => plegar('conteos')} />

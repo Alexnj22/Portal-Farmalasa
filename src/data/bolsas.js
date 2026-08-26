@@ -360,6 +360,11 @@ export async function fetchConteos({ desde, hasta } = {}) {
         p_desde: desde || null, p_hasta: hasta || null,
     });
     if (error) { console.error('bolsas: fetchConteos failed:', error.message); return []; }
+    // Las caras vienen en formato-público y el bucket `empleados` es PRIVADO:
+    // sin firmarlas el avatar sale roto. `signPhotosDeep` recorre la estructura
+    // entera —las firmas de la tanda, las de cada sala y las de cada bolsa— y
+    // reemplaza in place, así que alcanza con una llamada acá.
+    await signPhotosDeep(data || []);
     return data || [];
 }
 

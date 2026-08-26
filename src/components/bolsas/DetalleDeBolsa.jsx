@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ban, Image, Printer, ScrollText } from 'lucide-react';
 import Badge from '../common/Badge';
+import LiquidAvatar from '../common/LiquidAvatar';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -65,11 +66,20 @@ const fechaCorta = (f) => {
 
 const COMO = { CARNE: 'carné escaneado', CLAVE: 'usuario y contraseña' };
 
+const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
+    .map((p) => p[0]).join('').toUpperCase();
+
 const ACCION = {
     CREAR: 'Se guardó', SALIDA: 'Salió dinero', REINTEGRO: 'Volvió dinero',
     ABRIR: 'Se abrió', ANULAR_SALIDA: 'Se anuló una salida',
     ENTREGAR: 'Se entregó', RECIBIR: 'Se recibió', CONTAR: 'Se contó',
     RESOLVER: 'Se resolvió la diferencia', ANULAR: 'Se anuló la bolsa',
+    // Los dos que estaban saliendo en CÓDIGO. «DEPOSITAR» es el más frecuente
+    // de la tabla —68 de los eventos— y encabezaba el historial de cada bolsa
+    // ya depositada: la línea más visible de la pantalla escrita en la jerga de
+    // la tubería. Y `ABRIR` de arriba nunca existió: la acción real se llama
+    // `REABRIR`, así que su rótulo estaba escrito para un valor que no llega.
+    DEPOSITAR: 'Se depositó', REABRIR: 'Se reabrió',
     // El circuito no se registró en su momento y se cerró de una sola vez: la
     // nota del evento dice qué NO se hizo, así que el rótulo no puede decir
     // «Se contó» — sería la única línea de la bitácora que miente.
@@ -350,15 +360,36 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                     {!cargando && eventos.length > 0 && (
                         <section className="space-y-1.5">
                             <h4 className="text-caption font-black uppercase tracking-widest text-content-3">
-                                Qué le pasó
+                                Historial
                             </h4>
+                            {/* El renglón ENVUELVE, no se corta. Estaba en
+                                `truncate` y con eso «se lo lleva Carlos
+                                Renderos (usuario y contraseña)» terminaba en
+                                «(u…»: justo el pedazo que dice CÓMO se probó la
+                                identidad, que es la mitad del control. Una
+                                bitácora que esconde su propio texto no sirve
+                                para lo que existe.
+
+                                Y la cara va delante del nombre: «que SIEMPRE la
+                                foto con nombre y apellido» (usuario). Sin foto,
+                                `LiquidAvatar` pinta las iniciales — la columna
+                                no cambia de forma según quién sea. */}
                             {eventos.map((ev) => (
-                                <div key={ev.id} className="flex items-baseline justify-between gap-2 px-1">
-                                    <span className="text-caption text-content-2 min-w-0 truncate">
-                                        {ACCION[ev.accion] || ev.accion}
-                                        {ev.nombre ? ` · ${ev.nombre}` : ''}
-                                        {ev.motivo ? ` · ${ev.motivo}` : ''}
-                                        {ev.nota && !ev.motivo ? ` · ${ev.nota}` : ''}
+                                <div key={ev.id} className="flex items-start justify-between gap-3 px-1">
+                                    <span className="text-caption text-content-2 min-w-0 flex items-start gap-1.5 flex-wrap">
+                                        {ev.nombre && (
+                                            <LiquidAvatar
+                                                src={ev.photo_url} alt={ev.nombre}
+                                                fallbackText={iniciales(ev.nombre)}
+                                                className="w-5 h-5 rounded-full shrink-0 text-micro"
+                                            />
+                                        )}
+                                        <span className="min-w-0">
+                                            <b className="font-bold text-content">{ACCION[ev.accion] || ev.accion}</b>
+                                            {ev.nombre ? ` · ${ev.nombre}` : ''}
+                                            {ev.motivo ? ` · ${ev.motivo}` : ''}
+                                            {ev.nota && !ev.motivo ? ` · ${ev.nota}` : ''}
+                                        </span>
                                     </span>
                                     <span className="text-caption text-content-3 tabular-nums shrink-0">
                                         {selloDeTiempo(ev.created_at)}

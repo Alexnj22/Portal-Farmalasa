@@ -6502,12 +6502,23 @@ En los dos casos la palabra del encabezado era la **única** vez que la pantalla
 la usaba. Un encabezado que no comparte vocabulario con su propio cuerpo no es
 un título: es una etiqueta que alguien puso una vez.
 
-**La prueba que lo detecta es barata: contar.** Si la palabra del encabezado
-aparece una sola vez en el archivo —la del encabezado— es un intruso. Y su
-espejo: **el menú y el encabezado tienen que compartir al menos una palabra.**
-Medido sobre las 54 vistas, sólo tres no la compartían, y una era legítima
-(`/personal` dice «Listado» en el menú porque se lee bajo el grupo «Personal»,
-que es la abreviación que §33.1 permite).
+**De las dos formas de detectarlo, sólo una sirve como candado.**
+
+*Contar la palabra dentro del archivo* parecía la prueba barata —si el
+encabezado dice «comunicaciones» una sola vez, es un intruso— y **se probó y es
+ruido**: acusa a `AttendanceAuditView`, `OrphanObjectsView` y
+`EmployeeProfileView`, que están bien, sólo que su pantalla habla de marcajes y
+no repite su propio título. Cuatro falsos positivos sobre cuatro hallazgos. No
+se convirtió en gate: un detector que acusa al que hizo bien el trabajo es un
+detector que se termina desactivando.
+
+*Lo que sí funciona es el espejo*: **el menú y el encabezado tienen que
+compartir al menos una palabra.** Los dos nombran la misma pantalla; si no se
+tocan, uno de los dos es una etiqueta que alguien puso una vez. Medido sobre las
+54 vistas: sólo `/personal` no la comparte, y es legítimo —«Listado» se lee bajo
+el grupo «Personal»—, así que está declarado en `MENU_ABREVIA` con su motivo.
+
+Ése es el chequeo que corre en `gate:rutas`.
 
 Hoy son `/avisos` con «Gestión de avisos», y `/cargos` con «Cargos y
 organigrama».

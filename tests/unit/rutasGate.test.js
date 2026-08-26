@@ -133,6 +133,35 @@ describe('gate:rutas', () => {
         expect(salida).toContain('/bitacoras');
     });
 
+    it('caza un menú y un encabezado que no comparten ni una palabra', () => {
+        // Es la señal que delató a «Centro de comunicaciones» sobre una pantalla
+        // que dice «aviso» 34 veces, con el menú diciendo «Gestionar avisos».
+        // Contar la palabra dentro del archivo NO sirve: se probó y acusa a
+        // cuatro pantallas correctas. Lo que sirve es que los dos nombres de la
+        // misma pantalla no se toquen.
+        const mm = path.join(tmp, 'moduleMap.js');
+        fs.writeFileSync(mm, fs.readFileSync(path.join(RAIZ, 'src/constants/moduleMap.js'), 'utf8')
+            .replace("label: 'Bitácoras'", "label: 'Registros regulados'"));
+        const app = path.join(tmp, 'App-vocabulario.jsx');
+        fs.writeFileSync(app, fs.readFileSync(APP_REAL, 'utf8'));
+        const env = { ...process.env, RUTAS_GATE_APP: app, RUTAS_GATE_MODULOS: mm };
+        let salida = '', ok = true;
+        try { salida = execFileSync('node', [GATE], { env, encoding: 'utf8', cwd: RAIZ }); }
+        catch (e) { ok = false; salida = (e.stdout || '') + (e.stderr || ''); }
+        expect(ok).toBe(false);
+        expect(salida).toContain('no comparten ni una palabra');
+        expect(salida).toContain('/bitacoras');
+    });
+
+    it('NO acusa al menú que abrevia dentro de su grupo', () => {
+        // `/personal` dice «Listado» en el menú y «Gestión de personal» en el
+        // encabezado. No comparten palabra y está BIEN: «Listado» se lee bajo el
+        // grupo «Personal». Está declarado en MENU_ABREVIA con su motivo.
+        const { ok, salida } = correr();
+        expect(ok).toBe(true);
+        expect(salida).not.toContain('no comparten ni una palabra');
+    });
+
     // ── Los dos falsos positivos de la primera corrida ───────────────────────
 
     it('NO acusa a una ficha de detalle de no tener título de pestaña', () => {

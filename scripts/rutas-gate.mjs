@@ -189,6 +189,7 @@ function encabezadoDe(comp) {
 
 // ── Medición ─────────────────────────────────────────────────────────────────
 const app = leer(APP);
+const mm = leer(MODULOS);
 const titulos = titulosDeRuta(app);
 const rutas = rutasDeApp(app).filter(r => !FUERA_DE_ALCANCE.has(r.path));
 
@@ -208,13 +209,52 @@ for (const r of rutas) {
 }
 
 // ── El módulo del menú apunta a una ruta que existe ──────────────────────────
-const mm = leer(MODULOS);
 const rutasVivas = new Set(rutas.map(r => r.path));
 const modulosRotos = [];
 for (const m of mm.matchAll(/^\s*([a-z_0-9]+):\s*\{\s*path:\s*'([^']+)',\s*label:\s*'([^']+)'([\s\S]{0,120}?)\}/gm)) {
   const [, key, path, label, resto] = m;
   if (/comingSoon:\s*true/.test(resto)) continue;   // todavía no tiene ruta, a propósito
   if (!rutasVivas.has(path)) modulosRotos.push({ key, path, label });
+}
+
+// ── El menú y el encabezado hablan de lo mismo ──────────────────────────────
+//
+// Lo levantó el usuario: *«¿por qué si my-announcements dice mis avisos,
+// announcement dice comunicaciones?»*. La ruta se había derivado del encabezado
+// —«Centro de comunicaciones»— siguiendo la regla al pie de la letra. La regla
+// estaba bien; **el encabezado estaba mal**: era la ÚNICA vez que esa pantalla
+// decía «comunicación» (adentro dice «aviso» 34 veces) y el menú ya decía
+// «Gestionar avisos». Lo mismo en Cargos, con «Jerarquía institucional» sobre
+// una pantalla que dice «cargo» 22 veces.
+//
+// La señal que los delató no fue contar palabras dentro del archivo —se probó y
+// es ruido: acusa a cuatro pantallas correctas— sino esto: **el menú y el
+// encabezado no compartían NI UNA palabra**. Cuando los dos nombres de la misma
+// pantalla no se tocan, uno de los dos es una etiqueta que alguien puso una vez.
+const VACIAS = new Set(['de','del','la','el','los','las','en','y','a','por','mi','mis','un','una','tiempo','real']);
+const enPalabras = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w && !VACIAS.has(w))
+  .map(w => w.replace(/(es|s)$/, ''));
+
+// El menú PUEDE abreviar cuando se lee dentro de su grupo — es lo que dice
+// §33.1. Cada excepción con su motivo escrito; sin motivo, no va.
+const MENU_ABREVIA = {
+  '/personal': 'El menú dice «Listado» porque se lee bajo el grupo «Personal»: '
+             + '«Listado» a secas, entre los otros ítems de ese grupo, no es ambiguo.',
+};
+
+const menusPorRuta = {};
+for (const m of mm.matchAll(/^\s*([a-z_0-9]+):\s*\{\s*path:\s*'([^']+)',\s*label:\s*'([^']+)'/gm)) {
+  menusPorRuta[m[2]] = m[3];
+}
+const vocabularioDistinto = [];
+for (const [path, menu] of Object.entries(menusPorRuta)) {
+  const tab = titulos[path];
+  if (!tab || path in MENU_ABREVIA) continue;
+  const a = new Set(enPalabras(menu));
+  if (![...a].some(w => enPalabras(tab).includes(w))) {
+    vocabularioDistinto.push({ path, menu, tab });
+  }
 }
 
 // ── La precarga conoce a toda ruta ──────────────────────────────────────────
@@ -267,6 +307,17 @@ if (modulosRotos.length) {
   console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${modulosRotos.length} módulo(s) del menú apuntan a una ruta que no existe${c.fin}`);
   for (const m of modulosRotos) console.log(`      ${c.gris}${m.key} → ${m.path}${c.fin}  («${m.label}»)`);
   console.log(`    Un ítem del menú que lleva al 404 no da error: se ve como una pantalla rota.\n`);
+}
+
+if (vocabularioDistinto.length) {
+  falla = true;
+  console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${vocabularioDistinto.length} vista(s) donde el menú y el encabezado no comparten ni una palabra${c.fin}`);
+  for (const v of vocabularioDistinto) {
+    console.log(`      ${c.gris}${v.path}${c.fin}  menú «${v.menu}» · encabezado «${v.tab}»`);
+  }
+  console.log(`    Los dos nombran la MISMA pantalla: uno de los dos es una etiqueta`);
+  console.log(`    que alguien puso una vez. Si el menú abrevia a propósito, declaralo`);
+  console.log(`    en MENU_ABREVIA con su motivo.\n`);
 }
 
 if (sinPrecarga.length) {

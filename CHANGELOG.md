@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.781.2 — El chequeo que estaba escrito y no implementado
+
+Al verificar «¿ya quedó todo corregido?» apareció que **la regla del §33.5
+estaba escrita en DESIGN.md y no existía en el gate**. O sea, exactamente lo que
+este trabajo vino a cerrar: una afirmación que nadie verifica. Fueron dos días
+escribiendo que una nota al margen no es una regla, y quedó una.
+
+Implementado el chequeo: **el menú y el encabezado tienen que compartir al menos
+una palabra.** Los dos nombran la misma pantalla; si no se tocan, uno de los dos
+es una etiqueta que alguien puso una vez — que es exactamente lo que le pasaba a
+«Centro de comunicaciones» sobre una pantalla que dice «aviso» 34 veces. Sobre
+las 54 vistas hoy sólo `/personal` no la comparte, y es legítimo: «Listado» se
+lee bajo el grupo «Personal». Queda declarado en `MENU_ABREVIA` con su motivo.
+
+**Y la otra mitad de lo que había escrito era falsa.** El §33.5 decía que la
+prueba barata era *contar*: si el encabezado dice su palabra una sola vez, es un
+intruso. Se implementó y **es ruido**: acusa a `AttendanceAuditView`,
+`OrphanObjectsView` y `EmployeeProfileView`, que están bien —su pantalla habla
+de marcajes, no repite su propio título—. Cuatro falsos positivos sobre cuatro
+hallazgos. No se convirtió en gate y el documento se corrigió: un detector que
+acusa al que hizo bien el trabajo es un detector que se termina desactivando.
+
+Ese mismo detector de prueba tenía además el bug de la tilde —normalizaba la
+palabra del título pero no el archivo, así que «Nómina» y «huérfanos» contaban
+cero— y volvió a confundir el `title` de un botón anidado con el encabezado de
+`BranchDetailView`. Con esos van **seis falsos positivos en tres días** de la
+familia de detectores de este trabajo, contra siete defectos reales.
+
+`gate:rutas` queda con siete chequeos y 12 pruebas. 1868 en total, en verde.
+
 ## v2.781.1 — El aviso se llama aviso en las dos pantallas, y la precarga vuelve a encontrar sus rutas
 
 *«¿por qué si my-announcements dice mis avisos, announcement dice

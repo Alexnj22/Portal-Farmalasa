@@ -3,6 +3,7 @@ import { Ban, PackageCheck, CornerUpLeft } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import ModalShell from '../../components/common/ModalShell';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -138,7 +139,9 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
          * `clickable()` y no un `onClick` a secas: pone el rol, el foco, el
          * Enter/Espacio y el `data-interactive` que le da el acuse al toque
          * (§1.6) — que en el teléfono es la ÚNICA señal de que entró. */
-        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full"
+        /* `group` porque el ojo se realza al pasar el puntero por la TARJETA, no
+           por el ojo: sin esta clase el `group-hover:` no dispara nunca. */
+        <div data-surface="card" className="group px-3.5 py-3 flex flex-col gap-2 h-full"
             {...clickable(onAbrir ? () => onAbrir(fila) : null,
                 { label: `Ver el traslado de ${m.origen_branch_name ?? 'otra sala'} a ${m.branch_name ?? 'otra sala'}` })}>
             <div className="flex items-start gap-2">
@@ -165,6 +168,12 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
                 <Badge variant={rechazado ? 'danger' : 'success'} size="sm">
                     {rechazado ? 'Rechazado' : 'Recibido'}
                 </Badge>
+                {/* El ojo, en el sitio de siempre: arriba a la derecha. Es la
+                    ÚNICA marca de que la tarjeta abre algo — no hay puntero que
+                    cambie de forma en el teléfono, y sin ella la manera de
+                    averiguarlo es tocarla. Canon del portal desde el
+                    2026-08-15, y lo que faltaba en la tanda de hoy. */}
+                {onAbrir && <OjoDeTarjeta className="self-start mt-0.5" />}
             </div>
 
             {/* Qué se movió, cuando fue más de una cosa. Sin esto la tarjeta
@@ -218,7 +227,7 @@ export function TarjetaEnvioCerrado({ envio, onAbrir }) {
          * su estado, su motivo de devolución y la nota escrita a mano, y
          * guarda además las FOTOS de la avería — nada de eso cabe en la
          * tarjeta, y hasta hoy no se veía en ninguna parte. */
-        <div data-surface="card" className="px-3.5 py-3 flex flex-col gap-2 h-full"
+        <div data-surface="card" className="group px-3.5 py-3 flex flex-col gap-2 h-full"
             {...clickable(onAbrir ? () => onAbrir(envio) : null,
                 { label: `Ver el envío de ${envio.origen_branch_name ?? 'otra sala'} a ${envio.branch_name ?? 'otra sala'}` })}>
             <div className="flex items-start gap-2">
@@ -246,6 +255,7 @@ export function TarjetaEnvioCerrado({ envio, onAbrir }) {
                     <span className="text-content-3"> / </span>
                     <span className={devue > 0 ? 'text-danger-text' : 'text-content-3'}>{devue}</span>
                 </span>
+                {onAbrir && <OjoDeTarjeta className="self-start mt-0.5" />}
             </div>
 
             {devueltas.length > 0 && (

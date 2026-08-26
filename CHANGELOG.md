@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.783.1 — El ojo que faltaba en las tarjetas del historial de traslados
+
+Corregido por el usuario mirando la pantalla de v2.783.0: «¿por qué si se toca,
+la card no tiene el ojo, que es canónico y de regla en el portal para los
+elementos que se abren?».
+
+Tenía razón y el canónico ya existía — `OjoDeTarjeta`, canon desde el
+2026-08-15, cuando un barrido encontró que **de 44 candidatos sólo 4 tarjetas
+abrían un detalle y ninguna lo decía**. La tanda anterior le puso el destino a
+la tarjeta y se olvidó de la señal: el acuse al presionar avisa DESPUÉS de
+tocar, o sea que la única forma de saber si abría algo era probar.
+
+Va en las dos —traslado y envío cerrado— arriba a la derecha, que es el sitio
+que tiene siempre, y la tarjeta lleva `group` para que el realce al pasar el
+puntero dispare (sin esa clase el `group-hover:` no dispara nunca y el ojo se
+queda gris, que se lee como un degradado correcto y no como un olvido).
+
+Medido contra producción: **132 de 132 tarjetas de traslado y 6 de 6 de envío**
+con su ojo. `gate:design` y `gate:movil` en verde.
+
+Por qué no lo cazó ningún gate: la diferencia entre una tarjeta que ABRE y una
+que ELIGE o FILTRA está en el handler, no en las clases, así que un detector que
+mira la forma clasificaría mal por construcción — está escrito en el propio
+`OjoDeTarjeta` y en DESIGN.md §5.3.
+
 ## v2.783.0 — El historial de traslados abre el detalle al tocar la tarjeta
 
 Reportado así: «en `/traslados?tab=historial`, al tocar la card no se abre el

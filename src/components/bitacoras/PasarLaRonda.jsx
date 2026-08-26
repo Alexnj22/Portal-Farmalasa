@@ -308,7 +308,7 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
                     <Notice variant="warning" compact icon={AlertTriangle}>
                         <span className="font-bold">Quedaron renglones sin guardar.</span>
                         <span className="block mt-0.5 font-normal text-content-2">
-                            Lo demás ya está anotado. Acá abajo está el motivo de cada uno.
+                            Lo demás ya está anotado. Aquí abajo está el motivo de cada uno.
                         </span>
                     </Notice>
                 )}

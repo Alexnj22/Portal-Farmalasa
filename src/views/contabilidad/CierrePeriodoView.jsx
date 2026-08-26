@@ -176,7 +176,7 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
                         </Button>
                     ) : fila.puede_cerrarse ? (
                         <Button size="sm" icon={Check} disabled={busy} onClick={() => onCerrar(fila)}
-                            title="Congela estas cifras con tu nombre y la fecha. El mes siguiente arranca del remanente que salga de acá.">
+                            title="Congela estas cifras con tu nombre y la fecha. El mes siguiente arranca del remanente que salga de aquí.">
                             Cerrar {mesCorto(fila.periodo)}
                         </Button>
                     ) : (

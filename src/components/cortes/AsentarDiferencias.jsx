@@ -150,7 +150,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
 
             <LiquidModal.Body className="space-y-4">
                 <Notice variant="info" icon={Landmark}>
-                    <span className="font-bold">Primero se anota allá, después se marca acá</span>
+                    <span className="font-bold">Primero se anota allá, después se marca aquí</span>
                     <span className="block mt-0.5 font-normal text-content-2">
                         Haz un movimiento por el total de cada grupo y escribe con qué número
                         quedó. Se anota en cada una de las diferencias que cubre.

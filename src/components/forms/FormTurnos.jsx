@@ -372,7 +372,7 @@ const FormTurnos = ({ branches }) => {
                             compact
                             icon={statusFilter === 'ARCHIVED' ? Package : BookOpen}
                             title={statusFilter === 'ARCHIVED' ? 'Sin turnos archivados' : 'Sin turnos registrados'}
-                            subtitle={statusFilter === 'ARCHIVED' ? 'Los turnos que archives van a aparecer acá.' : 'Crea el primero para empezar a armar los horarios.'}
+                            subtitle={statusFilter === 'ARCHIVED' ? 'Los turnos que archives van a aparecer aquí.' : 'Crea el primero para empezar a armar los horarios.'}
                         />
                     )}
                 </div>

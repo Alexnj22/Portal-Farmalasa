@@ -236,7 +236,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 setLog(`✅ ${chunk.label} listo (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
             } catch (err) {
                 console.error(`Error en bloque ${chunk.label}:`, err);
-                setLog(`❌ Falló ${chunk.label}. Se detiene acá.`);
+                setLog(`❌ Falló ${chunk.label}. Se detiene aquí.`);
                 break;
             }
 

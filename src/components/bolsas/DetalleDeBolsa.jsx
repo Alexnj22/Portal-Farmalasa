@@ -245,7 +245,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                                 Lo que salió de esta bolsa
                             </h4>
                             {!salidas.length && (
-                                <EmptyState linea icon={ScrollText} title="No salió nada de acá" />
+                                <EmptyState linea icon={ScrollText} title="Sin salidas" />
                             )}
                             {salidas.map((s) => (
                                 <div key={s.movimiento_id} data-surface="card"
@@ -370,7 +370,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
 
                     {!enLaSala && (
                         <Notice variant="info" icon={Ban}>
-                            Esta bolsa ya salió de la sala: acá no se corrige nada.
+                            Esta bolsa ya salió de la sala: aquí no se corrige nada.
                             {' '}Si el dinero no cuadra, se resuelve en el conteo.
                         </Notice>
                     )}

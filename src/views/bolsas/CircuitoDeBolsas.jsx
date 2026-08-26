@@ -372,12 +372,33 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
     const [abierto, setAbierto] = useState(false);
     const [valor, setValor] = useState('');
 
+    /* Lo escrito, ya interpretado. Se calcula en el render y no al guardar
+     * porque la DIFERENCIA se muestra mientras se escribe: quien cuenta ve
+     * «Faltan $400.00» antes de apretar nada, que es cuando todavía puede
+     * recontar. Antes el número se anotaba a ciegas y la diferencia recién
+     * aparecía después, con la bolsa ya marcada. */
+    const n = Number(String(valor).replace(',', '.'));
+    const valido = valor !== '' && Number.isFinite(n) && n >= 0;
+    const dif = valido ? Math.round((n - saldoDe(bolsa)) * 100) / 100 : null;
+    const cuadraLoEscrito = dif !== null && Math.abs(dif) < 0.01;
+
+    const cerrar = () => { setAbierto(false); setValor(''); };
     const guardar = () => {
-        const n = Number(String(valor).replace(',', '.'));
-        if (!Number.isFinite(n) || n < 0) return;
+        if (!valido) return;
         onContar(bolsa, n);
-        setAbierto(false);
-        setValor('');
+        cerrar();
+    };
+
+    /* Enter anota, Escape cancela (usuario, 2026-08-26: «mejora el input, que al
+     * dar enter se guarde»). Contar treinta bolsas con el teclado numérico y
+     * tener que soltarlo para buscar el botón es la fricción que hace que se
+     * cuente en papel y se transcriba después.
+     *
+     * `preventDefault` en Enter porque el campo puede estar dentro de un
+     * formulario y un Enter suelto lo enviaría. */
+    const alTeclear = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cerrar(); }
     };
 
     /* ── Ya contada, pero todavía no cerrada ────────────────────────────────
@@ -401,6 +422,21 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
                 {!cuadra && verMontos && (
                     <span className="text-caption text-content-2 tabular-nums">
                         Se contaron <b className="text-content">{formatMoney(bolsa.conteo_marcado)}</b>
+                    </span>
+                )}
+                {/* Una bolsa que no cuadra se quedaba diciendo cuánto faltó y
+                    nada más: la pantalla no ofrecía ningún camino para decir
+                    «ya sé qué pasó» (usuario, 2026-08-26: «¿cómo se solventa?
+                    cómo digo, ah ya se identificó la causa?»).
+                    El camino EXISTE y está una pestaña más allá —«Contadas»,
+                    con Justificar / Repuesto / Retirado y su motivo escrito—,
+                    pero acá no se decía. Y no puede adelantarse: la diferencia
+                    se recalcula al confirmar contra el saldo de ese momento, así
+                    que resolverla antes sería resolver un número que todavía
+                    puede cambiar. */}
+                {!cuadra && (
+                    <span className="text-caption text-content-3">
+                        La causa se anota al confirmar el conteo
                     </span>
                 )}
                 <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
@@ -442,30 +478,44 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
     }
 
     return (
-        <div className="flex items-center gap-1.5 flex-wrap w-full">
-            <span className="text-caption text-content-2">
-                Se contaron
-                {verMontos && (
-                    <span className="text-content-3 tabular-nums">
-                        {' '}(debía haber {formatMoney(saldoDe(bolsa))})
-                    </span>
-                )}
-            </span>
+        <div className="flex items-center gap-2 flex-wrap w-full">
+            {/* El «(debía haber $650.25)» se fue: la tarjeta lo dice arriba a
+                20px con su rótulo. Repetirlo al lado del campo era la misma
+                cifra tres veces en la misma tarjeta. */}
+            <span className="text-caption text-content-2 shrink-0">Se contaron</span>
             <PortalInput
                 compact
+                autoFocus
+                prefix="$"
                 name={`contado-${bolsa.id}`}
-                aria-label={`Cuanto se conto en la bolsa ${bolsa.folio}`}
+                aria-label={`Cuánto se contó en la bolsa ${bolsa.folio}`}
                 inputMode="decimal" maskType="DECIMAL"
                 value={valor} onChange={(e) => setValor(e.target.value)}
-                placeholder={String(saldoDe(bolsa))}
+                onKeyDown={alTeclear}
+                /* Sin `bolsas_ver_montos` el marcador de posición NO puede ser
+                   lo que debe haber: sería decir la cifra que el permiso
+                   esconde, en el único sitio donde nadie la buscaría. */
+                placeholder={verMontos ? String(saldoDe(bolsa)) : '0.00'}
                 className="w-32"
                 inputClassName="tabular-nums"
             />
+            {/* La diferencia mientras se escribe. Va detrás del permiso por lo
+                mismo que el marcador: «Faltan $400.00» dice cuánto debía haber
+                con una resta. */}
+            {verMontos && dif !== null && (
+                cuadraLoEscrito
+                    ? <Badge variant="success" size="sm" icon={CheckCircle2}>Cuadra</Badge>
+                    : (
+                        <Badge variant={dif < 0 ? 'danger' : 'warning'} size="sm" dot>
+                            {dif < 0 ? 'Faltan' : 'Sobran'} {formatMoney(Math.abs(dif))}
+                        </Badge>
+                    )
+            )}
             <div className="flex items-center gap-1.5 ml-auto">
-                <Button variant="ghost" size="sm" onClick={() => { setAbierto(false); setValor(''); }}>
+                <Button variant="ghost" size="sm" onClick={cerrar}>
                     Cancelar
                 </Button>
-                <Button variant="primary" size="sm" loading={ocupado} disabled={valor === ''}
+                <Button variant="primary" size="sm" loading={ocupado} disabled={!valido}
                     onClick={guardar}>
                     Anotar
                 </Button>
@@ -973,6 +1023,38 @@ export default function CircuitoDeBolsas({
         () => porContar.filter((b) => b.conteo_marcado == null),
         [porContar],
     );
+    // Las contadas que NO cuadran. No frenan el cierre —una diferencia se
+    // resuelve después, no antes— pero quien va a confirmar tiene que saber
+    // cuántas van a salir con una explicación pendiente.
+    const descuadradas = useMemo(
+        () => marcadas.filter((b) => Math.abs(Number(b.conteo_marcado) - saldoDe(b)) >= 0.01),
+        [marcadas],
+    );
+
+    /* El cuadre de la TANDA, antes de firmarla.
+     *
+     * «al contar todo lo pendiente, dónde me dice las diferencias, el total
+     * esperado, el total actual?» (usuario, 2026-08-26). Los dos números YA
+     * estaban en pantalla y a diez centímetros uno del otro —$23,967.10 en la
+     * franja de totales, $19,374.86 dentro del botón— y nada decía cuál era
+     * cuál ni los restaba. La cifra que hace falta para decidir si se firma
+     * («faltan $4,592.24») no la calculaba nadie.
+     *
+     * ⚠ El esperado sale de `marcadas`, NO de `porContar`. La franja de arriba
+     * suma las 43 de la etapa; el botón suma sólo las contadas. Mientras estén
+     * todas contadas son el mismo conjunto, pero con una sala que no llegó
+     * dejan de serlo y la resta compararía 43 esperadas contra 41 contadas —
+     * una diferencia inventada, del tamaño de las que faltan. Es el mismo error
+     * de denominador que ya costó un tablero. */
+    const cuadreDeLaTanda = useMemo(() => {
+        const esperado = suma(marcadas);
+        const contado = marcadas.reduce((a, b) => a + Number(b.conteo_marcado || 0), 0);
+        return {
+            esperado,
+            contado,
+            diferencia: Math.round((contado - esperado) * 100) / 100,
+        };
+    }, [marcadas]);
 
     const sinResolverFuera = useMemo(
         () => sinResolver.filter((b) => !enRango(b)),
@@ -1503,7 +1585,7 @@ export default function CircuitoDeBolsas({
             <Etapa
                 icon={Package}
                 titulo="En la sala"
-                ayuda="Nacen solas al confirmar el corte. La etiqueta se imprime acá y se pega a la bolsa."
+                ayuda="Nacen solas al confirmar el corte. La etiqueta se imprime aquí y se pega a la bolsa."
                 grupos={conNodo(enSala, {
                     // Sin casilla: entregar dejó de elegirse bolsa por bolsa
                     // —el diálogo pregunta por DÍAS— y una casilla que ya no
@@ -1611,14 +1693,69 @@ export default function CircuitoDeBolsas({
                 icon={Banknote}
                 titulo="Por contar"
                 ayuda="Se cuenta sala por sala y, dentro de cada una, día por día. Nada se cierra hasta confirmar el conteo: mientras tanto se puede contar de nuevo."
+                /* El cuadre de la tanda, no un botón suelto. Las tres cifras
+                   van juntas y en el orden en que se leen —lo que debía haber,
+                   lo que se contó, la resta— porque separadas obligan a
+                   restarlas de memoria justo antes de firmar. Sin
+                   `bolsas_ver_montos` no hay cifras y queda el botón, que es lo
+                   que esa decisión vieja del usuario ya implicaba. */
                 accion={puedeContar && marcadas.length > 0 && (
-                    <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+                    <div data-surface="card" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-3">
+                        {verMontos && (
+                            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+                                <div>
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                        Debía haber
+                                    </div>
+                                    <div className="text-title font-bold tabular-nums text-content-2 leading-none mt-1">
+                                        {formatMoney(cuadreDeLaTanda.esperado)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                        Se contó
+                                    </div>
+                                    <div className="text-display font-black tabular-nums text-content leading-none mt-1">
+                                        {formatMoney(cuadreDeLaTanda.contado)}
+                                    </div>
+                                    <div className="text-caption text-content-2 mt-1.5">
+                                        en {marcadas.length} {marcadas.length === 1 ? 'bolsa' : 'bolsas'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                        Diferencia
+                                    </div>
+                                    {/* El cero se dice «Cuadra» y no «$0.00»: quien
+                                        mira esto quiere una respuesta, no una cifra
+                                        que hay que interpretar. */}
+                                    {Math.abs(cuadreDeLaTanda.diferencia) < 0.01 ? (
+                                        <div className="text-title font-black text-success-text leading-none mt-1">
+                                            Cuadra
+                                        </div>
+                                    ) : (
+                                        <div className={`text-title font-black tabular-nums leading-none mt-1
+                                            ${cuadreDeLaTanda.diferencia < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
+                                            {cuadreDeLaTanda.diferencia < 0 ? '−' : '+'}
+                                            {formatMoney(Math.abs(cuadreDeLaTanda.diferencia))}
+                                        </div>
+                                    )}
+                                    {descuadradas.length > 0 && (
+                                        <div className="text-caption text-content-2 mt-1.5">
+                                            {descuadradas.length === 1
+                                                ? '1 bolsa no cuadra'
+                                                : `${descuadradas.length} bolsas no cuadran`}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap ml-auto">
                         <Button variant="primary" size="sm" icon={ShieldCheck}
                             loading={ocupado === 'confirmar-conteo'}
                             onClick={() => confirmar(marcadas)}>
                             Confirmar el conteo · {marcadas.length}
                             {marcadas.length === 1 ? ' bolsa' : ' bolsas'}
-                            {verMontos ? ` · ${formatMoney(marcadas.reduce((a, b) => a + Number(b.conteo_marcado || 0), 0))}` : ''}
                         </Button>
                         {/* Decirlo sin bloquear. Una sala que todavía no llegó no
                             puede dejar en el aire lo que ya se contó, pero cerrar
@@ -1631,6 +1768,15 @@ export default function CircuitoDeBolsas({
                                 {' '}· se cerrarán sólo las contadas
                             </span>
                         )}
+                        {/* Qué sigue para las que no cuadran. Es la mitad que
+                            faltaba: la pantalla decía «faltó $500» y no decía
+                            qué hacer con eso. */}
+                        {descuadradas.length > 0 && (
+                            <span className="text-caption text-content-3">
+                                Su causa se anota después, en «Contadas»
+                            </span>
+                        )}
+                        </div>
                     </div>
                 )}
                 grupos={conNodo(porContar, {

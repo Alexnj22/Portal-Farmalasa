@@ -83,7 +83,7 @@ const OrphanObjectsView = () => {
                     <p className="text-label text-content-2 font-medium leading-snug">
                         Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
                         functions sin caller real). No es detección automática — cada fila se agrega vía
-                        migración cuando se confirma un caso real; acá solo se marca su estado.
+                        migración cuando se confirma un caso real; aquí solo se marca su estado.
                     </p>
                 </div>
                 <DataTable

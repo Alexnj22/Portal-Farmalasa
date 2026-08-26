@@ -238,7 +238,7 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                     {grupo.dominante && grupo.rows.length > 1 && grupo.credito > 0 && (
                         <p className="text-caption text-content-3 tabular-nums mt-1.5">
                             El más grande del grupo es <span className="font-black text-content-2">{grupo.dominante.nombre}</span>
-                            {` — ${fmtMoneda(grupo.dominante.credito_fiscal)}, el ${pct(grupo.dominante.credito_fiscal, grupo.credito)}% de lo que está en juego acá.`}
+                            {` — ${fmtMoneda(grupo.dominante.credito_fiscal)}, el ${pct(grupo.dominante.credito_fiscal, grupo.credito)}% de lo que está en juego aquí.`}
                         </p>
                     )}
                 </Notice>

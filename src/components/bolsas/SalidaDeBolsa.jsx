@@ -420,7 +420,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                     texto: `La boleta dice ${l.monto != null ? formatMoney(l.monto) : 'otro monto'} y la salida es de ${formatMoney(n)}.` };
             case 'BOLETA_NO_COINCIDE':
                 return { tono: 'danger', bloquea: true,
-                    texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y acá dice ${boleta.trim()}.` };
+                    texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y aquí dice ${boleta.trim()}.` };
             // Se dice, pero NO frena. La boleta de una remesa la imprime el
             // POS y arriba lleva el banco que procesa el cobro —«BANCO
             // PROMERICA»—, no la remesadora: reportado el 2026-08-21, una

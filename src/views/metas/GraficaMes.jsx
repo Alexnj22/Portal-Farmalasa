@@ -174,7 +174,7 @@ export default function GraficaMes({ data, vista, onVista }) {
                 si quien mira no tiene el permiso — el servidor manda cero. */}
             <AvisoSinProducto
                 datos={data}
-                contexto={vistaReal === 'dias' ? 'El mes que se dibuja acá' : 'Este acumulado'}
+                contexto={vistaReal === 'dias' ? 'El mes que se dibuja aquí' : 'Este acumulado'}
                 className="mt-3"
             />
         </div>

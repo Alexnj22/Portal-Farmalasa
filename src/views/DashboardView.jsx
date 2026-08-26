@@ -3858,12 +3858,12 @@ const DashboardView = ({ openModal }) => {
         {!canonCargando && Object.keys(activeLayout).length === 0 ? (
           <EmptyState
             icon={verComoRol != null ? Eye : LayoutDashboard}
-            title={verComoRol != null ? 'Este cargo no ve nada acá' : 'Todavía no hay nada en esta pestaña'}
+            title={verComoRol != null ? 'Este cargo no ve nada aquí' : 'Todavía no hay nada en esta pestaña'}
             subtitle={verComoRol != null
               ? `${cargos?.find(c => c.id === verComoRol)?.name ?? 'El cargo elegido'} no tiene habilitado ningún widget de ${TABS.find(t => t.id === activeTab)?.label ?? 'esta sección'}.`
               : activeTab === 'general'
                 ? 'Abre «Personalizar» y enciende los widgets que quieras ver.'
-                : 'Cuando tu cargo tenga widgets habilitados en esta categoría, aparecen acá.'}
+                : 'Cuando tu cargo tenga widgets habilitados en esta categoría, aparecen aquí.'}
             compact
           />
         ) : (

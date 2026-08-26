@@ -355,7 +355,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     <EmptyState
                         compact icon={Target}
                         title="Sin salas para este mes"
-                        subtitle="Cuando una sala registre ventas, su tarjeta aparece acá."
+                        subtitle="Cuando una sala registre ventas, su tarjeta aparece aquí."
                     />
                 )
             )}

@@ -316,8 +316,8 @@ export default function MaintenanceView() {
                 {envioPausado && (
                     <Notice variant="warning" icon={Clock}>
                         <strong>Lo que ya salió sigue en camino.</strong> Está fuera de bodega y
-                        todavía no en la sala. Dejá la recepción abierta para poder cerrarlo; si
-                        también la pausás, esa mercadería queda sin poder entrar a ningún lado.
+                        todavía no en la sala. Deja la recepción abierta para poder cerrarlo; si
+                        también la pausas, esa mercadería queda sin poder entrar a ningún lado.
                     </Notice>
                 )}
             </div>

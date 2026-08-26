@@ -355,7 +355,7 @@ export default function ConteoInventarioView() {
                     <div data-surface="card" className="p-8 text-center">
                         <ClipboardCheck size={28} className="mx-auto text-content-3 mb-2" />
                         <p className="text-body-sm font-bold text-content-3">
-                            {foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá'}
+                            {foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí'}
                         </p>
                     </div>
                 ) : filtered.map((c) => {
@@ -430,7 +430,7 @@ export default function ConteoInventarioView() {
                 movil={{ acciones: true, usarAccionDeFila: true }}
                 empty={{
                 icon: ClipboardCheck,
-                message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
+                message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí',
                 subtext: foco === 'TODOS'
                     ? 'Un conteo toma una foto del inventario del sistema y la compara con lo que hay en vitrinas y estantes.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',

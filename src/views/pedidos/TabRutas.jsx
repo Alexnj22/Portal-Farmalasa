@@ -360,7 +360,7 @@ export default function TabRutas({ searchTerm = '' }) {
             title="Sin rutas"
             subtitle={canEdit && !isBranch
               ? 'Crea una ruta para agrupar las entregas del día.'
-              : 'Acá aparecen las entregas cuando bodega arma una ruta.'}
+              : 'Aquí aparecen las entregas cuando bodega arma una ruta.'}
             action={canEdit && !isBranch
               ? <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Crear ruta</Button>
               : undefined}

@@ -500,7 +500,7 @@ export default function TrasladosView() {
                             icon={Send}
                             title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Sin envíos en curso'}
                             subtitle={busqueda.trim() ? undefined
-                                : 'Acá aparece el producto que sale de tu sala hacia otra, y el que te mandan a ti.'}
+                                : 'Aquí aparece el producto que sale de tu sala hacia otra, y el que te mandan a ti.'}
                         />
                     )}
 
@@ -603,7 +603,7 @@ export default function TrasladosView() {
                             icon={PackageCheck}
                             title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Nada en camino'}
                             subtitle={busqueda.trim() ? undefined
-                                : 'Lo que pediste y ya salió se lista acá hasta que lo recibas.'}
+                                : 'Lo que pediste y ya salió se lista aquí hasta que lo recibas.'}
                         />
                     )}
 

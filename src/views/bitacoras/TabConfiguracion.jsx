@@ -535,7 +535,7 @@ function AgregarArea({ branchId, areas, onCreada }) {
             </h4>
             <p className="text-label text-content-3">
                 Nace encendida y con los horarios de las áreas que esta sucursal ya lleva. El
-                refrigerador no se agrega por acá: tiene su propio interruptor arriba.
+                refrigerador no se agrega por aquí: tiene su propio interruptor arriba.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3">
                 <div className="space-y-1.5">

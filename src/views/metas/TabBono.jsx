@@ -320,7 +320,7 @@ export default function TabBono({
                         <DataTable columns={cols} loading={loading} empty={{
                             icon: Users,
                             message: 'Sin personal en la sala',
-                            subtext: 'El reparto necesita al menos una persona activa asignada acá.',
+                            subtext: 'El reparto necesita al menos una persona activa asignada aquí.',
                         }}>
                             {personas.map((p, i) => (
                                 <DataRow key={p.employee_id} index={i}>

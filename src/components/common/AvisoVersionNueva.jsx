@@ -121,7 +121,7 @@ export default function AvisoVersionNueva() {
                 <span className="text-micro font-medium text-content-3 leading-tight mt-1">
                     {v.bloqueado
                         ? 'Esa pantalla no abre hasta que actualices. Guarda lo que estés llenando.'
-                        : 'Actualizá cuando termines lo que estás haciendo.'}
+                        : 'Actualiza cuando termines lo que estás haciendo.'}
                 </span>
             </div>
 

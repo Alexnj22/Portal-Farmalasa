@@ -374,7 +374,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         if (mejor?.vence && new Date(mejor.vence) - new Date(sala.vence) > 180 * 86400000) {
             return {
                 grave: false,
-                texto: `${mejor.sala} lo tiene con más vida: vence ${fmtVence(mejor.vence)} contra ${fmtVence(sala.vence)} acá.`,
+                texto: `${mejor.sala} lo tiene con más vida: vence ${fmtVence(mejor.vence)} contra ${fmtVence(sala.vence)} aquí.`,
             };
         }
         return null;

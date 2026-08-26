@@ -92,8 +92,8 @@ export default function WidgetInventorySearch() {
       icon={Package}
       label="Consulta de inventario"
       pendientes={faltantesDeMiSala ? faltantesDeMiSala.length : null}
-      etiquetaPendientes="sin existencia acá"
-      etiquetaPendientesPlural="sin existencia acá"
+      etiquetaPendientes="sin existencia aquí"
+      etiquetaPendientesPlural="sin existencia aquí"
       // Sin sala propia no hay faltantes que repartir, así que tampoco hay
       // figura: un riel vacío ahí se leería como «todavía está cargando», y
       // ese número no va a llegar nunca. Es el mismo motivo de `sinDato`.

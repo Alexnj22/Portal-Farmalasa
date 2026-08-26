@@ -127,7 +127,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     if (productoOculto) { setErr(`Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}: primero hay que mostrarlo de nuevo en Min/Max.`); return; }
     const newMin = nMin;
     const newMax = nMax;
-    if (newMin === null || newMax === null || Number.isNaN(newMin) || Number.isNaN(newMax)) { setErr('Completá MIN y MAX'); return; }
+    if (newMin === null || newMax === null || Number.isNaN(newMin) || Number.isNaN(newMax)) { setErr('Completa MIN y MAX'); return; }
     if (newMin < 0 || newMax < 0) { setErr('Los valores no pueden ser negativos'); return; }
     if (!parMinMaxValido(newMin, newMax)) {
       setErr(newMin === 0
@@ -404,7 +404,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
               value={reason}
               onChange={e => { setReason(e.target.value); setErr(''); }}
               rows={2}
-              placeholder={motivoObligatorio ? 'Contá por qué este ajuste' : '¿Por qué este ajuste? (opcional)'}
+              placeholder={motivoObligatorio ? 'Cuenta por qué este ajuste' : '¿Por qué este ajuste? (opcional)'}
           />
           {/* Por qué se lo estamos pidiendo. Sin esto, el badge «Requerido»
               aparece de golpe al teclear un número y parece un capricho. */}

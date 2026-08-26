@@ -525,7 +525,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                             «$0.00 de crédito repetido» sería ruido. */}
                         {canVerMontos && totDecl.repCredito > 0 && <> Se está
                         contando <b>{formatMoney(totDecl.repCredito)}</b> de crédito fiscal repetido.</>}
-                        {' '}Van marcados <b>«Repetido»</b> en la tabla y en el CSV. Dejá
+                        {' '}Van marcados <b>«Repetido»</b> en la tabla y en el CSV. Deja
                         <b> uno solo</b> antes de declarar: una factura que trae productos de dos
                         salas se registra <b>completa una vez</b> y lo que es de la otra se
                         traslada por inventario.

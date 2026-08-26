@@ -2288,7 +2288,7 @@ export default function ConteoDetailView() {
                                         )}
                                     >
                                         Ajuste pendiente de aplicar: {conteo.total_diferencias} línea(s).
-                                        Descargá la hoja o el CSV, aplicalo, y registralo acá.
+                                        Descarga la hoja o el CSV, aplícalo, y regístralo aquí.
                                     </Notice>
                                 ) : (
                                     <Notice variant="success">Sin diferencias: no hay ajuste que aplicar.</Notice>
@@ -2450,7 +2450,7 @@ export default function ConteoDetailView() {
                         <Notice variant="warning" icon={AlertTriangle}>
                             <strong>Otro estante.</strong> Lo apartado por vencer se recorre y se cuenta
                             aparte de la bodega. Un producto puede estar en los dos: el número que anotes
-                            acá es sólo el de esta área.
+                            aquí es sólo el de esta área.
                         </Notice>
                         <ListaDeConteo
                             enFichas={enFichas}

@@ -422,7 +422,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
             {/* Debajo del dibujo y encima de la leyenda: se lee después de ver las
                 barras, que es cuando uno se pregunta por qué esa hora saltó. */}
-            <AvisoSinProducto datos={sinProducto} contexto="Lo que se dibuja acá" className="mt-2" />
+            <AvisoSinProducto datos={sinProducto} contexto="Lo que se dibuja aquí" className="mt-2" />
 
             {/* LEYENDA DEL HEATMAP · §20.2 · misma caja redondeada que los controles
                 de arriba, así que el mismo CARRIL — que además los empareja: eran dos

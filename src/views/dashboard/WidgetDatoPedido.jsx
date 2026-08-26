@@ -153,7 +153,7 @@ export default function WidgetDatoPedido() {
                     <EmptyState
                         icon={CheckCircle2}
                         title="Sin datos pendientes"
-                        subtitle="Cuando una venta necesite un dato del cliente, aparece acá."
+                        subtitle="Cuando una venta necesite un dato del cliente, aparece aquí."
                     />
                 ) : filas.map(p => <Pedido key={p.id} p={p} onListo={cargar} />)}
         </div>

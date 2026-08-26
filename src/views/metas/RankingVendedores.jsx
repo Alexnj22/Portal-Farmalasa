@@ -109,7 +109,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                 <EmptyState
                     compact icon={Users}
                     title="Sin ventas este mes"
-                    subtitle="Cuando alguien registre una venta, aparece acá con su puesto."
+                    subtitle="Cuando alguien registre una venta, aparece aquí con su puesto."
                 />
             </div>
         );

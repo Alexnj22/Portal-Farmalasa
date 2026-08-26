@@ -465,7 +465,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     {pendientes.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <Notice variant="warning">
-                                Acá quedan <strong>{pendientes.length}</strong> esperando salir
+                                Aquí quedan <strong>{pendientes.length}</strong> esperando salir
                                 {pendientes.some(p => p.destino) && `, para ${[...new Set(pendientes.map(p => p.destino).filter(Boolean))].join(', ')}`}.
                                 Escanea su ticket si te las llevas.
                             </Notice>

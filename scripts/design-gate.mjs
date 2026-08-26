@@ -108,6 +108,14 @@ const EXCEPTIONS = {
   //
   // Documentado en DESIGN.md §6 junto al resto de las excepciones de color.
   'src/components/common/LectorDeCodigo.jsx': ['white', 'shadow-literal'],
+  // «No le debemos nada a nadie en este período» es un VACÍO FELIZ (§26.3), no
+  // una lista vacía. La prueba de §26.3: ¿quien abre Cuentas por Pagar quería
+  // encontrar algo, o quería que estuviera vacío? Quería que estuviera vacío —
+  // y `Sin cuentas por pagar` diría lo mismo tirando la buena noticia al piso.
+  // El arranque `No ` lo caza el detector ensanchado el 2026-08-26; acá el
+  // patrón se confunde y el texto está bien, que es exactamente el uso sin
+  // culpa de EXCEPTIONS que documenta §26.9.
+  'src/views/purchases/CuentasPorPagarView.jsx': ['copy-vacio'],
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
   // 343 referencias vivas no se rompan mientras migran.
@@ -1065,7 +1073,19 @@ const SLOT_EMPTYSTATE_RE = /<EmptyState\b[^>]*?>/gs;
 const SLOT_ES_ATTR_RE = /\b(?:title|subtitle)=(?:\{\s*)?(['"])([^'"]{3,120})\1/g;
 
 // 26.1 — los arranques que la regla reemplaza por `Sin <sustantivo>`.
-const ARRANQUE_MALO_RE = /^(No hay|Aún no|Aun no|No se encontr|Ningún|Ninguna|Nada )/;
+//
+// ── Ensanchada el 2026-08-26 ────────────────────────────────────────────────
+// La lista cerrada dejaba pasar «No salió nada de acá» —el vacío de las salidas
+// de una bolsa—, que es la misma falta que «No hay registros» dicha con otro
+// verbo. Enumerar verbos es whack-a-mole: la regla real es que un vacío NO se
+// describe negando, se nombra («Sin salidas»).
+//
+// Por eso ahora entra cualquier arranque `No <algo>`, **menos los que son un
+// ERROR y no un vacío**. Medido antes de excluirlos: `^No\s` a secas acusaba a
+// 13, y ONCE eran «No se pudo cargar el libro» y familia — que §26.8 manda
+// escribir exactamente así, porque un error sí dice qué pasó. Un gate que
+// acusa al que hizo bien el trabajo es un gate que se termina desactivando.
+const ARRANQUE_MALO_RE = /^(?!No\s+(?:se\s+pud|puedes|podés|pudimos))(No\s|Aún no|Aun no|Ningún|Ninguna|Nada )/;
 
 // 26.4 — Title Case. Solo se aplica a etiquetas CORTAS (≤4 palabras): una
 // oración larga lleva nombres propios legítimos ("el botón Agregar", "vuelta a
@@ -1090,7 +1110,19 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
   // frases de al lado. Dos huecos distintos, y los dos son de la lista, no de
   // la regla: faltaban verbos, y `Elegí` sólo estaba en mayúscula, así que a
   // media oración no lo veía nadie.
-  'Acomodá','Publicá','Encendé','Apagá','Cambiá','Arrastrá','Soltá','Movés','Acomodás'];
+  'Acomodá','Publicá','Encendé','Apagá','Cambiá','Arrastrá','Soltá','Movés','Acomodás',
+  // ── 2026-08-26 ──────────────────────────────────────────────────────────
+  // Ampliada mientras se barría «acá»: al pasar el barrido apareció
+  // «Descargá la hoja o el CSV, aplicalo, y registralo acá» en verde. Se midió
+  // el resto con un barrido de agudas terminadas en á/é/í sobre texto de
+  // pantalla y salieron OCHO más que la lista no tenía. O sea que `copy-trato`
+  // llevaba meses en cero diciendo «no encontré», no «no hay».
+  //
+  // El barrido descarta el futuro de indicativo (`confirmará`, `dejará`,
+  // `revisará`), que es correcto y suena igual de agudo — el mismo tipo de
+  // falso positivo que ya se documenta arriba con `Pedí`.
+  'Actualizá','Completá','Contá','Dejá','Descargá','Confirmá','Tocá','Pausás',
+  'Aplicá','Registrá','Anotá','Cargá','Sacá','Meté','Contás','Dejás','Tocás'];
 
 // ── `copy-anaquel` — el portal dice «vitrina» o «estante», nunca «anaquel» ──
 //
@@ -1114,6 +1146,29 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
 // cíclico decía «anaquel» y ningún grep del fuente lo encontraba — salió de
 // auditar `pg_proc.prosrc`. Al cambiar vocabulario, mirar también ahí.
 const ANAQUEL_RE = /\b[Aa]naquel(?:es)?\b/g;
+
+// ── `copy-aqui` — el portal dice «aquí», nunca «acá» ───────────────────────
+//
+// Decisión del usuario, 2026-08-26: *«aca no se usa. es aqui.»*
+//
+// Es la misma clase de regla que `copy-anaquel`, y por el mismo motivo: sin
+// verificarla vuelve sola. Y acá la deriva ya había GANADO — medido antes de
+// barrer, el portal decía **«acá» 40 veces y «aquí» 22** en texto de pantalla.
+// O sea que la forma que el usuario no quiere era la mayoritaria, y ninguna de
+// las dos estaba decidida en ninguna parte: §26 no las mencionaba.
+//
+// `\b` no sirve con `á` —es ASCII, así que `á` cuenta como NO-palabra y la
+// frontera cae en cualquier parte—; es el mismo tropiezo que documenta VOSEO
+// más arriba. Van lookarounds explícitos de letra acentuada.
+//
+// Mira las líneas que NO son comentario, igual que sus dos hermanas: lo que la
+// regla protege es lo que la gente LEE. Los comentarios del repo están escritos
+// con «acá» de punta a punta y cambiarlos sería ruido sin proteger a nadie.
+//
+// ⚠ Y como toda regla de vocabulario, NO ve el texto que vive dentro de
+// funciones de Postgres — el mismo hueco que ya mordió con «anaquel». Al
+// barrer, mirar también `pg_proc.prosrc`.
+const ACA_RE = /(?<![A-Za-zÁÉÍÓÚÑáéíóúñ])([Aa])cá(?![A-Za-zÁÉÍÓÚÑáéíóúñ])/g;
 
 // Las minúsculas van explícitas en vez de poner la bandera `i`: con `i`, `Pedí`
 // —que también es «yo pedí», pretérito perfectamente correcto— marcaría como
@@ -1236,6 +1291,20 @@ function scanFile(path) {
   const lines = text.split('\n');
   const isComment = commentMask(lines);
   const findings = [];
+
+  /* `isComment` es por RENGLÓN entero: dice «este renglón es un comentario».
+   * No alcanza para las reglas de vocabulario, que buscan una palabra suelta —
+   * un `// …` pegado después de código, un `/** … *\/` de una sola línea o un
+   * `{/* … *\/}` de JSX quedan en un renglón que empieza con código y por lo
+   * tanto se leen como texto de pantalla.
+   *
+   * Medido al estrenar `copy-aqui`: de sus 7 hallazgos, los 7 eran comentarios
+   * de esas tres formas. Un detector de vocabulario que acusa comentarios se
+   * desactiva solo, que es el modo en que una regla escrita deja de valer. */
+  const sinComentarioEnLinea = (line) => line
+    .replace(/\{?\/\*[\s\S]*?\*\/\}?/g, ' ')
+    .replace(/\/\*[\s\S]*$/, '')   // bloque que ABRE acá y cierra más abajo
+    .replace(/\/\/.*$/, '');
 
   const scanPatterns = (patterns, category, exceptionCategory) => {
     if (hasException(path, exceptionCategory)) return;
@@ -2622,8 +2691,9 @@ function scanFile(path) {
   }
 
   if (!hasException(path, 'copy-trato')) {
-    lines.forEach((line, i) => {
+    lines.forEach((linea, i) => {
       if (isComment[i]) return;
+      const line = sinComentarioEnLinea(linea);
       VOSEO_RE.lastIndex = 0;
       let m;
       while ((m = VOSEO_RE.exec(line))) {
@@ -2634,14 +2704,29 @@ function scanFile(path) {
   }
 
   if (!hasException(path, 'copy-anaquel')) {
-    lines.forEach((line, i) => {
+    lines.forEach((linea, i) => {
       if (isComment[i]) return;
+      const line = sinComentarioEnLinea(linea);
       ANAQUEL_RE.lastIndex = 0;
       let m;
       while ((m = ANAQUEL_RE.exec(line))) {
         findings.push({ line: i + 1,
           label: `"${m[0]}" — el portal dice «vitrina» o «estante» (decisión del usuario, 2026-08-25)`,
           category: 'copy-anaquel', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'copy-aqui')) {
+    lines.forEach((linea, i) => {
+      if (isComment[i]) return;
+      const line = sinComentarioEnLinea(linea);
+      ACA_RE.lastIndex = 0;
+      let m;
+      while ((m = ACA_RE.exec(line))) {
+        findings.push({ line: i + 1,
+          label: `"${m[0]}" — el portal dice «aquí» (decisión del usuario, 2026-08-26)`,
+          category: 'copy-aqui', text: line.trim().slice(0, 120) });
       }
     });
   }

@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.771.0 — El portal dice «aquí», y el gate de voz ahora lo mira
+## v2.771.0 — El portal dice «aquí», y el conteo de bolsas dice si cuadra
 
 *«¿esto es canónico de la voz del portal? verifica el gate de voz»* y después
 *«aca no se usa. es aqui.»* (usuario, mirando el detalle de una bolsa).
@@ -64,6 +64,39 @@ revisado»** (§26.6: un botón dice qué va a pasar, no describe un estado).
 `copy-aqui` se probó devolviéndole un «acá» a Traslados y comprobando que
 fallara: **antes de creerle un cero a un detector, hay que fabricarle la
 regresión que debería cazar.**
+
+### Y tres cosas del conteo de bolsas, del mismo repaso
+
+**Enter anota.** *«mejora el input, que al dar enter se guarde»*. El campo de
+«No cuadra» ahora abre con el cursor puesto, guarda con Enter, cancela con
+Escape y lleva su `$`. Contar treinta bolsas con el teclado numérico y tener que
+soltarlo para buscar el botón es la fricción que hace que se cuente en papel y
+se transcriba después. Además muestra la **diferencia mientras se escribe**
+—«Faltan $400.00»—, que es cuando todavía se puede recontar: antes el número se
+anotaba a ciegas y el descuadre aparecía con la bolsa ya marcada. Y el «(debía
+haber $650.25)» que estaba al lado del campo se fue: la tarjeta lo dice arriba a
+20px, era la misma cifra tres veces.
+
+**El cuadre de la tanda, antes de firmarla.** *«al contar todo lo pendiente,
+dónde me dice las diferencias, el total esperado, el total actual?»* Los dos
+números **ya estaban en pantalla y a diez centímetros uno del otro** —$23,967.10
+en la franja de totales, $19,374.86 dentro del botón— y nada decía cuál era cuál
+ni los restaba. La cifra que hace falta para decidir si se firma, «faltan
+$4,592.24», no la calculaba nadie. Ahora las tres van juntas y en el orden en
+que se leen: **debía haber · se contó · diferencia**, más cuántas bolsas no
+cuadran. El cero se dice «Cuadra» y no «$0.00».
+
+⚠ El esperado sale de las bolsas **contadas**, no de las de la etapa. Mientras
+estén todas contadas son el mismo conjunto, pero con una sala que no llegó dejan
+de serlo, y la resta compararía 43 esperadas contra 41 contadas — una diferencia
+inventada del tamaño de las que faltan.
+
+**Y una bolsa que no cuadra dice qué sigue.** *«¿cómo se solventa? cómo digo, ah
+ya se identificó la causa?»* El camino existe —«Contadas», con Justificar /
+Repuesto / Retirado y su motivo escrito— y la pantalla no lo decía en ninguna
+parte. No puede adelantarse: la diferencia se recalcula al confirmar contra el
+saldo de ese momento, así que resolverla antes sería resolver un número que
+todavía puede cambiar. Ahora la tarjeta lo dice.
 
 ### Lo que queda abierto
 

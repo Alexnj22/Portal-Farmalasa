@@ -483,7 +483,7 @@ function TabPorConfirmar({ puedeEditar }) {
         {estado === 'apartados' ? (
             <Notice variant="info" icon={EyeOff} compact>
                 Lo que alguien marcó como <b>que no es un producto</b> —un flete, un servicio, un
-                descuento—. Está acá para poder revisarlo: si fue un error, o si desde entonces
+                descuento—. Está aquí para poder revisarlo: si fue un error, o si desde entonces
                 el producto empezó a existir, <b>Devolver a la lista</b> lo pone otra vez a la cola.
             </Notice>
         ) : (
@@ -503,18 +503,18 @@ function TabPorConfirmar({ puedeEditar }) {
             {filas !== null && visibles.length === 0 && (
                 estado === 'apartados' ? (
                     <Notice variant="info" icon={EyeOff}>
-                        Nadie apartó nada todavía. Acá van a aparecer los renglones que se marquen
+                        Nadie apartó nada todavía. Aquí van a aparecer los renglones que se marquen
                         como <b>que no son un producto</b>, por si hay que revisarlos.
                     </Notice>
                 ) : estado === 'resueltos' ? (
                     <Notice variant="info" icon={BookMarked}>
-                        Todavía no hay ningún producto confirmado. Cada uno que confirmes queda acá,
-                        y desde acá se corrige si te equivocaste.
+                        Todavía no hay ningún producto confirmado. Cada uno que confirmes queda aquí,
+                        y desde aquí se corrige si te equivocaste.
                     </Notice>
                 ) : (
                     <Notice variant="success" icon={CheckCircle2}>
                         Sin productos por confirmar. Si acaban de llegar facturas nuevas,
-                        tocá <b>Actualizar lista</b>.
+                        toca <b>Actualizar lista</b>.
                     </Notice>
                 )
             )}

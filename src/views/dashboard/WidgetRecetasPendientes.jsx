@@ -93,7 +93,7 @@ export default function WidgetRecetasPendientes() {
 
     if (!dispensa) {
         return <EmptyState icon={Pill} compact
-            title="Acá no se dispensa"
+            title="Aquí no se dispensa"
             subtitle="El libro bajo receta es de las salas de venta." />;
     }
 

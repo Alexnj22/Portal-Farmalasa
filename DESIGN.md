@@ -6235,6 +6235,60 @@ auditar `pg_proc.prosrc`. Es el mismo hueco que CLAUDE.md ya anota para los
 rótulos de catálogo. Al cambiar vocabulario, la búsqueda incluye `supabase/`,
 las funciones vivas y los datos sembrados — no sólo `src/`.
 
+### 26.7c «Aquí», nunca «acá»
+
+**Decisión del usuario, 2026-08-26:** *«aca no se usa. es aqui.»*
+
+Salió de mirar el detalle de una bolsa —*«¿esto es canónico de la voz del
+portal?»*— y midiendo se vio que **la forma no querida era la mayoritaria**: el
+portal decía «acá» **40 veces** y «aquí» **22** en texto de pantalla. Ninguna de
+las dos estaba decidida en ninguna parte; esta sección no las mencionaba, así
+que cada quien resolvió lo mismo a su manera. Es la misma deriva que §26 abre
+describiendo para los estados vacíos.
+
+Barridas las 40 en la misma tanda. Lo vigila la categoría `copy-aqui` de
+`npm run gate:design`, bloqueante en cero, sobre las líneas que no son
+comentario — los comentarios del repo están escritos con «acá» de punta a punta
+y cambiarlos sería ruido que no protege a nadie.
+
+⚠ Y como toda regla de vocabulario, **el gate no ve el texto que vive dentro de
+funciones de Postgres**, que es el mismo hueco que ya mordió con «anaquel». Al
+barrer vocabulario, mirar `pg_proc.prosrc` además de `src/`.
+
+### 26.7d Lo que el gate de voz NO veía, y se arregló al medirlo (2026-08-26)
+
+Tres huecos, encontrados al barrer «acá» y al mirar el detalle de una bolsa. Los
+tres tienen la misma forma: **el gate estaba en verde diciendo «no encontré», no
+«no hay»** — es [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]] otra
+vez.
+
+1. **`copy-vacio` sólo conocía una lista cerrada de arranques.** «No salió nada
+   de acá» —el vacío de las salidas de una bolsa— es la misma falta que «No hay
+   registros» dicha con otro verbo, y pasaba. Enumerar verbos es whack-a-mole,
+   así que ahora entra cualquier `No <algo>`, **menos los que son un ERROR**
+   (`No se pudo…`, `No puedes…`), que §26.8 manda escribir exactamente así.
+   Medido antes de excluirlos: `^No\s` a secas acusaba a 13 y ONCE eran errores
+   correctos. Un gate que acusa al que hizo bien el trabajo se termina
+   desactivando.
+2. **Las tres reglas de vocabulario miraban el renglón entero.** `isComment` es
+   por renglón, así que un `// …` pegado después de código, un `/** … */` de una
+   línea o un `{/* … */}` de JSX quedaban en un renglón que empieza con código y
+   se leían como texto de pantalla. De los 7 primeros hallazgos de `copy-aqui`,
+   **los 7 eran comentarios de esas tres formas.** Ahora se recorta el
+   comentario dentro del renglón antes de buscar.
+3. **La lista de voseo tenía agujeros y nadie los había medido.** Al pasar el
+   barrido apareció «Descargá la hoja o el CSV, aplicalo, y registralo acá» en
+   verde. Un barrido de agudas terminadas en á/é/í sobre texto de pantalla
+   encontró **ocho más** que la lista no tenía (`Actualizá`, `Completá`, `Contá`,
+   `Dejá`, `Descargá`, `confirmá`, `tocá`, `pausás`). O sea que `copy-trato`
+   llevaba meses en cero sin haber mirado. El barrido descarta el futuro de
+   indicativo (`confirmará`, `dejará`, `revisará`), que suena igual de agudo y es
+   correcto — el mismo falso positivo que ya documenta `Pedí`.
+
+La lección de método, que es la que se repite: **antes de creerle un cero a un
+detector de redacción, fabricarle la regresión que debería cazar.** `copy-aqui`
+se probó devolviendo un «acá» a `TrasladosView` y comprobando que fallara.
+
 ### 26.8 Un error dice qué pasó y qué hacer
 
 ```

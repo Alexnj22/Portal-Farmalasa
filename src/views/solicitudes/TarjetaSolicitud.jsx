@@ -498,7 +498,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                             recortes > 0 && (recortes === 1
                                                 ? 'a 1 le bajaste la cantidad'
                                                 : `a ${recortes} les bajaste la cantidad`),
-                                          ].filter(Boolean).join(' y ') + '. Contá por qué abajo.'
+                                          ].filter(Boolean).join(' y ') + '. Cuenta por qué abajo.'
                                         : 'Entra todo lo que se pidió, completo.'}
                             </Notice>
                         </div>

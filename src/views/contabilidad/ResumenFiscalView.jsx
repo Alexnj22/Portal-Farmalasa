@@ -245,7 +245,7 @@ export default function ResumenFiscalView() {
                             <p className="text-heading font-black text-content tabular-nums">{formatMoney(tar.monto)}</p>
                             <p className="text-caption text-content-3 mt-1">
                                 {pct(tar.tasa)} de {formatMoney(tar.base)} cobrados con tarjeta. Lo retiene
-                                el procesador, así que <b>acá es estimado</b>: se confirma en el estado de
+                                el procesador, así que <b>aquí es estimado</b>: se confirma en el estado de
                                 cuenta. {tar.fundamento}.
                             </p>
                         </div>

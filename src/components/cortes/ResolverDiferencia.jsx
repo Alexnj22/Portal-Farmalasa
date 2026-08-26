@@ -331,7 +331,7 @@ export default function ResolverDiferencia({
                         que presentar la lista de la sala como si fuera el turno. */}
                     {candidatos.length > 0 && !candidatos.some((c) => c.del_turno) && (
                         <Notice variant="info">
-                            Todavía no se registra quién estuvo en cada turno, así que acá aparece
+                            Todavía no se registra quién estuvo en cada turno, así que aquí aparece
                             la sala completa. Marca sólo a quienes aportan.
                         </Notice>
                     )}

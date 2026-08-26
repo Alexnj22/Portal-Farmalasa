@@ -259,7 +259,7 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
             {!cargando && deLinea.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                        De tu línea · confirmá que son tuyas
+                        De tu línea · confirma que son tuyas
                     </p>
                     {deLinea.map(f => (
                         <FilaFactura key={f.document_id} fila={f} branchId={branchId}

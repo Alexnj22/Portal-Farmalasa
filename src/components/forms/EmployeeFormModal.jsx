@@ -3,6 +3,7 @@ import useBorrador from '../../hooks/useBorrador';
 import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
+import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
@@ -11,7 +12,7 @@ const CLAVE_BORRADOR = 'alta_empleado';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -820,6 +821,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
+    // Lo que dijo el DUI, esperando que alguien lo confirme. NO se aplica solo:
+    // un formulario que se llena y se guarda solo convierte un error de lectura
+    // en un dato del expediente, y después nadie sabe si el DUI dice eso o si
+    // lo dijo el modelo.
+    const [duiLeido, setDuiLeido] = useState(null);
+    const [leyendoDui, setLeyendoDui] = useState(false);
 
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
         || { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
@@ -858,6 +865,54 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 expiryDate = getNextAnnualidadCsspDueDate();
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
+
+            // ── El DUI se lee cuando están las DOS caras ────────────────────
+            //
+            // El número y el sexo están en el anverso; el domicilio, la
+            // profesión, el estado familiar y el tipo de sangre, en el reverso.
+            // Una sola llamada con las dos imágenes lee mejor que dos sueltas:
+            // el modelo puede cruzar que sean del mismo documento, y dos
+            // respuestas separadas habría que conciliarlas acá — conciliar es
+            // adivinar.
+            if (category === 'DUI_FRENTE' || category === 'DUI_REVERSO') {
+                const otra = category === 'DUI_FRENTE' ? 'DUI_REVERSO' : 'DUI_FRENTE';
+                const urlOtra = getDocEntry(otra).url;
+                if (urlOtra && stored) {
+                    const guardadaOtra = getStoragePathFromUrl(urlOtra);
+                    setLeyendoDui(true);
+                    try {
+                        const caras = category === 'DUI_FRENTE'
+                            ? { frente: stored, reverso: guardadaOtra }
+                            : { frente: guardadaOtra, reverso: stored };
+                        const { data, error } = await supabase.functions.invoke('leer-dui', { body: caras });
+                        if (error || !data?.ok) {
+                            // Que no se pueda leer NO es un error del alta: el
+                            // documento ya quedó subido y los campos se teclean.
+                            // Avisar con un error rojo asustaría por nada.
+                            useToastStore.getState().showToast(
+                                'No se pudo leer el documento',
+                                data?.error === 'NO_ES_DUI'
+                                    ? 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.'
+                                    : 'Escribe los datos a mano; el documento quedó guardado.',
+                                'warning');
+                        } else {
+                            setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
+                        }
+                    } catch (errLectura) {
+                        // Catch propio y no el de arriba: el documento YA se
+                        // subió. Dejar que caiga al catch del alta diría «Error
+                        // al subir documento», que manda a mirar donde no está
+                        // el problema y además borraría la subida buena.
+                        console.error('leer-dui:', errLectura);
+                        useToastStore.getState().showToast(
+                            'No se pudo leer el documento',
+                            'Escribe los datos a mano; el documento quedó guardado.',
+                            'warning');
+                    } finally {
+                        setLeyendoDui(false);
+                    }
+                }
+            }
         } catch (err) {
             useToastStore.getState().showToast('Error al subir documento', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
             updateDoc(category, { url: null, file_name: '' });
@@ -1311,6 +1366,118 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                             </div>
                         )}
+
+                        {/* ── EL DOCUMENTO DE IDENTIDAD, AL INICIO ──────────────────
+                            Pedido de Talento Humano: subirlo acá y no al final. El motivo
+                            es que este documento LLENA MEDIA FICHA — el anverso trae el
+                            número, los nombres, el sexo y las fechas; el reverso, el
+                            domicilio, la profesión, el estado familiar y el tipo de sangre.
+                            Medido el 2026-08-26: DUI, género y estado civil eran tres de
+                            los cuatro campos por los que 48 de 49 fichas no se podían
+                            guardar. Pedirlo al final obliga a teclear lo que el papel ya
+                            dijo. Los documentos que NO alimentan ningún campo (CV, contrato
+                            firmado) siguen en su pestaña. */}
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center justify-between mb-3 gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                        <Fingerprint size={16} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">{isMinor ? altIdDocTypeLabel : 'DUI — los dos lados'}</h4>
+                                        <p className="text-label font-medium text-content-3 leading-snug mt-0.5">
+                                            {isMinor
+                                                ? 'Súbelo y después escribe los datos: un documento alterno no tiene formato fijo.'
+                                                : 'Sube las dos caras y el portal lee los datos. Tú confirmas antes de que entren.'}
+                                        </p>
+                                    </div>
+                                </div>
+                                {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
+                                    <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>
+                                )}
+                            </div>
+
+                            {isMinor ? (
+                                renderDocUploadArea('DOCUMENTO_IDENTIDAD')
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                            <span>Frente</span>
+                                            {!getDocEntry('DUI_FRENTE').url && <span className="text-warning font-black">Pendiente</span>}
+                                        </label>
+                                        {renderDocUploadArea('DUI_FRENTE')}
+                                    </div>
+                                    <div>
+                                        <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                            <span>Reverso</span>
+                                            {!getDocEntry('DUI_REVERSO').url && <span className="text-warning font-black">Pendiente</span>}
+                                        </label>
+                                        {renderDocUploadArea('DUI_REVERSO', { showExpiry: false })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {leyendoDui && (
+                                <p className="mt-3 text-label font-bold text-brand-text flex items-center gap-2">
+                                    <Loader2 size={14} className="animate-spin" /> Leyendo el documento…
+                                </p>
+                            )}
+
+                            {duiLeido && !leyendoDui && (() => {
+                                const { parche, descartados } = aplicarDuiLeido(duiLeido, formData);
+                                const campos = Object.keys(parche);
+                                return (
+                                    <div className="mt-3 bg-brand/10 border border-brand/30 p-3 rounded-2xl animate-in slide-in-from-top-2">
+                                        <div className="flex items-start gap-3">
+                                            <CheckCircle2 size={16} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                                            <div className="min-w-0 flex-1">
+                                                {campos.length > 0 ? (
+                                                    <>
+                                                        <p className="text-label text-content font-medium leading-snug">
+                                                            El documento dice <span className="font-black">{campos.length}</span> dato{campos.length === 1 ? '' : 's'} que
+                                                            todavía no {campos.length === 1 ? 'está' : 'están'} en la ficha:
+                                                        </p>
+                                                        <ul className="mt-2 flex flex-wrap gap-1.5">
+                                                            {campos.map(c => (
+                                                                <li key={c} className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
+                                                                    {ROTULO_DUI[c] || c}: <span className="text-content font-black">{String(parche[c])}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-label text-content font-medium leading-snug">
+                                                        Lo que dice el documento ya está escrito en la ficha. No hay nada que completar.
+                                                    </p>
+                                                )}
+
+                                                {duiLeido.numeroIlegible && (
+                                                    <p className="mt-2 text-label text-warning-text font-medium leading-snug">
+                                                        El número no se leyó bien —el dígito verificador no cuadra— así que hay que escribirlo a mano.
+                                                    </p>
+                                                )}
+                                                {descartados.length > 0 && (
+                                                    <p className="mt-2 text-label text-content-3 font-medium leading-snug">
+                                                        No se usó: {descartados.join(' · ')}. Escríbelo a mano si corresponde.
+                                                    </p>
+                                                )}
+
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    {campos.length > 0 && (
+                                                        <Button size="sm" icon={CheckCircle2} onClick={() => {
+                                                            setFormData(prev => ({ ...prev, ...aplicarDuiLeido(duiLeido, prev).parche }));
+                                                            setDuiLeido(null);
+                                                        }}>Usar estos datos</Button>
+                                                    )}
+                                                    <Button variant="ghost" size="sm" onClick={() => setDuiLeido(null)}>Descartar</Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             {/* ÁREA DE FOTO DE PERFIL */}
@@ -2501,33 +2668,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 independientes. La imagen NO bloquea el alta del empleado (a
                                 diferencia del campo de texto DUI/documento alterno, que sí es
                                 obligatorio) — si falta, queda marcada "Pendiente". */}
-                            <div data-surface="card" className="p-3 bg-surface-card-hover/60 mb-4">
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 block">{isMinor ? altIdDocTypeLabel : 'DUI'}</label>
-                                    {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
-                                        <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>
-                                    )}
-                                </div>
-                                {isMinor ? (
-                                    renderDocUploadArea('DOCUMENTO_IDENTIDAD')
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                <span>Frente</span>
-                                                {!getDocEntry('DUI_FRENTE').url && <span className="text-warning font-black">Pendiente</span>}
-                                            </label>
-                                            {renderDocUploadArea('DUI_FRENTE')}
-                                        </div>
-                                        <div>
-                                            <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                <span>Reverso</span>
-                                                {!getDocEntry('DUI_REVERSO').url && <span className="text-warning font-black">Pendiente</span>}
-                                            </label>
-                                            {renderDocUploadArea('DUI_REVERSO', { showExpiry: false })}
-                                        </div>
-                                    </div>
-                                )}
+                            <div data-surface="card" className="p-3 bg-surface-card-hover/60 mb-4 flex items-start gap-3">
+                                <Fingerprint size={16} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <p className="text-label text-content-2 font-medium leading-snug">
+                                    El {isMinor ? 'documento de identidad' : 'DUI'} se sube en <span className="font-black">Datos Personales</span>, al inicio.
+                                    Está ahí y no aquí porque el documento llena media ficha: de él salen el número, el género,
+                                    el estado familiar, la fecha de nacimiento y la dirección.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

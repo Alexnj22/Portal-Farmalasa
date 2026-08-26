@@ -162,6 +162,35 @@ describe('gate:rutas', () => {
         expect(salida).not.toContain('no comparten ni una palabra');
     });
 
+    it('caza una ruta muerta en el registro de auditoría', () => {
+        // Al renombrar 19 rutas, `auditoria/areas.mjs` quedó con DIECISIETE
+        // viejas y nada lo dijo: una ruta muerta ahí no rompe el portal, sólo
+        // hace que el % de esa área se calcule sobre una vista que ya no se
+        // llama así.
+        const areas = path.join(tmp, 'areas.mjs');
+        fs.writeFileSync(areas, fs.readFileSync(path.join(RAIZ, 'auditoria/areas.mjs'), 'utf8')
+            .replace("'/bitacoras'", "'/cuadernos'"));
+        const app = path.join(tmp, 'App-areas.jsx');
+        fs.writeFileSync(app, fs.readFileSync(APP_REAL, 'utf8'));
+        const env = { ...process.env, RUTAS_GATE_APP: app, RUTAS_GATE_AREAS: areas };
+        let salida = '', ok = true;
+        try { salida = execFileSync('node', [GATE], { env, encoding: 'utf8', cwd: RAIZ }); }
+        catch (e) { ok = false; salida = (e.stdout || '') + (e.stderr || ''); }
+        expect(ok).toBe(false);
+        expect(salida).toContain('registro de auditoría');
+        expect(salida).toContain('/cuadernos');
+    });
+
+    it('NO acusa a un comodín ni a un módulo declarado «próximamente»', () => {
+        // `(todas)` es un comodín del registro, no una dirección; y
+        // `/bonificaciones` no existe A PROPÓSITO — su módulo es comingSoon.
+        // Los dos los acusó la primera corrida de ese chequeo.
+        const { ok, salida } = correr();
+        expect(ok).toBe(true);
+        expect(salida).not.toContain('(todas)');
+        expect(salida).not.toContain('/bonificaciones');
+    });
+
     // ── Los dos falsos positivos de la primera corrida ───────────────────────
 
     it('NO acusa a una ficha de detalle de no tener título de pestaña', () => {

@@ -66,6 +66,7 @@ import { join } from 'node:path';
 const APP = process.env.RUTAS_GATE_APP || 'src/App.jsx';
 const MODULOS = process.env.RUTAS_GATE_MODULOS || 'src/constants/moduleMap.js';
 const PRECARGA = process.env.RUTAS_GATE_PRECARGA || 'src/constants/routeImporters.js';
+const AREAS = process.env.RUTAS_GATE_AREAS || 'auditoria/areas.mjs';
 // `RUTAS_GATE_HEREDADAS` (JSON) reemplaza la lista de deuda. Existe SÓLO para
 // que la prueba pueda fabricar el caso «una entrada de deuda que ya se
 // arregló»: hoy la lista está vacía y ese chequeo no tendría contra qué
@@ -279,6 +280,39 @@ for (const r of rutas) {
   if (!clavesPre.has(seg)) sinPrecarga.push(r.path);
 }
 
+// ── El registro de auditoría nombra rutas que existen ───────────────────────
+//
+// `auditoria/areas.mjs` reparte el portal en 25 áreas y cada una lista sus
+// rutas. Al renombrar 19 el 2026-08-26 ese archivo quedó con las viejas —
+// diecisiete— y nada lo dijo: una ruta muerta en el registro no rompe el
+// portal, sólo hace que el porcentaje de esa área se calcule sobre una vista
+// que ya no se llama así. Otra vez el modo de falla silencioso.
+const areas = existsSync(AREAS) ? leer(AREAS) : null;
+const rutasMuertas = [];
+if (areas) {
+  const declaradas = new Set([...areas.matchAll(/rutas:\s*\[([^\]]*)\]/g)]
+    .flatMap(m => [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1])));
+  // Se comparan por PRIMER SEGMENTO: el registro nombra `/personal/empleado/:id`
+  // y la ruta vive anidada, así que exigir la coincidencia exacta acusaría a
+  // fichas de detalle que están bien.
+  const vivas = new Set([...rutas.map(r => r.path.slice(1).split('/')[0]),
+                         ...FUERA_DE_ALCANCE].map(x => String(x).replace(/^\//, '')));
+  // Dos cosas que NO son rutas muertas, y las dos las acusó la primera
+  // corrida de este chequeo:
+  //   · `(todas)` y similares: comodines que el registro usa para decir «toda
+  //     el área», no direcciones.
+  //   · Un módulo declarado `comingSoon`: su ruta todavía no existe A
+  //     PROPÓSITO. Acusarla sería pedir que se borre la declaración de algo
+  //     que está planificado.
+  const proximamente = new Set([...mm.matchAll(/path:\s*'([^']+)'[\s\S]{0,140}?comingSoon:\s*true/g)].map(m => m[1]));
+  for (const d of declaradas) {
+    if (!d.startsWith('/')) continue;
+    if (proximamente.has(d)) continue;
+    const seg = d.slice(1).split('/')[0];
+    if (!vivas.has(seg)) rutasMuertas.push(d);
+  }
+}
+
 // ── Informe ──────────────────────────────────────────────────────────────────
 const c = { rojo: '\x1b[31m', verde: '\x1b[32m', gris: '\x1b[90m', neg: '\x1b[1m', fin: '\x1b[0m' };
 console.log(`\n── Cómo se llaman las vistas ─────────────────────────────`);
@@ -307,6 +341,15 @@ if (modulosRotos.length) {
   console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${modulosRotos.length} módulo(s) del menú apuntan a una ruta que no existe${c.fin}`);
   for (const m of modulosRotos) console.log(`      ${c.gris}${m.key} → ${m.path}${c.fin}  («${m.label}»)`);
   console.log(`    Un ítem del menú que lleva al 404 no da error: se ve como una pantalla rota.\n`);
+}
+
+if (rutasMuertas.length) {
+  falla = true;
+  console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${rutasMuertas.length} ruta(s) del registro de auditoría que ya no existen${c.fin}`);
+  for (const r of rutasMuertas) console.log(`      ${c.gris}${r}${c.fin}`);
+  console.log(`    Actualizalas en auditoria/areas.mjs. Una ruta muerta ahí no rompe`);
+  console.log(`    nada: hace que el % de esa área se calcule sobre una vista que ya`);
+  console.log(`    no se llama así.\n`);
 }
 
 if (vocabularioDistinto.length) {

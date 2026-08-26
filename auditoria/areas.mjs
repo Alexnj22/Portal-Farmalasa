@@ -131,7 +131,7 @@ export const AREAS = [
         nombre: 'Permisos, cargos y candado de módulo',
         resumen: 'El registro de 156 llaves, quién las tiene, el alcance de sala, la herencia por ausencia y el candado de mantenimiento por módulo.',
         modulos: ['permissions', 'roles', 'maintenance'],
-        rutas: ['/permissions', '/roles', '/mantenimiento'],
+        rutas: ['/permisos', '/cargos', '/mantenimiento'],
         archivos: [
             'src/views/PermissionsView.jsx', 'src/views/RolesView.jsx', 'src/views/MaintenanceView.jsx',
             'src/components/mantenimiento/',
@@ -159,7 +159,7 @@ export const AREAS = [
                   'dash_cortes_sala', 'dash_bolsas_sala', 'dash_bitacoras', 'dash_recetas_pendientes',
                   'dash_facturas_sala', 'dash_meta_sala', 'dash_meta_sala_vista_completa',
                   'dash_vendedores', 'dash_vendedores_vista_completa'],
-        rutas: ['/overview'],
+        rutas: ['/inicio'],
         archivos: [
             'src/views/DashboardView.jsx', 'src/views/dashboard/',
             'src/constants/dashboardTabs.js',
@@ -179,7 +179,7 @@ export const AREAS = [
         resumen: 'El listado de empleados, el expediente completo, documentos, eventos programados, autogestión y practicantes.',
         modulos: ['staff_list', 'staff_list_descargar', 'staff_detail', 'staff_salary',
                   'emp_profile', 'emp_documents'],
-        rutas: ['/dashboard', '/dashboard/empleado/:id', '/profile', '/my-documents'],
+        rutas: ['/personal', '/personal/empleado/:id', '/mi-perfil', '/mis-documentos'],
         archivos: [
             'src/views/StaffManagementView.jsx', 'src/views/EmployeeDetailView.jsx',
             'src/views/employee/EmployeeProfileView.jsx', 'src/views/employee/EmployeeDocumentsView.jsx',
@@ -194,10 +194,11 @@ export const AREAS = [
             'src/components/forms/FormEditContact.jsx', 'src/components/forms/FormUploadOnly.jsx',
             'src/components/forms/FormNovedad.jsx',
             'src/utils/documentExpiry.js', 'src/utils/fotoDocumento.js', 'src/utils/capturaDeFoto.js',
+            'src/utils/expediente.js', 'src/utils/duiLeido.js',
         ],
         tablas: ['employees', 'employee_branches', 'employee_documents', 'employee_events',
                  'practicantes', 'education_catalog_entries'],
-        edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry'],
+        edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry', 'leer-dui'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md'],
     },
@@ -206,7 +207,7 @@ export const AREAS = [
         nombre: 'Asistencia y marcaciones',
         resumen: 'El monitor en vivo, la auditoría de tiempos, la consolidación diaria de horas y el banco de horas extra.',
         modulos: ['monitor', 'time_audit', 'time_audit_descargar'],
-        rutas: ['/monitor', '/audit'],
+        rutas: ['/monitor', '/auditoria-de-tiempos'],
         archivos: [
             'src/views/AttendanceMonitorView.jsx', 'src/views/AttendanceAuditView.jsx',
             'src/data/attendanceAudit.js', 'src/views/asistencia/quincena.js',
@@ -222,7 +223,7 @@ export const AREAS = [
         resumen: 'El calendario semanal, el catálogo de turnos, los feriados, la cobertura entre salas y el plan anual de vacaciones.',
         modulos: ['schedules', 'schedules_tab_calendar', 'schedules_tab_shifts', 'schedules_tab_holidays',
                   'vacation_plan'],
-        rutas: ['/schedules', '/vacation-plan'],
+        rutas: ['/horarios', '/vacaciones'],
         archivos: [
             'src/views/SchedulesView.jsx', 'src/views/schedule-tabs/', 'src/views/VacationPlanView.jsx',
             'src/data/schedules.js', 'src/data/vacationPlans.js',
@@ -244,7 +245,7 @@ export const AREAS = [
         nombre: 'Nómina y bonificaciones',
         resumen: 'La planilla quincenal, las boletas impresas y la bonificación ligada al cumplimiento de meta.',
         modulos: ['payroll', 'payroll_descargar', 'bonificaciones'],
-        rutas: ['/payroll', '/bonificaciones'],
+        rutas: ['/nomina', '/bonificaciones'],
         archivos: [
             'src/views/PayrollView.jsx',
             'src/data/payroll.js',
@@ -262,7 +263,7 @@ export const AREAS = [
         resumen: 'El centro de la sala y el de la persona: descartes, cargas, traslados, Min/Max, facturación, vacaciones, anticipos. Con su enrutador de aprobadores.',
         modulos: ['requests', 'requests_facturacion', 'requests_inventario', 'requests_minmax',
                   'requests_personales'],
-        rutas: ['/requests', '/requests-personales'],
+        rutas: ['/solicitudes', '/solicitudes-personales'],
         archivos: [
             'src/views/RequestsView.jsx', 'src/views/solicitudes/',
             'src/data/requests.js', 'src/data/solicitudDeAviso.js',
@@ -286,7 +287,7 @@ export const AREAS = [
         nombre: 'Avisos, notificaciones y encuestas',
         resumen: 'Los comunicados internos, el push al teléfono, la campana del portal y la encuesta de clima organizacional.',
         modulos: ['announcements', 'emp_announcements', 'encuesta', 'encuesta_admin', 'entrevistas'],
-        rutas: ['/announcements', '/my-announcements', '/encuesta', '/encuesta-admin', '/entrevistas'],
+        rutas: ['/avisos', '/mis-avisos', '/encuesta', '/encuesta-admin', '/entrevistas'],
         archivos: [
             'src/views/AnnouncementsView.jsx', 'src/views/employee/EmployeeAnnouncementsView.jsx',
             'src/views/EncuestaView.jsx', 'src/views/EncuestaAdminView.jsx',
@@ -308,7 +309,7 @@ export const AREAS = [
         nombre: 'Sucursales',
         resumen: 'El expediente de cada sala: datos, inmueble, legal, servicios, horarios, gastos y su historial.',
         modulos: ['branches', 'branches_descargar'],
-        rutas: ['/branches', '/branches/:id'],
+        rutas: ['/sucursales', '/sucursales/:id'],
         archivos: [
             'src/views/BranchesView.jsx', 'src/views/BranchDetailView.jsx', 'src/views/branch-tabs/',
             'src/data/branches.js',
@@ -665,7 +666,7 @@ export const AREAS = [
         nombre: 'Sistema, salud y auditoría general',
         resumen: 'Las pantallas de quien mantiene el portal: bitácora de acciones, salud de las sincronizaciones, objetos huérfanos, respaldos y pruebas de dispositivo.',
         modulos: ['auditview', 'sync_health', 'orphan_objects', 'ios_test'],
-        rutas: ['/auditview', '/sync-health', '/orphan-objects', '/ios-test', '/raw-test'],
+        rutas: ['/auditoria-del-sistema', '/actualizacion-de-datos', '/objetos-huerfanos', '/prueba-ios', '/raw-test'],
         archivos: [
             'src/views/AuditView.jsx', 'src/views/SyncHealthView.jsx', 'src/views/OrphanObjectsView.jsx',
             'src/views/IOSTestView.jsx', 'src/views/RawTestView.jsx', 'src/views/NotFoundView.jsx',

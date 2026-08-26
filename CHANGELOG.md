@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.787.0 — El DUI se sube al inicio y llena media ficha
+
+Punto 1 de la revisión con Talento Humano: subir el DUI de los dos lados y que
+el portal detecte los datos.
+
+**Trae más de lo que se pidió, y por eso vale.** El anverso lleva el número, los
+nombres, el sexo, el lugar y la fecha de nacimiento y la expedición; el reverso
+lleva el domicilio, la profesión u oficio, el estado familiar y el tipo de
+sangre. **DUI, género y estado civil eran tres de los cuatro campos por los que
+48 de 49 fichas no se podían guardar** — así que esto no acelera la carga, la
+desbloquea.
+
+**Se mudó a Datos Personales.** Estaba al final, en Documentación, y pedirlo ahí
+obliga a volver a teclear lo que el papel ya dijo. La regla que quedó: **el
+documento que produce un dato va donde vive ese dato; el que es sólo un archivo
+va al final.** El CV y el contrato firmado siguen en su pestaña.
+
+**Nada se guarda solo.** La lectura se ofrece campo por campo y alguien
+confirma. Un formulario que se llena y se guarda solo convierte un error de
+lectura en un dato del expediente, y después nadie sabe si el DUI dice eso o si
+lo dijo el modelo.
+
+Tres reglas en el mapeo, y las tres existen para que ayudar no se vuelva
+estorbar:
+
+- **Sólo llena lo VACÍO.** Nunca pisa lo tecleado: quien escribió puede estar
+  corrigiendo una lectura anterior.
+- **Lo que no está en su catálogo, no entra** — y se dice cuál se descartó. Un
+  «CONVIVIENTE» guardado como estado familiar es la familia de `role_id: null`:
+  una escritura que funciona y no hace lo que dice.
+- **La dirección se cae entera o entra entera.** Un municipio sin departamento
+  no se puede resolver —hay nombres repetidos— así que media dirección es peor
+  que ninguna: se ve completa.
+
+**El número sólo entra si el dígito verificador cuadra**, comprobado en el
+servidor. Un DUI mal leído se parece a uno bien leído, y ese dígito es lo único
+que los distingue sin preguntarle a nadie. Si no cuadra, se dice y se teclea.
+
+La nacionalidad no se lee: se **deduce**. El DUI sólo se emite a salvadoreños.
+
+Edge function `leer-dui` (una sola llamada con las dos caras: el modelo puede
+cruzar que sean del mismo documento, y dos respuestas sueltas habría que
+conciliarlas — conciliar es adivinar). 8 pruebas del mapeo, y las que importan
+son las de lo que NO debe hacer.
+
 ## v2.786.0 — Una ficha se guarda con sólo el nombre, y lo que falta se ve
 
 Punto 6 de la revisión con Talento Humano: *«que se pueda guardar un empleado

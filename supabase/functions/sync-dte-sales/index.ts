@@ -106,6 +106,48 @@ function numEq(a: any, b: any): boolean {
   return Math.abs(parseFloat(a) - parseFloat(b)) < 0.005;
 }
 
+/**
+ * Texto del origen contra texto guardado: sin espacios de sobra y sin
+ * distinguir mayúsculas.
+ *
+ * El `codigo_generacion` es el motivo de que no sea una comparación cruda: la
+ * columna es `uuid` y Postgres lo devuelve en minúsculas mientras el origen lo
+ * manda en mayúsculas. Compararlos tal cual daría "cambió" en TODAS las
+ * facturas, cada minuto — o sea, reescribir la tabla entera para no cambiar
+ * nada, que es justo lo que prohíbe la regla de los syncs.
+ */
+function txtEq(a: unknown, b: unknown): boolean {
+  return String(a ?? '').trim().toUpperCase() === String(b ?? '').trim().toUpperCase();
+}
+
+/**
+ * Un campo que llega vacío se queda con lo guardado.
+ *
+ * Antes daba lo mismo porque el upsert casi nunca corría sobre una factura
+ * vieja; ahora lo dispara CUALQUIER dato que cambie, así que un correlativo o
+ * un vendedor que el origen mande en blanco un minuto se llevaría el bueno de
+ * paso — y sería una escritura, no un error, o sea invisible.
+ */
+function noVacio(v: unknown, guardado: any): any {
+  return (v != null && String(v).trim() !== '') ? v : (guardado ?? null);
+}
+
+/** `hora` es `time without time zone`: Postgres la devuelve `HH:MM:SS`. Si el
+ *  origen manda `H:MM` o `HH:MM`, comparar crudo inventa un cambio. */
+function horaEq(a: unknown, b: unknown): boolean {
+  const norm = (v: unknown) => {
+    const m = String(v ?? '').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    return m ? `${m[1].padStart(2, '0')}:${m[2]}:${m[3] ?? '00'}` : String(v ?? '').trim();
+  };
+  return norm(a) === norm(b);
+}
+
+/** `fecha` es `date`: Postgres la devuelve `YYYY-MM-DD` y el origen a veces le
+ *  agrega la hora detrás. */
+function fechaEq(a: unknown, b: unknown): boolean {
+  return String(a ?? '').trim().slice(0, 10) === String(b ?? '').trim().slice(0, 10);
+}
+
 // El sello de recepción de Hacienda son exactamente 40 caracteres.
 //
 // `venta.recibido_mh ?? …` NO alcanza: el `??` atrapa el valor `undefined`, pero
@@ -161,7 +203,7 @@ async function syncBranch(
   // fila vieja nunca se corregiría sola: `total` no cambió.
   const existingRaw = await selectAllByIn<any>(
     supabase, 'sales_invoices',
-    'id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, subtotal, iva, retencion, total, customer_id',
+    'id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, cod_vendedor, correlativo, codigo_generacion, fecha, hora, subtotal, iva, retencion, total, customer_id',
     'erp_invoice_id', erpInvoiceIds,
   );
 
@@ -186,8 +228,11 @@ async function syncBranch(
   for (const venta of ventas) {
     if (!venta.id_factura) continue;
     const erpId_s  = String(venta.id_factura);
-    const tipoDoc  = parseTipoDoc(venta.correlativo);
     const existing = existingMap.get(erpId_s);
+    const correlativoOk = noVacio(venta.correlativo, existing?.correlativo) as string | null;
+    const codGenOk      = noVacio(venta.codigo_generacion, existing?.codigo_generacion) as string | null;
+    const codVendedorOk = noVacio(venta.cod_vendedor, existing?.cod_vendedor) as string | null;
+    const tipoDoc  = parseTipoDoc(correlativoOk ?? '');
     const clienteName = venta.cliente?.trim() || null;
     const newTotal    = venta.totales?.total ?? 0;
     const newSubtotal = venta.totales?.subtotal ?? 0;
@@ -240,14 +285,46 @@ async function syncBranch(
           hasChange = true;
         }
       }
+      // ── Lo que el origen puede corregir DESPUÉS de emitido el documento ──
+      //
+      // Comparar sólo un subconjunto de lo que se ESCRIBE es un bug mudo: el
+      // campo viaja en el payload del upsert, pero como nada lo compara la
+      // factura nunca entra al upsert y el valor nuevo no llega jamás.
+      //
+      // `cod_vendedor` estuvo así desde el día uno. Las SEIS solicitudes de
+      // cambio de vendedor aprobadas entre el 15 y el 26 de agosto se
+      // aplicaron en el origen y se releyeron para confirmarlas, y el portal
+      // siguió mostrando al vendedor viejo en las seis: el resync del mes
+      // volvió a leer esas facturas cada hora y las saltó todas las veces.
+      // Seis ventas contadas a la persona equivocada, sin un error en ningún
+      // lado.
+      //
+      // Un valor vacío NO borra el guardado: el origen a veces manda el campo
+      // incompleto, y perder un dato fiscal es peor que quedarse con el viejo.
+      for (const [campo, viejo, nuevo, iguales] of [
+        ['cod_vendedor',      existing.cod_vendedor,      venta.cod_vendedor,      txtEq],
+        ['correlativo',       existing.correlativo,       venta.correlativo,       txtEq],
+        ['codigo_generacion', existing.codigo_generacion, venta.codigo_generacion, txtEq],
+        ['fecha',             existing.fecha,             venta.fecha,             fechaEq],
+        ['hora',              existing.hora,              venta.hora,              horaEq],
+      ] as [string, any, any, (a: unknown, b: unknown) => boolean][]) {
+        if (nuevo == null || String(nuevo).trim() === '') continue;
+        if (iguales(viejo, nuevo)) continue;
+        changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo, valor_anterior: viejo == null ? null : String(viejo), valor_nuevo: String(nuevo) });
+        hasChange = true;
+      }
       // También upsertear si falta el customer_id para linkear retroactivamente
       if (!existing.customer_id && clienteName) hasChange = true;
     } else {
       newErpIds.add(erpId_s);
     }
 
-    // Solo agregar a clientes si la factura es nueva o aún no tiene customer_id
-    if (clienteName && (!existing || !existing.customer_id)) {
+    // La factura busca ficha si es nueva, si no tiene enlace, o si el nombre
+    // CAMBIÓ. Ese último caso faltaba: un cambio de cliente en el origen movía
+    // el nombre —`cliente` sí se compara— y dejaba el enlace apuntando al
+    // cliente anterior, así que la factura mostraba a uno y sumaba en el
+    // historial del otro.
+    if (clienteName && (!existing || !existing.customer_id || (existing.cliente ?? null) !== clienteName)) {
       if (!customerNames.has(clienteName)) customerNames.set(clienteName, erpId_s);
     }
 
@@ -256,13 +333,13 @@ async function syncBranch(
       invoicesToUpsert.push({
         branch_id:         branchId,
         erp_invoice_id:    venta.id_factura,
-        codigo_generacion: venta.codigo_generacion,
-        correlativo:       venta.correlativo,
+        codigo_generacion: codGenOk,
+        correlativo:       correlativoOk,
         tipo_documento:    tipoDoc,
         fecha:             venta.fecha,
         hora:              venta.hora,
         cliente:           clienteName,
-        cod_vendedor:      venta.cod_vendedor,
+        cod_vendedor:      codVendedorOk,
         tipo_pago:         venta.tipo_pago,
         estado:            venta.estado,
         // Validado de los dos lados: si lo que llega no es un sello y lo

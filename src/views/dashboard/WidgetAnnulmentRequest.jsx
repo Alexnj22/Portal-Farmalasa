@@ -576,7 +576,11 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
   const [submitError, setSubmitError] = useState('');
 
   const currentPay = (inv.tipo_pago || '').toLowerCase();
-  const available  = PAYMENT_METHODS.filter(m => m !== currentPay);
+  // El crédito no está entre los destinos: una venta ya emitida no se pasa a
+  // crédito, se anula y se vuelve a facturar. Quien lo impone es el servidor
+  // (`validar_solicitud_facturacion`); acá se saca de la lista para que nadie
+  // elija algo que va a rebotar. Salir DE crédito sí se puede.
+  const available  = PAYMENT_METHODS.filter(m => m !== currentPay && m !== 'credito');
   const vendor     = employees.find(e => String(e.code) === String(inv.cod_vendedor));
 
   const handleSubmit = async () => {
@@ -637,6 +641,9 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
               layout="block" columns={3}
               options={available.map(m => ({ value: m, label: PAYMENT_LABELS[m] || m }))}
               value={newPayment} onChange={setNewPayment} label="Cambiar a" />
+          <p className="text-caption text-content-3 px-1">
+            El crédito no aparece a propósito: una venta ya emitida no se pasa a crédito. Para eso hay que anularla y volver a facturarla.
+          </p>
         </div>
 
         <div className="flex flex-col gap-1">

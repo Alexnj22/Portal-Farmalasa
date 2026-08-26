@@ -81,6 +81,8 @@ const REGLAS = [
     // sin leer un error de Postgres.
     [/FACTURA_ANULADA/i,
         'Esa factura ya está anulada. No se le pueden pedir cambios.'],
+    [/PAGO_A_CREDITO_NO/i,
+        'Una venta emitida no se puede pasar a crédito. Hay que anularla y volver a facturarla.'],
     // La sala ya sacó su cierre del día: no hay caja abierta de dónde descontar
     // el efectivo que se devuelve. NO es un callejón sin salida —mañana la sala
     // abre y la anulación entra—, así que el mensaje dice cuándo volver y no

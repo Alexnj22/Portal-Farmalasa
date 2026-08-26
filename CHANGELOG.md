@@ -21,6 +21,84 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.793.2 — Más de un contacto de emergencia, la entrega de herramientas legible, y enlazar trae su foto
+
+Los tres puntos que faltaban de la revisión con Talento Humano. Con esto quedan
+los **catorce** cerrados.
+
+**5 — contactos en plural.** Hasta hoy se podían guardar varios *teléfonos de
+una persona*, que no es lo mismo que varias personas. El principal sigue en sus
+columnas —son las que lee el resto del portal— y ahora se pueden agregar otros.
+
+La lista guardada **incluye al principal en la primera posición**, no sólo a los
+demás: guardar únicamente los extras dejaría la columna diciendo media verdad, y
+quien la lea después —un aviso, una exportación— tendría que saber que le falta
+uno y de dónde sacarlo.
+
+Y se recompone **siempre que se toque el principal o los extras**. Si sólo se
+recompusiera al tocar los extras, cambiarle el teléfono al contacto principal
+dejaría la lista con el número viejo y nadie notaría la discrepancia.
+
+**12 — la entrega de herramientas se lee como una entrega.** Era una fila de
+tabla con tres campos. Ahora cada renglón lleva la cantidad al frente, la
+descripción, y el estado como distintivos que se tocan —blanco de dedo de 44pt,
+así que sirve en el teléfono—. Y **cuando falta alguno de los tres, lo dice**:
+el Art. 23 nº10 pide cantidad, calidad y estado, y sin el estado de entrega no
+hay con qué comparar el día que se devuelve, que es para lo que el numeral
+existe. El vacío ya no es una tabla en blanco sino una explicación de qué va
+ahí.
+
+**2 — enlazar trae la foto, la sala y el cargo.** Son datos que el portal ya
+tiene: volver a pedirlos es pedir que alguien acierte lo que está a un clic.
+Sólo llena lo **vacío**, igual que el DUI — si quien carga ya eligió otra sala,
+manda ésa, porque puede estar trasladando a la persona en el mismo movimiento.
+
+La foto además ya no se pierde: la absorción dejó de pisar `photo_url`, así que
+lo que se ve aquí es la que se conserva.
+
+## v2.794.0 — Un cambio de vendedor llega al portal, y una venta emitida no se pasa a crédito
+
+Reportado desde Ventas: a la venta `0000070451_COF` se le aprobó un cambio de
+vendedor, el cambio entró en el sistema de origen, y el portal siguió mostrando
+al vendedor anterior.
+
+**El sync decidía si reescribir una venta comparando ocho campos, y escribía
+quince.** `cod_vendedor` viajaba en el payload pero no estaba en la
+comparación, así que la factura nunca entraba al upsert y el código nuevo no
+llegaba jamás. El resync del mes volvió a leer esa venta **cada hora** —unas 47
+veces desde el cambio— y la saltó todas.
+
+No era un caso: **las SEIS solicitudes de cambio de vendedor aprobadas desde el
+15 de agosto** seguían con el vendedor viejo en el portal (Salud 1, 3, 4 y 5).
+Seis ventas contadas a la persona equivocada en metas, ranking y comisiones, sin
+un error en ningún lado.
+
+Ahora se comparan también `cod_vendedor`, `correlativo`, `codigo_generacion`,
+`fecha` y `hora`, cada uno con su changelog, y un valor que llegue vacío **no
+borra** el guardado. Las comparaciones normalizan antes: el `codigo_generacion`
+es `uuid` y la base lo devuelve en minúsculas mientras el origen lo manda en
+mayúsculas — compararlos crudos habría reescrito la tabla entera cada minuto
+para no cambiar nada.
+
+**Y el enlace al cliente ahora sigue al nombre.** Se buscaba ficha sólo cuando
+`customer_id` estaba vacío, así que un cambio de cliente movía el nombre y
+dejaba la venta ligada al cliente anterior: mostraba a uno y sumaba en el
+historial del otro.
+
+**Una venta emitida ya no se puede pasar a crédito.** Para eso hay que anularla
+y volver a facturarla. La regla la impone la base
+(`validar_solicitud_facturacion`), la repite el paso que la aplica —por si
+alguna quedó pendiente de antes— y la pantalla ya no ofrece esa opción,
+diciendo por qué. La medición le da la razón: la única que llegó a aplicarse
+(`0000056702_COF`, Salud 3, 25-ago) quedó en crédito **cinco minutos** y volvió
+sola a tarjeta; el portal la dio por aplicada porque releyó la venta justo
+dentro de esa ventana.
+
+Lo que **no** cambió, a propósito: los renglones de una venta se siguen
+releyendo sólo a pedido. Un borrado y reinserción automática de renglones
+fiscales es un camino destructivo nuevo, y el total de una venta no se movió
+**ni una vez** en toda la historia del changelog.
+
 ## v2.793.1 — El área de vencidos deja de trabar el estante
 
 *«intenta de nuevo, se supone que ya lo corrigieron»*. Se intentó, y esta vez sí.

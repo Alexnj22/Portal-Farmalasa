@@ -579,6 +579,15 @@ Deno.serve(async (req) => {
     if (sol.type === "PAYMENT_CHANGE_REQUEST") {
       campo = "tipo_pago";
       de = String(antes.credito ?? "");
+      // Una venta emitida no se pasa a crédito: se anula y se vuelve a
+      // facturar. La regla vive en `validar_solicitud_facturacion`, pero acá
+      // también, porque una solicitud creada ANTES de la regla sigue en la
+      // cola y ésta es la puerta por la que se aplicaría.
+      if (String(meta.new_pago ?? "").toLowerCase() === "credito")
+        return json({
+          ok: false,
+          error: "Una venta emitida no se puede pasar a crédito. Hay que anularla y volver a facturarla.",
+        }, 422);
       const destino = PAGO_A_ERP[String(meta.new_pago ?? "").toLowerCase()];
       if (!destino) return json({ ok: false, error: `Forma de pago desconocida: ${meta.new_pago}` }, 422);
       a = destino;

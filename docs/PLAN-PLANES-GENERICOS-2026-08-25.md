@@ -449,6 +449,39 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 
 ---
 
+#### Resultado de la fase 5 — **el gate está puesto** (2026-08-26)
+
+Sección **E** de `npm run gate:perf`, contra el manifiesto
+`scripts/planes-genericos.json` (68 entradas: **43 con medición, 25 deuda
+declarada**).
+
+Lo que hace y lo que **no** hace, a propósito:
+
+- **Falla si producción expone una que no esté declarada.** Misma forma que
+  `auditoria/superficie-anon.json`, y por el mismo motivo: lo que nadie declara
+  crece solo y en silencio. Se auditaron 40 de 68 y ninguna tenía el defecto —
+  el riesgo real es **la número 69**, escrita dentro de tres meses por alguien
+  que no leyó nada de esto.
+- **Falla también al revés**, si el manifiesto nombra una que ya no existe. Una
+  lista con fantasmas deja de ser una lista de lo que hay.
+- **NO falla por lentitud.** Contra una base compartida eso es ruido, y un gate
+  que falla al azar se termina ignorando. De la velocidad se ocupan las
+  secciones C y D.
+- **NO exige que todas estén medidas.** `ms: null` es deuda declarada, que es
+  distinto de un número inventado — mismo criterio que `sistema: null` en
+  `gate:eficiencia`.
+
+**Probado fabricándole las dos regresiones antes de creerle el verde**
+(la lección de las seis mediciones mal leídas del barrido móvil):
+
+| prueba | resultado |
+|---|---|
+| sacar `get_stock_analysis` del manifiesto | `✗ plan-generico-sin-declarar:get_stock_analysis` |
+| agregar una entrada inexistente | `✗ plan-generico-fantasma:funcion_que_ya_no_existe` |
+| manifiesto restaurado | `✓ 68/68 declaradas` |
+
+---
+
 ## 5 · Lo que este plan NO promete
 
 - **No promete que las 69 se corrijan.** Promete que las 69 queden **medidas y
@@ -472,7 +505,7 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 | 2 · la frontera | **cerrado** — las nueve medidas y **declaradas sanas**; cero migraciones |
 | 3 · las que no se llamaron | **cerrado** — 18 medidas, **18 sanas**; cero migraciones |
 | 4 · sincronización | **cerrado** — 10 medidas, **10 sanas**; prueba estructural, cero migraciones |
-| 5 · el gate | abierto |
+| 5 · el gate | **cerrado** — sección E de `gate:perf` + `scripts/planes-genericos.json`, probado en las dos direcciones |
 
 **Medición base del portal**, tomada hoy sobre tráfico real antes y después de la
 fase 0 — es contra esto que se compara cualquier fase futura:

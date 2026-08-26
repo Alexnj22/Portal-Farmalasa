@@ -276,6 +276,50 @@ const PLANES = [
   },
 ];
 
+/* ── E. Planes genéricos declarados ──────────────────────────────────────────
+ *
+ * Una función `LANGUAGE sql` **con cláusula `SET`** cae en la peor combinación:
+ * el `SET` impide inlinearla, y su cuerpo se planifica UNA vez con los
+ * argumentos como `Params` — sin ver un valor nunca. No cae al plan genérico en
+ * la sexta llamada: NACE genérica, y no hay plan personalizado que pedir.
+ *
+ * Eso fue el corte del 2026-08-25: `get_conteo_products_count` a 2,606 ms
+ * contra 56, llenando el pool de PostgREST hasta que TODO el portal devolvía
+ * 504. Ver `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`.
+ *
+ * Este chequeo NO mide velocidad —de eso se ocupan C y D—: vigila que la
+ * SUPERFICIE no crezca sin que nadie la mire. Es la misma forma que
+ * `auditoria/superficie-anon.json`, y por el mismo motivo: lo que nadie declara
+ * crece solo y en silencio. Se auditaron 40 de las 68 y ninguna tenía el
+ * defecto; el riesgo real es la número 69, escrita dentro de tres meses por
+ * alguien que no leyó nada de esto.
+ *
+ * Dos cosas que este chequeo NO hace, a propósito:
+ *
+ * 1. **No falla por lentitud.** Contra una base compartida eso es ruido, y un
+ *    gate que falla al azar se termina ignorando. Falla por estar SIN DECLARAR.
+ * 2. **No exige que todas estén medidas.** `ms: null` es deuda declarada, que
+ *    es distinto de un número inventado — mismo criterio que `sistema: null` en
+ *    `gate:eficiencia`. Lo que no se tolera es una función que no figure.
+ *
+ * El filtro de descarte más rápido, por si aparece una nueva: **si sus únicos
+ * parámetros son un payload `json`/`jsonb`, NO puede tener este defecto** —
+ * `jsonb_array_elements` se estima en 100 filas pase lo que pase, así que
+ * conocer el valor no le aporta nada al planificador. */
+const MANIFIESTO_PLANES = 'scripts/planes-genericos.json';
+
+const SQL_PLANES_GENERICOS = `
+SELECT p.proname AS fn
+  FROM pg_proc p
+  JOIN pg_language l  ON l.oid = p.prolang
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = 'public' AND l.lanname = 'sql'
+   AND p.prokind = 'f' AND p.pronargs > 0
+   AND p.proconfig IS NOT NULL
+   AND array_to_string(p.proconfig, ',') !~ 'plan_cache_mode'
+   AND pg_get_functiondef(p.oid) ~* '\\mwith\\M'
+ ORDER BY p.proname`;
+
 /* ── D. Presupuestos de tiempo ───────────────────────────────────────────────
  *
  * El techo, no la meta. Ver la decisión 2 del encabezado. */
@@ -453,6 +497,37 @@ SELECT clave, plan FROM _pg_p`;
       } else planesOk++;
     }
     console.log(`  planes:      ${planesOk}/${PLANES.length} entrando por índice`);
+
+    // ── E. Planes genéricos declarados ───────────────────────────────────────
+    const enProd = canal.consultar(SQL_PLANES_GENERICOS).map(r => r.fn);
+    if (!existsSync(MANIFIESTO_PLANES)) {
+      fallas.push({ clave: 'planes-genericos', porque: 'Sin manifiesto no hay contra qué cruzar.',
+        detalle: `falta ${MANIFIESTO_PLANES}` });
+    } else {
+      const manifiesto = JSON.parse(readFileSync(MANIFIESTO_PLANES, 'utf8')).funciones ?? {};
+      const declaradas = new Set(Object.keys(manifiesto));
+      const sinDeclarar = enProd.filter(fn => !declaradas.has(fn));
+      const fantasmas = [...declaradas].filter(fn => !enProd.includes(fn));
+
+      for (const fn of sinDeclarar) {
+        fallas.push({ clave: `plan-generico-sin-declarar:${fn}`,
+          porque: 'Es LANGUAGE sql con SET: su cuerpo se planifica una vez y nunca ve sus argumentos. '
+                + 'Medila contra su cuerpo con literales y declarala en el manifiesto — con su medición '
+                + 'o con `ms: null` si es deuda. Receta: docs/PLAN-PLANES-GENERICOS-2026-08-25.md',
+          detalle: 'está en producción y no figura en el manifiesto' });
+      }
+      // Una entrada que ya no existe en prod significa que el manifiesto miente
+      // — la corrigieron, la borraron, o le cambiaron la firma. Sacarla es parte
+      // del trabajo; dejarla convierte el manifiesto en folclore.
+      for (const fn of fantasmas) {
+        fallas.push({ clave: `plan-generico-fantasma:${fn}`,
+          porque: 'Un manifiesto con entradas que ya no existen deja de ser una lista de lo que hay.',
+          detalle: `figura en el manifiesto y ya no está en producción — sacala de ${MANIFIESTO_PLANES}` });
+      }
+      const conMedicion = enProd.filter(fn => manifiesto[fn]?.ms != null).length;
+      console.log(`  planes sql:  ${enProd.length - sinDeclarar.length}/${enProd.length} declaradas`
+                + ` (${conMedicion} con medición, ${enProd.length - conMedicion} deuda declarada)`);
+    }
 
     // ── D. Tiempos ───────────────────────────────────────────────────────────
     for (const t of TIEMPOS) medidos[t.clave] = Number(canal.consultar(sqlMedir(t.sql))[0].ms);

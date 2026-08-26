@@ -338,13 +338,29 @@ tumbara el portal entero:
    donde no está el problema. Ver
    [[feedback_una_consulta_lenta_de_lectura_tumba_el_portal_entero]].
 
-   El barrido de las restantes está en
-   `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`, **y su primera conclusión es que
-   NO se barren**: al medirlas fuera de la ventana del corte, de 19 «caras» sólo
-   tres lo eran. Un promedio de `pg_stat_statements` sobre una ventana con
-   saturación de pool dice quién **esperaba**, no quién estaba **lento**. Y la
-   corrección cuesta +0.54 ms de planificación por llamada, así que en una
-   función barata y frecuente es una **regresión**.
+   **La auditoría de las restantes está CERRADA**
+   (`docs/PLAN-PLANES-GENERICOS-2026-08-25.md`): **40 funciones medidas, 40
+   sanas, 0 migraciones**. `get_conteo_products_count` era la única de las 69, y
+   eso enseñó la condición que faltaba: no basta con ser `LANGUAGE sql` + `SET`,
+   **hace falta ADEMÁS que el plan bueno dependa de los argumentos**. Si no
+   depende, el genérico es tan bueno como el personalizado — y forzarlo sólo
+   agrega el costo de replanificar (+0.54 ms por llamada), o sea una
+   **regresión** en una función barata y frecuente. Medido: a
+   `get_ccf_con_problema` la deja **6.6× más lenta**.
+
+   Dos filtros de descarte inmediato, los dos medidos:
+   - **Si sus únicos parámetros son un payload `json`/`jsonb`, NO puede tener
+     este defecto**: `jsonb_array_elements` se estima en 100 filas con un
+     literal de 3, uno de 5,000 o un parámetro. Descarta las diez de sync.
+   - **Un promedio de `pg_stat_statements` medido sobre una ventana con
+     saturación dice quién ESPERABA, no quién estaba LENTO.** De 19 «caras», al
+     remedirlas fuera de la ventana sólo tres lo eran.
+
+   Lo vigila la sección E de `npm run gate:perf` contra
+   `scripts/planes-genericos.json`: **producción exponiendo una que no esté
+   declarada FALLA el gate**, y el manifiesto que nombre una que ya no existe,
+   también. Al escribir una función `LANGUAGE sql` con parámetros y CTEs, se
+   declara ahí — con su medición, o con `ms: null` si es deuda.
 
 Y **medir con `EXPLAIN (ANALYZE, TIMING OFF)`**: con el timing encendido, la
 instrumentación de un nested loop de 3,655 vueltas inventó 1,146 ms sobre un

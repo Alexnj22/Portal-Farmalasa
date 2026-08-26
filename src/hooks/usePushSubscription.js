@@ -21,12 +21,12 @@ const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 // Ni oferta, ni explicación, ni forma de enterarse de que faltaba un paso.
 //
 // Por eso «no se puede» y «falta instalar la app» dejan de ser el mismo estado.
-const esIOS = () => typeof navigator !== 'undefined'
+export const esIOS = () => typeof navigator !== 'undefined'
     && (/iPad|iPhone|iPod/.test(navigator.userAgent)
         // iPadOS se hace pasar por Mac desde iOS 13; el táctil lo delata.
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 
-const esApp = () => typeof window !== 'undefined'
+export const esApp = () => typeof window !== 'undefined'
     && ((window.matchMedia?.('(display-mode: standalone)').matches)
         || window.navigator.standalone === true);
 
@@ -158,5 +158,5 @@ export function usePushSubscription() {
 
   // `subscribed` contesta «¿me van a llegar los avisos?», no «¿este navegador
   // tiene suscripción?». En un equipo compartido las dos respuestas se separan.
-  return { permission, subscribed: subscribed && ligado, subscribe, unsubscribe, isSupported, necesitaInstalar };
+  return { permission, subscribed: subscribed && ligado, ligado, subscribe, unsubscribe, isSupported, necesitaInstalar };
 }

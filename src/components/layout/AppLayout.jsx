@@ -41,7 +41,7 @@ import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
 import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
-import PushPromptBanner from '../common/PushPromptBanner';
+import AvisosApagadosDialog from '../common/AvisosApagadosDialog';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
@@ -1581,7 +1581,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             </div>
 
-            <PushPromptBanner />
+            <AvisosApagadosDialog />
             <OfflineBanner />
 
             <MenuSearchModal

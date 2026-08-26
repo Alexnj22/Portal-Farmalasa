@@ -21,46 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.770.1 — Los libros de compras cargan al doble de velocidad
-
-Los dos libros de compras cruzan cada compra contra los documentos por **tres
-formas normalizadas** del código de generación, dentro de un `LEFT JOIN LATERAL`.
-El índice único que ya existía sobre ese código **no servía para eso**: la
-consulta lo envuelve en `left(upper(...), 20)`, o sea una función sobre la
-columna indexada, y eso lo deja inservible.
-
-Medido sobre julio: un `Seq Scan` de la tabla de documentos ejecutado **467
-veces** —una por compra— que se llevaba **142,815 de los 148,530 buffers**, el
-**96% del trabajo**. La tabla tiene 1,920 filas: eran ~900,000 visitas de fila
-para resolver 699 renglones.
-
-Cuatro índices de expresión, uno por cada forma que la consulta compara:
-
-| | antes | ahora | |
-|---|---:|---:|---|
-| libro completo, un mes | 1,598 ms | **660 ms** | 2.4× |
-| libro declarable, un mes | 1,931 ms | **983 ms** | 2.0× |
-| libro completo, cuatro meses | 5,742 ms | **2,542 ms** | 2.3× |
-
-Pesan **376 kB** entre los cuatro, sobre una tabla que recibe 13 inserciones cada
-17 horas — mantenerlos no cuesta nada.
-
-**Las filas son las mismas: 699, 873 y 1,968.** Y no hace falta verificarlo
-columna por columna como exige la regla del libro, porque **un índice no puede
-cambiar el resultado de una consulta** — sólo el camino para llegar a él. Ésa es
-justamente la razón para empezar por acá y no por reescribir el cuerpo.
-
-Queda pendiente el resto de la ganancia, y es una reescritura: el `OR` entre la
-rama del sello y la de los tres códigos impide un plan estable por índice. Con
-los índices puestos, el planificador **todavía elige el barrido** en algunas
-formas de la consulta. Normalizar los documentos UNA vez y cruzarlos por hash
-midió 671 → 457 ms sobre el paso de emparejado. Eso sí cambia el cuerpo, así que
-necesita la verificación columna por columna del reporte antes de tocarse.
-
-Sale de la auditoría de `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`, donde estos
-dos libros habían quedado anotados como «lentos por su SQL, no por su plan».
-
-## v2.770.0 — El portal dice «aquí», y el gate de voz ahora lo mira
+## v2.771.0 — El portal dice «aquí», y el gate de voz ahora lo mira
 
 *«¿esto es canónico de la voz del portal? verifica el gate de voz»* y después
 *«aca no se usa. es aqui.»* (usuario, mirando el detalle de una bolsa).
@@ -113,7 +74,8 @@ funciones que le escriben al usuario sin tildes ni ñ —«contrasena», «carne
 «se lo lleva Fulano (usuario y contrasena)» en la bitácora de cada entrega. Va
 aparte porque son migraciones.
 
-## v2.769.0 — Bodega reparte por impulso, producto nuevo o encargo
+
+## v2.770.2 — Bodega reparte por impulso, producto nuevo o encargo
 
 *«en los traslados entre sala, que bodega tenga la opcion de envio de Producto
 por encargo. ademas las opciones deben ser segun si son de las salas a bodega, o
@@ -178,6 +140,45 @@ pregunta a `motivos_envio_por_direccion()`.
   `sinMotivoPosible` y el freno al agregar el renglón
 - `tests/unit/direccionDelEnvio.test.js` — 13 pruebas; la que anclaba «la
   intersección nunca queda vacía» ahora ancla el caso exacto en que sí
+
+## v2.770.1 — Los libros de compras cargan al doble de velocidad
+
+Los dos libros de compras cruzan cada compra contra los documentos por **tres
+formas normalizadas** del código de generación, dentro de un `LEFT JOIN LATERAL`.
+El índice único que ya existía sobre ese código **no servía para eso**: la
+consulta lo envuelve en `left(upper(...), 20)`, o sea una función sobre la
+columna indexada, y eso lo deja inservible.
+
+Medido sobre julio: un `Seq Scan` de la tabla de documentos ejecutado **467
+veces** —una por compra— que se llevaba **142,815 de los 148,530 buffers**, el
+**96% del trabajo**. La tabla tiene 1,920 filas: eran ~900,000 visitas de fila
+para resolver 699 renglones.
+
+Cuatro índices de expresión, uno por cada forma que la consulta compara:
+
+| | antes | ahora | |
+|---|---:|---:|---|
+| libro completo, un mes | 1,598 ms | **660 ms** | 2.4× |
+| libro declarable, un mes | 1,931 ms | **983 ms** | 2.0× |
+| libro completo, cuatro meses | 5,742 ms | **2,542 ms** | 2.3× |
+
+Pesan **376 kB** entre los cuatro, sobre una tabla que recibe 13 inserciones cada
+17 horas — mantenerlos no cuesta nada.
+
+**Las filas son las mismas: 699, 873 y 1,968.** Y no hace falta verificarlo
+columna por columna como exige la regla del libro, porque **un índice no puede
+cambiar el resultado de una consulta** — sólo el camino para llegar a él. Ésa es
+justamente la razón para empezar por acá y no por reescribir el cuerpo.
+
+Queda pendiente el resto de la ganancia, y es una reescritura: el `OR` entre la
+rama del sello y la de los tres códigos impide un plan estable por índice. Con
+los índices puestos, el planificador **todavía elige el barrido** en algunas
+formas de la consulta. Normalizar los documentos UNA vez y cruzarlos por hash
+midió 671 → 457 ms sobre el paso de emparejado. Eso sí cambia el cuerpo, así que
+necesita la verificación columna por columna del reporte antes de tocarse.
+
+Sale de la auditoría de `docs/PLAN-PLANES-GENERICOS-2026-08-25.md`, donde estos
+dos libros habían quedado anotados como «lentos por su SQL, no por su plan».
 
 ## v2.768.0 — Las tarjetas de bolsa: la cifra manda
 

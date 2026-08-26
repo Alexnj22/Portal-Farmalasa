@@ -28,23 +28,29 @@ import { subirEvidencia as subirEvidenciaEn } from './evidencia';
 export const ERP_BODEGA = 6;
 
 /**
- * Los cinco motivos por los que se empuja producto, y nada más.
+ * Los siete motivos por los que se empuja producto, y nada más.
  *
  * La lista vive TAMBIÉN en la base (`motivos_envio()`), que es la que manda: si
  * se agrega uno acá sin agregarlo allá, el envío rebota — a propósito. Está
  * repetida para poder ofrecerla sin una consulta, no para decidir.
  *
- * Eran CINCO hasta el 2026-08-24, y dos de ellas —«Lo pidieron» y «Otro»— eran
- * exactamente la puerta por la que una sala mandaba lo que quisiera a donde
- * quisiera. «Lo pidieron» ya tiene camino propio: la solicitud, donde el otro
- * lado decide ANTES de que el producto salga. «Sobrestock» se fue con ellas
- * porque nombra lo mismo que «Baja rotación», y dos nombres para una cosa
- * terminan queriendo decir cosas distintas.
+ * Eran SIETE con «Lo pidieron», «Otro» y «Sobrestock» adentro, y las tres se
+ * fueron el 2026-08-24: las dos primeras eran exactamente la puerta por la que
+ * una sala mandaba lo que quisiera a donde quisiera —«Lo pidieron» ya tiene
+ * camino propio: la solicitud, donde el otro lado decide ANTES de que el
+ * producto salga—, y «Sobrestock» nombraba lo mismo que «Baja rotación», que es
+ * cómo dos nombres para una cosa terminan queriendo decir cosas distintas.
+ *
+ * «Impulso» y «Encargo» entraron el 2026-08-26 y son los dos de Bodega hacia
+ * una sala. El ORDEN de esta lista es el del desplegable mientras todavía no
+ * hay sala de destino, así que van agrupados por familia y no por antigüedad.
  */
 export const MOTIVOS_ENVIO = [
     'Próximo a vencer',
     'Baja rotación',
     'Producto nuevo',
+    'Impulso',
+    'Encargo',
     'Retiro del mercado',
     'Avería',
 ];
@@ -52,11 +58,12 @@ export const MOTIVOS_ENVIO = [
 /**
  * Y cuáles no entran sin foto. Espejo de `motivos_envio_con_foto()`.
  *
- * Hoy sólo la avería, y el corte no es arbitrario: los otros cuatro se pueden
+ * Hoy sólo la avería, y el corte no es arbitrario: los otros seis se pueden
  * comprobar contra un dato —el vencimiento está en el lote, la rotación en las
- * ventas, el retiro en la orden, lo nuevo en la compra—. El daño no: cuando la
- * caja llega a Bodega ya viajó, y lo único que queda para decidir si se le
- * reclama al proveedor, se repara o se da de baja es haber visto cómo salió.
+ * ventas, el retiro en la orden, lo nuevo en la compra, el encargo en quien lo
+ * pidió—. El daño no: cuando la caja llega a Bodega ya viajó, y lo único que
+ * queda para decidir si se le reclama al proveedor, se repara o se da de baja
+ * es haber visto cómo salió.
  *
  * Es la misma regla que `OPS_CON_FOTO` en el descargue por daño: la foto se
  * pide donde se puede ver algo. En un descuadre sería un trámite vacío.
@@ -93,9 +100,11 @@ export const subirEvidenciaEnvio = (fotos, { salaId, userId }) =>
  *
  * | motivo | a Bodega | de Bodega a una sala | entre salas |
  * |---|---|---|---|
- * | Baja rotación | sí | sí | **sí** |
+ * | Baja rotación | sí | **no** | sí |
  * | Próximo a vencer | sí | sí | no |
  * | Producto nuevo | no | sí | no |
+ * | Impulso | no | **sí** | no |
+ * | Encargo | no | **sí** | no |
  * | Retiro del mercado | sí | no | no |
  * | Avería | sí | no | no |
  *
@@ -103,6 +112,24 @@ export const subirEvidenciaEnvio = (fotos, { salaId, userId }) =>
  * vuelta por Bodega. Uno próximo a vencer sí, porque ahí la pregunta no es «¿a
  * quién le sirve?» sino «¿quién se hace cargo?». Y uno nuevo sólo puede salir
  * de donde entró la compra.
+ *
+ * De **Bodega hacia una sala todo es reparto**, y el reparto tiene tres formas
+ * que se parecen sólo por fuera —lo eligió el usuario el 2026-08-26—:
+ *
+ * - **Producto nuevo**: llegó la compra y hay que repartirlo.
+ * - **Impulso**: el producto ya existe, no se está vendiendo donde está, y se
+ *   manda a la sala donde puede salir. Nadie lo pidió; lo decide Bodega.
+ * - **Encargo**: al revés, alguien lo pidió. Un cliente lo encargó en una sala
+ *   y va para esa sala y ninguna otra. Sin este rótulo el encargo viajaba
+ *   disfrazado de reparto, y el día que alguien pregunte cuántos se atendieron
+ *   no hay dónde mirarlo.
+ *
+ * Y por eso **«Baja rotación» dejó de valer en esa dirección**: entre salas
+ * quiere decir *me sobra y allá se vende*, hacia Bodega *me sobra, hazte
+ * cargo*, y desde Bodega hacia una sala no quiere decir ninguna de las dos
+ * porque Bodega no vende. Lo que hacía era nombrar el impulso con la etiqueta
+ * equivocada. El corto vence sí se queda del lado de Bodega: de él depende que
+ * su área de vencidos pueda despachar.
  *
  * El **retiro del mercado** —el proveedor retira un lote por un error, o lo
  * ordena la SRS— es el caso más cerrado de los cuatro: sólo viaja HACIA Bodega.
@@ -125,17 +152,24 @@ export const subirEvidenciaEnvio = (fotos, { salaId, userId }) =>
  * eso está la solicitud, donde el otro lado decide ANTES de que el producto
  * salga.
  *
- * «Baja rotación» está en las tres listas, y de eso depende algo que no se ve:
- * una composición que saca de Bodega y de una sala a la vez sale como dos
- * envíos con el MISMO motivo, así que el modal ofrece la intersección — y
- * gracias a esto nunca queda vacía.
+ * ⚠️ **La intersección PUEDE quedar vacía, y hasta el 2026-08-26 no podía.**
+ * Una composición que saca de Bodega y de una sala a la vez sale como dos
+ * envíos con el MISMO motivo, así que el modal ofrece la intersección de las
+ * listas de sus orígenes. Mientras «Baja rotación» estuvo en las tres, esa
+ * intersección nunca quedaba vacía; ahora hay un caso exacto en el que sí:
+ * **destino una sala, y orígenes Bodega + alguna sala**.
+ *
+ * Y es correcto que quede vacía: lo que sale de Bodega es reparto y lo que sale
+ * de una sala es sobrante, o sea dos cosas distintas que ya no se pueden decir
+ * con un solo rótulo. Son dos envíos, y el modal lo dice al AGREGAR el renglón
+ * que rompe la intersección — no al apretar «Transferir» con la caja armada.
  *
  * Se pregunta ANTES de ofrecer: un motivo que se ofrece y después rebota al
  * apretar es peor que uno que nunca se ofreció.
  */
 export function motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) {
     if (destinoEsBodega) return ['Próximo a vencer', 'Baja rotación', 'Retiro del mercado', 'Avería'];
-    if (origenEsBodega)  return ['Producto nuevo', 'Baja rotación', 'Próximo a vencer'];
+    if (origenEsBodega)  return ['Impulso', 'Producto nuevo', 'Encargo', 'Próximo a vencer'];
     return ['Baja rotación'];
 }
 

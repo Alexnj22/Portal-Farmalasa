@@ -1,7 +1,7 @@
 // El envío tiene UNA regla, y es el motivo. La dirección sale de ella.
 //
-// Tres correcciones del usuario el mismo día (2026-08-24) terminaron acá, y
-// vale la pena tener las tres a la vista porque la última reescribe a las otras:
+// Cuatro correcciones del usuario el mismo día (2026-08-24) terminaron acá, y
+// vale la pena tenerlas a la vista porque cada una reescribe a las anteriores:
 //
 //   1. «el fin de poder hacer traslados es: 1. enviar productos a bodega por
 //      corto vencimiento o baja rotacion. 2. enviar productos a una sucursal
@@ -11,6 +11,15 @@
 //   3. «pero si es por baja rotacion, si debe poder enviarse a otra sucursal.»
 //   4. «agreguemos el motivo de, cuando bodega pide un producto por retiro del
 //      proveedor por un error o por algo de la SRS. asi las salas lo mandan.»
+//
+// Y una quinta el 2026-08-26, que reescribe la fila de Bodega hacia una sala:
+//
+//   5. «que bodega tenga la opcion de envio de Producto por encargo. ademas las
+//      opciones deben ser segun si son de las salas a bodega, o de las salas a
+//      las salas o de bodega a las salas: de salas a salas es por baja rotacion
+//      nada mas. de salas a bodega, es por baja rotacion o por proximos a
+//      vencer. de bodega a las salas es, para impulso, producto nuevo o
+//      encargo.»
 //
 // Las dos primeras versiones pusieron el freno en la DIRECCIÓN —«sólo Bodega le
 // manda a una sala»— y encima le colgaron una tabla de motivos: dos reglas para
@@ -39,15 +48,16 @@ const DE_BODEGA   = () => motivosEnvioPorDireccion(true,  false);  // Bodega →
 const ENTRE_SALAS = () => motivosEnvioPorDireccion(false, false);  // sala → sala
 
 describe('los motivos del envío', () => {
-    it('son CINCO, y ninguno abierto', () => {
+    it('son SIETE, y ninguno abierto', () => {
         // La avería entró el 2026-08-24 con `MOTIVOS_ENVIO_CON_FOTO` y esta
         // prueba se quedó en cuatro: `main` amaneció con la suite roja, o sea
         // con el pre-commit de todas las sesiones bloqueado. El orden importa
-        // —es el de la lista que se ofrece en pantalla— y por eso se compara
-        // con `toEqual` y no con un `toContain` por motivo.
+        // —es el de la lista que se ofrece en pantalla mientras todavía no hay
+        // sala de destino— y por eso se compara con `toEqual` y no con un
+        // `toContain` por motivo.
         expect(MOTIVOS_ENVIO).toEqual([
-            'Próximo a vencer', 'Baja rotación', 'Producto nuevo', 'Retiro del mercado',
-            'Avería',
+            'Próximo a vencer', 'Baja rotación', 'Producto nuevo', 'Impulso', 'Encargo',
+            'Retiro del mercado', 'Avería',
         ]);
     });
 
@@ -94,24 +104,54 @@ describe('la tabla de direcciones, que es la única regla', () => {
         // Un retiro se consolida en un solo lugar: hay que juntarlo, contarlo y
         // devolverlo. Repartirlo entre salas sería repartir el problema, y de
         // Bodega hacia una sala sería devolver a la venta algo que se retiró.
-        // Es el motivo más cerrado de los cuatro, y a propósito.
+        // Es el motivo más cerrado de los siete, y a propósito.
         expect(A_BODEGA()).toContain('Retiro del mercado');
         expect(DE_BODEGA()).not.toContain('Retiro del mercado');
         expect(ENTRE_SALAS()).not.toContain('Retiro del mercado');
     });
 
-    it('«Baja rotación» vale en las tres direcciones, y de eso depende la composición', () => {
-        // Una composición que saca de Bodega y de una sala a la vez sale como
-        // dos envíos con el MISMO motivo, así que el modal ofrece la
-        // intersección. Si «Baja rotación» dejara de estar en alguna, esa
-        // intersección podría quedar vacía y el formulario no tendría motivo
-        // que ofrecer — sin error y sin explicación.
-        for (const lista of [A_BODEGA(), DE_BODEGA(), ENTRE_SALAS()]) {
-            expect(lista).toContain('Baja rotación');
+    it('el reparto SÓLO sale de Bodega, y son tres formas distintas', () => {
+        // Corrección 5. «Impulso» y «Encargo» se parecen a «Producto nuevo»
+        // sólo por fuera: los tres salen de Bodega hacia una sala, pero uno
+        // dice «llegó la compra», otro «no se vende donde está» y el tercero
+        // «alguien lo pidió». Sin el tercero, el encargo viajaba disfrazado de
+        // reparto y no había dónde contarlo.
+        for (const m of ['Impulso', 'Encargo']) {
+            expect(DE_BODEGA()).toContain(m);
+            expect(A_BODEGA()).not.toContain(m);
+            expect(ENTRE_SALAS()).not.toContain(m);
         }
-        const interseccion = [A_BODEGA(), DE_BODEGA(), ENTRE_SALAS()]
+    });
+
+    it('«Baja rotación» ya NO vale de Bodega hacia una sala', () => {
+        // Corrección 5, y es la parte que se puede perder de vista: entre salas
+        // «baja rotación» quiere decir *me sobra y allá se vende*, hacia Bodega
+        // *me sobra, hazte cargo*, y desde Bodega no quiere decir ninguna de
+        // las dos porque Bodega no vende. Lo que hacía era nombrar el impulso
+        // con la etiqueta equivocada.
+        expect(DE_BODEGA()).not.toContain('Baja rotación');
+        expect(A_BODEGA()).toContain('Baja rotación');
+        expect(ENTRE_SALAS()).toContain('Baja rotación');
+    });
+
+    it('una composición de Bodega + una sala hacia una sala se queda SIN motivo', () => {
+        // Hasta el 2026-08-26 «Baja rotación» estaba en las tres listas y esta
+        // prueba anclaba lo contrario: que la intersección nunca quedara vacía.
+        // Ahora queda vacía en un caso exacto —destino una sala, orígenes
+        // Bodega + alguna sala— y eso es CORRECTO: lo que sale de Bodega es
+        // reparto y lo que sale de una sala es sobrante, o sea dos cosas que ya
+        // no se pueden decir con un solo rótulo.
+        //
+        // Se ancla porque el modal tiene que DECIRLO. Sin este caso escrito, la
+        // pantalla se queda con un desplegable de motivos vacío y un botón
+        // apagado que no explica nada — el modo de falla mudo de siempre.
+        const interseccion = [DE_BODEGA(), ENTRE_SALAS()]
             .reduce((a, b) => a.filter(m => b.includes(m)));
-        expect(interseccion.length).toBeGreaterThan(0);
+        expect(interseccion).toEqual([]);
+
+        // Hacia Bodega, en cambio, todos los orígenes son salas, así que no hay
+        // intersección que calcular y el caso no existe.
+        expect(A_BODEGA().length).toBeGreaterThan(0);
     });
 
     it('ninguna dirección inventa un motivo que no exista', () => {
@@ -120,15 +160,15 @@ describe('la tabla de direcciones, que es la única regla', () => {
         }
     });
 
-    it('las tres listas juntas cubren los tres motivos', () => {
+    it('las tres listas juntas cubren los siete motivos', () => {
         const union = new Set([...A_BODEGA(), ...DE_BODEGA(), ...ENTRE_SALAS()]);
         expect([...union].sort()).toEqual([...MOTIVOS_ENVIO].sort());
     });
 
     it('trata un valor ausente como «no es Bodega»', () => {
         // Los extremos salen de comparar contra ERP_BODEGA, y un renglón sin
-        // sala de origen daría `undefined`. Tratarlo como Bodega abriría los
-        // tres motivos por un dato que falta.
+        // sala de origen daría `undefined`. Tratarlo como Bodega abriría el
+        // reparto entero por un dato que falta.
         expect(motivosEnvioPorDireccion(undefined, undefined)).toEqual(['Baja rotación']);
         expect(motivosEnvioPorDireccion(null, null)).toEqual(['Baja rotación']);
     });

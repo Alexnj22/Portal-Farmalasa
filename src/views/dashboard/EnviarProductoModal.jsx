@@ -58,6 +58,25 @@ const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
  */
 const claveOrigen = (erp, vencidos) => (vencidos ? `${erp}:V` : String(erp ?? ''));
 
+/**
+ * Los motivos que valen para TODOS estos orígenes a la vez.
+ *
+ * Una composición sale como UN envío por sala de origen y el motivo es el mismo
+ * para todos, así que lo que se puede ofrecer es la intersección: un motivo que
+ * no valga para uno de los orígenes haría rebotar ESE envío y no los otros —
+ * media composición mandada, que es peor que ninguna.
+ *
+ * ⚠️ **Puede devolver una lista vacía, y hasta el 2026-08-26 no podía.** Ese
+ * día «Baja rotación» dejó de valer de Bodega hacia una sala, y con eso dejó de
+ * estar en las tres listas. El caso exacto es destino una sala con orígenes
+ * Bodega + alguna sala, y quien llama tiene que decirlo en vez de quedarse con
+ * un desplegable sin opciones.
+ */
+const motivosParaOrigenes = (origenesEsBodega, destinoEsBodega) =>
+    (origenesEsBodega.length ? origenesEsBodega : [false])
+        .map(esBodega => motivosEnvioPorDireccion(esBodega, destinoEsBodega))
+        .reduce((a, b) => a.filter(m => b.includes(m)));
+
 /** Cómo se nombra cada estante. El sufijo es el que ya usa `get_donde_hay` del
  *  otro lado del viaje, así que quien pide y quien manda leen lo mismo. */
 const nombreEstante = (erp, vencidos) =>
@@ -274,6 +293,19 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * `TOPE_RENGLONES_ENVIO`. */
     const lleno = renglones.length >= TOPE_RENGLONES_ENVIO;
 
+    /* Si el destino es Bodega. Se calcula acá arriba y no junto al desplegable
+     * porque la tabla de motivos la necesitan las DOS puntas: el freno de este
+     * paso —al agregar el renglón— y la lista que se ofrece al final. */
+    const destinoEsBodega = Number(destino) === ERP_BODEGA;
+
+    /* Qué extremos tiene YA el envío, dicho como «¿es Bodega?». Es lo que
+     * decide qué motivos quedan posibles: una composición sale como un envío
+     * por sala de origen y el motivo es uno solo para todos. */
+    const origenesEnElEnvio = useMemo(
+        () => [...new Set(renglones.map(r => Number(r.origen_erp ?? miErp) === ERP_BODEGA))],
+        [renglones, miErp],
+    );
+
     const problemaDelPaso = lleno
             ? `Un envío admite hasta ${TOPE_RENGLONES_ENVIO} productos. Manda éste y arma otro con el resto.`
         : !elegido ? 'Elige un producto.'
@@ -294,8 +326,18 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         // no. Se dice con el renglón todavía sin agregar, y no al apretar
         // «Transferir» con la caja armada.
         : destino && motivo && !motivosEnvioPorDireccion(
-              Number(origen.erp) === ERP_BODEGA, Number(destino) === ERP_BODEGA).includes(motivo)
+              Number(origen.erp) === ERP_BODEGA, destinoEsBodega).includes(motivo)
             ? `«${motivo}» no vale para lo que sale de ${origen.nombre}.`
+        // Y aunque todavía no haya motivo elegido, este renglón puede dejar al
+        // envío SIN ninguno posible. Pasa desde el 2026-08-26, cuando «Baja
+        // rotación» dejó de valer de Bodega hacia una sala: si el envío va a
+        // una sala y saca de Bodega y de otra sala a la vez, no hay un rótulo
+        // que sea cierto para los dos —uno es reparto y el otro es sobrante—.
+        // Se dice acá, con el renglón todavía sin agregar, y no con un
+        // desplegable de motivos vacío que no explica nada.
+        : destino && renglones.length > 0 && motivosParaOrigenes(
+              [...origenesEnElEnvio, Number(origen.erp) === ERP_BODEGA], destinoEsBodega).length === 0
+            ? `Lo que sale de ${origen.nombre} no comparte motivo con lo que ya está en el envío. Mándalo aparte.`
         : null;
 
     const agregar = useCallback(() => {
@@ -404,8 +446,6 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         if (destino && !salasDestino.some(x => String(x.value) === String(destino))) setDestino('');
     }, [salasDestino, destino]);
 
-    const destinoEsBodega = Number(destino) === ERP_BODEGA;
-
     /* Qué motivos valen entre los extremos de ESTE envío.
      *
      * Es la intersección sobre las salas de origen presentes, no la lista de
@@ -414,16 +454,19 @@ export default function EnviarProductoModal({ onClose, onListo }) {
      * los orígenes haría rebotar ese envío y no los otros — media composición
      * mandada, que es peor que ninguna.
      *
-     * Nunca queda vacía porque «Baja rotación» está en las tres listas. */
+     * PUEDE quedar vacía desde el 2026-08-26 — ver `motivosParaOrigenes` y
+     * `sinMotivoPosible` acá abajo. */
     const motivosPosibles = useMemo(() => {
         if (!destino) return MOTIVOS_ENVIO;
-        const origenes = renglones.length
-            ? [...new Set(renglones.map(r => Number(r.origen_erp ?? miErp) === ERP_BODEGA))]
-            : [soyBodega];
-        return origenes
-            .map(esBodega => motivosEnvioPorDireccion(esBodega, destinoEsBodega))
-            .reduce((a, b) => a.filter(m => b.includes(m)));
-    }, [destino, destinoEsBodega, renglones, miErp, soyBodega]);
+        return motivosParaOrigenes(
+            origenesEnElEnvio.length ? origenesEnElEnvio : [soyBodega], destinoEsBodega);
+    }, [destino, destinoEsBodega, origenesEnElEnvio, soyBodega]);
+
+    /* Y si no quedó ninguno. El freno de `problemaDelPaso` lo evita al agregar,
+     * pero se puede llegar acá por el otro lado: con la caja ya armada desde
+     * Bodega y desde una sala, se elige DESPUÉS una sala de destino. Un
+     * desplegable vacío no dice nada, así que se dice qué pasó y qué hacer. */
+    const sinMotivoPosible = Boolean(destino) && motivosPosibles.length === 0;
 
     /* Y si lo único que queda es «Baja rotación», decir por qué. Es el caso de
      * sala a sala, y sin la explicación el desplegable con una sola opción se
@@ -488,6 +531,10 @@ export default function EnviarProductoModal({ onClose, onListo }) {
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
+        // Antes de «Elige el motivo»: si no hay ninguno posible, ese aviso
+        // mandaría a un desplegable vacío — un callejón sin salida con forma de
+        // instrucción.
+        : sinMotivoPosible ? 'Separa lo que sale de Bodega de lo que sale de una sala.'
         : !motivo ? 'Elige el motivo.'
         // La foto es lo único que le queda a Bodega para decidir si se le
         // reclama al proveedor: el daño viaja con la caja y no se puede volver
@@ -1051,10 +1098,26 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 value={motivo}
                                 onChange={v => setMotivo(String(v ?? ''))}
                                 options={motivosPosibles.map(m => ({ value: m, label: m }))}
-                                placeholder={destino ? '¿Por qué se lo mandas?' : 'Elige primero la sala'}
+                                placeholder={!destino ? 'Elige primero la sala'
+                                    : sinMotivoPosible ? 'No hay motivo para este envío'
+                                    : '¿Por qué se lo mandas?'}
                                 ariaLabel="Motivo del envío"
-                                disabled={!destino}
+                                disabled={!destino || sinMotivoPosible}
                             />
+                            {/* Un desplegable vacío no explica nada, y acá el
+                                vacío es la regla y no un defecto: lo que sale
+                                de Bodega es reparto y lo que sale de una sala
+                                es sobrante, así que no hay un rótulo que sea
+                                cierto para los dos. La salida no es aflojar la
+                                regla, es armar dos envíos. */}
+                            {sinMotivoPosible && (
+                                <p className="text-micro text-danger-text font-semibold leading-snug px-1 mt-1">
+                                    Este envío saca de Bodega y de una sala a la vez, y hacia{' '}
+                                    {NOMBRE_SALA[Number(destino)] ?? 'esa sala'} no hay un motivo que valga
+                                    para los dos: lo de Bodega va como reparto y lo de la sala como sobrante.
+                                    Manda uno y arma el otro después.
+                                </p>
+                            )}
                             {/* El porqué, donde alguien lo va a leer. Un
                                 desplegable con una sola opción y sin
                                 explicación se lee como un defecto en vez de
@@ -1126,9 +1189,13 @@ export default function EnviarProductoModal({ onClose, onListo }) {
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 placeholder={motivo === 'Próximo a vencer'
-                                    ? 'Ej.: vence en octubre y acá no va a salir, allá se vende'
+                                    ? 'Ej.: vence en octubre y aquí no va a salir, allá se vende'
                                     : motivo === 'Producto nuevo'
                                     ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
+                                    : motivo === 'Impulso'
+                                    ? 'Ej.: en Bodega lleva dos meses parado y allá se vende bien'
+                                    : motivo === 'Encargo'
+                                    ? 'Ej.: lo encargó una clienta el jueves, ya viene a recogerlo'
                                     : motivo === 'Baja rotación'
                                     ? 'Ej.: no se ha vendido en dos meses y ocupa el estante'
                                     : motivo === 'Retiro del mercado'

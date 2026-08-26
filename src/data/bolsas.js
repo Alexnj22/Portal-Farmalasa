@@ -299,20 +299,31 @@ export async function fetchBancos() {
 }
 
 /**
- * Cierra el depósito. El total NO se manda: lo suma el servidor sobre las
- * bolsas, porque es la cifra contra la que se decidió cuánto llevar.
+ * Cierra el efectivo contado. El total NO se manda: lo suma el servidor sobre
+ * las bolsas, porque es la cifra contra la que se decidió cuánto sale.
  *
- * `bancoId` es OBLIGATORIO desde el 2026-08-26 y el servidor lo exige: un
- * depósito sin banco no se puede cuadrar contra ningún estado de cuenta, que es
- * para lo único que este registro existe. Y es el dato que el aviso al Gerente
- * General necesita — el aviso lo manda la BASE al cerrar, no esta función.
+ * ── Tiene DOS salidas, no una ──────────────────────────────────────────────
+ * «que en vez de que sí o sí sea depósito, diga finalizar o algo, y pregunte si
+ * es depósito, o entrega en efectivo y a quién» (usuario, 2026-08-26).
+ *
+ * `destino: 'BANCO'` exige el banco —un depósito sin banco no se cuadra contra
+ * ningún estado de cuenta, que es para lo único que ese registro existe—; y
+ * `'EFECTIVO'` exige a quién se le entrega, que sólo puede ser administración.
+ * Las dos las vuelve a comprobar el servidor.
+ *
+ * El aviso al Gerente General lo manda la BASE al cerrar, no esta función.
  */
-export function registrarDeposito({ bolsaIds, monto, bancoId, aporte = 0, aporteNota = null, nota = null, llevadoPor = null }) {
+export function registrarDeposito({
+    bolsaIds, monto, bancoId, aporte = 0, aporteNota = null, nota = null,
+    llevadoPor = null, destino = 'BANCO', entregadoA = null,
+}) {
     return supabase.rpc('registrar_deposito_bancario', {
         p_bolsa_ids: bolsaIds,
         p_monto: monto,
         p_aporte: aporte,
         p_aporte_nota: aporteNota,
+        p_destino: destino,
+        p_entregado_a: entregadoA,
         // A quién se le entrega el remanente ya NO viaja desde acá: siempre es
         // el Gerente General y lo resuelve el servidor. Mandarlo sería dejar
         // abierta la puerta a registrar que el efectivo se le dio a otro.
@@ -320,6 +331,22 @@ export function registrarDeposito({ bolsaIds, monto, bancoId, aporte = 0, aporte
         p_llevado_por: llevadoPor,
         p_banco_id: bancoId,
     });
+}
+
+/**
+ * A quién se le puede entregar el efectivo en mano: los cuatro cargos del área
+ * de administración.
+ *
+ * La lista sale del SERVIDOR y no de un filtro escrito acá. «Admin» no es el
+ * rol `Administrador` —es un área de cuatro cargos, y el usuario ya tuvo que
+ * corregirlo una vez— así que escribirla dos veces significa que un día el
+ * selector va a ofrecer a alguien que el servidor rechaza, o al revés.
+ */
+export async function fetchPersonasDeAdministracion() {
+    const { data, error } = await supabase.rpc('get_personas_de_administracion');
+    if (error) { console.error('bolsas: fetchPersonasDeAdministracion failed:', error.message); return []; }
+    await signPhotosDeep(data || []);
+    return data || [];
 }
 
 /**

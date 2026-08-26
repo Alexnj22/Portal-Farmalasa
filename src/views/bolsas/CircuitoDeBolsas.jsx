@@ -2192,7 +2192,7 @@ export default function CircuitoDeBolsas({
                 <div data-surface="card" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-3">
                     <div>
                         <div className="text-micro font-black uppercase tracking-widest text-content-3">
-                            Contado y sin llevar al banco
+                            Contado y sin cerrar
                         </div>
                         {verMontos ? (
                             <div className="text-display font-black tabular-nums text-content leading-none mt-1">
@@ -2207,9 +2207,15 @@ export default function CircuitoDeBolsas({
                             en {porDepositar.length} {porDepositar.length === 1 ? 'bolsa' : 'bolsas'}
                         </div>
                     </div>
+                    {/* «Finalizar» y no «Depósito al banco»: desde el
+                        2026-08-26 el efectivo contado tiene DOS salidas —al
+                        banco, o entregado en mano a administración— y el botón
+                        que nombra una sola de ellas es el que dejaba una bolsa
+                        atrapada en «pendiente» cuando alguien ya se había
+                        llevado el dinero. */}
                     <Button variant="primary" size="sm" icon={Landmark}
                         onClick={() => setDepositando(true)}>
-                        Depósito al banco
+                        Finalizar el efectivo
                     </Button>
                 </div>
             )}

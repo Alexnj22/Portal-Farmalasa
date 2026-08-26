@@ -44,9 +44,10 @@ const COLUMNAS = [
     // el estado de cuenta. Los días van en `Días`, que es un RANGO derivado de
     // las bolsas que quedaron adentro.
     { key: 'dias', label: 'Días', hideBelow: 'md' },
-    // El banco. Los depósitos anteriores al 2026-08-26 se cerraron sin
-    // registrarlo, así que su celda dice «—» y no miente con un nombre.
-    { key: 'banco', label: 'Banco', hideBelow: 'lg' },
+    // A dónde fue: el banco, o la persona a la que se le entregó en mano.
+    // Los depósitos anteriores al 2026-08-26 se cerraron sin registrar el
+    // banco, así que su celda dice «—» y no miente con un nombre.
+    { key: 'banco', label: 'A dónde', hideBelow: 'lg' },
     { key: 'total_contado', label: 'Contado', align: 'right', hideBelow: 'sm' },
     { key: 'monto_deposito', label: 'Al banco', align: 'right' },
     { key: 'remanente', label: 'Remanente', align: 'right' },
@@ -91,8 +92,12 @@ function Detalle({ deposito, nombreSala, onClose }) {
                         </div>
                     )}
                     <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span className="min-w-0">Al banco{d.banco ? ` · ${d.banco}` : ''}</span>
-                        <span className="shrink-0">− {formatMoney(d.monto_deposito)}</span>
+                        <span className="min-w-0">
+                            {d.destino === 'EFECTIVO'
+                                ? `En efectivo${d.entregado_a ? ` · ${d.entregado_a}` : ''}`
+                                : `Al banco${d.banco ? ` · ${d.banco}` : ''}`}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap">{`− ${formatMoney(d.monto_deposito)}`}</span>
                     </div>
                     <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
                         <span className="text-subtitle font-bold text-content">Remanente</span>
@@ -106,6 +111,13 @@ function Detalle({ deposito, nombreSala, onClose }) {
                     <p className="text-caption text-content-2">
                         <span className="font-bold text-content">De dónde salió lo que entró: </span>
                         {d.aporte_nota}
+                    </p>
+                )}
+
+                {d.destino === 'EFECTIVO' && d.entregado_a && (
+                    <p className="text-caption text-content-2">
+                        <span className="font-bold text-content">Se le entregó en mano a: </span>
+                        {d.entregado_a}.
                     </p>
                 )}
 
@@ -255,7 +267,11 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                             </span>
                         </DataCell>
                         <DataCell hideBelow="lg">
-                            {d.banco
+                            {d.destino === 'EFECTIVO' ? (
+                                <span className="text-caption text-content-2">
+                                    En mano{d.entregado_a ? ` · ${d.entregado_a}` : ''}
+                                </span>
+                            ) : d.banco
                                 ? <span className="text-caption text-content-2">{d.banco}</span>
                                 : <span className="text-content-3">—</span>}
                         </DataCell>

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.796.0 — El efectivo contado se finaliza al banco o en mano
+
+> «esa bolsa que está pendiente de depósito, fue un dinero que se agarró. que en
+> vez de que sí o sí sea depósito, diga finalizar o algo, y pregunte si es
+> depósito, o entrega en efectivo y a quién (que sólo salga admin).»
+
+El circuito tenía UNA salida —el banco— y por eso una bolsa cuyo efectivo se
+entregó en mano se quedaba para siempre en «pendiente de depósito»: la única
+forma de sacarla de ahí era registrar un depósito que nunca ocurrió. **Un
+pendiente que no se puede cerrar con la verdad enseña a cerrarlo con mentira.**
+
+El botón dice **«Finalizar el efectivo»** y lo primero que pregunta es a dónde
+va, porque eso cambia todo lo de abajo: al banco pide banco y quién lo lleva; en
+efectivo pide a quién se le entrega. La tarjeta dejó de decir «Contado y sin
+llevar al banco» — ahora es «Contado y sin cerrar», que es lo que de verdad
+significa.
+
+**La lista de a quién se le entrega sale del servidor.** «Admin» no es el rol
+`Administrador`: es un área de cuatro cargos —Gerente General, Administrador,
+Jefe/a de Talento Humano y Supervisor/a de Ventas— y el usuario ya tuvo que
+corregirlo una vez. `cargos_de_administracion()` lo dice UNA vez y la usan el
+selector y la validación del cierre; escrita dos veces, un día el selector
+ofrece a alguien que el servidor rechaza, o al revés.
+
+**El monto cero se acepta en una entrega en mano y no en un depósito.** Es
+exactamente el caso que originó el pedido: una bolsa con $0.00 contados porque
+el efectivo se retiró en la sala antes de llegar a administración. Cerrarla es
+decir la verdad; un depósito de $0 al banco no es ningún hecho.
+
+El archivo de depósitos ahora dice **a dónde fue** cada uno —el banco, o la
+persona que lo recibió en mano— y el aviso al Gerente General cambia de título
+según el caso.
+
 ## v2.795.0 — no se ajusta el inventario de una sala que está contando
 
 Pedido del usuario:

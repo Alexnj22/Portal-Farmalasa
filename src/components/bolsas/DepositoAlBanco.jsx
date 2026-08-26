@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Banknote, Building2, Landmark } from 'lucide-react';
+import { AlertTriangle, Banknote, Building2, HandCoins, Landmark } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { fetchBancos, registrarDeposito } from '../../data/bolsas';
+import SegmentedControl from '../common/SegmentedControl';
+import { fetchBancos, fetchPersonasDeAdministracion, registrarDeposito } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
@@ -39,6 +40,23 @@ import { useToastStore } from '../../store/toastStore';
  * Cambiar $300 de moneda por $300 en billete no mueve ningún total. Preguntarlo
  * sería un campo que no cambia ninguna cuenta.
  *
+ * ── Tiene DOS salidas, y por eso se llama «Finalizar» ─────────────────────
+ * «esa bolsa que está pendiente de depósito, fue un dinero que se agarró. que
+ * en vez de que sí o sí sea depósito, diga finalizar o algo, y pregunte si es
+ * depósito, o entrega en efectivo y a quién (que sólo salga admin)» (usuario,
+ * 2026-08-26).
+ *
+ * El circuito tenía UNA salida —el banco— y por eso una bolsa cuyo efectivo se
+ * entregó en mano se quedaba para siempre en «pendiente de depósito»: la única
+ * forma de sacarla de ahí era registrar un depósito que nunca ocurrió. Un
+ * pendiente que no se puede cerrar con la verdad enseña a cerrarlo con mentira.
+ *
+ * La lista de a quién se le entrega sale del SERVIDOR
+ * (`get_personas_de_administracion`) y no de un filtro escrito acá: «admin» no
+ * es el rol `Administrador` sino un área de cuatro cargos, y escribir esa lista
+ * dos veces es cómo el selector termina ofreciendo a alguien que el servidor
+ * rechaza.
+ *
  * ── El aviso al Gerente General lo manda la BASE ───────────────────────────
  * «al darle en depositar al banco, que llegue una notificación al gerente
  * general con: el monto a depositar, quien y a que banco. el remanente que le
@@ -53,6 +71,12 @@ import { useToastStore } from '../../store/toastStore';
 export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
 
+    /* Arranca en BANCO porque es el caso normal: la entrega en mano es la
+     * excepción del día que alguien retiró el efectivo antes de que llegara. */
+    const [destino, setDestino] = useState('BANCO');
+    const alBanco = destino === 'BANCO';
+    const [entregadoA, setEntregadoA] = useState('');
+    const [admins, setAdmins] = useState([]);
     const [monto, setMonto] = useState('');
     const [banco, setBanco] = useState('');
     const [bancos, setBancos] = useState([]);
@@ -69,6 +93,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
         if (!abierto) return;
         let vivo = true;
         fetchBancos().then((filas) => { if (vivo) setBancos(filas); });
+        fetchPersonasDeAdministracion().then((filas) => { if (vivo) setAdmins(filas); });
         return () => { vivo = false; };
     }, [abierto]);
 
@@ -94,15 +119,19 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
             aporte: nAporte,
             aporteNota: aporteNota.trim() || null,
             nota: nota.trim() || null,
-            llevadoPor: llevadoPor || null,
+            llevadoPor: alBanco ? (llevadoPor || null) : null,
+            destino,
+            entregadoA: alBanco ? null : (entregadoA || null),
         });
         setGuardando(false);
-        if (err) { setError(mensajeAmigable(err, 'No se pudo cerrar el depósito.')); return; }
-        showToast('Depósito cerrado',
-            `${data?.folio} · ${formatMoney(data?.monto_deposito)} al banco`, 'success');
+        if (err) { setError(mensajeAmigable(err, 'No se pudo cerrar el efectivo.')); return; }
+        showToast(alBanco ? 'Depósito cerrado' : 'Efectivo entregado',
+            `${data?.folio} · ${formatMoney(data?.monto_deposito)} ${alBanco ? 'al banco' : 'en mano'}`,
+            'success');
         onHecho?.(data);
         onClose?.();
-    }, [bolsas, nMonto, banco, nAporte, aporteNota, llevadoPor, nota, showToast, onHecho, onClose]);
+    }, [bolsas, nMonto, banco, nAporte, aporteNota, llevadoPor, nota, destino, entregadoA,
+        alBanco, showToast, onHecho, onClose]);
 
     /* El rótulo que se muestra ES el de la fila, y lo que se guarda es su id.
      * Así el banco elegido coincide con la base por construcción — la regla
@@ -115,6 +144,15 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
     /* La lista de quién LLEVA el efectivo al banco sale del maestro de personal,
      * no de un texto escrito acá — un rótulo escrito a mano se desincroniza del
      * registro en cuanto alguien cambia de nombre. */
+    /* A quién se le entrega el efectivo en mano. Sale del servidor ya filtrado
+     * por los cuatro cargos de administración, así que acá no hay ninguna regla
+     * que pueda quedar desincronizada con la que valida el cierre. El cargo va
+     * de subtexto: con cuatro nombres, saber cuál es el Gerente General es
+     * justamente lo que se está por decidir. */
+    const opcionesAdmin = useMemo(() => (admins || []).map((p) => ({
+        value: String(p.id), label: p.name, sublabel: p.cargo,
+    })), [admins]);
+
     const gente = useMemo(() => [...(personas || [])]
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'))
         .map((p) => ({ value: String(p.id), label: p.name })), [personas]);
@@ -148,9 +186,9 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
             maxWidth="max-w-lg" className="h-fit" ariaLabel="Depósito al banco">
             <LiquidModal.Header>
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Depósito al banco</h3>
+                    <h3 className="text-body font-bold text-content">Finalizar el efectivo</h3>
                     <p className="text-caption text-content-3">
-                        {bolsas.length} {bolsas.length === 1 ? 'bolsa contada' : 'bolsas contadas'} · lo que no vaya queda como remanente
+                        {bolsas.length} {bolsas.length === 1 ? 'bolsa contada' : 'bolsas contadas'} · lo que no salga queda como remanente
                     </p>
                 </div>
             </LiquidModal.Header>
@@ -169,10 +207,28 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                     </div>
                 </div>
 
+                {/* La PRIMERA pregunta, porque cambia todas las de abajo: un
+                    depósito pide banco y quién lo lleva; una entrega en mano
+                    pide a quién. Preguntarlo después obligaría a volver a
+                    revisar lo ya escrito. */}
+                <div className="space-y-1.5">
+                    <label className="text-caption font-bold text-content-2">A dónde va</label>
+                    <SegmentedControl
+                        size="sm"
+                        value={destino}
+                        onChange={setDestino}
+                        label="A dónde va el efectivo"
+                        options={[
+                            { value: 'BANCO', label: 'Al banco', icon: Landmark },
+                            { value: 'EFECTIVO', label: 'En efectivo', icon: HandCoins },
+                        ]}
+                    />
+                </div>
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                         <label htmlFor="dep-monto" className="text-caption font-bold text-content-2">
-                            Cuánto va al banco
+                            {alBanco ? 'Cuánto va al banco' : 'Cuánto se entrega'}
                         </label>
                         <PortalInput
                             id="dep-monto" name="dep-monto"
@@ -188,16 +244,33 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                         ningún estado de cuenta, que es lo único para lo que
                         este registro existe. Y es el dato que le falta al
                         aviso que sale hacia el Gerente General al cerrar. */}
-                    <div className="space-y-1.5">
-                        <label className="text-caption font-bold text-content-2">
-                            A qué banco
-                        </label>
-                        <LiquidSelect
-                            value={banco} onChange={setBanco}
-                            options={opcionesBanco} placeholder="Elige el banco…"
-                            icon={Building2}
-                        />
-                    </div>
+                    {alBanco ? (
+                        <div className="space-y-1.5">
+                            <label className="text-caption font-bold text-content-2">
+                                A qué banco
+                            </label>
+                            <LiquidSelect
+                                value={banco} onChange={setBanco}
+                                options={opcionesBanco} placeholder="Elige el banco…"
+                                icon={Building2}
+                            />
+                        </div>
+                    ) : (
+                        /* Sólo administración, y la lista la decide el servidor.
+                           Efectivo que cambia de manos sin decir a las de quién
+                           es exactamente lo que este circuito existe para
+                           evitar. */
+                        <div className="space-y-1.5">
+                            <label className="text-caption font-bold text-content-2">
+                                A quién se le entrega
+                            </label>
+                            <LiquidSelect
+                                value={entregadoA} onChange={setEntregadoA}
+                                options={opcionesAdmin} placeholder="Elige a quién…"
+                                icon={HandCoins}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* El aporte es la excepción: sólo aparece si hace falta llevar
@@ -243,7 +316,8 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                         </div>
                     )}
                     <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>Al banco</span><span>− {formatMoney(nMonto)}</span>
+                        <span>{alBanco ? 'Al banco' : 'En efectivo'}</span>
+                        <span className="whitespace-nowrap">{`− ${formatMoney(nMonto)}`}</span>
                     </div>
                     <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
                         <span className="text-subtitle font-bold text-content">Remanente</span>
@@ -264,17 +338,22 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                     persona que agarra el dinero y sale a la calle. Ese tramo no
                     lo cubría ningún registro, y es el único en que el efectivo
                     está fuera de las dos puntas. */}
-                <div className="space-y-1.5">
-                    <label className="text-caption font-bold text-content-2">
-                        Quién lo lleva al banco
-                        <span className="font-normal text-content-3"> (opcional)</span>
-                    </label>
-                    <LiquidSelect
-                        value={llevadoPor} onChange={setLlevadoPor}
-                        options={gente} placeholder="Elige a quién…"
-                        icon={Landmark} clearable
-                    />
-                </div>
+                {/* Sólo tiene sentido yendo al banco: es el tramo en que el
+                    efectivo está en la calle, fuera de las dos puntas. En una
+                    entrega en mano quien lo recibe YA es el destino. */}
+                {alBanco && (
+                    <div className="space-y-1.5">
+                        <label className="text-caption font-bold text-content-2">
+                            Quién lo lleva al banco
+                            <span className="font-normal text-content-3"> (opcional)</span>
+                        </label>
+                        <LiquidSelect
+                            value={llevadoPor} onChange={setLlevadoPor}
+                            options={gente} placeholder="Elige a quién…"
+                            icon={Landmark} clearable
+                        />
+                    </div>
+                )}
 
                 {/* El remanente NO se elige: siempre es del Gerente General
                     («el remanente siempre es a Gerente General. así que no debe
@@ -319,10 +398,16 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
 
             <LiquidModal.Footer>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                <Button variant="primary" icon={Landmark} loading={guardando}
-                    disabled={nMonto <= 0 || !banco || noAlcanza || faltaNota}
+                {/* El monto CERO se acepta en una entrega en mano y no en un
+                    depósito: es el caso de la bolsa cuyo efectivo se retiró
+                    antes de llegar a administración, que hay que poder cerrar
+                    diciendo la verdad. Un depósito de $0 al banco no es ningún
+                    hecho. El servidor pone la misma regla. */}
+                <Button variant="primary" icon={alBanco ? Landmark : HandCoins} loading={guardando}
+                    disabled={noAlcanza || faltaNota || nMonto < 0
+                        || (alBanco ? (nMonto <= 0 || !banco) : !entregadoA)}
                     onClick={cerrar}>
-                    Cerrar el depósito
+                    {alBanco ? 'Cerrar el depósito' : 'Registrar la entrega'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

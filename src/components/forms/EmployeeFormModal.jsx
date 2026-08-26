@@ -513,21 +513,38 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * se puede borrar. Tres pantallas con tres listas propias dirían cosas
      * distintas de la misma persona.
      */
-    const pendingItems = useMemo(() => {
-        const items = faltantesDelExpediente(formData)
-            .map(f => (f.art ? `${f.label} (Art. ${f.art})` : f.label));
+    /* ── Lo que falta, sin el testamento ────────────────────────────────────
+     *
+     * Primera versión: los 23 faltantes en una sola línea, cada uno con su
+     * «(Art. 23 nº1)» al lado. El usuario lo cortó de raíz —«ese testamento es
+     * necesario? es too much»— y tenía razón dos veces:
+     *
+     *  1. En una ficha EN BLANCO no informa nada. Todo está pendiente porque
+     *     todavía no se escribió nada: el formulario vacío YA es la lista, y
+     *     repetirla arriba es ruido que se aprende a saltear. Por eso ahora no
+     *     aparece hasta que la ficha tiene nombre — a partir de ahí un campo
+     *     que falta sí se puede pasar por alto, que es cuando el aviso sirve.
+     *
+     *  2. El número de artículo es jerga de adentro. Es la misma regla que rige
+     *     todo el resto del portal (no se nombra el ERP, no se dice «sync»): el
+     *     artículo le importa a quien escribe el código, no a quien completa la
+     *     ficha. Sigue estando, pero en el `title` de cada uno — a mano para
+     *     quien lo necesite, fuera de la vista de quien no.
+     */
+    const pendientes = useMemo(() => faltantesDelExpediente(formData), [formData]);
 
-        // Los vencimientos son otra cosa: no es que falte el dato, es que el
-        // dato dice que el papel ya no sirve. RTS 11.02.04:24 §6.3.1 exige
-        // acreditación vigente para TODO el personal, no sólo Regente o
-        // Enfermería.
-        getExpiringDocuments(formData?.employee_documents || []).forEach(doc => {
-            items.push(doc.daysLeft < 0
+    const vencimientos = useMemo(
+        () => getExpiringDocuments(formData?.employee_documents || []).map(doc => ({
+            campo: `venc_${doc.category}`,
+            label: doc.daysLeft < 0
                 ? `${doc.title || doc.category}: vencido`
-                : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`);
-        });
-        return items;
-    }, [formData]);
+                : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`,
+        })),
+        [formData?.employee_documents]);
+
+    // Antes del nombre no hay ficha que esté «incompleta»: hay una ficha que no
+    // empezó.
+    const fichaEmpezada = !!formData?.first_names?.trim() || !!formData?.last_names?.trim();
 
     // Distritos del municipio elegido. Si el municipio cambia, el distrito que
     // había deja de pertenecerle — se limpia en `handleSelectChange`, no acá:
@@ -888,7 +905,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // La edad se calcula acá dentro y no se toma de `isMinor`: esa
         // constante se declara 200 líneas más abajo, y un `useMemo` corre su
         // callback durante ESTE render — leerla desde acá es un ReferenceError
-        // por zona muerta temporal, no un `undefined` benigno. `pendingItems`
+        // por zona muerta temporal, no un `undefined` benigno. `pendientes`
         // hace lo mismo por el mismo motivo.
         ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)' }] : []),
     ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
@@ -903,6 +920,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // es como llega la mayoría; el modo lo elige quien carga, no se adivina por
     // el tipo de archivo — un JPG puede traer las dos caras en una foto y un PDF
     // puede traer una sola.
+    const [verPendientes, setVerPendientes] = useState(false);
     const [duiEnUnArchivo, setDuiEnUnArchivo] = useState(false);
     const [duiLeido, setDuiLeido] = useState(null);
     const [leyendoDui, setLeyendoDui] = useState(false);
@@ -1404,23 +1422,30 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 </div>
             )}
 
-            {/* LO QUE FALTA — también al dar de alta.
-                Desde que la ficha se guarda con sólo el nombre, éste es el único
-                lugar donde se ve que el expediente está a medias. En ámbar y no
-                en rojo a propósito: rojo dice «está mal» y esto dice «falta», y
-                el día que alguien entra falta casi todo — eso es lo normal, no
-                un error. */}
-            {pendingItems.length > 0 && (
-                <div className="mb-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
-                    <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <div className="min-w-0">
-                        <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">
-                            Expediente incompleto — {pendingItems.length} pendiente{pendingItems.length === 1 ? '' : 's'}
+            {/* Contado y plegado, no enumerado. Ver el comentario de `pendientes`. */}
+            {fichaEmpezada && (pendientes.length + vencimientos.length) > 0 && (
+                <div className="mb-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl shadow-sm animate-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle size={16} className="text-warning shrink-0" strokeWidth={2.5} />
+                        <p className="text-label text-warning-text font-medium leading-tight flex-1 min-w-0">
+                            <span className="font-black">{pendientes.length + vencimientos.length} pendiente{(pendientes.length + vencimientos.length) === 1 ? '' : 's'}</span>
+                            {' '}en el expediente. Se puede guardar así y completarlo después.
                         </p>
-                        <p className="text-label text-warning-text font-medium leading-tight">
-                            Se puede guardar así y completarlo después: <span className="font-black">{pendingItems.join(' • ')}</span>
-                        </p>
+                        <Button variant="ghost" size="sm" onClick={() => setVerPendientes(v => !v)}>
+                            {verPendientes ? 'Ocultar' : 'Ver cuáles'}
+                        </Button>
                     </div>
+                    {verPendientes && (
+                        <ul className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in">
+                            {[...pendientes, ...vencimientos].map(f => (
+                                <li key={f.campo}
+                                    title={f.art ? `Código de Trabajo, Art. ${f.art}` : undefined}
+                                    className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
+                                    {f.label}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
 

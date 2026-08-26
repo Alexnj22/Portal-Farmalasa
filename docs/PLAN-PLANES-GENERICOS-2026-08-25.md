@@ -536,3 +536,92 @@ bache. Eso encaja con todo lo observado — los 522 a los 90 s, las conexiones
 agotadas y el corte de tráfico— y no fue algo que hiciéramos nosotros. Truco que
 vale para la próxima: **`stats_reset` es un detector de reinicios**, y cuesta una
 consulta.
+
+---
+
+## 7 · Los tres anotados, auditados (2026-08-26)
+
+Las tres cosas que la auditoría dejó fuera de alcance, medidas. **Dos eran
+reales, una no.**
+
+### 7.1 · Los libros de compras — **corregido, 2.4×** ✅
+
+El culpable era uno y se lleva el 96% del trabajo: un `Seq Scan` de
+`purchase_dte_documents` **ejecutado 467 veces**, una por compra, que consumía
+**142,815 de los 148,530 buffers**. La tabla tiene 1,920 filas — eran ~900,000
+visitas para resolver 699 renglones.
+
+**El índice único sobre `codigo_generacion` existía y no servía**: la consulta lo
+envuelve en `left(upper(...), 20)`, una función sobre la columna indexada.
+
+Cuatro índices de expresión —uno por cada forma que la consulta compara— en
+`20260826162414`, v2.770.1. Confirmado en producción con **las mismas filas**
+(699, 873, 1968):
+
+| | antes | ahora | |
+|---|---:|---:|---|
+| libro completo, un mes | 1,598 ms | **660 ms** | 2.4× |
+| libro declarable, un mes | 1,931 ms | **983 ms** | 2.0× |
+| libro completo, cuatro meses | 5,742 ms | **2,542 ms** | 2.3× |
+
+Pesan **376 kB** entre los cuatro. **No necesitó la verificación columna por
+columna** que exige la regla del libro, porque un índice no puede cambiar el
+resultado — sólo el camino. Ésa fue la razón para empezar por acá.
+
+**Queda el resto de la ganancia, y es una reescritura.** El `OR` entre la rama
+del sello y la de los tres códigos impide un plan estable: con los índices
+puestos, el planificador **todavía elige el barrido** en algunas formas de la
+consulta. Normalizar los documentos UNA vez y cruzarlos por hash midió
+**671 → 457 ms** sobre el paso de emparejado. Eso sí cambia el cuerpo, así que
+antes hay que comparar todas las columnas del reporte.
+
+### 7.2 · El payload de Ventas — **no era el problema** ❌
+
+Los 1,77 MB asustan y no cuestan lo que parece:
+
+| | |
+|---|---:|
+| crudo | 1,736 kB |
+| **comprimido** | **287 kB** (6,1×, y con gzip real es menos) |
+| armar el JSON | **24 ms** de 423 |
+| la consulta de fondo | **399 ms** |
+
+O sea que el tamaño **no es el costo**: el costo es agregar un mes de ventas
+sobre 2,495 productos, y eso son 399 ms razonables. Además el frente lo cachea
+en `localStorage` con TTL, así que no se pide en cada carga.
+
+Y los dos campos más pesados **se usan**: `ultima_venta_por_suc` (30%) alimenta
+el detalle de fila y la pantalla Sin Venta; `presentaciones` (16%) alimenta el
+buscador. No hay campo obvio que sacar.
+
+**Conclusión: no se toca.** Es el mismo error que este plan viene corrigiendo
+—un número grande que no es el número que importa—, sólo que en bytes en vez de
+milisegundos.
+
+### 7.3 · `empleados_en_turno` — **la función está bien, faltan los datos** ⚠️
+
+Devolvía 0 filas incluso en la sala con más gente. No es un defecto de la
+función: la semana cuadra (lunes), las claves del día cuadran (domingo = 0, igual
+que `extract(dow)`), y el cruce es correcto.
+
+**Lo que faltaba eran los horarios.** Medido: **47 empleados activos y sólo 8 con
+horario**, y cuatro salas —Salud 4, La Popular, Salud 5, Administración, 22
+personas— **sin uno solo**.
+
+Y no era un olvido de esa semana: **los mismos 8 empleados y las mismas 4 salas,
+idéntico todas las semanas desde el 6 de julio**. Era un piloto que nunca se
+amplió.
+
+⚠️ **Trampa de medición que casi me como:** la primera consulta agrupaba con
+`count(*)` después de un `LEFT JOIN` a los horarios, así que contaba **pares
+empleado×horario**, no empleados — y daba «Salud 3: 70 activos» donde hay 5. Con
+`count(distinct e.id)` salieron los números de arriba. Es la misma familia que
+todo lo demás de este plan: el instrumento contesta, pero no lo que se le
+preguntó.
+
+**Cerrado por decisión del usuario el 26-ago:** se borraron los datos —111
+horarios, 444 marcaciones y las 14 filas del catálogo de turnos— porque el módulo
+todavía no arranca desde el portal. Los cuatro crons quedan **activos** a pedido,
+porque posiblemente arranque la semana siguiente. Dato que confirma que no había
+uso real: **ninguna de las 444 marcaciones tenía hora de entrada** —
+`actual_start_time` estaba en NULL en las 444.

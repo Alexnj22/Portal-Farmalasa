@@ -4,6 +4,7 @@ import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
 import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
+import { acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS } from '../../utils/acreditaciones';
 import { estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
@@ -417,6 +418,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 chronic_conditions: [], has_disability: false, disability_type: '', disability_grade: '', disability_has_certification: false,
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
                 nursing_license_number: '', pharmacist_license_number: '',
+                medico_license_number: '', contador_license_number: '',
+                tiene_acreditacion_dependiente: false,
                 employee_documents: [],
                 department: '', municipality: '', distrito: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -826,10 +829,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isPharmacistRegentRole = /regente/i.test(selectedRoleName) && !/enfermer/i.test(selectedRoleName);
     const isPharmacistProfession = /qu[ií]mic.*farmac|farmac.*qu[ií]mic/i.test(formData.profession || '');
     const isPharmacistRegent = isPharmacistRegentRole || isPharmacistProfession || !!formData.has_srs_accreditation;
+    // Las juntas que le corresponden por cargo y profesión, y qué queda
+    // pendiente con el ISSS y la AFP. Los dos salen de `utils/acreditaciones.js`
+    // para que la pantalla y el banner de pendientes no puedan discrepar.
+    const acreditacionesQueAplican = useMemo(
+        () => acreditacionesDe({ cargo: selectedRoleName, profesion: formData?.profession }),
+        [selectedRoleName, formData?.profession]);
+    const pendientesDePrevision = useMemo(
+        () => pendientesPrevisionales(formData),
+        [formData]);
+
     const esMenorParaDocumentos = (() => {
         const edad = calcAge(formData?.birth_date);
         return edad !== null && edad < MINOR_AGE;
     })();
+    // Se suben en la sección Acreditaciones, no en Documentación: ahí el
+    // archivo es el que trae el número y el vencimiento.
+    const EN_ACREDITACIONES = ['SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
     const documentCategories = useMemo(() => [
         ...FIXED_DOCUMENT_CATEGORIES,
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
@@ -838,6 +854,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...(isPharmacistRegent ? [{ key: 'ANUALIDAD_JVPQF', label: 'Anualidad JVPQF — solvencia del año en curso' }] : []),
         ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: 'Contrato de Regencia' }] : []),
         ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE' }] : []),
+        ...(acreditacionesQueAplican.some(a => a.id === 'MEDICO') ? [{ key: 'MEDICO', label: 'Carné médico — JVPM' }] : []),
+        ...(acreditacionesQueAplican.some(a => a.id === 'CONTADURIA') ? [{ key: 'CONTADURIA', label: 'Acreditación de Contaduría — CVPCPA' }] : []),
+        ...(formData.tiene_acreditacion_dependiente ? [{ key: 'DEPENDIENTE_FARMACIA', label: 'Acreditación de dependiente de farmacia — CSSP' }] : []),
         ...(isNursing ? [{ key: 'ANUALIDAD_JVPE', label: 'Anualidad JVPE — solvencia del año en curso' }] : []),
         ...(formData.disability_has_certification ? [{ key: 'CERTIFICACION_DISCAPACIDAD', label: 'Certificación de Discapacidad — ISRI / CONAIPD' }] : []),
         // Art. 117 CT: el examen médico previo de un menor no es una buena
@@ -853,7 +872,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // por zona muerta temporal, no un `undefined` benigno. `pendingItems`
         // hace lo mismo por el mismo motivo.
         ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)' }] : []),
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos]);
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -2029,7 +2048,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-shine)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Vehículo y Acreditaciones</h4>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Vehículos y licencias</h4>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2053,15 +2072,120 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 onChange={(v) => handleSelectChange('has_car_license', v)}
                                 label={<><Car size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Automóvil</span></>}
                             />
-                                <Checkbox
-                                checked={!!formData.has_srs_accreditation}
-                                onChange={(v) => handleSelectChange('has_srs_accreditation', v)}
-                                label={<><ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span></>}
-                            />
                             </div>
-                            {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
-                                <p className="text-micro text-chart-9-text font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
+                            {(formData.has_motorcycle_license || formData.has_car_license) && (
+                                <p className="text-micro text-content-3 font-bold mt-2 ml-1">La licencia se sube en la pestaña Documentos.</p>
                             )}
+                        </div>
+
+                        {/* ── ACREDITACIONES ────────────────────────────────────────
+                            Pedido de Talento Humano: sacarlas de «Vehículos» y darles su
+                            propia sección, con la acreditación que corresponde a la
+                            profesión, la de dependiente de farmacia, y si ya tiene ISSS y
+                            AFP.
+
+                            Las tres juntas de salud son del Consejo Superior de Salud
+                            Pública; contaduría NO —es el CVPCPA, otro organismo—, y por eso
+                            cada una dice el suyo. Meterlas todas bajo «CSSP» mandaría a
+                            quien vaya a verificar la cuarta al lugar equivocado.
+
+                            Se DETECTAN por cargo y profesión, que ya están escritos: volver
+                            a preguntar «¿es enfermero?» es pedir que alguien acierte algo
+                            que el portal sabe. Lo que sí se pregunta es si la TIENE. */}
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                    <ShieldCheck size={16} strokeWidth={2.5} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Acreditaciones</h4>
+                                    <p className="text-label font-medium text-content-3 leading-snug mt-0.5">
+                                        El comprobante se sube aquí: de él salen el número y el vencimiento.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {acreditacionesQueAplican.length === 0 && !formData.tiene_acreditacion_dependiente && (
+                                <p className="text-label text-content-3 font-medium mb-4">
+                                    Por el cargo y la profesión de esta persona no corresponde ninguna junta profesional.
+                                    Si tiene la acreditación de dependiente de farmacia, márcala abajo.
+                                </p>
+                            )}
+
+                            <div className="flex flex-col gap-3">
+                                {acreditacionesQueAplican.map(a => (
+                                    <div key={a.id} data-surface="card" className="p-3">
+                                        <div className="flex items-center justify-between gap-3 mb-2">
+                                            <div className="min-w-0">
+                                                <p className="text-label font-black text-content uppercase tracking-wide">{a.label}</p>
+                                                <p className="text-micro text-content-3 font-medium leading-snug">{a.organismo}</p>
+                                            </div>
+                                            {!formData[a.campo] && <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                                            <PortalInput
+                                                aria-label={`Número de ${a.junta}`} compact icon={Hash}
+                                                value={formData[a.campo] || ''}
+                                                onChange={(e) => handleSelectChange(a.campo, e.target.value)}
+                                                placeholder={`N° ${a.junta}`} />
+                                            {renderDocUploadArea(a.doc)}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* La acreditación de dependiente de farmacia es del CSSP y
+                                    tiene trámite de REacreditación — o sea que vence, y por
+                                    eso el comprobante lleva fecha. No depende de la
+                                    profesión: la tiene quien atiende el mostrador. */}
+                                <div data-surface="card" className="p-3">
+                                    <Checkbox
+                                        checked={!!formData.tiene_acreditacion_dependiente}
+                                        onChange={(v) => handleSelectChange('tiene_acreditacion_dependiente', v)}
+                                        label={<><ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Acreditación de dependiente de farmacia</span></>}
+                                    />
+                                    {formData.tiene_acreditacion_dependiente && (
+                                        <div className="mt-3 animate-in fade-in zoom-in-95">
+                                            <p className="text-micro text-content-3 font-medium mb-2 leading-snug">
+                                                La otorga el Consejo Superior de Salud Pública y se renueva: el comprobante lleva su vencimiento.
+                                            </p>
+                                            {renderDocUploadArea('DEPENDIENTE_FARMACIA')}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* ── ISSS Y AFP ────────────────────────────────────────
+                                No se tramitan igual, y confundirlos hace que el portal le
+                                pida a alguien un trámite que no puede hacer: al ISSS lo
+                                inscribe el PATRONO; la AFP la elige el TRABAJADOR y sólo él
+                                puede afiliarse. Por eso cada uno dice de quién es el
+                                pendiente. */}
+                            <div className="mt-4 pt-4 border-t border-divider">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3">ISSS y AFP</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene ISSS?</label>
+                                        <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
+                                    </div>
+                                    <div className="relative z-content">
+                                        <label className="text-caption fontetc-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene AFP?</label>
+                                        <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
+                                    </div>
+                                </div>
+                                {pendientesDePrevision.length > 0 && (
+                                    <div className="mt-3 flex flex-col gap-2">
+                                        {pendientesDePrevision.map(t => (
+                                            <Notice key={t.clave} variant={t.estado === 'SIN_PREGUNTAR' ? 'info' : 'warning'} icon={AlertCircle}>
+                                                <span className="font-black">{t.label}:</span>{' '}
+                                                {t.estado === 'SIN_PREGUNTAR'
+                                                    ? 'Todavía no se preguntó.'
+                                                    : t.estado === 'EN_TRAMITE' ? 'En trámite.' : 'No tiene.'}{' '}
+                                                {t.orientacion}
+                                            </Notice>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
@@ -2852,7 +2976,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {documentCategories.map(cat => (
+                                {documentCategories.filter(cat => !EN_ACREDITACIONES.includes(cat.key)).map(cat => (
                                     <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 block">{cat.label}</label>
                                         {cat.key === 'SRS' && (

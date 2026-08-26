@@ -673,6 +673,14 @@ export const createEmployeeSlice = (set, get) => ({
                 has_srs_accreditation: !!formData.has_srs_accreditation,
                 srs_accreditation_expiry: formData.has_srs_accreditation ? (formData.srs_accreditation_expiry || null) : null,
                 nursing_license_number: formData.nursing_license_number || null,
+                // Las otras dos juntas. Médica y enfermería son del Consejo
+                // Superior de Salud Pública; contaduría NO —es el CVPCPA— y por
+                // eso son columnas separadas y no un «número de junta».
+                medico_license_number: formData.medico_license_number || null,
+                contador_license_number: formData.contador_license_number || null,
+                // Acreditación de dependiente de farmacia (CSSP). Tiene trámite
+                // de REacreditación: vence, y su comprobante lleva la fecha.
+                tiene_acreditacion_dependiente: !!formData.tiene_acreditacion_dependiente,
                 pharmacist_license_number: formData.pharmacist_license_number || null,
                 hire_date: formData.hire_date || null,
                 afp_number: formData.afp_number || null,
@@ -965,6 +973,9 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.mtps_remitido_fecha !== undefined) dbPayload.mtps_remitido_fecha = updatedData.mtps_remitido_fecha || null;
             if (updatedData.isss_estado !== undefined) dbPayload.isss_estado = updatedData.isss_estado || null;
             if (updatedData.afp_estado !== undefined) dbPayload.afp_estado = updatedData.afp_estado || null;
+            if (updatedData.medico_license_number !== undefined) dbPayload.medico_license_number = updatedData.medico_license_number || null;
+            if (updatedData.contador_license_number !== undefined) dbPayload.contador_license_number = updatedData.contador_license_number || null;
+            if (updatedData.tiene_acreditacion_dependiente !== undefined) dbPayload.tiene_acreditacion_dependiente = !!updatedData.tiene_acreditacion_dependiente;
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
             if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;

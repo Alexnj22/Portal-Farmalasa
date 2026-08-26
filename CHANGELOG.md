@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.792.1 — Un empleado con cargo poderoso sigue siendo un empleado
+
+Reporte del usuario, de una línea: *«yo debo salir. soy empleado»*. Y tenía
+razón: el conteo de Personal decía **45 cuando en planilla hay 46**.
+
+La causa era que `roles.is_su` mezclaba dos cosas distintas:
+
+| | |
+|---|---|
+| «esta cuenta tiene poderes» | `roles.is_su` |
+| «esta ficha no es una persona» | `employees.tipo_ficha` (desde v2.789.0) |
+
+La policy `employees_select` escondía del maestro de personal a **toda** ficha
+cuyo cargo tuviera `is_su`. Para la cuenta técnica es lo que se quiso; el
+problema es que hoy ese flag también lo lleva «Supervisor/a de Ventas», o sea
+una persona real, en planilla, que quedaba invisible en su propio directorio.
+
+**Y ya había costado antes, sin que se viera la causa común.** La ficha «Aprobó»
+de las solicitudes quedaba en «Sin registro» —ni cara ni nombre—, medido el
+2026-08-12 con la sesión de una vendedora: **8 de 8 solicitudes resueltas**,
+porque el aprobador real del portal tiene uno de esos cargos. Se resolvió
+construyendo una RPC `SECURITY DEFINER` y un segundo mapa de personas
+(`personasDeSolicitudes`) para esquivar esta misma policy. Un rodeo entero
+pagado por la fusión de los dos conceptos, y nadie lo había leído como el mismo
+problema.
+
+Ahora se esconde por lo que la ficha **es**, no por lo que su cargo **puede**:
+
+| ficha | antes | ahora |
+|---|---|---|
+| Administrador del Sistema (`is_su` + `tecnica`) | oculta | **oculta** — la intención original se conserva |
+| EDWIN NUÑEZ (`is_su` + `empleado`) | oculta | **visible**: es una persona en planilla |
+| QA Testing (`tecnica`) | visible | visible, y se administra en `/personal?tab=externos` |
+
+Verificado en pantalla contra los datos reales: «Total» pasó de 45 a **46** y la
+ficha aparece en el listado.
+
+El rodeo de `personasDeSolicitudes` **no se quita**: sigue siendo el respaldo
+correcto para cualquier ficha que el RLS esconda, y desarmarlo por este cambio
+dejaría la ficha «Aprobó» a merced de la próxima policy.
+
 ## v2.792.0 — Cómo se paga, el ejemplar del Ministerio, y la recontratación que dejaba un plazo sin justificar
 
 Puntos 11, 8, 9 y 10 de la revisión con Talento Humano, ya en pantalla.

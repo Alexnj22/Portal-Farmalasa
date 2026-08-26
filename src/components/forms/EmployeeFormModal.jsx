@@ -899,6 +899,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // un formulario que se llena y se guarda solo convierte un error de lectura
     // en un dato del expediente, y después nadie sabe si el DUI dice eso o si
     // lo dijo el modelo.
+    // Un solo archivo con las dos caras, o dos archivos. Arranca en dos porque
+    // es como llega la mayoría; el modo lo elige quien carga, no se adivina por
+    // el tipo de archivo — un JPG puede traer las dos caras en una foto y un PDF
+    // puede traer una sola.
+    const [duiEnUnArchivo, setDuiEnUnArchivo] = useState(false);
     const [duiLeido, setDuiLeido] = useState(null);
     const [leyendoDui, setLeyendoDui] = useState(false);
 
@@ -948,6 +953,29 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             // el modelo puede cruzar que sean del mismo documento, y dos
             // respuestas separadas habría que conciliarlas acá — conciliar es
             // adivinar.
+            if (category === 'DUI_COMPLETO' && stored) {
+                // Un archivo alcanza: `leer-dui` acepta uno o dos.
+                setLeyendoDui(true);
+                try {
+                    const { data, error } = await supabase.functions.invoke('leer-dui', { body: { frente: stored } });
+                    if (error || !data?.ok) {
+                        useToastStore.getState().showToast(
+                            'No se pudo leer el documento',
+                            data?.error === 'NO_ES_DUI'
+                                ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.'
+                                : 'Escribe los datos a mano; el documento quedó guardado.',
+                            'warning');
+                    } else {
+                        setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
+                    }
+                } catch (errLectura) {
+                    console.error('leer-dui:', errLectura);
+                    useToastStore.getState().showToast('No se pudo leer el documento', 'Escribe los datos a mano; el documento quedó guardado.', 'warning');
+                } finally {
+                    setLeyendoDui(false);
+                }
+            }
+
             if (category === 'DUI_FRENTE' || category === 'DUI_REVERSO') {
                 const otra = category === 'DUI_FRENTE' ? 'DUI_REVERSO' : 'DUI_FRENTE';
                 const urlOtra = getDocEntry(otra).url;
@@ -1505,13 +1533,42 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </p>
                                     </div>
                                 </div>
-                                {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
+                                {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (duiEnUnArchivo ? !!getDocEntry('DUI_COMPLETO').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url))) && (
                                     <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>
                                 )}
                             </div>
 
+                            {/* Talento Humano recibe el DUI de las dos formas: dos fotos
+                                sueltas, o un solo PDF con las dos caras adentro. Obligar a
+                                partir el PDF en dos imágenes sería trabajo manual para que el
+                                portal pueda leerlo — al revés de para lo que existe. El
+                                lector acepta uno o dos archivos. */}
+                            {!isMinor && (
+                                <div className="flex items-center gap-1.5 mb-3">
+                                    {[{ v: false, l: 'Frente y reverso' }, { v: true, l: 'Un solo archivo' }].map(op => (
+                                        <button key={String(op.v)} type="button"
+                                            onClick={() => setDuiEnUnArchivo(op.v)}
+                                            aria-pressed={duiEnUnArchivo === op.v}
+                                            className={`min-h-[var(--tap-min)] px-3 rounded-full text-micro font-black uppercase tracking-wide border transition-all active:scale-[0.97] ${
+                                                duiEnUnArchivo === op.v
+                                                    ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
+                                                    : 'bg-surface-card text-content-2 border-border-card hover:border-brand/40'}`}>
+                                            {op.l}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
                             {isMinor ? (
                                 renderDocUploadArea('DOCUMENTO_IDENTIDAD')
+                            ) : duiEnUnArchivo ? (
+                                <div>
+                                    <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                        <span>Documento completo (las dos caras)</span>
+                                        {!getDocEntry('DUI_COMPLETO').url && <span className="text-warning font-black">Pendiente</span>}
+                                    </label>
+                                    {renderDocUploadArea('DUI_COMPLETO')}
+                                </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
@@ -2834,6 +2891,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             Prorrogar
                                         </Button>
                                     </div>
+                                    {/* La ley NO dice cuándo se puede prorrogar y cuándo no:
+                                        no hay ningún artículo que limite el número de
+                                        prórrogas de un contrato individual. Lo que condiciona
+                                        es OTRA cosa, y es más importante — el Art. 25 sólo
+                                        acepta el plazo si la labor es transitoria, temporal o
+                                        eventual. Prorrogar NO cura ese defecto: un contrato a
+                                        plazo sobre labor permanente sigue presumido
+                                        indefinido, se prorrogue una vez o cinco. */}
+                                    {(formData.contrato_prorrogas || []).length >= 2 && !esContratoCivil(formData.contract_type) && (
+                                        <Notice variant="warning" icon={AlertTriangle} className="mb-3">
+                                            Van {(formData.contrato_prorrogas || []).length} prórrogas. La ley no las limita en número,
+                                            pero el Art. 25 sólo acepta el plazo si la labor es transitoria: prorrogar no convierte en
+                                            temporal un puesto permanente, y encadenar plazos sobre uno lo presume indefinido.
+                                        </Notice>
+                                    )}
+                                    {esContratoCivil(formData.contract_type) && (formData.contrato_prorrogas || []).length >= 2 && (
+                                        <Notice variant="warning" icon={ShieldAlert} className="mb-3">
+                                            Van {(formData.contrato_prorrogas || []).length} prórrogas. Cuanto más se extiende una
+                                            relación de servicios profesionales, más pesa la presunción del Art. 20: si además cumple
+                                            horario y tiene jefe, la figura correcta es un contrato de trabajo.
+                                        </Notice>
+                                    )}
                                     {(formData.contrato_prorrogas || []).length === 0 ? (
                                         <p className="text-label text-content-3 font-medium">Sin prórrogas.</p>
                                     ) : (
@@ -2853,7 +2932,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <Button variant="ghost" icon={X} title="Quitar prórroga" iconOnly onClick={() => quitarProrroga(idx)} />
                                                     </div>
                                                     <p className="text-micro text-content-3 font-medium mt-2 leading-snug">
-                                                        Desde {pr.desde || '—'}. Prorrogar vuelve a abrir los 8 días para remitir el ejemplar al Ministerio.
+                                                        Desde {pr.desde || '—'}.{' '}
+                                                        {esContratoCivil(formData.contract_type)
+                                                            ? 'Un contrato de servicios profesionales es civil: su prórroga no se remite al Ministerio de Trabajo.'
+                                                            : 'Prorrogar vuelve a abrir los 8 días para remitir el ejemplar al Ministerio (Art. 18).'}
                                                     </p>
                                                 </div>
                                             ))}

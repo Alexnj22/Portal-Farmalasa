@@ -71,7 +71,9 @@ function fechaValida(v: unknown, desde = 1900, hasta = 2100): string | null {
 
 const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().toUpperCase() : null)
 
-const PROMPT = `Eres un lector de documentos de identidad de El Salvador. Te doy las DOS caras del Documento Único de Identidad (DUI) de una persona.
+const PROMPT = `Eres un lector de documentos de identidad de El Salvador. Te doy el Documento Único de Identidad (DUI) de una persona.
+
+Puede llegarte de dos formas y las dos son válidas: como DOS imágenes (anverso y reverso), o como UN SOLO archivo —normalmente un PDF— que contiene las dos caras. Si es un solo archivo, busca las dos caras dentro de él antes de responder: el número y el sexo están en el anverso, y el domicilio, la profesión, el estado familiar y el tipo de sangre en el reverso.
 
 Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
 {
@@ -136,7 +138,11 @@ Deno.serve(async (req: Request) => {
       (c: unknown): c is { bucket: string; path: string } =>
         !!c && typeof (c as any).bucket === 'string' && typeof (c as any).path === 'string')
 
-    if (!caras.length) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaba al menos { frente: { bucket, path } }." })
+    // Acepta 1 o 2 archivos: dos caras sueltas, o un solo PDF que las trae
+    // adentro. Talento Humano recibe las dos formas, y obligar a partir un PDF
+    // en dos imágenes es trabajo manual para que el portal pueda leerlo — al
+    // revés de para lo que existe.
+    if (!caras.length) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaba al menos un archivo del documento." })
 
     const inlineData = []
     for (const cara of caras) {

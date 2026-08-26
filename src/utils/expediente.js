@@ -109,8 +109,11 @@ export function faltantesDelExpediente(datos) {
         // Art. 117: el examen médico previo de un menor no es una buena
         // práctica, es requisito para admitirlo, y se repite cada año.
         if (!tiene('EXAMEN_MEDICO')) faltan.push({ campo: 'examen_medico', label: 'Examen médico previo', art: '117' });
-    } else if (!tiene('DUI_FRENTE') || !tiene('DUI_REVERSO')) {
-        faltan.push({ campo: 'doc_dui', label: 'DUI (imagen de los dos lados)' });
+    } else if (!tiene('DUI_COMPLETO') && (!tiene('DUI_FRENTE') || !tiene('DUI_REVERSO'))) {
+        // Vale de las dos formas: las dos caras sueltas, o un solo archivo que
+        // las traiga adentro. Exigir siempre dos archivos pediría partir un PDF
+        // que ya está completo.
+        faltan.push({ campo: 'doc_dui', label: 'DUI (las dos caras)' });
     }
 
     // Un contrato a plazo sin base legal ni motivo escrito lo presume

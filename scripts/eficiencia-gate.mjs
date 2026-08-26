@@ -44,7 +44,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { abrirCanal } from './lib/canal-supabase.mjs';
-import { clasificarSalientes } from './lib/salientes.mjs';
+import { clasificarSalientes, cuentaComoCronRoto } from './lib/salientes.mjs';
 
 
 const BASELINE_FILE = 'scripts/eficiencia-gate-baseline.json';
@@ -499,7 +499,11 @@ if (!SOLO_LOCAL) {
        * tiene que ser rojo es lo SOSTENIDO: una función que quedó con el JWT
        * puesto falla el 100% de las veces, no el 0,07%. */
       const tasa = Number(p.corridas) ? Number(p.fallidas) / Number(p.corridas) : 0;
-      corridasFallidas += Number(p.fallidas) || 0;
+      // Sólo suma lo SOSTENIDO. Un `job startup timeout` suelto no llegó a hacer
+      // ninguna llamada saliente, así que no puede ser evidencia sobre ellas —
+      // ver `cuentaComoCronRoto`. Antes contaba crudo y ponía en rojo a B3 por
+      // los mismos tropiezos que esta sección imprime como aviso.
+      corridasFallidas += cuentaComoCronRoto({ fallidas: p.fallidas, corridas: p.corridas });
       if (Number(p.fallidas) > 0 && tasa > 0.05)
         fallos.push(`el cron ${d.job} falló en ${p.fallidas} de ${p.corridas} corridas `
                   + `(${(tasa * 100).toFixed(1)}%): ${p.ultimo_fallo ?? 'sin mensaje'}`);

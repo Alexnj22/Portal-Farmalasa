@@ -8,6 +8,39 @@
 
 export const TASA_NO_OK_MAX = 0.01;
 
+/* ── Qué corridas fallidas cuentan como evidencia (2026-08-26) ──────────────
+ *
+ * `clasificarSalientes` sube a ROJO en cuanto hay una corrida fallida en la
+ * misma ventana. La pregunta es cuáles cuentan, y acá contaban TODAS.
+ *
+ * El 2026-08-26 el gate se puso rojo por dos 503
+ * `SUPABASE_EDGE_RUNTIME_SERVICE_DEGRADED` y cuatro tiempos de espera de DNS,
+ * escalados por 17 `job startup timeout` repartidos entre seis crons — todos
+ * entre 0,19% y 0,94%, o sea que el propio gate los estaba imprimiendo como
+ * AVISO en la sección de arriba: «por debajo del 5% que pone esto en rojo».
+ *
+ * Los mismos tropiezos eran ruido tolerable en una sección y prueba de un cron
+ * roto en la otra. Y el mensaje que salía mandaba a revisar `verify_jwt` sobre
+ * funciones que estaban bien — **exactamente la receta equivocada que este
+ * módulo se creó para corregir**, un piso más arriba.
+ *
+ * Hay además un motivo de fondo, y es el que manda: un `job startup timeout` es
+ * el planificador que **no logró arrancar el trabajo**. Nunca hizo una llamada
+ * saliente, así que no puede ser evidencia sobre llamadas salientes. Es el
+ * mismo razonamiento que ya está escrito para las colgadas —«un fallo de DNS no
+ * llega a la función»— aplicado un nivel más arriba.
+ *
+ * Entonces cuenta lo SOSTENIDO, con el mismo 5% que usa la sección de crons:
+ * una función que quedó con el JWT puesto falla el 100% de las veces, no el
+ * 0,2%. */
+export const TASA_CRON_ROJA = 0.05;
+
+export function cuentaComoCronRoto({ fallidas = 0, corridas = 0 } = {}) {
+  if (!fallidas) return 0;
+  const tasa = corridas ? fallidas / corridas : 1;   // sin corridas, un fallo es todo
+  return tasa > TASA_CRON_ROJA ? fallidas : 0;
+}
+
 /* ── Un 401 no prueba que un cron esté roto (2026-08-24) ────────────────────
  *
  * Acá había tolerancia cero y el mensaje afirmaba que «el cron está fallando

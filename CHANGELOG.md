@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.778.0 — Las diferencias sin resolver se pueden aislar
+
+*«en las finalizadas, no veo las pendientes por diferencia, ¿cómo las filtro?»*
+(usuario).
+
+La baldosa decía **«$4,592.24 · 11 bolsas sin cuadrar»**, el aviso mandaba a
+«Finalizadas», y ahí las once quedaban repartidas entre las 97 — cada una con su
+insignia «Faltó $X», pero sin nada que las juntara. O sea que el portal sabía
+exactamente cuáles eran y no había forma de llegar a ellas.
+
+**La sección para eso ya existía y nunca se dibujaba para administración.**
+«Diferencias por resolver» estaba escrita, pero detrás de `!alcanceTodos`: la
+ve una SALA —para buscar su propia plata— y justamente no quien tiene que
+saldarlas.
+
+Tres caminos hasta ellas, y los tres llegan al mismo sitio:
+
+- **La baldosa ahora se toca.** Es la única de las cuatro que lleva a algún
+  lado, y no contradice que las otras no: las otras tres no son una etapa
+  («En circulación» vive en dos a la vez), pero «Sin resolver» sí es una
+  pregunta con respuesta.
+- **Un chip «Sin resolver (11)»** en la píldora, sólo en «Finalizadas». Es la
+  única ranura de estado de la pantalla, y tampoco contradice la regla de que
+  acá el estado es la pestaña: no es una etapa, es una condición DENTRO de una.
+- **El botón «Ver» del aviso** ahora deja el filtro puesto, en vez de dejarte
+  en la pestaña con las 97 delante.
+
+Con el filtro puesto la sección se llama **«Diferencias por resolver»** y no
+«Contadas» —el rótulo tiene que decir lo que hay debajo— y muestra `sinResolver`
+y no un recorte del archivo: esa lista viene de su propia consulta y **no la
+acota el período**, que es justo lo que hace falta. Una diferencia no se esconde
+por mover unas fechas, y la ayuda de la etapa ya lo prometía.
+
+Medido contra producción antes de cerrar: 11 bolsas, $4,592.24 — las mismas
+cifras que la baldosa.
+
 ## v2.777.0 — El expediente cumple el Art. 23 y se puede enlazar con la ficha que ya existe
 
 El personal se va a cargar de nuevo desde cero, y eso abría dos preguntas: si

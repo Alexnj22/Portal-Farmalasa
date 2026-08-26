@@ -127,6 +127,10 @@ const BolsasView = () => {
     const [desde, hasta] = periodo.split('|');
     const [busqueda, setBusqueda] = useState('');
     const [sala, setSala] = useState('');
+    /* El único filtro de ESTADO de la pantalla, y sólo vale en «Finalizadas».
+     * Ver la nota larga de la píldora sobre por qué acá no hay ranura de
+     * estado — y por qué éste es la excepción. */
+    const [soloSinResolver, setSoloSinResolver] = useState(false);
 
     /* Lo que el motor publica hacia arriba: es él quien tiene las bolsas
      * cargadas, y pedirlas otra vez acá para poder contarlas sería cargar la
@@ -156,7 +160,23 @@ const BolsasView = () => {
     const correr = useCallback((dir) => verPeriodo(correrPeriodo(periodo, dir)),
         [periodo, verPeriodo]);
 
-    const limpiar = () => { setSala(''); setPeriodo(ULTIMOS_30()); setBusqueda(''); };
+    const limpiar = () => { setSala(''); setPeriodo(ULTIMOS_30()); setBusqueda(''); setSoloSinResolver(false); };
+
+    /* Ir a una etapa, y opcionalmente con el filtro puesto. Lo usa el aviso de
+     * «hay N sin resolver»: mandaba a «Finalizadas» y ahí las dejaba repartidas
+     * entre las 97, que es justo lo que el aviso venía a resolver. */
+    const irAEtapa = useCallback((e, opts) => {
+        setEtapa(e);
+        if (opts?.sinResolver) setSoloSinResolver(true);
+    }, [setEtapa]);
+
+    /* Cuántas faltan resolver, para ponerlo en el chip. Sale de la baldosa que
+     * el motor ya publica —él tiene las bolsas cargadas— en vez de contarlas de
+     * nuevo acá, que sería pedir la misma lista dos veces. */
+    const sinCuadrar = useMemo(
+        () => metricas.find((m) => m.clave === 'sinResolver')?.cuantas || 0,
+        [metricas],
+    );
 
     /* Las pestañas con su número. El contador es el precio de haber separado las
      * etapas: una pestaña cerrada esconde lo suyo, y acá lo escondido es dinero
@@ -185,29 +205,52 @@ const BolsasView = () => {
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Las cuatro cifras que NINGUNA pestaña contesta, porque
-                        cruzan las cuatro. No filtran al tocarlas —la etapa ya es
-                        la pestaña— y por eso van sin `onClick`: ninguna de ellas
-                        ES una etapa, «En circulación» vive en dos a la vez. El
-                        motivo largo está en `CircuitoDeBolsas`, que es quien las
-                        calcula; acá sólo se dibujan. */}
+                        cruzan las cuatro. Tres van SIN `onClick`: no son una
+                        etapa —«En circulación» vive en dos a la vez— así que
+                        tocarlas no tendría a dónde llevar.
+
+                        La excepción es «Sin resolver», que sí es una pregunta
+                        con respuesta: «¿cuáles son?». Decía 11 y no había forma
+                        de llegar a las 11 —quedaban repartidas entre las 97 de
+                        «Finalizadas»—, así que tocarla lleva a esa pestaña con
+                        el filtro puesto. La marca el propio motor con
+                        `accionable`, porque es quien sabe si hay alguna. */}
                     {verCards && metricas.length > 0 ? (
                         <CarrilCards className="flex-1" ariaLabel="Resumen del efectivo en bolsas">
                             {metricas.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                    label={m.label} value={m.value} sub={m.sub} valueCls={m.valueCls} />
+                                    label={m.label} value={m.value} sub={m.sub} valueCls={m.valueCls}
+                                    onClick={m.accionable
+                                        ? () => { setEtapa('finalizadas'); setSoloSinResolver(true); }
+                                        : undefined} />
                             ))}
                         </CarrilCards>
                     ) : <div className="flex-1" />}
 
                     {/* El orden de las ranuras es el de §17: ámbito → entidad →
-                        tiempo → estado. Acá no hay ranura de estado, y es a
-                        propósito: el estado de una bolsa es su etapa, y la etapa
-                        ya es la pestaña. Una ranura que repitiera lo mismo
-                        escondería la mitad del proceso detrás de un filtro. */}
+                        tiempo → estado. La ranura de ESTADO casi no existe acá y
+                        es a propósito: el estado de una bolsa es su etapa, y la
+                        etapa ya es la pestaña. Una ranura que repitiera lo mismo
+                        escondería la mitad del proceso detrás de un filtro.
+
+                        La excepción es «Sin resolver», y no contradice lo de
+                        arriba: NO es una etapa, es una condición DENTRO de
+                        «Finalizadas» —una bolsa contada cuya diferencia todavía
+                        no se saldó—, y por eso el chip sólo existe en esa
+                        pestaña. En las otras tres no significaría nada. */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             acciones={acciones}
-                            activeCount={[sala, !periodoIntacto].filter(Boolean).length}>
+                            activeCount={[sala, !periodoIntacto, soloSinResolver].filter(Boolean).length}>
+                            {etapa === 'finalizadas' && (
+                                <FilterBar.Chip
+                                    active={soloSinResolver}
+                                    onToggle={() => setSoloSinResolver((v) => !v)}
+                                    tone="danger"
+                                >
+                                    Sin resolver{sinCuadrar ? ` (${sinCuadrar})` : ''}
+                                </FilterBar.Chip>
+                            )}
                             {alcanceTodos && (
                                 <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                                     <FilterBar.Sucursal value={sala} onChange={setSala} options={salaOptions} />
@@ -239,10 +282,11 @@ const BolsasView = () => {
                     busqueda={busqueda}
                     desde={desde} hasta={hasta}
                     sala={sala} nombreSala={nombreSala}
+                    soloSinResolver={etapa === 'finalizadas' && soloSinResolver}
                     onAcciones={setAcciones}
                     onMetricas={setMetricas}
                     onConteos={setConteos}
-                    onIrAEtapa={setEtapa}
+                    onIrAEtapa={irAEtapa}
                     onAmpliarPeriodo={(desdeMin) => setPeriodo(`${desdeMin}|${hoySV()}`)}
                 />
             </div>

@@ -961,7 +961,7 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
 
 export default function CircuitoDeBolsas({
     etapa = 'sala', busqueda = '',
-    desde, hasta, sala, nombreSala,
+    desde, hasta, sala, nombreSala, soloSinResolver = false,
     onAcciones, onMetricas, onConteos, onAmpliarPeriodo, onIrAEtapa,
 }) {
     // `user` es para la RUTA de la foto de respaldo en el bucket, nada más: la
@@ -1257,6 +1257,25 @@ export default function CircuitoDeBolsas({
     const sinResolverFuera = useMemo(
         () => sinResolver.filter((b) => !enRango(b)),
         [sinResolver, enRango],
+    );
+
+    /* Lo que dibuja «Contadas»: el archivo del período, o sólo lo que falta
+     * resolver.
+     *
+     * «en las finalizadas, no veo las pendientes por diferencia, ¿cómo las
+     * filtro?» (usuario, 2026-08-26). La baldosa decía «11 sin cuadrar» y el
+     * aviso mandaba a «Finalizadas», donde las once quedaban repartidas entre
+     * las 97 — cada una con su insignia, pero sin nada que las juntara. La
+     * sección «Diferencias por resolver» existía y sólo se dibujaba para una
+     * SALA (`!alcanceTodos`), así que administración nunca la veía.
+     *
+     * Con el filtro puesto se muestra `sinResolver` y NO un recorte de
+     * `contadas`: esa lista viene de su propia consulta y no la acota el
+     * período, que es justamente lo que hace falta — una diferencia no se
+     * esconde por mover unas fechas, y el aviso de la etapa ya lo promete. */
+    const archivo = useMemo(
+        () => (soloSinResolver ? sinResolver : contadas),
+        [soloSinResolver, sinResolver, contadas],
     );
 
     // Entregadas hace más de un día y todavía sin recibir. Se mide contra
@@ -1628,6 +1647,12 @@ export default function CircuitoDeBolsas({
               iconCls: diasMasVieja >= DIAS_DE_ALARMA ? 'text-danger-text' : 'text-content-3',
               valueCls: diasMasVieja >= DIAS_DE_ALARMA ? 'text-danger-text' : 'text-content' },
             { clave: 'sinResolver', icon: Scale, label: 'Sin resolver',
+              // La ÚNICA baldosa que lleva a algún lado. Las otras tres no son
+              // una etapa —«En circulación» vive en dos a la vez— pero ésta sí
+              // es una pregunta con respuesta: «cuáles son». Sin esto, el número
+              // decía 11 y no había forma de llegar a las 11.
+              accionable: sinResolver.length > 0,
+              cuantas: sinResolver.length,
               value: verMontos && sinResolver.length
                   ? formatMoney(sinResolver.reduce((a, b) => a + Math.abs(diferenciaDe(b) ?? 0), 0))
                   : String(sinResolver.length),
@@ -1701,7 +1726,7 @@ export default function CircuitoDeBolsas({
                 <Notice variant="danger" icon={AlertTriangle}
                     action={(
                         <Button variant="secondary" size="sm" icon={Scale}
-                            onClick={() => onIrAEtapa?.('finalizadas')}>
+                            onClick={() => onIrAEtapa?.('finalizadas', { sinResolver: true })}>
                             Ver
                         </Button>
                     )}>
@@ -2075,13 +2100,20 @@ export default function CircuitoDeBolsas({
 
             {/* ── 4. Contadas ───────────────────────────────────────────── */}
             <Etapa
-                icon={ShieldCheck}
-                titulo="Contadas"
-                ayuda={`El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.${
-                    sinResolverFuera.length
-                        ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas: una diferencia no se esconde por mover el período.`
-                        : ''}`}
-                grupos={conNodo(contadas, {
+                icon={soloSinResolver ? Scale : ShieldCheck}
+                /* Con el filtro puesto la sección deja de ser el archivo, así
+                   que deja de llamarse así: decir «Contadas» sobre once bolsas
+                   elegidas por otra cosa sería el rótulo mintiendo sobre lo que
+                   hay debajo. Y la ayuda avisa lo que más importa — que ahí
+                   NO manda el período. */
+                titulo={soloSinResolver ? 'Diferencias por resolver' : 'Contadas'}
+                ayuda={soloSinResolver
+                    ? 'Contadas que no cuadraron y todavía no se saldaron. Salen TODAS, sin importar el período: una diferencia no se esconde por mover unas fechas. En cada una se anota qué pasó.'
+                    : `El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.${
+                        sinResolverFuera.length
+                            ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas: una diferencia no se esconde por mover el período.`
+                            : ''}`}
+                grupos={conNodo(archivo, {
                     rotuloMonto: 'Debía haber',
                     pie: (b) => {
                         const dif = diferenciaDe(b);
@@ -2118,10 +2150,10 @@ export default function CircuitoDeBolsas({
                         );
                     },
                 })}
-                total={contadas.length} montoTotal={suma(contadas)}
+                total={archivo.length} montoTotal={suma(archivo)}
                 verMontos={verMontos}
                 plegada={cerradas.has('contadas')} onPlegar={() => plegar('contadas')}
-                vacio="Sin bolsas contadas en estas fechas"
+                vacio={soloSinResolver ? 'Todas las contadas están resueltas' : 'Sin bolsas contadas en estas fechas'}
             />
 
             {/* ── El archivo de los depósitos ──────────────────────────────

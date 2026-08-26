@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.5 — Contar dejó de recargar la pantalla en cada bolsa
+
+*«al dar en cuadra, por que actualiza? hace que pierda el flujo y eficiencia»*
+(usuario).
+
+Cada toque de «Cuadra» —o de «No cuadra», o de «Contar de nuevo»— bajaba
+**todo** otra vez: las bolsas vivas, las contadas del período, las de
+diferencia, los saldos, lo que falta depositar y la gente que firmó. Cinco
+viajes al servidor. Y encima con `setCargando(true)`, que reemplaza la vista
+entera por «Buscando las bolsas»: la pantalla quedaba en blanco y volvía con el
+scroll en el tope, así que después de cada bolsa había que buscar dónde se
+estaba.
+
+Contar es la acción **más repetida** del circuito —bolsa por bolsa, sala por
+sala, día por día—, así que una tanda de treinta bolsas eran treinta pantallas
+en blanco y ~150 llamadas.
+
+**Y no hacía falta ninguna.** Marcar un conteo cambia tres columnas de una sola
+bolsa: no le mueve el estado —sigue en «Por contar»—, no crea diferencias, no
+toca los depósitos. Y `marcar_conteo_bolsa` ya devuelve `RETURNS public.bolsas`,
+o sea la fila entera y fresca, desde el día que se escribió: volver a bajar las
+bolsas era pedirle al servidor algo que ya estaba en la mano. Ahora esa fila se
+pega en su sitio y no se llama a nada más.
+
+Se **superpone** (`{ ...vieja, ...nueva }`) en vez de reemplazar, y eso importa:
+`saldo`, `vales` y `salidas` no son columnas de `bolsas` —salen de
+`get_bolsas_saldos`— así que reemplazar la fila las borraría y el saldo caería a
+`monto_inicial`. En una bolsa con vales adentro esos dos números son distintos,
+que es exactamente el sobrante inventado que se corrigió el 24-ago.
+
+**Y ninguna acción vuelve a borrar la pantalla.** `cargar` acepta ahora
+`silencioso`: la vista en blanco se reserva para la primera carga y para cuando
+se mueve el período —que es cuando lo que se va a mostrar es realmente otra
+cosa—. Entregar, recibir, confirmar el conteo, depositar, sacar dinero o
+imprimir una etiqueta refrescan **en su sitio**, sin parpadeo ni salto de
+scroll. Confirmar la tanda sí sigue recargando: ahí cambia el estado, se
+escriben las diferencias y se avisa a las salas.
+
 ## v2.767.4 — Recibir de menos ya no cambia de pestaña
 
 *«al momento de confirmar recepcion, que no me lleve a conteo, a no ser que le

@@ -752,8 +752,15 @@ export default function CircuitoDeBolsas({
         return m;
     }, [empleados]);
 
-    const cargar = useCallback(async () => {
-        setCargando(true);
+    /* `silencioso` = volver a bajar los datos SIN borrar la pantalla.
+     *
+     * `setCargando(true)` reemplaza la vista entera por «Buscando las bolsas»,
+     * y eso está bien la primera vez y al mover el período —lo que se va a
+     * mostrar es otra cosa—. Después de una acción es lo contrario: el
+     * contenido es casi el mismo, y borrarlo devuelve el scroll al tope y hace
+     * parpadear todo. Contando bolsa por bolsa, eso pasaba en CADA toque. */
+    const cargar = useCallback(async ({ silencioso = false } = {}) => {
+        if (!silencioso) setCargando(true);
         // Las pendientes se BAJAN todas y se recortan acá; las contadas ya vienen
         // del período, **por la fecha en que se CONTARON** — filtrarlas por la
         // fecha del corte hacía que una bolsa vieja recién contada desapareciera
@@ -952,9 +959,19 @@ export default function CircuitoDeBolsas({
         [elegidas],
     );
 
-    const correr = useCallback(async (clave, fn, exito) => {
+    /**
+     * El plomería de toda acción: ocupado, error, aviso y refresco.
+     *
+     * `recargar: false` es para las acciones que YA saben qué cambió. Los RPC
+     * de conteo devuelven `RETURNS public.bolsas`, o sea la fila entera y
+     * fresca: volver a bajar las bolsas después es pedirle al servidor algo que
+     * ya está en la mano, y encima cuatro viajes (las vivas, las contadas, las
+     * de diferencia, los saldos y la gente). Esas acciones pasan `conLaFila`
+     * para pegar lo que volvió, y no recargan nada.
+     */
+    const correr = useCallback(async (clave, fn, exito, { recargar = true, conLaFila } = {}) => {
         setOcupado(clave);
-        const { error } = await fn();
+        const { data, error } = await fn();
         setOcupado(null);
         if (error) {
             showToast?.('No se pudo guardar', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
@@ -962,9 +979,28 @@ export default function CircuitoDeBolsas({
         }
         showToast?.(exito, '', 'success');
         setElegidas(new Set());
-        cargar();
+        conLaFila?.(data);
+        if (recargar) cargar({ silencioso: true });
         return true;
     }, [showToast, cargar]);
+
+    /* Pega en su sitio la fila que devolvió el RPC, sin bajar nada.
+     *
+     * Se SUPERPONE (`{ ...b, ...fila }`) y no reemplaza: `saldo`, `vales` y
+     * `salidas` no son columnas de `bolsas` —salen de `get_bolsas_saldos` y se
+     * pegan al cargar—, así que reemplazar la fila las borraría y `saldoDe`
+     * caería a `monto_inicial`. En una bolsa con vales adentro esos dos números
+     * son distintos, que es exactamente el error que costó el sobrante
+     * inventado de v2.743.x. */
+    const parchar = useCallback((fila) => {
+        if (!fila?.id) return;
+        setBolsas((prev) => prev.map((b) => (b.id === fila.id ? { ...b, ...fila } : b)));
+    }, []);
+
+    /* `cargar` NO se pasa pelada a un hijo: ahora recibe opciones, así que el
+     * argumento con que el hijo llame al callback decidiría si la pantalla se
+     * borra. Envuelta, la decisión se queda acá. */
+    const recargarEnSilencio = useCallback(() => { cargar({ silencioso: true }); }, [cargar]);
 
     /**
      * Entregar NO imprime nada (usuario, 2026-08-24: «al enviar las bolsas de
@@ -981,7 +1017,7 @@ export default function CircuitoDeBolsas({
      * adentro. Esos dos viven en el mundo físico —se pegan y se guardan dentro
      * de la bolsa— y son contra lo que administración cuenta.
      */
-    const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
+    const trasLaEntrega = recargarEnSilencio;
 
     /* Confirmar la recepción MUEVE la bolsa de pestaña: sale de «Esperando
      * recepción» y aparece en «Por contar». Sin llevar a quien apretó, el botón
@@ -1026,16 +1062,35 @@ export default function CircuitoDeBolsas({
      *
      * `correr` limpia la selección al terminar, y acá no hay ninguna que limpiar:
      * marcar no usa casillas. No molesta, pero por eso el aviso dice qué queda
-     * pendiente y no «listo». */
+     * pendiente y no «listo».
+     *
+     * ── Y NO recarga la pantalla ────────────────────────────────────────────
+     * «al dar en cuadra, por que actualiza? hace que pierda el flujo y
+     * eficiencia» (usuario, 2026-08-26).
+     *
+     * Cada toque bajaba TODO otra vez —las vivas, las contadas, las de
+     * diferencia, los saldos, la gente— y encima con `setCargando(true)`, o sea
+     * borrando la vista y devolviendo el scroll al tope. Contar es la acción
+     * más repetida del circuito: una tanda de treinta bolsas eran treinta
+     * pantallas en blanco y ~150 viajes al servidor, y después de cada uno hay
+     * que volver a encontrar dónde se estaba.
+     *
+     * Y no hacía falta ninguno: marcar cambia TRES columnas de UNA bolsa, no le
+     * mueve el estado —sigue en «Por contar»— ni crea diferencias ni toca los
+     * depósitos, y el RPC devuelve la fila ya escrita. Se pega y listo. Lo que
+     * sí recarga es confirmar la tanda, que ahí sí cambia de estado, escribe
+     * las diferencias y avisa a las salas. */
     const contar = useCallback((bolsa, monto) => correr(`contar-${bolsa.id}`,
         () => marcarConteoBolsa(bolsa.id, monto, saldoDe(bolsa)),
         Math.abs(monto - saldoDe(bolsa)) < 0.01
             ? `${bolsa.folio} cuadró · falta confirmar el conteo`
-            : `${bolsa.folio} anotada · falta confirmar el conteo`), [correr]);
+            : `${bolsa.folio} anotada · falta confirmar el conteo`,
+        { recargar: false, conLaFila: parchar }), [correr, parchar]);
 
     const desmarcar = useCallback((bolsa) => correr(`desmarcar-${bolsa.id}`,
         () => desmarcarConteoBolsa(bolsa.id),
-        `${bolsa.folio} vuelve a estar sin contar`), [correr]);
+        `${bolsa.folio} vuelve a estar sin contar`,
+        { recargar: false, conLaFila: parchar }), [correr, parchar]);
 
     /* El cierre de la tanda: acá pasa todo lo que antes pasaba bolsa por bolsa
      * —el cambio de estado, la bitácora y el aviso a cada sala—. Después de esto
@@ -1058,7 +1113,7 @@ export default function CircuitoDeBolsas({
      */
     const traslimSalida = useCallback(async (_oper, repartos) => {
         await imprimirTrasLaSalida(repartos, bolsas, nombrePersona);
-        cargar();
+        cargar({ silencioso: true });
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
     const resolver = useCallback((bolsa, via, causa) => correr(`resolver-${bolsa.id}`,
@@ -1420,7 +1475,7 @@ export default function CircuitoDeBolsas({
                                     setOcupado(`imprimir-${b.id}`);
                                     await imprimir(b, { cerradaPor: nombrePersona.get(b.cerrada_por) });
                                     setOcupado(null);
-                                    cargar();
+                                    cargar({ silencioso: true });
                                 }}>
                                 {b.etiqueta_impresa_at ? 'Reimprimir' : 'Imprimir etiqueta'}
                             </Button>
@@ -1673,7 +1728,7 @@ export default function CircuitoDeBolsas({
                         // saldría con el nombre de quien anuló.
                         cerradaPor={nombrePersona.get(abierta.cerrada_por)}
                         onClose={() => setAbierta(null)}
-                        onCambio={cargar}
+                        onCambio={recargarEnSilencio}
                     />
                 </Suspense>
             )}
@@ -1685,7 +1740,7 @@ export default function CircuitoDeBolsas({
                         bolsas={porDepositar}
                         personas={empleados}
                         onClose={() => setDepositando(false)}
-                        onHecho={cargar}
+                        onHecho={recargarEnSilencio}
                     />
                 </Suspense>
             )}

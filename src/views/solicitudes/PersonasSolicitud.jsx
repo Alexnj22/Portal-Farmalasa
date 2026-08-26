@@ -3,7 +3,8 @@ import { Building2 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { useNowTick } from '../../hooks/useNowTick';
-import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera } from './movimientoTexto';
+import { useStaffStore } from '../../store/staffStore';
+import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera, salaDePersona } from './movimientoTexto';
 
 /* La cara de quien pide y la de quien decide.
  *
@@ -78,6 +79,11 @@ export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', class
  *                 ESTADO, nunca del tipo de solicitud (auditoría de tema).
  */
 export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vacio = 'Sin asignar', tono = 'card' }) => {
+    /* El catálogo de salas, para poder nombrar la sucursal de quien viene del
+       maestro de personal: ahí sólo hay `branch_id`. Ver `salaDePersona`. */
+    const branches = useStaffStore(s => s.branches);
+    const sucursal = sala ? null : salaDePersona(persona, branches);
+
     const fondo = {
         card:    'bg-surface-card border-border-card',
         success: 'bg-success/10 border-success/30',
@@ -99,7 +105,27 @@ export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vac
      * venta, los productos— quedaba abajo del pliegue. */
     return (
         <div className={`px-3 py-2.5 rounded-2xl border ${fondo}`}>
-            <p className={`text-micro font-black uppercase tracking-widest mb-1.5 ${tinta}`}>{rotulo}</p>
+            {/* La sucursal, arriba a la derecha y en el renglón del rótulo.
+                Pedido del usuario el 2026-08-26: «en todos donde diga Solicitó
+                y Aprobó, que salga en esa misma card de qué sucursal, en la
+                esquina superior derecha, para que sea más visible». Estaba —
+                cuando estaba— colgando del cargo, en gris y en la letra más
+                chica de la ficha: en una bandeja que mezcla siete salas, saber
+                de cuál es cada quien no es una nota al pie. */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+                <p className={`text-micro font-black uppercase tracking-widest ${tinta}`}>{rotulo}</p>
+                {/* Sin `title`: en un span que no se puede apuntar no llega ni
+                    al lector de pantalla ni al teléfono (§15.10). Los nombres
+                    de las siete salas son cortos y entran enteros. */}
+                {sucursal && (
+                    <span className="flex items-center gap-1 min-w-0 shrink-0">
+                        <Building2 size={11} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                        <span className="text-micro font-black uppercase tracking-widest text-content-2 truncate">
+                            {sucursal}
+                        </span>
+                    </span>
+                )}
+            </div>
             <div className="flex items-start gap-2.5 min-w-0">
                 {/* Una sala no tiene cara: en su lugar va el icono de sucursal,
                     del mismo tamaño que el avatar para que las dos fichas
@@ -119,9 +145,12 @@ export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vac
                             La sala que tiene el producto
                         </p>
                     )}
-                    {!sala && persona && (persona.role || persona.branch_name) && (
+                    {/* Sólo el cargo: la sala ya está arriba a la derecha, y
+                        decirla dos veces gasta el renglón que necesita el cargo
+                        entero. */}
+                    {!sala && persona?.role && (
                         <p className="text-micro text-content-3 leading-tight truncate">
-                            {[persona.role, persona.branch_name].filter(Boolean).join(' · ')}
+                            {persona.role}
                         </p>
                     )}
                     {(cuando || apunte) && (

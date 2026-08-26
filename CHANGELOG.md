@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.785.0 — La ficha dice de qué sucursal, y un traslado no lleva signo
+
+Dos cosas reportadas mirando el detalle de un traslado.
+
+**El `−` delante de cada cantidad.** «Los montos tienen una `-` antes, parece
+como que si es `-` el producto». El renglón salía como `−24`, y es falso: un
+traslado no descuenta nada, **mueve**. Las 24 unidades que salen de Salud 3 son
+las mismas 24 que entran a Salud 5, y el encabezado de arriba ya dice el
+recorrido. El signo venía de un booleano —`esCarga`: `+` para la carga, `−` para
+todo lo demás— que metía al traslado en el mismo saco que el descarte.
+
+Ahora el signo lo decide el TIPO, y se reserva para lo que de verdad cambia el
+total del inventario: `+` la carga, `−` el descarte, **nada** el traslado. Sin
+signo el número queda igual, que es lo que es: la cantidad, no un saldo.
+
+**De qué sucursal es cada quien.** «En todos donde diga Solicitó y Aprobó, que
+salga en esa misma card de qué sucursal, en la esquina superior derecha (hay
+espacio) para que sea más visible».
+
+Y estaba peor de lo que se veía: la sala aparecía en **unas fichas sí y otras
+no**, en la misma pantalla y sin nada que lo explicara. La causa es que la misma
+persona llega por dos caminos que no traen lo mismo — las que resuelve
+`resolverPersonasDeSolicitudes` pasan por `ponerleCara`, que les cruza el
+`branch_id` contra el catálogo y les deja el nombre; las del maestro de personal
+llegan de `employees_safe` con el `branch_id` **y sin nombre de sala**. El cruce
+ahora lo hace `salaDePersona`, una vez, en lugar de en cada pantalla que dibuja
+una ficha.
+
+La sucursal va arriba a la derecha, en el renglón del rótulo, con el icono con
+el que el portal nombra una sucursal en todos lados. Antes colgaba del cargo, en
+gris y en la letra más chica de la ficha: en una bandeja que mezcla siete salas,
+de cuál es cada quien no es una nota al pie. Y deja de repetirse abajo, que
+gastaba el renglón que necesita el cargo entero.
+
+Vale para **todas** las pantallas que dibujan esa ficha —Solicitudes, la
+campana, el detalle del traslado y las tarjetas de «Pidió / Envió»—: es un solo
+componente, que era justamente el punto.
+
+Medido contra producción en escritorio 1280 y WebKit iPhone 13: las dos fichas
+con su sala, cero recortes de texto, ningún renglón con `−`, y una carga de
+inventario que sigue diciendo `+1`. `gate:design` y `gate:movil` en verde.
+
 ## v2.784.0 — Personal: la vista deja de estar pegada, y la pestaña y la página se van a la dirección
 
 Salió de un reporte de una línea —*«verifica la vista, que sea canónica,

@@ -130,8 +130,25 @@ const Caja = ({ children, tono = 'card', className = '' }) => {
  * rotula «había». Decir «quedan» sería prometer un número que el sistema no
  * volvió a mirar.
  */
+/* El SIGNO del renglón, que no es lo mismo que el tipo de solicitud.
+ *
+ * Era `esCarga`, un booleano: `+` para la carga y `−` para todo lo demás. En un
+ * TRASLADO ese `−` es falso —reportado por el usuario: «los montos tienen una
+ * `-` antes, parece como que si es `-` el producto»—: un traslado no descuenta
+ * nada, mueve. Las 24 unidades que salen de Salud 3 son las mismas 24 que
+ * entran a Salud 5, y el encabezado de arriba ya dice el recorrido.
+ *
+ * El signo se reserva para lo que de verdad cambia el total del inventario: `+`
+ * la carga, `−` el descarte. Cuando no hay signo, el número queda igual — es la
+ * cantidad, no un saldo. */
+const SIGNO_POR_TIPO = {
+    INVENTORY_LOAD_REQUEST:     '+',
+    INVENTORY_DISCARD_REQUEST:  '−',
+    INVENTORY_TRANSFER_REQUEST: '',
+};
+
 export const LineasMovimiento = memo(({
-    meta, seleccion, onToggle, onCantidad, cantidades, rechazadas, ajustadas, esCarga = false,
+    meta, seleccion, onToggle, onCantidad, cantidades, rechazadas, ajustadas, signo = '',
 }) => {
     const items = lineasDe(meta);
     if (items.length === 0) {
@@ -198,9 +215,9 @@ export const LineasMovimiento = memo(({
                             </div>
 
                             {!decidiendo && (
-                                <Badge variant={esCarga ? 'success' : 'neutral'} size="sm" uppercase={false}
+                                <Badge variant={signo === '+' ? 'success' : 'neutral'} size="sm" uppercase={false}
                                     className="shrink-0 mt-0.5">
-                                    {motivoRechazo ? '—' : `${esCarga ? '+' : '−'}${actual}`}
+                                    {motivoRechazo ? '—' : `${signo}${actual}`}
                                 </Badge>
                             )}
                         </div>
@@ -366,7 +383,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 <LineasMovimiento meta={meta} seleccion={seleccion} onToggle={onToggle}
                     onCantidad={onCantidad} cantidades={cantidades}
                     rechazadas={rechazadasDe(meta)} ajustadas={ajustadasDe(meta)}
-                    esCarga={t === 'INVENTORY_LOAD_REQUEST'} />
+                    signo={SIGNO_POR_TIPO[t] ?? ''} />
                 <EvidenciaFotos urls={meta.evidencia_urls} />
             </div>
         );

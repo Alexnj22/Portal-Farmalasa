@@ -237,6 +237,27 @@ export const salaQueEspera = (req) => {
  * id, su correo guardado, su usuario, y el usuario dentro del correo. Lo último
  * es lo que hace que siga funcionando el día que cambie el dominio.
  */
+/**
+ * De qué sucursal es una persona — el NOMBRE, resuelto de donde esté.
+ *
+ * Hay dos orígenes para la misma persona y no traen lo mismo: las que resuelve
+ * `resolverPersonasDeSolicitudes` pasan por `ponerleCara`, que les cruza el
+ * `branch_id` contra el catálogo y les deja `branch_name`; las del maestro de
+ * personal llegan de `employees_safe` con `branch_id` **y sin nombre de sala**.
+ *
+ * Por eso la ficha mostraba la sucursal de unas personas y de otras no, en la
+ * misma pantalla y sin ninguna diferencia visible que lo explicara. El cruce se
+ * hace acá, una vez, en lugar de en cada pantalla que dibuja una ficha.
+ */
+export const salaDePersona = (persona, branches) => {
+    if (!persona) return null;
+    if (persona.branch_name) return persona.branch_name;
+    if (persona.branch?.name) return persona.branch.name;
+    const id = persona.branch_id ?? persona.branchId;
+    if (id == null || id === '') return null;
+    return (branches ?? []).find(b => String(b.id) === String(id))?.name ?? null;
+};
+
 export const buscadorDePersonas = (empleados) => (idOCorreo) => {
     if (!idOCorreo) return null;
     const clave   = String(idOCorreo).trim().toLowerCase();

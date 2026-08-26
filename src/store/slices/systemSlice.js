@@ -417,6 +417,14 @@ export const createSystemSlice = (set, get) => ({
                                             e.alt_identity_document = i.alt_identity_document;
                                             e.isss_number           = i.isss_number;
                                             e.afp_number            = i.afp_number;
+                                            // Art. 23 nº2: el lugar y la fecha de expedición
+                                            // son parte del MISMO dato que el número, así que
+                                            // llegan por acá y no por `employees_safe` —
+                                            // igual que el número. Sin estas dos líneas el
+                                            // expediente los pediría de nuevo en cada
+                                            // edición aunque ya estuvieran guardados.
+                                            e.dui_lugar_expedicion  = i.dui_lugar_expedicion;
+                                            e.dui_fecha_expedicion  = i.dui_fecha_expedicion;
                                         }
                                     });
                                 }

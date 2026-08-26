@@ -404,16 +404,28 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const created = await addEmployee(finalData);
                     // La temporal solo existe en esta respuesta — mostrarla al admin
                     // (antes se descartaba y el primer login era imposible sin reset).
+                    // El aviso dice cuál de las dos cosas pasó, y lo dice
+                    // también cuando además hubo contraseña temporal: «Personal
+                    // Registrado» después de enlazar sonaría a que se creó una
+                    // segunda ficha, que es justo la duda que enlazar resuelve.
+                    const enlazado = created?.enlazadoCon
+                        ? `Quedó sobre la ficha de ${created.enlazadoCon}, que conserva su historial.`
+                        : null;
                     if (created?.tempPassword) {
                         try { await navigator.clipboard.writeText(created.tempPassword); } catch { /* sin permiso de clipboard */ }
                         if (showToast) showToast(
-                            "Empleado Creado — Contraseña Temporal",
-                            `Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
+                            enlazado ? "Expediente Enlazado — Contraseña Temporal" : "Empleado Creado — Contraseña Temporal",
+                            `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
                             "success",
                             20000
                         );
                     } else if (showToast) {
-                        showToast("Personal Registrado", "La ficha del empleado se guardó exitosamente.", "success");
+                        showToast(
+                            enlazado ? "Expediente Enlazado" : "Personal Registrado",
+                            enlazado || "La ficha del empleado se guardó exitosamente.",
+                            "success",
+                            enlazado ? 12000 : undefined
+                        );
                     }
 
                     // Marcado como que todavía no tiene carné: se le imprime uno

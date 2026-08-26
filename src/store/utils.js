@@ -5,7 +5,15 @@ export const makeId = () => {
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 };
 
-export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
+// `dui_lugar_expedicion` y `dui_fecha_expedicion` entran con el DUI y no
+// aparte: los tres son el MISMO dato del Art. 23 nº2 (número, lugar y fecha de
+// expedición del documento de identidad), y por eso los tres se leen por
+// `get_employee_identidad` y ninguno está en `employees_safe`. Dejar afuera de
+// esta lista a dos de los tres pondría en el disco de una computadora
+// compartida la mitad del documento — que es la misma media medida que el
+// 2026-08-24 dejó el DUI completo en el borrador mientras `persistEmployees` sí
+// lo filtraba.
+export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'dui_lugar_expedicion', 'dui_fecha_expedicion', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
 
 export const CACHE_KEYS = {
     BRANCHES: "sb_cache_branches_v1",

@@ -138,6 +138,27 @@ const normalizeExtraAddresses = (arr) => {
         .filter(a => a.department || a.municipality || a.address);
 };
 
+// Herramientas y materiales que entrega el patrono (Art. 23 nº10 CT):
+// {descripcion, cantidad, estado}. El numeral pide las TRES cosas —cantidad,
+// calidad y estado—, así que una fila con sólo el nombre no cumple; pero
+// tampoco se bloquea el alta por eso: se guarda lo que haya y el banner de
+// pendientes lo recuerda. Se descartan las filas agregadas con "+" y nunca
+// llenadas.
+const normalizeHerramientas = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map(h => ({
+            descripcion: (h?.descripcion || '').trim().toUpperCase(),
+            cantidad: (h?.cantidad === '' || h?.cantidad == null) ? null : Number(h.cantidad),
+            estado: (h?.estado || '').trim(),
+        }))
+        .filter(h => h.descripcion || h.cantidad != null || h.estado)
+        // Un `Number('abc')` es NaN y `JSON.stringify(NaN)` es `null`: la fila
+        // llegaría a la base sin cantidad y sin que nadie se entere. Se
+        // normaliza acá para que el jsonb guardado sea el que se ve.
+        .map(h => ({ ...h, cantidad: Number.isFinite(h.cantidad) ? h.cantidad : null }));
+};
+
 // Dependientes económicos: {name, birth_date, relationship, department,
 // municipality, address} — descarta filas totalmente vacías.
 const normalizeEconomicDependents = (arr) => {
@@ -502,6 +523,37 @@ export const createEmployeeSlice = (set, get) => ({
             const fNames = (formData.first_names || '').trim().toUpperCase();
             const lNames = (formData.last_names || '').trim().toUpperCase();
 
+            // ── Enlazar con una ficha que ya existe ──────────────────────────
+            //
+            // El expediente se está rehaciendo desde cero, pero la gente NO es
+            // nueva: cada persona ya tiene solicitudes, traslados, bolsas,
+            // conteos y bitácoras colgando de su fila. Con `enlazar_con_id`,
+            // esto NO crea una segunda ficha: escribe todo lo del formulario
+            // SOBRE la que ya está.
+            //
+            // Por qué así y no creando la nueva y moviéndole el historial:
+            // `employees.id` está referenciado por **129 columnas en ~70
+            // tablas** (medido el 2026-08-26). Veinte son `ON DELETE CASCADE`
+            // —entre ellas `approval_requests.employee_id`, o sea las
+            // solicitudes— así que borrar la vieja BORRA el historial en vez de
+            // conservarlo; otras quince son `RESTRICT` sobre tablas con filas y
+            // harían fallar el borrado. Mover 129 columnas a mano es un
+            // barrido donde la que se escapa no da error: queda huérfana o se
+            // va en cascada, en silencio.
+            //
+            // Absorbiendo, el historial **no se mueve**: ya está donde tiene
+            // que estar. Y el camino es uno que el portal ya recorre todos los
+            // días —es exactamente un `UPDATE` de empleado, con su misma
+            // policy, su mismo trigger de auditoría y sus mismas validaciones—,
+            // no un camino nuevo que haya que probar.
+            const absorbeA = formData.enlazar_con_id || null;
+            const fichaAbsorbida = absorbeA
+                ? get().employees.find(e => String(e.id) === String(absorbeA)) || null
+                : null;
+            if (absorbeA && !fichaAbsorbida) {
+                throw new Error('La ficha que quieres enlazar ya no está en la lista. Recarga la pantalla y vuelve a elegirla.');
+            }
+
             // El código es la credencial del carné: SOLO números (regla de negocio,
             // también validada por trigger en BD) y único entre empleados.
             const cleanCode = String(formData.code ?? '').trim() || null;
@@ -515,12 +567,16 @@ export const createEmployeeSlice = (set, get) => ({
                 // encuentra ningún choque — «no encontré» se ve igual que «no
                 // hay», y dos personas con el mismo código son dos con la misma
                 // contraseña del portal.
-                if (await codigoDeCarneLibre(cleanCode) === false) {
+                // Al absorber, la ficha destino se excluye: si no, su PROPIO
+                // código y su PROPIO DUI se leerían como choque contra sí
+                // misma y ninguna persona podría enlazarse conservando los
+                // suyos.
+                if (await codigoDeCarneLibre(cleanCode, absorbeA) === false) {
                     throw new Error(`El código "${cleanCode}" ya está asignado a otra persona.`);
                 }
             }
 
-            await validateDui(formData.dui || null);
+            await validateDui(formData.dui || null, absorbeA);
             validateOptionalFormats(formData);
 
             const dbPayload = {
@@ -541,6 +597,10 @@ export const createEmployeeSlice = (set, get) => ({
                 dui: formData.dui || null,
                 alt_identity_document: formData.alt_identity_document || null,
                 alt_identity_document_type: formData.alt_identity_document_type || null,
+                // Art. 23 nº2 CT: el numeral pide «número, LUGAR Y FECHA DE
+                // EXPEDICIÓN», no sólo el número.
+                dui_lugar_expedicion: formData.dui_lugar_expedicion ? formData.dui_lugar_expedicion.trim().toUpperCase() : null,
+                dui_fecha_expedicion: formData.dui_fecha_expedicion || null,
                 nationality: formData.nationality || null,
                 phone: formData.phone || null,
                 address: formData.address ? formData.address.trim().toUpperCase() : null,
@@ -581,6 +641,15 @@ export const createEmployeeSlice = (set, get) => ({
                 contract_temporal_legal_basis: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_legal_basis || null) : null,
                 contract_temporal_reason: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_reason || null) : null,
                 weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
+                // Art. 23 nº13 CT: dónde y cuándo se FIRMÓ. No es el nº5
+                // (`contract_start_date`, cuándo empieza a trabajar): se firma
+                // un día y se empieza otro.
+                contrato_lugar_celebracion: formData.contrato_lugar_celebracion ? formData.contrato_lugar_celebracion.trim().toUpperCase() : null,
+                contrato_fecha_celebracion: formData.contrato_fecha_celebracion || null,
+                // Art. 23 nº10 CT: «cantidad, calidad y estado» de lo que
+                // entrega el patrono. Vacío es una lista vacía, no null — la
+                // columna es NOT NULL y el CHECK exige que sea un array.
+                herramientas_entregadas: normalizeHerramientas(formData.herramientas_entregadas),
                 base_salary: formData.base_salary ? parseFloat(formData.base_salary) : null,
                 has_motorcycle: !!formData.has_motorcycle,
                 has_car: !!formData.has_car,
@@ -597,21 +666,37 @@ export const createEmployeeSlice = (set, get) => ({
                 bank_name: formData.bank_name || null,
                 account_number: formData.account_number || null,
                 account_type: formData.account_type || 'AHORRO',
+                // Art. 23 nº9 CT: «forma, PERÍODO y lugar de pago». El banco y
+                // la cuenta son la forma y el lugar; el período faltaba. Sin
+                // valor por defecto: NULL es «no se pactó», y eso se ve.
+                periodo_pago: formData.periodo_pago || null,
                 
                 kiosk_pin: formData.kiosk_pin || null,
                 // La marca «todavía no tiene carné»: es lo que habilita
                 // imprimirle uno de papel sin el permiso aparte.
                 carne_pendiente: !!formData.carne_pendiente,
                 status: 'ACTIVO',
-                photo_url: null,
             };
 
-            // Validar headcount del cargo seleccionado
-            assertHeadcountAvailable(get(), dbPayload.role_id, dbPayload.branch_id);
+            // La foto se sube DESPUÉS (necesita el id de la fila), así que el
+            // alta arranca con la columna en null y la llena en un segundo
+            // paso. Al absorber eso sería un borrado: quien enlaza una ficha
+            // sin adjuntar foto nueva no está pidiendo quitarle la que tenía,
+            // y recuperar 46 fotos es un trabajo que nadie eligió. Si adjunta
+            // una, el segundo paso la pisa igual.
+            if (!absorbeA) dbPayload.photo_url = null;
 
-            const { data: newEmp, error } = await insertEmployee(dbPayload);
+            // Validar headcount del cargo seleccionado. Al absorber, la ficha
+            // destino se excluye del conteo: esa persona YA ocupa la plaza, y
+            // contarla otra vez haría que un cargo de un solo puesto rechace
+            // enlazar justo a quien lo ocupa.
+            assertHeadcountAvailable(get(), dbPayload.role_id, dbPayload.branch_id, absorbeA);
+
+            const { data: newEmp, error } = absorbeA
+                ? await updateEmployeeReturning(absorbeA, dbPayload)
+                : await insertEmployee(dbPayload);
             if (error) {
-                console.error('Supabase INSERT error:', error.message, error.details, error.hint);
+                console.error(absorbeA ? 'Supabase UPDATE error:' : 'Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
             }
             registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
@@ -635,8 +720,13 @@ export const createEmployeeSlice = (set, get) => ({
                 newEmp.employee_documents = uploadedDocs;
             }
 
-            // Asignar sucursales adicionales si aplica (empleados externos)
+            // Asignar sucursales adicionales si aplica (empleados externos).
+            // Al absorber hay que BORRAR las que tenía: la ficha vieja puede
+            // traer las suyas y un insert a secas las sumaría en vez de
+            // reemplazarlas, dejando a la persona con acceso a salas que el
+            // formulario ya no dice. Es el mismo orden que usa `updateEmployee`.
             const assignedBranches = Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number).filter(Boolean) : [];
+            if (absorbeA) await deleteEmployeeBranches(newEmp.id);
             if (assignedBranches.length > 0) {
                 await insertEmployeeBranches(
                     assignedBranches.map(branch_id => ({ employee_id: newEmp.id, branch_id }))
@@ -666,11 +756,20 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            await get().appendAuditLog('PERSONAL_ASIGNADO', newEmp.id, {
-                timeline_title: `Nuevo Ingreso: ${newEmp.name}`,
+            // El asiento dice cuál de las dos cosas pasó, y al enlazar deja
+            // escrito CON QUÉ ficha — que es el único rastro de que ese
+            // expediente tuvo otro nombre antes. La fila no se duplicó, así que
+            // sin esta línea la absorción sería indistinguible de una edición.
+            await get().appendAuditLog(absorbeA ? 'PERSONAL_ENLAZADO' : 'PERSONAL_ASIGNADO', newEmp.id, {
+                timeline_title: absorbeA
+                    ? `Expediente enlazado: ${fichaAbsorbida.name} → ${newEmp.name}`
+                    : `Nuevo Ingreso: ${newEmp.name}`,
                 dimension: 'HR',
                 branch_id: newEmp.branch_id,
-                new_value: `Expediente creado`
+                old_value: absorbeA ? `${fichaAbsorbida.name}${fichaAbsorbida.code ? ` · ${fichaAbsorbida.code}` : ''}` : undefined,
+                new_value: absorbeA
+                    ? 'Expediente rehecho sobre la ficha existente — historial conservado'
+                    : 'Expediente creado'
             });
             
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -679,26 +778,42 @@ export const createEmployeeSlice = (set, get) => ({
             const mainRoleName = roles.find(r => String(r.id) === String(newEmp.role_id))?.name || null;
             const secRoleName = roles.find(r => String(r.id) === String(newEmp.secondary_role_id))?.name || null;
 
+            // Al absorber se parte de la entrada que ya estaba —no de
+            // `dbPayload`— y por un motivo concreto: ese objeto lleva el código
+            // de carné, el DUI, el sueldo y la cuenta bancaria, y esta lista se
+            // persiste en `localStorage`. Volcarlo ahí devolvería al disco de
+            // una computadora compartida exactamente lo que salió de
+            // `employees_safe` el 2026-08-24. Se copian sólo los campos que esa
+            // vista ya publica.
+            const base = fichaAbsorbida || {};
             const appEmp = {
+                ...base,
                 ...newEmp,
+                first_names: dbPayload.first_names,
+                last_names: dbPayload.last_names,
                 branchId: newEmp.branch_id,
-                hireDate: newEmp.hire_date,
-                birthDate: newEmp.birth_date,
+                hireDate: dbPayload.hire_date,
+                birthDate: dbPayload.birth_date,
                 photo: newEmp.photo_url ? await getSignedFileUrl(newEmp.photo_url, 43200) : null,
                 role: mainRoleName,
                 secondary_role: secRoleName,
                 assigned_branch_ids: assignedBranches,
-                attendance: [],
-                history: [],
-                documents: []
+                attendance: base.attendance || [],
+                history: base.history || [],
+                documents: base.documents || []
             };
 
             set((state) => {
-                const next = [...state.employees, appEmp];
+                // Absorber REEMPLAZA, no agrega: un append dejaría dos tarjetas
+                // de la misma persona en pantalla hasta la próxima recarga, que
+                // es justo el duplicado que esto viene a cerrar.
+                const next = absorbeA
+                    ? state.employees.map(e => String(e.id) === String(newEmp.id) ? appEmp : e)
+                    : [...state.employees, appEmp];
                 persistEmployees(next);
                 return { employees: next };
             });
-            return { id: appEmp.id, username: dbPayload.username, tempPassword };
+            return { id: appEmp.id, username: dbPayload.username, tempPassword, enlazadoCon: fichaAbsorbida?.name || null };
         } catch (err) {
             console.error("Fallo al crear empleado:", err);
             throw err; // Re-lanzar el error original sin modificarlo
@@ -822,6 +937,17 @@ export const createEmployeeSlice = (set, get) => ({
             }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';
+
+            // Art. 23 CT — los cuatro que se agregaron el 2026-08-26. Se
+            // normalizan acá igual que en el alta: si sólo se normalizara allá,
+            // editar un expediente guardaría un formato distinto del que dejó
+            // el alta y la misma columna tendría dos formas.
+            if (updatedData.periodo_pago !== undefined) dbPayload.periodo_pago = updatedData.periodo_pago || null;
+            if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
+            if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
+            if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;
+            if (updatedData.contrato_fecha_celebracion !== undefined) dbPayload.contrato_fecha_celebracion = updatedData.contrato_fecha_celebracion || null;
+            if (updatedData.herramientas_entregadas !== undefined) dbPayload.herramientas_entregadas = normalizeHerramientas(updatedData.herramientas_entregadas);
             
             if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL') {
                 dbPayload.contract_end_date = null;
@@ -830,6 +956,10 @@ export const createEmployeeSlice = (set, get) => ({
             }
 
             delete dbPayload.id;
+            // Sólo tiene sentido al dar de alta (lo lee `addEmployee`). Si
+            // llegara acá sería una columna inexistente y PostgREST rechazaría
+            // el UPDATE entero.
+            delete dbPayload.enlazar_con_id;
             delete dbPayload.branchId;
             delete dbPayload.photo;
             delete dbPayload.file;

@@ -10,7 +10,7 @@ const CLAVE_BORRADOR = 'alta_empleado';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -108,6 +108,21 @@ const PROBATION_EXEMPTION_DAYS = 365;
 const FIXED_DOCUMENT_CATEGORIES = [
     { key: 'CV', label: 'Currículum Vitae (CV)' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
+];
+// Art. 23 nº10 CT: el numeral pide «cantidad, CALIDAD Y ESTADO». Es una lista
+// cerrada y no texto libre porque el valor de este campo está en poder
+// compararlo el día de la devolución, y «bueno», «Bueno» y «b» no se comparan.
+const ESTADO_HERRAMIENTA_OPTIONS = [
+    { value: 'NUEVO', label: 'Nuevo' },
+    { value: 'BUENO', label: 'Bueno' },
+    { value: 'USADO', label: 'Usado' },
+    { value: 'DETERIORADO', label: 'Deteriorado' },
+];
+// Art. 23 nº9 CT: «forma, PERÍODO y lugar de pago».
+const PERIODO_PAGO_OPTIONS = [
+    { value: 'SEMANAL', label: 'Semanal' },
+    { value: 'QUINCENAL', label: 'Quincenal' },
+    { value: 'MENSUAL', label: 'Mensual' },
 ];
 // El documento de identidad (DUI frente/reverso para adultos, o el documento
 // alterno para menores — Art. 23.2) se renderiza aparte del resto, en un
@@ -401,7 +416,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0],
                 contract_end_date: '', contract_temporal_legal_basis: '', contract_temporal_reason: '', weekly_contracted_hours: '44', base_salary: '',
                 afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
-                ...prev 
+                // Art. 23 CT — los cuatro numerales que faltaban. Ninguno
+                // arranca con un valor puesto: `contract_type` y
+                // `weekly_contracted_hours` ya enseñaron que un default se
+                // confunde con un dato (figuran en las 49 fichas y nadie los
+                // escribió). Vacío se ve; 'QUINCENAL' preseleccionado, no.
+                dui_lugar_expedicion: '', dui_fecha_expedicion: '',
+                periodo_pago: '', contrato_lugar_celebracion: '', contrato_fecha_celebracion: '',
+                herramientas_entregadas: [],
+                // Enlazar con una ficha existente: sólo vive en el formulario,
+                // no es una columna. `addEmployee` la lee para escribir SOBRE
+                // esa ficha en vez de crear una segunda.
+                enlazar_con_id: '',
+                ...prev
             }));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -467,6 +494,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
             : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
         if (!hasIdDoc) items.push('DUI (Documento)');
+        // Art. 117 CT: sin el examen médico previo, admitir a un menor no es
+        // irregular — es que no se puede. Va acá y no en `isFormFullyValid`
+        // porque el papel llega después de la entrevista, y trabar el alta
+        // hasta tenerlo produce el atajo (dar de alta a otro nombre), no el
+        // cumplimiento.
+        if (minor && !docs.some(d => d.category === 'EXAMEN_MEDICO' && d.url)) items.push('Examen médico (Art. 117)');
+        // Los tres numerales del Art. 23 que se agregaron el 2026-08-26. Se
+        // avisan, no se exigen: son datos que a menudo llegan del contrato
+        // firmado, y el contrato se firma después de crear el expediente.
+        if (!formData?.dui_lugar_expedicion || !formData?.dui_fecha_expedicion) items.push('Expedición del documento (Art. 23 nº2)');
+        if (!formData?.periodo_pago) items.push('Cada cuánto se le paga (Art. 23 nº9)');
+        if (!formData?.contrato_lugar_celebracion || !formData?.contrato_fecha_celebracion) items.push('Dónde y cuándo se firmó (Art. 23 nº13)');
         // Documentos por vencer/vencidos — cualquier categoría (RTS 11.02.04:24
         // §6.3.1 exige acreditación vigente para TODO el personal, no solo
         // Regente/Enfermería). No bloquea Guardar (es "Pendiente", no "Requerido").
@@ -475,7 +514,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             items.push(label);
         });
         return items;
-    }, [isEditMode, formData?.dui, formData?.birth_date, formData?.isss_number, formData?.afp_number, formData?.employee_documents]);
+        // Depende de `formData` entero y no de once campos sueltos: la lista ya
+        // era una enumeración a mano incompleta, y cada campo nuevo del Art. 23
+        // había que acordarse de agregarlo acá o el banner se quedaba diciendo
+        // «pendiente» después de completarlo. Construir un array corto en cada
+        // render no cuesta nada; olvidarse de una dependencia, sí.
+    }, [isEditMode, formData]);
 
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
@@ -757,6 +801,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isPharmacistRegentRole = /regente/i.test(selectedRoleName) && !/enfermer/i.test(selectedRoleName);
     const isPharmacistProfession = /qu[ií]mic.*farmac|farmac.*qu[ií]mic/i.test(formData.profession || '');
     const isPharmacistRegent = isPharmacistRegentRole || isPharmacistProfession || !!formData.has_srs_accreditation;
+    const esMenorParaDocumentos = (() => {
+        const edad = calcAge(formData?.birth_date);
+        return edad !== null && edad < MINOR_AGE;
+    })();
     const documentCategories = useMemo(() => [
         ...FIXED_DOCUMENT_CATEGORIES,
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
@@ -767,7 +815,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE' }] : []),
         ...(isNursing ? [{ key: 'ANUALIDAD_JVPE', label: 'Anualidad JVPE — solvencia del año en curso' }] : []),
         ...(formData.disability_has_certification ? [{ key: 'CERTIFICACION_DISCAPACIDAD', label: 'Certificación de Discapacidad — ISRI / CONAIPD' }] : []),
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification]);
+        // Art. 117 CT: el examen médico previo de un menor no es una buena
+        // práctica, es requisito para admitirlo, y se repite cada año hasta los
+        // 18. El aviso amarillo ya lo decía en la pestaña Personal; faltaba
+        // dónde guardar la constancia. Con `expiry_date` entra además en el
+        // aviso de vencimientos, que es lo que convierte «cada año» en algo que
+        // alguien recuerda.
+        //
+        // La edad se calcula acá dentro y no se toma de `isMinor`: esa
+        // constante se declara 200 líneas más abajo, y un `useMemo` corre su
+        // callback durante ESTE render — leerla desde acá es un ReferenceError
+        // por zona muerta temporal, no un `undefined` benigno. `pendingItems`
+        // hace lo mismo por el mismo motivo.
+        ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)' }] : []),
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -822,6 +883,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const extraDocs = (formData.employee_documents || []).filter(d => d.category?.startsWith('EXTRA_'));
     const addExtraDoc = () => setFormData(prev => ({ ...prev, employee_documents: [...(prev.employee_documents || []), { category: `EXTRA_${Date.now()}`, title: '', file_name: '', url: null, expiry_date: '' }] }));
     const removeExtraDoc = (category) => setFormData(prev => ({ ...prev, employee_documents: (prev.employee_documents || []).filter(d => d.category !== category) }));
+
+    // Herramientas y materiales (Art. 23 nº10). Se indexan por posición y no
+    // por una clave inventada: la lista es corta, se edita entera de una y no
+    // hay nada externo que las referencie.
+    const addHerramienta = () => setFormData(prev => ({ ...prev, herramientas_entregadas: [...(prev.herramientas_entregadas || []), { descripcion: '', cantidad: '', estado: '' }] }));
+    const updateHerramienta = (idx, patch) => setFormData(prev => ({
+        ...prev,
+        herramientas_entregadas: (prev.herramientas_entregadas || []).map((h, i) => i === idx ? { ...h, ...patch } : h),
+    }));
+    const removeHerramienta = (idx) => setFormData(prev => ({ ...prev, herramientas_entregadas: (prev.herramientas_entregadas || []).filter((_, i) => i !== idx) }));
 
     // Aviso visual de vencimiento — la fecha puede venir tecleada a mano o
     // detectada por IA (analyze-document, se completa recién al Guardar y se
@@ -1063,6 +1134,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         });
     }, [formData?.first_names, formData?.last_names, formData?.id, employees]);
 
+    /* ── Enlazar con una ficha que ya existe ────────────────────────────────
+     *
+     * El expediente se está rehaciendo desde cero, pero la gente no es nueva:
+     * cada persona ya tiene solicitudes, traslados, bolsas, conteos y bitácoras
+     * colgando de su ficha. Elegir a alguien acá hace que lo escrito en este
+     * formulario se guarde SOBRE esa ficha en vez de crear una segunda — o sea
+     * que no hay historial que mover, porque nunca se despega.
+     *
+     * Sólo al dar de alta. En edición no tiene sentido: la ficha ya es una.
+     */
+    const fichasParaEnlazar = useMemo(() => {
+        if (isEditMode) return [];
+        const nombreDeSala = (id) => branches?.find(b => String(b.id) === String(id))?.name || 'Sin sala';
+        const nombreDeCargo = (id) => roles?.find(r => String(r.id) === String(id))?.name || 'Sin cargo';
+        return [...(employees || [])]
+            .filter(e => e.status !== 'INACTIVO')
+            .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'))
+            .map(e => ({
+                value: String(e.id),
+                label: `${e.name} · ${nombreDeSala(e.branch_id ?? e.branchId)} · ${nombreDeCargo(e.role_id)}`,
+            }));
+    }, [employees, branches, roles, isEditMode]);
+
+    const idAEnlazar = formData?.enlazar_con_id || '';
+    const fichaAEnlazar = useMemo(
+        () => (idAEnlazar ? (employees || []).find(e => String(e.id) === String(idAEnlazar)) || null : null),
+        [employees, idAEnlazar]);
+
     const AREA_TYPE_LABEL = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
     const TYPE_ORDER_EMP = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
     const branchOpts = TYPE_ORDER_EMP.flatMap(type => {
@@ -1160,8 +1259,48 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
                                     <h4 className="text-label font-black uppercase tracking-widest text-warning-text">Posible Duplicado</h4>
-                                    <p className="text-label text-warning-text font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
+                                    <p className="text-label text-warning-text font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Si es la misma persona, enlázala abajo en vez de crear una ficha nueva. Si es otra (homónimo), sigue adelante.</p>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* ENLAZAR CON UNA FICHA QUE YA EXISTE — sólo al dar de alta.
+                            Ver el comentario de `fichasParaEnlazar`: esto NO crea una
+                            segunda ficha, escribe sobre la elegida. Es la única forma
+                            de conservar el historial sin moverlo, y mover el historial
+                            sería mover 129 columnas repartidas en ~70 tablas. */}
+                        {!isEditMode && (
+                            <div className={`${islandClass} ${islandHoverClass}`}>
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                        <Link2 size={16} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">¿Esta persona ya trabajaba aquí?</h4>
+                                        <p className="text-label font-medium text-content-3 leading-snug mt-0.5">Enlázala con su ficha para que conserve sus solicitudes, traslados y todo lo que ya hizo. Déjalo vacío si es alguien que entra por primera vez.</p>
+                                    </div>
+                                </div>
+
+                                <LiquidSelect
+                                    value={formData.enlazar_con_id || ''}
+                                    onChange={(val) => handleSelectChange('enlazar_con_id', val)}
+                                    options={fichasParaEnlazar}
+                                    placeholder="Buscar a la persona por su nombre..."
+                                    icon={Users}
+                                    {...portalSelectProps}
+                                />
+
+                                {fichaAEnlazar && (
+                                    <div className="mt-3 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
+                                        <CheckCircle2 size={16} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                                        <p className="text-label text-content font-medium leading-snug">
+                                            Al guardar, la ficha de <span className="font-black">{fichaAEnlazar.name}</span> queda con
+                                            todo lo que escribiste aquí —nombre, documento, cargo, sala, contrato, sueldo, banco— y
+                                            conserva su historial. <span className="font-black">No se crea un registro nuevo</span>, y
+                                            lo que esa ficha tenía escrito antes se reemplaza.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -1258,6 +1397,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         />
                                     </div>
                                 )}
+
+                                {/* Art. 23 nº2 CT: el numeral pide «número, LUGAR Y FECHA DE
+                                    EXPEDICIÓN», y sólo se guardaba el número. Van juntos al
+                                    documento —da igual si es DUI o el alterno del menor—
+                                    porque es el mismo dato del contrato. No bloquean Guardar:
+                                    salen en «Información Pendiente», como el ISSS y el AFP. */}
+                                <PortalInput
+                                    label="Lugar de expedición del documento" name="dui_lugar_expedicion"
+                                    value={formData.dui_lugar_expedicion} onChange={handleChange}
+                                    icon={MapPin} placeholder="Ej. Chalatenango" />
+
+                                <div className="relative z-content">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de expedición</label>
+                                    <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                        <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
+                                    </div>
+                                </div>
 
                                 {isMinor && (
                                     <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
@@ -2116,6 +2272,82 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} inputMode="decimal" maskType="DECIMAL" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>
+
+                            {/* Art. 23 nº13 CT — «lugar y fecha de celebración del
+                                contrato». No es el nº5 («la fecha en que se iniciará el
+                                trabajo», que es la de arriba): se firma un día y se
+                                empieza otro, y en una disputa la que cuenta para el
+                                plazo es ésta. Por eso son dos campos y no uno derivado. */}
+                            <div className="mt-4 pt-4 border-t border-divider">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <CalendarClock size={14} className="text-content-3" strokeWidth={2.5} />
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-3">Dónde y cuándo se firmó</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <PortalInput
+                                        label="Lugar de la firma" name="contrato_lugar_celebracion"
+                                        value={formData.contrato_lugar_celebracion} onChange={handleChange}
+                                        icon={MapPin} placeholder="Ej. Chalatenango" />
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de la firma</label>
+                                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                            <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Art. 23 nº10 CT — «cantidad, calidad y estado de las
+                            herramientas y materiales que el patrono proporcione». Son
+                            las tres cosas juntas: sin el estado de entrega no hay con
+                            qué comparar el día que se devuelven, que es para lo que el
+                            numeral existe. */}
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center justify-between mb-4 gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                        <Wrench size={16} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Herramientas y Materiales Entregados</h4>
+                                        <p className="text-label font-medium text-content-3 leading-snug mt-0.5">Lo que la empresa le entrega y tiene que devolver: gabacha, llaves, teléfono, lector. Anota en qué estado se entregó.</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" icon={Plus} onClick={addHerramienta}>Agregar</Button>
+                            </div>
+
+                            {(formData.herramientas_entregadas || []).length === 0 && (
+                                <p className="text-label text-content-3 font-medium">No se le entregó nada todavía.</p>
+                            )}
+
+                            <div className="flex flex-col gap-3">
+                                {(formData.herramientas_entregadas || []).map((item, idx) => (
+                                    <div key={idx} data-surface="card" className="p-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_1fr_auto] gap-3 items-end">
+                                            <PortalInput
+                                                aria-label="Qué se entregó" compact
+                                                value={item.descripcion || ''}
+                                                onChange={(e) => updateHerramienta(idx, { descripcion: e.target.value })}
+                                                placeholder="Qué se entregó" />
+                                            <PortalInput
+                                                aria-label="Cantidad" compact type="number" inputMode="numeric"
+                                                value={item.cantidad ?? ''}
+                                                onChange={(e) => updateHerramienta(idx, { cantidad: e.target.value })}
+                                                placeholder="Cant." />
+                                            <div className="relative z-content">
+                                                <LiquidSelect
+                                                    value={item.estado || ''}
+                                                    onChange={(val) => updateHerramienta(idx, { estado: val })}
+                                                    options={ESTADO_HERRAMIENTA_OPTIONS}
+                                                    placeholder="En qué estado..."
+                                                    {...portalSelectProps} />
+                                            </div>
+                                            <Button variant="ghost" icon={X} title="Quitar" iconOnly onClick={() => removeHerramienta(idx)} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </>
                 )}
@@ -2150,6 +2382,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 <PortalInput label="Número de Cuenta" name="account_number" value={formData.account_number} onChange={handleChange} icon={CreditCard} placeholder="0000-0000-00" maskType="ACCOUNT" />
+
+                                {/* Art. 23 nº9 CT — «forma, PERÍODO y lugar de pago». El
+                                    banco, el tipo y el número de cuenta son la forma y el
+                                    lugar; cada cuánto se paga faltaba, y es lo que decide
+                                    cuándo el pago se vuelve exigible. Sin valor por
+                                    defecto: vacío es «no se pactó» y se ve. */}
+                                <div className="relative z-content">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cada cuánto se le paga</label>
+                                    <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
+                                </div>
                             </div>
                         </div>
 

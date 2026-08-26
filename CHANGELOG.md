@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.781.3 — Personal vuelve a abrir: el permiso por columna lo declara la vista
+
+Entrar a Personal devolvía **403 «permission denied for table employees»** y el
+padrón no cargaba. `employees_safe` es `security_invoker=true`: leerla exige que
+la **sesión** pueda leer cada columna que la vista nombra, y desde el 16-ago
+`authenticated` no tiene SELECT de tabla sino **por columna**.
+
+Los campos del Art. 23 agregaron seis columnas y publicaron cuatro en la vista
+sin darles ese permiso. El efecto no fue que faltaran cuatro campos: **falló
+toda** lectura de la vista, o sea el arranque entero del portal.
+
+La migración del 16-ago ya lo había escrito —«una columna nueva NO queda legible
+hasta que se vuelva a correr `regrant_employees_columns()`… se rompe en silencio
+si nadie lo sabe»—, así que correr la función y ya habría dejado el mismo defecto
+esperando la próxima columna. **La lista pasó a salir de la vista**:
+`regrant_employees_columns()` ya no dice «todas menos `code` y `kiosk_pin`», dice
+«las que publica `employees_safe`». Una declaración en vez de dos, y el permiso
+sigue sola a la vista.
+
+Eso cerró además un hueco que se creía cerrado: el sueldo, los datos bancarios y
+el documento de identidad **salieron de la vista el 24-ago pero conservaban su
+GRANT de columna**, así que un `.from('employees').select('base_salary,dui')`
+los devolvía igual. Sacar una columna de la vista escondía el chorro, no la
+llave. Hoy quedan afuera las once que corresponden y las sirven sus RPC con
+llave (`get_employee_salarios`, `get_employee_identidad`,
+`get_employee_credenciales`). Verificado como `authenticated`: 47 filas visibles,
+80 columnas legibles = las 80 de la vista, y el sueldo, el DUI y la cuenta
+bancaria responden `insufficient_privilege`.
+
 ## v2.781.2 — El chequeo que estaba escrito y no implementado
 
 Al verificar «¿ya quedó todo corregido?» apareció que **la regla del §33.5

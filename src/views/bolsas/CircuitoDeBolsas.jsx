@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
-    AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins, Inbox, Landmark, Package, Printer, Scale, Send, ShieldCheck,
+    AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins,
+    Image as ImageIcon, Inbox, Landmark, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -9,13 +10,17 @@ import LiquidAvatar from '../../components/common/LiquidAvatar';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
+import FileField from '../../components/common/FileField';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
     fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos, marcarConteoBolsa,
-    recibirBolsas, resolverDiferenciaBolsa,
+    recibirBolsas, resolverDiferenciaBolsa, subirComprobante,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 import { tokenMatch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -43,6 +48,11 @@ const DepositoAlBanco = lazy(() => import('../../components/bolsas/DepositoAlBan
 /* Y el archivo de los depósitos: arrastra `DataTable`, y sólo se mira cuando
  * alguien va a cuadrar contra el banco. */
 const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlBanco'));
+
+/* El editor de la foto se baja al ELEGIR el archivo, no al abrir la pantalla:
+ * la enorme mayoría de los conteos no adjunta nada. Es el mismo canónico y el
+ * mismo motivo que en `SalidaDeBolsa`. */
+const EditorDeDocumento = lazy(() => import('../../components/common/EditorDeDocumento'));
 
 /**
  * El proceso entero de una bolsa de efectivo, una etapa por vez.
@@ -374,9 +384,10 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
  * Compras cuenta dinero y no ve montos: es una decisión vieja del usuario, no un
  * descuido, y esto no la cambia. */
 function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
-    onContar, onDesmarcar, onResolver, puedeResolver, verMontos }) {
+    onContar, onDesmarcar, onResolver, puedeResolver, verMontos, salaId, userId }) {
     const [abierto, setAbierto] = useState(false);
     const [resolviendo, setResolviendo] = useState(false);
+    const [porRecontar, setPorRecontar] = useState(false);
     const [valor, setValor] = useState('');
 
     /* Lo escrito, ya interpretado. Se calcula en el render y no al guardar
@@ -455,22 +466,45 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                             Anotar la causa
                         </Button>
                     )}
-                    {/* Volver a contar BORRA la causa anotada, y por eso el
-                        botón lo dice: descartar el conteo sin saberlo se llevaría
-                        una explicación que a alguien le costó encontrar. */}
+                    {/* Volver a contar BORRA lo anotado, y por eso PREGUNTA
+                        («al dar en contar de nuevo, que de una confirmación,
+                        diciendo que se borrará el monto confirmado»). No es un
+                        botón peligroso por el estado —contar de nuevo es gratis
+                        a propósito— sino por lo que se lleva puesto: el monto
+                        contado y, desde que la causa se puede anotar acá, también
+                        la causa y su foto. Nada de eso se recupera. */}
                     <Button variant="ghost" size="sm" loading={ocupadoDesmarcar}
-                        title={resuelta ? 'Vuelve a contar y borra la causa anotada' : undefined}
-                        onClick={() => onDesmarcar(bolsa)}>
+                        onClick={() => setPorRecontar(true)}>
                         Contar de nuevo
                     </Button>
                 </div>
-                {resuelta && bolsa.dif_causa && (
-                    <span className="text-caption text-content-3 w-full truncate">
-                        {bolsa.dif_causa}
+                <ConfirmModal
+                    isOpen={porRecontar}
+                    onClose={() => setPorRecontar(false)}
+                    onConfirm={() => { setPorRecontar(false); setResolviendo(false); onDesmarcar(bolsa); }}
+                    title={`¿Volver a contar ${bolsa.folio}?`}
+                    message={[
+                        verMontos
+                            ? `Se borra el conteo de ${formatMoney(bolsa.conteo_marcado)} y la bolsa vuelve a quedar sin contar.`
+                            : 'Se borra el conteo y la bolsa vuelve a quedar sin contar.',
+                        resuelta ? 'También se borra la causa anotada y su foto de respaldo.' : '',
+                    ].filter(Boolean).join(' ')}
+                    confirmText="Volver a contar"
+                    cancelText="Dejarlo como está"
+                    isProcessing={ocupadoDesmarcar}
+                />
+                {resuelta && (bolsa.dif_causa || bolsa.dif_foto_url) && (
+                    <span className="flex items-center gap-2 w-full min-w-0">
+                        {bolsa.dif_causa && (
+                            <span className="text-caption text-content-3 truncate">{bolsa.dif_causa}</span>
+                        )}
+                        <VerRespaldo url={bolsa.dif_foto_url} />
                     </span>
                 )}
                 {!cuadra && !resuelta && resolviendo && (
-                    <Resolver bolsa={bolsa} ocupado={ocupadoResolver} onResolver={onResolver} />
+                    <Resolver bolsa={bolsa} ocupado={ocupadoResolver} onResolver={onResolver}
+                        onCancelar={() => setResolviendo(false)}
+                        salaId={salaId} userId={userId} />
                 )}
             </>
         );
@@ -551,6 +585,39 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
     );
 }
 
+/**
+ * Ver la foto de respaldo de una diferencia.
+ *
+ * El bucket es PRIVADO y lo que se guarda es la URL en formato público, que
+ * sirve de identificador y NO para mirar (regla 10 de CLAUDE.md: la firmada
+ * expira, así que no se puede guardar). Por eso el botón firma en el momento —
+ * no es un `<a href>`—, y es también el motivo de que exista un estado de
+ * «firmando»: hay un viaje al servidor entre el toque y la imagen.
+ */
+function VerRespaldo({ url, etiqueta = 'Ver el respaldo' }) {
+    const [firmando, setFirmando] = useState(false);
+    const [ampliada, setAmpliada] = useState(null);
+    const [fallo, setFallo] = useState(false);
+    if (!url) return null;
+    const abrir = async () => {
+        setFirmando(true); setFallo(false);
+        try {
+            const firmada = await getSignedFileUrl(url);
+            if (firmada) setAmpliada(firmada); else setFallo(true);
+        } catch { setFallo(true); }
+        setFirmando(false);
+    };
+    return (
+        <>
+            <Button variant="ghost" size="sm" icon={ImageIcon} loading={firmando} onClick={abrir}>
+                {fallo ? 'No se pudo abrir' : etiqueta}
+            </Button>
+            <PhotoLightbox src={ampliada} alt="Respaldo de la diferencia"
+                onClose={() => setAmpliada(null)} />
+        </>
+    );
+}
+
 /* Cómo se saldó la diferencia. Vivía escrito a mano en el pie de «Contadas»;
  * desde que también se resuelve mientras se cuenta, lo dicen dos sitios. */
 const VIA = { REPONE: 'Repuesto', RETIRA: 'Retirado', JUSTIFICA: 'Justificado' };
@@ -565,31 +632,112 @@ const rotuloDeVia = (via) => VIA[via] || 'Justificado';
  * cambió nada acá adentro — lo que se generalizó es `diferenciaDe`, que ahora
  * mide contra el conteo que haya.
  */
-function Resolver({ bolsa, ocupado, onResolver }) {
+function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
     const [causa, setCausa] = useState('');
+    // La foto YA recortada y lista para subir; y la recién elegida, en camino al
+    // editor. Son dos estados porque entre una y otra hay un paso que se puede
+    // cancelar, y ahí no tiene que quedar foto a medias.
+    const [foto, setFoto] = useState(null);
+    const [porEditar, setPorEditar] = useState(null);
+    const [subiendo, setSubiendo] = useState(false);
+    const [errorFoto, setErrorFoto] = useState('');
     const dif = diferenciaDe(bolsa);
     const falta = dif < 0;
+    const listo = !!causa.trim() && !subiendo && !ocupado;
+
+    /* La foto se sube ACÁ y no en el llamador porque es lo que convierte un
+     * `File` del navegador en la URL que la base guarda. Si falla, no se
+     * resuelve nada: saldar una diferencia diciendo que hay respaldo cuando el
+     * respaldo no llegó es peor que no adjuntarlo. */
+    const saldar = async (via) => {
+        if (!listo) return;
+        let url = null;
+        if (foto) {
+            setSubiendo(true);
+            setErrorFoto('');
+            try {
+                url = await subirComprobante(foto, { salaId, userId });
+            } catch (e) {
+                setSubiendo(false);
+                setErrorFoto(e?.message || 'No se pudo subir la foto. Intenta de nuevo.');
+                return;
+            }
+            setSubiendo(false);
+        }
+        onResolver(bolsa, via, causa, url);
+    };
+
+    /* Escape cierra, igual que en el campo del conteo. Es la salida que faltaba
+     * («cómo cierro el texto si me equivoqué y no hay causa aún»): el bloque se
+     * abría y no había forma de volver atrás sin escribir algo. */
+    const alTeclear = (e) => {
+        if (e.key === 'Escape' && onCancelar) { e.preventDefault(); onCancelar(); }
+        else if (e.key === 'Enter' && listo) { e.preventDefault(); saldar(falta ? 'REPONE' : 'RETIRA'); }
+    };
 
     return (
-        <div className="flex items-center gap-1.5 flex-wrap w-full">
+        <div className="flex items-center gap-2 flex-wrap w-full">
             <PortalInput
                 compact
+                autoFocus={!!onCancelar}
                 name={`causa-${bolsa.id}`}
-                aria-label={`Por que ${falta ? 'falto' : 'sobro'} en la bolsa ${bolsa.folio}`}
+                aria-label={`Por qué ${falta ? 'faltó' : 'sobró'} en la bolsa ${bolsa.folio}`}
                 value={causa} onChange={(e) => setCausa(e.target.value)}
+                onKeyDown={alTeclear}
                 placeholder={falta ? 'Por qué faltó y qué se hizo…' : 'Por qué sobró y qué se hizo…'}
                 className="flex-1 min-w-[10rem]"
             />
             <div className="flex items-center gap-1.5 ml-auto">
-                <Button variant="secondary" size="sm" disabled={!causa.trim()} loading={ocupado}
-                    onClick={() => onResolver(bolsa, 'JUSTIFICA', causa)}>
+                {onCancelar && (
+                    <Button variant="ghost" size="sm" onClick={onCancelar}>Cancelar</Button>
+                )}
+                <Button variant="secondary" size="sm" disabled={!listo} loading={ocupado || subiendo}
+                    onClick={() => saldar('JUSTIFICA')}>
                     Justificar
                 </Button>
-                <Button variant="primary" size="sm" disabled={!causa.trim()} loading={ocupado}
-                    onClick={() => onResolver(bolsa, falta ? 'REPONE' : 'RETIRA', causa)}>
+                <Button variant="primary" size="sm" disabled={!listo} loading={ocupado || subiendo}
+                    onClick={() => saldar(falta ? 'REPONE' : 'RETIRA')}>
                     {falta ? 'Repuesto' : 'Retirado'}
                 </Button>
             </div>
+
+            {/* El respaldo. Una diferencia de efectivo se explica con papel —el
+                vale que apareció, la boleta del depósito que repone el faltante—
+                y hasta hoy ese papel quedaba fuera del portal, o sea en ninguna
+                parte auditable.
+
+                `FileField` y no un `<input type="file">` suelto: es el canónico
+                de §15.9, y trae su límite de tamaño. Va en `neutral` porque es
+                opcional: la caja ámbar de «pendiente» sobre algo que no frena se
+                lee como un error que no lo es. */}
+            <div className="w-full">
+                <FileField
+                    label="Foto de respaldo (opcional)"
+                    accept="image/*"
+                    maxSizeMB={10}
+                    file={foto}
+                    onChange={(f) => { setErrorFoto(''); if (!f) { setFoto(null); return; } setPorEditar(f); }}
+                    emptyState="neutral"
+                    hint="El vale, la boleta del depósito o lo que respalde la causa. Antes de guardarla vas a poder recortarla."
+                />
+                {errorFoto && (
+                    <p className="text-caption text-danger-text mt-1">{errorFoto}</p>
+                )}
+            </div>
+
+            {/* La foto pasa por el editor antes de guardarse, igual que la del
+                comprobante de una salida. Cancelar el editor NO deja foto: no se
+                guarda a medias lo que se pidió preparar. */}
+            {porEditar && (
+                <Suspense fallback={null}>
+                    <EditorDeDocumento
+                        tipo="boleta"
+                        file={porEditar}
+                        onCancel={() => setPorEditar(null)}
+                        onConfirm={(lista) => { setFoto(lista); setPorEditar(null); }}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }
@@ -816,7 +964,9 @@ export default function CircuitoDeBolsas({
     desde, hasta, sala, nombreSala,
     onAcciones, onMetricas, onConteos, onAmpliarPeriodo, onIrAEtapa,
 }) {
-    const { hasPermission, getScope } = useAuth();
+    // `user` es para la RUTA de la foto de respaldo en el bucket, nada más: la
+    // firma de quién resolvió la pone el servidor con `auth_employee_id()`.
+    const { hasPermission, getScope, user } = useAuth();
     /* ── La sala ve SU etapa; el resto del circuito es de administración ──
      *
      * «para las salas de venta, solo debe salir en la sala, nada mas. las demas
@@ -1283,8 +1433,8 @@ export default function CircuitoDeBolsas({
         cargar({ silencioso: true });
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 
-    const resolver = useCallback((bolsa, via, causa) => correr(`resolver-${bolsa.id}`,
-        () => resolverDiferenciaBolsa(bolsa.id, via, causa),
+    const resolver = useCallback((bolsa, via, causa, fotoUrl) => correr(`resolver-${bolsa.id}`,
+        () => resolverDiferenciaBolsa(bolsa.id, via, causa, fotoUrl),
         `${bolsa.folio} · ${rotuloDeVia(via).toLowerCase()}`,
         // Se pega la fila que vuelve para que la tarjeta cambie al instante, y
         // ADEMÁS se recarga: «Diferencias por resolver» sale de otra consulta
@@ -1750,6 +1900,7 @@ export default function CircuitoDeBolsas({
                    `bolsas_ver_montos` no hay cifras y queda el botón, que es lo
                    que esa decisión vieja del usuario ya implicaba. */
                 accion={puedeContar && marcadas.length > 0 && (
+                    <>
                     <div data-surface="card" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-3">
                         {verMontos && (
                             <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
@@ -1802,38 +1953,59 @@ export default function CircuitoDeBolsas({
                                 </div>
                             </div>
                         )}
-                        <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap ml-auto">
+                        {/* El botón va SOLO a la derecha, siempre en el mismo
+                            sitio. Los avisos vivían pegados a su costado y eso
+                            está mal por dos motivos: corren el botón de lugar
+                            según cuántos haya —o sea que su posición depende del
+                            estado de los datos—, y un párrafo suelto al lado de
+                            una acción no es el canónico de aviso del portal.
+                            Ahora bajan a un `Notice`, que es donde el portal
+                            pone lo que hay que saber antes de apretar. */}
                         <Button variant="primary" size="sm" icon={ShieldCheck}
+                            className="ml-auto"
                             loading={ocupado === 'confirmar-conteo'}
                             onClick={() => confirmar(marcadas)}>
                             Confirmar el conteo · {marcadas.length}
                             {marcadas.length === 1 ? ' bolsa' : ' bolsas'}
                         </Button>
-                        {/* Decirlo sin bloquear. Una sala que todavía no llegó no
-                            puede dejar en el aire lo que ya se contó, pero cerrar
-                            sin saber que faltan dos es otra cosa. */}
-                        {sinMarcar.length > 0 && (
-                            <span className="text-caption text-warning-text">
-                                {sinMarcar.length === 1
-                                    ? 'Queda 1 bolsa sin contar'
-                                    : `Quedan ${sinMarcar.length} bolsas sin contar`}
-                                {' '}· se cerrarán sólo las contadas
-                            </span>
-                        )}
-                        {/* Qué sigue para las que no cuadran. Es la mitad que
-                            faltaba: la pantalla decía «faltó $500» y no decía
-                            qué hacer con eso. Y desde que se puede saldar sin
-                            confirmar, lo que se dice es que la causa se anota
-                            ACÁ y no una pestaña más allá. */}
-                        {sinCausa.length > 0 && (
-                            <span className="text-caption text-content-3">
-                                {sinCausa.length === 1
-                                    ? 'A la que no cuadra se le puede anotar la causa antes de confirmar'
-                                    : 'A las que no cuadran se les puede anotar la causa antes de confirmar'}
-                            </span>
-                        )}
-                        </div>
                     </div>
+                    {/* Los dos avisos, en un solo `Notice`. Van juntos porque
+                        son la misma pregunta —«¿qué me llevo por delante si
+                        confirmo ahora?»— y separados en dos cajas se leen como
+                        dos problemas distintos.
+
+                        El tono lo decide lo que falta: si hay bolsas sin contar
+                        se cierra una tanda incompleta y eso es una advertencia;
+                        si sólo faltan causas, es información — la causa se puede
+                        anotar después, en «Contadas», y nada se pierde. */}
+                    {(sinMarcar.length > 0 || sinCausa.length > 0) && (
+                        <Notice
+                            variant={sinMarcar.length > 0 ? 'warning' : 'info'}
+                            icon={sinMarcar.length > 0 ? AlertTriangle : Scale}
+                        >
+                            {sinMarcar.length > 0 && (
+                                <span className="block">
+                                    <b className="font-bold">
+                                        {sinMarcar.length === 1
+                                            ? 'Queda 1 bolsa sin contar'
+                                            : `Quedan ${sinMarcar.length} bolsas sin contar`}
+                                    </b>
+                                    {' '}· se cerrarán sólo las contadas. Una sala que
+                                    todavía no llegó no deja en el aire lo que ya se contó.
+                                </span>
+                            )}
+                            {sinCausa.length > 0 && (
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    {sinCausa.length === 1
+                                        ? 'Una bolsa no cuadra y todavía no tiene causa anotada.'
+                                        : `${sinCausa.length} bolsas no cuadran y todavía no tienen causa anotada.`}
+                                    {' '}Se les puede anotar aquí mismo, antes de confirmar,
+                                    con su foto de respaldo si hace falta.
+                                </span>
+                            )}
+                        </Notice>
+                    )}
+                    </>
                 )}
                 grupos={conNodo(porContar, {
                     rotuloMonto: 'Debe haber',
@@ -1844,6 +2016,7 @@ export default function CircuitoDeBolsas({
                             ocupadoResolver={ocupado === `resolver-${b.id}`}
                             onContar={contar} onDesmarcar={desmarcar} onResolver={resolver}
                             puedeResolver={puedeContar || puedeEntregar}
+                            salaId={b.branch_id} userId={user?.id}
                             verMontos={verMontos} />
                     ) : null),
                 })}
@@ -1924,11 +2097,18 @@ export default function CircuitoDeBolsas({
                                     <Badge variant="neutral" size="sm">{rotuloDeVia(b.dif_via)}</Badge>
                                 )}
                                 {!cuadra && !b.dif_at && (puedeContar || puedeEntregar) && (
-                                    <Resolver bolsa={b} ocupado={ocupado === `resolver-${b.id}`} onResolver={resolver} />
+                                    <Resolver bolsa={b} ocupado={ocupado === `resolver-${b.id}`}
+                                        onResolver={resolver}
+                                        salaId={b.branch_id} userId={user?.id} />
                                 )}
-                                {b.dif_causa && (
-                                    <span className="text-caption text-content-3 w-full truncate">
-                                        {b.dif_causa} · {selloDeTiempo(b.dif_at)}
+                                {(b.dif_causa || b.dif_foto_url) && (
+                                    <span className="flex items-center gap-2 w-full min-w-0">
+                                        {b.dif_causa && (
+                                            <span className="text-caption text-content-3 truncate">
+                                                {b.dif_causa} · {selloDeTiempo(b.dif_at)}
+                                            </span>
+                                        )}
+                                        <VerRespaldo url={b.dif_foto_url} />
                                     </span>
                                 )}
                             </>

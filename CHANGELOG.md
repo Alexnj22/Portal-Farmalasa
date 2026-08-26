@@ -21,6 +21,91 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.775.0 — Los avisos apagados se dicen a la cara, una vez al día
+
+*«sé más agresivo con las notificaciones para que lo acepten»* (usuario).
+
+**24 de los 49 empleados activos no tienen ni una suscripción de avisos** —
+medido el 26-ago investigando dos reportes de «no me llegó»: una anulación
+aprobada y un traslado rechazado. En los dos casos el portal había hecho su
+parte (el aviso de la anulación se creó a las 21:05 y se leyó a las 21:40),
+pero ninguna de las dos personas tiene avisos activos, así que nada podía
+sonar: había que entrar al portal a mirar. Por sala, con avisos activos —
+Salud 1 3/8, Salud 4 2/6, Bodega 2/6, Salud 5 2/5, La Popular 3/6.
+
+El motivo no era que la gente dijera que no: **es que a la mayoría nunca se le
+volvió a preguntar.** El aviso que lo ofrecía sólo aparecía con
+`permission === 'default'`, o sea:
+
+- quien alguna vez tocó «Bloquear» **no volvía a ver nada nunca**, ni una
+  explicación de cómo revertirlo;
+- quien tenía el permiso dado pero la suscripción perdida —o un equipo
+  compartido que quedó ligado a otra persona— tampoco veía nada, y **creía
+  tener avisos**;
+- y en el iPhone sin el portal agregado a inicio, ídem.
+
+O sea que era invisible justo para quien más lo necesitaba. Encima vivía en
+`fixed bottom-5`: en el teléfono, encima de la barra inferior de sala y del
+carril de filtros — aparecía donde está el pulgar trabajando y se cerraba sin
+leer.
+
+Ahora es un **diálogo al entrar, una vez al día**, hasta que los active, con
+los cuatro estados atendidos: botón que lo resuelve donde alcanza un botón, y
+**el paso a paso del equipo que se está usando** en los dos casos donde ningún
+botón alcanza (bloqueado, iPhone sin instalar). El día se marca al mostrarlo y
+no al cerrarlo: en sala la sesión se cierra sola cada 5 minutos, así que «una
+vez al día» tiene que valer también para quien no contesta.
+
+Y un estado que no se ofrece: el equipo que de verdad no puede recibir avisos.
+Insistirle todos los días sin una salida es acoso, no un recordatorio.
+
+## v2.774.0 — La causa: se puede cerrar, lleva foto, y recontar pregunta
+
+Cuatro correcciones sobre el conteo de bolsas, todas del mismo repaso.
+
+**El aviso dejó de correr al botón de lugar.** *«ese mensaje de aviso a la
+derecha del botón nada que ver. el botón siempre a la derecha. busca la forma de
+poner el aviso canónico»*. Los dos avisos —«quedan N sin contar» y «se les puede
+anotar la causa»— vivían pegados al costado del botón, así que **su posición
+dependía del estado de los datos**: con cero avisos el botón quedaba en un
+lugar, con dos en otro. Ahora el botón va solo y siempre a la derecha, y los
+avisos bajan a un **`Notice`**, que es donde el portal pone lo que hay que saber
+antes de apretar. Van los dos en la misma caja porque son la misma pregunta
+—«¿qué me llevo por delante si confirmo ahora?»— y el tono lo decide lo que
+falta: advertencia si hay bolsas sin contar (se cierra una tanda incompleta),
+información si sólo faltan causas (la causa se puede anotar después y no se
+pierde nada).
+
+**El campo de la causa se puede cerrar.** *«cómo cierro el texto si me equivoqué
+y no hay causa aún»*. Se abría y no había forma de volver atrás sin escribir
+algo. Ahora tiene **Cancelar** y sale con **Escape**, igual que el campo del
+conteo; y Enter guarda por la vía que corresponda.
+
+**Y puede llevar foto.** *«que permita adjuntar o tomar foto de ser necesario»*.
+Una diferencia de efectivo se explica con papel —el vale que apareció, la boleta
+del depósito que repone el faltante— y ese papel quedaba fuera del portal, o sea
+en ninguna parte auditable. Va por el canónico `FileField`, pasa por el mismo
+editor de recorte que la boleta de una salida, y se guarda en el bucket privado
+con la URL en formato público como identificador (la firmada expira). Se ve con
+**Ver el respaldo**, que la firma en el momento. Si la subida falla **no se
+resuelve nada**: saldar diciendo que hay respaldo cuando el respaldo no llegó es
+peor que no adjuntarlo.
+
+**Y «Contar de nuevo» pregunta.** *«que de una confirmación, diciendo que se
+borrará el monto confirmado»*. No es peligroso por el estado —contar de nuevo es
+gratis a propósito— sino por lo que se lleva puesto: el monto contado y, desde
+que la causa se anota acá, también la causa y su foto. El diálogo lo dice con el
+monto adentro, y menciona la causa sólo cuando hay una.
+
+En la base: `bolsas.dif_foto_url`, y `resolver_diferencia_bolsa` pasa a cuatro
+argumentos. **Se borró la firma de tres antes de crear la nueva** — con
+`p_foto_url DEFAULT NULL` conviviendo con ella, una llamada de tres queda
+ambigua, y aunque no lo fuera la vieja se quedaría con sus permisos propios: es
+exactamente lo que pasó con las dos sobrecargas de `update_proveedor_manual`.
+Las dos limpiezas (`desmarcar_conteo_bolsa` y `confirmar_conteo`) alcanzan
+también a la foto: una causa que deja de aplicar y se lleva su texto pero no su
+foto deja un respaldo huérfano colgado de una bolsa que ya no lo explica.
+
 ## v2.773.0 — La causa se anota mientras se cuenta
 
 *«que permita hacerlo también antes de confirmar, así mientras se cuenta

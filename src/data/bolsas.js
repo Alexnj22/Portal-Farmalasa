@@ -20,7 +20,7 @@ const CAMPOS = `
     entregada_por, entregada_at, recibida_por, recibida_at,
     contado, contado_por, contado_at,
     conteo_marcado, conteo_marcado_por, conteo_marcado_at,
-    dif_via, dif_causa, dif_por, dif_at, deposito_id
+    dif_via, dif_causa, dif_por, dif_at, dif_foto_url, deposito_id
 `;
 
 /**
@@ -309,8 +309,18 @@ export async function fetchDepositos({ desde, hasta } = {}) {
 }
 
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */
-export function resolverDiferenciaBolsa(id, via, causa) {
-    return supabase.rpc('resolver_diferencia_bolsa', { p_id: id, p_via: via, p_causa: causa });
+/**
+ * Saldar la diferencia de una bolsa, con su causa escrita y —desde el
+ * 2026-08-26— su foto de respaldo opcional.
+ *
+ * `fotoUrl` es la URL en formato PÚBLICO que devolvió `subirComprobante`, que es
+ * lo que se guarda como identificador: la firmada expira (regla 10). Va la misma
+ * que usa el comprobante de una salida, y al mismo bucket privado.
+ */
+export function resolverDiferenciaBolsa(id, via, causa, fotoUrl = null) {
+    return supabase.rpc('resolver_diferencia_bolsa', {
+        p_id: id, p_via: via, p_causa: causa, p_foto_url: fotoUrl || null,
+    });
 }
 
 // ── Sacar dinero de una bolsa ───────────────────────────────────────────────

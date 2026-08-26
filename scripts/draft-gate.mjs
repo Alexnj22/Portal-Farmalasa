@@ -111,6 +111,18 @@ const EXCEPCIONES = {
     'producto. Lo que hay en pantalla en cualquier momento es un solo renglón; ' +
     'el conteo entero ya está en la base. Verificado el 2026-08-17.',
 
+  'src/views/bitacoras/TabConfiguracion.jsx':
+    'Los 6 controles son de CUATRO formularios distintos, no de uno: `Area` ' +
+    '(termómetro + dos fechas de calibración), `HorariosDeLaSucursal`, ' +
+    '`Refrigerador` (una fecha) y `AgregarArea` (qué área + cómo se llama). ' +
+    'Cada uno tiene su propio botón —Guardar, Encender, Agregar— y los dos ' +
+    'primeros lo muestran sólo cuando están sucios, así que el más largo son ' +
+    'TRES campos. Es la segunda de las tres formas que el conteo por archivo ' +
+    'clasifica mal, anotada arriba. Y `Area` se rinde una vez POR ÁREA dentro ' +
+    'de un `.map`: un borrador por archivo pisaría la tarjeta de al lado, o ' +
+    'sea que el remedio sería peor que la falta. Abierto y medido el ' +
+    '2026-08-26; el archivo no se tocó.',
+
   'src/components/bolsas/DepositoAlBanco.jsx':
     'Llegó a 6 controles el 2026-08-26 al agregarle el banco. Restaurar un ' +
     'borrador acá sería PEOR que perderlo: el campo que importa es cuánto va ' +

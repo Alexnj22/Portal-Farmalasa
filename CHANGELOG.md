@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.782.1 — El gate de borradores vuelve a cero: los 6 controles eran cuatro formularios
+
+`npm run gate:borradores` estaba en rojo señalando
+`src/views/bitacoras/TabConfiguracion.jsx` con **6 campos sin borrador**. El
+archivo no se tocó desde v2.771.0 y el hallazgo no venía de este trabajo: la
+pantalla cruzó el umbral cuando se le agregó el termómetro del refrigerador.
+
+Abierto antes de creerle, que es lo que el propio gate manda hacer: **los 6
+controles son de CUATRO formularios distintos**, no de uno.
+
+| formulario | controles | su botón |
+|---|---:|---|
+| `Area` — termómetro y calibración | 3 | Guardar, sólo si está sucio |
+| `HorariosDeLaSucursal` | 0 contados | Guardar, sólo si está sucio |
+| `Refrigerador` — la fecha antes de encender | 1 | Encender |
+| `AgregarArea` — qué área y cómo se llama | 2 | Agregar |
+
+El más largo son **tres campos**, o sea la mitad del umbral. Es la segunda de
+las tres formas que el conteo por archivo clasifica mal, ya anotada en el
+encabezado del gate desde el 2026-08-24.
+
+Y hay una razón de más para que un borrador ahí sea peor que la falta: `Area` se
+rinde **una vez por área** dentro de un `.map`, así que un borrador por archivo
+pisaría la tarjeta de al lado.
+
+Cerrado como el gate indica — excepción con su motivo escrito, no baseline. Y
+antes de creerle el cero, se le fabricó la regresión que debería cazar: un
+archivo de seis controles apareció como hallazgo y desapareció al borrarlo.
+
 ## v2.782.0 — El depósito dice a qué banco va, y el Gerente General se entera
 
 «al darle en depositar al banco, que llegue una notificación al gerente general

@@ -1103,7 +1103,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     accept=".pdf,.jpg,.jpeg,.png"
                     density="sm"
                     busy={isAnalyzing}
-                    busyLabel="Subiendo y analizando con IA…"
+                    busyLabel="Subiendo y leyendo el documento…"
                     url={doc.url}
                     name={doc.file_name}
                     onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
@@ -1111,7 +1111,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
                         <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
-                            <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
+                            <span>Fecha de Vencimiento (opcional) — la lee el portal si el documento la trae</span>
                             {expiryBadge && <Badge variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
                         </label>
                         <div className="bg-surface-card rounded-xl border border-divider h-[36px] flex items-center px-1.5">

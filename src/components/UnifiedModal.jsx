@@ -322,7 +322,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "addCustomDocument": return "Nuevo Documento";
             case "editCustomDocument": return "Actualizar Documento";
             case "viewWfmAnalytics": return "Monitor de ventas";
-            case "aiSchedulerPreview": return "Planificación con IA";
+            case "aiSchedulerPreview": return "Planificación propuesta por el portal";
             case "setEmployeePassword": return "Establecer Contraseña";
             case "changeOwnPassword": return "Cambiar Contraseña";
             case "editContact": return "Editar Perfil";

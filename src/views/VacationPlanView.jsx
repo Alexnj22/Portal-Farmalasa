@@ -624,7 +624,7 @@ const VacationPlanView = () => {
     const handleGenerateAI = async () => {
         const result = await generateAIPlan(year);
         if (result.success) {
-            useToastStore.getState().showToast('Plan generado', `${result.count} vacaciones asignadas por IA.`, 'success');
+            useToastStore.getState().showToast('Plan generado', `${result.count} vacaciones propuestas por el portal.`, 'success');
         } else {
             useToastStore.getState().showToast('Error', result.error || 'No se pudo generar el plan.', 'error');
         }
@@ -923,7 +923,7 @@ const VacationPlanView = () => {
                                         {(!activeHeader || activeHeader.status === 'DRAFT') && (
                                             <Button disabled={isGeneratingPlan} onClick={handleGenerateAI}>{isGeneratingPlan
                                                     ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
-                                                    : <><Sparkles size={12} strokeWidth={2.5} /> {activeHeader ? 'Regenerar con IA' : 'Generar con IA'}</>
+                                                    : <><Sparkles size={12} strokeWidth={2.5} /> {activeHeader ? 'Rehacer propuesta' : 'Generar propuesta'}</>
                                                 }</Button>
                                         )}
                                         {/* Pre-approve */}

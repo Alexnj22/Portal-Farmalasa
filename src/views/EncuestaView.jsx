@@ -1446,7 +1446,7 @@ export default function EncuestaView() {
                                     <div className="p-5">
                                         <div className="flex items-center gap-2 mb-4">
                                             <Loader2 size={13} className="animate-spin text-chart-3-text shrink-0" />
-                                            <span className="text-body-sm text-chart-3-text/80 font-medium">Analizando comentarios con IA…</span>
+                                            <span className="text-body-sm text-chart-3-text/80 font-medium">Leyendo los comentarios…</span>
                                         </div>
                                         <div className="space-y-2.5">
                                             {[1, 0.8, 0.6, 0.75, 0.5].map((w, i) => (

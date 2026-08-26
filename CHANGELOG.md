@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.797.2 — Los CHECK del cierre no sabían de la parte en mano
+
+**El cierre en efectivo no podía guardar ni una fila**, y nada lo dijo. Salió a
+la luz al escribir el primer cierre real, una hora después de entregarlo.
+
+Los dos CHECK de `depositos_bancarios` se escribieron cuando el único destino
+era el banco, y ninguno se revisó al partir el monto en dos:
+
+- `deposito_monto_positivo` exigía `monto_deposito > 0`. Un cierre que va entero
+  en mano lleva $0 al banco: la función lo aceptaba y la tabla lo rechazaba.
+- `deposito_cuadra` no restaba la parte en mano. Un reparto de $10,000 al banco
+  y $6,000 en mano exigía remanente = $6,000 para pasar, cuando el remanente
+  real es $0 — así que **tampoco** entraba un cierre repartido.
+
+Entre las dos, lo único que pasaba era un depósito bancario puro: exactamente lo
+que ya había antes de todo el trabajo. La lección es la de siempre y era barata
+de evitar: **no corrí el camino que acababa de abrir.**
+
+De paso, dos reglas que estaban sólo en la función bajan a la tabla: una fila no
+puede decir «$6,000 en mano» sin decir a quién, ni «$10,000 al banco» sin decir
+a cuál. Efectivo que cambia de manos sin dueño es el agujero que este circuito
+existe para tapar, y una regla que vive sólo en la función deja de valer el día
+que alguien escriba por otro camino — como pasó hoy.
+
 ## v2.797.1 — Un cierre se reparte entre el banco y la mano
 
 > «¿qué pasa si una parte va en efectivo y otra en depósito?»

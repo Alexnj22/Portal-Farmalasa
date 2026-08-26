@@ -25,6 +25,7 @@
     "gate:doc": "node scripts/design-doc-gate.mjs",
     "gate:version": "node scripts/version-gate.mjs",
     "gate:migrations": "node scripts/migration-gate.mjs",
+    "gate:rutas": "node scripts/rutas-gate.mjs",
     "indices:testigo": "node scripts/indices-testigo.mjs",
     "gate:perf": "node scripts/perf-gate.mjs",
     "hooks:install": "git config core.hooksPath .githooks",

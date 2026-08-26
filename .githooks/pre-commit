@@ -122,6 +122,17 @@ if git diff --cached --name-only | grep -qE '^src/(views|components)/'; then
   node scripts/mobile-gate.mjs --hook || exit 1
 fi
 
+# rutas-gate: sólo si el commit toca App.jsx o el registro de módulos, que es
+# donde viven las rutas, sus títulos de pestaña y el menú. Comprueba que la
+# dirección diga lo que abre y lo diga en español, que toda vista tenga título
+# de pestaña copiado de su encabezado, y que ningún ítem del menú lleve al 404.
+# Nació de un reporte del usuario mirando la barra de direcciones: `/dashboard`
+# abría el listado de EMPLEADOS. El repo ya lo sabía —había un comentario que lo
+# decía— y nada lo miraba. Local, sin red, instantáneo. Canon: DESIGN.md §33.
+if git diff --cached --name-only | grep -qE '^src/(App\.jsx|constants/moduleMap\.js)$'; then
+  node scripts/rutas-gate.mjs || exit 1
+fi
+
 # perf-gate: sólo si el commit toca los tres archivos donde vive lo que evita
 # que la Consulta de Inventario se vuelva a trabar — el largo mínimo de la
 # búsqueda, el techo de productos y el filtro que le da índice al selector de

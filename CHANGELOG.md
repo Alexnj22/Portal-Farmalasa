@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.780.0 — La dirección, la pestaña y el menú de una vista tienen su regla y su candado
+
+Continuación del reporte de la barra de direcciones. El usuario pidió revisar
+cómo están nombradas **todas** las vistas y dejar la regla escrita para las que
+vengan.
+
+**Se auditaron las 60 rutas** cruzando cuatro nombres: el encabezado de la
+pantalla, el título de la pestaña, la etiqueta del menú y la dirección.
+Aparecieron tres defectos reales, y se corrigieron:
+
+- `/vacation-plan` decía «Plan de vacaciones» en la pestaña sobre una pantalla
+  titulada **«Plan anual de vacaciones»**.
+- `/compras` decía «Compras» sobre **«Compras (Bodega)»**.
+- `/carnes-del-dia` no tenía título de pestaña: decía «Portal FarmaSalud», que
+  entre veinte pestañas abiertas no distingue nada.
+
+**Y quedó el candado: `npm run gate:rutas`.** Corre en el pre-commit cuando el
+commit toca `App.jsx` o el registro de módulos, y mide cinco cosas: que toda
+vista tenga título de pestaña, que ese título se copie del ENCABEZADO y no del
+menú, que la dirección vaya en español y nombre lo que abre, que ningún ítem del
+menú apunte a una ruta que ya no existe —eso no da error, se ve como una
+pantalla rota— y que la lista de deuda no nombre deuda ya saldada.
+
+El motivo de que sea un gate y no un párrafo: **el repo ya sabía que
+`/dashboard` estaba mal.** Arriba de `ROUTE_TITLES` había un comentario escrito
+a mano que decía «el path es legado: la ruta es el listado». Una nota al margen
+no falla, no avisa, y el que agrega la vista siguiente no la lee.
+
+**La deuda quedó medida, no escondida: 18 rutas en inglés** que ya estaban en
+producción, cada una con el nombre en español que le corresponde anotado al
+lado, para que renombrarla sea una decisión ya tomada. La lista **sólo baja**:
+agregar una entrada nueva también hace fallar el gate.
+
+**Dos de los tres hallazgos de la primera corrida eran del detector, no del
+portal.** Acusó a `/conteo-inventario/:id` de no tener título —una ficha de
+detalle no lo tiene, a propósito— y dijo que el encabezado de `/encuesta` era
+«Volver a Gestión de encuesta», que es el tooltip de la flecha de volver: el
+regex saltaba por encima de un `title={` dinámico hasta caer en el `title` de un
+botón anidado. Sólo `/branches` era real. Los dos falsos positivos quedaron
+fabricados a mano en `tests/unit/rutasGate.test.js`, junto con las cinco
+regresiones que el gate sí tiene que cazar — un cero al que nadie le fabricó la
+regresión que debería cazar no significa nada.
+
+La regla completa, con la tabla de los cuatro nombres y la receta para renombrar
+sin romperle el favorito a nadie, en **DESIGN.md §33**.
+
 ## v2.779.0 — La dirección dice lo que abre: el listado es /personal y el tablero es /inicio
 
 Reporte del usuario, mirando la barra de direcciones: *«¿por qué dice dashboard

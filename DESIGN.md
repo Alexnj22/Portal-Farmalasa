@@ -6372,3 +6372,94 @@ Ojo con el corolario falso: `shadow-sm` y `shadow-lg` sueltos tampoco los ve el
 gate (sólo caza `shadow-[literal]`), pero ahí **no hay deuda** — 322 usos de
 `shadow-sm` dicen que la utilidad es el idioma aceptado. La diferencia es que el
 vidrio tiene canónico (`data-surface`) y la sombra no.
+
+---
+
+## 33. Cómo se llama una vista (2026-08-26)
+
+Nació de un reporte de una línea del usuario, mirando la barra de direcciones:
+*«¿por qué dice dashboard si es empleados? el inicio no debería ser
+dashboard?»*.
+
+Tenía razón dos veces. `/dashboard` abría el **listado de empleados** y
+`/overview` abría el tablero: las dos direcciones decían lo contrario de lo que
+mostraban. Y lo grave no es que estuvieran mal — es que **el repo ya lo sabía y
+nada lo miraba**: arriba de `ROUTE_TITLES` había un comentario escrito a mano
+que decía, textual, *«el path es legado: la ruta es el listado»*. Una nota al
+margen no es una regla: no falla, no avisa, y el que agrega la vista siguiente
+no la lee.
+
+El encabezado de la pantalla decía lo correcto todo el tiempo («Gestión de
+personal»). O sea que el nombre viejo sobrevivía **exactamente en el único lugar
+que nadie revisaba** y que el usuario sí mira.
+
+### 33.1 Una vista tiene CUATRO nombres, y cada uno tiene su regla
+
+| dónde se lee | de dónde sale | quién lo ve |
+|---|---|---|
+| **el encabezado** (`GlassViewLayout title=`) | es el nombre canónico: los otros tres se derivan de él | dentro de la pantalla |
+| **la pestaña del navegador** (`ROUTE_TITLES`) | **copiado del encabezado, letra por letra** | entre otras veinte pestañas |
+| **el menú** (`MODULE_MAP.label`) | puede abreviar | dentro de su grupo |
+| **la dirección** (`<Route path>`) | el encabezado, en minúsculas y con guiones | en la barra de direcciones y en lo que se comparte |
+
+1. **La pestaña se copia del ENCABEZADO, no del menú.** El menú puede abreviar
+   porque se lee dentro de su grupo («Listado» bajo Personal); la pestaña se lee
+   sola, entre otras veinte. Al medirlo aparecieron dos que no coincidían:
+   `/vacation-plan` decía «Plan de vacaciones» sobre una pantalla titulada «Plan
+   anual de vacaciones», y `/compras` decía «Compras» sobre «Compras (Bodega)».
+
+2. **Toda ruta tiene título de pestaña.** Sin él la pestaña dice «Portal
+   FarmaSalud», y con veinte abiertas no se distingue ninguna. Faltaban 19 el día
+   que se escribió `ROUTE_TITLES`, y volvió a faltar una (`/carnes-del-dia`) en
+   cuanto se agregó una vista.
+
+3. **La dirección va en español y nombra lo que abre.** Es la misma regla de §26
+   —el portal no le habla al usuario en la jerga de adentro— aplicada al único
+   texto de pantalla que nadie había mirado. La barra de direcciones se lee, se
+   copia y se pega en un chat: es tan visible como un encabezado.
+
+4. **La excepción es la ficha de detalle.** `/personal/empleado/:id` no tiene un
+   título fijo: lo arma `AppWithToast` con el nombre de lo que se abrió. No se
+   declara en `ROUTE_TITLES` y el gate no la pide.
+
+### 33.2 Renombrar una ruta: la vieja no se borra, redirige
+
+Un favorito del navegador **no vive en ninguna tabla** y no hay forma de medir a
+quién le rompés el enlace. Las notificaciones sí se pueden medir —el día del
+cambio eran 0 de 4,428 las que nombraban las rutas viejas— pero eso es la mitad
+del universo.
+
+Y si la ruta vieja tenía parámetros, **la redirección los conserva**. Un
+`<Navigate to="/personal">` suelto desde `/dashboard/empleado/:id` deja a quien
+tenía guardado el expediente de alguien mirando el listado completo, sin
+entender por qué. Eso es **peor que un 404**: parece que funcionó.
+
+La receta completa —los seis lugares que hay que tocar, incluida la consulta a
+`notifications`— está al pie de `scripts/rutas-gate.mjs`.
+
+### 33.3 Lo vigila `npm run gate:rutas`
+
+Corre en el pre-commit cuando el commit toca `src/App.jsx` o
+`src/constants/moduleMap.js`. Comprueba las cuatro reglas de arriba más una
+quinta que no se ve venir: **que ningún ítem del menú apunte a una ruta que ya
+no existe** — eso no da error, se ve como una pantalla rota al tocar el menú.
+
+`HEREDADAS` es la deuda del día que se escribió: 18 rutas en inglés que ya
+estaban en producción, **cada una con el nombre en español que le corresponde
+anotado al lado**, para que renombrarla sea una decisión ya tomada y no una
+discusión de vocabulario cada vez. **Sólo baja**: agregar una entrada nueva
+también hace fallar el gate, porque esa lista es un inventario de lo que hay que
+arreglar y no un lugar donde esconder lo que se acaba de escribir.
+
+### 33.4 De la primera corrida, dos de tres hallazgos eran del detector
+
+Vale anotarlo porque es la lección que se repite: acusó a
+`/conteo-inventario/:id` de no tener título —una ficha de detalle no lo tiene, a
+propósito— y dijo que el encabezado de `/encuesta` era «Volver a Gestión de
+encuesta», que es el **tooltip de la flecha de volver**: su regex saltaba por
+encima de un `title={` dinámico hasta caer en el `title` de un botón anidado.
+
+Sólo el tercero (`/branches`) era real. Los dos falsos positivos están
+fabricados a mano en `tests/unit/rutasGate.test.js` junto con las cinco
+regresiones que el gate sí tiene que cazar — **un cero al que nadie le fabricó
+la regresión que debería cazar no significa nada**.

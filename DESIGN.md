@@ -6464,7 +6464,7 @@ Las 17 renombradas (más `/dashboard` e `/overview` un rato antes):
 
 | era | es |
 |---|---|
-| `/announcements` | `/comunicaciones` |
+| `/announcements` | `/avisos` |
 | `/audit` | `/auditoria-de-tiempos` |
 | `/auditview` | `/auditoria-del-sistema` |
 | `/branches` | `/sucursales` |
@@ -6485,6 +6485,52 @@ Las 17 renombradas (más `/dashboard` e `/overview` un rato antes):
 `/monitor` se quedó: «monitor» es palabra española y la vista se llama «Monitor
 en tiempo real». `/roles` pasó a `/cargos` porque el portal dice **cargo** —
 `roles` es el nombre de la tabla, no el del negocio (§26).
+
+### 33.5 El quinto nombre: el que usa la pantalla por dentro
+
+Lo levantó el usuario horas después: *«¿por qué si my-announcements dice mis
+avisos, announcement dice comunicaciones?»*. La ruta se había derivado del
+encabezado —«Centro de comunicaciones»— siguiendo la regla al pie de la letra.
+La regla estaba bien; **el encabezado estaba mal**, y se probó contando:
+
+| vista | dice adentro | decía su encabezado |
+|---|---|---|
+| `AnnouncementsView` | **aviso ×34** · comunicación ×1 | «Centro de comunicaciones» |
+| `RolesView` | **cargo ×22** · organigrama ×11 · jerarquía ×1 | «Jerarquía institucional» |
+
+En los dos casos la palabra del encabezado era la **única** vez que la pantalla
+la usaba. Un encabezado que no comparte vocabulario con su propio cuerpo no es
+un título: es una etiqueta que alguien puso una vez.
+
+**La prueba que lo detecta es barata: contar.** Si la palabra del encabezado
+aparece una sola vez en el archivo —la del encabezado— es un intruso. Y su
+espejo: **el menú y el encabezado tienen que compartir al menos una palabra.**
+Medido sobre las 54 vistas, sólo tres no la compartían, y una era legítima
+(`/personal` dice «Listado» en el menú porque se lee bajo el grupo «Personal»,
+que es la abreviación que §33.1 permite).
+
+Hoy son `/avisos` con «Gestión de avisos», y `/cargos` con «Cargos y
+organigrama».
+
+### 33.6 El mapa de precarga es el sexto nombre, y falla en silencio
+
+`IMPORTADOR_POR_RUTA` (`src/constants/routeImporters.js`) mapea el primer
+segmento de la ruta a su vista, para empezar a bajar el módulo cuando el mouse
+pasa por el menú. **Su modo de falla es el peor de todos: no rompe nada.** Si la
+clave no está, `prefetchRuta` no encuentra nada y no hace nada — la vista carga
+lento la primera vez, sin error, sin log y sin pantalla en blanco.
+
+Al renombrar las 19 rutas, el mapa quedó viejo entero. Y su propio comentario
+describía el modo de falla y decía que el archivo estaba «GENERADO leyendo las
+`<Route>` de App.jsx» — **no hay generador**: se escribió a mano una vez. Otra
+afirmación que nadie verificaba.
+
+El chequeo que se agregó encontró además dos que **nunca estuvieron**:
+`/personal` y `/sucursales`, o sea que el listado de empleados y el de
+sucursales no se precargaron jamás. Y `cortes` figuraba como `cortes_caja`, que
+es la clave del MÓDULO y no el segmento de la ruta.
+
+Ninguno de los cuatro se podía notar usando el portal.
 
 ### 33.4 De la primera corrida, dos de tres hallazgos eran del detector
 

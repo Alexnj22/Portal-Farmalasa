@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.781.1 — El aviso se llama aviso en las dos pantallas, y la precarga vuelve a encontrar sus rutas
+
+*«¿por qué si my-announcements dice mis avisos, announcement dice
+comunicaciones?»*. La ruta se había derivado del encabezado —«Centro de
+comunicaciones»— siguiendo la regla al pie de la letra. La regla estaba bien;
+**el encabezado estaba mal**, y se probó contando:
+
+| vista | dice adentro | decía su encabezado |
+|---|---|---|
+| `AnnouncementsView` | **aviso ×34** · comunicación ×1 | «Centro de comunicaciones» |
+| `RolesView` | **cargo ×22** · organigrama ×11 · jerarquía ×1 | «Jerarquía institucional» |
+
+En los dos casos la palabra del encabezado era la **única** vez que la pantalla
+la usaba, y el menú ya decía lo correcto («Gestionar avisos», «Cargos /
+Organigrama»). Un encabezado que no comparte vocabulario con su propio cuerpo no
+es un título: es una etiqueta que alguien puso una vez.
+
+Ahora **`/avisos`** con «Gestión de avisos», y `/cargos` con «Cargos y
+organigrama». `/comunicaciones` vivió unas horas y queda como redirección:
+alguien pudo copiar el enlace.
+
+**Y buscándolo apareció algo peor.** `IMPORTADOR_POR_RUTA` —el mapa que precarga
+la vista cuando el mouse pasa por el menú— **quedó viejo entero** al renombrar
+las 19 rutas. Su modo de falla es el peor de todos: **no rompe nada**. Sin la
+clave, el prefetch no encuentra nada y no hace nada; la vista carga lento la
+primera vez, sin error, sin log y sin pantalla en blanco. El propio comentario
+del archivo describía ese modo de falla, y decía que estaba «GENERADO leyendo
+las `<Route>` de App.jsx» — **no hay generador**: se escribió a mano una vez.
+
+El chequeo nuevo del gate encontró además tres que estaban mal **desde antes**:
+
+- **`/personal` y `/sucursales` nunca estuvieron en el mapa.** El listado de
+  empleados y el de sucursales no se precargaron jamás.
+- **`cortes` figuraba como `cortes_caja`**, que es la clave del MÓDULO y no el
+  segmento de la ruta. Cortes de caja tampoco se precargó nunca.
+
+Ninguno de los tres se podía notar usando el portal.
+
+`gate:rutas` gana entonces un sexto chequeo —toda ruta que no sea redirección
+tiene que tener su clave de precarga— con su regresión fabricada. 10 pruebas.
+Canon en DESIGN.md §33.5 y §33.6.
+
 ## v2.781.0 — Las 17 direcciones que quedaban en inglés pasan a español
 
 *«corrige los que ya están mal»*. La deuda que el gate había declarado el día

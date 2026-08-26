@@ -2940,7 +2940,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos recientes" icon={Megaphone} category="general"
-          action={puedeAbrir('/comunicaciones')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/comunicaciones')}>Ver todos <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/avisos')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/avisos')}>Ver todos <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -2958,7 +2958,7 @@ const DashboardView = ({ openModal }) => {
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
                   subtitle={new Date(a.date).toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})}
-                  onClick={puedeAbrir('/comunicaciones')?()=>navigate('/comunicaciones'):undefined}
+                  onClick={puedeAbrir('/avisos')?()=>navigate('/avisos'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
               ))}

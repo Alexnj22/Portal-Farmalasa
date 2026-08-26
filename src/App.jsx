@@ -719,7 +719,7 @@ function MainApp() {
                                     <Route path="solicitudes-personales" element={<PermissionGuard moduleKey="requests_personales"><RequestsView ambito="personales" /></PermissionGuard>} />
                                     <Route path="vacaciones" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
                                     <Route path="nomina" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="comunicaciones" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="avisos" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="cortes" element={<PermissionGuard moduleKey="cortes_caja"><CortesView /></PermissionGuard>} />
@@ -795,7 +795,16 @@ function MainApp() {
                                         motivo que arriba: el favorito de alguien no vive en ninguna
                                         tabla. `/branches/:id` conserva el id — sin eso, el favorito
                                         de una sala abre el listado de las ocho. */}
-                                    <Route path="announcements" element={<Navigate to="/comunicaciones" replace />} />
+                                    <Route path="announcements" element={<Navigate to="/avisos" replace />} />
+                                    {/* `/comunicaciones` vivió unas horas el 2026-08-26: se
+                                        derivó del encabezado «Centro de comunicaciones», que
+                                        resultó ser la ÚNICA vez que esa pantalla decía
+                                        «comunicación» —adentro dice «aviso» 34 veces— y el menú
+                                        ya decía «Gestionar avisos». Lo levantó el usuario: «¿por
+                                        qué si my-announcements dice mis avisos, announcement
+                                        dice comunicaciones?». Va igual como redirección: alguien
+                                        pudo copiar el enlace en esas horas. */}
+                                    <Route path="comunicaciones" element={<Navigate to="/avisos" replace />} />
                                     <Route path="audit" element={<Navigate to="/auditoria-de-tiempos" replace />} />
                                     <Route path="auditview" element={<Navigate to="/auditoria-del-sistema" replace />} />
                                     <Route path="branches" element={<Navigate to="/sucursales" replace />} />
@@ -887,7 +896,7 @@ const ROUTE_TITLES = {
     '/nomina':           'Nómina',
     '/bonificaciones':    'Bonificaciones',
     '/entrevistas':       'Entrevistas',
-    '/comunicaciones':     'Centro de comunicaciones',
+    '/avisos':            'Gestión de avisos',
     '/ventas':            'Ventas',
     '/cortes':            'Cortes de caja',
     '/bolsas':            'Bolsas de efectivo',
@@ -919,7 +928,7 @@ const ROUTE_TITLES = {
     '/conteo-inventario': 'Conteo de inventario',
     '/bitacoras':         'Bitácoras',
     '/sucursales':          'Sucursales',
-    '/cargos':             'Jerarquía institucional',
+    '/cargos':            'Cargos y organigrama',
     '/permisos':       'Permisos de acceso',
     '/auditoria-del-sistema':         'Auditoría de sistema',
     '/mantenimiento':     'Mantenimiento',

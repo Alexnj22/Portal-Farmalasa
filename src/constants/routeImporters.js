@@ -70,15 +70,23 @@ export const IMPORTADORES = {
     BitacorasView: () => import("../views/BitacorasView"),
 };
 
-// Primer segmento de la ruta → vista que la atiende. GENERADO leyendo las
-// <Route> de App.jsx (no escrito a mano): si una vista se renombra y este mapa
-// queda viejo, el prefetch simplemente no encuentra la clave y no hace nada —
-// nunca rompe la navegación, que sigue con el lazy() normal.
+// Primer segmento de la ruta → vista que la atiende.
+//
+// Decía «GENERADO leyendo las <Route> de App.jsx», y no hay generador: se
+// escribió a mano una vez. El 2026-08-26 se renombraron 19 rutas y este mapa
+// quedó viejo, con el modo de falla que el comentario mismo describía — «el
+// prefetch no encuentra la clave y no hace nada». No rompe nada: sólo hace que
+// 19 vistas carguen lento la primera vez, sin error y sin que nadie lo note.
+// (Y `cortes` estaba desde antes como `cortes_caja`, que es la clave del MÓDULO
+// y no el segmento de la ruta: Cortes de caja nunca se precargó.)
+//
+// Hoy lo verifica `npm run gate:rutas`: toda ruta que no sea una redirección
+// tiene que tener su clave acá.
 export const IMPORTADOR_POR_RUTA = {
     '*': IMPORTADORES.NotFoundView,
-    'announcements': IMPORTADORES.AnnouncementsView,
-    'audit': IMPORTADORES.AttendanceAuditView,
-    'auditview': IMPORTADORES.AuditView,
+    'avisos': IMPORTADORES.AnnouncementsView,
+    'auditoria-de-tiempos': IMPORTADORES.AttendanceAuditView,
+    'auditoria-del-sistema': IMPORTADORES.AuditView,
     'bitacoras': IMPORTADORES.BitacorasView,
     'clientes': IMPORTADORES.ClientesView,
     'compras': IMPORTADORES.ComprasView,
@@ -101,37 +109,45 @@ export const IMPORTADOR_POR_RUTA = {
     'metas': IMPORTADORES.MetasView,
     'impresion': IMPORTADORES.ImpresionView,
     'carnes-del-dia': IMPORTADORES.CarnesDelDiaView,
-    'ios-test': IMPORTADORES.IOSTestView,
+    'prueba-ios': IMPORTADORES.IOSTestView,
     'laboratorios': IMPORTADORES.LaboratoriosView,
     'mantenimiento': IMPORTADORES.MaintenanceView,
     'minmax': IMPORTADORES.MinMaxView,
     'traslados': IMPORTADORES.TrasladosView,
     'monitor': IMPORTADORES.AttendanceMonitorView,
-    'my-announcements': IMPORTADORES.EmployeeAnnouncementsView,
-    'my-documents': IMPORTADORES.EmployeeDocumentsView,
-    // `/my-requests` se fusionó en `/requests-personales` el 2026-08-11 y hoy
-    // sólo redirige. Sin vista propia, no hay nada que precargar.
+    'mis-avisos': IMPORTADORES.EmployeeAnnouncementsView,
+    'mis-documentos': IMPORTADORES.EmployeeDocumentsView,
+    // `/my-requests` se fusionó en `/solicitudes-personales` el 2026-08-11 y hoy
+    // sólo redirige. Se deja porque el prefetch corre ANTES de la redirección:
+    // precargar la vista destino desde el enlace viejo es exactamente lo que se
+    // quiere.
     'my-requests': IMPORTADORES.RequestsView,
-    'orphan-objects': IMPORTADORES.OrphanObjectsView,
-    'overview': IMPORTADORES.DashboardView,
-    'payroll': IMPORTADORES.PayrollView,
+    'objetos-huerfanos': IMPORTADORES.OrphanObjectsView,
+    'inicio': IMPORTADORES.DashboardView,
+    'nomina': IMPORTADORES.PayrollView,
     'pedidos': IMPORTADORES.PedidosView,
-    'permissions': IMPORTADORES.PermissionsView,
+    // Estas dos nunca estuvieron: el listado de personal y el de sucursales
+    // no se precargaban desde que existe el mapa, y no había forma de
+    // notarlo — un prefetch que no encuentra su clave no falla, no avisa y
+    // no deja rastro. Las encontró el chequeo del gate, no una persona.
+    'personal': IMPORTADORES.StaffManagementView,
+    'sucursales': IMPORTADORES.BranchesView,
+    'permisos': IMPORTADORES.PermissionsView,
     'productos': IMPORTADORES.ProductosView,
-    'profile': IMPORTADORES.EmployeeProfileView,
+    'mi-perfil': IMPORTADORES.EmployeeProfileView,
     'proveedores': IMPORTADORES.ProveedoresView,
     'raw-test': IMPORTADORES.RawTestView,
-    'requests': IMPORTADORES.RequestsView,
+    'solicitudes': IMPORTADORES.RequestsView,
     // Misma vista, otro ámbito y otro permiso — comparte el importador para que
     // el prefetch de una sirva a la otra.
-    'requests-personales': IMPORTADORES.RequestsView,
-    'roles': IMPORTADORES.RolesView,
-    'schedules': IMPORTADORES.SchedulesView,
-    'sync-health': IMPORTADORES.SyncHealthView,
+    'solicitudes-personales': IMPORTADORES.RequestsView,
+    'cargos': IMPORTADORES.RolesView,
+    'horarios': IMPORTADORES.SchedulesView,
+    'actualizacion-de-datos': IMPORTADORES.SyncHealthView,
     'sesiones': IMPORTADORES.SesionesView,
-    'vacation-plan': IMPORTADORES.VacationPlanView,
+    'vacaciones': IMPORTADORES.VacationPlanView,
     'ventas': IMPORTADORES.VentasView,
-    'cortes_caja': IMPORTADORES.CortesView,
+    'cortes': IMPORTADORES.CortesView,
     'bolsas': IMPORTADORES.BolsasView,
     'ventas-perdidas': IMPORTADORES.VentasPperdidasView,
 };

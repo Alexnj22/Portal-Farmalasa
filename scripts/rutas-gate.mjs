@@ -65,6 +65,7 @@ import { join } from 'node:path';
 // y una pestaña que no copia su encabezado, y comprobar que falla por las dos.
 const APP = process.env.RUTAS_GATE_APP || 'src/App.jsx';
 const MODULOS = process.env.RUTAS_GATE_MODULOS || 'src/constants/moduleMap.js';
+const PRECARGA = process.env.RUTAS_GATE_PRECARGA || 'src/constants/routeImporters.js';
 // `RUTAS_GATE_HEREDADAS` (JSON) reemplaza la lista de deuda. Existe SÓLO para
 // que la prueba pueda fabricar el caso «una entrada de deuda que ya se
 // arregló»: hoy la lista está vacía y ese chequeo no tendría contra qué
@@ -216,6 +217,28 @@ for (const m of mm.matchAll(/^\s*([a-z_0-9]+):\s*\{\s*path:\s*'([^']+)',\s*label
   if (!rutasVivas.has(path)) modulosRotos.push({ key, path, label });
 }
 
+// ── La precarga conoce a toda ruta ──────────────────────────────────────────
+//
+// `IMPORTADOR_POR_RUTA` mapea el primer segmento de la ruta a la vista que la
+// atiende, para empezar a bajar el módulo al pasar el mouse por el menú. Su
+// modo de falla es el peor de todos: **no rompe nada**. Si falta la clave,
+// `prefetchRuta` no encuentra nada y no hace nada, así que la vista carga lento
+// la primera vez y no hay error, ni log, ni pantalla en blanco.
+//
+// El 2026-08-26 se renombraron 19 rutas y este mapa quedó viejo entero. Y
+// `cortes` estaba mal desde mucho antes —figuraba como `cortes_caja`, que es la
+// clave del MÓDULO y no el segmento de la ruta—, o sea que Cortes de caja nunca
+// se precargó y nadie podía notarlo.
+const precarga = leer(PRECARGA);
+const bloquePre = precarga.slice(precarga.indexOf('IMPORTADOR_POR_RUTA'), precarga.indexOf('};', precarga.indexOf('IMPORTADOR_POR_RUTA')));
+const clavesPre = new Set([...bloquePre.matchAll(/'([^']+)':\s*IMPORTADORES\./g)].map(m => m[1]));
+const sinPrecarga = [];
+for (const r of rutas) {
+  if (r.esRedireccion) continue;
+  const seg = r.path.slice(1).split('/')[0];
+  if (!clavesPre.has(seg)) sinPrecarga.push(r.path);
+}
+
 // ── Informe ──────────────────────────────────────────────────────────────────
 const c = { rojo: '\x1b[31m', verde: '\x1b[32m', gris: '\x1b[90m', neg: '\x1b[1m', fin: '\x1b[0m' };
 console.log(`\n── Cómo se llaman las vistas ─────────────────────────────`);
@@ -244,6 +267,14 @@ if (modulosRotos.length) {
   console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${modulosRotos.length} módulo(s) del menú apuntan a una ruta que no existe${c.fin}`);
   for (const m of modulosRotos) console.log(`      ${c.gris}${m.key} → ${m.path}${c.fin}  («${m.label}»)`);
   console.log(`    Un ítem del menú que lleva al 404 no da error: se ve como una pantalla rota.\n`);
+}
+
+if (sinPrecarga.length) {
+  falla = true;
+  console.log(`  ${c.rojo}✗${c.fin} ${c.neg}${sinPrecarga.length} ruta(s) sin clave en IMPORTADOR_POR_RUTA${c.fin}`);
+  for (const p of sinPrecarga) console.log(`      ${c.gris}${p}${c.fin}`);
+  console.log(`    Su vista no se precarga y NO da error: sólo carga lento la primera vez.`);
+  console.log(`    Agregá la clave en src/constants/routeImporters.js.\n`);
 }
 
 const nuevasEnIngles = enIngles.filter(p => !(p in HEREDADAS));

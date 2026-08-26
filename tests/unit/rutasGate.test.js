@@ -113,6 +113,26 @@ describe('gate:rutas', () => {
         expect(salida).not.toContain('/prueba-ios');
     });
 
+    it('caza una ruta sin clave de precarga', () => {
+        // El modo de falla que este chequeo cubre es el peor: no rompe nada.
+        // Sin la clave, `prefetchRuta` no encuentra nada y no hace nada — la
+        // vista carga lento la primera vez, sin error y sin rastro. Así se
+        // perdió la precarga de 19 rutas al renombrarlas, y así `cortes` estuvo
+        // años sin precargarse figurando como `cortes_caja`.
+        const pre = path.join(tmp, 'routeImporters.js');
+        fs.writeFileSync(pre, fs.readFileSync(path.join(RAIZ, 'src/constants/routeImporters.js'), 'utf8')
+            .replace("'bitacoras': IMPORTADORES.BitacorasView,", ''));
+        const app = path.join(tmp, 'App-precarga.jsx');
+        fs.writeFileSync(app, fs.readFileSync(APP_REAL, 'utf8'));
+        const env = { ...process.env, RUTAS_GATE_APP: app, RUTAS_GATE_PRECARGA: pre };
+        let salida = '', ok = true;
+        try { salida = execFileSync('node', [GATE], { env, encoding: 'utf8', cwd: RAIZ }); }
+        catch (e) { ok = false; salida = (e.stdout || '') + (e.stderr || ''); }
+        expect(ok).toBe(false);
+        expect(salida).toContain('sin clave en IMPORTADOR_POR_RUTA');
+        expect(salida).toContain('/bitacoras');
+    });
+
     // ── Los dos falsos positivos de la primera corrida ───────────────────────
 
     it('NO acusa a una ficha de detalle de no tener título de pestaña', () => {

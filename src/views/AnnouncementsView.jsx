@@ -566,7 +566,7 @@ const AnnouncementsView = ({ openModal }) => {
       <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso se moverá a la pestaña de Archivo y dejará de mostrarse en los Kioscos. ¿Continuar?" confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
       <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '' })} title={alertDialog.title} message={alertDialog.message} type="error" />
 
-      <GlassViewLayout icon={Megaphone} title="Centro de comunicaciones" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
+      <GlassViewLayout icon={Megaphone} title="Gestión de avisos" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
           {/* SIN `transform-gpu`: ancestro de la tarjeta del formulario, y un

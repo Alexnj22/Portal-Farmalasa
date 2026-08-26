@@ -743,6 +743,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     });
     const removeEmergencyPhone = (idx) => setFormData(prev => ({ ...prev, emergency_contact_extra_phones: (prev.emergency_contact_extra_phones || []).filter((_, i) => i !== idx) }));
 
+    // Contactos ADEMÁS del principal. Se leen de `contactos_extra` si alguien ya
+    // los tocó en esta sesión, y si no de la fila guardada salteando el primero
+    // —que es el principal y vive en sus propias columnas—. Sin estado extra ni
+    // efecto de hidratación: un `useEffect` que copia de una a otra se dispara
+    // también al abrir la ficha y pisa lo que se acaba de escribir.
+    const contactosExtra = formData?.contactos_extra ?? (formData?.emergency_contacts || []).slice(1);
+    const addContactoExtra = () => setFormData(prev => ({
+        ...prev,
+        contactos_extra: [...(prev.contactos_extra ?? (prev.emergency_contacts || []).slice(1)), { nombre: '', parentesco: '', telefono: '' }],
+    }));
+    const updateContactoExtra = (idx, patch) => setFormData(prev => {
+        const base = prev.contactos_extra ?? (prev.emergency_contacts || []).slice(1);
+        return { ...prev, contactos_extra: base.map((c, i) => i === idx ? { ...c, ...patch } : c) };
+    });
+    const removeContactoExtra = (idx) => setFormData(prev => {
+        const base = prev.contactos_extra ?? (prev.emergency_contacts || []).slice(1);
+        return { ...prev, contactos_extra: base.filter((_, i) => i !== idx) };
+    });
+
     // Un empleado puede tener varias enfermedades crónicas simultáneas — lista libre,
     // cada entrada es su propio catálogo con fallback "Otra...".
     const addChronicCondition = () => setFormData(prev => ({ ...prev, chronic_conditions: [...(prev.chronic_conditions || []), ''] }));
@@ -1401,7 +1420,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <LiquidSelect
                                     value={formData.enlazar_con_id || ''}
-                                    onChange={(val) => handleSelectChange('enlazar_con_id', val)}
+                                    onChange={(val) => {
+                                        // Su foto, su sala y su cargo vienen con él: son datos
+                                        // que el portal YA tiene, y volver a pedirlos es pedir
+                                        // que alguien acierte lo que está a un clic. Sólo llena
+                                        // lo VACÍO, igual que el DUI — si quien carga ya eligió
+                                        // otra sala manda ésa, porque puede estar trasladando a
+                                        // la persona en el mismo movimiento.
+                                        const ficha = (employees || []).find(e => String(e.id) === String(val));
+                                        setFormData(prev => {
+                                            const next = { ...prev, enlazar_con_id: val };
+                                            if (!ficha) return next;
+                                            if (!prev.branch_id) next.branch_id = ficha.branch_id ?? ficha.branchId ?? '';
+                                            if (!prev.role_id) next.role_id = ficha.role_id ?? '';
+                                            if (!prev.secondary_role_id) next.secondary_role_id = ficha.secondary_role_id ?? '';
+                                            if (!prev.photoPreview && !prev.file) next.photoPreview = ficha.photo || ficha.photo_url || null;
+                                            return next;
+                                        });
+                                    }}
                                     options={fichasParaEnlazar}
                                     placeholder="Buscar a la persona por su nombre..."
                                     icon={Users}
@@ -1780,6 +1816,44 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         })}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* ── OTROS CONTACTOS ───────────────────────────────────
+                                Hasta hoy se podían guardar varios TELÉFONOS de UNA persona,
+                                que no es lo mismo que varias personas. El de arriba sigue
+                                siendo el principal y sigue viviendo en sus columnas —son las
+                                que lee el resto del portal—; éstos se guardan en
+                                `emergency_contacts` JUNTO CON ÉL, de modo que esa columna es
+                                la lista completa y no una mitad. */}
+                            <div className="mt-4 pt-4 border-t border-danger/30">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <p className="text-caption font-black uppercase tracking-widest text-danger/70 flex items-center gap-1.5">
+                                        <Users size={12} strokeWidth={2.5} /> Otros contactos
+                                    </p>
+                                    <Button variant="ghost" icon={Plus} onClick={addContactoExtra}>Agregar contacto</Button>
+                                </div>
+                                {contactosExtra.length === 0 && (
+                                    <p className="text-label text-content-3 font-medium">Sólo hay un contacto de emergencia.</p>
+                                )}
+                                <div className="flex flex-col gap-3">
+                                    {contactosExtra.map((c, idx) => (
+                                        <div key={idx} data-surface="card" className="p-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+                                                <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
+                                                    onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
+                                                <div className="relative z-content">
+                                                    <LiquidSelect value={c.parentesco || ''}
+                                                        onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
+                                                        options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
+                                                </div>
+                                                <PortalInput aria-label="Teléfono" compact icon={Phone} maskType="PHONE"
+                                                    value={c.telefono || ''}
+                                                    onChange={(e) => updateContactoExtra(idx, { telefono: e.target.value })} placeholder="0000-0000" />
+                                                <Button variant="ghost" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

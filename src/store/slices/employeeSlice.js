@@ -159,6 +159,29 @@ const normalizeHerramientas = (arr) => {
         .map(h => ({ ...h, cantidad: Number.isFinite(h.cantidad) ? h.cantidad : null }));
 };
 
+// Contactos de emergencia, en plural.
+//
+// La lista guardada incluye al PRINCIPAL en la primera posición, y no sólo a
+// los demás. Guardar sólo los extras dejaría la columna diciendo media verdad:
+// quien la lea después —un aviso, una exportación— tendría que saber que le
+// falta uno y de dónde sacarlo. Las columnas viejas se conservan porque son las
+// que lee hoy el resto del portal; ésta es la lista completa.
+const normalizeContactosEmergencia = (principal, extras) => {
+    const uno = (c) => ({
+        nombre: (c?.nombre || '').trim().toUpperCase(),
+        parentesco: (c?.parentesco || '').trim(),
+        telefono: (c?.telefono || '').trim(),
+    });
+    const lista = [];
+    if (principal?.nombre || principal?.telefono) lista.push(uno(principal));
+    for (const c of (Array.isArray(extras) ? extras : [])) {
+        const n = uno(c);
+        // Una fila agregada con «+» y nunca llenada no es un contacto.
+        if (n.nombre || n.telefono) lista.push(n);
+    }
+    return lista;
+};
+
 // Dependientes económicos: {name, birth_date, relationship, department,
 // municipality, address} — descarta filas totalmente vacías.
 const normalizeEconomicDependents = (arr) => {
@@ -632,6 +655,9 @@ export const createEmployeeSlice = (set, get) => ({
                 emergency_contact_phone: formData.emergency_contact_phone || null,
                 emergency_contact_relationship: formData.emergency_contact_relationship || null,
                 emergency_contact_extra_phones: Array.isArray(formData.emergency_contact_extra_phones) ? formData.emergency_contact_extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
+                emergency_contacts: normalizeContactosEmergencia(
+                    { nombre: formData.emergency_contact_name, parentesco: formData.emergency_contact_relationship, telefono: formData.emergency_contact_phone },
+                    formData.contactos_extra ?? (formData.emergency_contacts || []).slice(1)),
                 economic_dependents: normalizeEconomicDependents(formData.economic_dependents),
                 chronic_conditions: normalizeChronicConditions(formData.chronic_conditions),
                 has_disability: !!formData.has_disability,
@@ -992,7 +1018,22 @@ export const createEmployeeSlice = (set, get) => ({
             // Sólo tiene sentido al dar de alta (lo lee `addEmployee`). Si
             // llegara acá sería una columna inexistente y PostgREST rechazaría
             // el UPDATE entero.
+            // La lista se recompone SIEMPRE que se toque el contacto principal o
+            // los extras: si sólo se recompusiera al tocar los extras, cambiarle
+            // el teléfono al principal dejaría la lista con el número viejo y
+            // nadie notaría la discrepancia.
+            if (updatedData.contactos_extra !== undefined
+                || updatedData.emergency_contact_name !== undefined
+                || updatedData.emergency_contact_phone !== undefined
+                || updatedData.emergency_contact_relationship !== undefined) {
+                dbPayload.emergency_contacts = normalizeContactosEmergencia(
+                    { nombre: updatedData.emergency_contact_name, parentesco: updatedData.emergency_contact_relationship, telefono: updatedData.emergency_contact_phone },
+                    updatedData.contactos_extra ?? (updatedData.emergency_contacts || []).slice(1));
+            }
+
             delete dbPayload.enlazar_con_id;
+            // Sólo vive en el formulario: la columna es `emergency_contacts`.
+            delete dbPayload.contactos_extra;
             delete dbPayload.branchId;
             delete dbPayload.photo;
             delete dbPayload.file;

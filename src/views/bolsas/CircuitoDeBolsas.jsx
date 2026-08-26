@@ -219,7 +219,12 @@ const VACIO = [];
 // decir que hay plata que ya no está.
 const saldoDe = (b) => Number(b.saldo ?? b.monto_inicial ?? 0);
 const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
-const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - saldoDe(b)) * 100) / 100);
+/* El conteo contra el que se mide, en las DOS ventanas donde existe: la tanda
+ * ya firmada (`contado`) y la que se está contando (`conteo_marcado`). Al
+ * confirmar, `conteo_marcado` se vacía y `contado` toma su valor, así que nunca
+ * hay dos a la vez y el `??` no elige entre números que compitan. */
+const contadoDe = (b) => (b.contado ?? b.conteo_marcado ?? null);
+const diferenciaDe = (b) => (contadoDe(b) == null ? null : Math.round((Number(contadoDe(b)) - saldoDe(b)) * 100) / 100);
 
 /**
  * Una bolsa, con lo que hay que saber de ella en cualquier etapa.
@@ -368,8 +373,10 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
  * Va detrás de `bolsas_ver_montos` como toda cifra de esta pantalla. Jefe/a de
  * Compras cuenta dinero y no ve montos: es una decisión vieja del usuario, no un
  * descuido, y esto no la cambia. */
-function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMontos }) {
+function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
+    onContar, onDesmarcar, onResolver, puedeResolver, verMontos }) {
     const [abierto, setAbierto] = useState(false);
+    const [resolviendo, setResolviendo] = useState(false);
     const [valor, setValor] = useState('');
 
     /* Lo escrito, ya interpretado. Se calcula en el render y no al guardar
@@ -406,9 +413,25 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
      * Se muestra el resultado —cuadró, o cuánto faltó/sobró— y el camino de
      * vuelta: mientras el conteo no esté confirmado, contar de nuevo es gratis.
      * Ése es justamente el punto de haberlo separado en dos pasos. */
+    /* ── Ya contada, todavía sin confirmar ──────────────────────────────────
+     * Y desde el 2026-08-26 también se puede SALDAR desde acá: «que permita
+     * hacerlo también antes de confirmar, así mientras se cuenta posiblemente
+     * se resuelve» (usuario).
+     *
+     * Antes la causa había que anotarla una pestaña más allá y un paso después,
+     * con la tanda ya firmada. Quien cuenta encuentra la causa EN EL MOMENTO
+     * —el vale que estaba suelto, el cambio de la otra caja—, y hacerla esperar
+     * es cómo se pierde.
+     *
+     * Y es SEGURO, que era la objeción: `confirmar_conteo` recalcula la
+     * diferencia contra el saldo del momento, pero las tres funciones que mueven
+     * el saldo exigen `estado = 'ABIERTA'` — una bolsa que ya está en
+     * administración lo tiene congelado. Lo único que puede cambiarla es volver
+     * a contar, y por eso `desmarcar_conteo_bolsa` borra la causa anotada. */
     if (bolsa.conteo_marcado != null) {
         const dif = Math.round((Number(bolsa.conteo_marcado) - saldoDe(bolsa)) * 100) / 100;
         const cuadra = Math.abs(dif) < 0.01;
+        const resuelta = !!bolsa.dif_at;
         return (
             <>
                 {cuadra
@@ -424,27 +447,31 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
                         Se contaron <b className="text-content">{formatMoney(bolsa.conteo_marcado)}</b>
                     </span>
                 )}
-                {/* Una bolsa que no cuadra se quedaba diciendo cuánto faltó y
-                    nada más: la pantalla no ofrecía ningún camino para decir
-                    «ya sé qué pasó» (usuario, 2026-08-26: «¿cómo se solventa?
-                    cómo digo, ah ya se identificó la causa?»).
-                    El camino EXISTE y está una pestaña más allá —«Contadas»,
-                    con Justificar / Repuesto / Retirado y su motivo escrito—,
-                    pero acá no se decía. Y no puede adelantarse: la diferencia
-                    se recalcula al confirmar contra el saldo de ese momento, así
-                    que resolverla antes sería resolver un número que todavía
-                    puede cambiar. */}
-                {!cuadra && (
-                    <span className="text-caption text-content-3">
-                        La causa se anota al confirmar el conteo
-                    </span>
-                )}
+                {resuelta && <Badge variant="neutral" size="sm">{rotuloDeVia(bolsa.dif_via)}</Badge>}
                 <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
+                    {!cuadra && !resuelta && puedeResolver && !resolviendo && (
+                        <Button variant="secondary" size="sm" icon={Scale}
+                            onClick={() => setResolviendo(true)}>
+                            Anotar la causa
+                        </Button>
+                    )}
+                    {/* Volver a contar BORRA la causa anotada, y por eso el
+                        botón lo dice: descartar el conteo sin saberlo se llevaría
+                        una explicación que a alguien le costó encontrar. */}
                     <Button variant="ghost" size="sm" loading={ocupadoDesmarcar}
+                        title={resuelta ? 'Vuelve a contar y borra la causa anotada' : undefined}
                         onClick={() => onDesmarcar(bolsa)}>
                         Contar de nuevo
                     </Button>
                 </div>
+                {resuelta && bolsa.dif_causa && (
+                    <span className="text-caption text-content-3 w-full truncate">
+                        {bolsa.dif_causa}
+                    </span>
+                )}
+                {!cuadra && !resuelta && resolviendo && (
+                    <Resolver bolsa={bolsa} ocupado={ocupadoResolver} onResolver={onResolver} />
+                )}
             </>
         );
     }
@@ -524,7 +551,20 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, onContar, onDesmarcar, verMo
     );
 }
 
-/** Resolver la diferencia de una bolsa ya contada. */
+/* Cómo se saldó la diferencia. Vivía escrito a mano en el pie de «Contadas»;
+ * desde que también se resuelve mientras se cuenta, lo dicen dos sitios. */
+const VIA = { REPONE: 'Repuesto', RETIRA: 'Retirado', JUSTIFICA: 'Justificado' };
+const rotuloDeVia = (via) => VIA[via] || 'Justificado';
+
+/**
+ * Resolver la diferencia de una bolsa contada.
+ *
+ * Sirve en las DOS ventanas desde el 2026-08-26 («que permita hacerlo también
+ * antes de confirmar, así mientras se cuenta posiblemente se resuelve»): con la
+ * bolsa todavía en «Por contar» y con la tanda ya firmada, en «Contadas». No
+ * cambió nada acá adentro — lo que se generalizó es `diferenciaDe`, que ahora
+ * mide contra el conteo que haya.
+ */
 function Resolver({ bolsa, ocupado, onResolver }) {
     const [causa, setCausa] = useState('');
     const dif = diferenciaDe(bolsa);
@@ -1030,6 +1070,11 @@ export default function CircuitoDeBolsas({
         () => marcadas.filter((b) => Math.abs(Number(b.conteo_marcado) - saldoDe(b)) >= 0.01),
         [marcadas],
     );
+    // Y de ésas, las que todavía no tienen causa anotada. Desde que se puede
+    // saldar sin confirmar, «no cuadra» y «no se sabe por qué» dejaron de ser
+    // lo mismo: la primera es un hecho del dinero, la segunda es trabajo
+    // pendiente, y sólo la segunda hay que empujarla.
+    const sinCausa = useMemo(() => descuadradas.filter((b) => !b.dif_at), [descuadradas]);
 
     /* El cuadre de la TANDA, antes de firmarla.
      *
@@ -1240,7 +1285,12 @@ export default function CircuitoDeBolsas({
 
     const resolver = useCallback((bolsa, via, causa) => correr(`resolver-${bolsa.id}`,
         () => resolverDiferenciaBolsa(bolsa.id, via, causa),
-        'Diferencia resuelta'), [correr]);
+        `${bolsa.folio} · ${rotuloDeVia(via).toLowerCase()}`,
+        // Se pega la fila que vuelve para que la tarjeta cambie al instante, y
+        // ADEMÁS se recarga: «Diferencias por resolver» sale de otra consulta
+        // (`get_bolsas_con_diferencia`) y sin recargar seguiría mostrando una
+        // bolsa que ya se saldó.
+        { conLaFila: parchar }), [correr, parchar]);
 
     // Arma los nodos y los reparte por sala, conservando el orden que ya traía la
     // lista (sala, y dentro de la sala por fecha): un `Map` mantiene el orden de
@@ -1745,6 +1795,8 @@ export default function CircuitoDeBolsas({
                                             {descuadradas.length === 1
                                                 ? '1 bolsa no cuadra'
                                                 : `${descuadradas.length} bolsas no cuadran`}
+                                            {sinCausa.length > 0 && descuadradas.length > sinCausa.length
+                                                && ` · ${sinCausa.length} sin causa`}
                                         </div>
                                     )}
                                 </div>
@@ -1770,10 +1822,14 @@ export default function CircuitoDeBolsas({
                         )}
                         {/* Qué sigue para las que no cuadran. Es la mitad que
                             faltaba: la pantalla decía «faltó $500» y no decía
-                            qué hacer con eso. */}
-                        {descuadradas.length > 0 && (
+                            qué hacer con eso. Y desde que se puede saldar sin
+                            confirmar, lo que se dice es que la causa se anota
+                            ACÁ y no una pestaña más allá. */}
+                        {sinCausa.length > 0 && (
                             <span className="text-caption text-content-3">
-                                Su causa se anota después, en «Contadas»
+                                {sinCausa.length === 1
+                                    ? 'A la que no cuadra se le puede anotar la causa antes de confirmar'
+                                    : 'A las que no cuadran se les puede anotar la causa antes de confirmar'}
                             </span>
                         )}
                         </div>
@@ -1785,7 +1841,10 @@ export default function CircuitoDeBolsas({
                         <Conteo bolsa={b}
                             ocupado={ocupado === `contar-${b.id}`}
                             ocupadoDesmarcar={ocupado === `desmarcar-${b.id}`}
-                            onContar={contar} onDesmarcar={desmarcar} verMontos={verMontos} />
+                            ocupadoResolver={ocupado === `resolver-${b.id}`}
+                            onContar={contar} onDesmarcar={desmarcar} onResolver={resolver}
+                            puedeResolver={puedeContar || puedeEntregar}
+                            verMontos={verMontos} />
                     ) : null),
                 })}
                 total={porContar.length} montoTotal={suma(porContar)}
@@ -1862,9 +1921,7 @@ export default function CircuitoDeBolsas({
                                         </Badge>
                                     )}
                                 {b.dif_at && (
-                                    <Badge variant="neutral" size="sm">
-                                        {b.dif_via === 'REPONE' ? 'Repuesto' : b.dif_via === 'RETIRA' ? 'Retirado' : 'Justificado'}
-                                    </Badge>
+                                    <Badge variant="neutral" size="sm">{rotuloDeVia(b.dif_via)}</Badge>
                                 )}
                                 {!cuadra && !b.dif_at && (puedeContar || puedeEntregar) && (
                                     <Resolver bolsa={b} ocupado={ocupado === `resolver-${b.id}`} onResolver={resolver} />

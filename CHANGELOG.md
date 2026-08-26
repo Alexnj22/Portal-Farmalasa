@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.773.0 — La causa se anota mientras se cuenta
+
+*«que permita hacerlo también antes de confirmar, así mientras se cuenta
+posiblemente se resuelve»* (usuario).
+
+Una diferencia sólo se podía saldar en «Contadas», o sea **después de firmar la
+tanda entera**. Quien cuenta encuentra la causa EN EL MOMENTO —el vale que
+estaba suelto, el cambio que quedó en la otra caja— y tenía que anotarla una
+pestaña más allá y un paso después, cuando ya no la tiene fresca. Ahora la
+tarjeta que no cuadra trae **«Anotar la causa»** ahí mismo, con las mismas tres
+salidas de siempre: Justificar, Repuesto o Retirado.
+
+### Por qué es seguro, que era mi objeción y estaba mal
+
+Ayer dije que no se podía adelantar porque `confirmar_conteo` **recalcula** la
+diferencia contra el saldo del momento, así que resolver antes sería resolver un
+número que todavía puede cambiar. Medido: las **tres** funciones que mueven el
+saldo —`registrar_salida_de_bolsa`, `anular_salida_de_bolsa` y
+`reajustar_bolsas_del_dia`— exigen `estado = 'ABIERTA'`. Una bolsa en «Por
+contar» ya está en administración: **su saldo está congelado**, y ese recálculo
+protege la ventana anterior, no ésta.
+
+Lo que sí puede cambiar la diferencia antes de confirmar es **volver a contar**,
+y ésa es la contraparte que hubo que escribir: `desmarcar_conteo_bolsa` ahora
+borra la causa anotada y lo deja en la bitácora. Sin eso, una bolsa saldada con
+«Repuesto $500» que se recuenta y ahora cuadra se quedaba con la explicación
+pegada — y encima invisible, porque «Diferencias por resolver» mira
+`dif_at IS NULL`. El botón «Contar de nuevo» lo avisa. Y `confirmar_conteo`
+limpia la resolución si la bolsa termina cuadrando: es la falla segura.
+
+Medido contra producción: **11 bolsas ya esperaban esto** —en «Por contar», sin
+cuadrar y sin causa—, y ninguna de las 86 restantes rebota mal.
+
+### Y el resumen de la tanda distingue las dos cosas
+
+«No cuadra» y «no se sabe por qué» dejaron de ser lo mismo: la primera es un
+hecho del dinero, la segunda es trabajo pendiente. El bloque de cuadre dice
+`3 bolsas no cuadran · 1 sin causa`, y sólo empuja a la segunda.
+
 ## v2.772.0 — El rechazo lo firma quien rechazó, y el motivo se pide una sola vez
 
 Dos reportes de la misma pantalla.

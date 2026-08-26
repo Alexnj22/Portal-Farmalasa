@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import useBorrador from '../../hooks/useBorrador';
 import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
+import { faltantesDelExpediente } from '../../utils/expediente';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
@@ -479,47 +480,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setHasDraft(false);
     };
 
+    /* ── Lo que falta, que ya NO es lo que bloquea ──────────────────────────
+     *
+     * Desde que una ficha se puede guardar con sólo el nombre, este banner dejó
+     * de ser un recordatorio menor y pasó a ser **la única señal** de que el
+     * expediente está a medias. Por eso ahora se muestra también al DAR DE
+     * ALTA: antes salía sólo en edición, que era cuando el formulario ya te
+     * había obligado a llenar casi todo.
+     *
+     * La lista sale de `utils/expediente.js` y no de acá: la miran también el
+     * listado de personal y —más adelante— quien decida si una ficha incompleta
+     * se puede borrar. Tres pantallas con tres listas propias dirían cosas
+     * distintas de la misma persona.
+     */
     const pendingItems = useMemo(() => {
-        if (!isEditMode) return [];
-        const items = [];
-        if (!formData?.dui) items.push('DUI');
-        if (!formData?.birth_date) items.push('Fecha de nacimiento');
-        if (!formData?.isss_number && !formData?.afp_number) items.push('ISSS o AFP');
-        // Documento de identidad (imagen): no bloquea el alta, pero se marca como
-        // pendiente si no se pudo completar al crear el expediente.
-        const age = calcAge(formData?.birth_date);
-        const minor = age !== null && age < MINOR_AGE;
-        const docs = formData?.employee_documents || [];
-        const hasIdDoc = minor
-            ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
-            : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
-        if (!hasIdDoc) items.push('DUI (Documento)');
-        // Art. 117 CT: sin el examen médico previo, admitir a un menor no es
-        // irregular — es que no se puede. Va acá y no en `isFormFullyValid`
-        // porque el papel llega después de la entrevista, y trabar el alta
-        // hasta tenerlo produce el atajo (dar de alta a otro nombre), no el
-        // cumplimiento.
-        if (minor && !docs.some(d => d.category === 'EXAMEN_MEDICO' && d.url)) items.push('Examen médico (Art. 117)');
-        // Los tres numerales del Art. 23 que se agregaron el 2026-08-26. Se
-        // avisan, no se exigen: son datos que a menudo llegan del contrato
-        // firmado, y el contrato se firma después de crear el expediente.
-        if (!formData?.dui_lugar_expedicion || !formData?.dui_fecha_expedicion) items.push('Expedición del documento (Art. 23 nº2)');
-        if (!formData?.periodo_pago) items.push('Cada cuánto se le paga (Art. 23 nº9)');
-        if (!formData?.contrato_lugar_celebracion || !formData?.contrato_fecha_celebracion) items.push('Dónde y cuándo se firmó (Art. 23 nº13)');
-        // Documentos por vencer/vencidos — cualquier categoría (RTS 11.02.04:24
-        // §6.3.1 exige acreditación vigente para TODO el personal, no solo
-        // Regente/Enfermería). No bloquea Guardar (es "Pendiente", no "Requerido").
-        getExpiringDocuments(docs).forEach(doc => {
-            const label = doc.daysLeft < 0 ? `${doc.title || doc.category}: vencido` : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`;
-            items.push(label);
+        const items = faltantesDelExpediente(formData)
+            .map(f => (f.art ? `${f.label} (Art. ${f.art})` : f.label));
+
+        // Los vencimientos son otra cosa: no es que falte el dato, es que el
+        // dato dice que el papel ya no sirve. RTS 11.02.04:24 §6.3.1 exige
+        // acreditación vigente para TODO el personal, no sólo Regente o
+        // Enfermería.
+        getExpiringDocuments(formData?.employee_documents || []).forEach(doc => {
+            items.push(doc.daysLeft < 0
+                ? `${doc.title || doc.category}: vencido`
+                : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`);
         });
         return items;
-        // Depende de `formData` entero y no de once campos sueltos: la lista ya
-        // era una enumeración a mano incompleta, y cada campo nuevo del Art. 23
-        // había que acordarse de agregarlo acá o el banner se quedaba diciendo
-        // «pendiente» después de completarlo. Construir un array corto en cada
-        // render no cuesta nada; olvidarse de una dependencia, sí.
-    }, [isEditMode, formData]);
+    }, [formData]);
 
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
@@ -1034,19 +1022,44 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // pedido explícito del usuario, tras notar que el botón aparecía habilitado
     // con el DUI vacío marcado "Requerido". Se reporta al padre (UnifiedModal)
     // vía onValidationChange, igual que ya hace FormNovedad con isFormValid.
+    /* ── Qué apaga Guardar, y qué NO ────────────────────────────────────────
+     *
+     * Antes esto exigía DUI, género, estado civil, sala, cargo y código. El
+     * resultado medido el 2026-08-26: **48 de las 49 fichas no se podían ni
+     * abrir y guardar**, así que para anotarle el teléfono a alguien había que
+     * traer primero su DUI. Es la forma exacta de
+     * [[feedback_una_verificacion_que_traba_la_accion_no_se_hace]]: la regla
+     * era correcta y el MOMENTO estaba mal, y el atajo que produce es dar de
+     * alta a la persona con datos inventados.
+     *
+     * Pedido del usuario: «que se pueda guardar un empleado sin importar qué,
+     * al menos como mínimo nombre… pero queda como borrador, los datos siguen
+     * siendo requeridos». Así que la línea se movió:
+     *
+     *   BLOQUEA sólo lo que hace daño escribir mal — un dato con formato
+     *   inválido (un DUI cuyo dígito verificador no cuadra, un teléfono que no
+     *   es de El Salvador, una edad fuera de rango). Guardar eso ensucia el
+     *   expediente y después nadie sabe si es un error o el dato real.
+     *
+     *   NO BLOQUEA lo que falta. Ausente es un estado legítimo del expediente
+     *   —lo dice el propio Art. 23: el contrato se firma después—, y se ve en
+     *   «Información Pendiente» y en la lista de personal.
+     *
+     * O sea: **vacío se guarda, mal escrito no.**
+     */
     const isFormFullyValid = useMemo(() => {
+        // Lo único imprescindible: sin nombre no hay a quién nombrar la ficha.
         if (!formData?.first_names?.trim() || firstNamesInvalid) return false;
         if (!formData?.last_names?.trim() || lastNamesInvalid) return false;
 
-        if (isMinor) {
-            if (altIdMissing) return false;
-        } else if (!formData?.dui?.trim() || isDuiInvalid || isDuiDuplicate || isDuiIncomplete) {
-            return false;
-        }
+        // ── De acá abajo, TODO es «si está, que esté bien» ──────────────────
+        // Ninguna condición exige presencia: cada una se dispara sólo cuando
+        // el campo tiene contenido y el contenido no cuadra.
+        if (!isMinor && (isDuiInvalid || isDuiDuplicate || isDuiIncomplete)) return false;
         if (birthDateInvalid) return false;
 
-        if (!formData?.gender) return false;
-        if (!formData?.marital_status) return false;
+        // Un departamento sin municipio es una dirección a medias que después
+        // no se puede resolver: o los dos, o ninguno.
         if (formData?.department && !formData?.municipality) return false;
         for (const addr of (formData?.extra_addresses || [])) {
             if (addr.department && !addr.municipality) return false;
@@ -1059,49 +1072,37 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }
         if (emailInvalid) return false;
 
-        if (formData?.education_level === 'BASICA' && !formData?.education_grade_completed) return false;
-        if (LEVELS_WITH_SPECIALTY.includes(formData?.education_level)
-            && (!formData?.education_specialty || formData.education_specialty === OTRA_ESPECIALIDAD)) return false;
-        if (LEVELS_WITH_PROFESSION.includes(formData?.education_level)
-            && (!formData?.profession || formData.profession === OTRA_ESPECIALIDAD)) return false;
-        if (formData?.education_level === 'UNIVERSITARIO' && !formData?.is_studying && formData?.has_maestria
-            && (!formData?.maestria_title || formData.maestria_title === OTRA_ESPECIALIDAD)) return false;
+        // «Otra…» sin especificar no es un dato: es el placeholder del catálogo
+        // guardado como si fuera una respuesta.
+        if (formData?.education_specialty === OTRA_ESPECIALIDAD) return false;
+        if (formData?.profession === OTRA_ESPECIALIDAD) return false;
+        if (formData?.has_maestria && formData?.maestria_title === OTRA_ESPECIALIDAD) return false;
         if (studyEndInPast || maestriaStudyEndInPast) return false;
 
         for (const dep of (formData?.economic_dependents || [])) {
             if (isDependentAgeInvalid(dep)) return false;
         }
 
-        if (formData?.has_disability && (!formData?.disability_type || formData.disability_type === OTRA_ESPECIALIDAD || !formData?.disability_grade)) return false;
-
-        if (!formData?.branch_id) return false;
-        if (!formData?.role_id) return false;
+        if (formData?.has_disability && formData?.disability_type === OTRA_ESPECIALIDAD) return false;
 
         if (salaryInvalid) return false;
         if (hoursInvalid) return false;
         if (contractDatesInvalid) return false;
+        // El plazo sin base legal ni motivo escrito SÍ bloquea, y es la única
+        // ausencia que lo hace: el Art. 25 presume indefinido un contrato a
+        // plazo sin justificar, así que guardarlo así no deja «un dato
+        // pendiente» — deja un contrato que dice algo que la ley no reconoce.
         if (temporalBasisMissing || temporalReasonMissing) return false;
 
         if (isssIncomplete) return false;
         if (afpIncomplete) return false;
 
-        if (!formData?.code?.trim()) return false;
-
         return true;
-    }, [
-        formData?.first_names, formData?.last_names, firstNamesInvalid, lastNamesInvalid,
-        isMinor, altIdMissing, formData?.dui, isDuiInvalid, isDuiDuplicate, isDuiIncomplete,
-        birthDateInvalid, formData?.gender, formData?.marital_status,
-        formData?.department, formData?.municipality, formData?.extra_addresses,
-        phoneHasError, formData?.extra_phones, emailInvalid,
-        formData?.education_level, formData?.education_grade_completed, formData?.education_specialty,
-        formData?.profession, formData?.is_studying, formData?.has_maestria, formData?.maestria_title,
-        studyEndInPast, maestriaStudyEndInPast, formData?.economic_dependents,
-        formData?.has_disability, formData?.disability_type, formData?.disability_grade,
-        formData?.branch_id, formData?.role_id,
-        salaryInvalid, hoursInvalid, contractDatesInvalid, temporalBasisMissing, temporalReasonMissing,
-        isssIncomplete, afpIncomplete, formData?.code,
-    ]);
+    }, [formData, firstNamesInvalid, lastNamesInvalid, isMinor,
+        isDuiInvalid, isDuiDuplicate, isDuiIncomplete, birthDateInvalid,
+        phoneHasError, emailInvalid, studyEndInPast, maestriaStudyEndInPast,
+        salaryInvalid, hoursInvalid, contractDatesInvalid,
+        temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete]);
 
     useEffect(() => {
         onValidationChange?.(isFormFullyValid);
@@ -1224,14 +1225,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 </div>
             )}
 
-            {/* DATOS PENDIENTES EN MODO EDICIÓN */}
-            {isEditMode && pendingItems.length > 0 && (
-                <div className="mb-3 bg-danger/10 border border-danger/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
-                    <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <div>
-                        <p className="text-caption font-black uppercase tracking-widest text-danger mb-0.5">Información Pendiente</p>
-                        <p className="text-label text-danger-text font-medium leading-tight">
-                            Completa los siguientes campos: <span className="font-black">{pendingItems.join(' • ')}</span>
+            {/* LO QUE FALTA — también al dar de alta.
+                Desde que la ficha se guarda con sólo el nombre, éste es el único
+                lugar donde se ve que el expediente está a medias. En ámbar y no
+                en rojo a propósito: rojo dice «está mal» y esto dice «falta», y
+                el día que alguien entra falta casi todo — eso es lo normal, no
+                un error. */}
+            {pendingItems.length > 0 && (
+                <div className="mb-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
+                    <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <div className="min-w-0">
+                        <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">
+                            Expediente incompleto — {pendingItems.length} pendiente{pendingItems.length === 1 ? '' : 's'}
+                        </p>
+                        <p className="text-label text-warning-text font-medium leading-tight">
+                            Se puede guardar así y completarlo después: <span className="font-black">{pendingItems.join(' • ')}</span>
                         </p>
                     </div>
                 </div>

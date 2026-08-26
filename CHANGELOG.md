@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.786.0 — Una ficha se guarda con sólo el nombre, y lo que falta se ve
+
+Punto 6 de la revisión con Talento Humano: *«que se pueda guardar un empleado
+sin importar qué, al menos como mínimo nombre… pero queda como borrador, los
+datos siguen siendo requeridos»*.
+
+Es el cambio de mayor efecto de los catorce. Guardar exigía DUI, género, estado
+civil, sala, cargo y código, y el resultado medido fue que **48 de las 49 fichas
+no se podían ni abrir y guardar**: para anotarle el teléfono a alguien había que
+traer primero su DUI. La regla era correcta y **el momento estaba mal** — un
+candado así no produce cumplimiento, produce el atajo.
+
+La línea se movió a otro lado:
+
+- **Bloquea lo que hace daño escribir mal.** Un DUI cuyo dígito verificador no
+  cuadra, un teléfono que no es de El Salvador, una edad fuera de rango, un
+  «Otra…» sin especificar. Guardar eso ensucia el expediente y después nadie
+  sabe si es un error o el dato real.
+- **No bloquea lo que falta.** Ausente es un estado legítimo: lo dice el propio
+  Art. 23, porque el contrato se firma después de abrir el expediente.
+
+**La única ausencia que sigue bloqueando es el plazo sin justificar.** Un
+contrato TEMPORAL sin base legal y sin motivo escrito lo presume indefinido el
+<span>Art. 25</span>, así que guardarlo no deja un dato pendiente: deja un
+contrato que afirma algo que la ley no reconoce.
+
+**Y «se puede guardar» no es «está completo».** La lista de lo que falta salió a
+`src/utils/expediente.js`, con su artículo al lado de cada campo, y el banner
+—ahora también al dar de alta, y en ámbar y no en rojo, porque el día que
+alguien entra falta casi todo y eso es lo normal— dice cuántos pendientes hay.
+
+Vive en un solo archivo a propósito: lo van a mirar el formulario, el listado de
+personal y quien decida si una ficha incompleta se puede borrar. Tres pantallas
+con tres listas propias dirían cosas distintas de la misma persona, que es
+exactamente lo que acababa de pasar con «Centro de comunicaciones» y el menú.
+
+Las pruebas que importan de las once nuevas no son las de «falta X» sino las de
+lo que **NO** debe pedir: un `NO_TIENE` declarado no es un faltante —es una
+respuesta—, a un menor no se le pide DUI porque en El Salvador no se tramita
+hasta los 18, y a un mayor no se le pide el examen médico del Art. 117.
+
 ## v2.785.0 — La ficha dice de qué sucursal, y un traslado no lleva signo
 
 Dos cosas reportadas mirando el detalle de un traslado.

@@ -21,6 +21,88 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.793.0 — Acreditaciones tiene su propia sección, y el ISSS y la AFP no se tramitan igual
+
+Punto 3 de la revisión con Talento Humano. «Vehículo y Acreditaciones» pasa a
+**Vehículos y licencias**, y las acreditaciones se van a una sección propia con
+tres cosas: la de la profesión, la de dependiente de farmacia, y si ya tiene
+ISSS y AFP.
+
+**Cuatro juntas, y una no es del CSSP.** Las tres de salud —médica, enfermería y
+químico farmacéutica— dependen del Consejo Superior de Salud Pública.
+**Contaduría no**: es el Consejo de Vigilancia de la Profesión de Contaduría
+Pública y Auditoría, otro organismo con su propio registro. Por eso cada una
+dice el suyo en pantalla, y por eso son columnas separadas y no un «número de
+junta» genérico: meterlas todas bajo «CSSP» mandaría a quien vaya a verificar la
+cuarta al lugar equivocado.
+
+**Se detectan, no se preguntan.** El cargo y la profesión ya están escritos en
+la ficha; volver a preguntar «¿es enfermero?» es pedir que alguien acierte algo
+que el portal sabe. Lo que sí se pregunta es si la **tiene**, que es lo que el
+portal no puede saber.
+
+El caso que rompe una detección ingenua está anclado en las pruebas:
+**«Regente de Enfermeria»** contiene la palabra «regente» y **no** es del JVPQF.
+
+**El comprobante se sube ahí mismo**, no en Documentación — de él salen el
+número y el vencimiento, y pedirlo al final obligaría a volver a teclear lo que
+el papel ya dijo. Es la misma regla del DUI. Las categorías siguen declaradas
+para que su título resuelva, pero no se pintan dos veces: el mismo documento en
+dos pantallas es dos sitios donde subirlo y uno donde buscarlo.
+
+La **acreditación de dependiente de farmacia** es del CSSP y tiene trámite de
+**reacreditación** —o sea que vence— así que su comprobante lleva fecha y entra
+al aviso diario de vencimientos. No depende de la profesión: la tiene quien
+atiende el mostrador.
+
+**Y el ISSS y la AFP no se tramitan igual.** Al **ISSS lo inscribe el patrono**;
+la **AFP la elige el trabajador** y sólo él puede afiliarse. Confundirlos haría
+que el portal le pida a alguien un trámite que no puede hacer, o que la empresa
+espere por algo que le toca a ella — así que cada aviso dice de quién es el
+pendiente.
+
+Los tres estados son `TIENE`, `NO_TIENE` y `EN_TRAMITE`, y **`null` no es «no
+tiene»: es «nadie preguntó»**. Hoy las 49 fichas están en silencio; tratar el
+silencio como una respuesta haría que el portal empiece 49 trámites que nadie
+pidió.
+
+9 pruebas nuevas, y las dos que importan son ésas: que contaduría no figure como
+del CSSP, y que un silencio no cuente como una respuesta.
+
+## v2.792.2 — El conteo dice sus fechas al elegirlo, y su detalle se lee en columnas
+
+Dos ajustes del usuario sobre la pantalla de conteos.
+
+**La ranura dice de qué fecha a qué fecha.**
+
+> «ahí debo poder ver de qué fecha a qué fecha son los conteos. para tener una
+> idea.»
+
+Las opciones decían `CNT-260826-2 · 25 bolsas` y el folio no contesta la
+pregunta: `260826` es el día en que se FIRMÓ la tanda, no el de las bolsas que
+lleva adentro — la del ejemplo cubre del 24 al 25. Sin eso había que abrir cada
+una para saber cuál se buscaba. Ahora el folio va arriba y debajo, en letra
+chica, `24 → 25 ago · 25 bolsas`. Va de subtexto y no pegado al folio porque en
+una ranura de 220px una sola línea con las tres cosas se corta justo donde
+empieza a informar; el buscador del selector encuentra por las dos.
+
+**El detalle pasa de tarjetas apiladas a una tabla.**
+
+> «el modal de abrir uno, no lo puedes hacer más ancho y poner más columnas,
+> para que esté mejor estructurado.»
+
+Nació angosto y con las bolsas como tarjetas: con 25 adentro eso son 25 bloques
+de dos renglones donde lo único comparable —la cifra— vive en la esquina y todo
+lo demás es prosa. Ahora es ancho, el cuadre son cuatro cifras en una fila
+—Debía haber, Se contó, Diferencia al contar, Sin resolver—, «Por día» es una
+franja, y las bolsas usan la misma tabla que la lista de afuera: Bolsa, Sala,
+Día, Debía haber, Contado, Diferencia, La contó y Causa. Lo que se ganó no es
+espacio sino comparación: en columnas se lee de arriba abajo, que es como se
+busca cuál de las 25 no cuadró.
+
+Y la que cuadró se dice con una raya, no con una insignia verde: en una lista
+donde cuatro fallaron, veintiún «✓ Cuadró» tapan a las cuatro que importan.
+
 ## v2.792.1 — Un empleado con cargo poderoso sigue siendo un empleado
 
 Reporte del usuario, de una línea: *«yo debo salir. soy empleado»*. Y tenía

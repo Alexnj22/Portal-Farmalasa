@@ -4,6 +4,9 @@ import Badge from '../common/Badge';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import { formatMoney } from '../../utils/formatNumber';
+// El rango de días vive en `etapas` porque también lo arma el motor para el
+// rótulo de la ranura de la píldora, y este archivo se carga en diferido.
+import { rangoDeDias } from '../../views/bolsas/etapas';
 
 /**
  * El archivo de las TANDAS de conteo.
@@ -56,15 +59,6 @@ const COLUMNAS = [
     { key: 'diferencia', label: 'Sin resolver', align: 'right' },
     { key: 'cuantas', label: 'Bolsas', align: 'right', hideBelow: 'md' },
 ];
-
-/* El rango de días que cubre una tanda, dicho corto. Un solo día se dice
- * «17 ago» y no «17 ago → 17 ago», que sería decir dos veces lo mismo. */
-const rangoDeDias = (c) => {
-    if (!c?.dia_desde) return '—';
-    const corto = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV',
-        { day: 'numeric', month: 'short' });
-    return c.dia_desde === c.dia_hasta ? corto(c.dia_desde) : `${corto(c.dia_desde)} → ${corto(c.dia_hasta)}`;
-};
 
 /* Quiénes contaron, en una línea. Con más de dos se dice el número: tres
  * nombres completos en una celda de tabla no se leen, se estorban. */
@@ -136,50 +130,105 @@ function SinResolver({ conteo }) {
     );
 }
 
-/** El detalle: el cuadre que se firmó, quién hizo qué, y bolsa por bolsa. */
+/* Las columnas de las bolsas de una tanda. Mismo canónico que la tabla de
+ * afuera, y por el mismo motivo: 25 tarjetas apiladas con la cifra a la derecha
+ * y el resto en prosa no se pueden comparar entre sí — que es lo único que se
+ * hace acá. Con columnas, «¿cuál de Salud 1 no cuadró?» se contesta de un
+ * vistazo. */
+const COLUMNAS_BOLSA = [
+    { key: 'folio', label: 'Bolsa' },
+    { key: 'sala', label: 'Sala', hideBelow: 'sm' },
+    { key: 'dia', label: 'Día' },
+    { key: 'esperado', label: 'Debía haber', align: 'right', hideBelow: 'md' },
+    { key: 'contado', label: 'Contado', align: 'right' },
+    { key: 'dif', label: 'Diferencia', align: 'right' },
+    { key: 'conto', label: 'La contó', hideBelow: 'lg' },
+    { key: 'causa', label: 'Causa', hideBelow: 'lg' },
+];
+
+/* Una cifra del cuadre, con su rótulo arriba en versalitas. Es la misma forma
+ * que la franja de «Por contar» — que se lea igual acá que allá es lo que
+ * permite seguir la cuenta meses después. */
+function Cifra({ rotulo, children, fuerte = false }) {
+    return (
+        <div>
+            <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                {rotulo}
+            </div>
+            <div className={`tabular-nums leading-none mt-1 ${fuerte
+                ? 'text-display font-black text-content' : 'text-title font-bold text-content-2'}`}>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+/**
+ * El detalle: el cuadre que se firmó, quién hizo qué, y bolsa por bolsa.
+ *
+ * ── Ancho, y con columnas (2026-08-26) ─────────────────────────────────────
+ * «el modal de abrir uno, no lo puedes hacer más ancho y poner más columnas,
+ * para que esté mejor estructurado» (usuario).
+ *
+ * Nació en `max-w-lg` con las bolsas como tarjetas apiladas, y con 25 adentro
+ * eso son 25 bloques de dos renglones donde lo único comparable —la cifra— vive
+ * en la esquina y todo lo demás es prosa. El cuadre entraba en cuatro renglones
+ * verticales usando un tercio del ancho de la pantalla.
+ *
+ * Ahora es `max-w-5xl`: el cuadre son cuatro cifras en fila, «Por día» es una
+ * franja, y las bolsas son la misma `DataTable` de afuera. Lo que ganó no es
+ * espacio sino comparación: puestas en columnas se leen de arriba abajo, que es
+ * como se busca cuál de las 25 no cuadró.
+ */
 function Detalle({ conteo, nombreSala, onClose }) {
     const c = conteo;
+    const abiertas = Number(c.descuadradas || 0) - Number(c.resueltas || 0);
+    const firmada = Number(c.diferencia || 0);
+    const pendiente = Number(c.pendiente || 0);
     return (
         <LiquidModal open={!!c} onClose={onClose}
-            maxWidth="max-w-lg" className="h-fit" ariaLabel={`Conteo ${c.folio}`}>
+            maxWidth="max-w-5xl" className="h-fit" ariaLabel={`Conteo ${c.folio}`}>
             <LiquidModal.Header>
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">{c.folio}</h3>
                     <p className="text-caption text-content-3">
-                        {fechaLarga(c.fecha)} · lo firmó {c.cerrado_por || '—'} · {selloDeTiempo(c.cerrado_at)}
+                        {rangoDeDias(c.dia_desde, c.dia_hasta)} · {c.cuantas} {Number(c.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                        {' '}· lo firmó {c.cerrado_por || '—'} · {selloDeTiempo(c.cerrado_at)}
                     </p>
                 </div>
             </LiquidModal.Header>
 
             <LiquidModal.Body className="space-y-4">
-                {/* Las mismas tres cifras y en el mismo orden que la franja de
-                    «Por contar»: lo que debía haber, lo que se contó, la resta.
-                    Que se lea igual acá que allá es lo que permite volver a
-                    seguir la cuenta meses después. */}
-                <div data-surface="card" className="px-4 py-3 space-y-1.5">
-                    <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>Debía haber</span><span>{formatMoney(c.total_esperado)}</span>
+                {/* Las cuatro cifras en UNA fila, en el orden en que se leen:
+                    lo que debía haber, lo que se contó, la resta, y lo que
+                    todavía no explicó nadie. La última es la que manda y por eso
+                    va aparte, contra el borde. */}
+                <div data-surface="card"
+                    className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 px-4 py-3">
+                    <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+                        <Cifra rotulo="Debía haber">{formatMoney(c.total_esperado)}</Cifra>
+                        <Cifra rotulo="Se contó" fuerte>{formatMoney(c.total_contado)}</Cifra>
+                        <Cifra rotulo="Diferencia al contar">
+                            {Math.abs(firmada) < 0.01
+                                ? <span className="text-success-text">Cuadró</span>
+                                : (
+                                    <span className={firmada < 0 ? 'text-danger-text' : 'text-warning-text'}>
+                                        {firmada < 0 ? '−' : '+'}{formatMoney(Math.abs(firmada))}
+                                    </span>
+                                )}
+                        </Cifra>
                     </div>
-                    <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>Se contó</span><span>{formatMoney(c.total_contado)}</span>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-3 text-caption text-content-2 tabular-nums">
-                        <span>Diferencia al contar</span>
-                        <span>{Math.abs(Number(c.diferencia || 0)) < 0.01
-                            ? 'Cuadró'
-                            : `${Number(c.diferencia) < 0 ? '−' : '+'}${formatMoney(Math.abs(Number(c.diferencia)))}`}</span>
-                    </div>
-                    {/* Las DOS cifras, y la de abajo es la que manda: lo firmado
-                        es el hecho, lo pendiente es lo que todavía hay que
-                        hacer. Juntas se lee de corrido «faltaron $4,592.24 y no
-                        queda nada sin explicar», que es la frase entera. */}
-                    <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line">
-                        <span className="text-subtitle font-bold text-content">Sin resolver</span>
-                        {Math.abs(Number(c.pendiente || 0)) < 0.01 && Number(c.descuadradas || 0) > 0 ? (
-                            <Badge variant="success" size="md" icon={CheckCircle2}>{formatMoney(0)}</Badge>
-                        ) : (
-                            <Diferencia valor={c.pendiente} size="md" />
-                        )}
+                    <div className="text-right">
+                        <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                            Sin resolver
+                        </div>
+                        <div className="mt-1.5">
+                            {Math.abs(pendiente) < 0.01 && Number(c.descuadradas || 0) > 0 ? (
+                                <Badge variant="success" size="md" icon={CheckCircle2}>{formatMoney(0)}</Badge>
+                            ) : (
+                                <Diferencia valor={pendiente} size="md" />
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -192,94 +241,104 @@ function Detalle({ conteo, nombreSala, onClose }) {
                     </span>
                     {(c.contaron || []).join(', ') || '—'}
                     {c.cerrado_por ? ` · la firmó ${c.cerrado_por}.` : '.'}
-                </p>
-
-                {Number(c.descuadradas) > 0 && (() => {
-                    const abiertas = Number(c.descuadradas) - Number(c.resueltas || 0);
-                    return (
-                        <p className="text-caption text-content-2">
+                    {Number(c.descuadradas) > 0 && (
+                        <>
+                            {' '}
                             <span className="font-bold text-content">
                                 {Number(c.descuadradas) === 1 ? 'Una bolsa no cuadró' : `${c.descuadradas} bolsas no cuadraron`}
                             </span>
                             {abiertas > 0
                                 ? ` · ${abiertas === 1 ? 'falta anotar una causa' : `faltan ${abiertas} causas por anotar`}.`
                                 : ' · todas tienen su causa anotada.'}
-                        </p>
-                    );
-                })()}
+                        </>
+                    )}
+                </p>
 
-                {/* Qué días entraron y cuánto de cada uno. Va ANTES de las
-                    bolsas porque es la pregunta que se hace primero: con 43
-                    bolsas, la lista de a una no responde «¿cuánto se contó del
-                    martes?». */}
+                {/* Qué días entraron y cuánto de cada uno, en franja. Va ANTES
+                    de las bolsas porque es la pregunta que se hace primero: con
+                    25 bolsas, la lista de a una no responde «¿cuánto se contó
+                    del martes?». */}
                 {(c.por_dia?.length || 0) > 1 && (
-                    <div className="space-y-1.5">
-                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
-                            Por día
-                        </h4>
-                        <div data-surface="card" className="px-4 py-3 space-y-1.5">
-                            {c.por_dia.map((x) => (
-                                <div key={x.fecha}
-                                    className="flex items-baseline justify-between gap-3 tabular-nums">
-                                    <span className="text-caption text-content-2">
-                                        {fechaLarga(x.fecha)}
-                                        <span className="text-content-3">
-                                            {' '}· {x.cuantas} {Number(x.cuantas) === 1 ? 'bolsa' : 'bolsas'}
-                                        </span>
-                                    </span>
-                                    <span className="text-label font-bold text-content shrink-0">
-                                        {formatMoney(x.contado)}
-                                    </span>
+                    <div data-surface="card" className="flex flex-wrap gap-x-10 gap-y-4 px-4 py-3">
+                        {c.por_dia.map((x) => (
+                            <div key={x.fecha}>
+                                <div className="text-micro font-black uppercase tracking-widest text-content-3">
+                                    {fechaLarga(x.fecha)}
                                 </div>
-                            ))}
-                        </div>
+                                <div className="text-title-sm font-bold tabular-nums text-content mt-0.5">
+                                    {formatMoney(x.contado)}
+                                </div>
+                                <div className="text-micro text-content-3 tabular-nums">
+                                    {x.cuantas} {Number(x.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
 
-                <div className="space-y-1.5">
-                    <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
-                        {c.bolsas?.length || 0} {c.bolsas?.length === 1 ? 'bolsa' : 'bolsas'}
-                    </h4>
-                    <div className="space-y-1.5">
-                        {(c.bolsas || []).map((b) => {
-                            const dif = Math.round((Number(b.contado || 0) - Number(b.esperado || 0)) * 100) / 100;
-                            const cuadra = Math.abs(dif) < 0.01;
-                            return (
-                                <div key={b.id} data-surface="card" className="px-3 py-2 space-y-1">
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <span className="min-w-0">
-                                            <span className="text-label font-bold text-content">{b.folio}</span>
-                                            <span className="text-caption text-content-3">
-                                                {' '}{nombreSala?.[b.branch_id] || ''} · {fechaLarga(b.fecha)} · {hhmm(b.hora)}
-                                            </span>
+                <DataTable
+                    columns={COLUMNAS_BOLSA}
+                    minWidth="720px"
+                    empty={{ icon: Package, message: 'Esta tanda no tiene bolsas' }}
+                >
+                    {(c.bolsas || []).map((b, i) => {
+                        const dif = Math.round((Number(b.contado || 0) - Number(b.esperado || 0)) * 100) / 100;
+                        const cuadra = Math.abs(dif) < 0.01;
+                        return (
+                            <DataRow key={b.id} index={i}>
+                                <DataCell>
+                                    <span className="font-bold text-content">{b.folio}</span>
+                                </DataCell>
+                                <DataCell hideBelow="sm">
+                                    <span className="text-caption text-content-2">
+                                        {nombreSala?.[b.branch_id] || '—'}
+                                    </span>
+                                </DataCell>
+                                <DataCell>
+                                    <span className="text-caption text-content-2 tabular-nums whitespace-nowrap">
+                                        {fechaLarga(b.fecha)} · {hhmm(b.hora)}
+                                    </span>
+                                </DataCell>
+                                <DataCell align="right" hideBelow="md">
+                                    <span className="tabular-nums text-content-2">{formatMoney(b.esperado)}</span>
+                                </DataCell>
+                                <DataCell align="right">
+                                    <span className="font-bold tabular-nums text-content">{formatMoney(b.contado)}</span>
+                                </DataCell>
+                                <DataCell align="right">
+                                    {/* La que cuadró se dice con una raya y no
+                                        con una insignia verde: en una lista de
+                                        25 donde cuatro fallaron, veintiún «✓
+                                        Cuadró» tapan a las cuatro que importan. */}
+                                    {cuadra
+                                        ? <span className="text-content-3 tabular-nums">—</span>
+                                        : <Diferencia valor={dif} />}
+                                </DataCell>
+                                <DataCell hideBelow="lg">
+                                    <span className="text-caption text-content-2">{b.contado_por || '—'}</span>
+                                </DataCell>
+                                <DataCell hideBelow="lg">
+                                    {b.dif_causa ? (
+                                        /* Sin `title`: §15.10 — el tooltip nativo
+                                           no existe en el teléfono, que es donde
+                                           la columna se colapsa. La causa es
+                                           corta («$15 saco Dra.») y entra
+                                           entera; si algún día no entrara, el
+                                           lugar de leerla es la bolsa. */
+                                        <span className="text-caption text-content-2">
+                                            {b.dif_causa}
+                                            {b.dif_por ? (
+                                                <span className="text-content-3"> · {b.dif_por}</span>
+                                            ) : null}
                                         </span>
-                                        <span className="text-label font-bold tabular-nums text-content shrink-0">
-                                            {formatMoney(b.contado)}
-                                        </span>
-                                    </div>
-                                    {/* Quién contó ESTA bolsa. Va en cada renglón y
-                                        no sólo arriba porque es lo que se pregunta
-                                        cuando una no cuadra: «¿quién la contó?»,
-                                        no «¿quién contó ese día?». */}
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {!cuadra && <Diferencia valor={dif} />}
-                                        {b.contado_por && (
-                                            <span className="text-caption text-content-3">
-                                                La contó {b.contado_por}
-                                            </span>
-                                        )}
-                                        {b.dif_causa && (
-                                            <span className="text-caption text-content-3 min-w-0 truncate">
-                                                · {b.dif_causa}
-                                                {b.dif_por ? ` (${b.dif_por})` : ''}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                                    ) : (
+                                        <span className="text-content-3">—</span>
+                                    )}
+                                </DataCell>
+                            </DataRow>
+                        );
+                    })}
+                </DataTable>
             </LiquidModal.Body>
         </LiquidModal>
     );
@@ -364,7 +423,7 @@ export default function ConteosDeBolsas({
                         <DataCell>{fechaLarga(c.fecha)}</DataCell>
                         <DataCell hideBelow="md">
                             <span className="text-caption text-content-2 tabular-nums">
-                                {rangoDeDias(c)}
+                                {rangoDeDias(c.dia_desde, c.dia_hasta)}
                             </span>
                         </DataCell>
                         <DataCell hideBelow="lg">

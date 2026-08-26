@@ -295,7 +295,7 @@ const BolsasView = () => {
                                         icon={Scale}
                                         placeholder="Conteos"
                                         umbral={0}
-                                        ancho="200px"
+                                        ancho="220px"
                                     />
                                 </FilterBar.Section>
                             )}

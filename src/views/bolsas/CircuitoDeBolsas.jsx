@@ -27,6 +27,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { rangoDeDias } from './etapas';
 import { useToastStore } from '../../store/toastStore';
 
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
@@ -1662,7 +1663,17 @@ export default function CircuitoDeBolsas({
      * sola vez. */
     const opcionesDeTanda = useMemo(() => tandas.map((t) => ({
         value: String(t.id),
-        label: `${t.folio} · ${t.cuantas} ${Number(t.cuantas) === 1 ? 'bolsa' : 'bolsas'}`,
+        label: t.folio,
+        /* El rango de DÍAS va en el rótulo porque es lo que se pregunta al
+         * elegir: «ahí debo poder ver de qué fecha a qué fecha son los conteos,
+         * para tener una idea» (usuario, 2026-08-26). El folio no lo dice
+         * —`CNT-260826-1` es el día en que se FIRMÓ, no el de las bolsas— así
+         * que sin esto hay que abrir cada uno para saber cuál se busca.
+         *
+         * Va de `sublabel` y no pegado al folio: en una ranura de 220px una
+         * sola línea con folio, rango y cuenta se corta justo donde empieza a
+         * informar. `LiquidSelect` lo dibuja en segundo renglón y lo busca. */
+        sublabel: `${rangoDeDias(t.dia_desde, t.dia_hasta)} · ${t.cuantas} ${Number(t.cuantas) === 1 ? 'bolsa' : 'bolsas'}`,
     })), [tandas]);
     useEffect(() => { onTandas?.(opcionesDeTanda); }, [opcionesDeTanda, onTandas]);
     useEffect(() => () => onTandas?.(VACIO), [onTandas]);

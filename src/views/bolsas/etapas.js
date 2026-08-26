@@ -27,3 +27,20 @@ export const ETAPAS = [
     { key: 'contar',      label: 'Por contar',          icon: Banknote,    estado: 'RECIBIDA',  soloAdmin: true },
     { key: 'finalizadas', label: 'Finalizadas',         icon: ShieldCheck, estado: 'CONTADA',   soloAdmin: true },
 ];
+
+/* ── El rango de días que cubre una tanda, dicho corto ──────────────────────
+ *
+ * Vive acá y no en `ConteosDeBolsas` porque lo leen los DOS lados —la tabla de
+ * conteos y la ranura de la píldora, que la arma `CircuitoDeBolsas`— y ese
+ * componente se carga en diferido: importarlo desde el motor para sacar una
+ * función de tres líneas rompería el corte del bundle.
+ *
+ * Un solo día se dice «17 ago» y no «17 ago → 17 ago», que sería decir dos
+ * veces lo mismo.
+ */
+export const rangoDeDias = (desde, hasta) => {
+    if (!desde) return '—';
+    const corto = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV',
+        { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    return desde === hasta ? corto(desde) : `${corto(desde)} → ${corto(hasta)}`;
+};

@@ -40,21 +40,21 @@ top 19", se habrían tocado funciones sanas y al menos una habría quedado peor.
 > Es la misma familia que [[feedback_un_gate_que_no_pudo_medir_no_puede_dar_verde]]:
 > el instrumento contestó, pero no contestó lo que se le preguntó.
 
-### Después de medir doce: el defecto era de UNA
+### Después de medir treinta: el defecto era de UNA
 
-Cerradas las fases 1 y 2, el marcador es **12 funciones medidas contra su
-candidata, 12 declaradas sanas, 0 migraciones**. Sumando la fase 0:
+Cerradas las fases 1, 2 y 3, el marcador es **30 funciones medidas contra su
+candidata, 30 declaradas sanas, 0 migraciones**. Sumando la fase 0:
 `get_conteo_products_count` **era la única de las 69**.
 
 Eso cambia la expectativa de lo que queda, y conviene decirlo antes de empezarlo:
-las fases 3 y 4 son casi con seguridad **un ejercicio de declarar sanas**, no de
+la fase 4 es casi con seguridad **un ejercicio de declarar sanas**, no de
 corregir. Eso no las vuelve inútiles —lo que no está medido y escrito se vuelve
 a mirar dentro de tres meses— pero sí cambia cuánto esfuerzo merecen: barrido
 por tiempo absoluto primero, y medición a fondo sólo para las que crucen 200 ms.
 
 Y explica de dónde salía el defecto. No es que `LANGUAGE sql` con `SET` sea malo
 por sí solo: **hace falta además que el plan bueno dependa de los argumentos**.
-En las doce sanas, el plan genérico resulta ser tan bueno como el personalizado
+En las treinta sanas, el plan genérico resulta ser tan bueno como el personalizado
 porque su forma no cambia con los valores. En `get_conteo_products_count` sí
 cambiaba —el tamaño del conteo decide entre hash join y nested loop— y ahí los
 21 millones de comparaciones. **La condición 2 del criterio de §2 no es un
@@ -304,6 +304,64 @@ plazo vencido. `get_stock_analysis` además es la del Patrón B, con paginación
 
 Se miden con argumentos de **cierre de mes real**, no con un rango de un día.
 
+#### Resultado de la fase 3 — **las 18 están sanas, cero migraciones** (2026-08-26)
+
+Doce quedaron bajo 200 ms en el barrido. Las **seis que cruzaron** se midieron a
+fondo, y ninguna tiene el defecto:
+
+| función | caso | filas | función | corregida / literales | divergencia |
+|---|---|---:|---:|---:|---:|
+| `get_libro_compras_declarable` | julio (cierre) | 873 | 1,931 ms | 1,723 ms | **1.1×** |
+| `get_libro_compras_declarable` | junio (cierre) | 705 | 1,266 ms | 1,258 ms | 1.0× |
+| `get_no_sales_products` | sala 1 | 31 | 1,350 ms | 1,358 ms | 1.0× |
+| `get_stagnant_inventory` | salas 1 y 7 | 86 / 409 | 799 / 822 ms | 873 / 738 ms | 0.9–1.1× |
+| `get_stock_analysis` | sala 1 | 4,249 | 437 ms | 470 ms | 0.9× |
+| `get_pedido_sucursal_stats` | las 7 salas | 7 | 301 ms | 286 ms | 1.1× |
+| `get_products_sold_no_minmax` | sala 1 | 621 | 291 ms | **445 ms** | **0.7× — peor** |
+| `get_ccf_con_problema` | julio | 0 | **70 ms** | **464 ms** | **0.2× — 6.6× peor** |
+
+**`get_ccf_con_problema` da vuelta el argumento entero: su plan genérico es
+MEJOR.** Forzarle el personalizado la dejaría 6.6× más lenta. Sirve como
+recordatorio de que «genérico» no significa «malo» — significa «el mismo para
+todos los argumentos», y a veces ése es el correcto.
+
+**Cinco funciones salieron vacías en el primer barrido y hubo que remedirlas.**
+Cortes y bolsas **sólo existen desde el 14-ago**, así que los argumentos de julio
+daban 0 filas — y un tiempo sobre un resultado vacío no es una medición. Con
+agosto: `get_corte_z_dias` 23 ms (26 filas), `get_bolsas_invariante` 6 ms (62),
+`get_corte_eventos` 4 ms (5). Las otras dos quedan **declaradas sin medición con
+datos**, no sanas:
+
+- `get_ccf_con_problema` — 0 filas sobre **20 meses**, pero el tiempo sí es real
+  (865 ms de trabajo). Medida por tiempo; la igualdad de resultados no se pudo
+  verificar sobre filas.
+- `empleados_en_turno` — 0 filas incluso en la sala con más gente. 11 ms.
+
+⚠️ **Ese cero de `empleados_en_turno` puede ser un hallazgo aparte**, no de este
+plan: la sala con más empleados activos no devuelve a nadie en turno. O no hay
+horarios publicados, o la función no los encuentra. Verificar antes de que algo
+dependa de ella.
+
+#### Convertir a plpgsql NO siempre es mecánico
+
+El generador automático **falló en 4 de 6**, por dos causas que hay que conocer
+antes de presupuestar cualquier conversión futura:
+
+1. **`RETURN QUERY` exige el tipo exacto.** `get_no_sales_products` y
+   `get_stagnant_inventory` declaran `numeric` y su cuerpo devuelve `integer`;
+   `LANGUAGE sql` lo convertía en silencio, plpgsql no
+   (*«structure of query does not match function result type»*). Es además una
+   pista de que esas firmas tienen tipos flojos.
+2. **Los nombres de `RETURNS TABLE(...)` se vuelven variables en plpgsql**, y
+   chocan con las columnas del cuerpo: `get_stock_analysis` y
+   `get_pedido_sucursal_stats` fallan con *«column reference is ambiguous»*. Se
+   arregla con `#variable_conflict use_column` o calificando cada referencia.
+
+Para esas cuatro se usó el test directo del criterio —**la función contra su
+cuerpo con los parámetros reemplazados por literales**—, que no necesita plpgsql
+y es exactamente la condición 2. Es el camino a preferir cuando el generador
+tropieza.
+
 ### Fase 4 — las de sincronización, aparte y al final *(≈1 sesión)*
 
 `sync_inventory_batch` (737 s), `upsert_product_precios_batch`,
@@ -364,7 +422,7 @@ Sección nueva en `gate:perf` (que ya mide contra producción):
 | 0 · triage de las 69 | **cerrado** — medido fuera de la ventana del corte, tabla en §0 |
 | 1 · las tres lentas | **cerrado** — las tres medidas y **declaradas sanas**; cero migraciones |
 | 2 · la frontera | **cerrado** — las nueve medidas y **declaradas sanas**; cero migraciones |
-| 3 · las que no se llamaron | abierto |
+| 3 · las que no se llamaron | **cerrado** — 18 medidas, **18 sanas**; cero migraciones |
 | 4 · sincronización | abierto |
 | 5 · el gate | abierto |
 

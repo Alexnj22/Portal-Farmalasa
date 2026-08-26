@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.767.3 — Recepción parcial: el botón de la sala obedece a las casillas
+
+*«no puedo recepcionar parcialmente, si selecciono 6 en salud 1, no cambia a
+recibir 6 siempre dice 10, y el monto no cambia tampoco»* (usuario).
+
+Las casillas de «Esperando recepción» estaban, y funcionaban — pero **el único
+control que se ve al lado de ellas las ignoraba**. El botón del encabezado de
+la sala llamaba siempre a `recibir(g.lista)`, o sea las diez, y su cifra era
+`suma(g.lista)`, o sea el total de la sala. Marcar seis no cambiaba ni el
+rótulo, ni el monto, ni lo que se recibía: apretar ahí confirmaba las diez.
+
+Lo que sí obedecía la selección era el botón de arriba, y sólo llegaba cuando
+todo lo elegido cruzaba dos salas — con una sala sola no salía nunca. Así que
+en el caso normal —una sala, faltó alguna— **no había ningún camino para
+recibir de menos**, aunque el servidor siempre supo hacerlo: `recibir_bolsas`
+recorre los ids que se le pasan y nada más.
+
+Ahora, con una selección parcial dentro de una sala:
+
+- el botón dice **«Recibir las 6»** y recibe esas seis;
+- el encabezado dice **«6 de 10 bolsas»** con el monto de las seis — las dos
+  cifras, porque «6 bolsas» a secas se lee como si la sala hubiera mandado
+  seis;
+- los renglones de día siguen a la sala, para que lo de abajo sume lo de
+  arriba y no queden dos cifras que no cierran entre sí.
+
+Y el botón de arriba sólo sale cuando lo elegido toca **dos salas o más**: si
+todo es de Salud 1, el de su encabezado ya dice lo mismo, y repetirlo arriba
+era el mismo botón dos veces, uno de ellos lejos de las casillas que lo mandan.
+
 ## v2.767.2 — El carné de quien entrega: cámara, panel canónico y lectura que sí lo encuentra
 
 Tres cosas sobre la misma pantalla, reportadas el mismo día en que la firma

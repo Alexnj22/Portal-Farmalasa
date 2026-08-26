@@ -479,7 +479,7 @@ function Resolver({ bolsa, ocupado, onResolver }) {
  * pierde cuando alguien deja filtrada una sala y se olvida.
  */
 function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo,
-    vacio, verMontos, plegada = false, onPlegar }) {
+    elegidasDe, vacio, verMontos, plegada = false, onPlegar }) {
     /* El desglose por día de TODA la etapa: junta los días de las seis salas.
      * Del más reciente al más viejo, que es como se pregunta («¿y lo de hoy?»).
      * Es una vuelta sobre lo que ya está agrupado, no una consulta más. */
@@ -590,7 +590,20 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
             {!plegada && accion}
             {plegada ? null : total === 0
                 ? <EmptyState linea icon={Icon} title={vacio} />
-                : grupos.map((g) => (
+                : grupos.map((g) => {
+                    /* Lo elegido DENTRO de esta sala. El encabezado de la sala y
+                       su botón hablan de lo que se va a hacer, no de lo que la
+                       sala mandó: quien recibe tiene seis bolsas en la mano,
+                       marca seis, y necesita leer «6 de 10 · $x» ahí mismo, al
+                       lado de las casillas.
+                       Sin esto el botón decía «Recibir las 10» con las seis
+                       marcadas al lado —y recibía las diez—, así que recibir
+                       parcialmente era imposible por el único control que se ve
+                       junto a la sala. */
+                    const elegidasAca = elegidasDe?.(g.lista) ?? VACIO;
+                    const parcial = elegidasAca.length > 0 && elegidasAca.length < g.lista.length;
+                    const enJuego = parcial ? elegidasAca : g.lista;
+                    return (
                     <div key={g.branchId} className="space-y-1.5">
                         {/* La acción de grupo va en el encabezado de la sala
                             porque recibir se hace POR SALA: llega el recolector
@@ -605,21 +618,33 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                 {/* El segundo de los tres totales: el de la sucursal.
                                     Baja un escalón de peso respecto al de la etapa y
                                     sube uno respecto al del día, para que la jerarquía
-                                    se lea sin leer los rótulos. */}
+                                    se lea sin leer los rótulos.
+                                    Con una selección parcial dice las DOS cifras
+                                    —«6 de 10»— porque sola, la de la selección se
+                                    lee como si la sala hubiera mandado seis. */}
                                 <span className="text-caption text-content-3 tabular-nums shrink-0">
-                                    {g.lista.length} {g.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                    {parcial
+                                        ? `${enJuego.length} de ${g.lista.length} bolsas`
+                                        : `${g.lista.length} ${g.lista.length === 1 ? 'bolsa' : 'bolsas'}`}
                                     {verMontos && (
-                                        <> · <b className="text-body-xl font-bold text-content">{formatMoney(suma(g.lista))}</b></>
+                                        <> · <b className="text-body-xl font-bold text-content">{formatMoney(suma(enJuego))}</b></>
                                     )}
                                 </span>
-                                {accionDeGrupo?.(g)}
+                                {accionDeGrupo?.(g, enJuego, parcial)}
                             </span>
                         </div>
                         {/* Un renglón por día, con lo suyo. El día sale igual con
                             uno solo: saber de qué día es lo que se está contando
                             nunca sobra, y es lo primero que se pregunta quien
                             tiene la bolsa en la mano. */}
-                        {(g.dias ?? [{ fecha: null, lista: g.lista }]).map((d) => (
+                        {(g.dias ?? [{ fecha: null, lista: g.lista }]).map((d) => {
+                            /* El día sigue a la sala: si arriba dice «6 de 10»,
+                               los renglones de abajo tienen que sumar esas seis.
+                               Que uno cuente lo elegido y el otro lo mandado
+                               deja dos cifras que no cierran entre sí, y quien
+                               cuadra dinero contra el papel no sabe cuál mirar. */
+                            const elegidasDelDia = parcial ? elegidasDe?.(d.lista) ?? VACIO : d.lista;
+                            return (
                             <div key={d.fecha ?? 'todo'} className="space-y-1.5">
                                 {d.fecha && (
                                     <div className="flex items-baseline justify-between gap-3 px-1">
@@ -633,9 +658,11 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                             distinto, se dice con tamaño de leerse. */}
                                         {(g.dias?.length ?? 1) > 1 && (
                                             <span className="text-caption text-content-3 tabular-nums shrink-0">
-                                                {d.lista.length} {d.lista.length === 1 ? 'bolsa' : 'bolsas'}
+                                                {parcial
+                                                    ? `${elegidasDelDia.length} de ${d.lista.length} bolsas`
+                                                    : `${d.lista.length} ${d.lista.length === 1 ? 'bolsa' : 'bolsas'}`}
                                                 {verMontos && (
-                                                    <> · <b className="font-bold text-content-2">{formatMoney(suma(d.lista))}</b></>
+                                                    <> · <b className="font-bold text-content-2">{formatMoney(suma(elegidasDelDia))}</b></>
                                                 )}
                                             </span>
                                         )}
@@ -645,9 +672,11 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                                     {d.lista.map((b) => b.nodo)}
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
-                ))}
+                    );
+                })}
         </section>
     );
 }
@@ -1222,6 +1251,10 @@ export default function CircuitoDeBolsas({
 
     const elegidasEnCamino = elegidasDe(enCamino);
     const gruposEnCamino = new Set(enCamino.map((b) => b.branch_id)).size;
+    // Cuántas SALAS toca lo elegido. Es lo que decide si el botón de arriba
+    // aporta algo: con una sola sala el de su encabezado ya hace exactamente
+    // eso, y al lado de las casillas.
+    const salasElegidasEnCamino = new Set(elegidasEnCamino.map((b) => b.branch_id)).size;
 
     return (
         <div className="space-y-6">
@@ -1421,26 +1454,37 @@ export default function CircuitoDeBolsas({
                      · llegó lo de una sala → el botón de su encabezado;
                      · faltó alguna → las casillas, que es el caso excepcional.
                    El de «todo» sólo sale cuando hay más de una sala: con una
-                   sola sería el mismo botón dos veces. */
-                accion={puedeContar && (elegidasEnCamino.length > 0 ? (
+                   sola sería el mismo botón dos veces.
+                   Y por lo mismo, desde que el botón de la sala obedece a las
+                   casillas, el de arriba sólo sale cuando lo elegido cruza dos
+                   salas: si todo lo marcado es de Salud 1, el de su encabezado
+                   ya dice «Recibir las 6» y repetirlo arriba es el mismo botón
+                   dos veces, uno de ellos lejos de las casillas que lo mandan. */
+                accion={puedeContar && ((elegidasEnCamino.length > 0 && salasElegidasEnCamino > 1) ? (
                     <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
                         onClick={() => recibir(elegidasEnCamino)}>
                         Confirmar recepción de {elegidasEnCamino.length}
                         {verMontos ? ` · ${formatMoney(suma(elegidasEnCamino))}` : ''}
                     </Button>
-                ) : (enCamino.length > 0 && gruposEnCamino > 1 && (
+                ) : (elegidasEnCamino.length === 0 && enCamino.length > 0 && gruposEnCamino > 1 && (
                     <Button variant="primary" size="sm" icon={Inbox} loading={ocupado === 'recibir'}
                         onClick={() => recibir(enCamino)}>
                         Confirmar las {enCamino.length} que llegaron
                     </Button>
                 )))}
-                accionDeGrupo={puedeContar ? (g) => (
+                /* Y el botón de la sala recibe LO ELEGIDO cuando hay algo
+                   elegido ahí: es el control que está al lado de las casillas,
+                   así que es el que tiene que obedecerlas. */
+                accionDeGrupo={puedeContar ? (g, enJuego, parcial) => (
                     <Button variant="secondary" size="sm" icon={Inbox}
                         loading={ocupado === 'recibir'}
-                        onClick={() => recibir(g.lista)}>
-                        {g.lista.length === 1 ? 'Recibir' : `Recibir las ${g.lista.length}`}
+                        onClick={() => recibir(enJuego)}>
+                        {enJuego.length === 1
+                            ? (parcial ? 'Recibir la elegida' : 'Recibir')
+                            : `Recibir las ${enJuego.length}`}
                     </Button>
                 ) : null}
+                elegidasDe={puedeContar ? elegidasDe : null}
                 verMontos={verMontos}
                 vacio={pendientesFuera.length ? "Nada en camino en estas fechas" : "Nada en camino"}
             />

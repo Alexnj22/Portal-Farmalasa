@@ -32,7 +32,7 @@ import { getRoleTheme } from '../../utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import { repartirSala } from '../../utils/mandoDeSala';
 import { getExpiringDocuments } from '../../utils/documentExpiry';
-import { soloPersonalEnPlanilla, soloNoEmpleados } from '../../utils/tipoDeFicha';
+import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '../../utils/tipoDeFicha';
 import { exportarDirectorio } from '../../utils/directorioCsv';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
@@ -446,6 +446,11 @@ function PulsoDeSala({ personas }) {
 function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar }) {
   const { sucursal, sinSede, personas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
+  // `every` sobre una lista vacía es `true`, y una sección sin personas no
+  // existe (se arma agrupando lo que hay) — pero el guard queda escrito para que
+  // el aviso no cambie de significado si algún día se pinta una sala vacía.
+  const soloCuentasDelSistema = personas.length > 0 && personas.every(esFichaQueNoEsEmpleado);
+
   return (
     <section className="space-y-3">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-divider pb-2">
@@ -463,11 +468,26 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, reco
         )}
       </header>
 
+      {/* Sin sede es un PENDIENTE para una persona y el estado NORMAL para una
+          cuenta del sistema. Con un solo aviso, el grupo salía siempre en
+          amarillo pidiendo elegirle una sede a la cuenta de pruebas y al
+          Administrador del Sistema —que no trabajan en ninguna sala—, o sea un
+          hallazgo permanente que nadie puede cerrar. Un aviso así se aprende a
+          ignorar, y el día que ahí caiga una persona real no lo va a distinguir
+          nadie. */}
       {sinSede && (
-        <Notice variant="warning" icon={AlertCircle}>
-          Estas fichas no tienen sucursal, así que no aparecen en ningún equipo
-          ni en el conteo de ninguna sala. Falta elegirles una sede.
-        </Notice>
+        soloCuentasDelSistema ? (
+          <Notice variant="neutral">
+            Son cuentas del portal, no personas: no trabajan en ninguna sala, así
+            que no llevan sede. A la de pruebas se le asigna una sólo mientras se
+            prueba algo, y se le quita al terminar.
+          </Notice>
+        ) : (
+          <Notice variant="warning" icon={AlertCircle}>
+            Estas fichas no tienen sucursal, así que no aparecen en ningún equipo
+            ni en el conteo de ninguna sala. Falta elegirles una sede.
+          </Notice>
+        )
       )}
 
       {/* La jefatura y su segundo, en su propia fila y siempre arriba. */}

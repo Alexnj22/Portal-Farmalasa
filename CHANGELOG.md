@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.808.1 — La cuenta de pruebas no vive en ninguna sala
+
+*«El de QA que no esté en Salud 1, por defecto que esté sin sucursal; cuando se
+hagan pruebas que se le asigne una sucursal y al finalizar se le quite.»*
+
+`QA Testing` (code 99999, `tipo_ficha = 'tecnica'`) estaba anotada en **Salud 1**,
+así que esa sala aparecía con «1 persona» que no es una persona. Es el mismo
+error que corrigió v2.789.0 —una cuenta del sistema anotada como personal— visto
+desde la sala en vez de desde la planilla. Hoy su sede queda **vacía por
+defecto**, igual que la del `Administrador del Sistema`: se le presta una sala
+mientras se prueba algo que la necesita, y se le quita al terminar.
+
+Y el aviso del grupo «Sin sucursal asignada» **deja de acusar al que hizo lo
+correcto**. Sin sede es un pendiente para una persona y el estado normal para una
+cuenta del portal; con un solo texto, el grupo salía siempre en amarillo pidiendo
+elegirle una sede a dos fichas que no trabajan en ninguna sala — un hallazgo
+permanente que nadie podía cerrar, y de los que se aprenden a ignorar. Cuando
+todas las fichas del grupo son cuentas del sistema, el aviso lo dice en neutro;
+en cuanto cae ahí una persona real, vuelve el amarillo.
+
+Migración `20260827135456_la_cuenta_de_pruebas_no_vive_en_ninguna_sala`.
+
 ## v2.808.0 — La foto de una persona lleva su aro, en todo el portal
 
 *«Hazlo canónico, así en futuras cosas ya está listo. Todo lugar que muestre

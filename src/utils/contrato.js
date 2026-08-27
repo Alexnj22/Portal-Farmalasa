@@ -67,17 +67,38 @@ export function estadoRemisionMtps(datos, hoy = new Date()) {
     if (!firma) {
         return { aplica: false, motivo: 'El plazo empieza a contar desde la fecha de la firma.' };
     }
-    if (datos?.mtps_remitido_fecha) {
-        return { aplica: true, remitido: true, fecha: datos.mtps_remitido_fecha };
+    // ── El plazo cuenta desde el ÚLTIMO acto, no desde la firma ─────────────
+    //
+    // El Art. 18 dice «dentro de los ocho días siguientes al de su celebración,
+    // MODIFICACIÓN O PRÓRROGA»: cada prórroga vuelve a disparar el plazo y exige
+    // un tercer ejemplar nuevo. El portal contaba sólo desde la firma, así que
+    // una ficha prorrogada mostraba «remitido» para siempre — la prórroga se
+    // quedaba sin remitir y nada lo decía.
+    //
+    // Se toma la prórroga más reciente que tenga fecha `desde`: es la fecha del
+    // acto. Y `mtps_remitido_fecha` se compara CONTRA ella — una remisión
+    // anterior a la última prórroga no cubre esa prórroga.
+    const prorrogas = Array.isArray(datos?.contrato_prorrogas) ? datos.contrato_prorrogas : [];
+    let acto = firma;
+    let porProrroga = false;
+    for (const p of prorrogas) {
+        const d = fechaLocal(p?.desde);
+        if (d && d > acto) { acto = d; porProrroga = true; }
     }
 
-    const limite = new Date(firma.getTime() + PLAZO_MTPS_DIAS * DIA_MS);
+    const remitido = fechaLocal(datos?.mtps_remitido_fecha);
+    if (remitido && remitido >= acto) {
+        return { aplica: true, remitido: true, fecha: datos.mtps_remitido_fecha, porProrroga };
+    }
+
+    const limite = new Date(acto.getTime() + PLAZO_MTPS_DIAS * DIA_MS);
     const cero = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
     const dias = Math.round((limite - cero) / DIA_MS);
 
     return {
         aplica: true,
         remitido: false,
+        porProrroga,
         diasRestantes: dias,
         vencido: dias < 0,
         limite: `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, '0')}-${String(limite.getDate()).padStart(2, '0')}`,

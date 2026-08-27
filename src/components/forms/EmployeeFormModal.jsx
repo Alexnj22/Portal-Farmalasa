@@ -952,6 +952,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         //
         // La solicitud de empleo SÍ se queda: es requisito del Art. 8 letra b) y
         // el usuario lo confirmó — «si es así, se debe adjuntar».
+        // El acuse del Ministerio se dibujaba suelto dentro de la pestaña
+        // Contrato y ni siquiera estaba en esta lista: no aparecía en
+        // Documentos ni con nombre. Va acá porque es SÓLO UN ARCHIVO — la fecha
+        // de remisión se teclea, el papel no la trae—, que es la regla que
+        // separa estos de los de Acreditaciones.
+        ...(!esContratoCivil(formData.contract_type)
+            ? [{ key: 'ACUSE_MTPS', label: 'Acuse sellado del Ministerio de Trabajo' }] : []),
         { key: 'SOLICITUD_EMPLEO', label: 'Solicitud de empleo' },
         // ── El certificado médico es ANUAL, no de ingreso ───────────────────
         //
@@ -3460,12 +3467,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <label className={rotuloCampo('text-content-3')}>Fecha en que se remitió</label>
                                                 <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
                                             </div>
-                                            {/* El acuse sellado, adjunto. La fecha sola dice que
-                                                se mandó; el papel es lo que lo prueba. */}
-                                            <div>
-                                                <label className={rotuloCampo('text-content-3')}>Acuse sellado</label>
-                                                {renderDocUploadArea('ACUSE_MTPS', { showExpiry: false })}
-                                            </div>
+                                            {/* El acuse se sube en Documentos. Acá va la FECHA, que
+                                                es la que apaga la cuenta regresiva; el papel es
+                                                sólo el archivo que lo prueba, y los archivos que no
+                                                traen ningún dato viven todos en el mismo sitio. */}
+                                            <p className="text-micro text-content-3 font-medium md:pt-6 ml-1 leading-snug">
+                                                El acuse sellado se adjunta en <span className="font-black text-content-2">Documentos</span>.
+                                            </p>
                                         </div>
                                     </div>
                                 );

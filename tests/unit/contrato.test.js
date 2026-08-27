@@ -207,3 +207,61 @@ describe('el horario que va en el contrato', () => {
         expect(h.texto).toMatch(/Se define al elegir/i);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El plazo del Ministerio cuenta desde el ÚLTIMO acto
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Art. 18, textual: «dentro de los ocho días siguientes al de su celebración,
+// MODIFICACIÓN O PRÓRROGA». El portal contaba sólo desde la firma, así que una
+// ficha prorrogada mostraba «remitido» para siempre — la prórroga se quedaba sin
+// remitir y nada lo decía. Ese es el modo de falla caro: no falla, dice que sí.
+
+describe('el plazo para remitir el ejemplar al Ministerio', () => {
+    const hoy = new Date(2026, 7, 27);
+
+    it('cuenta desde la firma cuando no hay prórrogas', () => {
+        const r = estadoRemisionMtps({ contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-08-25' }, hoy);
+        expect(r.remitido).toBe(false);
+        expect(r.diasRestantes).toBe(6);
+    });
+
+    it('una prórroga REINICIA el plazo', () => {
+        const r = estadoRemisionMtps({
+            contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-01-10',
+            contrato_prorrogas: [{ desde: '2026-08-26', hasta: '2026-12-31' }],
+        }, hoy);
+        expect(r.remitido).toBe(false);
+        expect(r.porProrroga).toBe(true);
+        expect(r.diasRestantes).toBe(7);      // 26-ago + 8 = 3-sep
+    });
+
+    it('remitir el original NO cubre la prórroga posterior', () => {
+        // Es el caso que se escapaba: decía «remitido» y la prórroga estaba sin
+        // mandar.
+        const r = estadoRemisionMtps({
+            contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-01-10',
+            mtps_remitido_fecha: '2026-01-12',
+            contrato_prorrogas: [{ desde: '2026-08-26', hasta: '2026-12-31' }],
+        }, hoy);
+        expect(r.remitido).toBe(false);
+        expect(r.porProrroga).toBe(true);
+    });
+
+    it('remitir DESPUÉS de la prórroga sí la cubre', () => {
+        const r = estadoRemisionMtps({
+            contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-01-10',
+            mtps_remitido_fecha: '2026-08-27',
+            contrato_prorrogas: [{ desde: '2026-08-26', hasta: '2026-12-31' }],
+        }, hoy);
+        expect(r.remitido).toBe(true);
+    });
+
+    it('una prórroga sin fecha no mueve nada', () => {
+        const r = estadoRemisionMtps({
+            contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-08-25',
+            contrato_prorrogas: [{ desde: null, hasta: null }],
+        }, hoy);
+        expect(r.diasRestantes).toBe(6);
+    });
+});

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.819.0 — La prórroga reinicia el plazo del Ministerio, y el acuse va con los documentos
+
+Dos preguntas del usuario sobre la misma pantalla, y la primera destapó un
+defecto que decía «cumplido» sin serlo.
+
+### ¿De qué fecha se basa el plazo?
+
+De la **celebración** — el Art. 18 dice «dentro de los ocho días siguientes al de
+su celebración». Eso el portal lo tenía bien.
+
+**Lo que no tenía es el resto de la frase:** «…al de su celebración,
+**modificación o prórroga**». Cada prórroga vuelve a disparar el plazo y exige un
+tercer ejemplar nuevo. El portal contaba sólo desde la firma, así que una ficha
+prorrogada mostraba **«remitido» para siempre**: la prórroga se quedaba sin
+mandar y nada lo decía.
+
+Es el modo de falla caro — no falla, dice que sí. Ahora el plazo cuenta desde el
+**último acto** (la prórroga más reciente con fecha), y la fecha de remisión se
+compara **contra ella**: haber remitido el original no cubre una prórroga
+posterior.
+
+### ¿El documento no debería estar al final?
+
+Sí, y ese estaba mal puesto. El acuse sellado se dibujaba **suelto** dentro de la
+pestaña Contrato y **ni siquiera estaba en la lista de documentos** — no aparecía
+en Documentos ni con nombre.
+
+La regla que ya seguía el expediente: **el documento que produce un dato vive
+donde vive ese dato; el que es sólo un archivo va al final.** El DUI está arriba
+porque llena media ficha. Los carnés profesionales están en Acreditaciones porque
+de ellos salen el número y el vencimiento. El acuse **no produce nada** —la fecha
+de remisión se teclea— así que es sólo un archivo, y va con los demás.
+
+La pestaña Contrato se queda con la fecha, que es la que apaga la cuenta
+regresiva, y dice dónde está el papel.
+
 ## v2.818.2 — El menor: el reglamento agrega dos prohibiciones que la ley no dice
 
 Salió del último barrido, leyendo el capítulo del reglamento sobre la persona

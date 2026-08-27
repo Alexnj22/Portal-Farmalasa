@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.805.1 — La foto de respaldo es opcional, así que deja de señalarse
+
+**«no hace falta foto de respaldo»** (usuario, 2026-08-26), sobre el renglón que
+v2.804.0 había agregado al aviso de «Finalizadas»: *«6 de esas notas no tienen
+foto de respaldo»*.
+
+Tiene razón de fondo, y la corrección es más general que el renglón. La foto al
+justificar una diferencia es **opcional por decisión**, no un requisito que se
+esté incumpliendo — así que marcar su ausencia es señalar a quien hizo
+exactamente lo que se le permitió. Y una alarma que se levanta sobre algo que
+nadie va a corregir es la que enseña a ignorar las de al lado, incluidas las dos
+que sí importan en ese mismo aviso.
+
+Se quitan los tres sitios: el renglón del aviso, la píldora «N sin respaldo» de
+la columna «Justificado» y la de cada bolsa en el detalle. **El dato sigue
+llegando del servidor** (`sin_respaldo`, `con_respaldo`): cuesta nada y, si algún
+día la foto pasa a ser obligatoria, ya está medido. Lo que se retira es tratarlo
+como hallazgo.
+
+No toca la boleta del banco, que es otra cosa: ésa existe para cuadrar contra el
+estado de cuenta, y ahí la ausencia sí es un pendiente.
+
 ## v2.805.0 — El aro de la foto, y la lista se va
 
 Dos decisiones del usuario después de ver cinco tratamientos comparados a los

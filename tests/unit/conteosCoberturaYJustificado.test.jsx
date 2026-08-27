@@ -20,9 +20,12 @@ import ConteosDeBolsas from '../../src/components/bolsas/ConteosDeBolsas';
 //      se contó nueve días después. La celda decía «14 → 20 ago» —el rango de
 //      lo que SÍ entró—, que es cierto y no delata a la que falta.
 //
-//   3. Seis justificaciones sin foto, por $1,644.56. La fila marcaba a las que
-//      TENÍAN foto con un clip, y una celda sin clip se lee igual que una que
-//      todavía no se miró.
+//   3. (Retirado el mismo día.) La primera versión marcaba las justificaciones
+//      sin foto de respaldo. «no hace falta foto de respaldo» (usuario): la foto
+//      es opcional por decisión, así que señalar su ausencia es acusar a quien
+//      hizo lo permitido, y una alarma que nadie va a apagar enseña a ignorar
+//      las de al lado. El dato sigue viniendo del servidor, sin tratarse como
+//      hallazgo.
 //
 // Los datos son los reales de producción de esa fecha, recortados.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -66,14 +69,15 @@ describe('Conteos · lo justificado', () => {
         expect(screen.getAllByText('−$4,592.24').length).toBe(2);
     });
 
-    it('marca las justificaciones que no tienen con qué probarse', () => {
+    it('NO señala la falta de foto: es opcional por decisión', () => {
+        // Ver el punto 3 del encabezado. `sin_respaldo` llega igual y no se pinta.
         pintar([COMPLETA]);
-        expect(screen.getByText('1 sin respaldo')).toBeTruthy();
+        expect(screen.queryByText(/sin respaldo/i)).toBeNull();
     });
 
     it('no inventa una cifra cuando la tanda cuadró de verdad', () => {
         pintar([INCOMPLETA]);
-        expect(screen.queryByText(/sin respaldo/)).toBeNull();
+        expect(screen.queryByText(/^[−+]\$/)).toBeNull();
     });
 });
 

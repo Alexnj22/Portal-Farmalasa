@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Building2, CameraOff, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
+import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
 import Notice from '../common/Notice';
 import LiquidAvatar from '../common/LiquidAvatar';
@@ -190,26 +190,25 @@ function SinResolver({ conteo }) {
  * por tanda, sala por sala, bolsa por bolsa — o sea, no se enteraba nadie.
  *
  * Va en tono de AVISO y no de peligro: una diferencia explicada no es un error,
- * es un hecho que alguien tiene que poder ver. Y debajo, lo que no tiene con qué
- * probarse: seis de las dieciséis se guardaron sin foto, por $1,644.56, y la
- * fila no lo decía porque sólo mostraba el clip de las que SÍ tenían. Un vacío
- * por «no hay foto» se veía igual que un vacío por «todavía no miré». */
+ * es un hecho que alguien tiene que poder ver.
+ *
+ * ── La foto de respaldo NO se vigila (usuario, 2026-08-26) ─────────────────
+ * La primera versión marcaba «N sin respaldo» acá y en el detalle: seis de las
+ * dieciséis justificaciones se habían guardado sin foto. El usuario lo cerró en
+ * una línea — «no hace falta foto de respaldo»— y tiene razón de fondo: la foto
+ * es OPCIONAL por decisión, así que señalar su ausencia es acusar a quien hizo
+ * lo que se le permitió. Una alarma que se levanta sobre algo que nadie va a
+ * corregir es exactamente la que enseña a ignorar las de al lado.
+ *
+ * El dato sigue viniendo del servidor (`sin_respaldo`) y no se borró: cuesta
+ * nada y el día que la foto pase a ser obligatoria ya está medido. Lo que se
+ * quitó es tratarlo como hallazgo. */
 function Justificado({ conteo }) {
     const monto = Number(conteo.justificado || 0);
-    const sinRespaldo = Number(conteo.sin_respaldo || 0);
-    if (Math.abs(monto) < 0.01 && sinRespaldo === 0) {
-        return <span className="text-content-3">—</span>;
-    }
+    if (Math.abs(monto) < 0.01) return <span className="text-content-3">—</span>;
     return (
-        <span className="inline-flex flex-col items-end gap-0.5">
-            <span className="font-bold tabular-nums text-warning-text whitespace-nowrap">
-                {`${monto < 0 ? '−' : '+'}${formatMoney(Math.abs(monto))}`}
-            </span>
-            {sinRespaldo > 0 && (
-                <Badge variant="warning" size="sm" icon={CameraOff} className="whitespace-nowrap">
-                    {sinRespaldo === 1 ? '1 sin respaldo' : `${sinRespaldo} sin respaldo`}
-                </Badge>
-            )}
+        <span className="font-bold tabular-nums text-warning-text whitespace-nowrap">
+            {`${monto < 0 ? '−' : '+'}${formatMoney(Math.abs(monto))}`}
         </span>
     );
 }
@@ -350,23 +349,9 @@ function BolsasDeLaSala({ bolsas }) {
                         </DataCell>
                         <DataCell hideBelow="lg">
                             {b.dif_causa ? (
-                                <span className="inline-flex flex-col gap-0.5 items-start">
-                                    <span className="text-caption text-content-2">
-                                        {b.dif_causa}
-                                        {b.dif_por ? <span className="text-content-3"> · {b.dif_por}</span> : null}
-                                    </span>
-                                    {/* Lo que FALTA se dice; lo que está no se
-                                        anuncia. Antes era al revés —un clip en
-                                        las que tenían foto— y una celda sin clip
-                                        se lee igual que una celda que todavía no
-                                        se miró. Seis de dieciséis estaban así,
-                                        por $1,644.56. */}
-                                    {!b.con_respaldo && (
-                                        <Badge variant="warning" size="sm" icon={CameraOff}
-                                            className="whitespace-nowrap">
-                                            Sin respaldo
-                                        </Badge>
-                                    )}
+                                <span className="text-caption text-content-2">
+                                    {b.dif_causa}
+                                    {b.dif_por ? <span className="text-content-3"> · {b.dif_por}</span> : null}
                                 </span>
                             ) : (
                                 <span className="text-content-3">—</span>
@@ -565,10 +550,9 @@ export default function ConteosDeBolsas({
            juntaba, así que $5,786.80 que salieron de las bolsas no aparecían en
            ningún renglón. */
         justificado: a.justificado + Number(c.justificado || 0),
-        sinRespaldo: a.sinRespaldo + Number(c.sin_respaldo || 0),
         // Salas que se quedaron esperando en alguna tanda del período.
         salasFuera: a.salasFuera + (Array.isArray(c.salas_fuera) ? c.salas_fuera.length : 0),
-    }), { contado: 0, abiertas: 0, justificado: 0, sinRespaldo: 0, salasFuera: 0 }), [filas]);
+    }), { contado: 0, abiertas: 0, justificado: 0, salasFuera: 0 }), [filas]);
 
     return (
         <section className="space-y-2">
@@ -594,7 +578,7 @@ export default function ConteosDeBolsas({
                     )}
                 </span>
             </div>
-            {(Math.abs(totales.justificado) >= 0.01 || totales.sinRespaldo > 0 || totales.salasFuera > 0) && (
+            {(Math.abs(totales.justificado) >= 0.01 || totales.salasFuera > 0) && (
                 <Notice variant={totales.salasFuera > 0 ? 'danger' : 'warning'}
                     icon={AlertTriangle} bloque className="mx-1">
                     <span className="font-bold">Para mirar en estas fechas</span>
@@ -606,14 +590,6 @@ export default function ConteosDeBolsas({
                                 </b>
                                 {' '}salieron de las bolsas y quedaron explicados con una nota.
                                 Explicado no es recuperado.
-                            </span>
-                        )}
-                        {totales.sinRespaldo > 0 && (
-                            <span className="block text-caption text-content-2">
-                                <b className="font-bold text-content tabular-nums">{totales.sinRespaldo}</b>
-                                {totales.sinRespaldo === 1
-                                    ? ' de esas notas no tiene foto de respaldo.'
-                                    : ' de esas notas no tienen foto de respaldo.'}
                             </span>
                         )}
                         {totales.salasFuera > 0 && (

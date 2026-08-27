@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.804.1 — La tabla de conteos cabe, y los depósitos dejan de decir cero
+
+Correcciones sobre v2.804.0, encontradas **abriendo la vista en producción** —
+que es lo que faltaba: los cambios se habían publicado sin que nadie los mirara.
+
+Para poder mirarla hubo que darle a la cuenta de pruebas el permiso de ver
+montos: el cargo «QA / Testing (CI)» tenía `bolsas` y `bolsas_conteo` y **no**
+`bolsas_ver_montos`, y tres de los cuatro bloques de «Finalizadas» viven detrás
+de ese permiso. O sea que el barrido automático medía **una línea plegada** donde
+hay una pantalla entera, y salía en verde. `can_view` y no `can_edit`: el barrido
+mira, no escribe.
+
+**La tabla no cabía.** Con la columna nueva quedaron nueve, y a 1440px «Sin
+resolver» y «Bolsas» caían fuera de la pantalla mientras el folio se partía en
+tres renglones (`CNT- / 260826- / 3`) sobre una fecha partida en otros tres. El
+folio y la fecha de firma pasan a una sola columna —el folio ya lleva la fecha
+adentro, así que la línea de abajo confirma en vez de agregar— y lo que la tabla
+existe para mostrar deja de caerse por el borde.
+
+**«Depósitos al banco · 0 depósitos» sobre cuatro que existen.** La sección no
+consultaba nada mientras estuviera plegada —y arranca plegada— pero su encabezado
+sí pintaba el contador: un cero que significaba «todavía no miré» y se leía como
+«no hay». En la pantalla del efectivo eso no es una imprecisión. Además dejaba
+mudo al aviso de boletas faltantes, que vive fuera del bloque plegable
+justamente para leerse con la sección cerrada. Ahora se pide siempre: es un RPC
+sobre una tabla de cuatro filas.
+
+**Dos totales que se contradecían.** «Conteos · $67,613.73» y, dos renglones más
+abajo, «Contadas · $73,400.53» — las **mismas 123 bolsas**, sin que ninguno
+dijera qué era cuál. La resta es exactamente **$5,786.80**: lo que salió de las
+bolsas y se justificó. Las dos cifras contaban la misma historia y no había cómo
+verlo. Ahora dicen **«contado»** y **«debía haber»**. El rótulo va sólo donde dos
+totales conviven; en las otras tres pestañas no hay con qué confundirlo.
+
+Migración `20260827035501`.
+
 ## v2.804.0 — Finalizadas dice lo justificado, su cobertura y lo que no tiene respaldo
 
 Auditoría pedida sobre `/bolsas?tab=finalizadas` — «sigo sin ver bien esta

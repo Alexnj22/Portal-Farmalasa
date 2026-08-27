@@ -349,13 +349,27 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
     const [cargando, setCargando] = useState(true);
     const [abierto, setAbierto] = useState(null);
 
-    /* Cerrada no se pide nada: es archivo, y el caso normal es no abrirla. */
+    /* Se pide SIEMPRE, también con la sección cerrada (2026-08-26).
+     *
+     * Antes no: «cerrada no se pide nada, es archivo». Pero el encabezado sí
+     * pintaba el contador, así que sobre cuatro depósitos reales decía
+     * **«0 depósitos»** — un cero que no significaba «no hay» sino «todavía no
+     * miré», y los dos se ven igual. En la pantalla del efectivo eso no es una
+     * imprecisión: es el número equivocado en el sitio donde se controla el
+     * dinero. Es `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`.
+     *
+     * Y arrastraba al aviso de las boletas faltantes, que vive fuera del bloque
+     * plegable justamente para leerse con la sección cerrada: con la lista vacía
+     * no salía nunca, o sea que el aviso existía y no avisaba.
+     *
+     * El costo es un RPC sobre una tabla de cuatro filas al entrar a la
+     * pestaña. La sección de Conteos ya lo hacía así —su lista se la pasa el
+     * motor, que la carga siempre— y por el mismo motivo. */
     const cargar = useCallback(async () => {
-        if (plegada) return;
         setCargando(true);
         setLista(await fetchDepositos({ desde, hasta }));
         setCargando(false);
-    }, [desde, hasta, plegada]);
+    }, [desde, hasta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al entrar y al mover el período
 

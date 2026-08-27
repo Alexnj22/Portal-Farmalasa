@@ -850,7 +850,7 @@ function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
  * de qué sala es lo que se está mirando nunca sobra — que es justo lo que se
  * pierde cuando alguien deja filtrada una sala y se olvida.
  */
-function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, accionDeGrupo,
+function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, rotuloTotal, accion, accionDeGrupo,
     elegidasDe, vacio, verMontos, plegada = false, onPlegar }) {
     /* El desglose por día de TODA la etapa: junta los días de las seis salas.
      * Del más reciente al más viejo, que es como se pregunta («¿y lo de hoy?»).
@@ -905,7 +905,18 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, accion, a
                 <span className="text-caption text-content-3 tabular-nums">
                     {total} {total === 1 ? 'bolsa' : 'bolsas'}
                     {verMontos && total > 0 && (
-                        <> · <b className="text-label font-bold text-content">{formatMoney(montoTotal)}</b></>
+                        <> · <b className="text-label font-bold text-content">{formatMoney(montoTotal)}</b>
+                            {/* `rotuloTotal` sólo donde hace falta, que es donde
+                                DOS totales conviven en la misma pantalla. En
+                                «Finalizadas» el encabezado de Contadas decía
+                                $73,400.53 y el de Conteos $67,613.73 —las mismas
+                                123 bolsas— sin que ninguno dijera qué era cuál.
+                                La resta es exactamente $5,786.80, o sea lo que
+                                salió de las bolsas y se justificó: las dos
+                                cifras cuentan la misma historia y no había cómo
+                                verlo. En las otras tres pestañas no hay con qué
+                                confundirlo, así que ahí no se rotula. */}
+                            {rotuloTotal ? <> {rotuloTotal}</> : null}</>
                     )}
                 </span>
             </div>
@@ -2451,7 +2462,7 @@ export default function CircuitoDeBolsas({
                         );
                     },
                 })}
-                total={archivo.length} montoTotal={suma(archivo)}
+                total={archivo.length} montoTotal={suma(archivo)} rotuloTotal="debía haber"
                 verMontos={verMontos}
                 plegada={cerradas.has('contadas')} onPlegar={() => plegar('contadas')}
                 vacio={soloSinResolver ? 'Todas las contadas están resueltas' : 'Sin bolsas contadas en estas fechas'}

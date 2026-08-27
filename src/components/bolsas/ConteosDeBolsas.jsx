@@ -49,8 +49,17 @@ const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
     .map((p) => p[0]).join('').toUpperCase();
 
 const COLUMNAS = [
+    /* El folio y la fecha en que se FIRMÓ, en una sola columna. Eran dos, y con
+       nueve columnas la tabla ya no cabía a 1440px: «Sin resolver» y «Bolsas»
+       quedaban fuera de la pantalla, y las dos celdas se partían en tres
+       renglones cada una — `CNT- / 260826- / 3` sobre `26 / ago / 2026`.
+
+       Juntarlas no pierde nada: el folio YA lleva la fecha adentro
+       (`CNT-260826-1` es del 26 de agosto), así que la línea de abajo confirma
+       lo que el folio dice, no agrega un dato nuevo. Y lo que la tabla necesita
+       de verdad —cobertura, justificado y sin resolver— es lo que se estaba
+       cayendo por el borde. */
     { key: 'folio', label: 'Conteo' },
-    { key: 'fecha', label: 'Fecha' },
     /* COBERTURA, no «Días» (2026-08-26). El rango sigue estando, pero primero va
        cuántas SALAS entraron, que es la pregunta de quien controla el efectivo:
        ¿está todo contado?
@@ -570,7 +579,11 @@ export default function ConteosDeBolsas({
                 <span className="text-caption text-content-3 tabular-nums">
                     {filas.length} {filas.length === 1 ? 'conteo' : 'conteos'}
                     {filas.length > 0 && (
-                        <> · <b className="text-label font-bold text-content">{formatMoney(totales.contado)}</b></>
+                        /* «contado», porque dos renglones más abajo el encabezado
+                           de «Contadas» dice otro total de las MISMAS bolsas —lo
+                           que debía haber— y difieren en lo que se justificó. Sin
+                           el rótulo son dos cifras que se contradicen. */
+                        <> · <b className="text-label font-bold text-content">{formatMoney(totales.contado)}</b> contado</>
                     )}
                 </span>
             </div>
@@ -631,7 +644,7 @@ export default function ConteosDeBolsas({
                 /* El toque de la fila va a un destino de verdad —el cuadre de la
                    tanda y sus bolsas—, no a la hoja genérica. */
                 movil={{ usarAccionDeFila: true }}
-                minWidth="780px"
+                minWidth="860px"
                 empty={{ icon: Scale, message: conteoId
                     ? 'Ese conteo no cae en estas fechas'
                     : 'Sin conteos firmados en estas fechas' }}
@@ -639,9 +652,15 @@ export default function ConteosDeBolsas({
                 {filas.map((c, i) => (
                     <DataRow key={c.id} index={i} onClick={() => setAbierto(c)}>
                         <DataCell>
-                            <span className="font-bold text-content">{c.folio}</span>
+                            <span className="inline-flex flex-col gap-0.5 items-start">
+                                <span className="font-bold text-content whitespace-nowrap">
+                                    {c.folio}
+                                </span>
+                                <span className="text-caption text-content-3 whitespace-nowrap">
+                                    Se firmó el {fechaLarga(c.fecha)}
+                                </span>
+                            </span>
                         </DataCell>
-                        <DataCell>{fechaLarga(c.fecha)}</DataCell>
                         <DataCell hideBelow="md">
                             <Cobertura conteo={c} />
                         </DataCell>

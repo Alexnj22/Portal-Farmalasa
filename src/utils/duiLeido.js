@@ -162,3 +162,74 @@ export const ROTULO_DUI = {
     distrito: 'Distrito',
     blood_type: 'Tipo de sangre',
 };
+
+/**
+ * Qué era cada archivo que se subió, dicho para quien lo subió.
+ *
+ * ── Por qué hacía falta ─────────────────────────────────────────────────────
+ *
+ * «Eso no es un DUI» ya estaba resuelto: el lector corta con `NO_ES_DUI` y la
+ * pantalla lo dice. Lo que no tenía forma de detectarse es el error más común y
+ * el más caro: **subir dos veces la misma cara**.
+ *
+ * Ése PASA la comprobación —las dos imágenes son un DUI de verdad— y se
+ * manifiesta como «faltó la mitad de los datos». Nadie lo relaciona con el
+ * archivo: el número está en el anverso y el domicilio en el reverso, así que
+ * con dos anversos falta la dirección entera y se lee como que el lector falló.
+ *
+ * La rama de `esDui` se queda igual. Hoy no se alcanza —el corte pasa antes—
+ * pero este archivo describe la respuesta del lector, no el orden en que la
+ * función decide; el día que ese corte se mueva, acá no hay nada que arreglar.
+ *
+ * @param {{esDui?: boolean, caras?: string[]}} r  lo que devolvió `leer-dui`
+ * @param {boolean} unArchivo  true si se subió un solo archivo con las dos caras
+ * @returns {{grave: boolean, texto: string}|null} `null` cuando no hay nada que decir
+ */
+export function avisoDeCaras(r, unArchivo = false) {
+    const caras = Array.isArray(r?.caras) ? r.caras : [];
+
+    // Lo más grave primero: si no es un DUI, lo demás no importa.
+    if (r?.esDui === false) {
+        return { grave: true, texto: 'Eso no parece un DUI. Revisa que sea el documento correcto.' };
+    }
+
+    if (!caras.length) return null;   // el lector no clasificó: no se inventa nada
+
+    if (unArchivo) {
+        if (caras[0] === 'OTRO') {
+            return { grave: true, texto: 'El archivo no parece un DUI.' };
+        }
+        if (caras[0] === 'ANVERSO' || caras[0] === 'REVERSO') {
+            const cual = caras[0] === 'ANVERSO' ? 'el frente' : 'el reverso';
+            return {
+                grave: false,
+                texto: `El archivo trae sólo ${cual}. Faltan los datos de la otra cara — súbelo completo o usa las dos imágenes.`,
+            };
+        }
+        return null;
+    }
+
+    // Dos archivos: el primero es el que se subió como frente.
+    const [f, rev] = caras;
+    if (f === 'OTRO' && rev === 'OTRO') {
+        return { grave: true, texto: 'Ninguna de las dos imágenes parece un DUI.' };
+    }
+    if (f === 'OTRO') return { grave: true, texto: 'La imagen del frente no parece un DUI.' };
+    if (rev === 'OTRO') return { grave: true, texto: 'La imagen del reverso no parece un DUI.' };
+
+    if (f === rev && (f === 'ANVERSO' || f === 'REVERSO')) {
+        const cual = f === 'ANVERSO' ? 'el frente' : 'el reverso';
+        return {
+            grave: true,
+            texto: `Subiste dos veces ${cual}. Falta la otra cara, y con ella la mitad de los datos.`,
+        };
+    }
+
+    // Cambiadas de lugar. NO es grave: el lector ve las dos juntas y los datos
+    // salen bien igual. Se dice para que el archivo quede donde dice su rótulo.
+    if (f === 'REVERSO' && rev === 'ANVERSO') {
+        return { grave: false, texto: 'Las dos caras están cambiadas de lugar. Los datos se leyeron bien igual.' };
+    }
+
+    return null;
+}

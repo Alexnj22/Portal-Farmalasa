@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import useBorrador from '../../hooks/useBorrador';
 import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
-import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
+import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '../../utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
@@ -41,6 +41,17 @@ import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import { abrirCaptura, esperarFoto, fotoComoArchivo, enlaceDeCaptura } from '../../data/capturaDeFoto';
 import QrDeCaptura from '../common/QrDeCaptura';
+/* El editor de la foto de un documento, por `lazy`: arrastra `react-easy-crop`
+   y sólo hace falta cuando alguien elige una imagen del DUI. Es la regla de
+   «librerías pesadas sólo por await import()» de CLAUDE.md, y el mismo camino
+   que ya usan bitácoras y bolsas. */
+const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
+
+/* Las tres casillas donde entra un DUI. `DOCUMENTO_IDENTIDAD` NO está: es el
+   documento alterno de una persona menor de edad —un carné de minoridad, una
+   partida— y no tiene forma fija, así que recortarlo a proporción de tarjeta le
+   cortaría los bordes. */
+const CATEGORIAS_DE_DUI = new Set(['DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO']);
 import ModalShell from '../common/ModalShell';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import FileField from '../common/FileField';
@@ -1007,6 +1018,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // que adivinar es un fallo que se reporta como «no funciona».
     const [duiFallo, setDuiFallo] = useState(null);
     const [leyendoDui, setLeyendoDui] = useState(false);
+    /* Lo que el lector dijo de las CARAS: si no es un DUI, si subieron dos veces
+       la misma, si están cambiadas de lugar. Va aparte de `duiFallo` porque no
+       es lo mismo: `duiFallo` es «no pude leer» y esto es «leí, y lo que me
+       diste no es lo que decía el rótulo». Un aviso puede ser grave (falta media
+       ficha) o sólo informativo (los archivos están al revés pero los datos
+       salieron bien), y esa diferencia se pinta distinta. */
+    const [duiCaras, setDuiCaras] = useState(null);
+
+    /* ── Recortar el DUI antes de subirlo ────────────────────────────────────
+       Pedido del usuario: «al subirla desde la computadora puedo ajustarla, para
+       que se suba sólo el dui». La foto de un DUI casi nunca es sólo el DUI: es
+       la tarjeta sobre un escritorio, y todo lo que sobra es lo que el lector
+       tiene que descartar antes de leer. `EditorDeDocumento` ya es el canónico
+       para esto —lo usan la receta de bitácoras y la boleta de bolsas—; lo único
+       que faltaba era su ficha `dui` en `DOCS`.
+
+       Sólo IMÁGENES: un DUI también llega como PDF con las dos caras adentro, y
+       ese camino sigue derecho a subirse. Recortar un PDF exigiría rasterizarlo
+       primero, que es trabajo para no ganar nada — el PDF ya viene encuadrado. */
+    const [duiPorRecortar, setDuiPorRecortar] = useState(null);
 
     // ── La foto que se toma con el teléfono ──────────────────────────────────
     //
@@ -1053,6 +1084,46 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return { ...prev, employee_documents: list };
     });
 
+    /* Lo que hace el portal con la respuesta del lector.
+     *
+     * Existe UNA vez porque los dos caminos —dos caras sueltas y un solo
+     * archivo— hacían exactamente lo mismo escrito dos veces, y ya se sabe cómo
+     * termina eso: el arreglo entra en una copia y la otra sigue con el defecto
+     * viejo. Es la misma lección que el placeholder de `PortalTextarea`.
+     *
+     * @param {boolean} unArchivo  si se subió una sola imagen con las dos caras
+     */
+    const aplicarLecturaDui = (data, error, unArchivo) => {
+        if (error || !data?.ok) {
+            setDuiCaras(null);
+            setDuiFallo(data?.details || (data?.error === 'NO_ES_DUI'
+                ? (unArchivo
+                    ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.'
+                    : 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.')
+                : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
+            return;
+        }
+        setDuiFallo(null);
+        /* Qué era cada archivo. Se dice SIEMPRE que el lector lo clasificó, aun
+           cuando la lectura salió bien: subir dos veces el frente devuelve un
+           `ok: true` con la mitad de los campos vacíos, y sin este aviso eso se
+           lee como que el lector falló. */
+        setDuiCaras(avisoDeCaras(data, unArchivo));
+
+        const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
+        let resumen = null;
+        setFormData(prev => {
+            const r = aplicarDuiLeido(leido, prev);
+            resumen = r;
+            return { ...prev, ...r.parche };
+        });
+        setDuiLeido({
+            aplicados: Object.keys(resumen?.parche || {}).length,
+            descartados: resumen?.descartados || [],
+            numeroIlegible: leido.numeroIlegible,
+        });
+    };
+
     const handleDocFile = async (category, file) => {
         if (!file) return;
         updateDoc(category, { file_name: file.name, url: null });
@@ -1063,10 +1134,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (!url) throw new Error('La subida no devolvió una URL.');
             const stored = getStoragePathFromUrl(url);
             let expiryDate = getDocEntry(category).expiry_date || null;
+            /* Declarada AFUERA del `if`, y no es estilo.
+             *
+             * Estuvo dentro, y el certificado médico anual —que la lee 40
+             * renglones más abajo, ya fuera del bloque— tiraba
+             * `ReferenceError: aiResponse is not defined`. El `?.` no protege de
+             * eso: una variable de otro ámbito no es «indefinida», directamente
+             * no existe. Y el modo de falla era el peor posible: el error caía
+             * en el `catch` del alta, que dice «Error al subir documento» y hace
+             * `updateDoc(category, { url: null })` — o sea que el archivo SÍ se
+             * había subido y el formulario lo soltaba igual. El certificado
+             * médico anual no se podía adjuntar, y el aviso mandaba a mirar la
+             * subida, que era lo único que había funcionado. */
+            let aiResponse = null;
+            let aiError = null;
             if (stored) {
-                const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
+                ({ data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
                     body: { filePath: stored.path, bucketName: stored.bucket }
-                });
+                }));
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
                     expiryDate = aiResponse.aiData.expDate;
                 }
@@ -1124,30 +1209,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (category === 'DUI_COMPLETO' && stored) {
                 // Un archivo alcanza: `leer-dui` acepta uno o dos.
                 setDuiFallo(null);
+                setDuiCaras(null);
                 setLeyendoDui(true);
                 try {
                     const { data, error } = await supabase.functions.invoke('leer-dui', { body: { frente: stored } });
-                    if (error || !data?.ok) {
-                        setDuiFallo(data?.details || (data?.error === 'NO_ES_DUI'
-                            ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.'
-                            : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
-                    } else {
-                        setDuiFallo(null);
-                        const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
-                        let resumen = null;
-                        setFormData(prev => {
-                            const r = aplicarDuiLeido(leido, prev);
-                            resumen = r;
-                            return { ...prev, ...r.parche };
-                        });
-                        setDuiLeido({
-                            aplicados: Object.keys(resumen?.parche || {}).length,
-                            descartados: resumen?.descartados || [],
-                            numeroIlegible: leido.numeroIlegible,
-                        });
-                    }
+                    aplicarLecturaDui(data, error, true);
                 } catch (errLectura) {
                     console.error('leer-dui:', errLectura);
+                    setDuiCaras(null);
                     setDuiFallo('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
                 } finally {
                     setLeyendoDui(false);
@@ -1160,39 +1229,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 if (urlOtra && stored) {
                     const guardadaOtra = getStoragePathFromUrl(urlOtra);
                     setDuiFallo(null);
+                    setDuiCaras(null);
                     setLeyendoDui(true);
                     try {
                         const caras = category === 'DUI_FRENTE'
                             ? { frente: stored, reverso: guardadaOtra }
                             : { frente: guardadaOtra, reverso: stored };
                         const { data, error } = await supabase.functions.invoke('leer-dui', { body: caras });
-                        if (error || !data?.ok) {
-                            // Que no se pueda leer NO es un error del alta: el
-                            // documento ya quedó subido y los campos se teclean.
-                            setDuiFallo(data?.details || (data?.error === 'NO_ES_DUI'
-                                ? 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.'
-                                : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
-                        } else {
-                            setDuiFallo(null);
-                            const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
-                            let resumen = null;
-                            setFormData(prev => {
-                                const r = aplicarDuiLeido(leido, prev);
-                                resumen = r;
-                                return { ...prev, ...r.parche };
-                            });
-                            setDuiLeido({
-                                aplicados: Object.keys(resumen?.parche || {}).length,
-                                descartados: resumen?.descartados || [],
-                                numeroIlegible: leido.numeroIlegible,
-                            });
-                        }
+                        // Que no se pueda leer NO es un error del alta: el
+                        // documento ya quedó subido y los campos se teclean.
+                        aplicarLecturaDui(data, error, false);
                     } catch (errLectura) {
                         // Catch propio y no el de arriba: el documento YA se
                         // subió. Dejar que caiga al catch del alta diría «Error
                         // al subir documento», que manda a mirar donde no está
                         // el problema y además borraría la subida buena.
                         console.error('leer-dui:', errLectura);
+                        setDuiCaras(null);
                         setDuiFallo('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
                     } finally {
                         setLeyendoDui(false);
@@ -1267,7 +1320,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     busyLabel="Subiendo y leyendo el documento…"
                     url={doc.url}
                     name={doc.file_name}
-                    onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
+                    onChange={f => {
+                        if (!f) return removeDocFile(category);
+                        // Sólo el DUI, y sólo si es una imagen: ver el comentario
+                        // de `duiPorRecortar`.
+                        if (CATEGORIAS_DE_DUI.has(category) && f.type?.startsWith('image/')) {
+                            return setDuiPorRecortar({ category, file: f });
+                        }
+                        return handleDocFile(category, f);
+                    }}
                 />
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
@@ -1779,7 +1840,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-label font-medium text-content-3 leading-snug mt-0.5">
                                             {isMinor
                                                 ? 'Súbelo y después escribe los datos: un documento alterno no tiene formato fijo.'
-                                                : 'Sube las dos caras y el portal lee los datos. Tú confirmas antes de que entren.'}
+                                                : 'Sube las dos caras y el portal lee los datos. Si es una foto, la recortas antes para que entre sólo la tarjeta.'}
                                         </p>
                                     </div>
                                 </div>
@@ -1852,6 +1913,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             )}
 
+                            {/* Qué era cada archivo.
+                                Va ARRIBA del resumen de lo leído a propósito: si subieron
+                                dos veces el frente, el resumen va a decir «se completaron 6
+                                datos» —lo cual es cierto— y eso, solo, se lee como que todo
+                                salió bien. Lo primero que hay que ver es que falta media
+                                ficha. */}
+                            {duiCaras && !leyendoDui && !duiFallo && (
+                                <div className="mt-3">
+                                    <Notice variant={duiCaras.grave ? 'warning' : 'info'}
+                                        icon={duiCaras.grave ? AlertTriangle : AlertCircle}>
+                                        {duiCaras.texto}
+                                    </Notice>
+                                </div>
+                            )}
+
                             {/* Informa, no pregunta. Los datos YA entraron: lo que este
                                 panel destaca es lo que quedó a verificar, que es lo único
                                 que necesita ojo humano. Un botón «Usar estos datos» sobre
@@ -1894,6 +1970,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Recortar antes de subir.
+                                Se abre entre elegir el archivo y subirlo: cancelar acá deja
+                                la casilla como estaba, sin nada a medio guardar. Lo que
+                                sale del editor es un `File` normal y sigue el camino de
+                                siempre — el lector recibe la tarjeta sola, sin el
+                                escritorio alrededor. */}
+                            {duiPorRecortar && (
+                                <Suspense fallback={null}>
+                                    <EditorDeDocumento
+                                        tipo="dui"
+                                        file={duiPorRecortar.file}
+                                        onCancel={() => setDuiPorRecortar(null)}
+                                        onConfirm={(recortado) => {
+                                            const { category } = duiPorRecortar;
+                                            setDuiPorRecortar(null);
+                                            handleDocFile(category, recortado);
+                                        }}
+                                    />
+                                </Suspense>
                             )}
                         </div>
 
@@ -1960,10 +2057,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {captura && (
                                     <ModalShell open onClose={cerrarCaptura} maxWidthClass="max-w-sm"
                                         ariaLabel="Tomar la foto con el teléfono">
-                                        <div className="p-5 flex flex-col items-center gap-4">
-                                            <p className="text-body-sm font-black uppercase tracking-widest text-content-3">
-                                                Tomar la foto con el teléfono
-                                            </p>
+                                        <div className="p-5 pt-3 flex flex-col items-center gap-4">
+                                            {/* Un botón de cerrar EXPLÍCITO, pedido por el
+                                                usuario. Escape y el clic en el fondo ya
+                                                cerraban, pero los dos son gestos que hay que
+                                                saber: quien decide no usar el teléfono se
+                                                queda mirando un QR sin ninguna salida a la
+                                                vista, y con el dedo no hay Escape que valga.
+                                                El rótulo va a la izquierda y la X a la
+                                                derecha: centrarlo obligaría a compensar el
+                                                ancho del botón con un relleno a mano, que es
+                                                un número que se rompe al cambiar el rótulo. */}
+                                            <div className="w-full flex items-center justify-between gap-2">
+                                                <p className="min-w-0 text-body-sm font-black uppercase tracking-widest text-content-3">
+                                                    Tomar la foto con el teléfono
+                                                </p>
+                                                <Button variant="ghost" size="sm" icon={X} iconOnly
+                                                    title="Cerrar" onClick={cerrarCaptura} />
+                                            </div>
                                             <p className="text-label text-content-2 font-medium text-center leading-snug max-w-[260px]">
                                                 Escanea este código con la cámara del teléfono. La foto va a aparecer
                                                 aquí sola.
@@ -1972,6 +2083,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 enlace={enlaceDeCaptura(captura.secreto)}
                                                 venceEl={captura.vence_el}
                                                 alRenovar={pedirFotoAlTelefono} />
+                                            {/* Y una salida con NOMBRE. La X de arriba es la
+                                                convención; ésta dice qué pasa si se aprieta,
+                                                que es lo que hace falta cuando el diálogo
+                                                está esperando algo. */}
+                                            <Button variant="secondary" size="sm" onClick={cerrarCaptura}>
+                                                Cerrar — la subo desde aquí
+                                            </Button>
                                         </div>
                                     </ModalShell>
                                 )}

@@ -11,7 +11,7 @@
 // media dirección es PEOR que ninguna, porque se ve completa.
 
 import { describe, it, expect } from 'vitest';
-import { aplicarDuiLeido } from '../../src/utils/duiLeido';
+import { aplicarDuiLeido, avisoDeCaras } from '../../src/utils/duiLeido';
 
 const LEIDO = {
     numero: '01234567-8',
@@ -135,5 +135,70 @@ describe('el nivel académico sale del DUI', () => {
             { education_level: 'BACHILLERATO_GENERAL', profession: 'Bachiller' });
         expect(parche.education_level).toBeUndefined();
         expect(parche.profession).toBeUndefined();
+    });
+});
+
+/* ── Qué era cada archivo ────────────────────────────────────────────────────
+ *
+ * Estas pruebas existen por el defecto que las trajo: `es_dui` viajaba desde el
+ * lector y NADIE lo leía, así que quien subía una licencia de conducir veía el
+ * mismo «no se pudo leer» que quien subió un DUI movido. Y el error más caro —
+ * subir dos veces la misma cara— ni siquiera tenía cómo detectarse.
+ */
+describe('avisoDeCaras', () => {
+    it('«no es un DUI» gana sobre todo lo demás', () => {
+        const a = avisoDeCaras({ esDui: false, caras: ['ANVERSO', 'REVERSO'] });
+        expect(a.grave).toBe(true);
+        expect(a.texto).toMatch(/no parece un DUI/i);
+    });
+
+    it('sin clasificación no inventa nada', () => {
+        expect(avisoDeCaras({ esDui: true })).toBeNull();
+        expect(avisoDeCaras({ esDui: true, caras: [] })).toBeNull();
+        expect(avisoDeCaras(null)).toBeNull();
+    });
+
+    it('las dos caras bien puestas no dicen nada', () => {
+        expect(avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'REVERSO'] })).toBeNull();
+    });
+
+    it('dos veces el frente es GRAVE: falta media ficha', () => {
+        const a = avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'ANVERSO'] });
+        expect(a.grave).toBe(true);
+        expect(a.texto).toMatch(/dos veces el frente/i);
+    });
+
+    it('dos veces el reverso también', () => {
+        const a = avisoDeCaras({ esDui: true, caras: ['REVERSO', 'REVERSO'] });
+        expect(a.grave).toBe(true);
+        expect(a.texto).toMatch(/dos veces el reverso/i);
+    });
+
+    it('cambiadas de lugar NO es grave — los datos salieron bien', () => {
+        const a = avisoDeCaras({ esDui: true, caras: ['REVERSO', 'ANVERSO'] });
+        expect(a.grave).toBe(false);
+        expect(a.texto).toMatch(/cambiadas de lugar/i);
+    });
+
+    it('dice CUÁL de las dos imágenes no es un DUI', () => {
+        expect(avisoDeCaras({ esDui: true, caras: ['OTRO', 'REVERSO'] }).texto).toMatch(/del frente/i);
+        expect(avisoDeCaras({ esDui: true, caras: ['ANVERSO', 'OTRO'] }).texto).toMatch(/del reverso/i);
+        expect(avisoDeCaras({ esDui: true, caras: ['OTRO', 'OTRO'] }).texto).toMatch(/ninguna de las dos/i);
+    });
+
+    describe('un solo archivo con las dos caras', () => {
+        it('AMBAS es lo esperado y no dice nada', () => {
+            expect(avisoDeCaras({ esDui: true, caras: ['AMBAS'] }, true)).toBeNull();
+        });
+
+        it('media tarjeta avisa, sin ser grave: el archivo sirve, le falta la otra cara', () => {
+            const a = avisoDeCaras({ esDui: true, caras: ['ANVERSO'] }, true);
+            expect(a.grave).toBe(false);
+            expect(a.texto).toMatch(/sólo el frente/i);
+        });
+
+        it('otro documento, en cambio, es grave', () => {
+            expect(avisoDeCaras({ esDui: true, caras: ['OTRO'] }, true).grave).toBe(true);
+        });
     });
 });

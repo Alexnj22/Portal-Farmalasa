@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.823.0 — El DUI se recorta antes de subirlo, y el portal dice qué cara le tocó
+
+Tres cosas pedidas sobre la misma pantalla: *«mientras está en el QR que haya
+botón de cerrar. al subirla desde la computadora puedo ajustarla? para que se
+suba solo el dui, además, ahí cómo detecta que es? si es frontal, trasero, si es
+otro documento?»*
+
+**El QR tiene salida.** Escape y el clic en el fondo ya cerraban, pero los dos
+son gestos que hay que saber: quien decide no usar el teléfono se quedaba
+mirando un código sin ninguna salida a la vista, y con el dedo no hay Escape que
+valga. Ahora hay una X arriba y un botón con nombre abajo — «Cerrar, la subo
+desde aquí» — que dice qué pasa si se aprieta.
+
+**La foto del DUI se recorta antes de subirse.** La foto de un DUI casi nunca es
+sólo el DUI: es la tarjeta sobre un escritorio, y todo lo que sobra es lo que el
+lector tiene que descartar antes de leer. El editor ya existía —lo usan la receta
+de bitácoras y la boleta de bolsas—; lo que faltaba era su ficha. Dos cosas la
+hacen distinta de un papel:
+
+- **No se aclara nunca.** «Aclarada» deja papel blanco y tinta negra, que es lo
+  que hace legible una receta. Sobre un DUI quema la fotografía de la persona y
+  los fondos de seguridad a color — o sea, justo lo que el lector necesita ver.
+  El control ni se ofrece, en vez de ofrecerlo y confiar en que nadie lo toque.
+- **Su forma es fija y conocida.** ID-1, 85.6 × 54 mm. La receta y la boleta
+  tienen que adivinar su proporción; ésta se sabe, así que el recuadro nace con
+  la forma de la tarjeta. Medido en el navegador: **1.586**.
+
+Sólo se recorta si es una imagen. El DUI también llega como PDF con las dos
+caras adentro, y ese ya viene encuadrado.
+
+**Y ahora el portal dice qué cara subiste.** «Eso no es un DUI» ya estaba
+resuelto. Lo que no tenía forma de detectarse era el error más común y el más
+caro: **subir dos veces la misma cara**. Ése *pasa* la comprobación —las dos
+imágenes son un DUI de verdad— y se manifiesta como «faltó la mitad de los
+datos»: el número está en el anverso y el domicilio en el reverso, así que con
+dos anversos falta la dirección entera y se lee como que el lector falló.
+
+El lector ahora clasifica cada archivo (anverso · reverso · ambas · otro) y el
+aviso sale **arriba** del resumen de lo leído, a propósito: ese resumen diría «se
+completaron 6 datos» —lo cual es cierto— y eso, solo, se lee como que todo salió
+bien.
+
+Tres avisos distintos y sólo dos son graves. Que las dos caras estén cambiadas de
+lugar **no lo es**: el lector las ve juntas y los datos salen bien igual, así que
+se dice para que el archivo quede donde dice su rótulo, no como una alarma.
+
+### Y de paso, un defecto que no daba error
+
+Adjuntar el **certificado médico anual** —el documento que se agregó anteayer—
+tiraba `ReferenceError` y el formulario **soltaba el archivo que acababa de
+subir**, avisando «Error al subir documento». O sea que el aviso mandaba a mirar
+la subida, que era lo único que había funcionado. Lo levantó el linter al pasar
+por el archivo por otro motivo.
+
 ## v2.822.0 — Tomar la foto con el teléfono y verla aparecer en la computadora
 
 El alta se llena en una computadora que casi nunca tiene una cámara usable, y la

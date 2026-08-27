@@ -220,6 +220,45 @@ export const DOCS = {
         pistaTactil: 'Arrastra el papel y pellizca para acercar. «Aclarada» lo deja '
                    + 'blanco con la letra negra.',
     },
+    /* ── El DUI: una TARJETA, no una hoja ────────────────────────────────
+     *
+     * Entra acá porque el pedido fue el mismo que trajo la boleta —«al subirla
+     * desde la computadora puedo ajustarla, para que se suba sólo el DUI»— y la
+     * respuesta ya estaba construida. Lo que cambia son dos cosas, y las dos
+     * importan:
+     *
+     *  1. **No se aclara nunca.** «Aclarada» existe para dejar papel blanco y
+     *     tinta negra; sobre un DUI eso quema la fotografía de la persona y los
+     *     fondos de seguridad a color, que es exactamente lo que el lector
+     *     necesita ver. Por eso `aclarar: false` — el control ni se ofrece, en
+     *     vez de ofrecerlo y confiar en que nadie lo toque.
+     *  2. **Su forma es fija y conocida.** Un DUI es ID-1: 85.6 × 54 mm. La
+     *     receta y la boleta tienen que adivinar su proporción; ésta se sabe, y
+     *     ponerla de entrada hace que el recuadro caiga casi encima de la
+     *     tarjeta sin que nadie lo arrastre.
+     *
+     * El lado largo sale siempre en 1600 px: sobre una tarjeta de 85.6 mm eso
+     * son ~475 ppp, muy por encima de lo que necesita el lector para la letra
+     * chica del reverso —el domicilio y la profesión, que es lo que se lee— y
+     * el archivo queda en ~300 kB. */
+    dui: {
+        nombre: 'el documento',
+        titulo: 'Recortar el documento',
+        bajada: 'Deja sólo la tarjeta: lo que quede dentro del recuadro es lo que se lee.',
+        archivo: 'dui',
+        superficie: 'la tarjeta',
+        salida: { por: 'largo', lado: 1600 },
+        ladoMinimo: 800,
+        medirLado: 'corto',
+        marco: 'ancho',
+        // ID-1, la norma de toda tarjeta de identidad: 85.60 × 53.98 mm.
+        aspecto: 85.6 / 53.98,
+        // Un DUI no se aclara: ver arriba.
+        aclarar: false,
+        pista: 'Recorta hasta el borde de la tarjeta y enderézala. Si la foto trae el frente '
+             + 'y el reverso juntos, súbela en «Un solo archivo».',
+        pistaTactil: 'Arrastra la tarjeta y pellizca para acercar. Recorta hasta su borde.',
+    },
 };
 
 /**
@@ -248,19 +287,26 @@ export function escalaDeSalida(ancho, alto, doc = {}) {
 export function avisosDeFoto(d, modo = 'aclarada', doc = {}) {
     if (!d) return [];
     const nombre = doc.nombre || 'la receta';
+    // Cómo se llama la superficie. Una receta y una boleta son HOJAS; un DUI es
+    // una tarjeta, y llamarle hoja hace que el aviso se lea como si hablara de
+    // otro documento.
+    const sup = doc.superficie || 'la hoja';
     const avisos = [];
 
     if (d.tinta < TINTA_MINIMA) {
         avisos.push({
             tono: 'warning',
-            texto: `Casi no se ve tinta en la hoja. Comprueba que la foto sea de ${nombre} y que entre completa.`,
+            texto: `Casi no se ve tinta en ${sup}. Comprueba que la foto sea de ${nombre} y que entre completa.`,
         });
     }
 
-    if (d.papel < PAPEL_OSCURO && modo !== 'aclarada') {
+    // El consejo NOMBRA un control. Donde ese control no existe —el DUI, que
+    // no se aclara nunca— el aviso manda a apretar algo que no está en la
+    // pantalla, que es peor que no avisar.
+    if (d.papel < PAPEL_OSCURO && modo !== 'aclarada' && doc.aclarar !== false) {
         avisos.push({
             tono: 'info',
-            texto: 'La hoja quedó oscura. «Aclarada» le sube el contraste y la deja legible.',
+            texto: `${sup[0].toUpperCase()}${sup.slice(1)} quedó oscura. «Aclarada» le sube el contraste y la deja legible.`,
         });
     }
 

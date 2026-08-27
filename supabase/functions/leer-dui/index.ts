@@ -122,14 +122,16 @@ Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
   "municipio": "el municipio del domicilio. null si no está.",
   "distrito": "el distrito del domicilio, si aparece. null si no está.",
   "tipo_sangre": "el tipo de sangre (por ejemplo O+, A-). null si no aparece.",
-  "es_dui": true si las imágenes son realmente un DUI de El Salvador, false si son otra cosa.
+  "es_dui": true si las imágenes son realmente un DUI de El Salvador, false si son otra cosa,
+  "caras": ["ANVERSO" | "REVERSO" | "AMBAS" | "OTRO", ...] una entrada POR CADA archivo que te di, EN EL MISMO ORDEN. Di ANVERSO si esa imagen es la cara con la foto y el número; REVERSO si es la cara con el domicilio y la firma; AMBAS si ese único archivo trae las dos caras; OTRO si esa imagen no es una cara de un DUI salvadoreño.
 }
 
 REGLAS QUE NO PUEDES ROMPER:
 - Si un dato no se lee con seguridad, devuelve null. NUNCA lo inventes ni lo deduzcas.
 - El tipo de sangre es OPCIONAL en el DUI: sólo aparece si la persona presentó constancia de laboratorio. Que no esté es normal, devuelve null.
 - No completes el departamento ni el municipio a partir del distrito ni al revés. Devuelve sólo lo que está escrito.
-- Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.`
+- Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.
+- "caras" tiene EXACTAMENTE tantas entradas como archivos recibiste, en orden. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "POST, OPTIONS" }
@@ -232,6 +234,26 @@ Deno.serve(async (req: Request) => {
       // emite a salvadoreños, así que si esto es un DUI, la persona lo es.
       nacionalidad: 'Salvadoreña',
       carasLeidas: caras.length,
+      // ── Qué era cada archivo ────────────────────────────────────────────
+      //
+      // «No es un DUI» ya se resolvía arriba, cortando con `NO_ES_DUI`. Lo que
+      // faltaba era el error más común y el más caro: **subir dos veces la
+      // misma cara**. Eso pasa la comprobación de `es_dui` —las dos imágenes
+      // SON un DUI— y se manifiesta como «faltó la mitad de los datos», que
+      // nadie relaciona con el archivo: el número está en el anverso y el
+      // domicilio en el reverso, así que con dos anversos falta la dirección
+      // entera y parece que el lector falló.
+      //
+      // `caras` dice qué es cada archivo EN ORDEN, para poder decirlo.
+      //
+      // `esDui` viaja igual aunque acá siempre sea `true`: la respuesta dice lo
+      // que el lector concluyó, y quien la consume no tiene por qué saber que
+      // el corte pasó 40 renglones más arriba.
+      esDui: leido?.es_dui !== false,
+      caras: Array.isArray(leido?.caras)
+        ? leido.caras.map((c: unknown) =>
+            ['ANVERSO', 'REVERSO', 'AMBAS', 'OTRO'].includes(String(c)) ? String(c) : 'OTRO')
+        : [],
     })
   } catch (e) {
     console.error('leer-dui:', e)

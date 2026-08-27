@@ -225,7 +225,7 @@ async function revisar(src, cropPx, rotacion, doc) {
 
 /**
  * @param {File}   file      la foto elegida
- * @param {string} tipo      clave de `DOCS` — hoy `receta` o `boleta`
+ * @param {string} tipo      clave de `DOCS` — hoy `receta`, `boleta` o `dui`
  * @param {func}   onConfirm recibe el `File` ya recortado y normalizado
  */
 export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, onConfirm, onCancel }) {
@@ -267,7 +267,15 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * que la persona arrastró, decirle cómo arrastrar es tapar la foto. */
     const [tocado, setTocado] = useState(false);
     const [cropPx, setCropPx] = useState(null);
-    const [modo, setModo] = useState('aclarada');
+    /* «Aclarada» de entrada, PERO no en todo documento.
+     *
+     * Sube el contraste hasta dejar papel blanco y tinta negra, que es lo que
+     * hace legible una receta o una boleta térmica. Sobre un DUI quema la
+     * fotografía de la persona y los fondos de seguridad a color — o sea que
+     * arruina justo lo que el lector necesita ver. Los documentos que no se
+     * aclaran lo declaran con `aclarar: false` y ni siquiera ven el control:
+     * ofrecerlo y confiar en que nadie lo apriete es dejar el defecto puesto. */
+    const [modo, setModo] = useState(doc.aclarar === false ? 'original' : 'aclarada');
     const [guardando, setGuardando] = useState(false);
     const [medidas, setMedidas] = useState(null);
     const urlRef = useRef(null);
@@ -551,9 +559,11 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             label="Forma del papel"
                         />
                     )}
-                    <div className="ml-auto">
-                        <SegmentedControl size="sm" value={modo} onChange={setModo} options={MODOS} />
-                    </div>
+                    {doc.aclarar !== false && (
+                        <div className="ml-auto">
+                            <SegmentedControl size="sm" value={modo} onChange={setModo} options={MODOS} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Los avisos reemplazan a la explicación fija cuando hay algo

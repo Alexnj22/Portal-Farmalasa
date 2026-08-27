@@ -113,6 +113,46 @@ export const PLAZO_DE_PAGO = {
  * moneda de curso legal y prohíbe expresamente fichas, vales, pagarés y
  * cupones. Un catálogo que incluye lo prohibido invita a elegirlo.
  */
+/**
+ * ── El lugar de pago NO es texto libre ──────────────────────────────────────
+ *
+ * El Art. 23 nº 9 exige que el contrato escrito diga «Forma, período y **lugar**
+ * de pago» — las tres, y sin excepción por el medio: también cuando se paga por
+ * transferencia. Y el Art. 128 dice de dónde sale ese lugar:
+ *
+ *   «El salario debe pagarse en el lugar convenido o en el establecido por el
+ *    REGLAMENTO INTERNO DE TRABAJO y, a falta de estipulación, en el
+ *    acostumbrado o donde el trabajador preste sus servicios.»
+ *
+ * El reglamento interno de esta empresa ya lo estableció. Art. 40, aprobado por
+ * la Dirección General de Trabajo (`docs/legal/REGLAMENTO INTERNO...`):
+ *
+ *   «…será cancelado los días quince y último de cada mes, en las OFICINAS DE LA
+ *    EMPRESA o en su LUGAR DE TRABAJO.»
+ *
+ * O sea que el lugar no se inventa por persona: son esos dos. Un campo de texto
+ * libre invita a escribir un tercero, y un contrato que estipule un lugar que el
+ * reglamento no contempla se contradice con el documento que la empresa ya tiene
+ * aprobado.
+ *
+ * ── Y el lugar equivocado no es un detalle ──────────────────────────────────
+ *
+ * Art. 129: está prohibido pagar en centros de vicio, lugares de recreo,
+ * expendios de bebidas embriagantes y **tiendas de ventas al por menor**, «a no
+ * ser que se trate de los trabajadores de esos establecimientos» — que es
+ * justamente el caso de una sala. La sanción es dura: «El pago efectuado en
+ * contravención a lo dispuesto en el inciso anterior, SE TENDRÁ POR NO HECHO.»
+ */
+export const LUGAR_PAGO_OPTIONS = [
+    { value: 'LUGAR_TRABAJO', label: 'En su lugar de trabajo' },
+    { value: 'OFICINAS',      label: 'En las oficinas de la empresa' },
+];
+
+/** Lo que el reglamento interno ya dejó dicho, para mostrarlo al elegir. */
+export const REGLAMENTO_LUGAR_PAGO =
+    'El reglamento interno ya lo fija: se paga los días quince y último de cada mes, '
+    + 'en las oficinas de la empresa o en su lugar de trabajo.';
+
 export const MEDIO_PAGO_OPTIONS = [
     { value: 'EFECTIVO',      label: 'Efectivo' },
     { value: 'TRANSFERENCIA', label: 'Transferencia o depósito' },

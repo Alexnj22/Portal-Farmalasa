@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.814.1 — El lugar de pago sale del reglamento, no de un texto libre
+
+La pregunta fue *«legalmente el lugar de pago, ¿cómo lo espera ver la ley?»*. Y
+para contestarla hubo que traer el Código de Trabajo al repo: **no estaba**. El
+expediente de personal se venía construyendo citando artículos de memoria.
+
+**Lo que dice el texto, y lo que yo había hecho mal.** El **Art. 23 nº 9** exige
+que el contrato escrito diga «Forma, período y **lugar** de pago» — las tres, sin
+excepción por el medio. Dos versiones atrás yo había **escondido** el lugar
+cuando el pago era por transferencia, razonando que a una cuenta no se va a
+ningún lado. El razonamiento es sensato y el texto no lo admite: así el contrato
+salía sin un elemento que la ley pide. Vuelve, siempre.
+
+**Y no es un texto libre.** El **Art. 128** dice que el lugar sale del convenio
+«o del establecido por el **reglamento interno de trabajo**». El de esta empresa
+ya lo resolvió en su **Art. 40**, aprobado por la Dirección General de Trabajo:
+se paga los días quince y último, «en las oficinas de la Empresa o en su lugar de
+trabajo». Así que el campo es una elección entre esos dos, y la pantalla dice de
+dónde sale. Un texto libre invitaba a escribir un tercero, y un contrato que
+estipule un lugar que el reglamento no contempla se contradice con el documento
+que la empresa tiene aprobado.
+
+**Un hallazgo que conviene conocer.** El **Art. 129** prohíbe pagar el salario en
+«tiendas de ventas al por menor» —una sala lo es— pero exceptúa «a los
+trabajadores de esos establecimientos», que es justo el caso. O sea que pagar en
+la sala **sí se puede**. Importa saberlo porque la sanción no es leve: el pago
+hecho en un lugar prohibido «**se tendrá por no hecho**».
+
+### El Código de Trabajo ya vive en el repo
+
+`docs/legal/codigo_de_trabajo.pdf` y su texto plano, con el mapa de los nueve
+artículos que el expediente ya usa y dónde se aplica cada uno.
+
+Dos advertencias escritas ahí: es una **copia de una edición**, no el diario
+oficial; y el `-layout` **engaña en este documento** —va a dos columnas con notas
+al margen, así que el Art. 129 termina en «a no ser que» y su excepción aparece
+después del Art. 133—. Para leer un artículo completo hay que extraerlo sin
+`-layout`.
+
+### Una pregunta que queda abierta, y no es del portal
+
+El reglamento interno dice que los métodos de pago son **transferencia bancaria
+electrónica o cheque**. El portal ofrece «Efectivo». Uno de los dos tiene que
+cambiar, y es decisión de la empresa.
+
 ## v2.814.0 — El DUI que vence avisa, y el número de la acreditación sale del papel
 
 Los dos huecos que quedaban del expediente de Talento Humano.

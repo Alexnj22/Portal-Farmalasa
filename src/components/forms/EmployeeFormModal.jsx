@@ -6,7 +6,8 @@ import { faltantesDelExpediente } from '../../utils/expediente';
 import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
-import { estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
+import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
+    estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
@@ -3199,23 +3200,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             El salario se paga en moneda de curso legal. No se puede pagar con vales, fichas ni cupones.
                                         </p>
                                     </div>
-                                    {/* El lugar de pago es un dato del pago EN EFECTIVO: dice
-                                        dónde se presenta la persona a cobrar. Con transferencia
-                                        no hay lugar al que ir — el pago llega a la cuenta— y
-                                        pedirlo igual es pedir un dato que no existe. Se
-                                        pregunta cuando corresponde, y cuando no, se dice por
-                                        qué no se pregunta. */}
-                                    {formData.medio_pago === 'EFECTIVO' ? (
-                                        <PortalInput
-                                            label="Lugar de pago" name="lugar_pago"
-                                            value={formData.lugar_pago} onChange={handleChange}
-                                            icon={MapPin} placeholder="Ej. Salud 1" colSpan={2}
-                                            helperText="dónde se presenta a cobrar" />
-                                    ) : formData.medio_pago ? (
-                                        <p className="md:col-span-2 text-micro text-content-3 font-medium ml-1 leading-snug">
-                                            No se pregunta el lugar de pago: el salario llega a la cuenta, no se cobra en un sitio.
+                                    {/* El lugar va SIEMPRE, aunque se pague por transferencia:
+                                        el Art. 23 nº 9 pide «forma, período y lugar de pago» en
+                                        el contrato escrito y no hace excepción por el medio.
+                                        Estuvo escondido cuando el medio no era efectivo, y eso
+                                        dejaba el contrato sin un elemento exigido — el
+                                        razonamiento de sentido común no le gana al texto.
+
+                                        Y no es texto libre: el Art. 128 dice que el lugar sale
+                                        del convenio o del REGLAMENTO INTERNO, y el de esta
+                                        empresa ya lo fijó en su Art. 40. Escribir un tercero
+                                        contradiría el documento que la empresa tiene aprobado. */}
+                                    <div className="relative z-content md:col-span-2">
+                                        <label className={rotuloCampo('text-content-3')}>Lugar de pago</label>
+                                        <LiquidSelect
+                                            value={formData.lugar_pago}
+                                            onChange={(val) => handleSelectChange('lugar_pago', val)}
+                                            options={LUGAR_PAGO_OPTIONS}
+                                            placeholder="Seleccionar…" icon={MapPin} {...portalSelectProps} />
+                                        <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                            {REGLAMENTO_LUGAR_PAGO}
                                         </p>
-                                    ) : null}
+                                    </div>
                                 </div>
                             </div>
 

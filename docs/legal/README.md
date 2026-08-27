@@ -66,6 +66,63 @@ la **DNM** (Dirección Nacional de Medicamentos) y a la **SRS**
 (Superintendencia de Regulación Sanitaria), que la absorbió. Es el mismo
 regulador; al buscar en internet aparecen bajo los dos nombres.
 
+## 3 · Laboral — Código de Trabajo
+
+Descargado el **2026-08-27**, al preguntarse cómo espera la ley ver el «lugar de
+pago» en el contrato. Hasta ese día el expediente de personal se construyó
+citando artículos **de memoria**, sin el texto en el repo para contrastarlos.
+
+| Archivo | Contenido | Fuente | Vigencia conocida |
+|---|---|---|---|
+| `codigo_de_trabajo.pdf` | Código de Trabajo, edición rubricada y concordada con las Normas Internacionales del Trabajo (OIT) | colsiba.org (copia de la edición OIT) | Versión actualizada; sin fecha de corte impresa |
+| `codigo_de_trabajo.txt` | El mismo, en texto plano | `pdftotext -layout` | — |
+
+⚠️ **Es una copia de una edición, no el diario oficial.** Sirve para leer el
+texto y citarlo con precisión; para una actuación con consecuencias —una
+inspección, un juicio— la fuente es la Asamblea Legislativa.
+
+⚠️ **Y el `-layout` engaña en ESTE documento.** Va a dos columnas con notas al
+margen, así que un artículo se corta a mitad de frase y sigue veinte líneas más
+abajo, intercalado con otro. El Art. 129 termina en «…a no ser que» y su
+excepción aparece después del Art. 133. Para leer un artículo COMPLETO conviene
+extraerlo **sin** `-layout`, que respeta el orden de lectura:
+
+```bash
+pdftotext docs/legal/codigo_de_trabajo.pdf - | less
+```
+
+Los que ya se usaron, con su ubicación:
+
+| Artículo | Qué dice | Dónde se aplica |
+|---|---|---|
+| 18 | Tres ejemplares del contrato; el tercero a la Dirección General de Trabajo dentro de **ocho días**. Omitirlo NO invalida el contrato | aviso con cuenta regresiva del expediente |
+| 20 | Presunción de contrato de trabajo cuando hay subordinación | advertencia de «servicios profesionales» |
+| 23 | Qué debe decir el contrato escrito. **Nº 9: «Forma, período y lugar de pago»** | la pestaña Contrato entera |
+| 25 | El plazo sólo vale si la labor es transitoria, temporal o eventual | «por qué es temporal» |
+| 28 | Período de prueba: 30 días | aviso de período de prueba |
+| 120 | Moneda de curso legal; prohíbe vales, fichas y cupones | catálogo de medio de pago |
+| **128** | «El salario debe pagarse en el lugar convenido **o en el establecido por el reglamento interno de trabajo** y, a falta de estipulación, en el acostumbrado o donde el trabajador preste sus servicios» | catálogo de lugar de pago |
+| **129** | Prohíbe pagar en centros de vicio, lugares de recreo, expendios de bebidas embriagantes y **tiendas de ventas al por menor**, «a no ser que se trate de los trabajadores de esos establecimientos». El pago en contravención **«se tendrá por no hecho»** | por qué pagar en la sala SÍ se puede |
+| 130 | Cuándo se vuelve exigible el salario según la forma de estipulación | nota bajo «forma de estipulación» |
+
+### El reglamento interno de la empresa manda tanto como el Código
+
+`REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf` está **aprobado por la Dirección
+General de Trabajo**, y el Art. 128 del Código le entrega expresamente la
+definición del lugar de pago. Su **Art. 40** ya lo resolvió:
+
+> «El salario devengado por los y las Trabajadoras les será pagado en la moneda
+> de curso legal y será cancelado los **días quince y último de cada mes**, en
+> las **oficinas de la Empresa o en su lugar de trabajo**. Los métodos de pago
+> serán por medio de **transferencia bancaria electrónica o cheque**.»
+
+De ahí sale que el lugar de pago sea un catálogo de dos y no un texto libre.
+**Y deja una pregunta abierta:** el reglamento dice transferencia o cheque, y el
+portal ofrece «Efectivo». Uno de los dos tiene que cambiar, y es decisión de la
+empresa, no del portal.
+
+Se lee con `textutil -convert txt -stdout "docs/legal/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf"`.
+
 ## ⚠️ Limitación importante
 
 **Ninguno de estos documentos es garantizadamente la versión 100% vigente hoy.**

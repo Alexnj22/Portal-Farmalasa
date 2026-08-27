@@ -77,3 +77,41 @@ describe('PLAZO_DE_PAGO', () => {
         expect(PLAZO_DE_PAGO.COMISION).toContain('quince días');
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El lugar de pago: lo que la ley espera ver
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Art. 23 nº 9: el contrato escrito dice «Forma, período y LUGAR de pago» — las
+// tres, y sin excepción por el medio. El portal lo escondía cuando se pagaba
+// por transferencia, razonando que «a una cuenta no se va a ningún lado». El
+// razonamiento es sensato y el texto no lo admite: un contrato sin el lugar es
+// un contrato al que le falta un elemento exigido.
+//
+// Art. 128: el lugar sale del convenio o del REGLAMENTO INTERNO. El de esta
+// empresa ya lo fijó en su Art. 40 —oficinas de la empresa o lugar de trabajo—,
+// así que el campo es una elección entre esos dos y no un texto libre: un
+// tercero contradiría el documento que la empresa tiene aprobado.
+
+import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO, MEDIO_PAGO_OPTIONS } from '../../src/utils/contrato';
+
+describe('el lugar de pago', () => {
+    it('son los dos que fijó el reglamento interno, y sólo esos', () => {
+        expect(LUGAR_PAGO_OPTIONS.map(o => o.value).sort())
+            .toEqual(['LUGAR_TRABAJO', 'OFICINAS']);
+    });
+
+    it('la pantalla dice de dónde sale, no lo hace adivinar', () => {
+        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/reglamento interno/i);
+        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/quince y último/i);
+    });
+
+    it('el medio de pago no incluye nada que la ley prohíba', () => {
+        // Art. 120: moneda de curso legal. Un catálogo que incluya un vale o
+        // una ficha invita a elegirlo.
+        const valores = MEDIO_PAGO_OPTIONS.map(o => o.value);
+        expect(valores).not.toContain('VALE');
+        expect(valores).not.toContain('CUPON');
+        expect(valores.length).toBe(2);
+    });
+});

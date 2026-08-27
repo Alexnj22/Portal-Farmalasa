@@ -167,17 +167,24 @@ const normalizeHerramientas = (arr) => {
 // falta uno y de dónde sacarlo. Las columnas viejas se conservan porque son las
 // que lee hoy el resto del portal; ésta es la lista completa.
 const normalizeContactosEmergencia = (principal, extras) => {
-    const uno = (c) => ({
-        nombre: (c?.nombre || '').trim().toUpperCase(),
-        parentesco: (c?.parentesco || '').trim(),
-        telefono: (c?.telefono || '').trim(),
-    });
+    // Cada contacto puede tener VARIOS teléfonos. Se acepta la forma vieja
+    // (`telefono` suelto) al leer para que una ficha guardada antes no aparezca
+    // sin número, y se guarda siempre en la nueva: una sola forma en la base.
+    const uno = (c) => {
+        const tels = (Array.isArray(c?.telefonos) ? c.telefonos : [c?.telefono])
+            .map(t => (t || '').trim()).filter(Boolean);
+        return {
+            nombre: (c?.nombre || '').trim().toUpperCase(),
+            parentesco: (c?.parentesco || '').trim(),
+            telefonos: tels,
+        };
+    };
     const lista = [];
     if (principal?.nombre || principal?.telefono) lista.push(uno(principal));
     for (const c of (Array.isArray(extras) ? extras : [])) {
         const n = uno(c);
         // Una fila agregada con «+» y nunca llenada no es un contacto.
-        if (n.nombre || n.telefono) lista.push(n);
+        if (n.nombre || n.telefonos.length) lista.push(n);
     }
     return lista;
 };

@@ -2427,7 +2427,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     los datos». Nómina se queda con el banco y la cuenta, que
                                     sí son datos de pago. */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    {formData.isss_estado !== 'NO_TIENE' && (
                                     <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
+                                    )}
                                     {/* El NUP quedó homologado al DUI en enero de 2023: es con el
                                         número de DUI que uno se afilia y hace cualquier trámite de
                                         pensiones. Así que dejó de ser un campo que se teclea — se
@@ -2437,6 +2439,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         El valor viejo NO se borra ni se pisa: si una ficha trae un
                                         NUP anterior distinto del DUI, se sigue viendo. Borrarlo
                                         sería decidir por alguien que ese número ya no importa. */}
+                                    {formData.afp_estado !== 'NO_TIENE' && (
                                     <div className="relative z-content">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
                                         <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-3 gap-2`}>
@@ -2450,11 +2453,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
                                         </p>
                                     </div>
+                                    )}
 
-                                    <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
-                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    {/* Preguntarle la institución a quien declaró que NO tiene
+                                        AFP es pedir un dato que por definición no existe — y
+                                        peor: invita a elegir una, y esa elección queda escrita
+                                        como si la persona estuviera afiliada. Lo mismo con el
+                                        NUP. Los dos aparecen sólo cuando hay a qué referirse. */}
+                                    {formData.afp_estado !== 'NO_TIENE' && (
+                                        <div className="relative z-content">
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
+                                            <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
+                                        </div>
+                                    )}
 
                                 </div>
 
@@ -2514,12 +2525,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
-                                                            <span className="flex items-center gap-1.5">
-                                                                {depAgeOnly ? 'Edad' : 'Fecha de nacimiento'}
-                                                                {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
-                                                            </span>
-                                                            <Button variant="ghost" onClick={() => toggleDependentAgeMode(idx)}>{depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}</Button>
+                                                        {/* El botón salió de la etiqueta. Compartían renglón
+                                                            con `justify-between`, y «Fecha de nacimiento» se
+                                                            parte en dos líneas mientras el botón se queda
+                                                            arriba: dos cosas peleando por el mismo ancho.
+                                                            Ahora la etiqueta es una etiqueta y el cambio de
+                                                            modo va debajo del campo, que es donde se decide. */}
+                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center gap-1.5">
+                                                            {depAgeOnly ? 'Edad' : 'Fecha de nacimiento'}
+                                                            {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                         </label>
                                                         {depAgeOnly ? (
                                                             <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
@@ -2531,15 +2545,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} />
                                                             </div>
                                                         )}
-                                                        {!depAgeOnly && depAge !== null && <span className="text-content-3 font-bold text-caption ml-1 mt-1 block">· {depAge} años</span>}
+                                                        <div className="flex items-center justify-between gap-2 mt-1 ml-1">
+                                                            {!depAgeOnly && depAge !== null
+                                                                ? <span className="text-content-3 font-bold text-caption">{depAge} años</span>
+                                                                : <span />}
+                                                            <Button variant="ghost" size="xs" onClick={() => toggleDependentAgeMode(idx)}>{depAgeOnly ? 'Sé la fecha' : 'No sé la fecha'}</Button>
+                                                        </div>
                                                     </div>
                                                     <div className="relative z-base">
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Parentesco</label>
                                                         <LiquidSelect value={dep.relationship} onChange={(val) => updateDependent(idx, 'relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                                     </div>
 
-                                                    <div className="md:col-span-3 flex items-center justify-between -mb-1">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 block">Dirección</label>
+                                                    {/* El atajo va PEGADO al encabezado, no empujado al
+                                                        otro extremo de la fila: con `justify-between` en un
+                                                        `col-span-3` el select quedaba a media pantalla del
+                                                        rótulo que lo explica. */}
+                                                    <div className="md:col-span-3 flex flex-wrap items-center gap-3 mt-1 -mb-1">
+                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Dirección</label>
                                                         <div className="w-56">
                                                             <LiquidSelect value="" onChange={(val) => copyDependentAddress(idx, val)} options={copyOptions} placeholder="Copiar dirección de..." compact clearable={false} {...portalSelectProps} />
                                                         </div>
@@ -2549,7 +2572,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <LiquidSelect value={dep.department} onChange={(val) => updateDependent(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Distrito</label>
+                                                        {/* Decía «Distrito» y guardaba el MUNICIPIO: el mismo
+                                                            rótulo cruzado que ya se corrigió en la dirección
+                                                            de la persona. Se arrastraba acá. */}
+                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Municipio</label>
                                                         <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Municipio...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
@@ -2753,23 +2779,56 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <p className="text-label text-content-3 font-medium">Sólo hay un contacto de emergencia.</p>
                                 )}
                                 <div className="flex flex-col gap-3">
-                                    {contactosExtra.map((c, idx) => (
-                                        <div key={idx} data-surface="card" className="p-3">
-                                            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
-                                                <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
-                                                    onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
-                                                <div className="relative z-content">
-                                                    <LiquidSelect value={c.parentesco || ''}
-                                                        onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
-                                                        options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
+                                    {contactosExtra.map((c, idx) => {
+                                        // Los teléfonos de ESTE contacto. Se lee `telefonos`
+                                        // si ya existe y si no el `telefono` suelto de las
+                                        // fichas guardadas antes: migrar la forma del dato al
+                                        // leerlo evita una migración de datos y evita que una
+                                        // ficha vieja aparezca sin teléfono.
+                                        const tels = Array.isArray(c.telefonos) ? c.telefonos
+                                            : (c.telefono ? [c.telefono] : ['']);
+                                        const ponerTel = (i, v) => updateContactoExtra(idx, {
+                                            telefonos: tels.map((t, k) => k === i ? v : t), telefono: undefined,
+                                        });
+                                        return (
+                                            <div key={idx} data-surface="card" className="p-3">
+                                                <div className="flex items-center justify-between gap-2 mb-3">
+                                                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Contacto {idx + 2}</span>
+                                                    <Button variant="ghost" size="xs" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
                                                 </div>
-                                                <PortalInput aria-label="Teléfono" compact icon={Phone} maskType="PHONE"
-                                                    value={c.telefono || ''}
-                                                    onChange={(e) => updateContactoExtra(idx, { telefono: e.target.value })} placeholder="0000-0000" />
-                                                <Button variant="ghost" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
+                                                        onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
+                                                    <div className="relative z-content">
+                                                        <LiquidSelect value={c.parentesco || ''}
+                                                            onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
+                                                            options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
+                                                    </div>
+                                                    <div className="md:col-span-2 flex flex-col gap-2">
+                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center justify-between">
+                                                            <span>Teléfono{tels.length > 1 ? 's' : ''}</span>
+                                                            <Button variant="ghost" size="xs" icon={Plus}
+                                                                onClick={() => updateContactoExtra(idx, { telefonos: [...tels, ''], telefono: undefined })}>Agregar</Button>
+                                                        </label>
+                                                        {tels.map((t, i) => (
+                                                            <div key={i} className="flex items-center gap-1.5">
+                                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                                    <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
+                                                                    <input type="tel" value={t || ''} placeholder="0000-0000"
+                                                                        onChange={(e) => ponerTel(i, applyMask(e.target.value, 'PHONE'))}
+                                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
+                                                                </div>
+                                                                {tels.length > 1 && (
+                                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly
+                                                                        onClick={() => updateContactoExtra(idx, { telefonos: tels.filter((_, k) => k !== i), telefono: undefined })} />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

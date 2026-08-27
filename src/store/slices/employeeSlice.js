@@ -648,6 +648,7 @@ export const createEmployeeSlice = (set, get) => ({
                 maestria_study_duration_years: (formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && formData.has_maestria && formData.maestria_is_studying && formData.maestria_study_duration_years) ? parseFloat(formData.maestria_study_duration_years) : null,
                 additional_skills: normalizeAdditionalSkills(formData.additional_skills),
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
+                extra_emails: Array.isArray(formData.extra_emails) ? formData.extra_emails.map(e => (e || '').trim().toLowerCase()).filter(Boolean) : [],
                 extra_addresses: normalizeExtraAddresses(formData.extra_addresses),
 
                 email: formData.email || null,
@@ -971,6 +972,10 @@ export const createEmployeeSlice = (set, get) => ({
             }
             if (updatedData.additional_skills !== undefined) {
                 dbPayload.additional_skills = normalizeAdditionalSkills(updatedData.additional_skills);
+            }
+            if (updatedData.extra_emails !== undefined) {
+                dbPayload.extra_emails = Array.isArray(updatedData.extra_emails)
+                    ? updatedData.extra_emails.map(e => (e || '').trim().toLowerCase()).filter(Boolean) : [];
             }
             if (updatedData.extra_phones !== undefined) {
                 dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];

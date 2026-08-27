@@ -412,7 +412,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) {
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', alt_identity_document_type: '', birth_date: '', nationality: 'Salvadoreña',
+                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', extra_emails: [], address: '', extra_addresses: [], dui: '', alt_identity_document: '', alt_identity_document_type: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 chronic_conditions: [], has_disability: false, disability_type: '', disability_grade: '', disability_has_certification: false,
@@ -832,6 +832,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     });
     const removePhone = (idx) => setFormData(prev => ({ ...prev, extra_phones: (prev.extra_phones || []).filter((_, i) => i !== idx) }));
 
+    // Correos, en plural. Una persona tiene el personal y el de la empresa, y
+    // guardar sólo uno obliga a elegir cuál se pierde — normalmente el que no
+    // se usó ese día. Mismo patrón que el teléfono.
+    const addEmail = () => setFormData(prev => ({ ...prev, extra_emails: [...(prev.extra_emails || []), ''] }));
+    const updateEmail = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.extra_emails || [])]; arr[idx] = value; return { ...prev, extra_emails: arr };
+    });
+    const removeEmail = (idx) => setFormData(prev => ({ ...prev, extra_emails: (prev.extra_emails || []).filter((_, i) => i !== idx) }));
+
     const addAddress = () => setFormData(prev => ({ ...prev, extra_addresses: [...(prev.extra_addresses || []), { department: '', municipality: '', address: '' }] }));
     const updateAddress = (idx, field, value) => setFormData(prev => {
         const arr = [...(prev.extra_addresses || [])];
@@ -994,7 +1003,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
                     } else {
                         setDuiFallo(null);
-                        setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
+                        const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
+                        let resumen = null;
+                        setFormData(prev => {
+                            const r = aplicarDuiLeido(leido, prev);
+                            resumen = r;
+                            return { ...prev, ...r.parche };
+                        });
+                        setDuiLeido({
+                            aplicados: Object.keys(resumen?.parche || {}).length,
+                            descartados: resumen?.descartados || [],
+                            numeroIlegible: leido.numeroIlegible,
+                        });
                     }
                 } catch (errLectura) {
                     console.error('leer-dui:', errLectura);
@@ -1024,7 +1044,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
                         } else {
                             setDuiFallo(null);
-                            setDuiLeido({ ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible });
+                            const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
+                            let resumen = null;
+                            setFormData(prev => {
+                                const r = aplicarDuiLeido(leido, prev);
+                                resumen = r;
+                                return { ...prev, ...r.parche };
+                            });
+                            setDuiLeido({
+                                aplicados: Object.keys(resumen?.parche || {}).length,
+                                descartados: resumen?.descartados || [],
+                                numeroIlegible: leido.numeroIlegible,
+                            });
                         }
                     } catch (errLectura) {
                         // Catch propio y no el de arriba: el documento YA se
@@ -1165,11 +1196,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         if (!dui || dui.length < 10) { setIsDuiDuplicate(false); return undefined; }
         let vigente = true;
         const t = setTimeout(async () => {
-            const libre = await duiDisponible(dui, formData?.id ?? null);
+            // Al ENLAZAR con una ficha existente hay que excluirla: su propio DUI
+            // se leería como choque contra sí misma y el formulario diría «DUI ya
+            // registrado» sobre la persona que se está actualizando. El alta ya lo
+            // excluía en el servidor; faltaba acá, que es donde se ve el error.
+            const libre = await duiDisponible(dui, formData?.id ?? formData?.enlazar_con_id ?? null);
             if (vigente) setIsDuiDuplicate(libre === false);
         }, 400);
         return () => { vigente = false; clearTimeout(t); };
-    }, [formData?.dui, formData?.id]);
+    }, [formData?.dui, formData?.id, formData?.enlazar_con_id]);
 
     const isDuiInvalid = formData?.dui?.length === 10 && !isValidDUIAlgorithm(formData.dui);
     const isDuiIncomplete = !!formData?.dui && formData.dui.length > 0 && formData.dui.length < 10;
@@ -1273,6 +1308,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return false;
         }
         if (emailInvalid) return false;
+        for (const em of (formData?.extra_emails || [])) {
+            if (!!em && em.trim() !== '' && !isValidEmail(em.trim())) return false;
+        }
 
         // «Otra…» sin especificar no es un dato: es el placeholder del catálogo
         // guardado como si fuera una respuesta.
@@ -1631,59 +1669,49 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             )}
 
-                            {duiLeido && !leyendoDui && (() => {
-                                const { parche, descartados } = aplicarDuiLeido(duiLeido, formData);
-                                const campos = Object.keys(parche);
-                                return (
-                                    <div className="mt-3 bg-brand/10 border border-brand/30 p-3 rounded-2xl animate-in slide-in-from-top-2">
-                                        <div className="flex items-start gap-3">
-                                            <CheckCircle2 size={16} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                                            <div className="min-w-0 flex-1">
-                                                {campos.length > 0 ? (
-                                                    <>
-                                                        <p className="text-label text-content font-medium leading-snug">
-                                                            El documento dice <span className="font-black">{campos.length}</span> dato{campos.length === 1 ? '' : 's'} que
-                                                            todavía no {campos.length === 1 ? 'está' : 'están'} en la ficha:
-                                                        </p>
-                                                        <ul className="mt-2 flex flex-wrap gap-1.5">
-                                                            {campos.map(c => (
-                                                                <li key={c} className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
-                                                                    {ROTULO_DUI[c] || c}: <span className="text-content font-black">{String(parche[c])}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </>
-                                                ) : (
-                                                    <p className="text-label text-content font-medium leading-snug">
-                                                        Lo que dice el documento ya está escrito en la ficha. No hay nada que completar.
-                                                    </p>
-                                                )}
+                            {/* Informa, no pregunta. Los datos YA entraron: lo que este
+                                panel destaca es lo que quedó a verificar, que es lo único
+                                que necesita ojo humano. Un botón «Usar estos datos» sobre
+                                una lista de 14 era ceremonia — nadie iba a decir que no. */}
+                            {duiLeido && !leyendoDui && (
+                                <div className={`mt-3 border p-3 rounded-2xl animate-in slide-in-from-top-2 ${
+                                    (duiLeido.numeroIlegible || duiLeido.descartados.length)
+                                        ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'}`}>
+                                    <div className="flex items-start gap-3">
+                                        <CheckCircle2 size={16} className={`shrink-0 mt-0.5 ${
+                                            (duiLeido.numeroIlegible || duiLeido.descartados.length) ? 'text-warning' : 'text-success'}`} strokeWidth={2.5} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-label text-content font-medium leading-snug">
+                                                {duiLeido.aplicados > 0
+                                                    ? <>Se completaron <span className="font-black">{duiLeido.aplicados}</span> dato{duiLeido.aplicados === 1 ? '' : 's'} con el documento.</>
+                                                    : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
+                                            </p>
 
-                                                {duiLeido.numeroIlegible && (
-                                                    <p className="mt-2 text-label text-warning-text font-medium leading-snug">
-                                                        El número no se leyó bien —el dígito verificador no cuadra— así que hay que escribirlo a mano.
-                                                    </p>
-                                                )}
-                                                {descartados.length > 0 && (
-                                                    <p className="mt-2 text-label text-content-3 font-medium leading-snug">
-                                                        No se usó: {descartados.join(' · ')}. Escríbelo a mano si corresponde.
-                                                    </p>
-                                                )}
-
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {campos.length > 0 && (
-                                                        <Button size="sm" icon={CheckCircle2} onClick={() => {
-                                                            setFormData(prev => ({ ...prev, ...aplicarDuiLeido(duiLeido, prev).parche }));
-                                                            setDuiLeido(null);
-                                                        }}>Usar estos datos</Button>
-                                                    )}
-                                                    <Button variant="ghost" size="sm" onClick={() => setDuiLeido(null)}>Descartar</Button>
+                                            {(duiLeido.numeroIlegible || duiLeido.descartados.length > 0) && (
+                                                <div className="mt-2">
+                                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-1">A verificar</p>
+                                                    <ul className="flex flex-col gap-0.5">
+                                                        {duiLeido.numeroIlegible && (
+                                                            <li className="text-label text-content-2 font-medium leading-snug">
+                                                                El número no se leyó bien —el dígito verificador no cuadra—: escríbelo a mano.
+                                                            </li>
+                                                        )}
+                                                        {duiLeido.descartados.map(d => (
+                                                            <li key={d} className="text-label text-content-2 font-medium leading-snug">
+                                                                No se usó el {d}: no coincide con ninguna opción del portal.
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
+                                            )}
+
+                                            <div className="mt-2">
+                                                <Button variant="ghost" size="sm" onClick={() => setDuiLeido(null)}>Entendido</Button>
                                             </div>
                                         </div>
                                     </div>
-                                );
-                            })()}
+                                </div>
+                            )}
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
@@ -1822,7 +1850,35 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     }
                                 />
 
-                                <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" hasError={emailInvalid} errorMessage="Correo inválido" />
+                                <div>
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Correo Electrónico {emailInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Correo inválido</span>}</span>
+                                        <Button variant="ghost" icon={Plus} onClick={addEmail}>Agregar</Button>
+                                    </label>
+                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emailInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                        <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
+                                        <input type="email" name="email" value={formData.email || ''} onChange={handleChange} placeholder="nombre@correo.com"
+                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
+                                    </div>
+                                </div>
+
+                                {(formData.extra_emails || []).length > 0 && (
+                                    <div className="md:col-span-2 flex flex-col gap-2">
+                                        {(formData.extra_emails || []).map((em, idx) => {
+                                            const emErr = !!em && em.trim() !== '' && !isValidEmail(em.trim());
+                                            return (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <div className={`relative flex-1 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                        <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
+                                                        <input type="email" value={em} onChange={(e) => updateEmail(idx, e.target.value)} placeholder="otro@correo.com"
+                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar correo" iconOnly onClick={() => removeEmail(idx)} />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                                 {(formData.extra_phones || []).length > 0 && (
                                     <div className="md:col-span-2 flex flex-col gap-2">
@@ -1934,43 +1990,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                             </div>
 
-                            {/* ── OTROS CONTACTOS ───────────────────────────────────
-                                Hasta hoy se podían guardar varios TELÉFONOS de UNA persona,
-                                que no es lo mismo que varias personas. El de arriba sigue
-                                siendo el principal y sigue viviendo en sus columnas —son las
-                                que lee el resto del portal—; éstos se guardan en
-                                `emergency_contacts` JUNTO CON ÉL, de modo que esa columna es
-                                la lista completa y no una mitad. */}
-                            <div className="mt-4 pt-4 border-t border-danger/30">
-                                <div className="flex items-center justify-between gap-3 mb-3">
-                                    <p className="text-caption font-black uppercase tracking-widest text-danger/70 flex items-center gap-1.5">
-                                        <Users size={12} strokeWidth={2.5} /> Otros contactos
-                                    </p>
-                                    <Button variant="ghost" icon={Plus} onClick={addContactoExtra}>Agregar contacto</Button>
-                                </div>
-                                {contactosExtra.length === 0 && (
-                                    <p className="text-label text-content-3 font-medium">Sólo hay un contacto de emergencia.</p>
-                                )}
-                                <div className="flex flex-col gap-3">
-                                    {contactosExtra.map((c, idx) => (
-                                        <div key={idx} data-surface="card" className="p-3">
-                                            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
-                                                <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
-                                                    onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
-                                                <div className="relative z-content">
-                                                    <LiquidSelect value={c.parentesco || ''}
-                                                        onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
-                                                        options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
-                                                </div>
-                                                <PortalInput aria-label="Teléfono" compact icon={Phone} maskType="PHONE"
-                                                    value={c.telefono || ''}
-                                                    onChange={(e) => updateContactoExtra(idx, { telefono: e.target.value })} placeholder="0000-0000" />
-                                                <Button variant="ghost" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
@@ -2637,6 +2656,44 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         })}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* ── OTROS CONTACTOS ───────────────────────────────────
+                                Hasta hoy se podían guardar varios TELÉFONOS de UNA persona,
+                                que no es lo mismo que varias personas. El de arriba sigue
+                                siendo el principal y sigue viviendo en sus columnas —son las
+                                que lee el resto del portal—; éstos se guardan en
+                                `emergency_contacts` JUNTO CON ÉL, de modo que esa columna es
+                                la lista completa y no una mitad. */}
+                            <div className="mt-4 pt-4 border-t border-danger/30">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <p className="text-caption font-black uppercase tracking-widest text-danger/70 flex items-center gap-1.5">
+                                        <Users size={12} strokeWidth={2.5} /> Otros contactos
+                                    </p>
+                                    <Button variant="ghost" icon={Plus} onClick={addContactoExtra}>Agregar contacto</Button>
+                                </div>
+                                {contactosExtra.length === 0 && (
+                                    <p className="text-label text-content-3 font-medium">Sólo hay un contacto de emergencia.</p>
+                                )}
+                                <div className="flex flex-col gap-3">
+                                    {contactosExtra.map((c, idx) => (
+                                        <div key={idx} data-surface="card" className="p-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+                                                <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
+                                                    onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
+                                                <div className="relative z-content">
+                                                    <LiquidSelect value={c.parentesco || ''}
+                                                        onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
+                                                        options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
+                                                </div>
+                                                <PortalInput aria-label="Teléfono" compact icon={Phone} maskType="PHONE"
+                                                    value={c.telefono || ''}
+                                                    onChange={(e) => updateContactoExtra(idx, { telefono: e.target.value })} placeholder="0000-0000" />
+                                                <Button variant="ghost" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </>

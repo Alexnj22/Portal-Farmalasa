@@ -195,11 +195,15 @@ function Detalle({ deposito, nombreSala, onClose, onCambio }) {
                     </p>
                 )}
 
+                {/* El remanente se dice, no se le asigna a nadie: es efectivo
+                    del dueño y el portal no le sigue la pista. Los cierres
+                    anteriores al 2026-08-26 sí guardaron a quién se le entregó,
+                    y eso pasó — pero no se muestra, porque leerlo invita a
+                    creer que hay un seguimiento que no existe. */}
                 {Number(d.remanente) >= 0.01 && (
                     <p className="text-caption text-content-2">
-                        <span className="font-bold text-content">El remanente </span>
-                        lo entregó {d.entregado_por || '—'}
-                        {d.recibido_por ? ` a ${d.recibido_por}` : ''}.
+                        <span className="font-bold text-content">Quedaron {formatMoney(d.remanente)} </span>
+                        sin salir por el portal.
                     </p>
                 )}
 
@@ -360,13 +364,20 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
      * tenga, es «no se registró a dónde fue». Sumarlo pondría $32,006.16 en el
      * acumulado del Gerente General, que es exactamente lo contrario de
      * seguirle la pista al remanente. */
+    /* Un cierre CORREGIDO ya no cuenta —sus bolsas volvieron a estar por
+     * cerrar— y uno `ANTERIOR` tampoco: no registra ningún movimiento.
+     *
+     * El remanente NO se acumula: «ya no es responsabilidad ni control del
+     * portal, es efectivo del dueño» (usuario, 2026-08-26). Un total de
+     * remanentes sería un saldo, y un saldo es exactamente el seguimiento que
+     * el portal dejó de hacer. En cada cierre sigue estando, porque ahí cierra
+     * la cuenta de ese cierre. */
     const totales = useMemo(() => lista
         .filter((d) => !d.anulado_at && d.destino !== 'ANTERIOR')
         .reduce((a, d) => ({
             banco: a.banco + Number(d.monto_deposito || 0),
             efectivo: a.efectivo + Number(d.monto_efectivo || 0),
-            remanente: a.remanente + Number(d.remanente || 0),
-        }), { banco: 0, efectivo: 0, remanente: 0 }), [lista]);
+        }), { banco: 0, efectivo: 0 }), [lista]);
 
     return (
         <section className="space-y-2">
@@ -393,7 +404,6 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                 Cada cierre del efectivo contado: lo que fue al banco —para cuadrar contra el
                 estado de cuenta— y lo que se entregó en mano.
                 {totales.efectivo >= 0.01 && ` En mano: ${formatMoney(totales.efectivo)}.`}
-                {totales.remanente >= 0.01 && ` En remanentes: ${formatMoney(totales.remanente)}.`}
             </p>
 
             <DataTable

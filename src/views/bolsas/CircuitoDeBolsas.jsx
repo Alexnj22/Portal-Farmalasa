@@ -1062,9 +1062,6 @@ export default function CircuitoDeBolsas({
     const verCards = hasPermission('bolsas_ver_cards');
     const showToast = useToastStore((s) => s.showToast);
     const empleados = useStaff((st) => st.employees);
-    // Los cargos, para resolver quién es el Gerente General en el depósito. Se
-    // resuelve por `role_id` contra esta tabla, no cruzando el texto del cargo.
-    const cargos = useStaff((st) => st.roles);
 
     const [bolsas, setBolsas] = useState([]);
     /* Las diferencias sin resolver vienen APARTE y sin fechas: son lo único que
@@ -2426,7 +2423,6 @@ export default function CircuitoDeBolsas({
                         abierto={depositando}
                         bolsas={porDepositar}
                         personas={empleados}
-                        roles={cargos}
                         onClose={() => setDepositando(false)}
                         onHecho={recargarEnSilencio}
                     />

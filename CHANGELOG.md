@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.800.0 — El remanente es efectivo del dueño y sale del circuito
+
+> «el remanente ya no es responsabilidad ni control del portal. es efectivo del
+> dueño.»
+
+El portal hacía tres cosas con él, y las tres sobraban:
+
+1. **Se lo asignaba a una persona** —el Gerente General— y guardaba quién se lo
+   entregó. Registrar a las manos de quién pasa un efectivo que el portal no
+   sigue es prometer un control que no existe.
+2. **Bloqueaba el cierre si no había ningún Gerente General activo.** Ése era el
+   peor con diferencia: el registro del efectivo —lo que sí es del portal— se
+   caía por una asignación de cargo que ya no le incumbe. Una regla que frena lo
+   que importa por algo que dejó de importar.
+3. Lo nombraba en el aviso como si fuera una entrega pendiente, y lo acumulaba
+   en el archivo como si fuera un saldo que alguien tuviera que cuadrar.
+
+**El número se queda.** El remanente es la resta que cierra la cuenta de ese
+cierre —contado + aporte − al banco − en mano— y sin él un cierre parcial se
+leería como un hueco; el CHECK `deposito_cuadra` lo exige y tiene razón. Lo que
+se fue es el dueño: ahora dice «quedan $X sin salir por el portal» y ahí
+termina.
+
+Las filas anteriores conservan a quién se le entregó — pasó, y borrarlo sería
+reescribir lo que se registró en su momento. Pero deja de mostrarse: leerlo
+invita a creer que hay un seguimiento que ya no existe.
+
 ## v2.799.0 — El circuito se cierra: el invariante a la vista, el comprobante del banco y la corrección del cierre
 
 Lo que salió de auditar el módulo entero.

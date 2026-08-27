@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Banknote, Building2, HandCoins, Landmark } from 'lucide-react';
+import { Banknote, Building2, HandCoins, Landmark } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
@@ -20,7 +20,9 @@ import { useToastStore } from '../../store/toastStore';
  *     1. la moneda se cambia por billete
  *     2. los ~$50 que faltan salen por un vale en Salud 3
  *     3. se confirman los $22,400 para el banco
- *     4. el remanente se le entrega al gerente general
+ *     4. lo que sobra queda fuera del portal (ver «el remanente sale del
+ *        circuito», más abajo — el paso 4 del dictado original decía «se le
+ *        entrega al gerente general» y el usuario lo cerró el 26-ago)
  *
  * ── Se llama DEPÓSITO y no remesa ──────────────────────────────────────────
  * El usuario dice «remesar», y en su idioma está bien. Pero en esta misma
@@ -75,7 +77,8 @@ import { useToastStore } from '../../store/toastStore';
  * ── El aviso al Gerente General lo manda la BASE ───────────────────────────
  * «al darle en depositar al banco, que llegue una notificación al gerente
  * general con: el monto a depositar, quien y a que banco. el remanente que le
- * queda» (usuario, 2026-08-26).
+ * queda» (usuario, 2026-08-26). El aviso sigue; lo que cambió es que el
+ * remanente se DICE y no se le asigna a nadie.
  *
  * No sale de acá a propósito: `registrar_deposito_bancario` lo emite dentro de
  * la misma transacción que guarda el depósito. Si lo mandara este archivo, un
@@ -83,7 +86,10 @@ import { useToastStore } from '../../store/toastStore';
  * monto del aviso podría no ser el que quedó guardado. Lo que sí es de acá es
  * el BANCO, que hasta hoy no existía como dato en ninguna parte.
  */
-export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onClose, onHecho }) {
+/* `roles` ya no se recibe: existía sólo para resolver al Gerente General y
+ * decir a quién le quedaba el remanente. Desde el 2026-08-26 el remanente no
+ * tiene dueño en el portal. */
+export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
 
     const [entregadoA, setEntregadoA] = useState('');
@@ -179,29 +185,6 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'))
         .map((p) => ({ value: String(p.id), label: p.name })), [personas]);
 
-    /* El Gerente General, para DECIRLO — no para elegirlo.
-     *
-     * «el remanente siempre es a Gerente General. así que no debe haber opción»
-     * (usuario, 2026-08-26). Quien decide es el servidor: acá sólo se muestra a
-     * quién le va a quedar, porque una cifra de efectivo que cambia de manos sin
-     * decir a las de quién es exactamente lo que este circuito existe para
-     * evitar.
-     *
-     * Si no se encuentra, la pantalla lo DICE en vez de callarse: el servidor
-     * va a rechazar el cierre por lo mismo, y enterarse antes de escribir el
-     * monto es mejor que después. */
-    /* Se resuelve por `role_id` contra la tabla de cargos, NUNCA cruzando el
-     * texto del cargo contra un rótulo escrito acá: es la regla «un rótulo no
-     * es una clave» de CLAUDE.md. El único cruce por texto es el que ubica el
-     * cargo dentro de `roles` —y ahí el nombre SÍ es la clave, porque esa tabla
-     * no tiene columna de código—, exactamente el mismo cruce que hace el
-     * servidor. */
-    const gerente = useMemo(() => {
-        const cargo = (roles || []).find((r) => r.name === 'Gerente General');
-        if (!cargo) return null;
-        const suyos = (personas || []).filter((p) => String(p.role_id) === String(cargo.id));
-        return suyos.find((p) => p.status === 'ACTIVO') || suyos[0] || null;
-    }, [roles, personas]);
 
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
@@ -387,33 +370,24 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, roles, onCl
                     </div>
                 )}
 
-                {/* El remanente NO se elige: siempre es del Gerente General
-                    («el remanente siempre es a Gerente General. así que no debe
-                    haber opción», usuario 2026-08-26). Acá se DICE a quién le
-                    queda, que no es lo mismo que preguntarlo — una cifra de
-                    efectivo que cambia de manos sin decir a las de quién es
-                    justo lo que este circuito existe para evitar.
+                {/* ── El remanente sale del circuito ──────────────────────────
+                    «el remanente ya no es responsabilidad ni control del portal.
+                    es efectivo del dueño» (usuario, 2026-08-26).
 
-                    Lo decide el servidor, así que esto es un espejo. Si no hay
-                    Gerente General la pantalla lo avisa acá y no al fallar el
-                    cierre: enterarse antes de escribir el monto es mejor. */}
+                    Hasta hoy esta pantalla lo asignaba al Gerente General, decía
+                    que quedabas registrado como quien se lo entregó, y —peor—
+                    avisaba que sin un Gerente General activo no se podía cerrar.
+                    Eso era el registro del efectivo cayéndose por una asignación
+                    de cargo que ya no le incumbe.
+
+                    El NÚMERO se queda porque cierra la cuenta: sin él, un cierre
+                    parcial se lee como un hueco. Lo que se fue es el dueño. */}
                 {remanente >= 0.01 && !noAlcanza && (
-                    gerente ? (
-                        <Notice variant="info" icon={Banknote}>
-                            El remanente de <b className="font-bold">{formatMoney(remanente)}</b>
-                            {' '}se le entrega a <b className="font-bold">{gerente.name}</b>, Gerente General.
-                            {' '}Quedas registrado como quien lo entregó, y al cerrar se le avisa
-                            {' '}con el monto, el banco y quién lo lleva.
-                        </Notice>
-                    ) : (
-                        <Notice variant="warning" icon={AlertTriangle}>
-                            <span className="font-bold">No hay ningún Gerente General activo</span>
-                            <span className="block mt-0.5 font-normal text-content-2">
-                                El remanente se le entrega a ese cargo, así que hay que asignarlo
-                                antes de cerrar el depósito.
-                            </span>
-                        </Notice>
-                    )
+                    <Notice variant="info" icon={Banknote}>
+                        Quedan <b className="font-bold">{formatMoney(remanente)}</b> sin salir por
+                        {' '}el portal. Se anotan en el cierre para que la cuenta cuadre; de ahí en
+                        {' '}adelante son efectivo del dueño y el portal no les sigue la pista.
+                    </Notice>
                 )}
 
                 <div className="space-y-1.5">

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import AvatarConEstado from '../common/AvatarConEstado';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
@@ -98,11 +99,8 @@ const hasInjections = legal.injections === true;
         return { plantSlots: pSlots, opSlots: oSlots };
     }, [employees, branchId, formData]);
 
-    const getInitials = (name) => {
-        if (!name) return '??';
-        const parts = name.split(' ');
-        return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name.substring(0, 2).toUpperCase();
-    };
+    // El respaldo cuando no hay foto —las iniciales— lo resuelve
+    // `AvatarConEstado` con `shortEmployeeName`, el mismo del resto del portal.
 
     const handleViewEmployee = (e, emp) => {
         e.stopPropagation(); 
@@ -129,7 +127,6 @@ const hasInjections = legal.injections === true;
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {plantSlots.map((slot) => {
                         const emp = slot.employee;
-                        const photoUrl = emp?.photo || emp?.avatar || emp?.profilePicture || null;
                         
                         // Si no hay fecha, usa un valor de muestra elegante
                         const tiempoEmpresa = getTimeAgo(emp?.hireDate || '2023-08-15T00:00:00Z');
@@ -155,9 +152,7 @@ const hasInjections = legal.injections === true;
                             <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
                                 <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-4 group-hover:opacity-0">
-                                    <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>
-                                        {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
-                                    </div>
+                                    <AvatarConEstado emp={emp} px={56} radio="rounded-2xl" className="shadow-inner" />
                                     <div className="flex-1 min-w-0">
                                         <h4 className="text-body-lg font-black text-content truncate leading-tight">{shortEmployeeName(emp)}</h4>
                                         <span className="text-caption font-bold uppercase tracking-widest text-content-3 mt-1 block truncate">{slot.roleName}</span>
@@ -200,7 +195,6 @@ const hasInjections = legal.injections === true;
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {opSlots.map((slot) => {
                         const emp = slot.employee;
-                        const photoUrl = emp?.photo || emp?.avatar || emp?.profilePicture || null;
 
                         if (!emp) {
                             return (
@@ -218,9 +212,8 @@ const hasInjections = legal.injections === true;
 
                         return (
                             <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-[var(--dur-slow)] flex items-center gap-3 active:scale-[0.97] h-[72px]">
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-caption border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-divider p-0'}`}>
-                                    {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
-                                </div>
+                                <AvatarConEstado emp={emp} px={36} radio="rounded-lg"
+                                    className="shadow-sm transition-transform group-hover:scale-105" />
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-label font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{shortEmployeeName(emp)}</h4>
                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>

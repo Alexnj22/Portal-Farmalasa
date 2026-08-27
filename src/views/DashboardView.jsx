@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
 import Switch from '../components/common/Switch';
@@ -3038,7 +3039,7 @@ const DashboardView = ({ openModal }) => {
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
-                          ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-surface-card'}`}/>
+                          ?<AvatarConEstado emp={e} px={36} radio="rounded-full" marco="" />
                           :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-surface-card'}`}>{initials}</div>
                         }
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}

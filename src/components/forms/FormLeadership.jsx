@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { webpSignedUrl } from '../../utils/storageFiles';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -10,7 +10,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import Button from '../common/Button';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
-import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { opcionesDeCargo, buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
@@ -141,7 +141,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                             >
                                 <div className="flex items-center gap-3">
                                     <div data-surface={isSelected ? undefined : 'card'} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'text-content-3'}`}>
-                                        {emp.photo ? <img src={webpSignedUrl(emp.photo)} alt="" className="w-full h-full object-cover"/> : employeeInitials(emp)}
+                                        <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
@@ -177,7 +177,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <div data-surface="card" className="p-5 relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-border-card shadow-md overflow-hidden bg-surface-card-hover shrink-0">
-                                    {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{employeeInitials(selectedEmp)}</div>}
+                                    <AvatarConEstado emp={selectedEmp} px={64} radio="rounded-full" marco="" />
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>

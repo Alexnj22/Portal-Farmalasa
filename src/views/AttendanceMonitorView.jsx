@@ -1,6 +1,7 @@
 // src/views/AttendanceMonitorView.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Badge from '../components/common/Badge';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -458,7 +459,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             ].join(" ")}
           >
             {emp.photo ? (
-              <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
+              <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
             ) : (
               employeeInitials(emp)
             )}

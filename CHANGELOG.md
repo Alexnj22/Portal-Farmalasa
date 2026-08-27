@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.809.0 — Ninguna foto de persona se queda sin aro
+
+*«¿Quedó canónico? ¿Completamente?»* — y la respuesta medida fue **no**. Ayer se
+migraron 21 archivos y el gate quedó en cero, pero el detector miraba
+`LiquidAvatar` y el defecto tenía **otra forma**: un `<img>` a mano con la foto
+de alguien. Al ensanchar la regla aparecieron **25 hallazgos en 16 archivos**.
+
+Es `tarjeta-a-mano` otra vez —llegó a cero en julio y siguió en verde mientras
+un censo a mano encontraba 81 casos vivos—: **un detector que mira UNA de las
+formas del defecto certifica la ausencia de esa forma, no la del defecto.** Y no
+era hipotético: el menú lateral pintaba su foto exactamente así antes de
+migrarlo.
+
+**Migradas las 25**, entre ellas sitios donde el dato cambia una decisión:
+elegir a quién se le da un **cargo** o una **sucursal**, el **relevo de una
+jefatura**, a quién se le manda un **aviso**, quién **retira el efectivo**, el
+**plan anual de vacaciones** (donde no ver que alguien ya está de vacaciones es
+el error propio de esa pantalla), el **calendario de horarios**, el **monitor de
+asistencia**, la **anulación** y el **tablero**.
+
+De paso, Facturación: su mapa de fotos estaba indexado por NOMBRE y devolvía
+sólo la URL, así que no había id y no podía haber aro. Ahora devuelve la ficha
+entera — cuatro sitios arreglados con un cambio de una línea.
+
+**Cuatro excepciones, cada una con su motivo escrito** en `EXCEPTIONS`:
+
+- **`LiquidSelect`** — su `opt.avatar` es una URL cualquiera y la opción puede
+  ser una sucursal o un laboratorio. Un aro prometería un estado que el
+  componente no puede conocer: no recibe una ficha, recibe una imagen.
+- **`EmployeeFormModal`** — muestra el archivo que la persona **acaba** de
+  elegir y todavía no se guardó, un blob local. `LiquidAvatar` reescribe la URL
+  al endpoint de WEBP y sobre un blob eso da una imagen rota.
+- **El kiosco** — dimensiona su foto con **cuatro** consultas de medio, dos por
+  alto de pantalla: no hay un `px`, hay 144, 176, 128 y 96 según el monitor. Y
+  el aro no aportaría — la pantalla aparece justo después de que esa persona
+  marcó.
+- **La encuesta** — ya usa el aro para decir otra cosa (`isJefe` pinta un
+  `ring-warning`). Dos aros concéntricos con dos significados no se leen: uno
+  diría «es jefe» y el otro «está de vacaciones», y quien mire vería un color.
+
+**Y la tercera pata del canon, que ayer faltaba: DESIGN.md §5.4.** Hasta hoy la
+regla vivía sólo en un comentario y en el gate. En este repo el canon son tres
+cosas —componente, gate y sección— y había dos.
+
+Antes de dar el cero por bueno se le fabricaron **tres** regresiones al
+detector: un `LiquidAvatar` suelto (lo marca), un `<img src={emp.photo_url}>`
+(lo marca) y un `<img src={foto.url}>` de un comprobante (**no** lo marca, que
+es igual de importante — un gate que acusa al que hizo bien el trabajo se
+termina desactivando).
+
+**Sigue abierto** lo único que no depende del frente: tres pantallas —el detalle
+del conteo y los dos de bolsas— muestran nombre y foto pero **su consulta no
+devuelve el id**, así que el aro no se puede resolver. `get_conteo_items` expone
+`contado_por_nombre` y no `contado_por`. Está dicho en el sitio, en §5.4 y acá.
+
 ## v2.808.2 — La píldora dice si está elegida
 
 Reportado como *«áreas que cubre, no entiendo, al dar click no hace nada»*.

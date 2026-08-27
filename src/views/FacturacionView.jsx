@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -551,7 +552,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
-        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        // Devuelve la FICHA y no sólo la foto: `AvatarConEstado` necesita el
+        // id para resolver el aro, y lo único que trae la fila es el NOMBRE de
+        // quien resolvió. Con la ficha entera se recupera.
+        for (const e of employees) if (e.name) m[e.name] = e;
         return m;
     }, [employees]);
 
@@ -920,16 +924,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                         <div className="border-t border-divider">
                             {resolvedDisplay.map((r, i) => {
                                 const inv = r.invoice;
-                                const photo = empPhotoMap[r.resolved_by] || null;
-                                const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                const quien = empPhotoMap[r.resolved_by] || null;
                                 return (
                                     <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        {photo
-                                            ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
-                                            : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-micro font-black text-success-text">{initials}</span>
-                                              </div>
-                                        }
+                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <Badge variant="success" uppercase={false}>{inv?.tipo_documento}</Badge>
@@ -1096,7 +1094,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
-        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        // Devuelve la FICHA y no sólo la foto: `AvatarConEstado` necesita el
+        // id para resolver el aro, y lo único que trae la fila es el NOMBRE de
+        // quien resolvió. Con la ficha entera se recupera.
+        for (const e of employees) if (e.name) m[e.name] = e;
         return m;
     }, [employees]);
     const [rows, setRows]               = useState([]);
@@ -1559,16 +1560,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                         <div className="border-t border-divider">
                             {resolvedDisplay.map((r, i) => {
                                 const resolvedBy = r.resolution?.resolved_by || null;
-                                const photo = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
-                                const initials = (resolvedBy || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                const quien = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
                                 return (
                                     <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        {photo
-                                            ? <img src={photo} alt={resolvedBy} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
-                                            : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-micro font-black text-success-text">{initials}</span>
-                                              </div>
-                                        }
+                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
@@ -1615,7 +1610,10 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
-        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        // Devuelve la FICHA y no sólo la foto: `AvatarConEstado` necesita el
+        // id para resolver el aro, y lo único que trae la fila es el NOMBRE de
+        // quien resolvió. Con la ficha entera se recupera.
+        for (const e of employees) if (e.name) m[e.name] = e;
         return m;
     }, [employees]);
     const [gaps, setGaps] = useState([]);
@@ -1998,16 +1996,10 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                     {showHistorial && (
                         <div className="border-t border-divider">
                             {resolvedGapsDisplay.map((r, i) => {
-                                const photo = r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null;
-                                const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                const quien = r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null;
                                 return (
                                     <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        {photo
-                                            ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
-                                            : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-micro font-black text-success-text">{initials}</span>
-                                              </div>
-                                        }
+                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <Badge variant="success" uppercase={false}>{r.tipo_documento}</Badge>
@@ -2426,7 +2418,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                             <DataCell className="font-bold whitespace-nowrap">{<Monto v={inv?.total} />}</DataCell>
                                             <DataCell>
                                                 <div className="flex items-center gap-2">
-                                                    {r.confirmed_by_photo ? (
+                                                    {r.confirmed_by_quien ? (
                                                         <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-divider shrink-0" />
                                                     ) : (
                                                         <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-content-2 text-caption font-bold shrink-0">
@@ -2523,7 +2515,10 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
-        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        // Devuelve la FICHA y no sólo la foto: `AvatarConEstado` necesita el
+        // id para resolver el aro, y lo único que trae la fila es el NOMBRE de
+        // quien resolvió. Con la ficha entera se recupera.
+        for (const e of employees) if (e.name) m[e.name] = e;
         return m;
     }, [employees]);
     const [rows, setRows]       = useState([]);
@@ -2934,16 +2929,10 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         <div className="border-t border-divider">
                             {resueltas.map((r, i) => {
                                 const resolvedBy = r.resolution?.resolved_by || null;
-                                const photo = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
-                                const initials = (resolvedBy || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                const quien = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
                                 return (
                                     <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        {photo
-                                            ? <img src={photo} alt={resolvedBy} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
-                                            : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-micro font-black text-success-text">{initials}</span>
-                                              </div>
-                                        }
+                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>

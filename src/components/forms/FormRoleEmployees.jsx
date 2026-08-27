@@ -1,8 +1,8 @@
 import React from 'react';
-import { webpSignedUrl } from '../../utils/storageFiles';
+import AvatarConEstado from '../common/AvatarConEstado';
 import { User, ShieldCheck } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore'; // ✅ Corregido para usar Zustand
-import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const FormRoleEmployees = ({ formData }) => {
     const { employees, branches = [] } = useStaff();
@@ -49,13 +49,7 @@ const FormRoleEmployees = ({ formData }) => {
                             data-surface="card" className="flex items-center justify-between p-4 group hover:border-brand/30 transition-all"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border-2 border-border-card shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
-                                    {emp.photo ? (
-                                        <img src={webpSignedUrl(emp.photo)} className="w-full h-full object-cover" alt="Perfil" />
-                                    ) : (
-                                        employeeInitials(emp)
-                                    )}
-                                </div>
+                                <AvatarConEstado emp={emp} px={48} radio="rounded-2xl" marco="border-2 border-border-card" className="shadow-sm" />
                                 <div>
                                     <p className="font-bold text-content text-body-lg md:text-subtitle leading-tight group-hover:text-brand-text transition-colors">
                                         {shortEmployeeName(emp)}

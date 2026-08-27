@@ -109,6 +109,33 @@ const EXCEPTIONS = {
   //
   // Documentado en DESIGN.md §6 junto al resto de las excepciones de color.
   'src/components/common/LectorDeCodigo.jsx': ['white', 'shadow-literal'],
+
+  // ── Las tres fotos que NO llevan aro, y por qué ──────────────────────────
+  //
+  // `LiquidSelect` es la primitiva del desplegable: su `opt.avatar` es una URL
+  // cualquiera y la opción puede ser una persona, una sucursal o un
+  // laboratorio. Un aro ahí prometería un estado que el componente no puede
+  // conocer — no recibe una ficha, recibe una imagen.
+
+  // La foto del formulario de empleado muestra `photoPreview`, que es el
+  // archivo que la persona ACABA de elegir y todavía no se guardó: un blob
+  // local. `LiquidAvatar` reescribe la URL al endpoint de render para pedirla
+  // en WEBP, y sobre un blob eso da una imagen rota. Además el aro sobra donde
+  // se está editando a esa misma persona.
+  'src/components/forms/EmployeeFormModal.jsx': ['foto-sin-aro'],
+
+  // La encuesta ya usa el ARO para decir otra cosa: `isJefe` pinta un
+  // `ring-warning` alrededor de la cara para marcar a quien jefea. Dos aros
+  // concéntricos con dos significados distintos no se pueden leer — uno diría
+  // «es jefe» y el otro «está de vacaciones», y quien mire vería un color.
+  // Además sus filas llegan con nombre y foto y sin id, que en una encuesta es
+  // deliberado.
+
+  // El kiosco dimensiona su foto con CUATRO consultas de medio —dos de ellas
+  // por ALTO de pantalla— y `AvatarConEstado` necesita un `px` en número para
+  // decidir su escalera. No hay un número: hay 144, 176, 128 y 96 según el
+  // monitor. Y el aro no aportaría: la pantalla aparece justo después de que
+  // esa persona marcó, así que su presencia es el hecho que se está mostrando.
   // «No le debemos nada a nadie en este período» es un VACÍO FELIZ (§26.3), no
   // una lista vacía. La prueba de §26.3: ¿quien abre Cuentas por Pagar quería
   // encontrar algo, o quería que estuviera vacío? Quería que estuviera vacío —
@@ -323,7 +350,7 @@ const EXCEPTIONS = {
   'src/components/common/BannerPortal.jsx': ['color', 'hex', 'inline-color'],
   // Los componentes canónicos SON la implementación del select/date-picker/
   // modal — su interior legítimamente toca lo nativo que envuelven.
-  'src/components/common/LiquidSelect.jsx': ['native'],
+  'src/components/common/LiquidSelect.jsx': ['native', 'foto-sin-aro'],
   'src/components/common/LiquidDatePicker.jsx': ['native'],
   'src/components/common/RangeDatePicker.jsx': ['native'],
   'src/components/common/TimePicker12.jsx': ['native'],
@@ -353,7 +380,7 @@ const EXCEPTIONS = {
   // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
   // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
   // existe para rellenos sobre fondo claro.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['material-a-mano', 'color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano'],
+  'src/components/timeclock/FeedbackOverlay.jsx': ['material-a-mano', 'color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano', 'foto-sin-aro'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -403,7 +430,7 @@ const EXCEPTIONS = {
   // son puntos de un timeline/paso sobre una línea de color.
   'src/components/common/ErrorBoundary.jsx': ['white', 'z-index'],
   'src/views/RequestsView.jsx': ['white'],
-  'src/views/EncuestaView.jsx': ['white'],
+  'src/views/EncuestaView.jsx': ['white', 'foto-sin-aro'],
   'src/components/forms/FormNursingRegents.jsx': ['white'],
   'src/views/productos/TabMinMax.jsx': ['white', 'z-index'],
   // ── Superficies siempre-oscuras, agregadas al cerrar D3.8 (2026-07-27) ──
@@ -1963,15 +1990,50 @@ function scanFile(path) {
     // día, así que no hay deuda que heredar. Lo que este detector protege no es
     // el pasado, es la pantalla número 27.
     //
-    // La excepción es el propio canónico, que ES quien envuelve la primitiva.
-    if (!path.includes('components/common/AvatarConEstado')) {
+    // ── El detector mira la FOTO, no el componente ──────────────────────
+    //
+    // La primera versión buscaba sólo `<LiquidAvatar`, y llegó a cero el mismo
+    // día. El usuario preguntó *«¿quedó canónico? ¿completamente?»* y la
+    // respuesta medida fue que no: había **nueve** fotos de persona pintadas
+    // con un `<img>` a mano —los selectores de empleado de cargos, sucursales y
+    // relevos, el aviso, quién retira el efectivo— y ninguna las veía. El
+    // sidebar hacía exactamente eso antes de migrarlo, así que no era un caso
+    // hipotético: era el patrón que ya existía.
+    //
+    // Es la lección de `tarjeta-a-mano` otra vez —llegó a cero en julio y
+    // siguió en verde mientras un censo a mano encontraba 81 casos vivos—: un
+    // detector que mira UNA de las formas del defecto certifica la ausencia de
+    // esa forma, no la del defecto.
+    //
+    // Así que hay dos reglas. La primitiva suelta, y el `<img>` cuyo `src`
+    // nombra la foto de alguien. Lo segundo se reconoce por el nombre del
+    // campo, que en este repo es estable: `photo`, `photo_url`, `foto`,
+    // `avatar`, o pasado por `webpSignedUrl`.
+    //
+    // NO marca un `<img>` de un comprobante, una etiqueta o una evidencia
+    // —`foto.url` de un vale, por ejemplo— porque ahí no hay ninguna persona
+    // cuyo estado se pueda decir. La diferencia la da el campo, no la palabra.
+    if (!path.includes('components/common/AvatarConEstado') && !hasException(path, 'foto-sin-aro')) {
+      const marcar = (indice, texto) => findings.push({
+        line: sinComentarios2.slice(0, indice).split('\n').length,
+        label: 'foto de persona sin aro de estado — usar `AvatarConEstado` (DESIGN.md §5.4)',
+        category: 'foto-sin-aro', text: texto.replace(/\s+/g, ' ').slice(0, 120),
+      });
+
       let mi3;
       const usoDirecto = /<LiquidAvatar\b/g;
-      while ((mi3 = usoDirecto.exec(sinComentarios2))) {
-        const linea = sinComentarios2.slice(0, mi3.index).split('\n').length;
-        findings.push({ line: linea,
-          label: 'foto de persona sin aro de estado — usar `AvatarConEstado` (DESIGN.md §5)',
-          category: 'foto-sin-aro', text: '<LiquidAvatar' });
+      while ((mi3 = usoDirecto.exec(sinComentarios2))) marcar(mi3.index, '<LiquidAvatar');
+
+      // `foto.url` / `foto?.url` quedan fuera: son el comprobante de un vale,
+      // no la cara de nadie. Se descartan antes de mirar el resto.
+      const FOTO_DE_PERSONA = /\b(photo|photo_url|photoPreview|foto|avatar|profilePicture)\b|webpSignedUrl\s*\(/;
+      const imgs = /<img\b[^>]*>/g;
+      while ((mi3 = imgs.exec(sinComentarios2))) {
+        const tag = mi3[0];
+        const src = (tag.match(/src=\{([^}]*)\}/) || [, ''])[1];
+        if (!src || !FOTO_DE_PERSONA.test(src)) continue;
+        if (/\bfotos?\s*\??\.\s*url\b|\bevidencia|comprobante|etiqueta/i.test(src)) continue;
+        marcar(mi3.index, tag);
       }
     }
 

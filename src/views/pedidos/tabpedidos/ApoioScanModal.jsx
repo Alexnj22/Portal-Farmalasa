@@ -122,7 +122,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                             animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
                             {reconocido.photo_url
-                                ? <img src={reconocido.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
+                                ? <AvatarConEstado emp={reconocido} px={48} radio="rounded-full" marco="" />
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>

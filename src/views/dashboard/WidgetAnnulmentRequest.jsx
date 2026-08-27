@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { webpSignedUrl } from '../../utils/storageFiles';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
@@ -184,7 +185,10 @@ function VendorAvatar({ employee, size = 6 }) {
     //
     // `loading="lazy"` además: la lista trae un mes de ventas y las de abajo no
     // hacen falta hasta que alguien baje.
-    return <div className={base}><img src={webpSignedUrl(employee.photo || employee.photo_url)} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
+    // `AvatarConEstado` conserva las dos optimizaciones medidas acá: envuelve a
+    // `LiquidAvatar`, que ya pide la foto en WEBP y ya lleva `loading="lazy"`.
+    // Lo que agrega es el aro — quien pidió la anulación puede no estar hoy.
+    return <AvatarConEstado emp={employee} px={20} radio="rounded-full" marco="" />;
   return (
     <div className={`${base} bg-surface-card-hover`}>
       <span className="text-content-2 font-black text-caption leading-none">{employeeInitials(employee)}</span>

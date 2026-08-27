@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Button from '../common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -19,20 +20,16 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
   );
 };
 
-// 4. Componente de Avatar (Squircle con Imagen o Inicial)
-const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-success' }) => {
-  return (
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border-card transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
-      {photoUrl ? (
-        <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
-      ) : (
-        <span className="text-white font-black text-body-sm uppercase">
-          {name?.charAt(0) || '?'}
-        </span>
-      )}
-    </div>
-  );
-};
+// La cara de quien va a recibir el aviso — con su aro, porque acá se decide a
+// quién se le manda: avisarle a alguien que está de vacaciones es una decisión
+// distinta a avisarle a alguien que está en sala.
+//
+// Recibe la ficha entera y no `photoUrl`: sin el id no hay aro, y ése era
+// justamente el defecto — el envoltorio se quedaba con la foto y tiraba a la
+// persona.
+const EmployeeAvatar = ({ emp, className = '' }) => (
+  <AvatarConEstado emp={emp} px={40} className={className} />
+);
 
 const FormAnnouncements = ({ data }) => {
   const readersModal = data?.announcement;
@@ -131,7 +128,7 @@ const FormAnnouncements = ({ data }) => {
                           key={emp.id}
                           data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
+                          <EmployeeAvatar emp={emp} className="shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
                             <p className="text-body-sm font-black text-content truncate" title={emp.name}>
                               {shortEmployeeName(emp)}
@@ -185,7 +182,7 @@ const FormAnnouncements = ({ data }) => {
                           key={emp.id}
                           data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:bg-surface-card group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
+                          <EmployeeAvatar emp={emp} className="transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
                             <p className="text-body-sm font-bold text-content-2 truncate transition-colors group-hover:text-content" title={emp.name}>
                               {shortEmployeeName(emp)}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
@@ -321,7 +322,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
-                                ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
+                                ? <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
                                 : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
                         </div>
                         <div className="min-w-0">

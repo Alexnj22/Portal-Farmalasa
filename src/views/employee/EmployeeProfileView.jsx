@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
@@ -225,7 +226,7 @@ const EmployeeProfileView = ({ openModal }) => {
             <div className="relative shrink-0">
                 <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-border-card shadow-md">
                     {emp.photo || emp.photo_url
-                        ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
+                        ? <AvatarConEstado emp={emp} px={96} radio="rounded-full" marco="" />
                         : <div className="w-full h-full bg-gradient-to-br from-chart-8 to-chart-8-text flex items-center justify-center text-white">
                             <User size={18} strokeWidth={2} />
                           </div>

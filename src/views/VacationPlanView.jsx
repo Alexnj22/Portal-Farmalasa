@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import PromptModal from '../components/common/PromptModal';
 import Button from '../components/common/Button';
@@ -260,7 +261,7 @@ const GanttChart = ({ plans, year }) => {
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
                                         <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                             {(emp?.photo || emp?.photo_url)
-                                                ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
+                                                ? <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
                                                 : employeeInitials(emp)
                                             }
                                         </div>
@@ -1000,7 +1001,7 @@ const VacationPlanView = () => {
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                                         {p.employee?.photo
-                                                                            ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
+                                                                            ? <AvatarConEstado emp={p.employee} px={28} radio="rounded-full" marco="" />
                                                                             : employeeInitials(p.employee)
                                                                         }
                                                                     </div>
@@ -1080,7 +1081,7 @@ const VacationPlanView = () => {
                                                     <div className="flex items-center gap-2.5">
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                             {emp?.photo_url
-                                                                ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
+                                                                ? <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
                                                                 : employeeInitials(emp)
                                                             }
                                                         </div>

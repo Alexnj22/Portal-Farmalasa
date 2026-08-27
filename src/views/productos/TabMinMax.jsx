@@ -1,4 +1,5 @@
 import React from 'react';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -1415,7 +1416,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {toast && createPortal(
                 <div className={`fixed bottom-6 right-6 z-toast flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-body font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-danger-solid' : 'bg-brand'}`}>
                     {currentEmployee?.photo_url
-                        ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-[var(--border-card)]" />
+                        ? <AvatarConEstado emp={currentEmployee} px={24} radio="rounded-full" marco="" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     {toast.action && (

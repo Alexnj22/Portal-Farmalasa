@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import CuerpoDialogo from '../components/common/CuerpoDialogo';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Button from '../components/common/Button';
@@ -691,7 +692,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-surface-card shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
             {emp.photo
-              ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
+              ? <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
               : <span className="text-body-xl">{employeeInitials(emp)}</span>}
           </div>
           {alertColor ? (

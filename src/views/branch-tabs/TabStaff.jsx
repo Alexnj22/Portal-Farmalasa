@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import BotonIA from '../../components/common/BotonIA';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -102,7 +103,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
                         <div className="w-full h-full rounded-full border-2 border-surface-card overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
-                            {employee.photo ? <img src={employee.photo} alt={employee.name} className="w-full h-full object-cover" /> : employee.name.charAt(0)}
+                            {employee.photo ? <AvatarConEstado emp={employee} px={40} radio="rounded-full" marco="" /> : employee.name.charAt(0)}
                         </div>
                     </div>
                     <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface-card flex items-center justify-center text-white shadow-sm ${theme.badge}`}>

@@ -950,6 +950,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // La solicitud de empleo SÍ se queda: es requisito del Art. 8 letra b) y
         // el usuario lo confirmó — «si es así, se debe adjuntar».
         { key: 'SOLICITUD_EMPLEO', label: 'Solicitud de empleo' },
+        // ── El certificado médico es ANUAL, no de ingreso ───────────────────
+        //
+        // El Art. 8 del reglamento lo pide al entrar y la empresa NO lo pide
+        // así. Lo que sí hace, todos los años y a todo el mundo, es el examen de
+        // heces y orina con su certificado — dicho por el usuario el
+        // 27-ago-2026.
+        //
+        // Es una PRÁCTICA de la empresa, no una obligación citable: el
+        // reglamento no la escribe y la norma sanitaria de almacenamiento
+        // tampoco (buscado en los dos textos de `docs/legal/`). Queda anotado
+        // para que nadie lo borre mañana por «infundado» ni le invente una base
+        // legal que no tiene.
+        //
+        // Lleva vencimiento a propósito: es lo que convierte «cada año» en algo
+        // que alguien recuerda, porque entra al aviso de documentos por vencer.
+        // Es el mismo razonamiento que ya está escrito para el examen del menor.
+        { key: 'CERTIFICADO_MEDICO_ANUAL', label: 'Certificado médico anual — heces y orina' },
         { key: 'CURRICULUM',       label: 'Currículum u hoja de vida (con sus atestados)' },
         { key: 'COPIA_NIT',        label: 'Copia del NIT' },
         { key: 'TARJETA_ISSS',     label: 'Copia de la tarjeta del ISSS' },
@@ -1032,6 +1049,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             // — se autocompleta solo si no hay fecha ya escrita a mano ni detectada por IA en el recibo.
             if (!expiryDate && (category === 'ANUALIDAD_JVPQF' || category === 'ANUALIDAD_JVPE')) {
                 expiryDate = getNextAnnualidadCsspDueDate();
+            }
+            // El certificado médico vale un año desde que se hizo el examen, y
+            // ese vencimiento es POR PERSONA — no una fecha fija del calendario
+            // como la anualidad del Consejo. Si el documento dice cuándo se
+            // expidió, el vencimiento sale solo; si no lo dice, se queda vacío
+            // para que alguien lo escriba. Poner «hoy + un año» sobre un
+            // certificado viejo lo daría por vigente cuando no lo está.
+            if (!expiryDate && category === 'CERTIFICADO_MEDICO_ANUAL') {
+                const emision = aiResponse?.aiData?.issueDate;
+                if (emision) {
+                    const d = new Date(`${emision}T12:00:00`);
+                    if (!Number.isNaN(d.getTime())) {
+                        d.setFullYear(d.getFullYear() + 1);
+                        expiryDate = d.toISOString().split('T')[0];
+                    }
+                }
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
 

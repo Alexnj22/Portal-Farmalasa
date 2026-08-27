@@ -306,3 +306,47 @@ describe('las píldoras de «Áreas que cubre»', () => {
         expect(form).toMatch(/'Quitar todas' : 'Todas'/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Los documentos de ingreso, y el que NO es de ingreso
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El Art. 8 del reglamento interno lista diez requisitos. El portal pide CINCO,
+// y no por criterio propio: el usuario dijo cuáles pide esta empresa —los demás
+// «van en el currículum»—. Eso es un dato que el reglamento no contiene.
+//
+// El certificado médico es el caso interesante: el reglamento lo pide AL ENTRAR
+// y la empresa no lo pide así. Lo que sí hace es el examen de heces y orina cada
+// año, a todo el mundo. Así que está, pero como documento anual y con
+// vencimiento — que es lo que lo mete en el aviso de documentos por vencer.
+
+describe('los documentos que pide el expediente', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+
+    it('están los cinco de ingreso', () => {
+        for (const k of ['SOLICITUD_EMPLEO', 'CURRICULUM', 'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP']) {
+            expect(form).toContain(`key: '${k}'`);
+        }
+    });
+
+    it('NO pide los que van dentro del currículum', () => {
+        // Pedirlos otra vez es pedir dos veces lo mismo.
+        for (const k of ['SOLVENCIA_PNC', 'REFERENCIAS', 'CERTIFICADO_ESTUDIOS', 'PASAPORTE_RESIDENCIA']) {
+            expect(form).not.toContain(`key: '${k}'`);
+        }
+    });
+
+    it('el certificado médico es ANUAL y no de ingreso', () => {
+        expect(form).toContain("key: 'CERTIFICADO_MEDICO_ANUAL'");
+        expect(form).not.toContain("key: 'CERTIFICADO_MEDICO'");
+    });
+
+    it('el certificado médico deriva su vencimiento de cuándo se hizo', () => {
+        // Un año desde el examen, y POR PERSONA — no una fecha fija del
+        // calendario. Sin fecha de emisión se queda vacío: «hoy + un año» sobre
+        // un certificado viejo lo daría por vigente cuando no lo está.
+        expect(form).toContain("category === 'CERTIFICADO_MEDICO_ANUAL'");
+        expect(form).toMatch(/setFullYear\(d\.getFullYear\(\) \+ 1\)/);
+    });
+});

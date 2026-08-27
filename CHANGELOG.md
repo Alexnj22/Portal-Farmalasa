@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.816.0 — El certificado médico es anual, no de ingreso
+
+Corrección del usuario: *«certificado médico no se pide al ingreso, pero sí se
+hace cada año — todos los años se les pide examen de heces y orina a todos y se
+les llena un certificado médico»*.
+
+El reglamento lo pide **al entrar** (su Art. 8 letra c). La empresa no lo pide
+así, pero hace algo que el reglamento no dice: lo repite **cada año y a todo el
+mundo**. Así que vuelve, pero como otra cosa — «Certificado médico anual — heces
+y orina», sin condición, para todos.
+
+**Lleva vencimiento a propósito.** Es lo que convierte «cada año» en algo que
+alguien recuerda: con fecha entra al aviso de documentos por vencer, y sin fecha
+sería un archivo que nadie vuelve a mirar. Es el mismo razonamiento que ya estaba
+escrito para el examen del menor.
+
+**Y el vencimiento sale de cuándo se hizo el examen, no de hoy.** Un año desde la
+fecha de emisión que trae el documento. Si el documento no la dice, el campo
+queda vacío para que alguien lo escriba: poner «hoy + un año» sobre un
+certificado viejo lo daría por vigente cuando no lo está.
+
+**Queda anotado que es práctica, no obligación citable.** El reglamento no
+escribe el examen anual, y la norma sanitaria de almacenamiento tampoco — se
+buscó en los dos textos de `docs/legal/`. Se deja dicho en el código para que
+nadie lo borre mañana por «infundado» ni le invente una base legal que no tiene.
+
 ## v2.815.1 — Sólo los documentos que la empresa pide de verdad
 
 La versión anterior agregó los **once** documentos del Art. 8 del reglamento. El

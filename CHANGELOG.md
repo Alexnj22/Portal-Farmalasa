@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.797.3 — Un sello que cambie tampoco pasa desapercibido
+
+Última esquina del repaso de hoy. El sello de recepción de Hacienda sólo se
+detectaba cuando pasaba de **vacío a puesto**; si alguna vez llegara uno
+distinto sobre una venta que ya tenía el suyo, el portal se quedaba con el
+viejo y nadie se enteraba.
+
+**Medido antes de tocar nada: no pasa.** Se compararon los **10,366 sellos** de
+agosto en Salud 2, 3 y 4 contra lo que entrega el sistema hoy — **cero
+diferencias**, y ninguna venta con sello afuera que el portal no tuviera. Tiene
+su explicación: un documento que ya tiene sello no se vuelve a transmitir, así
+que Hacienda no emite un segundo.
+
+Pero «hoy no pasa» no es «no puede pasar», y un dato fiscal que cambiara en
+silencio es exactamente el tipo de cosa que se descubre un año después. Ahora
+se compara el sello completo: si llega uno distinto, se guarda y queda anotado
+en el historial de la venta.
+
+Lo que sigue siendo imposible es **borrar** uno bueno. Si lo que llega no es un
+sello de 40 caracteres, no entra — que es la regla que se escribió el día que
+se descubrió la cadena `"undefined"` guardada como si fuera un sello.
+
 ## v2.797.2 — Los CHECK del cierre no sabían de la parte en mano
 
 **El cierre en efectivo no podía guardar ni una fila**, y nada lo dijo. Salió a

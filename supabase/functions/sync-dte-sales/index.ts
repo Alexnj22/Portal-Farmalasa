@@ -259,8 +259,20 @@ async function syncBranch(
       // Ojo con el `existing`: si ya tiene basura guardada ('undefined'), el
       // viejo `!existing.recibido_mh` daba false —truthy— y el changelog del
       // sello REAL nunca se habría escrito. Por eso se valida de los dos lados.
-      const selloNuevo = selloValido(venta.recibido_mh);
-      if (!selloValido(existing.recibido_mh) && selloNuevo) {
+      //
+      // Y son DOS casos, no uno: que llegue el sello por primera vez, y que
+      // llegue uno DISTINTO. El segundo faltaba. Medido el 2026-08-26 sobre
+      // 10,366 sellos de agosto en tres salas: CERO diferencias, y tiene su
+      // explicación —un documento que ya tiene sello no se vuelve a mandar, así
+      // que Hacienda no emite un segundo—. Pero «hoy no pasa» no es «no puede
+      // pasar», y un sello fiscal que cambiara en silencio no lo notaría nadie.
+      //
+      // Lo que sigue siendo imposible es BORRAR uno bueno: si lo que llega no
+      // es un sello de 40 caracteres, `selloValido` lo deja en null y acá no
+      // entra.
+      const selloNuevo    = selloValido(venta.recibido_mh);
+      const selloGuardado = selloValido(existing.recibido_mh);
+      if (selloNuevo && selloNuevo !== selloGuardado) {
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'recibido_mh', valor_anterior: existing.recibido_mh, valor_nuevo: selloNuevo });
         hasChange = true;
       }

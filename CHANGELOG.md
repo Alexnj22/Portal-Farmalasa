@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.804.2 — Lo que se vigila se ve; lo que se consulta se desplaza
+
+Segunda pasada mirando la vista publicada. La tabla de conteos tiene ocho
+columnas y no entra en 1440px —ofrece su barra de desplazamiento, que es lo
+correcto—, pero lo que quedaba **fuera del borde derecho era «Sin resolver»**:
+justamente la única columna que dice si queda algo pendiente.
+
+«Contaron» pasa al final. Es una celda ancha —el usuario pidió expresamente la
+cara **con nombre y apellido**, así que no se puede angostar— y estaba en el
+medio, empujando el cuadre fuera de la pantalla.
+
+El criterio, para la próxima tabla que no quepa: **lo que se empuja fuera de la
+vista es lo que se consulta, no lo que se vigila.** Quien abre esta tabla
+pregunta primero «¿cuadra?» y sólo después «¿quién la contó?».
+
 ## v2.804.1 — La tabla de conteos cabe, y los depósitos dejan de decir cero
 
 Correcciones sobre v2.804.0, encontradas **abriendo la vista en producción** —

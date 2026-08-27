@@ -70,9 +70,6 @@ const COLUMNAS = [
        celda decía «14 → 20 ago», que es cierto. Un rango es el MÁXIMO de lo que
        entró; no dice nada de lo que faltó. */
     { key: 'cobertura', label: 'Cobertura', hideBelow: 'md' },
-    // La columna que motivó todo esto. Con una sola persona dice su nombre; con
-    // varias dice cuántas, y el detalle las lista.
-    { key: 'contaron', label: 'Contaron', hideBelow: 'lg' },
     { key: 'esperado', label: 'Debía haber', align: 'right', hideBelow: 'sm' },
     { key: 'contado', label: 'Contado', align: 'right' },
     /* Lo que ya se EXPLICÓ. Va al lado de «Sin resolver» y no en vez de ella:
@@ -83,6 +80,16 @@ const COLUMNAS = [
     // Dice lo que queda SIN RESOLVER, no lo que faltó al contar. Ver `Diferencia`.
     { key: 'diferencia', label: 'Sin resolver', align: 'right' },
     { key: 'cuantas', label: 'Bolsas', align: 'right', hideBelow: 'md' },
+    /* «Contaron» va ÚLTIMA, y no donde nació (2026-08-26).
+       Ocho columnas no entran en 1440px, así que la tabla ofrece su barra de
+       desplazamiento — y lo que quedaba fuera del borde derecho era «Sin
+       resolver», que es la única que dice si hay algo pendiente. La celda de las
+       caras es ancha, va en medio y no se puede angostar sin perder el nombre
+       completo que el usuario pidió expresamente.
+       Lo que se empuja fuera de la vista tiene que ser lo que se consulta, no lo
+       que se vigila: quien mira esta tabla pregunta primero «¿cuadra?» y sólo
+       después «¿quién la contó?». */
+    { key: 'contaron', label: 'Contaron', hideBelow: 'lg' },
 ];
 
 /* Quiénes contaron, en una línea. Con más de dos se dice el número: tres
@@ -664,23 +671,6 @@ export default function ConteosDeBolsas({
                         <DataCell hideBelow="md">
                             <Cobertura conteo={c} />
                         </DataCell>
-                        <DataCell hideBelow="lg">
-                            {/* Con más de dos, la cara de las dos primeras y el
-                               resto en número: tres avatares con nombre no
-                               entran en una celda, y el detalle los lista. */}
-                            {(c.contaron || []).length ? (
-                                <span className="inline-flex items-center gap-2 flex-wrap">
-                                    {c.contaron.slice(0, 2).map((p) => (
-                                        <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
-                                    ))}
-                                    {c.contaron.length > 2 && (
-                                        <span className="text-caption text-content-3">
-                                            +{c.contaron.length - 2}
-                                        </span>
-                                    )}
-                                </span>
-                            ) : <span className="text-content-3">—</span>}
-                        </DataCell>
                         <DataCell align="right" hideBelow="sm">
                             <span className="tabular-nums text-content-2">
                                 {formatMoney(c.total_esperado)}
@@ -702,6 +692,23 @@ export default function ConteosDeBolsas({
                                 <Package size={12} className="text-content-3" />
                                 {c.cuantas}
                             </span>
+                        </DataCell>
+                        <DataCell hideBelow="lg">
+                            {/* Con más de dos, la cara de las dos primeras y el
+                               resto en número: tres avatares con nombre no
+                               entran en una celda, y el detalle los lista. */}
+                            {(c.contaron || []).length ? (
+                                <span className="inline-flex items-center gap-2 flex-wrap">
+                                    {c.contaron.slice(0, 2).map((p) => (
+                                        <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
+                                    ))}
+                                    {c.contaron.length > 2 && (
+                                        <span className="text-caption text-content-3">
+                                            +{c.contaron.length - 2}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : <span className="text-content-3">—</span>}
                         </DataCell>
                     </DataRow>
                 ))}

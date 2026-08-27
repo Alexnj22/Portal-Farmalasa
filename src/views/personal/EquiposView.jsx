@@ -22,7 +22,7 @@ import { clickable } from '../../utils/clickable';
 import { getEffectiveStatus } from '../../utils/helpers';
 import { getRoleTheme } from '../../utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '../../utils/roles';
-import { repartirSala, puestosVacantesConGente } from '../../utils/mandoDeSala';
+import { repartirSala } from '../../utils/mandoDeSala';
 import { getExpiringDocuments } from '../../utils/documentExpiry';
 import { soloPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { exportarDirectorio } from '../../utils/directorioCsv';
@@ -83,6 +83,19 @@ const ROTULO_FIJO = {
   Inactivo:   { texto: 'Inactivo',   icon: UserMinus, variante: 'neutral' },
   Liquidado:  { texto: 'Liquidado',  icon: UserX,     variante: 'danger'  },
   Suspendido: { texto: 'Suspendido', icon: HelpCircle,variante: 'danger'  },
+};
+
+// El relleno de la marca de la foto. Escritos LITERALES, no armados con
+// plantilla: Tailwind escanea strings del fuente, y con `bg-${'$'}{v}-solid` no ve
+// nada y no emite la clase — la marca saldría sin fondo y en silencio. Es la
+// misma trampa que `Badge.jsx` documenta en su tabla SOLID.
+const MARCA = {
+  warning: 'bg-warning-solid',
+  danger:  'bg-danger-solid',
+  neutral: 'bg-chart-8-solid',
+  'chart-9': 'bg-chart-9-solid',
+  'chart-6': 'bg-chart-6-solid',
+  'chart-3': 'bg-chart-3-solid',
 };
 
 const hoyISO = () => {
@@ -216,6 +229,7 @@ const pesoDeSucursal = (nombre) => {
 // categoría `tarjeta-a-mano` de `gate:design`.
 function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir }) {
   const estado = useMemo(() => estadoVigente(emp), [emp]);
+  const ausente = !!estado;
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
@@ -253,6 +267,11 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
          llevan los dos—. En tiempo de render sí se sabe. Es lo mismo que
          `data-destino` hizo por las fichas y `data-vacio` por los vacíos. */
       data-lugar={lugar}
+      /* Mismo recurso, otra pregunta: «¿esta tarjeta muestra a alguien que no
+         está?». Desde afuera se contestaría por el gris de la foto o por el
+         relleno del chip, y las dos son CSS —jsdom no calcula ninguna—. Acá se
+         sabe en tiempo de render. */
+      data-ausente={ausente ? '' : undefined}
       /* `clickable` aunque la tarjeta contenga dos `<a>`: la nota del helper
          («si ya hay un enlace adentro, el teclado llega por ahí») habla de dos
          afordancias para la MISMA acción. Acá son tres acciones distintas —
@@ -266,23 +285,60 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
     >
       <OjoDeTarjeta className="absolute top-3 right-3" />
 
-      <div className={`shrink-0 overflow-hidden rounded-xl border border-border-card bg-surface-card
-        ${destacada ? 'h-16 w-16' : 'h-12 w-12'}`}>
-        <LiquidAvatar
-          src={emp.photo || emp.photo_url}
-          alt={emp.name || 'Empleado'}
-          fallbackText={shortEmployeeName(emp)}
-          className="h-full w-full"
-        />
+      {/* ── La foto dice si la persona ESTÁ ────────────────────────────────
+          Primer intento: una píldora ámbar más, debajo de los cargos. El
+          usuario la miró y dijo «no distingo que está de vacación», y tenía
+          razón — quedaba **cuarta en una pila de píldoras**, y la de arriba
+          («Faltan 2 datos») es del mismo ámbar, del mismo tamaño y de la misma
+          forma. Poner un dato importante en el mismo envase que los demás lo
+          esconde, por mucho que diga lo correcto.
+
+          Tres cosas a la vez, y ninguna es «otra píldora»: la foto se apaga a
+          gris, le aparece una marca con el ícono del estado —el mismo sitio
+          donde el listado ponía su punto de disponibilidad—, y el rótulo pasa
+          a relleno, así que es el ÚNICO chip sólido de la tarjeta. */}
+      <div className="relative shrink-0">
+        <div className={`overflow-hidden rounded-xl border border-border-card bg-surface-card
+          transition-all duration-[var(--dur-base)]
+          ${ausente ? 'grayscale opacity-60' : ''}
+          ${destacada ? 'h-16 w-16' : 'h-12 w-12'}`}>
+          <LiquidAvatar
+            src={emp.photo || emp.photo_url}
+            alt={emp.name || 'Empleado'}
+            fallbackText={shortEmployeeName(emp)}
+            className="h-full w-full"
+          />
+        </div>
+        {ausente && (
+          <span
+            /* `border-2` del color de la tarjeta, no un aro de color: la marca
+               tiene que despegarse de la foto sin depender de qué foto es. */
+            className={`absolute -bottom-1 -right-1 flex h-[22px] w-[22px] items-center justify-center
+              rounded-full border-2 border-surface-card shadow-sm ${MARCA[estado.variante]}`}
+            role="img" aria-label={estado.texto}
+          >
+            <estado.icon size={12} strokeWidth={2.5} className="text-white" />
+          </span>
+        )}
       </div>
 
       <div className="min-w-0 flex-1 space-y-1.5">
-        <p className={`truncate pr-6 font-black tracking-tight text-content
+        <p className={`truncate pr-6 font-black tracking-tight
+          ${ausente ? 'text-content-2' : 'text-content'}
           ${destacada ? 'text-body' : 'text-body-sm'}`} title={emp.name}>
           {emp.name || shortEmployeeName(emp)}
         </p>
 
-        <div className="flex flex-wrap items-center gap-1">
+        {/* Va ARRIBA de los cargos: «¿está?» se pregunta antes que «¿qué
+            hace?». Y `tone="solid"` lo saca de la conversación de las otras
+            píldoras — sólidas no hay ninguna más en la tarjeta. */}
+        {estado && (
+          <Badge variant={estado.variante} tone="solid" size="md" icon={estado.icon} uppercase={false}>
+            {estado.texto}{estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}
+          </Badge>
+        )}
+
+        <div className={`flex flex-wrap items-center gap-1 ${ausente ? 'opacity-65' : ''}`}>
           {cargos.map((c, i) => (
             <Badge key={i} variant={getRoleTheme(c).variante} size="sm">{c}</Badge>
           ))}
@@ -300,13 +356,6 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
             <CornerDownRight size={11} strokeWidth={2.5} className="shrink-0" />
             <span className="truncate">Responde a {respondeA}</span>
           </p>
-        )}
-
-        {/* Sólo cuando hay algo que decir — ver la nota del encabezado. */}
-        {estado && (
-          <Badge variant={estado.variante} size="sm" icon={estado.icon} uppercase={false}>
-            {estado.texto}{estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}
-          </Badge>
         )}
 
         {!!alertas.length && (
@@ -546,11 +595,15 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       });
   }, [visibles, plantilla, roles, nombreDeSucursal]);
 
-  // Los puestos intermedios que nadie ocupa, dichos UNA vez para toda la
-  // empresa en vez de repetir la explicación en cada tarjeta.
-  const vacantes = useMemo(
-    () => puestosVacantesConGente({ todos: plantilla, roles }), [plantilla, roles]);
-
+  // Acá vivía un aviso que listaba los puestos intermedios sin cubrir
+  // —«Supervisor del Departamento Médico (7 personas) · Asistente de Logística
+  // (5)»— para explicar por qué esa gente cuelga de la jefatura de sala. Lo
+  // sacó el usuario el 2026-08-26: «¿por qué dice eso? no es necesario».
+  //
+  // Y es correcto: eso explicaba el MECANISMO del reparto, no un hecho del
+  // negocio. Quien mira la pantalla quiere ver su equipo, no por qué el
+  // algoritmo puso a cada uno donde lo puso. El hueco que sí importa —el
+  // segundo puesto de la sala— ya se ve como tarjeta, en su sección.
   const abrir = (emp) => navigate(`/personal/empleado/${emp.id}`);
   const cargando = employeesStatus !== 'ready' && !employees.length;
 
@@ -624,19 +677,6 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
               ? <Button variant="secondary" size="sm" onClick={() => setSearchTerm('')}>Limpiar búsqueda</Button>
               : undefined}
           />
-        )}
-
-        {/* Los puestos intermedios vacíos, dichos una sola vez. Sin esto la
-            tarjeta de una regente de enfermería diría «responde al Supervisor
-            del Departamento Médico», que es cierto en el organigrama y falso
-            en la sala: ese puesto no lo ocupa nadie. */}
-        {!cargando && !!vacantes.length && (
-          <Notice variant="warning" icon={AlertCircle}>
-            {vacantes.map(v => `${v.nombre} (${v.personas} ${v.personas === 1 ? 'persona' : 'personas'})`).join(' · ')}
-            {' — '}
-            {vacantes.length === 1 ? 'este puesto está' : 'estos puestos están'} sin cubrir, así que
-            {' '}quienes dependen de {vacantes.length === 1 ? 'él' : 'ellos'} responden a la jefatura de su sala.
-          </Notice>
         )}
 
         {!cargando && secciones.map(s => (

@@ -201,9 +201,12 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
         const nombres = conJefatura(container);
         expect(nombres).toContain('Jefe de Salud 3');
         expect(nombres).not.toContain('Regente de Salud 3');
-        // Y el motivo se dice una sola vez, para toda la empresa.
-        expect(container.textContent).toContain('Supervisor del Departamento Medico y Enfermería');
-        expect(container.textContent).toContain('sin cubrir');
+        // Y no queda suelta: cae en el equipo de su sala, que es la otra mitad
+        // de la regla. Antes esto además se explicaba con un aviso arriba de la
+        // vista; lo sacó el usuario el 2026-08-26 —«¿por qué dice eso? no es
+        // necesario»— porque describía el mecanismo del reparto y no un hecho
+        // del negocio. La regla sigue viva; lo que se fue es el cartel.
+        expect(enLugar(container, 'equipo')).toContain('Regente de Salud 3');
     });
 
     it('la técnica queda adscrita: su superior existe, pero está en otra sucursal', () => {
@@ -248,12 +251,45 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
         expect(container.textContent).not.toContain('Activo');
     });
 
-    it('una ausencia vigente se anuncia con la fecha de vuelta', () => {
+    it('la tarjeta de quien no está SE DISTINGUE de las demás', () => {
+        // El primer intento ponía el estado como una píldora más, debajo de los
+        // cargos. El usuario lo miró y dijo «no distingo que está de vacación»:
+        // quedaba cuarta en una pila de píldoras, y la de arriba —«Faltan 2
+        // datos»— es del mismo ámbar y del mismo tamaño. Lo que se ancla acá es
+        // que la tarjeta cambie de ESTADO, no que exista el texto.
         const previo = estado.employees;
-        estado.employees = EMPLEADOS.map(e => e.id !== 4 ? e : {
+        estado.employees = [...EMPLEADOS.map(e => e.id !== 4 ? e : {
             ...e,
             history: [{ type: 'VACATION', date: '2020-01-01', metadata: { endDate: '2099-09-02' } }],
-        });
+        }), ...NO_PERSONAL];
+        try {
+            const { container } = montar();
+            const suya = tarjetas(container).find(c => textoDe(c) === 'Dependiente Uno');
+            expect(suya.dataset.ausente).toBe('');
+            // Sólo la suya: si todas quedaran marcadas, la marca no marcaría nada.
+            expect(tarjetas(container).filter(c => c.dataset.ausente === '')).toHaveLength(1);
+
+            // El chip del estado va ARRIBA de los cargos —«¿está?» se pregunta
+            // antes que «¿qué hace?»— y es el ÚNICO relleno de la tarjeta.
+            const chips = [...suya.querySelectorAll('span')].map(n => n.textContent.trim());
+            const iEstado = chips.findIndex(t => t.startsWith('En vacaciones'));
+            const iCargo = chips.findIndex(t => t === 'Dependiente de Farmacia');
+            expect(iEstado).toBeGreaterThanOrEqual(0);
+            expect(iEstado).toBeLessThan(iCargo);
+
+            // Y la foto lleva su marca, con el estado como nombre accesible.
+            expect(suya.querySelector('[role="img"][aria-label="En vacaciones"]')).toBeTruthy();
+        } finally {
+            estado.employees = previo;
+        }
+    });
+
+    it('una ausencia vigente se anuncia con la fecha de vuelta', () => {
+        const previo = estado.employees;
+        estado.employees = [...EMPLEADOS.map(e => e.id !== 4 ? e : {
+            ...e,
+            history: [{ type: 'VACATION', date: '2020-01-01', metadata: { endDate: '2099-09-02' } }],
+        }), ...NO_PERSONAL];
         try {
             const { container } = montar();
             expect(container.textContent).toContain('En vacaciones');

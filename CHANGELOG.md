@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.803.1 — Se ve de un vistazo quién no está
+
+Dos correcciones del usuario mirando la vista con el primer dato real encima.
+
+**«Si te soy sincero, no distingo que está de vacación».** Tenía razón, y el
+defecto no era el texto —decía «En vacaciones · vuelve el 2 de septiembre»— sino
+el ENVASE: quedaba como la cuarta píldora de una pila de píldoras, y la de
+arriba —«Faltan 2 datos»— es del mismo ámbar, del mismo tamaño y de la misma
+forma. **Poner un dato importante en el mismo envase que los demás lo esconde,
+por bien que esté redactado.**
+
+Tres cambios, y ninguno es «otra píldora»:
+
+- **La foto se apaga a gris** cuando la persona no está. Es lo que se ve antes
+  de leer nada: una tarjeta apagada entre siete encendidas salta sola.
+- **La foto lleva una marca** con el ícono del estado —palmera, estetoscopio,
+  reloj— en el mismo sitio donde el listado ponía su punto de disponibilidad.
+- **El rótulo pasa a relleno y sube arriba de los cargos**, así que es el único
+  chip sólido de la tarjeta y ya no compite con nadie. Va antes que el cargo
+  porque «¿está?» se pregunta antes que «¿qué hace?».
+
+Anclado con `data-ausente`, por el mismo motivo que `data-lugar`: desde afuera
+«¿esta tarjeta muestra a alguien que no está?» sólo se contestaría por el gris
+de la foto o el relleno del chip, y las dos son CSS que jsdom no calcula.
+
+**Se fue el aviso de puestos sin cubrir.** Listaba «Supervisor del Departamento
+Médico (7 personas) · Asistente de Logística (5)» para explicar por qué esa
+gente cuelga de la jefatura de su sala. *«¿Por qué dice eso? No es necesario»* —
+y es correcto: explicaba **el mecanismo del reparto**, no un hecho del negocio.
+Quien abre la pantalla quiere ver su equipo, no por qué el algoritmo puso a cada
+uno donde lo puso. La regla sigue intacta; lo que se fue es el cartel. El hueco
+que sí importa —el segundo puesto de cada sala— se sigue viendo como tarjeta, en
+su sección. Con eso `puestosVacantesConGente` se quedó sin llamadores y se borró.
+
 ## v2.803.0 — El DUI dice el nivel académico, y el sello provisional se reemplaza al graduarse
 
 **El DUI ya traía la profesión y el portal la guardaba abreviada.** El documento

@@ -170,30 +170,3 @@ export function repartirSala({ personas, todos, roles, sucursalId }) {
         adscritos: adscritos.sort(porRango),
     };
 }
-
-/**
- * Los puestos intermedios que no ocupa nadie y por eso dejan gente colgando de
- * la jefatura de sala. Es la regla 2 dicha una vez y para toda la empresa, en
- * vez de repetir la explicación en cada tarjeta.
- */
-export function puestosVacantesConGente({ todos, roles }) {
-    const ocupados = new Set((todos || []).flatMap(cargosDe).map(String));
-    const cuenta = new Map();
-
-    (todos || []).forEach(p => {
-        cargosDe(p).forEach(c => {
-            const [padre] = cadenaDeSuperiores(roles, c);
-            if (padre == null || ocupados.has(String(padre))) return;
-            cuenta.set(padre, (cuenta.get(padre) || 0) + 1);
-        });
-    });
-
-    return [...cuenta.entries()]
-        .map(([id, personas]) => ({
-            id,
-            nombre: (roles || []).find(r => Number(r.id) === Number(id))?.name || null,
-            personas,
-        }))
-        .filter(v => v.nombre)
-        .sort((a, b) => b.personas - a.personas);
-}

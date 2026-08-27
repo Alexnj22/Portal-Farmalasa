@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.805.3 — Un rótulo mide siempre lo mismo, y el gate deja de estar ciego
+
+_(La versión quedó en 2.805.2 al commitearse: otra sesión commiteó este trabajo junto con el suyo. Este commit la alinea.)_
+
+Arreglado el alto del select, el usuario volvió con la misma queja sobre otra
+fila: *«teléfono y correo tiene distinto tamaño»*. Esta vez el que se movía no
+era el campo sino **el rótulo de arriba**, y con él, dónde empieza el campo.
+
+Medido con Chromium sobre el CSS compilado:
+
+| el rótulo llevaba | medía | cuántos |
+|---|---:|---:|
+| sólo texto | 15px | 42 |
+| «Requerido» | 25px | 18 |
+| un botón chico | 28px | 1 |
+| un botón normal | 36px, con margen −2 en vez de 6 | 1 |
+
+Dos campos vecinos arrancaban hasta **21px** desalineados, y la diferencia no la
+decidía el diseño: la decidía si a ese campo le tocaba una insignia. En teléfono
+y correo se sumaba un caso aparte — el rótulo del correo tenía su propio margen
+**dentro** de un padre con separación, así que el campo caía 14px abajo contra 6
+del de al lado.
+
+**Ahora el alto del rótulo lo fija el rótulo, no su contenido**: 20px, con lo que
+entra acotado (una insignia va chica; una acción usa `size="rotulo"`, el único
+tamaño de botón que no se estira en el teléfono y consigue el blanco del dedo
+agrandando el área y no lo pintado). Los **73 rótulos** del alta de personal
+pasaron al canónico, y el correo dejó de estar escrito a mano.
+
+Y el alto fijo solo no alcanzaba: un aviso largo partía en dos líneas y **se
+salía encima del campo** —caja 20, contenido 27—, que es peor porque tapa un
+dato. El canónico ya no deja envolver, y el que cede es el texto del rótulo, no
+el aviso.
+
+### El gate estaba ciego sobre dos tercios del archivo
+
+La categoría nueva daba **cero** sobre el formulario más grande del repo, y era
+mentira. Su limpiador de comentarios era un `replace` de `/* … */`, y en ese
+archivo hay `accept="image/*"`: ese `/*` está **dentro de una cadena**, el regex
+lo tomó como apertura de comentario y blanqueó **154,304 caracteres** — el
+archivo entero de ahí para abajo.
+
+O sea que cinco categorías venían dando cero ahí. Al arreglarlo aparecieron
+**15 hallazgos reales**, todos corregidos: cinco campos escritos a mano y sin
+nombre para un lector de pantalla, cuatro selects metidos en un envoltorio de
+38px, y un relleno sólido sin su token.
+
+El reemplazo no es un regex sino un recorrido que sabe cuándo está dentro de una
+cadena. Lo usa también la categoría de importaciones, que tenía el defecto
+hermano —blanqueaba `/* */` pero no `//`— y por eso acusaba de «usado sin
+importar» a un componente nombrado en prosa dentro de un comentario.
+
+**Un gate que falla avisa; uno que se quedó ciego da verde, y el verde es
+indistinguible del verde de verdad.**
+
+Verificado después del cambio: teléfono y correo, y DUI y lugar de expedición,
+tienen rótulo de 20px en el mismo píxel y campo de 40px en el mismo píxel.
+
 ## v2.805.2 — El aro se veía en el DOM y no en pantalla
 
 *«¿Y el aro de vacaciones?»* — con la captura de una tarjeta que mostraba la

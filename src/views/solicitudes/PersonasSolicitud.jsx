@@ -1,6 +1,6 @@
 import React from 'react';
 import { Building2 } from 'lucide-react';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useStaffStore } from '../../store/staffStore';
@@ -21,17 +21,20 @@ import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, sala
  * fast refresh de Vite.
  */
 
-/** La foto, con la inicial de respaldo. `photo` viene firmada; `photo_url` es la cruda. */
-export const CaraPersona = ({ persona, className = 'w-10 h-10 rounded-full' }) => (
-    <LiquidAvatar
-        src={persona?.photo || persona?.photo_url || null}
-        alt={persona ? shortEmployeeName(persona) : ''}
-        // El canónico pinta la PRIMERA letra de lo que reciba, así que va el
-        // nombre corto y no las iniciales: `employeeInitials` daría «EC» y se
-        // vería una «E» igual.
-        fallbackText={persona ? shortEmployeeName(persona) : ''}
-        className={`${className} border border-border-card`}
-    />
+/**
+ * La foto de quien pide, aprueba o despacha — con su aro de estado.
+ *
+ * `px` en número y no un tamaño dentro de `className`: `AvatarConEstado`
+ * necesita el número para decidir si el aro lleva chip, y desde una clase de
+ * Tailwind ese dato no se puede leer. Los llamadores pasaban `w-10 h-10`,
+ * `w-7 h-7` y `w-5 h-5`; hoy pasan 40, 28 y 20.
+ *
+ * Y el aro acá dice algo que en otras pantallas no: una solicitud esperando la
+ * firma de alguien que está de vacaciones es exactamente lo que hay que ver
+ * antes de preguntarse por qué no avanza.
+ */
+export const CaraPersona = ({ persona, px = 40, className = '' }) => (
+    <AvatarConEstado emp={persona} px={px} radio="rounded-full" className={className} />
 );
 
 /**
@@ -58,7 +61,7 @@ export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', class
             quién mostrar. */}
         {sala
             ? <Building2 size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
-            : persona && <CaraPersona persona={persona} className="w-5 h-5 rounded-full" />}
+            : persona && <CaraPersona persona={persona} px={20} />}
         {!soloFoto && (
             <span className={`text-caption truncate ${sala || persona ? 'font-bold text-content-2' : 'font-medium text-content-3 italic'}`}>
                 {sala || (persona ? shortEmployeeName(persona) : vacio)}
@@ -135,7 +138,7 @@ export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vac
                                        flex items-center justify-center shrink-0">
                         <Building2 size={16} strokeWidth={2.5} className="text-content-3" />
                       </span>
-                    : persona && <CaraPersona persona={persona} className="w-9 h-9 rounded-full" />}
+                    : persona && <CaraPersona persona={persona} px={36} />}
                 <div className="min-w-0 flex-1">
                     <p className={`text-body-sm leading-tight truncate ${sala || persona ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
                         {sala || (persona ? shortEmployeeName(persona) : vacio)}

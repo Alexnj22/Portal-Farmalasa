@@ -5,7 +5,7 @@ import React from 'react';
 import { Pause } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
 import Badge from '../../../components/common/Badge';
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
 // `es-SV` devuelve «10:22 a. m.» —con espacio dentro de la abreviatura— y eso
@@ -246,12 +246,8 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             {/* Responsible person mini-avatar */}
                             {node.emp && (
                                 <div className="flex flex-col items-center gap-0.5 mt-1">
-                                    <LiquidAvatar
-                                        src={node.emp.photo || node.emp.photo_url}
-                                        alt=""
-                                        fallbackText={shortEmployeeName(node.emp)}
-                                        className="w-7 h-7 rounded-full border-2 border-surface-card shadow-md shrink-0 text-caption"
-                                    />
+                                    <AvatarConEstado emp={node.emp} px={28} radio="rounded-full"
+                                        marco="border-2 border-surface-card" className="shadow-md" />
                                     <span className="w-full text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
                             )}
@@ -320,7 +316,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             privado, y la firmada vive en `photo` — `photo_url` es la
                             cruda que se guarda en la base. Es el mismo orden que usa
                             el resto del portal. */}
-                        <LiquidAvatar src={a.photo || a.photo_url} alt="" fallbackText={shortEmployeeName(a)} className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                        <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
                         {shortEmployeeName(a)}
                     </Badge>
                 ))}

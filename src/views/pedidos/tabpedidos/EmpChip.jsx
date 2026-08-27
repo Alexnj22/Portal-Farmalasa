@@ -1,4 +1,4 @@
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
 // La cara y el nombre de una persona, juntos.
@@ -29,17 +29,14 @@ const TONO = {
 
 export default function EmpChip({ emp, label, prefijo, tono = 'content-2', size = 'sm' }) {
     if (!emp) return null;
-    const px = size === 'xs' ? 'w-4 h-4' : 'w-5 h-5';
+    // `px` en número y no en clase: `AvatarConEstado` decide con él si el aro
+    // lleva chip, y desde una clase de Tailwind ese dato no se puede leer.
+    const px = size === 'xs' ? 16 : 20;
     return (
         <span className={`inline-flex items-center gap-1.5 text-label font-medium shrink-0 ${TONO[tono] ?? TONO['content-2']}`}>
             {label && <span className="text-content-3 text-caption uppercase tracking-wide">{label}</span>}
             {prefijo && <span className="text-content-3 text-caption">{prefijo}</span>}
-            <LiquidAvatar
-                src={emp.photo || emp.photo_url}
-                alt=""
-                fallbackText={shortEmployeeName(emp)}
-                className={`${px} rounded-full border border-border-card shadow-sm shrink-0 text-micro`}
-            />
+            <AvatarConEstado emp={emp} px={px} radio="rounded-full" className="shadow-sm" />
             <span className="font-semibold whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     );

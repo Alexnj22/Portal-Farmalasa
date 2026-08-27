@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.808.0 — La foto de una persona lleva su aro, en todo el portal
+
+*«Hazlo canónico, así en futuras cosas ya está listo. Todo lugar que muestre
+quién lo hizo (nombre + apellido) debe llevar foto, y por lo tanto aro. O donde
+esté sólo la foto por alguna razón, aro.»*
+
+Antes de esto eran **5 archivos con aro y 21 sin él**, y esa diferencia no se
+podía ver desde ningún lado: no hay error, no falta ninguna fila, y sólo se nota
+cuando alguien busca a quien no está. Hoy son **26 y ninguno**.
+
+**El canónico acepta las seis formas de persona que existen en el portal.** La
+misma gente llega con `{name, photo}` del store, `{nombre, foto}` de bolsas,
+`{empleado, persona_id}` de un RPC de conexiones, `{created_by_name,
+created_by_photo}` de cotizaciones, `{first_names, last_names}` de ventas y
+`{nombre, photo_url}` de un evento. Mientras cada pantalla armaba su avatar a
+mano eso no molestaba —cada una sabía su forma—; al volverlo canónico había que
+elegir entre reescribir veintiún objetos a mano o que el componente los acepte.
+`normalizarPersona` los acepta, y por eso la migración fue mecánica en vez de
+veintiún oportunidades de equivocarse.
+
+**Migrados:** solicitudes (`CaraPersona` y sus cuatro llamadores), pedidos
+(`EmpChip`, la línea de vida, recepción, apoyo, post-completado), ventas,
+cotizaciones, nómina, cortes, bitácoras, bolsas, conteo de inventario, la
+campana de avisos, recontratar y el reintegro de vacaciones.
+
+**Tres no pueden llevar aro todavía, y está escrito por qué.** El conteo de
+inventario y los dos de bolsas muestran a la persona con nombre y foto pero
+**sus consultas no devuelven el id**, así que el estado no se puede resolver —
+`get_conteo_items` expone `contado_por_nombre` y `contado_por_photo_url` y no
+`contado_por`, y el RPC de conteos de bolsas resuelve el nombre en SQL. La foto
+ya sale por el canónico; falta agregar el id a esas funciones. Queda dicho en el
+sitio, no en un pendiente aparte.
+
+**Y esto es lo que lo vuelve canon y no una tanda: `foto-sin-aro`**, categoría
+nueva de `gate:design`, **en cero y bloqueante**. Marca cualquier `LiquidAvatar`
+suelto fuera del componente que lo envuelve. No protege el pasado —la deuda se
+saldó el mismo día— sino la pantalla número 27.
+
+Antes de creerle el cero se le fabricó la regresión: se le puso un
+`<LiquidAvatar>` a Nómina y el gate lo marcó en la línea correcta y falló. Es la
+regla de la casa — un detector en cero que nunca cazó nada no prueba que no haya
+nada.
+
+De paso, el gate cazó dos restos de la propia migración: `alt` y `fallbackText`
+colgando en los dos archivos de cortes, props que `AvatarConEstado` no acepta y
+que React ignora en silencio.
+
 ## v2.807.1 — El selector de rango también, y «bare» no encoge
 
 `RangeDatePicker` no comparte código con los otros tres y tenía **tres alturas

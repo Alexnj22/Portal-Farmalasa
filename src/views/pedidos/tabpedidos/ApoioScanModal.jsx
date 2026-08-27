@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { Users, Loader2, AlertTriangle, UserCircle2, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import useCapturaDeCarne from '../../../hooks/useCapturaDeCarne';
@@ -146,9 +146,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             </span>
                             {anotados.map(a => (
                                 <Badge key={a.id} variant="success" uppercase={false} className="pl-1">
-                                    <LiquidAvatar src={a.photo || a.photo_url} alt=""
-                                        fallbackText={shortEmployeeName(a)}
-                                        className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
                                     {shortEmployeeName(a)}
                                 </Badge>
                             ))}

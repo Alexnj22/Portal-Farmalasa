@@ -3,10 +3,9 @@ import Badge from '../common/Badge';
 import { Building2, ShieldCheck, Briefcase, Clock, DollarSign } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import LiquidAvatar from '../common/LiquidAvatar';
+import AvatarConEstado from '../common/AvatarConEstado';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
-import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -57,7 +56,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
             {/* TARJETA EMPLEADO */}
             <div className={`${island} flex items-center gap-4`}>
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border-card shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
-                    <LiquidAvatar src={formData.photo || formData.photo_url} alt={formData.name} fallbackText={shortEmployeeName(formData)} className="w-full h-full" />
+                    <AvatarConEstado emp={formData} px={56} radio="rounded-full" marco="" />
                 </div>
                 <div className="min-w-0">
                     <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>

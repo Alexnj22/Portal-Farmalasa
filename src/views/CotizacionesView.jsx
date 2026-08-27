@@ -15,7 +15,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import PortalInput from '../components/common/PortalInput';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import {
@@ -934,8 +934,8 @@ export default function CotizacionesView() {
                     {/* Creador */}
                     {cot.created_by_name && (
                         <div data-surface="card" className="flex items-center gap-3 px-4 py-3">
-                            <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
-                                className="w-8 h-8 rounded-full shrink-0" />
+                            <AvatarConEstado emp={{ id: cot.created_by, name: cot.created_by_name, photo: cot.created_by_photo }}
+                                px={32} radio="rounded-full" />
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Preparada por</p>
                                 <p className="text-body font-black text-content-2">{cot.created_by_name}</p>
@@ -1135,7 +1135,7 @@ export default function CotizacionesView() {
                             <DataCell hideBelow="2xl">
                                 {cot.created_by_name ? (
                                     <div className="flex items-center gap-2">
-                                        <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name} className="w-6 h-6 rounded-full shrink-0" />
+                                        <AvatarConEstado emp={{ id: cot.created_by, name: cot.created_by_name, photo: cot.created_by_photo }} px={24} radio="rounded-full" />
                                         <span className="text-label text-content-2 truncate max-w-[100px]">{cot.created_by_name}</span>
                                     </div>
                                 ) : <span className="text-content-3">—</span>}

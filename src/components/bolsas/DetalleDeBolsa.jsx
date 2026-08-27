@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ban, Image, Printer, ScrollText } from 'lucide-react';
 import Badge from '../common/Badge';
-import LiquidAvatar from '../common/LiquidAvatar';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -66,8 +66,9 @@ const fechaCorta = (f) => {
 
 const COMO = { CARNE: 'carné escaneado', CLAVE: 'usuario y contraseña' };
 
-const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
-    .map((p) => p[0]).join('').toUpperCase();
+// Las iniciales de respaldo se fueron con el avatar suelto: hoy las resuelve
+// `AvatarConEstado` con `shortEmployeeName`, el mismo respaldo del resto
+// del portal.
 
 const ACCION = {
     CREAR: 'Se guardó', SALIDA: 'Salió dinero', REINTEGRO: 'Volvió dinero',
@@ -378,11 +379,8 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                                 <div key={ev.id} className="flex items-start justify-between gap-3 px-1">
                                     <span className="text-caption text-content-2 min-w-0 flex items-start gap-1.5 flex-wrap">
                                         {ev.nombre && (
-                                            <LiquidAvatar
-                                                src={ev.photo_url} alt={ev.nombre}
-                                                fallbackText={iniciales(ev.nombre)}
-                                                className="w-5 h-5 rounded-full shrink-0 text-micro"
-                                            />
+                                            <AvatarConEstado emp={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }}
+                                                px={20} radio="rounded-full" marco="" />
                                         )}
                                         <span className="min-w-0">
                                             <b className="font-bold text-content">{ACCION[ev.accion] || ev.accion}</b>

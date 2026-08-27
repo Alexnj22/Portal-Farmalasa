@@ -1,7 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus } from 'lucide-react';
 import Badge from '../../../components/common/Badge';
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Notice from '../../../components/common/Notice';
 import { shortEmployeeName } from '../../../utils/nameUtils';
@@ -49,12 +49,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     // renglones más arriba, en la línea de tiempo, se veía bien.
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-caption text-content-3">
-            <LiquidAvatar
-                src={emp.photo || emp.photo_url}
-                alt=""
-                fallbackText={shortEmployeeName(emp)}
-                className="w-4 h-4 rounded-full border border-border-card shadow-sm shrink-0 text-micro"
-            />
+            <AvatarConEstado emp={emp} px={16} radio="rounded-full" className="shadow-sm" />
             <span className="whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     ) : null;

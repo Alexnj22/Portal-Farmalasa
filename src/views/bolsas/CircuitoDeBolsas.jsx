@@ -6,7 +6,7 @@ import {
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
@@ -143,7 +143,8 @@ const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
     hour12: true, timeZone: 'America/El_Salvador',
 }) : '');
-const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+// Las iniciales de respaldo las resuelve `AvatarConEstado` con
+// `shortEmployeeName`, el mismo respaldo del resto del portal.
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 const fechaLarga = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
     day: 'numeric', month: 'long', timeZone: 'UTC',
@@ -391,11 +392,7 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                 )}
                 {quien && (
                     <span className="flex items-center gap-1.5 min-w-0">
-                        <LiquidAvatar
-                            src={quien.photo_url} alt={quien.name}
-                            fallbackText={iniciales(quien.name)}
-                            className="w-5 h-5 rounded-full shrink-0 text-micro"
-                        />
+                        <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
                         <span className="text-caption text-content-3 truncate">
                             {firma.verbo} {quien.name}
                         </span>

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { AlertTriangle, Calendar, Clock, FileText, Palmtree } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import LiquidAvatar from '../common/LiquidAvatar';
+import AvatarConEstado from '../common/AvatarConEstado';
 import { useStaffStore } from '../../store/staffStore';
 import { formatDate } from '../../utils/helpers';
 import PortalTextarea from '../common/PortalTextarea';
@@ -53,7 +53,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {emp && (
                 <div data-surface="card" className="p-4 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
-                        <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className="w-full h-full" />
+                        <AvatarConEstado emp={emp} px={56} radio="rounded-full" marco="" />
                     </div>
                     <div>
                         <p className="text-body font-black text-content">{shortEmployeeName(emp)}</p>

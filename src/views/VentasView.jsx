@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import LiquidSelect from '../components/common/LiquidSelect';
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
@@ -991,7 +991,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 <DataCell hideBelow="md">
                                     <div className="flex items-center gap-2">
                                         {emp ? (
-                                            <LiquidAvatar src={emp.photo || emp.photo_url} fallbackText={emp.first_names} className="w-6 h-6 rounded-full shrink-0" />
+                                            <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" />
                                         ) : (
                                             <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
                                                 <Users size={11} className="text-content-3" />
@@ -1369,9 +1369,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell>
                                     <div className="flex items-center gap-2.5">
                                         {r.emp ? (
-                                            <LiquidAvatar src={r.emp.photo || r.emp.photo_url}
-                                                fallbackText={r.emp.first_names}
-                                                className="w-8 h-8 rounded-full shrink-0" />
+                                            <AvatarConEstado emp={r.emp} px={32} radio="rounded-full" marco="" />
                                         ) : (
                                             <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
                                                 <Users size={14} className="text-content-3" />
@@ -1652,8 +1650,7 @@ function VentasPorVendedor({ porVendedor, porSucursal, branches, employees, filt
                         <div key={v.cod_vendedor ?? `sin-codigo-${ci}`}>
                             <div className="flex justify-between items-center mb-1 gap-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names}
-                                        className="w-5 h-5 rounded-full shrink-0" />
+                                    <AvatarConEstado emp={emp} px={20} radio="rounded-full" marco="" />
                                     <span className="text-caption text-content-2 font-semibold truncate">{rotulo}</span>
                                     {!filterBranch && v.branch_id != null && (
                                         <span className="text-micro text-content-3 shrink-0 whitespace-nowrap">
@@ -2487,7 +2484,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             </DataCell>
                                                             <DataCell className="whitespace-nowrap">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
+                                                                    <AvatarConEstado emp={emp} px={20} radio="rounded-full" marco="" />
                                                                     <span className="text-content-2 text-label">{empShort}</span>
                                                                 </div>
                                                             </DataCell>

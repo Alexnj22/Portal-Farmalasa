@@ -1,7 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useRef, useEffect } from 'react';
 import Badge from '../../../components/common/Badge';
-import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 import { Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
 
@@ -60,12 +60,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     igual, pinta las iniciales en vez de un hueco. */}
                 {llegadaEmp && (
                     <span className="flex items-center gap-1.5 text-caption text-content-3">
-                        <LiquidAvatar
-                            src={llegadaEmp.photo || llegadaEmp.photo_url}
-                            alt=""
-                            fallbackText={shortEmployeeName(llegadaEmp)}
-                            className="w-4 h-4 rounded-full border border-border-card shadow-sm shrink-0 text-micro"
-                        />
+                        <AvatarConEstado emp={llegadaEmp} px={16} radio="rounded-full" className="shadow-sm" />
                         <span className="whitespace-nowrap">{shortEmployeeName(llegadaEmp)}</span>
                     </span>
                 )}

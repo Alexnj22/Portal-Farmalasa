@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
-import LiquidAvatar from '../common/LiquidAvatar';
+import AvatarConEstado from '../common/AvatarConEstado';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
 import { formatMoney } from '../../utils/formatNumber';
@@ -44,8 +44,9 @@ const selloDeTiempo = (iso) => (iso ? new Date(iso).toLocaleString('es-SV', {
     hour12: true, timeZone: 'America/El_Salvador',
 }) : '');
 const hhmm = (h) => String(h || '').slice(0, 5);
-const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
-    .map((p) => p[0]).join('').toUpperCase();
+// Las iniciales de respaldo se fueron con el avatar suelto: hoy las resuelve
+// `AvatarConEstado` con `shortEmployeeName`, el mismo respaldo del resto
+// del portal.
 
 const COLUMNAS = [
     /* El folio y la fecha en que se FIRMÓ, en una sola columna. Eran dos, y con
@@ -276,11 +277,10 @@ function Persona({ nombre, foto, className = '' }) {
     if (!nombre) return <span className="text-content-3">—</span>;
     return (
         <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
-            <LiquidAvatar
-                src={foto} alt={nombre}
-                fallbackText={iniciales(nombre)}
-                className="w-5 h-5 rounded-full shrink-0 text-micro"
-            />
+            {/* Sin aro: el RPC de conteos resuelve `contado_por` a un NOMBRE y no
+                devuelve el id, así que el estado no se puede resolver. Declarado
+                en la excepción `foto-sin-aro` de `gate:design`. */}
+            <AvatarConEstado emp={{ name: nombre, photo: foto }} px={20} radio="rounded-full" marco="" />
             <span className="text-caption text-content-2 whitespace-nowrap">{nombre}</span>
         </span>
     );

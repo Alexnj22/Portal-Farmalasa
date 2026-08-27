@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { AlertTriangle, Ban, CheckCircle2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
-import LiquidAvatar from '../common/LiquidAvatar';
+import AvatarConEstado from '../common/AvatarConEstado';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { contraste, diferenciaDelCorte, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
@@ -54,8 +54,8 @@ const selloDeTiempo = (iso) => (iso
     })
     : '');
 
-const iniciales = (nombre) => String(nombre || '?')
-    .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+// Las iniciales de respaldo las resuelve `AvatarConEstado` con
+// `shortEmployeeName`, el mismo respaldo del resto del portal.
 
 const TarjetaCorte = memo(function TarjetaCorte({
     corte,
@@ -199,12 +199,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 reclamar. */}
             {!pendiente && !esZ && (
                 <div className="flex items-center gap-2 pt-2 border-t border-divider">
-                    <LiquidAvatar
-                        src={persona?.photo_url}
-                        alt={persona?.name || 'Quien resolvió el corte'}
-                        fallbackText={iniciales(persona?.name)}
-                        className="w-6 h-6 rounded-full shrink-0 text-micro"
-                    />
+                    <AvatarConEstado emp={persona} px={24} radio="rounded-full" marco="" />
                     <div className="min-w-0 flex-1">
                         <div className="text-caption font-semibold text-content-2 truncate">
                             {persona?.name || 'Sin registrar quién'}

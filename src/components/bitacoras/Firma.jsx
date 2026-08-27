@@ -1,6 +1,6 @@
 import React from 'react';
-import LiquidAvatar from '../common/LiquidAvatar';
-import { employeeInitials, shortEmployeeName } from '../../utils/nameUtils';
+import AvatarConEstado from '../common/AvatarConEstado';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Quién anotó, con su cara.
@@ -31,8 +31,7 @@ export default function Firma({ quien, hora, tarde }) {
     };
     return (
         <span className="flex items-center gap-1.5 min-w-0">
-            <LiquidAvatar src={quien?.foto} alt="" fallbackText={employeeInitials(emp)}
-                className="w-5 h-5 text-micro shrink-0" />
+            <AvatarConEstado emp={emp || quien} px={20} radio="rounded-full" />
             <span className="text-micro text-content-3 truncate">
                 {shortEmployeeName(emp)}
                 {hora && <> · <span className="tabular-nums">{hora}</span></>}

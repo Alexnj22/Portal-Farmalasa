@@ -9,7 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp,
 } from 'lucide-react';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -47,7 +47,7 @@ import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { CajaFecha } from './camposDeConteo';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const PAGE_SIZE_INICIAL = 25;
@@ -330,8 +330,12 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
         // sigue midiendo 44px.
         <Button variant="ghost" size="xs" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
             <span className="flex items-center gap-1.5 min-w-0">
-                <LiquidAvatar src={fotoUrl} alt="" fallbackText={corto || '?'}
-                    className="w-5 h-5 rounded-full shrink-0" />
+                {/* Sin aro: `get_conteo_items` devuelve `contado_por_nombre` y
+                    `contado_por_photo_url` pero NO el id, así que el estado no se
+                    puede resolver. Para que lo lleve hay que agregar el id a esa
+                    función (y a su gemela de vencidos) — está declarado en la
+                    excepción `foto-sin-aro` de `gate:design`. */}
+                <AvatarConEstado emp={{ name: nombre, photo: fotoUrl }} px={20} radio="rounded-full" marco="" />
                 <span className="text-label font-bold text-content-2 truncate">{corto || 'Desconocido'}</span>
                 <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
                 {/* `Contador`, no `Badge`. Su propia documentación lo dice: un chip
@@ -1326,9 +1330,8 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                             return (
                                 <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <LiquidAvatar src={h.contado_por_photo_url} alt=""
-                                            fallbackText={employeeInitials(h.contado_por_nombre)}
-                                            className="w-9 h-9 rounded-full shrink-0" />
+                                        <AvatarConEstado emp={{ name: h.contado_por_nombre, photo: h.contado_por_photo_url }}
+                                            px={36} radio="rounded-full" marco="" />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <p className="text-label font-bold text-content-2 truncate" title={h.contado_por_nombre}>{h.contado_por_nombre ? shortEmployeeName(h.contado_por_nombre) : 'Desconocido'}</p>

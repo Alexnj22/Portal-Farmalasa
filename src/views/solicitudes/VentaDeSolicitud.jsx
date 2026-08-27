@@ -204,7 +204,7 @@ const LaVenta = memo(({ meta, employeesById }) => {
                     <Dato rotulo="Atendió">
                         {vendedor ? (
                             <span className="flex items-center gap-1.5 min-w-0">
-                                <CaraPersona persona={vendedor} className="w-5 h-5 rounded-full" />
+                                <CaraPersona persona={vendedor} px={20} />
                                 <span className="truncate">{shortEmployeeName(vendedor)}</span>
                             </span>
                         ) : (

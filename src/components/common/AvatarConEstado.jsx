@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { estadoDePersona } from '../../utils/estadoDePersona';
+import { estadoDePersona, normalizarPersona } from '../../utils/estadoDePersona';
 import { useStaffStore } from '../../store/staffStore';
 
 /**
@@ -89,8 +89,12 @@ const ICONO = {
   SUSPENDIDO: HelpCircle,
 };
 
-export default function AvatarConEstado({ emp, px, className = '', mostrarChip = true,
+export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
                                           radio = 'rounded-xl', marco = 'border border-border-card' }) {
+  // El portal muestra a la misma gente con seis formas de objeto distintas
+  // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
+  // nota en `utils/estadoDePersona.js`.
+  const emp = useMemo(() => normalizarPersona(crudo), [crudo]);
   // ── El estado se busca en la ficha, aunque quien llame no la tenga ────────
   //
   // La mitad de los sitios donde sale una foto no pasa un empleado completo:

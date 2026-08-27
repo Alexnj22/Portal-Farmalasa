@@ -203,7 +203,7 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                     `z-base` de su `<img>`; se arregló en `LiquidAvatar`, y por eso
                     esta esquina no lleva ningún z-index. */}
                 <div className="relative flex-shrink-0">
-                    <CaraPersona persona={solicitante} className="w-10 h-10 rounded-full" />
+                    <CaraPersona persona={solicitante} px={40} />
                     <span className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full
                                      bg-surface-card border border-border-card flex items-center justify-center">
                         <TypeIcon size={10} strokeWidth={2.5} className="text-content-2" />

@@ -22,7 +22,7 @@ import useResolverCorte from '../../hooks/useResolverCorte';
 import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
 import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
 import Contador from './Contador';
-import LiquidAvatar from './LiquidAvatar';
+import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
 
 /* El diálogo canónico de la solicitud, para el rechazo.
@@ -1049,12 +1049,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 {(quien || sucursal) && (
                                                                     <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
                                                                         {quien && (
-                                                                            <LiquidAvatar
-                                                                                src={quien.photo || quien.photo_url}
-                                                                                alt=""
-                                                                                fallbackText={quien.name}
-                                                                                className="w-5 h-5 rounded-full shrink-0 text-micro"
-                                                                            />
+                                                                            <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
                                                                         )}
                                                                         <span className={`text-caption font-bold truncate ${cx.rowTitleRead}`}>
                                                                             {quien ? shortEmployeeName(quien) : sucursal}

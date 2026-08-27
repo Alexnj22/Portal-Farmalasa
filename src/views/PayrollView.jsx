@@ -15,7 +15,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ListRow from '../components/common/ListRow';
@@ -342,7 +342,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                     <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/10' : ''}>
                                         <DataCell className="whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className="w-8 h-8 rounded-xl shrink-0" />
+                                                <AvatarConEstado emp={emp} px={32} />
                                                 <div>
                                                     <p className="font-black text-content text-label leading-tight">{shortEmployeeName(emp)}</p>
                                                     {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}

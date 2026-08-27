@@ -1943,6 +1943,38 @@ function scanFile(path) {
       }
     }
 
+    // ── `foto-sin-aro` (2026-08-26, CERO ABSOLUTO) ──────────────────────
+    // La foto de una persona se pinta con `AvatarConEstado`, nunca con
+    // `LiquidAvatar` suelto.
+    //
+    // Regla del usuario, dicha en una línea: *«todo lugar que muestre quién lo
+    // hizo (nombre + apellido) debe llevar foto, y por lo tanto aro. O donde
+    // esté sólo la foto por alguna razón, aro.»*
+    //
+    // El aro dice si esa persona está —de vacaciones, incapacitada, con
+    // permiso— y `LiquidAvatar` es la primitiva que sólo sabe pintar la imagen.
+    // Mientras cada pantalla armaba el suyo, el estado aparecía en unas y en
+    // otras no **sin que nada fallara**: no hay error, no falta ninguna fila, y
+    // sólo se nota cuando alguien busca a quien no está. Ese silencio es la
+    // razón del gate — el 2026-08-26 eran 5 archivos con aro y 21 sin él, y la
+    // diferencia no se podía ver desde ningún lado.
+    //
+    // Empieza en CERO y es bloqueante: la migración de los 21 se hizo el mismo
+    // día, así que no hay deuda que heredar. Lo que este detector protege no es
+    // el pasado, es la pantalla número 27.
+    //
+    // La excepción es el propio canónico, que ES quien envuelve la primitiva.
+    if (!path.includes('components/common/AvatarConEstado')) {
+      let mi3;
+      const usoDirecto = /<LiquidAvatar\b/g;
+      while ((mi3 = usoDirecto.exec(sinComentarios2))) {
+        const linea = sinComentarios2.slice(0, mi3.index).split('\n').length;
+        findings.push({ line: linea,
+          label: 'foto de persona sin aro de estado — usar `AvatarConEstado` (DESIGN.md §5)',
+          category: 'foto-sin-aro', text: '<LiquidAvatar' });
+      }
+    }
+
     // ── `tarjeta-a-mano` (2026-07-28) ───────────────────────────────────
     // Un `<div>` que reconstruye `data-surface="card"`: superficie de tarjeta
     // + borde + radio de tarjeta + padding de tarjeta, sin el atributo.

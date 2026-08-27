@@ -4,7 +4,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -509,9 +509,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
                                                 <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
-                                                    <LiquidAvatar src={a.photo || a.photo_url} alt=""
-                                                        fallbackText={shortEmployeeName(a)}
-                                                        className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
                                                     {shortEmployeeName(a)}
                                                 </Badge>
                                             ))}

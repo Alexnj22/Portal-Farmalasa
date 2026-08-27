@@ -76,3 +76,39 @@ export function estadoDePersona(emp) {
     if (!cfg) return null;
     return { clave: ev.type, ...cfg, hasta: fechaDeVuelta(ev.metadata?.endDate ?? ev.endDate) };
 }
+
+// ── Una persona, venga como venga ──────────────────────────────────────────
+//
+// El portal muestra a la misma gente con al menos SEIS formas distintas de
+// objeto, según de qué consulta salga: `{name, photo, photo_url}` del store,
+// `{nombre, foto}` de las bolsas, `{empleado, foto, persona_id}` de un RPC de
+// conexiones, `{created_by_name, created_by_photo}` de cotizaciones,
+// `{first_names, last_names}` de ventas, `{nombre, photo_url}` de un evento.
+//
+// Mientras cada pantalla armaba su `<LiquidAvatar>` a mano eso no molestaba:
+// cada una sabía su forma. Al volver la foto un canónico —decisión del usuario
+// el 2026-08-26, «todo lugar que muestre quién lo hizo debe llevar foto, y por
+// lo tanto aro»— el canónico tiene que aceptar las seis, o migrar veintiún
+// archivos sería reescribir veintiún objetos a mano y garantizar que el
+// veintidós se olvide.
+//
+// El `id` es lo que más importa: con él, el aro se resuelve contra el store
+// aunque el objeto no traiga historial. Sin él no hay aro, y eso es correcto —
+// no se puede afirmar el estado de alguien que no se sabe quién es.
+export function normalizarPersona(p) {
+    if (!p) return null;
+    const nombreCompuesto = [p.first_names, p.last_names].filter(Boolean).join(' ').trim();
+    return {
+        id: p.id ?? p.employee_id ?? p.persona_id ?? p.empleado_id ?? null,
+        name: p.name ?? p.nombre ?? p.empleado ?? p.created_by_name ?? nombreCompuesto ?? null,
+        photo: p.photo ?? p.foto ?? p.created_by_photo ?? p.photo_url ?? null,
+        photo_url: p.photo_url ?? null,
+        first_names: p.first_names,
+        last_names: p.last_names,
+        status: p.status,
+        // `undefined` y no `[]` a propósito: `[]` significa «esta persona no
+        // tiene eventos» y apagaría la búsqueda contra el store, que es
+        // justamente lo que salva a los objetos que no traen historial.
+        history: Array.isArray(p.history) ? p.history : undefined,
+    };
+}

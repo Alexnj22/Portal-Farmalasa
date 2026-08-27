@@ -804,7 +804,7 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                         return (
                             <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
                                 {quien
-                                    ? <CaraPersona persona={quien} className="w-7 h-7 rounded-full mt-0.5" />
+                                    ? <CaraPersona persona={quien} px={28} className="mt-0.5" />
                                     : <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />}
                                 <div className="min-w-0">
                                     <p className="text-label font-black text-success-text">

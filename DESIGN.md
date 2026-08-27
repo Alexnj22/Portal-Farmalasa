@@ -5321,6 +5321,29 @@ de fila era el select. Hoy los tres miden 32, y el piso del dedo sale de
 Medido después, con Chromium sobre el CSS compilado: campo, select y fecha en
 **40px** y en el mismo píxel; compactos, **32** los tres.
 
+#### El cuarto control, y la mitad que le faltaba a `compact`
+
+`RangeDatePicker` no comparte código con los otros tres y tenía **tres alturas
+propias**: 48px el de un rango suelto, 40 el de varios rangos y 44 el compacto.
+Los 48 son los que se veían — sus tres usos en formulario lo ponen al lado de
+campos de 40. Hoy los tres van al alto canónico; lo que `compact` conserva es la
+FORMA de píldora, que es lo suyo dentro de una barra de filtros, no una altura
+aparte.
+
+Y alinear `compact` destapó su otra mitad: **`bare` queda fuera de la
+reducción.** `bare` significa «la caja la dibuja otro» —la píldora de
+`FilterBar`, la barra de paginación, `TimePicker12`—, así que ahí el alto es
+asunto del anfitrión y lo nuestro es sólo el blanco donde se hace clic. Medido:
+de los **46 `bare`** del portal, **28 viven en una píldora de filtro**.
+Encogerlos a 32 no movía un píxel en pantalla —la píldora mide 52 fijos y el
+control va centrado y transparente— pero les recortaba el blanco de 40 a 32 **sin
+que se viera**. Ése es justo el tipo de daño que un barrido de consistencia puede
+hacer creyendo que ordena.
+
+`PeriodPicker` y `PeriodStepper` se miraron y no entran: no tienen campo cerrado
+propio. `SegmentedControl` tampoco — es un riel con opciones y su altura está en
+§25.10.
+
 #### Dos veces se equivocó el barrido, no el portal
 
 - **El detector pedía `tracking-widest`.** Con eso encontró 114 rótulos. Un diff

@@ -144,7 +144,17 @@ const LiquidSelect = ({
     // área de impacto crece a 44 sin agrandar lo pintado—, que es la salida que
     // este mismo archivo ya usa para su aspa y la que documenta §25.6. Estirar
     // el control en cambio rompería la grilla densa donde `compact` vive.
-    const minHeightClass = nano ? 'min-h-[26px]' : compact ? 'min-h-8' : 'min-h-[max(40px,var(--tap-min))]';
+    //
+    // `bare` queda FUERA de esa reducción, y es la mitad que faltaba: `bare`
+    // significa «la caja la dibuja otro» —la píldora de `FilterBar`, la barra de
+    // paginación, `TimePicker12`—, así que ahí el alto es asunto del anfitrión y
+    // el nuestro es sólo el blanco donde se hace clic. Medido: de los 46 `bare`
+    // del portal, 28 viven en una píldora de filtro. Encogerlos a 32 no movía un
+    // píxel en pantalla —la píldora mide 52 y el control va centrado y
+    // transparente— pero les recortaba el blanco de 40 a 32 sin que se viera.
+    const minHeightClass = nano ? 'min-h-[26px]'
+        : (compact && !bare) ? 'min-h-8'
+        : 'min-h-[max(40px,var(--tap-min))]';
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),
@@ -621,7 +631,7 @@ const LiquidSelect = ({
     // nada (ver memoria feedback_tailwind_v4_outline_solid_gotcha). El anillo de
     // foco va con `focus-visible` para que solo aparezca al navegar con teclado.
     const anilloFoco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
-    const pillBaseClasses = `w-full transition-all duration-[var(--dur-slow)] outline-none ${anilloFoco} ${minHeightClass} ${compact ? 'relative blanco-tactil' : ''} flex items-center text-content ${
+    const pillBaseClasses = `w-full transition-all duration-[var(--dur-slow)] outline-none ${anilloFoco} ${minHeightClass} ${(compact && !bare) ? 'relative blanco-tactil' : ''} flex items-center text-content ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
         !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''

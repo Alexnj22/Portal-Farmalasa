@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.807.1 — El selector de rango también, y «bare» no encoge
+
+`RangeDatePicker` no comparte código con los otros tres y tenía **tres alturas
+propias**: 48px el de un rango suelto, 40 el de varios y 44 el compacto. Los 48
+son los que se veían — sus tres usos en formulario lo ponen al lado de campos de
+40. Hoy los tres van al alto canónico; lo que el modo compacto conserva es la
+forma de píldora, que es lo suyo dentro de una barra de filtros, no una altura
+aparte.
+
+**Y alinearlo destapó un daño que yo mismo había hecho la versión anterior.** Al
+unificar el modo compacto en 32px, encogí también los selects marcados `bare` —
+los que van dentro de una píldora de filtro, de la barra de paginación o del
+selector de hora, donde **la caja la dibuja el anfitrión**. Medido: de los 46 del
+portal, **28 viven en una píldora de filtro**. Encogerlos no movía un píxel en
+pantalla —la píldora mide 52 fijos y el control va centrado y transparente— pero
+les recortaba el blanco donde se hace clic de 40 a 32 **sin que se viera**.
+
+Es justo el tipo de daño que un barrido de consistencia puede hacer creyendo que
+ordena: no falla nada, no se ve nada, y el control se volvió más difícil de
+acertar. Hoy `bare` queda fuera de la reducción.
+
+Se miraron además `PeriodPicker`, `PeriodStepper` y `SegmentedControl`: ninguno
+entra — los dos primeros no tienen campo cerrado propio y el tercero es un riel
+con opciones, con su altura documentada aparte.
+
+Medido con Chromium sobre el CSS compilado: campo, select, fecha, rango, rango
+compacto y select `bare`, **los seis en 40px**. El único 32 es el select denso,
+que es el que tiene que medir lo mismo que el campo denso.
+
 ## v2.807.0 — Canónico quiere decir en todas partes
 
 Cerrado el alta de personal, el usuario preguntó lo obvio: *«¿quedó así para

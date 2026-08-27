@@ -623,6 +623,14 @@ const RangeDatePicker = ({
 
     return (
         <>
+            {/* ── El alto es el de los demás campos (2026-08-27) ──────────────
+                Este control tenía TRES alturas propias: 48px el de un rango
+                suelto, 40 el de varios rangos y 44 el compacto. Los 48 son los
+                que se veían: sus tres usos en formulario lo ponen al lado de
+                campos de 40. Hoy los tres van al mismo alto que `PortalInput`,
+                `LiquidSelect` y `LiquidDatePicker`; lo que `compact` conserva es
+                la FORMA de píldora, que es lo suyo dentro de una barra de
+                filtros, no una altura aparte. */}
             {/* Mismo caso que `PeriodPicker`: sin teclado no se podía abrir. */}
             <div ref={triggerRef} onClick={handleOpen}
                 role="button" tabIndex={0} aria-haspopup="dialog" aria-expanded={isOpen}
@@ -635,7 +643,7 @@ const RangeDatePicker = ({
                 // el toque. Mismo caso que el disparador de `PeriodPicker`.
                 className="cursor-pointer rounded-input transition-transform duration-[var(--dur-fast)] active:scale-[0.97] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 {multiRange ? (
-                    <div data-surface="input" className={`flex items-center gap-2 ${compact ? 'h-11 px-2.5 rounded-full' : 'h-[40px] px-3'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
+                    <div data-surface="input" className={`flex items-center gap-2 h-[max(40px,var(--tap-min))] ${compact ? 'px-2.5 rounded-full' : 'px-3'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />
                         <p className={`text-body-sm font-bold ${selectedRanges.length > 0 ? 'text-content-2' : 'text-content-3'}`}>
                             {selectedRanges.length > 0
@@ -644,7 +652,7 @@ const RangeDatePicker = ({
                         </p>
                     </div>
                 ) : (
-                    <div data-surface="input" className={`flex items-center ${compact ? 'gap-2 h-11 px-3 rounded-full' : 'gap-3 h-[48px] px-4'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
+                    <div data-surface="input" className={`flex items-center h-[max(40px,var(--tap-min))] ${compact ? 'gap-2 px-3 rounded-full' : 'gap-3 px-4'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={startDate ? 'text-brand-text' : 'text-content-3'} strokeWidth={2.5} />
                         {/* Un solo día se dice con una sola fecha. Con
                             `inicio → fin` idénticos el rótulo mide el doble y en

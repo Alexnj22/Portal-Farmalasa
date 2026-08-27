@@ -56,8 +56,30 @@ describe('el alto de los controles de formulario', () => {
         expect(fecha).toContain(`h-[${alto}]`);
         // `compact` significa lo mismo en los tres: 32px.
         expect(input).toContain("compact ? 'h-8'");
-        expect(select).toContain("compact ? 'min-h-8'");
+        // `bare` queda fuera de la reducción: ahí la caja es del anfitrión.
+        expect(select).toContain("(compact && !bare) ? 'min-h-8'");
         expect(fecha).toContain("compact ? 'h-8'");
+    });
+
+    it('el selector de RANGO usa el mismo alto que los demás', () => {
+        // Tenía TRES alturas propias: 48px el de un rango suelto, 40 el de
+        // varios y 44 el compacto. Los 48 eran los que se veían, porque sus
+        // tres usos en formulario lo ponen al lado de campos de 40.
+        const rango = leer('src/components/common/RangeDatePicker.jsx');
+        // Se mira el CAMPO CERRADO y no el archivo entero: adentro hay un
+        // `w-11 h-11` que es la casilla de un día del calendario en táctil, y
+        // ésa sí tiene que medir 44.
+        const cerrados = rango.split('\n').filter(l => l.includes('data-surface="input"'));
+        expect(cerrados.length).toBeGreaterThan(0);
+        for (const l of cerrados) expect(l).toContain('h-[max(40px,var(--tap-min))]');
+    });
+
+    it('`bare` no encoge el select: la caja es del anfitrión', () => {
+        // `bare` significa que la píldora de filtro (o la paginación, o
+        // `TimePicker12`) dibuja la superficie. Ahí el alto es asunto del
+        // anfitrión y el nuestro es el blanco donde se hace clic: encogerlo a 32
+        // no movía un píxel en pantalla y recortaba el blanco sin que se viera.
+        expect(select).toContain('(compact && !bare)');
     });
 
     it('el campo de fecha dibuja su propia caja', () => {

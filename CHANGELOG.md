@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.804.0 — Finalizadas dice lo justificado, su cobertura y lo que no tiene respaldo
+
+Auditoría pedida sobre `/bolsas?tab=finalizadas` — «sigo sin ver bien esta
+vista» — y hecha contra producción con la vista abierta. **Los números de la
+pantalla eran todos correctos y aun así no se podía controlar el efectivo.** Lo
+que se construye acá es para el arranque completo del **lunes 31 de agosto**: no
+persigue el histórico, cierra los huecos con los que el circuito iba a arrancar.
+
+### El cero que tapaba $5,786.80
+
+Una diferencia se salda de tres formas —Repone, Retira, Justifica—. De las 16 que
+existían, **las 16 se saldaron con Justificar**, así que la única columna de
+diferencias decía **«Sin resolver: $0.00» en las cuatro tandas**. Cierto: no
+quedaba nada por explicar. Y en dos de esas cuatro filas, «Debía haber» y
+«Contado» se diferenciaban en miles de dólares.
+
+Explicada no es recuperada, y ninguna cifra de la pantalla sumaba lo explicado —
+para enterarse había que abrir tanda por tanda, sala por sala, bolsa por bolsa.
+Ahora hay una columna **«Justificado»** al lado de «Sin resolver», nunca en vez
+de ella: son dos preguntas distintas y una sola cifra no contesta las dos.
+
+### La sala que se quedó esperando, y nada lo decía
+
+Medido: **la tanda del 21-ago cubrió cinco salas de seis**. Salud 4 quedó afuera
+y sus bolsas del 17 se contaron el 26 — **nueve días**, contra tres de promedio
+en las otras cinco. La celda decía `14 → 20 ago`, que es el máximo de lo que
+entró y no dice nada de lo que faltó.
+
+«Días» pasó a ser **«Cobertura»**: `5 salas · 14 → 20 ago`, y **«Faltó Salud 4»**
+cuando alguna se quedó. `salas_fuera` no son «las que no aparecen» —una sala sin
+bolsas ese día no falta— sino las que **tenían bolsas en el rango de esa tanda y
+esperaron**: siguen sin contar, o se contaron en una tanda posterior. Las dos
+condiciones salieron de probarlo: sin la segunda, la tanda del 26 de una sola
+bolsa acusaba a las otras cinco salas de ese día, que ya se habían contado seis
+horas antes. **De 5 falsos positivos a 0, y el hallazgo real sobrevive.**
+
+### Lo que no tiene con qué probarse
+
+Seis de las dieciséis justificaciones se guardaron **sin foto**, por
+**$1,644.56** — la mayor de todas incluida. La fila marcaba con un clip a las que
+**sí** tenían, y una celda sin clip se lee igual que una celda que todavía no se
+miró. Ahora se dice lo que falta: **«N sin respaldo»** en la fila y **«Sin
+respaldo»** en cada bolsa del detalle. Lo mismo con el banco: los dos únicos
+depósitos reales —$19,250 y $16,175— estaban **sin boleta**, y ahora la fila lo
+dice y la sección lo cuenta.
+
+### El aviso se lee con la sección cerrada
+
+Las tres secciones de «Finalizadas» arrancan plegadas, así que un aviso adentro
+no lo ve nadie: es el defecto que venía a corregir. El resumen **«Para mirar en
+estas fechas»** —lo justificado, lo que no tiene respaldo, las salas que
+esperaron— va **fuera** del bloque plegable, y sólo aparece cuando hay algo que
+decir. Anclado en `tests/unit/conteosCoberturaYJustificado.test.jsx`, que prueba
+exactamente eso: que sale con `plegada`.
+
+### Contar cero pregunta una vez
+
+Anotar $0.00 en una bolsa que tenía dinero casi nunca es un conteo: es un retiro
+que no se registró. La bolsa de $1,044.66 contada en cero, y las once de «se
+entregaron $X en concepto de remesas», son la misma cosa — efectivo que salió por
+fuera y se explicó al contar, hasta una semana después. El circuito ya tiene la
+puerta correcta: **«Sacar dinero»** baja el saldo esperado y deja su vale, y
+entonces esas bolsas **cuadran solas**.
+
+Pregunta una vez y **no bloquea**: un candado acá se saltea escribiendo un
+centavo y rompe el caso legítimo de la bolsa que sí vino vacía. Lo que hace falta
+es que quien cuenta recuerde la otra puerta en el momento en que la tiene
+delante. El aviso **no dice el monto** — sin `bolsas_ver_montos` sería revelar
+por atrás la cifra que el permiso esconde.
+
+Migración `20260827033115`. Nueve pruebas nuevas. La auditoría completa, con la
+cobertura sala × día y los ocho hallazgos, quedó en una página aparte.
+
 ## v2.803.2 — Un select y un campo de texto miden lo mismo
 
 Reportado mirando el alta de personal: *«no me gusta que hay distintos tamaños en

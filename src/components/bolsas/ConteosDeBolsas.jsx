@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
+import { AlertTriangle, Building2, CameraOff, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
+import Notice from '../common/Notice';
 import LiquidAvatar from '../common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
@@ -50,14 +51,26 @@ const iniciales = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2)
 const COLUMNAS = [
     { key: 'folio', label: 'Conteo' },
     { key: 'fecha', label: 'Fecha' },
-    // De qué días es la plata que se contó. Es un RANGO derivado de las bolsas
-    // que quedaron adentro, igual que en los depósitos: una tanda cruza días.
-    { key: 'dias', label: 'Días', hideBelow: 'md' },
+    /* COBERTURA, no «Días» (2026-08-26). El rango sigue estando, pero primero va
+       cuántas SALAS entraron, que es la pregunta de quien controla el efectivo:
+       ¿está todo contado?
+
+       El rango solo no la contestaba, y costó una semana sin que nadie lo viera.
+       Medido: la tanda del 21-ago cubrió cinco salas de seis. Salud 4 quedó
+       afuera y sus bolsas del 17 se contaron el 26 —nueve días—, mientras la
+       celda decía «14 → 20 ago», que es cierto. Un rango es el MÁXIMO de lo que
+       entró; no dice nada de lo que faltó. */
+    { key: 'cobertura', label: 'Cobertura', hideBelow: 'md' },
     // La columna que motivó todo esto. Con una sola persona dice su nombre; con
     // varias dice cuántas, y el detalle las lista.
     { key: 'contaron', label: 'Contaron', hideBelow: 'lg' },
     { key: 'esperado', label: 'Debía haber', align: 'right', hideBelow: 'sm' },
     { key: 'contado', label: 'Contado', align: 'right' },
+    /* Lo que ya se EXPLICÓ. Va al lado de «Sin resolver» y no en vez de ella:
+       explicada no es recuperada. Con las dos, una fila que dice «$0.00 sin
+       resolver · −$4,592.24 justificado» cuenta algo completamente distinto de
+       la que decía sólo el cero — y ese cero es el que había. */
+    { key: 'justificado', label: 'Justificado', align: 'right', hideBelow: 'md' },
     // Dice lo que queda SIN RESOLVER, no lo que faltó al contar. Ver `Diferencia`.
     { key: 'diferencia', label: 'Sin resolver', align: 'right' },
     { key: 'cuantas', label: 'Bolsas', align: 'right', hideBelow: 'md' },
@@ -119,9 +132,9 @@ function Diferencia({ valor, size = 'sm' }) {
 function SinResolver({ conteo }) {
     const c = conteo;
     const pendiente = Number(c.pendiente || 0);
-    const firmada = Number(c.diferencia || 0);
     const descuadradas = Number(c.descuadradas || 0);
     const resueltas = Number(c.resueltas || 0);
+    const abiertas = Math.max(0, descuadradas - resueltas);
 
     if (descuadradas === 0 && Math.abs(pendiente) < 0.01) {
         return <Diferencia valor={0} />;
@@ -133,12 +146,84 @@ function SinResolver({ conteo }) {
             ) : (
                 <Diferencia valor={pendiente} />
             )}
-            <span className="text-micro text-content-3 tabular-nums whitespace-nowrap">
-                {resueltas > 0 && `${resueltas} ${resueltas === 1 ? 'resuelta' : 'resueltas'}`}
-                {resueltas > 0 && Math.abs(firmada) >= 0.01 ? ' · ' : ''}
-                {Math.abs(firmada) >= 0.01
-                    && `${firmada < 0 ? '−' : '+'}${formatMoney(Math.abs(firmada))} al contar`}
+            {/* El monto de lo explicado se fue a su propia columna
+                («Justificado», 2026-08-26). Acá queda el CONTEO de bolsas, que
+                es lo que la cifra de al lado no dice: −$4,592.24 puede ser una
+                bolsa o pueden ser once, y once en la misma sala no es un caso
+                suelto. */}
+            {(resueltas > 0 || abiertas > 0) && (
+                <span className="text-micro text-content-3 tabular-nums whitespace-nowrap">
+                    {abiertas > 0 && `${abiertas} sin causa`}
+                    {abiertas > 0 && resueltas > 0 ? ' · ' : ''}
+                    {resueltas > 0 && `${resueltas} ${resueltas === 1 ? 'explicada' : 'explicadas'}`}
+                </span>
+            )}
+        </span>
+    );
+}
+
+/* ── Lo que se EXPLICÓ, y con qué se prueba ─────────────────────────────────
+ *
+ * Nace de la auditoría del 2026-08-26. De las 16 diferencias que existían, las
+ * 16 se saldaron con «Justificar» —ninguna con Repone ni con Retira—, así que
+ * la columna «Sin resolver» decía $0.00 en las cuatro tandas mientras
+ * **$5,786.80 habían salido de las bolsas**. Las dos cosas ciertas: no quedaba
+ * nada por explicar, y ese dinero no volvió.
+ *
+ * Ninguna cifra de la pantalla lo sumaba. Para enterarse había que abrir tanda
+ * por tanda, sala por sala, bolsa por bolsa — o sea, no se enteraba nadie.
+ *
+ * Va en tono de AVISO y no de peligro: una diferencia explicada no es un error,
+ * es un hecho que alguien tiene que poder ver. Y debajo, lo que no tiene con qué
+ * probarse: seis de las dieciséis se guardaron sin foto, por $1,644.56, y la
+ * fila no lo decía porque sólo mostraba el clip de las que SÍ tenían. Un vacío
+ * por «no hay foto» se veía igual que un vacío por «todavía no miré». */
+function Justificado({ conteo }) {
+    const monto = Number(conteo.justificado || 0);
+    const sinRespaldo = Number(conteo.sin_respaldo || 0);
+    if (Math.abs(monto) < 0.01 && sinRespaldo === 0) {
+        return <span className="text-content-3">—</span>;
+    }
+    return (
+        <span className="inline-flex flex-col items-end gap-0.5">
+            <span className="font-bold tabular-nums text-warning-text whitespace-nowrap">
+                {`${monto < 0 ? '−' : '+'}${formatMoney(Math.abs(monto))}`}
             </span>
+            {sinRespaldo > 0 && (
+                <Badge variant="warning" size="sm" icon={CameraOff} className="whitespace-nowrap">
+                    {sinRespaldo === 1 ? '1 sin respaldo' : `${sinRespaldo} sin respaldo`}
+                </Badge>
+            )}
+        </span>
+    );
+}
+
+/* ── Cobertura: cuántas salas entraron, y cuáles se quedaron esperando ──────
+ *
+ * `salas_fuera` no son «las que no aparecen»: son las que TENÍAN bolsas dentro
+ * del rango de esta tanda, no entraron en ella, y esperaron —siguen sin contar,
+ * o se contaron en una tanda posterior—. Una sala sin bolsas ese día no falta, y
+ * acusarla volvería el aviso ruido permanente, que es como se desactiva una
+ * alarma. La regla vive en `get_conteos`, con las dos condiciones y por qué.
+ *
+ * Se nombra a la sala. «Falta 1 sala» obliga a abrir el detalle y comparar seis
+ * nombres contra los que hay; «Faltó Salud 4» es la respuesta. */
+function Cobertura({ conteo }) {
+    const fuera = Array.isArray(conteo.salas_fuera) ? conteo.salas_fuera : [];
+    const salas = Number(conteo.salas || 0);
+    return (
+        <span className="inline-flex flex-col gap-0.5 items-start">
+            <span className="inline-flex items-center gap-1.5 text-caption text-content-2 tabular-nums whitespace-nowrap">
+                <Building2 size={12} className="text-content-3 shrink-0" />
+                {salas} {salas === 1 ? 'sala' : 'salas'}
+                <span className="text-content-3">·</span>
+                {rangoDeDias(conteo.dia_desde, conteo.dia_hasta)}
+            </span>
+            {fuera.length > 0 && (
+                <Badge variant="danger" size="sm" icon={AlertTriangle} className="whitespace-nowrap">
+                    {fuera.length === 1 ? `Faltó ${fuera[0]}` : `Faltaron ${fuera.length} salas`}
+                </Badge>
+            )}
         </span>
     );
 }
@@ -249,9 +334,23 @@ function BolsasDeLaSala({ bolsas }) {
                         </DataCell>
                         <DataCell hideBelow="lg">
                             {b.dif_causa ? (
-                                <span className="text-caption text-content-2">
-                                    {b.dif_causa}
-                                    {b.dif_por ? <span className="text-content-3"> · {b.dif_por}</span> : null}
+                                <span className="inline-flex flex-col gap-0.5 items-start">
+                                    <span className="text-caption text-content-2">
+                                        {b.dif_causa}
+                                        {b.dif_por ? <span className="text-content-3"> · {b.dif_por}</span> : null}
+                                    </span>
+                                    {/* Lo que FALTA se dice; lo que está no se
+                                        anuncia. Antes era al revés —un clip en
+                                        las que tenían foto— y una celda sin clip
+                                        se lee igual que una celda que todavía no
+                                        se miró. Seis de dieciséis estaban así,
+                                        por $1,644.56. */}
+                                    {!b.con_respaldo && (
+                                        <Badge variant="warning" size="sm" icon={CameraOff}
+                                            className="whitespace-nowrap">
+                                            Sin respaldo
+                                        </Badge>
+                                    )}
                                 </span>
                             ) : (
                                 <span className="text-content-3">—</span>
@@ -445,7 +544,15 @@ export default function ConteosDeBolsas({
     const totales = useMemo(() => filas.reduce((a, c) => ({
         contado: a.contado + Number(c.total_contado || 0),
         abiertas: a.abiertas + Math.max(0, Number(c.descuadradas || 0) - Number(c.resueltas || 0)),
-    }), { contado: 0, abiertas: 0 }), [filas]);
+        /* Lo EXPLICADO del período, sumado. Es la cifra que no existía en
+           ninguna parte de la pantalla: cada tanda la tenía adentro y nadie las
+           juntaba, así que $5,786.80 que salieron de las bolsas no aparecían en
+           ningún renglón. */
+        justificado: a.justificado + Number(c.justificado || 0),
+        sinRespaldo: a.sinRespaldo + Number(c.sin_respaldo || 0),
+        // Salas que se quedaron esperando en alguna tanda del período.
+        salasFuera: a.salasFuera + (Array.isArray(c.salas_fuera) ? c.salas_fuera.length : 0),
+    }), { contado: 0, abiertas: 0, justificado: 0, sinRespaldo: 0, salasFuera: 0 }), [filas]);
 
     return (
         <section className="space-y-2">
@@ -467,6 +574,40 @@ export default function ConteosDeBolsas({
                     )}
                 </span>
             </div>
+            {(Math.abs(totales.justificado) >= 0.01 || totales.sinRespaldo > 0 || totales.salasFuera > 0) && (
+                <Notice variant={totales.salasFuera > 0 ? 'danger' : 'warning'}
+                    icon={AlertTriangle} bloque className="mx-1">
+                    <span className="font-bold">Para mirar en estas fechas</span>
+                    <span className="block mt-1.5 space-y-1 font-normal">
+                        {Math.abs(totales.justificado) >= 0.01 && (
+                            <span className="block text-caption text-content-2">
+                                <b className="font-bold text-content tabular-nums">
+                                    {`${totales.justificado < 0 ? '−' : '+'}${formatMoney(Math.abs(totales.justificado))}`}
+                                </b>
+                                {' '}salieron de las bolsas y quedaron explicados con una nota.
+                                Explicado no es recuperado.
+                            </span>
+                        )}
+                        {totales.sinRespaldo > 0 && (
+                            <span className="block text-caption text-content-2">
+                                <b className="font-bold text-content tabular-nums">{totales.sinRespaldo}</b>
+                                {totales.sinRespaldo === 1
+                                    ? ' de esas notas no tiene foto de respaldo.'
+                                    : ' de esas notas no tienen foto de respaldo.'}
+                            </span>
+                        )}
+                        {totales.salasFuera > 0 && (
+                            <span className="block text-caption text-content-2">
+                                {totales.salasFuera === 1
+                                    ? 'Una sala se quedó fuera de su tanda y se contó después.'
+                                    : `${totales.salasFuera} salas se quedaron fuera de su tanda y se contaron después.`}
+                                {' '}Está marcado en la columna de cobertura.
+                            </span>
+                        )}
+                    </span>
+                </Notice>
+            )}
+
             {!plegada && (<>
             <p className="text-caption text-content-3 px-1">
                 Cada tanda que se firmó, con lo que debía haber, lo que se contó y quién la contó.
@@ -475,13 +616,22 @@ export default function ConteosDeBolsas({
                     : `${totales.abiertas} bolsas no cuadraron y siguen sin causa anotada`} en estas fechas.`}
             </p>
 
+            {/* ── Lo que hay que mirar, antes de la tabla ────────────────────
+                Tres hechos que la tabla tiene fila por fila y que nadie iba a
+                sumar de memoria. Van como aviso y no como baldosa porque no son
+                una métrica del período: son una pregunta pendiente.
+
+                Sale sólo cuando hay algo que decir. Un aviso permanente deja de
+                leerse, y las tres condiciones son justamente las que deberían
+                ser cero en una semana sana. */}
+
             <DataTable
                 columns={COLUMNAS}
                 loading={cargando}
                 /* El toque de la fila va a un destino de verdad —el cuadre de la
                    tanda y sus bolsas—, no a la hoja genérica. */
                 movil={{ usarAccionDeFila: true }}
-                minWidth="640px"
+                minWidth="780px"
                 empty={{ icon: Scale, message: conteoId
                     ? 'Ese conteo no cae en estas fechas'
                     : 'Sin conteos firmados en estas fechas' }}
@@ -493,9 +643,7 @@ export default function ConteosDeBolsas({
                         </DataCell>
                         <DataCell>{fechaLarga(c.fecha)}</DataCell>
                         <DataCell hideBelow="md">
-                            <span className="text-caption text-content-2 tabular-nums">
-                                {rangoDeDias(c.dia_desde, c.dia_hasta)}
-                            </span>
+                            <Cobertura conteo={c} />
                         </DataCell>
                         <DataCell hideBelow="lg">
                             {/* Con más de dos, la cara de las dos primeras y el
@@ -523,6 +671,9 @@ export default function ConteosDeBolsas({
                             <span className="font-bold tabular-nums text-content">
                                 {formatMoney(c.total_contado)}
                             </span>
+                        </DataCell>
+                        <DataCell align="right" hideBelow="md">
+                            <Justificado conteo={c} />
                         </DataCell>
                         <DataCell align="right">
                             <SinResolver conteo={c} />

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Ban, ChevronDown, ChevronUp, Image as ImageIcon, Landmark, Package, Paperclip } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronDown, ChevronUp, Image as ImageIcon, Landmark, Package, Paperclip } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
@@ -377,7 +377,20 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
         .reduce((a, d) => ({
             banco: a.banco + Number(d.monto_deposito || 0),
             efectivo: a.efectivo + Number(d.monto_efectivo || 0),
-        }), { banco: 0, efectivo: 0 }), [lista]);
+            /* Los que fueron al banco y NO tienen boleta. Cuadrar contra el
+               estado de cuenta es lo único para lo que este registro existe, y
+               ese es el momento en que hace falta el papel.
+
+               Medido el 2026-08-26: los dos únicos depósitos reales —$19,250 y
+               $16,175— estaban sin comprobante. El campo se había agregado el
+               día anterior y la fila sólo marcaba a los que SÍ lo tenían: un
+               clip ausente no se lee como «falta», se lee como nada. */
+            sinBoleta: a.sinBoleta
+                + ((Number(d.monto_deposito || 0) >= 0.01 && !d.comprobante_url) ? 1 : 0),
+            sinBoletaMonto: a.sinBoletaMonto
+                + ((Number(d.monto_deposito || 0) >= 0.01 && !d.comprobante_url)
+                    ? Number(d.monto_deposito || 0) : 0),
+        }), { banco: 0, efectivo: 0, sinBoleta: 0, sinBoletaMonto: 0 }), [lista]);
 
     return (
         <section className="space-y-2">
@@ -399,12 +412,23 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                     )}
                 </span>
             </div>
+            {totales.sinBoleta > 0 && (
+                <Notice variant="warning" icon={AlertTriangle} className="mx-1">
+                    {totales.sinBoleta === 1
+                        ? 'Un depósito al banco no tiene su boleta'
+                        : `${totales.sinBoleta} depósitos al banco no tienen su boleta`}
+                    {` (${formatMoney(totales.sinBoletaMonto)}).`}
+                    {' '}Se anexa abriendo el cierre.
+                </Notice>
+            )}
+
             {!plegada && (<>
             <p className="text-caption text-content-3 px-1">
                 Cada cierre del efectivo contado: lo que fue al banco —para cuadrar contra el
                 estado de cuenta— y lo que se entregó en mano.
                 {totales.efectivo >= 0.01 && ` En mano: ${formatMoney(totales.efectivo)}.`}
             </p>
+
 
             <DataTable
                 columns={COLUMNAS}
@@ -424,9 +448,17 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                                 </span>
                                 {d.anulado_at && <Badge variant="neutral" size="sm">Corregido</Badge>}
                                 {d.destino === 'ANTERIOR' && <Badge variant="neutral" size="sm">Anterior</Badge>}
-                                {d.comprobante_url && (
+                                {d.comprobante_url ? (
                                     <Paperclip size={12} className="text-content-3 shrink-0"
                                         aria-label="Con comprobante del banco" />
+                                ) : (
+                                    /* Sólo donde la boleta EXISTE: un cierre en
+                                       mano o `ANTERIOR` no tiene banco del cual
+                                       traerla, y pedírsela sería un aviso que
+                                       nadie puede apagar. */
+                                    Number(d.monto_deposito || 0) >= 0.01 && !d.anulado_at && (
+                                        <Badge variant="warning" size="sm">Sin boleta</Badge>
+                                    )
                                 )}
                             </span>
                         </DataCell>

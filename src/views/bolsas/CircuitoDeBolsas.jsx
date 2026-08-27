@@ -450,9 +450,34 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
     const dif = valido ? Math.round((n - saldoDe(bolsa)) * 100) / 100 : null;
     const cuadraLoEscrito = dif !== null && Math.abs(dif) < 0.01;
 
-    const cerrar = () => { setAbierto(false); setValor(''); };
+    /* ── Contar CERO sobre una bolsa que tenía dinero ───────────────────────
+     *
+     * Casi nunca es un conteo: es un retiro que no se registró. Medido en la
+     * auditoría del 2026-08-26 — una bolsa entera de $1,044.66 anotada en $0.00
+     * y saldada con «Retiró Don Rutilio la totalidad del corte», sin foto. Once
+     * más de la misma familia dicen «se entregaron $X en concepto de remesas»:
+     * efectivo que salió por fuera y se explicó al contar, hasta una semana
+     * después.
+     *
+     * El circuito ya tiene el camino correcto —«Sacar dinero», que baja el saldo
+     * esperado y deja su vale—. Si se usa, esas bolsas CUADRAN: no hay
+     * diferencia que justificar porque lo esperado ya es menos.
+     *
+     * Pregunta una vez y NO bloquea. Un candado acá se saltea escribiendo un
+     * centavo, y de paso rompe el caso legítimo —la bolsa que de verdad vino
+     * vacía—; lo que hace falta es que quien cuenta se acuerde de que existe la
+     * otra puerta, en el momento en que la tiene delante. Ver
+     * [[feedback_una_verificacion_que_traba_la_accion_no_se_hace]].
+     *
+     * El aviso NO dice el monto: sin `bolsas_ver_montos` sería revelar por la
+     * puerta de atrás la cifra que el permiso esconde. */
+    const [confirmandoCero, setConfirmandoCero] = useState(false);
+    const cuentaCeroConSaldo = valido && n === 0 && saldoDe(bolsa) >= 0.01;
+
+    const cerrar = () => { setAbierto(false); setValor(''); setConfirmandoCero(false); };
     const guardar = () => {
         if (!valido) return;
+        if (cuentaCeroConSaldo && !confirmandoCero) { setConfirmandoCero(true); return; }
         onContar(bolsa, n);
         cerrar();
     };
@@ -607,7 +632,8 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                 name={`contado-${bolsa.id}`}
                 aria-label={`Cuánto se contó en la bolsa ${bolsa.folio}`}
                 inputMode="decimal" maskType="DECIMAL"
-                value={valor} onChange={(e) => setValor(e.target.value)}
+                value={valor}
+                onChange={(e) => { setValor(e.target.value); setConfirmandoCero(false); }}
                 onKeyDown={alTeclear}
                 /* Sin `bolsas_ver_montos` el marcador de posición NO puede ser
                    lo que debe haber: sería decir la cifra que el permiso
@@ -633,11 +659,22 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                 <Button variant="ghost" size="sm" onClick={cerrar}>
                     Cancelar
                 </Button>
-                <Button variant="primary" size="sm" loading={ocupado} disabled={!valido}
-                    onClick={guardar}>
-                    Anotar
+                <Button variant={confirmandoCero ? 'secondary' : 'primary'} size="sm"
+                    loading={ocupado} disabled={!valido} onClick={guardar}>
+                    {confirmandoCero ? 'Sí, vino vacía' : 'Anotar'}
                 </Button>
             </div>
+
+            {confirmandoCero && (
+                <Notice variant="warning" icon={AlertTriangle} bloque className="w-full">
+                    <span className="font-bold">Anotar cero dice que la bolsa vino vacía</span>
+                    <span className="block mt-1 font-normal text-content-2">
+                        Si alguien retiró ese efectivo, eso es una salida y va con su vale:
+                        se registra desde «Sacar dinero» en la bolsa, y entonces el conteo cuadra
+                        solo. Anotarlo aquí deja una diferencia que hay que explicar a mano.
+                    </span>
+                </Notice>
+            )}
         </div>
     );
 }

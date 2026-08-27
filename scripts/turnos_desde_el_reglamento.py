@@ -1,6 +1,25 @@
 #!/usr/bin/env python3
 """
-Los turnos salen del REGLAMENTO INTERNO, no de la cabeza de nadie.
+Lo que el REGLAMENTO INTERNO dice de los horarios — para el CONTRATO, no para el
+catálogo del módulo.
+
+⚠️ ESTO NO ALIMENTA LA TABLA `shifts`. El 27-ago-2026 cargué las 39 franjas de
+este reglamento en el catálogo del módulo de horarios y estaba MAL — corrección
+del usuario: «eso debe estar sólo para contratos, los shifts son otros, muy
+distintos». Se borraron.
+
+Son dos cosas que se parecen y no lo son:
+
+  · el REGLAMENTO fija el marco legal —los turnos aprobados por la Dirección
+    General de Trabajo, que rotan cada quince días— y de ahí sale la frase que
+    va en el contrato, por remisión (`horarioParaElContrato` en
+    `src/utils/contrato.js`);
+  · el CATÁLOGO del módulo de horarios es operativo: lo arma Talento Humano con
+    las franjas que de verdad se trabajan, y de ahí salen los horarios semanales
+    y la comparación contra la marcación del kiosco.
+
+Este script sirve para LEER el reglamento —al reformarlo, para redactar, para
+verificar—. No escribe en la base y no debe hacerlo.
 
 ── Por qué existe este script ──────────────────────────────────────────────
 

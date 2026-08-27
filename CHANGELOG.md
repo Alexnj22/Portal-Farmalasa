@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.818.1 — El catálogo de turnos es del módulo, no del reglamento
+
+Corrección del usuario: *«eso debe estar sólo para contratos, los shifts son
+otros, muy distintos»*.
+
+Ayer cargué las 39 franjas del reglamento en la tabla `shifts` — que **es el
+catálogo del módulo de horarios**. Estaba mal. **Las 39 se borraron**: el catálogo
+vuelve a cero y lo arma Talento Humano, que es de quien es.
+
+**Son dos cosas que se parecen y no lo son:**
+
+| | de dónde sale | para qué sirve |
+|---|---|---|
+| **Reglamento** | Art. 18, aprobado por la Dirección General de Trabajo | la frase que va en el **contrato**, por remisión |
+| **Catálogo** | lo arma Talento Humano en el módulo | los horarios semanales y la comparación contra la marcación del kiosco |
+
+El primero es el marco legal —turnos que rotan cada quince días—; el segundo es
+operativo, con las franjas que de verdad se trabajan. Confundirlos me llevó a
+escribir en un catálogo que no me correspondía.
+
+**Nada del contrato se cayó con el borrado**, y eso no fue suerte:
+`horarioParaElContrato` deriva su frase del nombre del área y **no consulta la
+tabla `shifts`** — verificado, cero referencias. Por eso el contrato sigue
+diciendo su horario con el catálogo vacío.
+
+El extractor (`scripts/turnos_desde_el_reglamento.py`) se queda, con la
+advertencia escrita arriba de todo: sirve para **leer** el reglamento —al
+reformarlo, para redactar, para verificar— y no escribe en la base ni debe
+hacerlo.
+
 ## v2.818.0 — El contrato dice el horario por remisión, y Bodega toma el de Administración
 
 **Bodega ya tiene turnos** — los mismos de Administración, como pidió el usuario.

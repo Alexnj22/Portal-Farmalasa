@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.821.2 — Horarios: el mapa de auditoría al día
+
+`auditoria/areas.mjs` decía cosas que ya no existen: el cron
+`auto-copy-roster-saturday` (apagado en v2.820.0) y los tres formularios
+borrados en v2.821.0. Y le faltaba `src/utils/turnoDelDia.js`.
+
+No es contabilidad: **lo que no está mapeado no entra en ningún porcentaje**, y
+un cron declarado que ya no corre hace fallar `gate:auditoria` sin decir por qué
+—lo cazaron las pruebas del propio candado, que es para lo que existen.
+
 ## v2.821.1 — Horarios: la documentación del área
 
 Lo que las dos tandas anteriores cambiaron, escrito donde se busca.

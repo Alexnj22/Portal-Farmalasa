@@ -203,7 +203,12 @@ export const AREAS = [
         ],
         tablas: ['employees', 'employee_branches', 'employee_documents', 'employee_events',
                  'practicantes', 'education_catalog_entries'],
-        edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry', 'leer-dui'],
+        // `subir-foto-de-captura` la creó otra sesión el 2026-08-27 y quedó sin
+        // mapear, lo que bloquea el gate para todo el mundo. Va acá porque el
+        // efecto es una foto de PERSONAL: escribe en el bucket `empleados`.
+        // Si esa sesión la ubica en otro lado, gana su decisión.
+        edge: ['apply-scheduled-employee-events', 'check-employee-doc-expiry', 'leer-dui',
+               'subir-foto-de-captura'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md'],
     },
@@ -233,15 +238,21 @@ export const AREAS = [
             'src/views/SchedulesView.jsx', 'src/views/schedule-tabs/', 'src/views/VacationPlanView.jsx',
             'src/data/schedules.js', 'src/data/vacationPlans.js',
             'src/store/slices/vacationPlanSlice.js',
-            'src/utils/scheduleHelpers.js', 'src/utils/semana.js',
-            'src/components/forms/FormPlanificador.jsx', 'src/components/forms/FormTurnos.jsx',
-            'src/components/forms/FormAiSchedulerPreview.jsx', 'src/components/forms/FormWfmAnalytics.jsx',
+            'src/utils/scheduleHelpers.js', 'src/utils/semana.js', 'src/utils/turnoDelDia.js',
+            // `FormPlanificador`, `FormTurnos` y `FormAiSchedulerPreview` se
+            // borraron el 2026-08-27: ningún `openModal` los abría.
+            'src/components/forms/FormWfmAnalytics.jsx',
             'src/components/forms/GraficaAfluencia.jsx', 'src/components/forms/FormVacationRecall.jsx',
         ],
         tablas: ['employee_rosters', 'shifts', 'holidays', 'schedule_coverage',
                  'vacation_plans', 'vacation_plan_headers', 'wfm_snapshots'],
         edge: ['auto-copy-weekly-roster', 'generate-vacation-plan', 'wfm-ai-scheduler'],
-        crons: ['auto-copy-roster-saturday', 'auto-copy-weekly-roster', 'roster-missing-alert-saturday',
+        // `auto-copy-roster-saturday` se apagó el 2026-08-27: era un duplicado de
+        // `auto-copy-weekly-roster` a las 06:00 UTC que copiaba ANTES de que la
+        // alarma de las 15:00 preguntara si faltaban horarios — así que esa
+        // alarma no podía sonar nunca, y ninguna corrección hecha el sábado se
+        // propagaba.
+        crons: ['auto-copy-weekly-roster', 'roster-missing-alert-saturday',
                 'wfm_weekly_snapshot'],
         docs: ['docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md'],
     },

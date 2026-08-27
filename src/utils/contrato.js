@@ -85,6 +85,50 @@ export function estadoRemisionMtps(datos, hoy = new Date()) {
 }
 
 /**
+ * ── El OTRO plazo de ocho días, y no es el del Ministerio ───────────────────
+ *
+ * El portal ya vigilaba uno: desde la FIRMA, ocho días para remitirle el
+ * ejemplar a la Dirección General de Trabajo. Pero el reglamento interno abre un
+ * segundo reloj, antes que ése, y nadie lo miraba. Su **Art. 11**:
+ *
+ *   «El contrato individual de trabajo se firmará en los primeros OCHO DÍAS a
+ *    partir que el(la) trabajador(a) ha comenzado a laborar para la Empresa.»
+ *
+ * O sea que los relojes son dos y en cadena: de **inicio de labores** a firma, y
+ * de **firma** a Ministerio. Vigilar sólo el segundo deja pasar el caso peor —
+ * alguien trabajando hace un mes sin contrato firmado— porque mientras no haya
+ * firma el aviso del Ministerio dice, con toda razón, que el plazo «todavía no
+ * empezó a contar».
+ *
+ * @returns `aplica:false` mientras no haya fecha de inicio, o si ya se firmó:
+ *   un plazo cumplido no necesita cuenta regresiva.
+ */
+export function estadoFirmaDelContrato(datos, hoy = new Date()) {
+    const inicio = fechaLocal(datos?.hire_date);
+    const firma = fechaLocal(datos?.contrato_fecha_celebracion);
+
+    if (esContratoCivil(datos?.contract_type)) {
+        return { aplica: false, motivo: 'Un contrato de servicios profesionales es civil: no lo alcanza este plazo.' };
+    }
+    if (!inicio) {
+        return { aplica: false, motivo: 'El plazo empieza el día que la persona comienza a trabajar.' };
+    }
+    if (firma) return { aplica: true, firmado: true, fecha: datos.contrato_fecha_celebracion };
+
+    const limite = new Date(inicio.getTime() + PLAZO_MTPS_DIAS * DIA_MS);
+    const cero = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const dias = Math.round((limite - cero) / DIA_MS);
+
+    return {
+        aplica: true,
+        firmado: false,
+        diasRestantes: dias,
+        vencido: dias < 0,
+        limite: `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, '0')}-${String(limite.getDate()).padStart(2, '0')}`,
+    };
+}
+
+/**
  * Art. 126 — formas de estipulación del salario.
  *
  * No es una etiqueta: el Art. 130 hace depender de ella CUÁNDO el pago se
@@ -154,6 +198,20 @@ export const REGLAMENTO_LUGAR_PAGO =
     + 'en las oficinas de la empresa o en su lugar de trabajo.';
 
 export const MEDIO_PAGO_OPTIONS = [
-    { value: 'EFECTIVO',      label: 'Efectivo' },
+    // ── Sin «Efectivo», y no es una omisión ─────────────────────────────────
+    //
+    // El Código lo permitiría —lo que exige el Art. 120 es moneda de curso
+    // legal—, pero el REGLAMENTO INTERNO de esta empresa ya eligió, y su Art. 40
+    // está aprobado por la Dirección General de Trabajo:
+    //
+    //   «Los métodos de pago serán por medio de transferencia bancaria
+    //    electrónica o cheque.»
+    //
+    // Un catálogo con «Efectivo» dejaba estipular en el contrato un medio que el
+    // propio reglamento de la empresa no contempla — y el contrato y el
+    // reglamento se leen juntos en una inspección. La ley pone el piso; el
+    // reglamento, que la empresa escribió y le aprobaron, pone el suyo más
+    // arriba. Lo que manda acá es el más alto.
     { value: 'TRANSFERENCIA', label: 'Transferencia o depósito' },
+    { value: 'CHEQUE',        label: 'Cheque' },
 ];

@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.815.0 — El reglamento interno también manda: once documentos y el plazo de la firma
+
+Con el Código de Trabajo ya en el repo, faltaba leer el otro documento que
+obliga: el **Reglamento Interno de Trabajo**, aprobado por la Dirección General
+de Trabajo. Su Capítulo II es exactamente «Requisitos de Ingreso», y de ahí
+salieron tres cosas.
+
+### Once documentos que el portal no pedía
+
+El **Art. 8** lista lo que toda persona debe presentar para entrar, y **ninguno
+tenía dónde guardarse**. El expediente pedía las acreditaciones profesionales
+—que son de unos pocos— y no los documentos que se le piden a todo el mundo:
+
+solicitud de empleo · currículum · **certificado médico** (heces, orina y
+hemograma) · solvencia de la PNC · copia del NIT · copia de la tarjeta del ISSS ·
+copia de la tarjeta de la AFP · referencias personales y familiares · referencias
+de trabajos anteriores · certificados de estudio · pasaporte o carné de residente.
+
+Los dos últimos aparecen solos cuando corresponde: los estudios, si hay nivel
+académico; el pasaporte, si la nacionalidad no es salvadoreña — y **no** si nadie
+contestó la nacionalidad, porque «sin contestar» no es «extranjero».
+
+El certificado médico del Art. 8 **no es** el examen del Art. 117 que el portal ya
+tenía: ése es sólo de menores y se repite cada año.
+
+### El otro plazo de ocho días, el que nadie miraba
+
+El portal vigilaba uno: de la **firma** al Ministerio. El reglamento abre otro
+**antes** (su Art. 11): *«El contrato individual de trabajo se firmará en los
+primeros ocho días a partir que el trabajador ha comenzado a laborar.»*
+
+Son dos relojes en cadena y sólo se miraba el segundo — así el caso peor pasaba
+en silencio: **alguien trabajando hace un mes sin contrato firmado**. Mientras no
+hay firma, el aviso del Ministerio dice, con toda razón, que su plazo «todavía no
+empezó a contar».
+
+### «Efectivo» sale del medio de pago
+
+El Código lo permitiría —lo que exige es moneda de curso legal— pero el
+reglamento de esta empresa ya eligió, y su Art. 40 está aprobado: *«Los métodos
+de pago serán por medio de transferencia bancaria electrónica o cheque.»* Un
+catálogo con «Efectivo» dejaba estipular en el contrato un medio que el propio
+reglamento no contempla, y los dos documentos se leen juntos en una inspección.
+**La ley pone el piso; el reglamento, que la empresa escribió y le aprobaron,
+pone el suyo más arriba — y manda el más alto.**
+
+### Lo que se revisó y ya estaba bien
+
+- **La recontratación antes de un año no lleva período de prueba** (Art. 10 del
+  reglamento, Art. 28 del Código). El portal ya lo dice.
+- **El portal no pide nada de lo prohibido.** El Art. 8 prohíbe exigir prueba de
+  embarazo, examen de VIH-SIDA y constancia de no afiliación sindical. Verificado
+  campo por campo: no hay ninguno.
+
+El reglamento queda en `docs/legal/` como texto plano, junto al Código.
+
 ## v2.814.1 — El lugar de pago sale del reglamento, no de un texto libre
 
 La pregunta fue *«legalmente el lugar de pago, ¿cómo lo espera ver la ley?»*. Y

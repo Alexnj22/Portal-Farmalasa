@@ -7,7 +7,7 @@ import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
-    estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
+    estadoRemisionMtps, estadoFirmaDelContrato, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
@@ -895,6 +895,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const edad = calcAge(formData?.birth_date);
         return edad !== null && edad < MINOR_AGE;
     })();
+    // El reglamento interno le pide pasaporte o carné de residente a quien no es
+    // salvadoreño (su Art. 8, letra g). Sale de la nacionalidad que ya está
+    // escrita: una casilla aparte sería el mismo dato preguntado dos veces, y el
+    // día que se contradigan nadie sabría cuál vale.
+    //
+    // Sin nacionalidad NO se pide el documento: «nadie contestó» no es
+    // «extranjero», y pedirle un pasaporte a quien todavía no dijo de dónde es
+    // convierte un campo vacío en un pendiente falso.
+    const esExtranjero = !!formData?.nationality &&
+        !/salvadore/i.test(String(formData.nationality));
     // Se suben en la sección Acreditaciones, no en Documentación: ahí el
     // archivo es el que trae el número y el vencimiento.
     const EN_ACREDITACIONES = ['SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
@@ -924,7 +934,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // por zona muerta temporal, no un `undefined` benigno. `pendientes`
         // hace lo mismo por el mismo motivo.
         ...(esMenorParaDocumentos ? [{ key: 'EXAMEN_MEDICO', label: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)' }] : []),
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
+
+        // ── Lo que el reglamento interno pide para ingresar (su Art. 8) ─────
+        //
+        // La lista estaba completa en el reglamento aprobado por la Dirección
+        // General de Trabajo, y NINGUNO tenía dónde guardarse acá: el expediente
+        // pedía las acreditaciones profesionales —que son de unos pocos— y no
+        // los documentos que se le piden a TODA persona que entra.
+        //
+        // Van al final y sin condición: son de todos. Los tres primeros son los
+        // que el reglamento nombra sin salvedad; los que llevan «si aplica» la
+        // llevan porque el propio Art. 8 la escribe.
+        { key: 'SOLICITUD_EMPLEO',   label: 'Solicitud de empleo' },
+        { key: 'CURRICULUM',         label: 'Currículum u hoja de vida' },
+        // El certificado médico del Art. 8 NO es el examen del Art. 117 (ése es
+        // sólo de menores y se repite cada año). Éste es de ingreso y el
+        // reglamento dice qué tiene que traer adentro.
+        { key: 'CERTIFICADO_MEDICO', label: 'Certificado médico — heces, orina y hemograma' },
+        { key: 'SOLVENCIA_PNC',      label: 'Solvencia de la Policía Nacional Civil' },
+        { key: 'COPIA_NIT',          label: 'Copia del NIT' },
+        { key: 'TARJETA_ISSS',       label: 'Copia de la tarjeta del ISSS' },
+        { key: 'TARJETA_AFP',        label: 'Copia de la tarjeta de la AFP' },
+        { key: 'REFERENCIAS',        label: 'Referencias personales y familiares' },
+        { key: 'REFERENCIAS_LABORALES', label: 'Referencias de trabajos anteriores (si aplica)' },
+        ...(formData.education_level ? [{ key: 'CERTIFICADO_ESTUDIOS', label: 'Certificados de estudio' }] : []),
+        // Extranjero: el reglamento pide pasaporte o carné de residente. Sale de
+        // la nacionalidad que ya está escrita y no de una casilla aparte.
+        ...(esExtranjero ? [{ key: 'PASAPORTE_RESIDENCIA', label: 'Pasaporte o carné de residente' }] : []),
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente, formData.education_level, esExtranjero]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -3304,6 +3341,33 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     )}
                                 </div>
                             )}
+
+                            {/* ── El plazo de la FIRMA, que va antes que el del Ministerio ──
+                                Son dos relojes en cadena y el portal sólo miraba el
+                                segundo. Mientras no hay firma, el aviso del Ministerio dice
+                                —con razón— que su plazo «todavía no empezó a contar», y así
+                                el caso peor pasaba en silencio: alguien trabajando hace un
+                                mes sin contrato firmado. Lo pide el reglamento interno de la
+                                empresa en su Art. 11. */}
+                            {(() => {
+                                const firma = estadoFirmaDelContrato(formData);
+                                if (!firma.aplica || firma.firmado) return null;
+                                return (
+                                    <Notice
+                                        variant={firma.vencido ? 'danger' : firma.diasRestantes <= 3 ? 'warning' : 'info'}
+                                        icon={CalendarClock} className="mt-4">
+                                        <span className="font-black">
+                                            {firma.vencido
+                                                ? `El contrato debió firmarse el ${firma.limite}.`
+                                                : firma.diasRestantes === 0
+                                                    ? 'El contrato se firma hoy.'
+                                                    : `Quedan ${firma.diasRestantes} días para firmar el contrato.`}
+                                        </span>{' '}
+                                        Se cuentan desde el día que empezó a trabajar. Después va el ejemplar al
+                                        Ministerio, que tiene su propio plazo.
+                                    </Notice>
+                                );
+                            })()}
 
                             {(() => {
                                 const mtps = estadoRemisionMtps(formData);

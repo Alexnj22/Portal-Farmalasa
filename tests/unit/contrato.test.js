@@ -115,3 +115,50 @@ describe('el lugar de pago', () => {
         expect(valores.length).toBe(2);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Los DOS plazos de ocho días, en cadena
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El portal vigilaba uno —de la firma al Ministerio— y el reglamento interno
+// abre otro ANTES: del día que la persona empieza a trabajar, ocho días para
+// firmar (su Art. 11). Vigilar sólo el segundo deja pasar el caso peor, porque
+// mientras no hay firma el aviso del Ministerio dice, con razón, que su plazo
+// todavía no empezó — y alguien puede llevar un mes trabajando sin contrato.
+
+import { estadoFirmaDelContrato } from '../../src/utils/contrato';
+
+describe('el plazo para firmar el contrato', () => {
+    const hoy = new Date(2026, 7, 27);   // 27-ago-2026
+
+    it('sin fecha de inicio no hay plazo que contar', () => {
+        const r = estadoFirmaDelContrato({ contract_type: 'INDEFINIDO' }, hoy);
+        expect(r.aplica).toBe(false);
+    });
+
+    it('ya firmado no lleva cuenta regresiva', () => {
+        const r = estadoFirmaDelContrato({
+            contract_type: 'INDEFINIDO', hire_date: '2026-08-25',
+            contrato_fecha_celebracion: '2026-08-26',
+        }, hoy);
+        expect(r.firmado).toBe(true);
+    });
+
+    it('cuenta desde que empezó a trabajar, no desde la firma', () => {
+        const r = estadoFirmaDelContrato({ contract_type: 'INDEFINIDO', hire_date: '2026-08-25' }, hoy);
+        expect(r.firmado).toBe(false);
+        expect(r.diasRestantes).toBe(6);      // 25 + 8 = 2 de septiembre
+        expect(r.vencido).toBe(false);
+    });
+
+    it('un mes trabajando sin firmar está VENCIDO — el caso que se escapaba', () => {
+        const r = estadoFirmaDelContrato({ contract_type: 'INDEFINIDO', hire_date: '2026-07-25' }, hoy);
+        expect(r.vencido).toBe(true);
+        expect(r.diasRestantes).toBeLessThan(0);
+    });
+
+    it('a un contrato civil no lo alcanza', () => {
+        const r = estadoFirmaDelContrato({ contract_type: 'SERVICIOS', hire_date: '2026-07-01' }, hoy);
+        expect(r.aplica).toBe(false);
+    });
+});

@@ -12,7 +12,8 @@
 //     el portal empiece 49 trámites que nadie pidió.
 
 import { describe, it, expect } from 'vitest';
-import { acreditacionesDe, pendientesPrevisionales, ACREDITACIONES } from '../../src/utils/acreditaciones';
+import { acreditacionesDe, pendientesPrevisionales, ACREDITACIONES,
+    tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion, acreditacionesProvisionales } from '../../src/utils/acreditaciones';
 
 const ids = (ctx) => acreditacionesDe(ctx).map(a => a.id);
 
@@ -80,5 +81,59 @@ describe('pendientesPrevisionales', () => {
         const p = pendientesPrevisionales({ isss_estado: 'EN_TRAMITE', afp_estado: 'TIENE' });
         expect(p).toHaveLength(1);
         expect(p[0].clave).toBe('isss');
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provisional → definitiva
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lo que se prueba acá no es «cambia el tipo»: es que al cambiarlo **no se
+// pierda** el número provisional y **no quede puesto** como si fuera el
+// definitivo. Los dos errores son silenciosos — uno borra con qué credencial se
+// trabajó durante la práctica, el otro archiva un sello temporal como
+// permanente — y ninguno da error al guardar.
+
+describe('el sello provisional', () => {
+    it('sin preguntar no es «definitiva»', () => {
+        expect(tipoDeAcreditacion({}, 'ENFERMERIA')).toBe(null);
+        expect(tipoDeAcreditacion({ acreditaciones: {} }, 'MEDICO')).toBe(null);
+    });
+
+    it('fijar el tipo no toca las otras juntas', () => {
+        const datos = { acreditaciones: { MEDICO: { tipo: 'DEFINITIVA' } } };
+        const p = fijarTipoAcreditacion(datos, 'ENFERMERIA', 'PROVISIONAL');
+        expect(p.acreditaciones.MEDICO.tipo).toBe('DEFINITIVA');
+        expect(p.acreditaciones.ENFERMERIA.tipo).toBe('PROVISIONAL');
+    });
+
+    it('al graduarse: guarda el número viejo y VACÍA el campo', () => {
+        const datos = {
+            nursing_license_number: 'P-1234',
+            acreditaciones: { ENFERMERIA: { tipo: 'PROVISIONAL' } },
+        };
+        const p = promoverADefinitiva(datos, 'ENFERMERIA', 'nursing_license_number', '2026-08-26');
+        // Vacío, no el viejo: dejarlo puesto es cómo un provisional termina
+        // archivado como definitivo.
+        expect(p.nursing_license_number).toBe('');
+        expect(p.acreditaciones.ENFERMERIA.tipo).toBe('DEFINITIVA');
+        expect(p.acreditaciones.ENFERMERIA.provisional_numero).toBe('P-1234');
+        expect(p.acreditaciones.ENFERMERIA.definitiva_desde).toBe('2026-08-26');
+    });
+
+    it('promover dos veces no pisa el número provisional original', () => {
+        const datos = {
+            nursing_license_number: 'DEF-9',
+            acreditaciones: { ENFERMERIA: { tipo: 'DEFINITIVA', provisional_numero: 'P-1234' } },
+        };
+        const p = promoverADefinitiva(datos, 'ENFERMERIA', 'nursing_license_number', '2026-09-01');
+        expect(p.acreditaciones.ENFERMERIA.provisional_numero).toBe('P-1234');
+    });
+
+    it('lista sólo las que están provisionales hoy', () => {
+        const aplicables = acreditacionesDe({ profesion: 'Licenciada en Enfermería' });
+        const datos = { acreditaciones: { ENFERMERIA: { tipo: 'PROVISIONAL' } } };
+        expect(acreditacionesProvisionales(datos, aplicables).map(a => a.id)).toEqual(['ENFERMERIA']);
+        expect(acreditacionesProvisionales({}, aplicables)).toEqual([]);
     });
 });

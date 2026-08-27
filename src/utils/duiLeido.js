@@ -25,6 +25,7 @@ import {
     canonDepartamento, canonMunicipio, canonDistrito,
     municipiosDe, distritosDe,
 } from '../data/elSalvadorGeo';
+import { leerProfesion } from './profesionDelDui';
 
 const sinTildes = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
 
@@ -72,7 +73,28 @@ export function aplicarDuiLeido(leido, actual = {}) {
     poner('dui_lugar_expedicion', leido?.lugar_expedicion);
     poner('dui_fecha_expedicion', leido?.fecha_expedicion);
     poner('dui_fecha_vencimiento', leido?.fecha_vencimiento);
-    poner('profession', leido?.profesion);
+    // ── Profesión: se expande, y de ahí sale el nivel académico ────────────
+    //
+    // El DUI la escribe abreviada (`ING. EN SISTEMAS Y COMPUTACION`). Guardarla
+    // así deja el expediente con una abreviatura en el campo que después decide
+    // si a esa persona le corresponde una acreditación profesional — y «ING.» no
+    // coincide con nada. `leerProfesion` la expande SIN recortar el resto.
+    //
+    // El nivel sale de la misma lectura, y sale `null` cuando el texto no lo
+    // permite: «COMERCIANTE» es un oficio, no un título. Un `null` acá deja el
+    // campo para que alguien lo elija, que es lo correcto — inventarle un nivel
+    // universitario a quien no lo tiene le abre una acreditación que no le toca.
+    //
+    // Y el texto va al campo que ESE nivel muestra, no siempre a `profession`:
+    // el formulario esconde «Profesión / Título» salvo en Universitario, así que
+    // un «TEC. EN ENFERMERIA» guardado ahí quedaría escrito y **invisible** —
+    // que es la forma de error que este archivo existe para evitar.
+    const prof = leerProfesion(leido?.profesion);
+    poner('education_level', prof.nivel);
+    if (prof.nivel === 'UNIVERSITARIO') poner('profession', prof.profesion);
+    else if (prof.nivel === 'TECNICO_SUPERIOR') poner('education_specialty', prof.profesion);
+    else if (!prof.nivel) poner('profession', prof.profesion);
+    // Bachillerato no lleva ninguno de los dos: su «profesión» es el nivel.
     poner('address', leido?.domicilio);
 
     // El DUI sólo se emite a salvadoreños: si esto es un DUI, la nacionalidad
@@ -132,6 +154,8 @@ export const ROTULO_DUI = {
     dui_fecha_expedicion: 'Fecha de expedición',
     dui_fecha_vencimiento: 'Vence el',
     profession: 'Profesión u oficio',
+    education_level: 'Nivel académico',
+    education_specialty: 'Especialidad',
     address: 'Dirección',
     department: 'Departamento',
     municipality: 'Municipio',

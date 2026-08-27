@@ -106,3 +106,34 @@ describe('aplicarDuiLeido', () => {
         expect(descartados.join(' ')).not.toContain('sangre');
     });
 });
+
+describe('el nivel académico sale del DUI', () => {
+    it('la profesión se expande y el nivel se deduce', () => {
+        const { parche } = aplicarDuiLeido({ profesion: 'ING. EN SISTEMAS Y COMPUTACION' }, {});
+        expect(parche.profession).toBe('Ingeniería en Sistemas y Computacion');
+        expect(parche.education_level).toBe('UNIVERSITARIO');
+    });
+
+    it('un técnico va a Especialidad, no a Profesión', () => {
+        // El formulario esconde «Profesión / Título» salvo en Universitario:
+        // escribirlo ahí lo dejaría guardado y invisible.
+        const { parche } = aplicarDuiLeido({ profesion: 'TEC. EN ENFERMERIA' }, {});
+        expect(parche.education_level).toBe('TECNICO_SUPERIOR');
+        expect(parche.education_specialty).toBe('Técnico en Enfermeria');
+        expect(parche.profession).toBeUndefined();
+    });
+
+    it('un oficio no inventa nivel académico', () => {
+        const { parche } = aplicarDuiLeido({ profesion: 'COMERCIANTE' }, {});
+        expect(parche.education_level).toBeUndefined();
+        expect(parche.profession).toBe('Comerciante');
+    });
+
+    it('no pisa el nivel que alguien ya eligió', () => {
+        const { parche } = aplicarDuiLeido(
+            { profesion: 'ING. EN SISTEMAS' },
+            { education_level: 'BACHILLERATO_GENERAL', profession: 'Bachiller' });
+        expect(parche.education_level).toBeUndefined();
+        expect(parche.profession).toBeUndefined();
+    });
+});

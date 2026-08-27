@@ -133,3 +133,87 @@ export function pendientesPrevisionales(datos = {}) {
     }
     return out;
 }
+
+/**
+ * ── Provisional y definitiva ────────────────────────────────────────────────
+ *
+ * Una acreditación profesional no aparece el día de la graduación: en las
+ * juntas del Consejo Superior de Salud Pública hay una inscripción **con
+ * carácter provisional** para quien ya terminó la carrera y todavía no tiene el
+ * título, y la **definitiva** se otorga cuando presenta el título.
+ *
+ * Lo verificado y lo que NO, porque la diferencia importa:
+ *
+ * - **Enfermería (JVPE)** — verificado en el formulario de solicitud de la
+ *   propia junta: pide declarar «Egresado(a) de la Institución … el día …», o
+ *   sea que la provisional es para EGRESADOS y la definitiva llega con el
+ *   título.
+ * - **Médico (JVPM)** — el usuario lo describió así: durante la práctica se
+ *   trabaja con sello provisional. Coincide con lo de enfermería.
+ * - **Químico farmacéutico (JVPQF)** y **Contaduría (CVPCPA)** — **NO
+ *   verificado**. Puede que funcione igual y puede que no. Por eso la pantalla
+ *   no afirma cuándo se obtiene cada una: sólo pregunta cuál tiene esta
+ *   persona, que es un dato que Talento Humano sí conoce.
+ *
+ * Y por eso la opción existe para las cuatro. Ofrecerla de más cuesta un campo
+ * que se deja en «Definitiva»; ofrecerla de menos deja a alguien sin poder
+ * anotar el sello con el que está trabajando hoy.
+ */
+export const TIPO_ACREDITACION_OPTIONS = [
+    { value: 'DEFINITIVA',  label: 'Definitiva' },
+    { value: 'PROVISIONAL', label: 'Provisional — todavía sin el título' },
+];
+
+/**
+ * El tipo de acreditación que tiene esta persona para esa junta.
+ *
+ * Devuelve `null` cuando nadie contestó. No se asume «definitiva»: es
+ * exactamente el error de [[feedback_null_no_es_no_tiene]] —el silencio no es
+ * una respuesta— y acá la consecuencia es que nadie vigilaría el reemplazo de
+ * un sello que caduca al graduarse.
+ */
+export function tipoDeAcreditacion(datos, id) {
+    return datos?.acreditaciones?.[id]?.tipo || null;
+}
+
+/** Las que están con sello provisional hoy, de entre las que le corresponden. */
+export function acreditacionesProvisionales(datos, aplicables = []) {
+    return aplicables.filter(a => tipoDeAcreditacion(datos, a.id) === 'PROVISIONAL');
+}
+
+/**
+ * Pasar una acreditación de provisional a definitiva.
+ *
+ * Devuelve el parche —no escribe— con el número anterior GUARDADO. Se conserva
+ * a propósito: si mañana alguien tiene que explicar con qué sello se trabajó
+ * durante la práctica, el dato tiene que existir. Sobrescribirlo en silencio
+ * sería borrar el historial de una credencial profesional.
+ *
+ * El número nuevo se vacía para que se teclee el de la definitiva: dejar el
+ * viejo puesto es cómo un número provisional termina archivado como definitivo.
+ */
+export function promoverADefinitiva(datos, id, campo, hoy) {
+    const previo = datos?.acreditaciones?.[id] || {};
+    return {
+        [campo]: '',
+        acreditaciones: {
+            ...(datos?.acreditaciones || {}),
+            [id]: {
+                ...previo,
+                tipo: 'DEFINITIVA',
+                provisional_numero: previo.provisional_numero ?? (datos?.[campo] || null),
+                definitiva_desde: hoy,
+            },
+        },
+    };
+}
+
+/** Parche para dejar anotado el tipo, sin tocar el resto de la ficha. */
+export function fijarTipoAcreditacion(datos, id, tipo) {
+    return {
+        acreditaciones: {
+            ...(datos?.acreditaciones || {}),
+            [id]: { ...(datos?.acreditaciones?.[id] || {}), tipo },
+        },
+    };
+}

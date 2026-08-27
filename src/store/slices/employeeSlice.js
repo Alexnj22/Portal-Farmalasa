@@ -725,6 +725,13 @@ export const createEmployeeSlice = (set, get) => ({
                 // de REacreditación: vence, y su comprobante lleva la fecha.
                 tiene_acreditacion_dependiente: !!formData.tiene_acreditacion_dependiente,
                 pharmacist_license_number: formData.pharmacist_license_number || null,
+                // Cuál sello tiene hoy cada junta: el provisional del egresado
+                // o el definitivo del titulado. El NÚMERO vigente sigue en su
+                // columna; acá va sólo cuál es, y el provisional que se
+                // reemplazó — borrarlo sería perder con qué credencial se
+                // trabajó durante la práctica.
+                acreditaciones: formData.acreditaciones && typeof formData.acreditaciones === 'object'
+                    ? formData.acreditaciones : {},
                 hire_date: formData.hire_date || null,
                 afp_number: formData.afp_number || null,
                 isss_number: formData.isss_number || null,
@@ -1023,6 +1030,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.medico_license_number !== undefined) dbPayload.medico_license_number = updatedData.medico_license_number || null;
             if (updatedData.contador_license_number !== undefined) dbPayload.contador_license_number = updatedData.contador_license_number || null;
             if (updatedData.tiene_acreditacion_dependiente !== undefined) dbPayload.tiene_acreditacion_dependiente = !!updatedData.tiene_acreditacion_dependiente;
+            if (updatedData.acreditaciones !== undefined) dbPayload.acreditaciones = updatedData.acreditaciones || {};
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
             if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;

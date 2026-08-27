@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.803.0 — El DUI dice el nivel académico, y el sello provisional se reemplaza al graduarse
+
+**El DUI ya traía la profesión y el portal la guardaba abreviada.** El documento
+escribe `ING. EN SISTEMAS Y COMPUTACION`, y eso quedaba tal cual en el campo que
+después decide si a esa persona le corresponde una acreditación profesional —
+donde «ING.» no coincide con nada. Ahora se expande **sin recortar el resto**,
+que es el pedido textual: *«si dice ing. en xxxx es ingenieria, no acortes»*.
+Sale `Ingeniería en Sistemas y Computacion`, no «Ingeniería» a secas.
+
+Y de ahí sale el **nivel académico**, que antes había que elegir a mano teniendo
+el dato adelante. `LIC.`, `ING.`, `ARQ.`, `DR.` y `PROF.` son universitario;
+`TEC.` es técnico superior; `BR.` es bachillerato.
+
+Tres cosas que **no** hace, y las tres son a propósito:
+
+- **No inventa un nivel.** «COMERCIANTE» es un oficio, no un título: el nivel
+  queda vacío para que alguien lo elija. Ponerle «Universitario» le abriría una
+  acreditación que no le toca.
+- **No inventa tildes.** El DUI escribe `COMPUTACION` y así se guarda. Un
+  diccionario de acentos parece una mejora hasta que le toca un nombre propio y
+  lo «corrige» mal — y el expediente diría algo que el documento no dice.
+- **No escribe en un campo escondido.** Un técnico va a *Especialidad*, no a
+  *Profesión / Título*: el formulario esconde ese campo salvo en universitario,
+  así que ahí el dato quedaría guardado e invisible.
+
+La carrera que no esté en el catálogo se escribe libre y **se agrega a la base al
+guardar**, que es lo que ya hacía `registerCatalogEntry`.
+
+**El sello provisional.** Una acreditación profesional no aparece el día de la
+graduación: la junta inscribe **con carácter provisional** a quien ya terminó la
+carrera y todavía no tiene el título, y la definitiva llega con el título. Cada
+junta que le corresponde a la persona ahora pregunta **cuál de las dos tiene**, y
+mientras sea provisional lo dice en la ficha y ofrece el botón **«Ya se graduó»**.
+
+Ese botón hace las dos cosas que si se hacen a mano se hacen mal:
+
+- **vacía el número** para que se teclee el de la definitiva — dejar el viejo
+  puesto es exactamente cómo un sello temporal termina archivado como permanente;
+- **guarda el provisional** en la ficha. Si mañana hay que explicar con qué
+  credencial se trabajó durante la práctica, el dato existe.
+
+**Lo verificado y lo que no.** La inscripción provisional para egresados está
+verificada en el formulario de la **junta de enfermería**, que pide declarar el
+día en que se egresó, y coincide con el sello provisional del médico durante su
+práctica. Para **químico farmacéutico y contaduría no está verificado**. Por eso
+la pantalla no afirma cuándo se obtiene cada una: sólo pregunta cuál tiene esta
+persona, que es un dato que Talento Humano sí conoce.
+
+Migración `20260827030204`. La columna nueva entró a `employees_safe`
+**reescribiendo la vista que estaba viva**, no una lista de columnas leída antes:
+otra sesión puede agregarle una en el medio y una lista vieja la borraría sin dar
+error — ya pasó en esta misma tabla.
+
 ## v2.802.0 — El personal se ve por sala
 
 **`/personal` ya no es una tabla: es el equipo de cada sucursal.** El usuario lo

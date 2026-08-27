@@ -4,7 +4,8 @@ import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
 import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
-import { acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS } from '../../utils/acreditaciones';
+import { acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
+    TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
 import { estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
@@ -419,7 +420,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
                 nursing_license_number: '', pharmacist_license_number: '',
                 medico_license_number: '', contador_license_number: '',
-                tiene_acreditacion_dependiente: false,
+                tiene_acreditacion_dependiente: false, acreditaciones: {},
                 employee_documents: [],
                 department: '', municipality: '', distrito: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -2352,6 +2353,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             </div>
 
+                            {/* Quien todavía estudia no llega con la acreditación puesta:
+                                la junta inscribe con carácter provisional al que ya terminó
+                                la carrera y le falta el título. Se dice acá y no dentro de
+                                cada junta porque vale para el nivel académico, que ya está
+                                contestado arriba. */}
+                            {formData.is_studying && acreditacionesQueAplican.length > 0 && (
+                                <p className="text-label text-content-3 font-medium mb-4">
+                                    Esta persona todavía estudia: si aún no tiene el título, lo que puede tener es la acreditación provisional.
+                                </p>
+                            )}
+
                             {acreditacionesQueAplican.length === 0 && !formData.tiene_acreditacion_dependiente && (
                                 <p className="text-label text-content-3 font-medium mb-4">
                                     Por el cargo y la profesión de esta persona no corresponde ninguna junta profesional.
@@ -2360,14 +2372,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
 
                             <div className="flex flex-col gap-3">
-                                {acreditacionesQueAplican.map(a => (
+                                {acreditacionesQueAplican.map(a => {
+                                    const tipo = tipoDeAcreditacion(formData, a.id);
+                                    const esProvisional = tipo === 'PROVISIONAL';
+                                    return (
                                     <div key={a.id} data-surface="card" className="p-3">
                                         <div className="flex items-center justify-between gap-3 mb-2">
                                             <div className="min-w-0">
                                                 <p className="text-label font-black text-content uppercase tracking-wide">{a.label}</p>
                                                 <p className="text-micro text-content-3 font-medium leading-snug">{a.organismo}</p>
                                             </div>
-                                            {!formData[a.campo] && <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>}
+                                            {esProvisional
+                                                ? <Badge variant="warning" size="sm" className="shrink-0">Provisional</Badge>
+                                                : !formData[a.campo] && <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>}
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                                             <PortalInput
@@ -2377,8 +2394,55 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 placeholder={`N° ${a.junta}`} />
                                             {renderDocUploadArea(a.doc)}
                                         </div>
+
+                                        {/* ── Cuál sello tiene ──────────────────────────
+                                            La junta inscribe con carácter provisional a quien
+                                            ya terminó la carrera y todavía no tiene el título;
+                                            la definitiva llega con el título. Verificado en el
+                                            formulario de la junta de enfermería, y coincide
+                                            con el sello provisional del médico en su práctica.
+                                            Para químico farmacéutico y contaduría no está
+                                            verificado — por eso la pantalla NO afirma cuándo
+                                            se obtiene cada una: sólo pregunta cuál tiene esta
+                                            persona, que es lo que Talento Humano sí sabe. */}
+                                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                                            <div className="relative z-content">
+                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Cuál tiene?</label>
+                                                <LiquidSelect
+                                                    value={tipo || ''}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, ...fijarTipoAcreditacion(prev, a.id, val) }))}
+                                                    options={TIPO_ACREDITACION_OPTIONS}
+                                                    placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
+                                            </div>
+                                            {esProvisional && (
+                                                <div className="flex flex-col justify-end gap-2">
+                                                    <p className="text-micro text-content-3 font-medium leading-snug ml-1">
+                                                        Al graduarse hay que reemplazarla por la definitiva.
+                                                    </p>
+                                                    <Button
+                                                        type="button" variant="secondary" size="sm"
+                                                        icon={RefreshCw}
+                                                        onClick={() => setFormData(prev => ({
+                                                            ...prev,
+                                                            ...promoverADefinitiva(prev, a.id, a.campo, new Date().toISOString().split('T')[0]),
+                                                        }))}>
+                                                        Ya se graduó
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* El número provisional queda guardado, no se pierde:
+                                            si mañana hay que explicar con qué credencial se
+                                            trabajó durante la práctica, el dato existe. */}
+                                        {formData?.acreditaciones?.[a.id]?.provisional_numero && !esProvisional && (
+                                            <p className="text-micro text-content-3 font-medium mt-2 ml-1">
+                                                Antes tuvo el provisional N° {formData.acreditaciones[a.id].provisional_numero}.
+                                            </p>
+                                        )}
                                     </div>
-                                ))}
+                                    );
+                                })}
 
                                 {/* La acreditación de dependiente de farmacia es del CSSP y
                                     tiene trámite de REacreditación — o sea que vence, y por
@@ -2415,7 +2479,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                     </div>
                                     <div className="relative z-content">
-                                        <label className="text-caption fontetc-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene AFP?</label>
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene AFP?</label>
                                         <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                     </div>
                                 </div>

@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.800.1 — Equipos: la sala tiene una jefatura, no tres
+
+Correcciones del usuario sobre el boceto de `/personal/equipos`, mirándolo en
+pantalla. El primer reparto destacaba a **todo el que responde fuera de la
+sala**, y eso salió mal en Salud 4: aparecían tres jefaturas —la Jefa de Sala,
+la Regente de Enfermería y la Técnica de Mantenimiento— y la técnica salía
+**primera**, porque su cargo cuelga del Administrador (nivel 2) y el de la jefa
+del Supervisor de Ventas (nivel 3). O sea: **el árbol formal, leído crudo,
+coronaba a quien la sala no reconoce como jefe.**
+
+Tres reglas nuevas, en `src/utils/mandoDeSala.js`, y todas sobre el DATO:
+
+1. **El jefe es quien más gente de esa sala tiene colgando de su cargo**, no el
+   de nivel más alto. Mantenimiento está arriba en el organigrama y no manda a
+   nadie ahí.
+2. **Un cargo cuyo superior está vacante en toda la empresa responde a la
+   jefatura de la sala.** Palabras del usuario: *«mientras no haya un supervisor
+   del departamento médico, la regente de enfermería queda bajo el jefe de
+   sala»*. Vale igual para el Auxiliar de Bodega, que cuelga de un Asistente de
+   Logística que hoy no existe — la regla es sobre el puesto vacío, no sobre
+   esos dos cargos.
+3. **El resto queda «También en esta sala»**: trabaja ahí y responde a alguien
+   que sí existe, pero está afuera. Es el caso de Mantenimiento, y es lo que
+   hace falta para no mentir sobre quién lo dirige.
+
+**El segundo puesto se muestra aunque esté vacío** —pedido del usuario—, pero
+sólo cuando ese cargo está ocupado en otra parte de la empresa. Si no lo está en
+ninguna, no es una vacante sino un puesto que no se usa, y anunciarlo en las
+ocho salas sería ruido. Hoy la diferencia es real y se ve: «Subjefe/a de Sala»
+existe en Salud 1 y Salud 4 y **falta en las otras cuatro**; «Asistente de
+Logística» no existe en ninguna, así que Bodega no muestra hueco.
+
+Medido contra la plantilla real: las 7 salas quedan con su Jefe/a de Sala
+arriba, la regente de enfermería primera del equipo —antes del mostrador—, y los
+dos únicos subjefes que existen en su lugar. Y el aviso de arriba nombra los dos
+puestos intermedios que nadie ocupa: **Supervisor del Departamento Médico y
+Enfermería (7 personas) y Asistente de Logística (5)**.
+
+**`data-lugar` en cada tarjeta.** Desde afuera no se puede saber si una tarjeta
+es la jefatura o un adscrito: por tamaño es CSS, y por la línea «Responde a…»
+fallan las dos —la llevan la jefatura *y* los adscritos, que fue exactamente lo
+que hizo pasar por buena una sonda equivocada al escribir la prueba—. En tiempo
+de render sí se sabe. Mismo recurso que `data-destino` en las fichas y
+`data-vacio` en los estados vacíos.
+
+**Y un pendiente que la vista destapa sola:** Edemir Quintanilla no tiene
+sucursal en su ficha, así que no entraba en ningún equipo ni en el conteo de
+ninguna sala. Ahora sale al final bajo «Sin sucursal asignada», con el aviso de
+que falta elegirle una sede.
+
 ## v2.800.0 — El remanente es efectivo del dueño y sale del circuito
 
 > «el remanente ya no es responsabilidad ni control del portal. es efectivo del

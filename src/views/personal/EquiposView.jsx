@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus,
-  UserX, CheckCircle2, HelpCircle, ArrowUpRight, CornerDownRight, Building2,
+  UserX, HelpCircle, ArrowUpRight, CornerDownRight, Building2, UserPlus,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -20,7 +20,8 @@ import { useAuth } from '../../context/AuthContext';
 import { clickable } from '../../utils/clickable';
 import { getEffectiveStatus } from '../../utils/helpers';
 import { getRoleTheme } from '../../utils/scheduleHelpers';
-import { cadenaDeSuperiores, nivelDeCargo } from '../../utils/roles';
+import { cadenaDeSuperiores } from '../../utils/roles';
+import { repartirSala, puestosVacantesConGente } from '../../utils/mandoDeSala';
 import { getExpiringDocuments } from '../../utils/documentExpiry';
 import { soloPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { shortEmployeeName } from '../../utils/nameUtils';
@@ -206,24 +207,33 @@ const pesoDeSucursal = (nombre) => {
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a
 // mano deja el radio FIJO cuando `--card-radius` cambia por tema, y falla la
 // categoría `tarjeta-a-mano` de `gate:design`.
-function TarjetaPersona({ emp, sucursal, roles, destacada = false, abrir }) {
+function TarjetaPersona({ emp, sucursal, roles, destacada = false, conSuperior = false, lugar, abrir }) {
   const estado = useMemo(() => estadoVigente(emp), [emp]);
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
 
   // A quién responde — sale del árbol de `roles`, no de adivinar por el
-  // nombre del cargo. Sólo en las destacadas: en el equipo el superior es el
-  // encabezado de la propia sección y repetirlo sería ruido.
+  // nombre del cargo. Sólo en la jefatura y en los adscritos: en el equipo el
+  // superior ES el encabezado de la sección, y repetirlo en cada tarjeta sería
+  // ruido. En los adscritos es al revés — es el dato que explica por qué están
+  // aparte.
   const respondeA = useMemo(() => {
-    if (!destacada) return null;
+    if (!destacada && !conSuperior) return null;
     const [padre] = cadenaDeSuperiores(roles, emp.role_id);
     return (roles || []).find(r => String(r.id) === String(padre))?.name || null;
-  }, [destacada, roles, emp.role_id]);
+  }, [destacada, conSuperior, roles, emp.role_id]);
 
   return (
     <div
       data-surface="card"
+      /* `data-lugar` no cambia un pixel y convierte la pregunta en una
+         respuesta: desde afuera, «¿esta tarjeta es la jefatura o un adscrito?»
+         se contesta con el tamaño o con la presencia de la línea «Responde
+         a…», y las dos sondas fallan —la de tamaño es CSS, y la línea la
+         llevan los dos—. En tiempo de render sí se sabe. Es lo mismo que
+         `data-destino` hizo por las fichas y `data-vacio` por los vacíos. */
+      data-lugar={lugar}
       /* `clickable` aunque la tarjeta contenga dos `<a>`: la nota del helper
          («si ya hay un enlace adentro, el teclado llega por ahí») habla de dos
          afordancias para la MISMA acción. Acá son tres acciones distintas —
@@ -311,6 +321,27 @@ function TarjetaPersona({ emp, sucursal, roles, destacada = false, abrir }) {
   );
 }
 
+// ── El puesto que falta ───────────────────────────────────────────────────
+// Pedido del usuario: «si no hay subjefe, que aparezca el espacio pendiente».
+// Un hueco dibujado dice algo que una ausencia no dice — la sala de al lado sí
+// lo tiene, y esta no. Sólo se pinta para un cargo que existe ocupado en otra
+// parte de la empresa; ver el motivo en `mandoDeSala.js`.
+function PuestoVacante({ cargo }) {
+  return (
+    <div data-surface="card"
+      className="flex items-center gap-3 border-dashed p-3.5 opacity-70 md:col-span-2">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl
+        border border-dashed border-border-card text-content-3">
+        <UserPlus size={22} strokeWidth={2} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-body font-black tracking-tight text-content-2">Puesto sin cubrir</p>
+        <Badge variant="neutral" size="sm" className="mt-1">{cargo}</Badge>
+      </div>
+    </div>
+  );
+}
+
 // ── El pulso de la sala ───────────────────────────────────────────────────
 // Los `StatCard` de `/personal` cuentan la EMPRESA entera. Cuántos hay hoy en
 // Salud 2 —y cuántos de ellos están ausentes— no se puede saber en ninguna
@@ -336,30 +367,44 @@ function PulsoDeSala({ personas }) {
   );
 }
 
-function SeccionSucursal({ sucursal, referentes, equipo, roles, abrir }) {
-  const personas = [...referentes, ...equipo];
+function SeccionSucursal({ seccion, roles, abrir }) {
+  const { sucursal, sinSede, personas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
   return (
     <section className="space-y-3">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-divider pb-2">
         <h2 className="flex items-center gap-2 text-body font-black tracking-tight text-content">
           <MapPin size={15} strokeWidth={2.5} className="shrink-0 text-content-3" />
-          {sucursal}
+          {sinSede ? 'Sin sucursal asignada' : sucursal}
         </h2>
         <PulsoDeSala personas={personas} />
-        {/* Un hueco se DICE. Una sala sin referente no es un renglón vacío que
-            nadie mira: es un hallazgo, y acá es donde se ve. */}
-        {!referentes.length && (
+        {/* Un hueco se DICE. Que una sala no tenga jefatura no es un renglón
+            vacío que nadie mira: es un hallazgo, y acá es donde se ve. */}
+        {!jefe && !sinSede && (
           <Badge variant="warning" size="sm" icon={AlertCircle} uppercase={false}>
-            Nadie a cargo en esta sala
+            Sin jefatura
           </Badge>
         )}
       </header>
 
-      {!!referentes.length && (
+      {sinSede && (
+        <Notice variant="warning" icon={AlertCircle}>
+          Estas fichas no tienen sucursal, así que no aparecen en ningún equipo
+          ni en el conteo de ninguna sala. Falta elegirles una sede.
+        </Notice>
+      )}
+
+      {/* La jefatura y su segundo, en su propia fila y siempre arriba. */}
+      {(jefe || !!vacantesDeSegundo.length) && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {referentes.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} destacada abrir={abrir} />
+          {jefe && (
+            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} destacada lugar="jefatura" abrir={abrir} />
+          )}
+          {segundos.map(emp => (
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} destacada lugar="segundo" abrir={abrir} />
+          ))}
+          {vacantesDeSegundo.map(cargo => (
+            <PuestoVacante key={cargo.id} cargo={cargo.name} />
           ))}
         </div>
       )}
@@ -367,9 +412,24 @@ function SeccionSucursal({ sucursal, referentes, equipo, roles, abrir }) {
       {!!equipo.length && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {equipo.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} abrir={abrir} />
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} lugar="equipo" abrir={abrir} />
           ))}
         </div>
+      )}
+
+      {/* Trabaja acá y responde a otro. Va aparte para no decir que la
+          jefatura de sala lo dirige, que es lo que haría meterlo en el equipo. */}
+      {!!adscritos.length && (
+        <>
+          <p className="pt-1 text-micro font-black uppercase tracking-widest text-content-3">
+            También en esta sala
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {adscritos.map(emp => (
+              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} conSuperior lugar="adscrito" abrir={abrir} />
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
@@ -408,17 +468,11 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
   }, [employees, getScope, user?.branchId, busqueda, nombreDeSucursal]);
 
   // ── El reparto ────────────────────────────────────────────────────────
+  // Las tres reglas —y por qué el primer boceto las tenía mal— viven en
+  // `utils/mandoDeSala.js`. Acá sólo se agrupa por sala y se ordena.
   //
-  // «Referente» = quien NO tiene por encima suyo, dentro de esta misma sala, a
-  // nadie de su propia cadena de mando. Sale del árbol de `roles`, así que no
-  // depende de que el cargo se llame «Jefe» ni «Regente»: el día que exista un
-  // cargo nuevo, cae en el lugar correcto sin tocar esta vista.
-  //
-  // Eso hace que una sala pueda tener MÁS de un referente, y está bien que se
-  // vea: en Salud 4 son tres —Jefe/a de Sala, Regente de Enfermería y el
-  // Técnico de Mantenimiento—, y los tres responden a Administración y no
-  // entre ellos. La tabla de hoy los mezcla en el mismo montón ordenado por
-  // peso de cargo, que dice quién va primero pero no quién manda a quién.
+  // `visibles` completo se le pasa a cada sala a propósito: para saber si un
+  // puesto intermedio está VACANTE hay que mirar la empresa entera, no la sala.
   const secciones = useMemo(() => {
     const porSucursal = new Map();
     visibles.forEach(e => {
@@ -427,41 +481,30 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
       porSucursal.get(id).push(e);
     });
 
-    const orden = (a, b) => {
-      const na = nivelDeCargo(roles, a.role_id);
-      const nb = nivelDeCargo(roles, b.role_id);
-      // Un cargo que no está en la tabla va al final: no es la raíz de la
-      // empresa, y ponerlo en 0 lo coronaría por accidente.
-      const ka = na == null ? 99 : na;
-      const kb = nb == null ? 99 : nb;
-      if (ka !== kb) return ka - kb;
-      return (a.name || '').localeCompare(b.name || '');
-    };
-
     return [...porSucursal.entries()]
-      .map(([id, personas]) => {
-        const cargosPresentes = new Set(personas.map(p => String(p.role_id)));
-        const referentes = [];
-        const equipo = [];
-        personas.forEach(p => {
-          const tieneJefeAca = cadenaDeSuperiores(roles, p.role_id)
-            .some(sup => cargosPresentes.has(String(sup)));
-          (tieneJefeAca ? equipo : referentes).push(p);
-        });
-        return {
-          id,
-          sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR,
-          referentes: referentes.sort(orden),
-          equipo: equipo.sort(orden),
-        };
-      })
+      .map(([id, personas]) => ({
+        id,
+        // `id === 0` no es una sucursal: es una ficha sin sede. Se dice, no se
+        // disfraza de sala — ver el aviso de la sección.
+        sinSede: id === 0,
+        sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR,
+        ...repartirSala({ personas, todos: visibles, roles }),
+        personas,
+      }))
       .sort((a, b) => {
+        // La ficha sin sede va al final: es un pendiente, no una sala.
+        if (a.sinSede !== b.sinSede) return a.sinSede ? 1 : -1;
         const pa = pesoDeSucursal(a.sucursal);
         const pb = pesoDeSucursal(b.sucursal);
         if (pa !== pb) return pa - pb;
         return a.sucursal.localeCompare(b.sucursal);
       });
   }, [visibles, roles, nombreDeSucursal]);
+
+  // Los puestos intermedios que nadie ocupa, dichos UNA vez para toda la
+  // empresa en vez de repetir la explicación en cada tarjeta.
+  const vacantes = useMemo(
+    () => puestosVacantesConGente({ todos: visibles, roles }), [visibles, roles]);
 
   const abrir = (emp) => navigate(`/personal/empleado/${emp.id}`);
   const cargando = employeesStatus !== 'ready' && !employees.length;
@@ -507,15 +550,21 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
           />
         )}
 
+        {/* Los puestos intermedios vacíos, dichos una sola vez. Sin esto la
+            tarjeta de una regente de enfermería diría «responde al Supervisor
+            del Departamento Médico», que es cierto en el organigrama y falso
+            en la sala: ese puesto no lo ocupa nadie. */}
+        {!cargando && !!vacantes.length && (
+          <Notice variant="warning" icon={AlertCircle}>
+            {vacantes.map(v => `${v.nombre} (${v.personas} ${v.personas === 1 ? 'persona' : 'personas'})`).join(' · ')}
+            {' — '}
+            {vacantes.length === 1 ? 'este puesto está' : 'estos puestos están'} sin cubrir, así que
+            {' '}quienes dependen de {vacantes.length === 1 ? 'él' : 'ellos'} responden a la jefatura de su sala.
+          </Notice>
+        )}
+
         {!cargando && secciones.map(s => (
-          <SeccionSucursal
-            key={s.id}
-            sucursal={s.sucursal}
-            referentes={s.referentes}
-            equipo={s.equipo}
-            roles={roles}
-            abrir={abrir}
-          />
+          <SeccionSucursal key={s.id} seccion={s} roles={roles} abrir={abrir} />
         ))}
 
         {!cargando && !!secciones.length && (

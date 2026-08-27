@@ -12,18 +12,18 @@ import { MemoryRouter } from 'react-router-dom';
 // diferencia entre un dato y una coincidencia de palabras — el mismo defecto
 // que costó los `role_id: null` de 2026-08-12 («un rótulo no es una clave»).
 //
-// El caso que se reproduce es real y es el que hace falta que no se pierda:
-// en **Salud 4** conviven un Jefe/a de Sala, una Regente de Enfermería y un
-// Técnico de Mantenimiento, y los tres responden FUERA de la sala —a Supervisor
-// de Ventas, a Supervisor Médico y a Administrador—. O sea que la sala tiene
-// TRES referentes y ninguno manda sobre los otros dos. Un criterio por «nivel
-// más alto del árbol» coronaría al técnico (nivel 2) y dejaría al jefe de sala
-// (nivel 3) en el montón: exactamente al revés de lo que la sala entiende.
+// El caso que se reproduce es **Salud 4**, y es el que corrigió el usuario el
+// 2026-08-26 mirando el primer boceto. Ahí conviven una Jefa de Sala, una
+// Regente de Enfermería que además es Subjefa, tres Dependientes y una Técnica
+// de Mantenimiento. El boceto destacaba a los tres que responden fuera de la
+// sala y ponía a la técnica PRIMERA, porque su cargo cuelga del Administrador
+// (nivel 2) y el de la jefa del Supervisor de Ventas (nivel 3): el árbol formal
+// leído crudo coronaba a quien la sala no reconoce como jefe.
 //
-// La segunda prueba mira el otro lado: los Dependientes SÍ tienen a su jefe
-// dentro de la sala (por la cadena Dependiente → Subjefe → Jefe/a de Sala), así
-// que caen en equipo. Sin esa cadena, cada dependiente sería su propio
-// referente y la sección entera perdería sentido.
+// Las tres reglas que lo arreglan —jefe por cuánta gente le cuelga, superior
+// vacante que devuelve a la persona a la jefatura de sala, y adscrito para el
+// que responde a alguien que sí existe pero está afuera— viven en
+// `src/utils/mandoDeSala.js` con su porqué.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Las 6 filas de `roles` que participan, con los ids y padres REALES de
@@ -42,23 +42,32 @@ const ROLES = [
     { id: 30, name: 'Dependiente de Farmacia',                      parent_role_id: 20 },
 ];
 
-const persona = (id, name, role_id, role, branch_id) => ({
-    id, name, role_id, role, branch_id, branchId: branch_id,
+const persona = (id, name, role_id, role, branch_id, secondary_role_id = null, secondary_role = null) => ({
+    id, name, role_id, role, branch_id, branchId: branch_id, secondary_role_id, secondary_role,
     status: 'ACTIVO', history: [], documents: [], employee_documents: [],
     // Con estos tres puestos, `alertasDe` no encuentra nada que decir: la
     // prueba habla del reparto, no de las insignias.
     dui: '00000000-0', birth_date: '1990-03-04', isss_number: '123456',
 });
 
+// Salud 4 tal como está en producción, más el Administrador de casa matriz —
+// que NO es decorado: es lo que hace que la técnica quede adscrita en vez de
+// devuelta a la jefatura de sala. Su superior existe, sólo que está en otra
+// sucursal. Sin esa fila, la regla del superior vacante se dispararía y la
+// prueba pasaría por el motivo equivocado.
 const EMPLEADOS = [
     persona(1, 'Jefa de Salud 4',       19, 'Jefe/a de Sala',                                 44),
-    persona(2, 'Regente de Salud 4',    23, 'Regente de Enfermeria',                          44),
-    persona(3, 'Tecnico de Servicios',  27, 'Tecnico de Mantenimiento y Servicios Generales', 44),
+    persona(2, 'Regente de Salud 4',    23, 'Regente de Enfermeria',                          44, 20, 'Subjefe/a de Sala'),
+    persona(3, 'Tecnica de Servicios',  27, 'Tecnico de Mantenimiento y Servicios Generales', 44),
     persona(4, 'Dependiente Uno',       30, 'Dependiente de Farmacia',                        44),
     persona(5, 'Dependiente Dos',       30, 'Dependiente de Farmacia',                        44),
+    persona(6, 'Regente de Salud 3',    23, 'Regente de Enfermeria',                          43),
+    persona(7, 'Jefe de Salud 3',       19, 'Jefe/a de Sala',                                 43),
+    persona(8, 'Dependiente Tres',      30, 'Dependiente de Farmacia',                        43),
+    persona(9, 'El Administrador',       3, 'Administrador',                                  99),
 ];
 
-const BRANCHES = [{ id: 44, name: 'Salud 4' }];
+const BRANCHES = [{ id: 44, name: 'Salud 4' }, { id: 43, name: 'Salud 3' }, { id: 99, name: 'Administracion' }];
 
 const estado = {
     employees: EMPLEADOS,
@@ -93,37 +102,85 @@ const montar = () => render(
     </MemoryRouter>,
 );
 
-// Las tarjetas destacadas son las que llevan la línea «Responde a …»: es la
-// marca que sólo pinta un referente, así que sirve de sonda sin depender de una
-// clase de CSS —que cambiaría con cualquier retoque visual—.
-const referentes = (container) =>
-    [...container.querySelectorAll('[data-surface="card"]')]
-        .filter(c => c.textContent.includes('Responde a'))
-        .map(c => c.querySelector('p')?.textContent?.trim());
+// Sondas por el CONTENIDO del DOM, no por clases de CSS: un retoque visual no
+// tiene que romper una prueba que habla de jerarquía.
+const tarjetas = (container) => [...container.querySelectorAll('[data-surface="card"]')];
 
-describe('Equipos por sucursal — el reparto entre referentes y equipo', () => {
+const textoDe = (t) => t.querySelector('p')?.textContent?.trim();
+
+// `data-lugar` lo estampa la vista, que en tiempo de render sí sabe si una
+// tarjeta es la jefatura, el equipo o un adscrito. Preguntarlo por el aspecto
+// —tamaño de la tarjeta, o la línea «Responde a…»— falla: lo primero es CSS y
+// lo segundo lo llevan la jefatura Y los adscritos, que fue exactamente lo que
+// hizo pasar por buena una sonda equivocada al escribir esta prueba.
+const enLugar = (container, lugar) =>
+    tarjetas(container).filter(c => c.dataset.lugar === lugar).map(textoDe);
+
+const conJefatura = (container) => [...enLugar(container, 'jefatura'), ...enLugar(container, 'segundo')];
+
+describe('Equipos por sucursal — quién manda y quién responde a quién', () => {
     beforeEach(() => cleanup());
 
-    it('los tres que responden fuera de la sala son referentes', () => {
+    it('la jefa de sala manda, aunque su cargo esté MÁS ABAJO en el árbol', () => {
+        // Técnico de Mantenimiento cuelga del Administrador (nivel 2) y Jefe/a
+        // de Sala del Supervisor de Ventas (nivel 3). Por nivel ganaría la
+        // técnica; por gente a cargo dentro de la sala, gana la jefa — que es
+        // lo que la sala entiende.
         const { container } = montar();
-        const nombres = referentes(container);
+        const nombres = conJefatura(container);
         expect(nombres).toContain('Jefa de Salud 4');
-        expect(nombres).toContain('Regente de Salud 4');
-        expect(nombres).toContain('Tecnico de Servicios');
-        expect(nombres).toHaveLength(3);
+        expect(nombres).not.toContain('Tecnica de Servicios');
     });
 
-    it('los dependientes tienen jefe DENTRO de la sala y caen en el equipo', () => {
+    it('la regente que además es subjefa ocupa el segundo puesto', () => {
         const { container } = montar();
-        const nombres = referentes(container);
-        expect(nombres).not.toContain('Dependiente Uno');
-        expect(nombres).not.toContain('Dependiente Dos');
-        // Y siguen estando: caer en equipo no es desaparecer.
+        expect(conJefatura(container)).toContain('Regente de Salud 4');
+    });
+
+    it('la sala sin subjefe muestra el puesto sin cubrir, con su nombre', () => {
+        const { container } = montar();
+        // Salud 3 no tiene subjefe y Salud 4 sí: el hueco se dibuja UNA vez.
+        expect(container.textContent).toContain('Puesto sin cubrir');
+        expect(container.textContent).toContain('Subjefe/a de Sala');
+        expect(tarjetas(container).filter(c => c.textContent.includes('Puesto sin cubrir'))).toHaveLength(1);
+    });
+
+    it('la regente de Salud 3 NO es jefatura: su superior está vacante y responde a la sala', () => {
+        const { container } = montar();
+        const nombres = conJefatura(container);
+        expect(nombres).toContain('Jefe de Salud 3');
+        expect(nombres).not.toContain('Regente de Salud 3');
+        // Y el motivo se dice una sola vez, para toda la empresa.
+        expect(container.textContent).toContain('Supervisor del Departamento Medico y Enfermería');
+        expect(container.textContent).toContain('sin cubrir');
+    });
+
+    it('la técnica queda adscrita: su superior existe, pero está en otra sucursal', () => {
+        const { container } = montar();
+        expect(container.textContent).toContain('También en esta sala');
+        expect(enLugar(container, 'adscrito')).toEqual(['Tecnica de Servicios']);
+        const adscrita = tarjetas(container).find(c => textoDe(c) === 'Tecnica de Servicios');
+        expect(adscrita.textContent).toContain('Responde a Administrador');
+    });
+
+    it('dentro del equipo, la regente va ANTES que los dependientes', () => {
+        // Pedido del usuario: «regente de enfermería sale después [del jefe]».
+        // Después de la jefatura, sí — pero antes que el mostrador. El orden
+        // sale del nivel del cargo en el árbol: Regente 3, Dependiente 5.
+        const { container } = montar();
+        const equipo = enLugar(container, 'equipo');
+        expect(equipo.indexOf('Regente de Salud 3')).toBeLessThan(equipo.indexOf('Dependiente Tres'));
+    });
+
+    it('los dependientes siguen estando, en el equipo', () => {
+        const { container } = montar();
+        expect(enLugar(container, 'equipo')).toContain('Dependiente Uno');
+        expect(conJefatura(container)).not.toContain('Dependiente Uno');
         expect(container.textContent).toContain('Dependiente Uno');
         expect(container.textContent).toContain('Dependiente Dos');
     });
 
-    it('el encabezado de la sala cuenta las cinco personas', () => {
+    it('el encabezado de la sala cuenta a su gente', () => {
         const { container } = montar();
         expect(container.textContent).toContain('Salud 4');
         expect(container.textContent).toContain('5 personas');
@@ -141,15 +198,11 @@ describe('Equipos por sucursal — el reparto entre referentes y equipo', () => 
     });
 
     it('una ausencia vigente se anuncia con la fecha de vuelta', () => {
-        const conVacacion = {
-            ...estado,
-            employees: EMPLEADOS.map(e => e.id !== 4 ? e : {
-                ...e,
-                history: [{ type: 'VACATION', date: '2020-01-01', metadata: { endDate: '2099-09-02' } }],
-            }),
-        };
         const previo = estado.employees;
-        estado.employees = conVacacion.employees;
+        estado.employees = EMPLEADOS.map(e => e.id !== 4 ? e : {
+            ...e,
+            history: [{ type: 'VACATION', date: '2020-01-01', metadata: { endDate: '2099-09-02' } }],
+        });
         try {
             const { container } = montar();
             expect(container.textContent).toContain('En vacaciones');

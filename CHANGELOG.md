@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.805.2 — El aro se veía en el DOM y no en pantalla
+
+*«¿Y el aro de vacaciones?»* — con la captura de una tarjeta que mostraba la
+palmera y ningún aro.
+
+**Estaba dibujado con `ring-inset`, y ahí es donde la foto se lo comía.** Una
+sombra interior se pinta encima del fondo del elemento pero **debajo de sus
+hijos**, y el hijo acá es una foto que ocupa el 100% de la caja. O sea que el aro
+existía en el DOM, tenía su color y su grosor, **pasaba las siete pruebas** —
+jsdom no compone capas, así que ninguna afirmación sobre clases podía verlo— y
+era invisible en pantalla. Lo vio el usuario antes que cualquier gate.
+
+Va por fuera: una sombra no ocupa espacio, así que no mueve el layout, y el
+`overflow-hidden` no la recorta porque sólo recorta hijos. La prueba que queda
+no afirma «se ve» —eso jsdom no lo puede decir— sino la causa: **que
+`ring-inset` no vuelva**.
+
+**Y el segundo reclamo era otro:** la foto del menú lateral no tenía aro. No era
+un bug, era que ese sitio nunca se migró — el componente existía y lo usaba una
+sola pantalla. Migradas ahora:
+
+- **El menú lateral, en sus cuatro formas** (desplegado, colapsado, el flyout y
+  la barra del teléfono). Ahí la foto mide 36 y 44 px, o sea por debajo del
+  escalón del chip, así que sale el aro solo — y por eso tampoco choca con la
+  torta de cumpleaños que ya vivía en esa esquina.
+- **La ficha del empleado**, a 144/160 px, que es donde el chip con el ícono sí
+  se pinta y dice qué pasa sin leer.
+- **Conexiones** y **Carnés del día**, que son las otras dos pantallas que
+  hablan de gente **ahora**.
+
+**El aro se resuelve por id contra el store**, y eso es lo que hace posible la
+migración: la mitad de los sitios donde sale una foto no pasa un empleado
+completo —el sidebar tiene el objeto de la sesión, que no lleva historial; los
+chips de pedidos pasan `{id, name, photo}`—. Si el aro dependiera de que el
+llamador traiga `history`, el estado saldría en unas pantallas y en otras no,
+sin que nada fallara. `AvatarConEstado` acepta además `radio` y `marco` porque
+el sidebar es una superficie **bespoke** (§25.4) con sus propios tokens de
+borde: meterle la caja de una tarjeta habría sido una regresión visual.
+
+**Lo que NO se migró, y por qué no es un olvido.** Quedan ~19 archivos usando la
+foto sin aro, y casi todos muestran a una persona en un registro **pasado**:
+quién firmó una bitácora, quién despachó un pedido, quién hizo un corte. Ahí el
+aro sería engañoso — decoraría un hecho de la semana pasada con un dato de hoy.
+El aro dice «esta persona no está **ahora**», así que sólo tiene sentido donde la
+pantalla habla del ahora.
+
+**`gate:bundle`:** el entry pasa de 304 a **305 kB** contra un techo de 303. La
+atribución está medida construyendo el mismo árbol con y sin el cambio del
+sidebar: **304 era el estado previo, ajeno a este trabajo, y 1 kB es de acá** —
+el precio de que la foto del menú tenga aro en todas las pantallas. **No se subió
+el techo.** El entry necesita una decisión, y ahora 2 de sus kB de más son
+reales.
+
+También se reescribió un comentario en la ficha del empleado que nombraba
+`LiquidAvatar` entre ángulos: el detector `import` de `gate:design` lee el
+fuente como texto y lo marcó como «usado sin importar». Tiene razón en no
+distinguir una etiqueta de una mención — un detector que lo intentara dejaría
+pasar el caso real, que el build tampoco ve.
+
+
 ## v2.805.1 — La foto de respaldo es opcional, así que deja de señalarse
 
 **«no hace falta foto de respaldo»** (usuario, 2026-08-26), sobre el renglón que

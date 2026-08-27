@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { AlertCircle, Lock } from 'lucide-react';
 import { inputHoverClass, applyInputMask } from '../../utils/inputStyles';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // Input estándar del portal: label uppercase + badge "Requerido"/error, icono
 // izquierdo opcional, glow azul de marca al hover/focus, borde rojo cuando
@@ -40,6 +41,11 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // único que sobraba en varios era eso. Sin la ranura, cada uno seguía
     // escribiendo la etiqueta, el badge de error y el contenedor por su cuenta.
     labelAction,
+    // `labelDenso`: el rótulo un punto más chico, para el campo que vive dentro
+    // de una tarjeta junto a otros que ya lo usan. El ALTO del rótulo NO cambia
+    // —lo fija `rotuloCampo`—: si cambiara, volvería el desalineado un nivel
+    // más abajo, que es justo el defecto que ese canónico existe para cerrar.
+    labelDenso = false,
     // `compact`: alto de 32px en vez de 40 y texto más chico, para las celdas
     // numéricas densas de las grillas (nómina, min/max) donde el campo va
     // dentro de una tabla y no como campo de formulario.
@@ -122,7 +128,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 mensaje de error pasa a ser solo para lectores de pantalla: la
                 señal visible es el borde rojo, que ya estaba. */}
             {label ? (
-                <label htmlFor={name} className={`text-caption font-black uppercase tracking-widest ${od ? od.label : 'text-content-3'} ml-1 mb-1.5 flex items-center justify-between transition-colors`}>
+                <label htmlFor={name} className={`${rotuloCampo(od ? od.label : 'text-content-3', { denso: labelDenso })} transition-colors`}>
                     <span className="flex items-center gap-1.5">
                         {label} {helperText && <span className="text-micro text-brand-text">{helperText}</span>}
                         {labelAction}

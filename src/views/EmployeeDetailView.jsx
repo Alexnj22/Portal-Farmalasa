@@ -29,7 +29,8 @@ import { fetchEmployeeTimeline, fetchCredenciales } from '../data/employees';
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
 // quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
 const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
+import useMediaQuery from '../hooks/useMediaQuery';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
@@ -45,6 +46,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const shifts = useStaffStore(s => s.shifts);
     const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
+    // 144 y 160 son las dos medidas que ya tenían las clases `h-36 md:h-40`.
+    const fotoPx = useMediaQuery('(min-width: 768px)') ? 160 : 144;
     const canEdit = hasPermission('staff_detail', 'can_edit');
     // La sección de dinero del expediente estaba gateada por `canEdit`, o sea
     // por poder EDITAR la ficha — no por el módulo que existe para eso. Con
@@ -243,7 +246,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         return { cells, year: y, month: m };
     }, [ausenciasCalMonth]);
 
-    const fallbackInitials = emp?.name ? emp.name.charAt(0).toUpperCase() : '👤';
+    // Las iniciales de respaldo se fueron con el avatar suelto que había acá:
+    // hoy las resuelve `AvatarConEstado` con `shortEmployeeName`, que da DOS
+    // letras —primer nombre y primer apellido— en vez de la primera del nombre
+    // completo. Es el mismo respaldo que ya usa el resto del portal.
+    //
+    // El nombre del componente viejo NO se escribe entre ángulos ni siquiera en
+    // un comentario: el detector `import` de `gate:design` lee el fuente como
+    // texto y no distingue una etiqueta de una mención, así que lo marcaría
+    // como «usado sin importar». Y tiene razón en no distinguirlo — un
+    // detector que intente adivinar cuál de los dos es dejaría pasar el caso
+    // real, que el build tampoco ve.
 
     const age = useMemo(() => {
         if (!emp?.birth_date && !emp?.birthDate) return null;
@@ -512,10 +525,21 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 
                                 <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-base">
                                     
-                                    <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl mb-5 group relative">
-                                        <div className="h-full w-full rounded-full overflow-hidden bg-surface-card-hover relative shadow-inner">
-                                            <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-lento)]" />
-                                        </div>
+                                    {/* El aro del estado, también acá — es la pantalla donde se
+                                        viene a saber de esta persona en particular, así que si no
+                                        está, es lo primero que hay que ver. A este tamaño la
+                                        escalera de `AvatarConEstado` sí pinta el chip con el
+                                        ícono, que es lo que dice QUÉ pasa sin leer.
+
+                                        `px` sale de `useEsAncho` y no de las clases `md:`: el
+                                        componente necesita el número real para decidir el
+                                        escalón, y un breakpoint de Tailwind no se puede leer
+                                        desde JavaScript sin medirlo. */}
+                                    <div className="rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl mb-5 group relative">
+                                        <AvatarConEstado
+                                            emp={emp} px={fotoPx} radio="rounded-full" marco=""
+                                            className="group-hover:scale-105 transition-transform duration-[var(--dur-lento)]"
+                                        />
                                         {canEdit && (
                                             <div className="absolute inset-0 rounded-full bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-[var(--dur-slow)] flex items-center justify-center cursor-pointer"
                                                 onClick={handleEditProfile}>

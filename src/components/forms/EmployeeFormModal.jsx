@@ -23,6 +23,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { EL_SALVADOR_GEO, distritosDe } from '../../data/elSalvadorGeo';
 import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
@@ -283,7 +284,7 @@ const applyMask = (value, type) => {
 // Locked field shown for HR-action-only fields in edit mode
 const LockedField = ({ label, value, colSpan = 1 }) => (
     <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
-        <label className="text-caption font-black uppercase tracking-widest text-content-2 ml-1 mb-1.5 flex items-center justify-between">
+        <label className={rotuloCampo('text-content-2')}>
             <span>{label}</span>
             <Badge size="sm" icon={Lock} uppercase={false}>Acción RRHH</Badge>
         </label>
@@ -1782,14 +1783,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required hasError={lastNamesInvalid} errorMessage="Solo letras" />
 
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nacionalidad</label>
+                                    <label className={rotuloCampo('text-content-3')}>Nacionalidad</label>
                                     <LiquidSelect value={formData.nationality} onChange={(val) => handleSelectChange('nationality', val)} options={NATIONALITY_OPTIONS} placeholder="Nacionalidad..." icon={Globe} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-tabs">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
-                                        {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
+                                        {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1 leading-none">{birthDateErrorMsg}</span>}
                                     </label>
                                     <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} />
@@ -1802,7 +1803,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 {isMinor && (
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Documento</label>
+                                        <label className={rotuloCampo('text-content-3')}>Tipo de Documento</label>
                                         <CatalogSelect
                                             value={formData.alt_identity_document_type}
                                             onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
@@ -1820,7 +1821,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 {isMinor && isCatalogOther(formData.alt_identity_document_type, ALT_ID_DOCUMENT_TYPE_OPTIONS) && (
                                     <div className="md:col-span-2">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Especifica el Tipo de Documento</label>
+                                        <label className={rotuloCampo('text-content-3')}>Especifica el Tipo de Documento</label>
                                         <CatalogOtherInput
                                             value={formData.alt_identity_document_type}
                                             onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
@@ -1841,7 +1842,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     icon={MapPin} placeholder="Ej. Chalatenango" />
 
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de expedición</label>
+                                    <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
                                     <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                         <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
                                     </div>
@@ -1888,7 +1889,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     hasError={phoneHasError}
                                     errorMessage={phoneErrorMsg}
                                     labelAction={
-                                        <Button variant="ghost" size="xs" icon={Plus} onClick={addPhone}>Agregar</Button>
+                                        <Button variant="ghost" size="rotulo" icon={Plus} onClick={addPhone}>Agregar</Button>
                                     }
                                 />
                                     {(formData.extra_phones || []).map((ph, idx) => {
@@ -1896,11 +1897,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
                                         return (
                                             <div key={idx} className="flex items-center gap-1.5">
-                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                    <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                                    <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
-                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
-                                                </div>
+                                                <PortalInput
+                                                    aria-label={`Otro teléfono ${idx + 2}`} type="tel" icon={Phone} className="flex-1 min-w-0"
+                                                    value={ph} onChange={(e) => updatePhone(idx, e.target.value)}
+                                                    maskType="PHONE" placeholder="0000-0000" hasError={phErr} />
                                                 <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
                                             </div>
                                         );
@@ -1908,25 +1908,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 -mb-0.5 flex items-center justify-between">
-                                        <span>Correo Electrónico {emailInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Correo inválido</span>}</span>
-                                        <Button variant="ghost" icon={Plus} onClick={addEmail}>Agregar</Button>
-                                    </label>
-                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${emailInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                        <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
-                                        <input type="email" name="email" value={formData.email || ''} onChange={handleChange} placeholder="nombre@correo.com"
-                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                    </div>
+                                    <PortalInput
+                                        label="Correo Electrónico" name="email" type="email" icon={Mail}
+                                        value={formData.email} onChange={handleChange}
+                                        placeholder="nombre@correo.com"
+                                        hasError={emailInvalid} errorMessage="Correo inválido"
+                                        labelAction={<Button size="rotulo" variant="ghost" icon={Plus} onClick={addEmail}>Agregar</Button>} />
 
                                     {(formData.extra_emails || []).map((em, idx) => {
                                         const emErr = !!em && em.trim() !== '' && !isValidEmail(em.trim());
                                         return (
                                             <div key={idx} className="flex items-center gap-1.5">
-                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                    <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
-                                                    <input type="email" value={em} onChange={(e) => updateEmail(idx, e.target.value)} placeholder="otro@correo.com"
-                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
-                                                </div>
+                                                <PortalInput
+                                                    aria-label={`Otro correo ${idx + 2}`} type="email" icon={Mail} className="flex-1 min-w-0"
+                                                    value={em} onChange={(e) => updateEmail(idx, e.target.value)}
+                                                    placeholder="otro@correo.com" hasError={emErr} />
                                                 <Button variant="ghost" size="sm" icon={X} title="Quitar correo" iconOnly onClick={() => removeEmail(idx)} />
                                             </div>
                                         );
@@ -1935,16 +1931,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         <span>Género</span>
-                                        {!formData.gender && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                        {!formData.gender && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <LiquidSelect invalid={!formData.gender} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         <span>Estado Civil</span>
-                                        {!formData.marital_status && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                        {!formData.marital_status && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <LiquidSelect invalid={!formData.marital_status} value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
@@ -1960,13 +1956,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
 
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
+                                    <label className={rotuloCampo('text-content-3')}>Departamento</label>
                                     <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                 </div>
                                 <div className="relative z-base">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         <span>Municipio</span>
-                                        {formData.department && !formData.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                        {formData.department && !formData.municipality && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Municipio...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
@@ -1978,9 +1974,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     ya existía: se construyó para la ficha fiscal del
                                     cliente, que es lo que pide el ERP. */}
                                 <div className="relative z-base">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         <span>Distrito</span>
-                                        {formData.municipality && !formData.distrito && <Badge variant="warning" uppercase={false}>Pendiente</Badge>}
+                                        {formData.municipality && !formData.distrito && <Badge size="sm" variant="warning" uppercase={false}>Pendiente</Badge>}
                                     </label>
                                     <LiquidSelect value={formData.distrito} onChange={(val) => handleSelectChange('distrito', val)} options={distritoOpts} placeholder={formData.municipality ? 'Distrito...' : 'Elija municipio'} disabled={!formData.municipality} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
@@ -2003,23 +1999,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                         <div>
-                                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
+                                                            <label className={rotuloCampo('text-content-3')}>Departamento</label>
                                                             <LiquidSelect value={addr.department} onChange={(val) => updateAddress(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div>
-                                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                                            <label className={rotuloCampo('text-content-3')}>
                                                                 <span>Municipio</span>
-                                                                {addr.department && !addr.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                                {addr.department && !addr.municipality && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                             </label>
                                                             <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Municipio...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div className="md:col-span-2">
-                                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
-                                                            <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
-                                                                <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
-                                                                <input type="text" value={addr.address || ''} onChange={(e) => updateAddress(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
-                                                                    className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                            </div>
+                                                            <PortalInput label="Dirección Detallada" name={`dir-alterna-${idx}`} icon={MapPin}
+                                                                value={addr.address} onChange={(e) => updateAddress(idx, 'address', e.target.value)}
+                                                                placeholder="Colonia, Calle, Número de Casa..." />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2041,15 +2034,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="relative z-tabs">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nivel Académico</label>
+                                    <label className={rotuloCampo('text-content-3')}>Nivel Académico</label>
                                     <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 {formData.education_level === 'BASICA' && (
                                     <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                        <label className={rotuloCampo('text-content-3')}>
                                             <span>Grado Finalizado</span>
-                                            {!formData.education_grade_completed && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                            {!formData.education_grade_completed && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                         </label>
                                         <LiquidSelect invalid={!formData.education_grade_completed} value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                     </div>
@@ -2061,9 +2054,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     return (
                                         <>
                                             <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                                <label className={rotuloCampo('text-content-3')}>
                                                     <span>Especialidad</span>
-                                                    {!formData.education_specialty && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                    {!formData.education_specialty && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.education_specialty}
@@ -2077,9 +2070,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                             {isOtherSpecialty && (
                                                 <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <label className={rotuloCampo('text-content-3')}>
                                                         <span>Especifica la Especialidad</span>
-                                                        {formData.education_specialty === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                        {formData.education_specialty === OTRA_ESPECIALIDAD && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.education_specialty}
@@ -2099,9 +2092,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     return (
                                         <>
                                             <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                                <label className={rotuloCampo('text-content-3')}>
                                                     <span>Profesión / Título</span>
-                                                    {!formData.profession && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                    {!formData.profession && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.profession}
@@ -2115,9 +2108,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                             {isOtherProfession && (
                                                 <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <label className={rotuloCampo('text-content-3')}>
                                                         <span>Especifica la Profesión / Título</span>
-                                                        {formData.profession === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                        {formData.profession === OTRA_ESPECIALIDAD && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.profession}
@@ -2143,18 +2136,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         {!!formData.is_studying && (
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                                                 <div>
-                                                    <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Mes de Inicio</label>
-                                                    <div className="rounded-2xl h-[38px]">
-                                                        <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[1] : ''} onChange={(val) => handleStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
-                                                    </div>
+                                                    <label className={rotuloCampo('text-chart-3-text', { denso: true })}>Mes de Inicio</label>
+                                                    <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[1] : ''} onChange={(val) => handleStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." clearable={false} {...portalSelectProps} />
                                                 </div>
                                                 <div>
-                                                    <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Año de Inicio</label>
-                                                    <div className="rounded-2xl h-[38px]">
-                                                        <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
-                                                    </div>
+                                                    <label className={rotuloCampo('text-chart-3-text', { denso: true })}>Año de Inicio</label>
+                                                    <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." clearable={false} {...portalSelectProps} />
                                                 </div>
-                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" hasError={studyEndInPast} />
+                                                <PortalInput label="Duración (años)" labelDenso name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" hasError={studyEndInPast} />
                                             </div>
                                         )}
                                         {estimatedStudyEnd && (
@@ -2179,9 +2168,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             {!!formData.has_maestria && (
                                                 <div className="mt-3 grid grid-cols-1 gap-3">
                                                     <div>
-                                                        <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 flex items-center justify-between">
+                                                        <label className={rotuloCampo('text-chart-3-text', { denso: true })}>
                                                             <span>Maestría / Postgrado</span>
-                                                            {!formData.maestria_title && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                            {!formData.maestria_title && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                         </label>
                                                         <CatalogSelect
                                                             value={formData.maestria_title}
@@ -2195,7 +2184,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     {isOtherMaestria && (
                                                         <div>
-                                                            <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Especifica la Maestría / Postgrado</label>
+                                                            <label className={rotuloCampo('text-chart-3-text', { denso: true })}>Especifica la Maestría / Postgrado</label>
                                                             <CatalogOtherInput
                                                                 value={formData.maestria_title}
                                                                 onChange={(val) => handleSelectChange('maestria_title', val)}
@@ -2215,18 +2204,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         {!!formData.maestria_is_studying && (
                                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                                                                 <div>
-                                                                    <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Mes de Inicio</label>
-                                                                    <div className="rounded-2xl h-[38px]">
-                                                                        <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[1] : ''} onChange={(val) => handleMaestriaStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
-                                                                    </div>
+                                                                    <label className={rotuloCampo('text-chart-3-text', { denso: true })}>Mes de Inicio</label>
+                                                                    <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[1] : ''} onChange={(val) => handleMaestriaStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." clearable={false} {...portalSelectProps} />
                                                                 </div>
                                                                 <div>
-                                                                    <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Año de Inicio</label>
-                                                                    <div className="rounded-2xl h-[38px]">
-                                                                        <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[0] : ''} onChange={(val) => handleMaestriaStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
-                                                                    </div>
+                                                                    <label className={rotuloCampo('text-chart-3-text', { denso: true })}>Año de Inicio</label>
+                                                                    <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[0] : ''} onChange={(val) => handleMaestriaStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." clearable={false} {...portalSelectProps} />
                                                                 </div>
-                                                                <PortalInput label="Duración (años)" name="maestria_study_duration_years" value={formData.maestria_study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2" hasError={maestriaStudyEndInPast} />
+                                                                <PortalInput label="Duración (años)" labelDenso name="maestria_study_duration_years" value={formData.maestria_study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2" hasError={maestriaStudyEndInPast} />
                                                             </div>
                                                         )}
                                                         {estimatedMaestriaEnd && (
@@ -2245,7 +2230,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-divider">
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Cursos / Habilidades Adicionales</label>
+                                <label className={rotuloCampo('text-content-3')}>Cursos / Habilidades Adicionales</label>
                                 <div className="flex flex-col gap-3">
                                     {(formData.additional_skills || []).map((entry, idx) => {
                                         const isOtherSkill = isCatalogOther(entry.skill, cursoHabilidadOptions);
@@ -2258,27 +2243,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div className="md:col-span-2">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Curso / Habilidad</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Curso / Habilidad</label>
                                                         <CatalogSelect value={entry.skill} onChange={(val) => updateSkill(idx, 'skill', val)} options={cursoHabilidadOptions} portalSelectProps={portalSelectProps} inputHoverClass={inputHoverClass} placeholder="Curso/Habilidad..." />
                                                     </div>
                                                     {isOtherSkill && (
                                                         <div className="md:col-span-2">
-                                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Especifica el Curso / Habilidad</label>
+                                                            <label className={rotuloCampo('text-content-3')}>Especifica el Curso / Habilidad</label>
                                                             <CatalogOtherInput value={entry.skill} onChange={(val) => updateSkill(idx, 'skill', val)} inputHoverClass={inputHoverClass} placeholder="Especifica el curso o habilidad" />
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Institución</label>
                                                         <CatalogSelect value={entry.institution} onChange={(val) => updateSkill(idx, 'institution', val)} options={institucionOptions} portalSelectProps={portalSelectProps} inputHoverClass={inputHoverClass} placeholder="Institución..." />
                                                     </div>
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Totales</label>
-                                                        <input type="number" min="0" value={entry.hours || ''} onChange={(e) => updateSkill(idx, 'hours', e.target.value)} placeholder="Ej. 40"
-                                                            className={`w-full h-[max(40px,var(--tap-min))] px-4 bg-surface-card border border-divider rounded-2xl text-body-xl font-bold text-content-2 outline-none shadow-sm ${inputHoverClass}`} />
+                                                        <PortalInput label="Horas Totales" name={`horas-curso-${idx}`} type="number" min="0"
+                                                            value={entry.hours} onChange={(e) => updateSkill(idx, 'hours', e.target.value)} placeholder="Ej. 40" />
                                                     </div>
                                                     {isOtherInstitution && (
                                                         <div className="md:col-span-2">
-                                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Especifica la Institución</label>
+                                                            <label className={rotuloCampo('text-content-3')}>Especifica la Institución</label>
                                                             <CatalogOtherInput value={entry.institution} onChange={(val) => updateSkill(idx, 'institution', val)} inputHoverClass={inputHoverClass} placeholder="Especifica la institución" />
                                                         </div>
                                                     )}
@@ -2388,7 +2372,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                                             <PortalInput
-                                                aria-label={`Número de ${a.junta}`} compact icon={Hash}
+                                                aria-label={`Número de ${a.junta}`} icon={Hash}
                                                 value={formData[a.campo] || ''}
                                                 onChange={(e) => handleSelectChange(a.campo, e.target.value)}
                                                 placeholder={`N° ${a.junta}`} />
@@ -2407,7 +2391,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             persona, que es lo que Talento Humano sí sabe. */}
                                         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                                             <div className="relative z-content">
-                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Cuál tiene?</label>
+                                                <label className={rotuloCampo('text-content-3')}>¿Cuál tiene?</label>
                                                 <LiquidSelect
                                                     value={tipo || ''}
                                                     onChange={(val) => setFormData(prev => ({ ...prev, ...fijarTipoAcreditacion(prev, a.id, val) }))}
@@ -2475,11 +2459,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3">ISSS y AFP</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene ISSS?</label>
+                                        <label className={rotuloCampo('text-content-3')}>¿Ya tiene ISSS?</label>
                                         <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                     </div>
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">¿Ya tiene AFP?</label>
+                                        <label className={rotuloCampo('text-content-3')}>¿Ya tiene AFP?</label>
                                         <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                     </div>
                                 </div>
@@ -2505,7 +2489,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         sería decidir por alguien que ese número ya no importa. */}
                                     {formData.afp_estado !== 'NO_TIENE' && (
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
+                                        <label className={rotuloCampo('text-content-3')}>NUP (AFP)</label>
                                         <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-3 gap-2`}>
                                             <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                                             <span className="text-body-xl font-bold text-content-2 truncate">
@@ -2526,7 +2510,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         NUP. Los dos aparecen sólo cuando hay a qué referirse. */}
                                     {formData.afp_estado !== 'NO_TIENE' && (
                                         <div className="relative z-content">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
+                                            <label className={rotuloCampo('text-content-3')}>Institución AFP</label>
                                             <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
                                         </div>
                                     )}
@@ -2581,12 +2565,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nombre</label>
-                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
-                                                            <div className="absolute left-3 text-content-3"><User size={14} strokeWidth={2.5} /></div>
-                                                            <input type="text" value={dep.name || ''} onChange={(e) => updateDependent(idx, 'name', e.target.value)} placeholder="Nombre completo"
-                                                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                        </div>
+                                                        <PortalInput label="Nombre" name={`dep-nombre-${idx}`} icon={User}
+                                                            value={dep.name} onChange={(e) => updateDependent(idx, 'name', e.target.value)}
+                                                            placeholder="Nombre completo" />
                                                     </div>
                                                     <div>
                                                         {/* El botón salió de la etiqueta. Compartían renglón
@@ -2595,15 +2576,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             arriba: dos cosas peleando por el mismo ancho.
                                                             Ahora la etiqueta es una etiqueta y el cambio de
                                                             modo va debajo del campo, que es donde se decide. */}
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center gap-1.5">
+                                                        <label className={rotuloCampo('text-content-3')}>
                                                             {depAgeOnly ? 'Edad' : 'Fecha de nacimiento'}
                                                             {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                         </label>
                                                         {depAgeOnly ? (
-                                                            <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                                <input type="number" min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
-                                                                    className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-4 pr-4" />
-                                                            </div>
+                                                            <PortalInput aria-label="Edad" name={`dep-edad-${idx}`} type="number"
+                                                                min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1"
+                                                                value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)}
+                                                                placeholder="Edad en años" hasError={depAgeInvalid} />
                                                         ) : (
                                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                                 <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} />
@@ -2617,7 +2598,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </div>
                                                     </div>
                                                     <div className="relative z-base">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Parentesco</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Parentesco</label>
                                                         <LiquidSelect value={dep.relationship} onChange={(val) => updateDependent(idx, 'relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                                     </div>
 
@@ -2626,29 +2607,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         `col-span-3` el select quedaba a media pantalla del
                                                         rótulo que lo explica. */}
                                                     <div className="md:col-span-3 flex flex-wrap items-center gap-3 mt-1 -mb-1">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Dirección</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Dirección</label>
                                                         <div className="w-56">
                                                             <LiquidSelect value="" onChange={(val) => copyDependentAddress(idx, val)} options={copyOptions} placeholder="Copiar dirección de..." compact clearable={false} {...portalSelectProps} />
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Departamento</label>
                                                         <LiquidSelect value={dep.department} onChange={(val) => updateDependent(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
                                                         {/* Decía «Distrito» y guardaba el MUNICIPIO: el mismo
                                                             rótulo cruzado que ya se corrigió en la dirección
                                                             de la persona. Se arrastraba acá. */}
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Municipio</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Municipio</label>
                                                         <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Municipio...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
-                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
-                                                            <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
-                                                            <input type="text" value={dep.address || ''} onChange={(e) => updateDependent(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
-                                                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                        </div>
+                                                        <PortalInput label="Dirección Detallada" name={`dep-dir-${idx}`} icon={MapPin}
+                                                            value={dep.address} onChange={(e) => updateDependent(idx, 'address', e.target.value)}
+                                                            placeholder="Colonia, Calle, Número de Casa..." />
                                                     </div>
                                                 </div>
                                             </div>
@@ -2664,7 +2642,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
-                                    <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
+                                    <label className={rotuloCampo('text-danger/80')}>Tipo de Sangre</label>
                                     <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
                                 </div>
                             </div>
@@ -2732,9 +2710,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     return (
                                         <>
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                <label className={rotuloCampo('text-danger/80')}>
                                                     <span>Tipo de Discapacidad</span>
-                                                    {!formData.disability_type && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                    {!formData.disability_type && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.disability_type}
@@ -2747,9 +2725,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 />
                                             </div>
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                <label className={rotuloCampo('text-danger/80')}>
                                                     <span>Grado</span>
-                                                    {!formData.disability_grade && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                    {!formData.disability_grade && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <LiquidSelect invalid={!formData.disability_grade} value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                             </div>
@@ -2760,9 +2738,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             />
                                             {isOtherDisability && (
                                                 <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                    <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <label className={rotuloCampo('text-danger/80')}>
                                                         <span>Especifica el Tipo de Discapacidad</span>
-                                                        {formData.disability_type === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                                        {formData.disability_type === OTRA_ESPECIALIDAD && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.disability_type}
@@ -2787,7 +2765,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <PortalInput label="Avisar a" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Nombre" />
                                 <div className="relative z-base">
-                                    <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 block">Parentesco</label>
+                                    <label className={rotuloCampo('text-danger/80')}>Parentesco</label>
                                     <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
 
@@ -2856,15 +2834,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <PortalInput label="Nombre" aria-label="Nombre" value={c.nombre || ''}
                                                         onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
                                                     <div className="relative z-content">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Parentesco</label>
+                                                        <label className={rotuloCampo('text-content-3')}>Parentesco</label>
                                                         <LiquidSelect value={c.parentesco || ''}
                                                             onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
                                                             options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
                                                     </div>
                                                     <div className="md:col-span-2 flex flex-col gap-2">
-                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center justify-between">
+                                                        <label className={rotuloCampo('text-content-3')}>
                                                             <span>Teléfono{tels.length > 1 ? 's' : ''}</span>
-                                                            <Button variant="ghost" size="xs" icon={Plus}
+                                                            <Button size="rotulo" variant="ghost" size="rotulo" icon={Plus}
                                                                 onClick={() => updateContactoExtra(idx, { telefonos: [...tels, ''], telefono: undefined })}>Agregar</Button>
                                                         </label>
                                                         {tels.map((t, i) => (
@@ -2911,12 +2889,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 ) : (
                                     <>
                                         <div className={`relative z-tabs ${cubreVariasAreas ? 'md:col-span-2' : ''}`}>
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
+                                            <label className={rotuloCampo('text-content-3')}>Área de Trabajo <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge></label>
                                             <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (((branches||[]).find(b=>String(b.id)===String(val))?.type || 'FARMACIA') === 'FARMACIA') setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                         </div>
                                         {cubreVariasAreas && (
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Áreas que cubre</label>
+                                                <label className={rotuloCampo('text-chart-9-text')}>Áreas que cubre</label>
                                                 <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-2xl min-h-[44px]">
                                                     {areasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
@@ -2939,17 +2917,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                         )}
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de inicio de labores</label>
+                                            <label className={rotuloCampo('text-content-3')}>Fecha de inicio de labores</label>
                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                             </div>
                                         </div>
                                         <div className="relative z-content">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
+                                            <label className={rotuloCampo('text-content-3')}>Cargo Principal <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge></label>
                                             <LiquidSelect invalid={!formData.role_id} value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-base">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
+                                            <label className={rotuloCampo('text-content-3')}>Cargo Secundario (Apoyo)</label>
                                             <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                     </>
@@ -2963,7 +2941,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Si no está, lo cubre</label>
+                                    <label className={rotuloCampo('text-content-3')}>Si no está, lo cubre</label>
                                     <LiquidSelect value={formData.suplente_id || ''} onChange={(val) => handleSelectChange('suplente_id', val || null)} options={suplenteOpts} placeholder="Nadie en particular..." icon={Users} {...portalSelectProps} />
                                 </div>
                                 <p className="text-caption text-content-3 font-medium leading-snug md:pt-6">
@@ -3008,11 +2986,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 ) : (
                                     <>
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de contrato</label>
+                                            <label className={rotuloCampo('text-content-3')}>Tipo de contrato</label>
                                             <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de contratación</label>
+                                            <label className={rotuloCampo('text-content-3')}>Fecha de contratación</label>
                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} />
                                             </div>
@@ -3022,9 +3000,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 {contractHasEndDate && (
                                     <div className="relative z-tabs animate-in fade-in zoom-in-95">
-                                        <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-1.5 flex items-center justify-between">
-                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
-                                            {!formData.contract_end_date && <Badge variant="danger" uppercase={false}>Obligatorio</Badge>}
+                                        <label className={rotuloCampo('text-warning')}>
+                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge size="sm" variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
+                                            {!formData.contract_end_date && <Badge size="sm" variant="danger" uppercase={false}>Obligatorio</Badge>}
                                         </label>
                                         <div className={`bg-warning/10 rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} />
@@ -3046,9 +3024,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.contract_type === 'TEMPORAL' && (
                                     <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in-95">
                                         <div className="relative z-content">
-                                            <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-1.5 flex items-center justify-between">
-                                                <span>Base Legal del Plazo (Art. 25)</span>
-                                                {temporalBasisMissing && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                                            <label className={rotuloCampo('text-warning')}>
+                                                <span>Por qué es temporal</span>
+                                                {temporalBasisMissing && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                             </label>
                                             <LiquidSelect invalid={temporalBasisMissing} value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                         </div>
@@ -3080,7 +3058,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     respuesta de la ley es que no hay horas. */}
                                 {!esContratoCivil(formData.contract_type) && (
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas semanales</label>
+                                        <label className={rotuloCampo('text-content-3')}>Horas semanales</label>
                                         <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
                                     </div>
                                 )}
@@ -3111,7 +3089,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         bancario: es una cláusula del contrato, y además la que
                                         decide cuándo el pago se vuelve exigible (Art. 130). */}
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cada cuánto se le paga</label>
+                                        <label className={rotuloCampo('text-content-3')}>Cada cuánto se le paga</label>
                                         <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
                                     </div>
                                     <PortalInput
@@ -3119,7 +3097,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         value={formData.contrato_lugar_celebracion} onChange={handleChange}
                                         icon={MapPin} placeholder="Ej. Chalatenango" />
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de la firma</label>
+                                        <label className={rotuloCampo('text-content-3')}>Fecha de la firma</label>
                                         <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                             <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
                                         </div>
@@ -3141,7 +3119,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Forma de estipulación</label>
+                                        <label className={rotuloCampo('text-content-3')}>Forma de estipulación</label>
                                         <LiquidSelect value={formData.forma_estipulacion_salario} onChange={(val) => handleSelectChange('forma_estipulacion_salario', val)} options={FORMA_ESTIPULACION_OPTIONS} placeholder="Seleccionar…" icon={Clock} {...portalSelectProps} />
                                         {/* El plazo del Art. 130 al lado de la opción elegida:
                                             es lo que vuelve esto una decisión y no un
@@ -3153,7 +3131,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                     </div>
                                     <div className="relative z-content">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Medio de pago</label>
+                                        <label className={rotuloCampo('text-content-3')}>Medio de pago</label>
                                         <LiquidSelect value={formData.medio_pago} onChange={(val) => handleSelectChange('medio_pago', val)} options={MEDIO_PAGO_OPTIONS} placeholder="Seleccionar…" icon={Banknote} {...portalSelectProps} />
                                         <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
                                             El salario se paga en moneda de curso legal. No se puede pagar con vales, fichas ni cupones.
@@ -3272,7 +3250,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 items-start">
                                             <div className="relative z-content">
-                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha en que se remitió</label>
+                                                <label className={rotuloCampo('text-content-3')}>Fecha en que se remitió</label>
                                                 <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                     <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
                                                 </div>
@@ -3280,7 +3258,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             {/* El acuse sellado, adjunto. La fecha sola dice que
                                                 se mandó; el papel es lo que lo prueba. */}
                                             <div>
-                                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Acuse sellado</label>
+                                                <label className={rotuloCampo('text-content-3')}>Acuse sellado</label>
                                                 {renderDocUploadArea('ACUSE_MTPS', { showExpiry: false })}
                                             </div>
                                         </div>
@@ -3394,12 +3372,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Banco (Planilla)</label>
+                                    <label className={rotuloCampo('text-content-3')}>Banco (Planilla)</label>
                                     <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar banco…" icon={Building2} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Cuenta</label>
+                                    <label className={rotuloCampo('text-content-3')}>Tipo de Cuenta</label>
                                     <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} clearable={false} {...portalSelectProps} />
                                 </div>
 
@@ -3450,9 +3428,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {/* PIN derivado del código (se recalcula en vivo al escribir) */}
                                     {formData.kiosk_pin && (
                                         <div className="mt-3 animate-in fade-in">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">PIN del Carné (SHA-256)</label>
+                                            <label className={rotuloCampo('text-content-3')}>PIN del Carné (SHA-256)</label>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-[max(40px,var(--tap-min))] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
+                                                <div className="flex-1 h-[max(40px,var(--tap-min))] bg-chart-8-solid rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
                                                     {formData.kiosk_pin}
                                                 </div>
                                                 <Button variant="secondary" icon={Copy} title="Copiar PIN" iconOnly onClick={async () => {
@@ -3518,7 +3496,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {documentCategories.filter(cat => !EN_ACREDITACIONES.includes(cat.key)).map(cat => (
                                     <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 block">{cat.label}</label>
+                                        <label className={rotuloCampo('text-content-3')}>{cat.label}</label>
                                         {cat.key === 'SRS' && (
                                             <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />
                                         )}

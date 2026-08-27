@@ -147,6 +147,16 @@ const VARIANT_CLASSES = {
 // es `--tap-min` (0 en escritorio, 44px en táctil) y va DENTRO del max().
 // Medido en iPhone 13 antes del cambio: 20 de 87 controles bajo 44px.
 const SIZE_CLASSES = {
+    // `rotulo`: la acción que vive DENTRO del rótulo de un campo («+ Agregar»).
+    // Es el único tamaño que NO crece con `--tap-min`, y es a propósito: el
+    // rótulo mide 20px fijos (`src/utils/rotuloDeCampo.js`) porque de eso
+    // depende que dos campos vecinos arranquen a la misma altura, y un botón
+    // que se estira a 44 en un teléfono rompería justo eso. El piso del dedo lo
+    // da `.blanco-tactil`, que agranda el ÁREA sin agrandar lo pintado — la
+    // misma salida que ya usan el aspa del select y la flecha del carril.
+    // ⚠️ Necesita `relative`, que va incluido acá: el pseudo-elemento se ancla
+    // al botón.
+    rotulo: 'relative blanco-tactil h-5 px-1.5 text-caption gap-1',
     xs: 'h-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] px-2.5 text-micro gap-1',
     sm: 'h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-3.5 text-[12.5px] gap-1.5',
     md: 'h-[max(var(--tap-min),var(--control-h))] px-[18px] text-body gap-1.5',
@@ -160,13 +170,14 @@ const SIZE_CLASSES = {
 // nadie lo notó; donde no, quedaba una pastilla de 44×15. Así estaban los tres
 // botones de abrir/cerrar el menú, medidos en un iPhone 13.
 const ICON_ONLY_SIZE = {
+    rotulo: 'relative blanco-tactil w-5 h-5 px-0',
     xs: 'w-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] h-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] px-0',
     sm: 'w-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-0',
     md: 'w-[max(var(--tap-min),var(--control-h))] h-[max(var(--tap-min),var(--control-h))] px-0',
     lg: 'w-[max(48px,calc(var(--control-h)+8px))] h-[max(48px,calc(var(--control-h)+8px))] px-0',
 };
 
-const ICON_PX = { xs: 12, sm: 14, md: 15, lg: 17 };
+const ICON_PX = { rotulo: 11, xs: 12, sm: 14, md: 15, lg: 17 };
 
 
 const Button = memo(({

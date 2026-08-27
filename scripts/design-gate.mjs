@@ -42,6 +42,7 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { blanquearComentarios } from './lib/blanquearComentarios.mjs';
 
 const ROOTS = ['src'];
 
@@ -510,6 +511,7 @@ function listFiles() {
   ).toString().trim();
   return out ? out.split('\n') : [];
 }
+
 
 // ── Categoría 1: elementos nativos ──────────────────────────────────────
 const NATIVE_PATTERNS = [
@@ -1500,8 +1502,13 @@ function scanFile(path) {
     // marcarlo hacía que documentar bien rompiera el gate. Detectado el
     // 2026-07-27 al crear `FilterBar`. Se blanquean en vez de borrarse para no
     // correr los números de línea de los hallazgos que sí valen.
-    const sinComentarios = text.replace(/\/\*[\s\S]*?\*\//g,
-      m => m.replace(/[^\n]/g, ' '));
+    // ── También los de `//`, y sin comerse el archivo ────────────────────
+    // Este blanqueaba sólo `/* */`, así que una mención en prosa dentro de un
+    // comentario de línea —«las iniciales se fueron con el `<LiquidAvatar>`
+    // suelto»— se contaba como un USO sin importar, o sea un error inventado
+    // sobre código correcto. Y arrastraba el otro defecto: `accept="image/*"`
+    // tiene un `/*` DENTRO de una cadena y el regex lo tomaba por comentario.
+    const sinComentarios = blanquearComentarios(text);
     const lineasSC = sinComentarios.split('\n');
     for (const comp of CANONICOS) {
       const uso = new RegExp(`<${comp}[\\s/>]`);
@@ -1726,10 +1733,7 @@ function scanFile(path) {
     // último, seis menciones de `<input>` en prosa —"reemplaza el <input> que
     // simulaba tecleo"— se contaban como campos sin nombre. Es la misma trampa
     // que ya costó dos conteos de botones.
-    const sinComentarios2 = text
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => m.replace(/[^\n]/g, ' '))
-      .replace(/\/\*[\s\S]*?\*\//g,     m => m.replace(/[^\n]/g, ' '))
-      .replace(/\/\/[^\n]*/g,             m => m.replace(/[^\n]/g, ' '));
+    const sinComentarios2 = blanquearComentarios(text);
     // OJO: NO vale `/<input\b[^>]*>/`. La primera `>` de un `<input>` suele ser
     // la flecha de `onChange={e => …}`, así que la etiqueta queda cortada antes
     // del `placeholder` y el gate reporta campos que sí tienen nombre. Es el
@@ -2015,6 +2019,38 @@ function scanFile(path) {
         const linea = sinComentarios2.slice(0, t.ini).split('\n').length;
         findings.push({ line: linea, label: 'tarjeta a mano — usar `data-surface="card"` (DESIGN.md §5)',
           category: 'tarjeta-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
+    // ── `rotulo-de-campo-a-mano` (2026-08-26) ───────────────────────────
+    // El `<label>` de un campo escrito con sus clases literales en vez de
+    // `rotuloCampo()` (`src/utils/rotuloDeCampo.js`).
+    //
+    // No es una categoría de repetición: es de ALINEACIÓN. Escrito a mano, el
+    // alto del rótulo sale de lo que le pongan adentro, y eso mueve el campo
+    // que está debajo. Medido en el alta de personal el 2026-08-26 con Chromium
+    // sobre el CSS compilado:
+    //
+    //     sólo texto ............ 15px   (42 campos)
+    //     con «Requerido» ....... 25px   (18 campos)
+    //     con un botón chico .... 28px
+    //     con un botón normal ... 36px   (y margen −2 en vez de 6)
+    //
+    // O sea que dos campos vecinos arrancaban hasta 21px desalineados según si
+    // a uno le tocaba una insignia. Lo reportó el usuario, dos veces.
+    //
+    // El canónico fija el alto en 20px y acota lo que entra. Un rótulo a mano
+    // se lo salta por construcción, y como no falla nada, sólo se ve.
+    {
+      const re = /<label\s+className=(?:"([^"]*)"|\{`([^`]*)`\})/g;
+      let m;
+      while ((m = re.exec(sinComentarios2)) !== null) {
+        const c = m[1] || m[2] || '';
+        if (!/tracking-widest/.test(c)) continue;
+        if (!/text-caption|text-micro/.test(c)) continue;
+        const linea = sinComentarios2.slice(0, m.index).split('\n').length;
+        findings.push({ line: linea, label: 'rótulo de campo a mano — usar `rotuloCampo()` (DESIGN.md §25.10-ter)',
+          category: 'rotulo-de-campo-a-mano', text: c.slice(0, 120) });
       }
     }
 

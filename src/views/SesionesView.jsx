@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle, MapPin, ShieldOff, ShieldCheck } from 'lucide-react';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import LiquidModal from '../components/common/LiquidModal';
 import OjoDeTarjeta from '../components/common/OjoDeTarjeta';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -261,11 +261,15 @@ const SesionesView = () => {
                                 onClick={() => setAbierta(p.persona_id)}
                                 className="group p-4 text-left w-full flex items-center gap-3 active:scale-[0.99] transition-transform duration-[var(--dur-base)]"
                             >
-                                <LiquidAvatar
-                                    src={p.foto}
-                                    alt={p.empleado}
-                                    fallbackText={p.empleado}
-                                    className="w-12 h-12 rounded-2xl shrink-0"
+                                {/* Esta pantalla habla de quién está conectado AHORA, así
+                                    que el aro dice algo útil: una sesión abierta de alguien
+                                    que está de vacaciones o incapacitado es justo lo que
+                                    vale la pena mirar dos veces. El objeto viene de un RPC
+                                    con otra forma —`persona_id`, `empleado`, `foto`— y el
+                                    componente resuelve el estado por id contra el store. */}
+                                <AvatarConEstado
+                                    emp={{ id: p.persona_id, name: p.empleado, photo: p.foto }}
+                                    px={48} radio="rounded-2xl" marco=""
                                 />
                                 <div className="min-w-0 flex-1">
                                     <div className="text-label font-bold text-content-2 truncate">{p.empleado}</div>
@@ -314,11 +318,9 @@ const SesionesView = () => {
             >
                 <LiquidModal.Header>
                     <div className="flex items-center gap-3">
-                        <LiquidAvatar
-                            src={detalleVisible?.foto}
-                            alt={detalleVisible?.empleado}
-                            fallbackText={detalleVisible?.empleado}
-                            className="w-11 h-11 rounded-2xl shrink-0"
+                        <AvatarConEstado
+                            emp={{ id: detalleVisible?.persona_id, name: detalleVisible?.empleado, photo: detalleVisible?.foto }}
+                            px={44} radio="rounded-2xl" marco=""
                         />
                         <div className="min-w-0">
                             <h3 className="text-body font-bold text-content truncate">{detalleVisible?.empleado}</h3>

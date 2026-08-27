@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '../common/Button';
+import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -47,7 +48,6 @@ import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
-import { webpSignedUrl } from '../../utils/storageFiles';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../utils/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
@@ -1214,9 +1214,18 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <Link to="/mi-perfil"
                                             className={`flex-1 min-w-0 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-realce)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
-                                                    {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
-                                                </div>
+                                                {/* `AvatarConEstado` y no un `<img>` a mano: el usuario
+                                                    pidió el aro «en todos lados que salga la foto», y acá
+                                                    es donde se ve la propia. A 36 px no lleva chip —la
+                                                    escalera lo saca antes de que sea una mancha— así que
+                                                    tampoco choca con la torta de cumpleaños de al lado.
+                                                    El radio y el marco se le pasan porque el sidebar es
+                                                    una superficie bespoke con sus propios tokens. */}
+                                                <AvatarConEstado
+                                                    emp={user} px={36}
+                                                    className="shadow-[var(--shadow-elevation-xl)]"
+                                                    marco="border border-[rgb(var(--sidebar-ink)/0.12)] bg-[rgb(var(--sidebar-realce)/0.08)]"
+                                                />
                                                 {myBirthday && (
                                                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                         <Cake size={9} className="text-[rgb(var(--sidebar-ink))]" />
@@ -1259,7 +1268,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 bg-[rgb(var(--sidebar-realce)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-[rgb(var(--sidebar-realce)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
-                                            {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
+                                            <AvatarConEstado emp={user} px={44} radio="rounded-2xl" marco="" />
                                         </Link>
                                         {myBirthday && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1348,8 +1357,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="relative w-11 h-11">
                                     <Link to="/mi-perfil" aria-label="Mi perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
-                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
-                                        {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
+                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-base" />
+                                        <AvatarConEstado emp={user} px={44} radio="rounded-3xl" marco="" />
                                     </Link>
                                     {myBirthday && (
                                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[rgb(var(--sidebar-ink))] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1566,9 +1575,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition duration-[var(--dur-fast)] active:scale-[0.97] ${focusRing}`}
                                     type="button"
                                 >
-                                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-[rgb(var(--sidebar-ink)/0.2)] bg-[rgb(var(--sidebar-realce)/0.1)] flex items-center justify-center">
-                                        {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
-                                    </div>
+                                    <AvatarConEstado
+                                        emp={user} px={36}
+                                        marco="border border-[rgb(var(--sidebar-ink)/0.2)] bg-[rgb(var(--sidebar-realce)/0.1)]"
+                                    />
                                     <div className="flex flex-col items-start pr-1">
                                         <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{myShortName}</span>
                                         <span className="text-label text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>

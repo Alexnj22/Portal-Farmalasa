@@ -4,7 +4,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
-import LiquidAvatar from '../components/common/LiquidAvatar';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import BotonCarneDePapel from '../components/personal/BotonCarneDePapel';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -217,8 +217,10 @@ const CarnesDelDiaView = () => {
                                                 esto la foto sale con las esquinas
                                                 cuadradas dentro de una tarjeta
                                                 redondeada. */}
-                                            <LiquidAvatar src={e.photo} alt={e.name} fallbackText={e.name}
-                                                className="w-12 h-12 rounded-xl shrink-0 border border-border-card" />
+                                            {/* El carné de papel vale para HOY, así que quién
+                                                está y quién no es parte de la decisión de
+                                                imprimirlo. */}
+                                            <AvatarConEstado emp={e} px={48} />
                                             <div className="min-w-0">
                                                 <p className="text-body-sm font-black text-content truncate">{shortEmployeeName(e)}</p>
                                                 <p className="text-caption text-content-3 truncate">{e.role || 'Sin cargo'}</p>
@@ -290,8 +292,9 @@ const CarnesDelDiaView = () => {
                                         {g.items.map(c => (
                                             <div key={c.id} data-surface="card" className="p-4 flex flex-col gap-3">
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <LiquidAvatar src={c.foto} alt={c.nombre} fallbackText={c.nombre}
-                                                        className="w-12 h-12 rounded-xl shrink-0 border border-border-card" />
+                                                    <AvatarConEstado
+                                                        emp={{ id: c.employee_id, name: c.nombre, photo: c.foto }}
+                                                        px={48} />
                                                     <div className="min-w-0">
                                                         <p className="text-body-sm font-black text-content truncate">{c.nombre}</p>
                                                         <p className="text-caption text-content-3 truncate">{c.cargo || 'Sin cargo'}</p>

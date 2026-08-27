@@ -5222,6 +5222,77 @@ Quedan **21 en otros seis archivos**, medidos: `BranchTabGeneral` (9),
 `FormNovedad` (4), `PracticanteModal` (3), y uno cada uno en `RangeDatePicker`,
 `CatalogSelect`, `FormRehireEmployee` y `ScheduleCalendar`.
 
+### 25.10-ter El rótulo también tiene que medir siempre lo mismo (2026-08-26)
+
+Arreglado el alto del select, el usuario volvió con la misma queja sobre otra
+fila: *«teléfono y correo tiene distinto tamaño»*. Esta vez el que se movía no
+era el campo sino **el rótulo de arriba**, y con él, dónde empieza el campo.
+
+Medido con Chromium sobre el CSS compilado, en el alta de personal:
+
+| el rótulo llevaba | medía | cuántos |
+|---|---:|---:|
+| sólo texto | 15px | 42 |
+| «Requerido» | 25px | 18 |
+| un botón `xs` | 28px | 1 |
+| un botón normal | 36px (y margen −2 en vez de 6) | 1 |
+
+O sea que dos campos vecinos arrancaban hasta **21px** desalineados, y la
+diferencia no la decidía el diseño: la decidía si a ese campo le tocaba una
+insignia. Sumado a un caso aparte —un rótulo con `mb-1.5` propio **dentro** de
+un padre con `gap-2`, que suma 14px contra 6— eso es exactamente lo que se veía
+entre teléfono y correo.
+
+**La regla: el alto del rótulo lo fija el rótulo, no su contenido.** Son 20px
+(`rotuloCampo()` en `src/utils/rotuloDeCampo.js`), y lo que entra tiene límite:
+
+- una insignia va `size="sm"` (19.5px) — la normal mide 25 y no cabe;
+- una acción va `size="rotulo"`, el único tamaño de `Button` que **no** crece
+  con `--tap-min`: se ve de 20px y se toca como uno de 44 por `.blanco-tactil`,
+  que es la misma salida que ya usaban el aspa del select y la flecha del
+  carril;
+- el espaciado lo trae el canónico. Un rótulo dentro de un padre con `gap`
+  **no** agrega el suyo.
+
+**Y el alto fijo solo no alcanza.** Con el alto puesto y nada más, un aviso
+largo parte en dos líneas y se sale del rótulo *hacia abajo, encima del campo*:
+medido, caja 20 y contenido 27. Eso cambia un desalineado por un encimado, que
+es peor porque tapa un dato. Por eso el canónico además no deja envolver ni
+salirse, y el que cede es el TEXTO del rótulo —con puntos suspensivos— y no el
+aviso: el nombre del campo se adivina por su lugar, el aviso no.
+
+Lo vigila la categoría `rotulo-de-campo-a-mano` de `npm run gate:design`, con
+**113 de deuda declarada en 30 archivos** el día que nació. El alta de personal
+está en cero.
+
+#### El gate estaba ciego sobre dos tercios de ese archivo
+
+La categoría nueva daba **cero** sobre el formulario más grande del repo, y era
+mentira. Su limpiador de comentarios era
+`text.replace(/\/\*[\s\S]*?\*\//g, …)`, y en la línea 1754 hay
+`accept="image/*"`: ese `/*` está **dentro de una cadena**, el regex lo tomó
+como apertura de comentario y blanqueó **154,304 caracteres** — el archivo
+entero de ahí para abajo.
+
+O sea que `input-sin-nombre`, `input-a-mano`, `tarjeta-a-mano`,
+`select-con-envoltorio` y `relleno-sin-solid` venían dando cero sobre ese
+archivo. Al arreglarlo aparecieron **15 hallazgos reales**, todos corregidos:
+cinco campos escritos a mano y sin nombre accesible, cuatro selects dentro de un
+envoltorio de 38px, y un relleno sólido sin su token.
+
+El reemplazo (`scripts/lib/blanquearComentarios.mjs`) no es un regex sino un
+recorrido que sabe cuándo está dentro de una cadena, y blanquea conservando los
+saltos de línea para que los números que reporta el gate sigan siendo los del
+archivo. Lo usa también la categoría `import`, que tenía el defecto hermano:
+blanqueaba `/* */` pero no `//`, así que una mención en prosa —«las iniciales se
+fueron con el `<LiquidAvatar>` suelto»— se contaba como un uso sin importar, o
+sea un error inventado sobre código correcto.
+
+**La lección es la de siempre y esta vez le tocó al instrumento:** un gate que
+falla avisa; uno que se quedó ciego da verde, y el verde es indistinguible del
+verde de verdad. Antes de creerle un cero a una categoría nueva, fabricarle la
+regresión que debería cazar — que es como se encontró esto.
+
 ### 25.11 Toda capa que se monta sobre la pantalla es un diálogo
 
 Una capa que cubre la pantalla, atrapa el clic de afuera y contiene controles

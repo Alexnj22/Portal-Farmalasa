@@ -1,8 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 
 import AvatarConEstado from '../../src/components/common/AvatarConEstado';
+
+// El store es la fuente cuando el llamador no trae la ficha entera. Se le da la
+// misma persona que `DE_VACACIONES` para que la prueba de resolución por id
+// tenga contra qué resolver.
+vi.mock('../../src/store/staffStore', () => ({
+    useStaffStore: (selector) => selector({
+        employees: [{
+            id: 1, name: 'Edwin Nuñez',
+            history: [{ type: 'VACATION', date: '2020-01-01', metadata: { endDate: '2099-09-02' } }],
+        }],
+    }),
+}));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El aro de la foto, y la escalera de tamaños que lo hace funcionar.
@@ -101,6 +113,31 @@ describe('AvatarConEstado — el aro sobrevive al achique, el chip no', () => {
         };
         expect(clases(160)).toContain('ring-[2.5px]');
         expect(clases(32)).toContain('ring-[2.5px]');
+    });
+
+    // ── La regresión que jsdom casi no puede ver ─────────────────────────
+    // La primera versión dibujaba el aro con `ring-inset`. Una sombra interior
+    // se pinta encima del fondo del elemento pero DEBAJO de sus hijos, y el
+    // hijo acá es una foto que ocupa el 100% de la caja: el aro existía en el
+    // DOM, tenía su color, pasaba todas las pruebas de arriba — y era invisible
+    // en pantalla. Lo vio el usuario antes que cualquier gate.
+    //
+    // jsdom no compone capas, así que no se puede afirmar «se ve». Lo que SÍ se
+    // puede afirmar es la causa: que la clase que lo escondía no vuelva.
+    it('el aro NO es `inset` — ahí es donde la foto se lo comía', () => {
+        const c = montar(DE_VACACIONES, 64);
+        const aro = c.querySelector('[data-estado] > span');
+        expect(aro.className).toContain('ring-warning');
+        expect(aro.className).not.toContain('ring-inset');
+    });
+
+    it('el estado se resuelve por id cuando el llamador no trae historial', () => {
+        // El sidebar pasa el objeto de la SESIÓN, que no lleva `history`; los
+        // chips de pedidos pasan {id, name, photo}. Si el aro dependiera de que
+        // el llamador traiga el historial, el estado saldría en unas pantallas
+        // y en otras no, sin que nada fallara.
+        const c = montar({ id: 1, name: 'Edwin Nuñez', photo: null }, 64);
+        expect(marco(c).dataset.estado).toBe('VACATION');
     });
 
     it('quien fue dado de baja también lleva marca, y en su propio color', () => {

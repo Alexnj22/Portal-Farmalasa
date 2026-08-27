@@ -3,6 +3,7 @@ import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCi
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { estadoDePersona } from '../../utils/estadoDePersona';
+import { useStaffStore } from '../../store/staffStore';
 
 /**
  * AvatarConEstado — la foto de una persona, y si esa persona está o no.
@@ -54,6 +55,13 @@ import { estadoDePersona } from '../../utils/estadoDePersona';
  * `px` es OBLIGATORIO y es un número, no una clase: la escalera necesita el
  * tamaño real y desde una clase de Tailwind no se puede leer. Es la misma razón
  * por la que `data-lugar` existe — en tiempo de render se sabe, desde afuera no.
+ *
+ * `radio` y `marco` existen para el sidebar y el kiosco, que son superficies
+ * BESPOKE (§25.4): tienen sus propios tokens de borde y sus propios radios, y
+ * meterles la caja de una tarjeta sería una regresión visual en el único sitio
+ * del portal que a propósito no usa los tokens de superficie. Cuando hay
+ * estado, el aro reemplaza al marco: dos bordes concéntricos leen como un
+ * defecto de render, no como una marca.
  */
 
 const MARCA = {
@@ -81,8 +89,26 @@ const ICONO = {
   SUSPENDIDO: HelpCircle,
 };
 
-export default function AvatarConEstado({ emp, px, className = '', mostrarChip = true }) {
-  const estado = useMemo(() => estadoDePersona(emp), [emp]);
+export default function AvatarConEstado({ emp, px, className = '', mostrarChip = true,
+                                          radio = 'rounded-xl', marco = 'border border-border-card' }) {
+  // ── El estado se busca en la ficha, aunque quien llame no la tenga ────────
+  //
+  // La mitad de los sitios donde sale una foto no pasa un empleado completo:
+  // el sidebar tiene el objeto de la SESIÓN —que no lleva historial—, y los
+  // chips de pedidos y las firmas de bitácoras pasan {id, name, photo}. Si el
+  // aro dependiera de que el llamador traiga `history`, el estado aparecería en
+  // unas pantallas y en otras no, sin que nada fallara — que es exactamente el
+  // silencio que este componente vino a cerrar.
+  //
+  // Así que si el objeto no trae historial, se resuelve por id contra el store,
+  // que es la única fuente. `find` devuelve la referencia que ya está en el
+  // array, no un objeto nuevo, así que el selector no dispara renders de más.
+  const ficha = useStaffStore(s => {
+    if (!emp?.id || Array.isArray(emp.history)) return null;
+    return (s.employees || []).find(e => String(e.id) === String(emp.id)) || null;
+  });
+
+  const estado = useMemo(() => estadoDePersona(ficha || emp), [ficha, emp]);
 
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;
@@ -113,8 +139,16 @@ export default function AvatarConEstado({ emp, px, className = '', mostrarChip =
          CSS, y jsdom no calcula ninguno. */
       data-estado={estado ? estado.clave : undefined}
     >
-      <span className={`block h-full w-full overflow-hidden rounded-xl
-        ${marca ? `ring-inset ${grosor} ${marca.anillo}` : 'border border-border-card'}`}>
+      {/* ⚠️ El aro va POR FUERA, sin `ring-inset`, y eso no es una preferencia.
+          Una sombra interior se pinta encima del fondo del elemento pero DEBAJO
+          de sus hijos, y acá el hijo es una foto que ocupa el 100% de la caja:
+          con `ring-inset` el aro existía en el DOM, tenía su color, pasaba las
+          pruebas —jsdom no compone capas— y era invisible en pantalla. Lo vio
+          el usuario antes que cualquier gate: «¿y el aro de vacaciones?».
+          Por fuera no ocupa espacio (una sombra nunca lo hace) y no lo recorta
+          el `overflow-hidden`, que sólo recorta hijos. */}
+      <span className={`block h-full w-full overflow-hidden ${radio}
+        ${marca ? `${grosor} ${marca.anillo}` : marco}`}>
         <LiquidAvatar
           src={emp?.photo || emp?.photo_url}
           alt={emp?.name || 'Empleado'}

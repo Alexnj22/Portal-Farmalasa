@@ -283,8 +283,8 @@ import path from 'node:path';
 describe('las píldoras de «Áreas que cubre»', () => {
     const form = fs.readFileSync(
         path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
-    const bloque = form.slice(form.indexOf('Áreas que cubre'),
-                              form.indexOf('Áreas que cubre') + 2200);
+    const ini = form.indexOf('{areasOpts.map(');
+    const bloque = form.slice(ini, form.indexOf('})}', ini));
 
     it('lo que se calcula llega al render', () => {
         expect(bloque).toContain('const isActive');
@@ -297,6 +297,12 @@ describe('las píldoras de «Áreas que cubre»', () => {
     });
 
     it('el campo explica qué es antes de pedir que se toque', () => {
-        expect(bloque).toMatch(/no es una sala/);
+        // La explicación va ARRIBA de las píldoras, no dentro del `map`.
+        expect(form).toMatch(/no es una sala, pero esta persona sí atiende salas/);
+    });
+
+    it('se pueden marcar todas de una vez', () => {
+        // Hay puestos que cubren las ocho; marcarlas de a una es lo más común.
+        expect(form).toMatch(/'Quitar todas' : 'Todas'/);
     });
 });

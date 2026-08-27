@@ -274,7 +274,14 @@ const LiquidSelect = ({
     // opciones (los minutos de TimePicker12) sí necesita que se pueda escribir,
     // y quitarle el buscador dejaría 60 ítems recorribles solo con flechas.
     // Ocho es donde la lista entra completa de un vistazo.
-    const sinBuscador = nano && !serverSearch && !creatable &&
+    //
+    // ── El `nano` sobraba en esa condición (2026-08-27) ────────────────────
+    // El razonamiento de arriba —«ocho es donde la lista entra completa de un
+    // vistazo»— no depende del tamaño del control: un select NORMAL de cinco
+    // opciones tampoco necesita que se pueda escribir, y el buscador le tapa
+    // igual el único dato que importaba. Reportado sobre «Forma de
+    // estipulación», que tiene cinco: *«todos en un select es incorrecto»*.
+    const sinBuscador = !serverSearch && !creatable &&
         options.filter(o => !o.isSeparator).length <= 8;
 
     // Estas dos listas van ANTES de los manejadores porque

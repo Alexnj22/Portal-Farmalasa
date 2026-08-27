@@ -38,6 +38,7 @@ import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } fr
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
+import { cadenaDeSuperiores } from '../../utils/roles';
 import FileField from '../common/FileField';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
@@ -1446,6 +1447,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     // Quién lo cubre mientras no está. Sale de la tabla —nunca de una lista
     // escrita a mano— y excluye a la propia persona (la BD también lo prohíbe).
+    // Quién cubre si no se elige a nadie. NO se preselecciona: la cobertura por
+    // organigrama ya funciona sola y escribirla como si fuera una elección
+    // convertiría un default vivo —si mañana cambia el jefe, cambia solo— en un
+    // dato fijo que envejece. Lo que faltaba era DECIR quién es, que es lo que
+    // preguntó el usuario: «¿no debería ser su jefe inmediato?». Sí, y ya lo es.
+    const cubrePorOrganigrama = useMemo(() => {
+        const cargo = formData?.role_id;
+        if (!cargo || !roles?.length) return null;
+        const cadena = cadenaDeSuperiores(roles, cargo);
+        for (const cargoSuperior of cadena) {
+            // El más cercano que EXISTE como persona activa. Un cargo vacante no
+            // cubre a nadie, así que se sigue subiendo — que es la misma regla
+            // que usa el organigrama de /personal.
+            const gente = (employees || []).filter(e =>
+                e.status === 'ACTIVO' && String(e.role_id) === String(cargoSuperior) &&
+                String(e.id) !== String(formData?.id));
+            if (!gente.length) continue;
+            // Si hay varios con ese cargo, gana el de la misma sala.
+            const mismaSala = gente.find(e => String(e.branch_id) === String(formData?.branch_id));
+            const elegido = mismaSala || gente[0];
+            return {
+                nombre: elegido.name || `${elegido.first_names || ''} ${elegido.last_names || ''}`.trim(),
+                cargo: elegido.role || roles.find(r => String(r.id) === String(cargoSuperior))?.name || '',
+            };
+        }
+        return null;
+    }, [formData?.role_id, formData?.branch_id, formData?.id, roles, employees]);
+
     const suplenteOpts = useMemo(() => (employees || [])
         .filter(e => e.status === 'ACTIVO' && String(e.id) !== String(formData?.id))
         .map(e => ({
@@ -1464,7 +1493,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const portalSelectProps = {
         menuPortalTarget: typeof document !== 'undefined' ? document.body : null,
         menuPosition: "fixed",
-        styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) }
+        styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) },
+        // «Todos» es la palabra de un FILTRO —«mostrame todos»—. En un campo de
+        // formulario se elige UNA cosa, así que la opción de vaciarlo tiene que
+        // decir que queda vacío. Va acá y no en los 39 selects del formulario:
+        // el default del canónico sigue siendo el de filtro, que es su uso más
+        // común.
+        clearLabel: 'Sin elegir',
     };
 
     if (!formData) return null;
@@ -2891,6 +2926,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     {selectedBranch?.name} no es una sala, pero esta persona sí atiende salas.
                                                     Toca las que le tocan: va a salir en el equipo de cada una.
                                                 </p>
+                                                {/* Hay puestos que cubren TODAS —mantenimiento repara en
+                                                    las ocho—, y marcarlas de a una es la forma más común de
+                                                    llenar esto. Un botón que las pone todas de una vez, y el
+                                                    mismo botón las quita: el estado se lee del propio botón. */}
+                                                <div className="flex items-center justify-end mb-2">
+                                                    <Button
+                                                        size="xs" variant="ghost" type="button"
+                                                        onClick={() => setFormData(p => ({
+                                                            ...p,
+                                                            assigned_branch_ids: (p.assigned_branch_ids || []).length === areasOpts.length
+                                                                ? [] : areasOpts.map(o => o.value),
+                                                        }))}>
+                                                        {(formData.assigned_branch_ids || []).length === areasOpts.length ? 'Quitar todas' : 'Todas'}
+                                                    </Button>
+                                                </div>
                                                 <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-2xl min-h-[44px]">
                                                     {areasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
@@ -2942,22 +2992,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <LiquidSelect value={formData.suplente_id || ''} onChange={(val) => handleSelectChange('suplente_id', val || null)} options={suplenteOpts} placeholder="Nadie en particular..." icon={Users} {...portalSelectProps} />
                                 </div>
                                 <p className="text-caption text-content-3 font-medium leading-snug md:pt-6">
-                                    Mientras esté de vacaciones o incapacidad, esta persona resuelve lo que le corresponde
-                                    —solo lo que su cargo tenga marcado para delegar—. Al volver, la cobertura se apaga sola.
-                                    {' '}Sin nadie elegido, sigue cubriendo quien esté arriba en el organigrama.
+                                    <span className="font-black text-content-2">No hace falta elegir.</span>{' '}
+                                    {cubrePorOrganigrama
+                                        ? <>Si se deja vacío, cubre <span className="font-black text-content-2">{cubrePorOrganigrama.nombre}</span>
+                                            {cubrePorOrganigrama.cargo ? <> ({cubrePorOrganigrama.cargo})</> : null}, que es quien está arriba en el organigrama.
+                                            Se elige a alguien sólo para que cubra otra persona.</>
+                                        : <>Si se deja vacío, cubre quien esté arriba en el organigrama. Se elige a alguien
+                                            sólo para que cubra otra persona.</>}
+                                    {' '}Mientras esté de vacaciones o incapacidad resuelve lo que le corresponde —solo lo que
+                                    su cargo tenga marcado para delegar—, y al volver la cobertura se apaga sola.
                                 </p>
                             </div>
                         </div>
 
-                        {formData.contract_type === 'SERVICIOS' && (
-                            <div className="bg-danger/10 border border-danger/30 rounded-2xl p-3.5 flex items-start gap-3">
-                                <ShieldAlert size={18} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
-                                <p className="text-label text-danger-text font-medium leading-tight">
-                                    <span className="font-black">Riesgo legal — "Servicios profesionales" con subordinación.</span> El Art. 20 del Código de Trabajo presume un contrato laboral real (con derecho a aguinaldo, vacaciones, ISSS e indemnización) cuando hay subordinación — horario, cargo y sucursal asignados, como en este expediente. Un juez laboral puede reclasificarlo sin importar la etiqueta del contrato. Usa este tipo solo para relaciones genuinamente independientes, sin horario ni supervisión directa.
-                                </p>
-                            </div>
-                        )}
-
+                        {/* El aviso de «servicios profesionales» vivía DOS veces: acá
+                            en rojo y otra vez adentro de la tarjeta del contrato, las
+                            dos diciendo lo mismo (subordinación, Art. 20). Se queda la
+                            de adentro, que además dice las consecuencias fiscales y
+                            está al lado del campo que las provoca. Dos avisos iguales
+                            no avisan el doble: enseñan a saltárselos. */}
                         {formData.contract_type === 'PRACTICAS' && (
                             <div className="bg-chart-1/10 border border-chart-1/30 rounded-2xl p-3.5 flex items-start gap-3">
                                 <GraduationCap size={18} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -2996,7 +3049,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {contractHasEndDate && (
                                     <div className="relative z-tabs animate-in fade-in zoom-in-95">
                                         <label className={rotuloCampo('text-warning')}>
-                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge size="sm" variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
+                                            <span>Fecha fin {contractDatesInvalid && <Badge size="sm" variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
                                             {!formData.contract_end_date && <Badge size="sm" variant="danger" uppercase={false}>Obligatorio</Badge>}
                                         </label>
                                         <LiquidDatePicker hasError={contractDatesInvalid} tono="warning" value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} />
@@ -3023,7 +3076,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </label>
                                             <LiquidSelect invalid={temporalBasisMissing} value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                         </div>
-                                        <PortalInput label="Motivo Concreto" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido para justificar el plazo" />
+                                        <PortalInput label="Motivo" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido" />
                                         <p className="md:col-span-2 text-caption text-warning-text/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
                                     </div>
                                 )}
@@ -3128,10 +3181,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             El salario se paga en moneda de curso legal. No se puede pagar con vales, fichas ni cupones.
                                         </p>
                                     </div>
-                                    <PortalInput
-                                        label="Lugar de pago" name="lugar_pago"
-                                        value={formData.lugar_pago} onChange={handleChange}
-                                        icon={MapPin} placeholder="Ej. Salud 1" colSpan={2} />
+                                    {/* El lugar de pago es un dato del pago EN EFECTIVO: dice
+                                        dónde se presenta la persona a cobrar. Con transferencia
+                                        no hay lugar al que ir — el pago llega a la cuenta— y
+                                        pedirlo igual es pedir un dato que no existe. Se
+                                        pregunta cuando corresponde, y cuando no, se dice por
+                                        qué no se pregunta. */}
+                                    {formData.medio_pago === 'EFECTIVO' ? (
+                                        <PortalInput
+                                            label="Lugar de pago" name="lugar_pago"
+                                            value={formData.lugar_pago} onChange={handleChange}
+                                            icon={MapPin} placeholder="Ej. Salud 1" colSpan={2}
+                                            helperText="dónde se presenta a cobrar" />
+                                    ) : formData.medio_pago ? (
+                                        <p className="md:col-span-2 text-micro text-content-3 font-medium ml-1 leading-snug">
+                                            No se pregunta el lugar de pago: el salario llega a la cuenta, no se cobra en un sitio.
+                                        </p>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -3148,7 +3214,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 completa — un contrato prorrogado cinco veces sobre labor
                                 permanente es exactamente lo que el Art. 25 presume
                                 indefinido. Guardar sólo la última borraría esa evidencia. */}
-                            {contractHasEndDate && (
+                            {/* Sólo al EDITAR. Una prórroga extiende un contrato que ya
+                                existe: en el alta, la fecha fin todavía se está escribiendo
+                                y no hay nada que prorrogar. Mostrarlo ahí es ofrecer una
+                                acción que en ese momento no puede ser correcta. */}
+                            {contractHasEndDate && isEditMode && (
                                 <div className="mt-4 pt-4 border-t border-divider">
                                     <div className="flex items-center justify-between gap-3 mb-3">
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">

@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.810.0 — Siete arreglos del alta, mirando la pantalla
+
+Siete cosas reportadas sobre capturas del alta de personal. Ninguna daba error.
+
+**Los textos se cortaban** — «FECHA FIN DE CONTR…», «MOTIVO CONC…». Es una
+consecuencia del rótulo de alto fijo: cuando el nombre y su insignia no entran,
+cede el nombre. La corrección no es agrandar el rótulo sino **decir menos y
+mejor**: «Fecha fin» (está al lado de «Fecha de contratación», no hace falta
+repetirlo), «Motivo», y la insignia «Requerido para justificar el plazo» pasa a
+«Requerido» — el porqué ya está escrito debajo.
+
+**El mismo aviso, dos veces.** «Servicios profesionales» mostraba una alerta roja
+arriba y otra ámbar adentro, las dos sobre lo mismo. Se queda la de adentro, que
+además dice las consecuencias fiscales y está junto al campo que las provoca.
+Dos avisos iguales no avisan el doble: enseñan a saltárselos.
+
+**«Todos» en un select de formulario.** Es la palabra de un filtro —«mostrame
+todos»—; en un campo se elige UNA cosa. Los 39 selects del alta ahora dicen «Sin
+elegir». Y el buscador dejó de aparecer en listas cortas: la regla que ya existía
+—«ocho opciones entran completas de un vistazo»— estaba atada al tamaño del
+control, y no depende de eso. Un select de cinco opciones no necesita que se
+pueda escribir, y el buscador tapaba justo el valor elegido.
+
+**Lugar de pago con transferencia.** Se preguntaba siempre. Es un dato del pago
+**en efectivo** —dónde se presenta la persona a cobrar—; con transferencia no hay
+sitio al que ir. Ahora se pregunta cuando corresponde, y cuando no, dice por qué
+no se pregunta.
+
+**Prórrogas al crear.** Una prórroga extiende un contrato que ya existe: en el
+alta la fecha fin todavía se está escribiendo. Sólo sale al editar.
+
+**«Áreas que cubre» ahora tiene «Todas».** Hay puestos que cubren las ocho
+—mantenimiento repara en todas— y marcarlas de a una era lo más común. El mismo
+botón las quita.
+
+**«Si no está, lo cubre» dice quién es.** La pregunta fue *«¿no debería ser su
+jefe inmediato? ¿por qué lo debo seleccionar?»*. Ya lo era: sin nadie elegido
+cubre quien está arriba en el organigrama. Lo que faltaba era **decirlo con
+nombre y apellido** — ahora lo resuelve del árbol de cargos (saltando los
+vacantes, prefiriendo la misma sala) y lo muestra. No se preselecciona a
+propósito: escribirlo convertiría un default vivo —si mañana cambia el jefe,
+cambia solo— en un dato fijo que envejece.
+
 ## v2.809.0 — Ninguna foto de persona se queda sin aro
 
 *«¿Quedó canónico? ¿Completamente?»* — y la respuesta medida fue **no**. Ayer se

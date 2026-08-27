@@ -57,7 +57,7 @@ import CarrilCards from '../components/common/CarrilCards';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { usePaginaEnUrl } from '../hooks/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
-import { exportCsv } from '../utils/csvExport';
+import { exportarDirectorio } from '../utils/directorioCsv';
 import { soloPersonalEnPlanilla, soloNoEmpleados, rotuloTipoFicha, esFichaQueNoEsEmpleado } from '../utils/tipoDeFicha';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { SIN_ASIGNAR } from '../data/constants';
@@ -879,37 +879,12 @@ const StaffManagementView = ({
     setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
   }, []);
 
-  // El canónico es `exportCsv` (`utils/csvExport.js`) y esta vista era una de las
-  // cuatro que se armaba el archivo a mano (CLAUDE.md, §«toda salida de datos se
-  // anota»). No era sólo duplicación: el archivo a mano salía separado por COMA
-  // y con `\n`, y todo el resto del portal escribe `;` + CRLF + BOM — o sea que
-  // el directorio de personal era el único CSV que Excel en es-SV abría en una
-  // sola columna. El canónico además anota el egreso él mismo, así que la
-  // llamada suelta a `registrarEgreso` se va: dos anotaciones del mismo archivo
-  // serían dos filas para una sola descarga.
-  const handleExportCSV = () => {
-    const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
-
-    // `soloPersonalEnPlanilla` otra vez, aunque la vista ya filtre: el archivo se
-    // llama «Directorio_Personal» y sale del portal —queda anotado en
-    // `export_log` y termina en el correo de alguien—. Que su contenido dependa
-    // de qué pestaña estaba abierta es cómo una cuenta de pruebas se cuela en un
-    // documento de personal. Acá el filtro no es de pantalla: es del documento.
-    const rows = soloPersonalEnPlanilla(sortedEmployees).map(emp => ([
-      emp.code,
-      emp.name,
-      branchMap.get(Number(emp.branchId || emp.branch_id)) || SIN_ASIGNAR,
-      emp.role,
-      emp.secondary_role,
-      getEffectiveStatus(emp),
-      emp.phone,
-      emp.dui,
-      emp.hire_date,
-      emp.birth_date,
-    ]));
-
-    exportCsv(headers, rows, `Directorio_Personal_${new Date().toISOString().split('T')[0]}.csv`, 'personal');
-  };
+  // El armado del CSV salió a `utils/directorioCsv.js` el 2026-08-26, cuando
+  // «Equipos por sucursal» pasó a ofrecer la misma descarga: dos copias del
+  // mismo archivo se separan solas —basta una columna agregada en una— y este
+  // sale del portal, queda anotado en `export_log` y termina en el correo de
+  // alguien. El filtro por planilla y la anotación del egreso viven ahí.
+  const handleExportCSV = () => exportarDirectorio(sortedEmployees, branchMap);
 
   // D3.9 (2026-07-27): esta barra estaba reescrita a mano. Los dos botones de
   // alta pasan a `trailingActions`; el estado del buscador, el contrato de

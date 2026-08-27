@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus,
-  UserX, HelpCircle, ArrowUpRight, CornerDownRight, Building2, UserPlus,
+  UserX, HelpCircle, CornerDownRight, UserPlus, Download, List,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
+import FilterBar from '../../components/common/FilterBar';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
@@ -24,6 +25,7 @@ import { cadenaDeSuperiores } from '../../utils/roles';
 import { repartirSala, puestosVacantesConGente } from '../../utils/mandoDeSala';
 import { getExpiringDocuments } from '../../utils/documentExpiry';
 import { soloPersonalEnPlanilla } from '../../utils/tipoDeFicha';
+import { exportarDirectorio } from '../../utils/directorioCsv';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { smartFilter } from '../../utils/searchUtils';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
@@ -88,13 +90,18 @@ const hoyISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// «Vuelve el mar 2 de sep», no «2026-09-02». La fecha cruda obliga a contar
+// «Vuelve el 2 de septiembre», no «2026-09-02». La fecha cruda obliga a contar
 // días con los dedos; lo que se necesita saber es si la persona está mañana.
+//
+// Sin el día de la semana a propósito: `es-SV` lo abrevia con coma —«mié, 2
+// sept»— y dentro de la píldora eso se lee «vuelve el mié, 2 sept», con una
+// coma que parte la frase justo donde no va. El mes largo entra igual y se lee
+// como una fecha dicha en voz alta.
 const fechaCorta = (iso) => {
   if (!iso) return null;
   const d = new Date(`${String(iso).slice(0, 10)}T12:00:00`);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long' });
 };
 
 function estadoVigente(emp) {
@@ -453,13 +460,17 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
   );
 }
 
-export default function EquiposView({ searchTerm, setSearchTerm }) {
+export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch, setSelectedBranch, openModal }) {
   const navigate = useNavigate();
   const employees = useStaff(s => s.employees);
   const branches = useStaff(s => s.branches);
   const roles = useStaff(s => s.roles);
   const employeesStatus = useStaff(s => s.employeesStatus);
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const canEdit = hasPermission('staff_list', 'can_edit');
+  // El CSV se lleva el padrón fuera del portal — permiso aparte de consultarlo
+  // en pantalla (canon 2026-08-03).
+  const canDownload = hasPermission('staff_list_descargar');
 
   const busqueda = (searchTerm || '').trim();
 
@@ -491,13 +502,15 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
     // Las cuentas externas y del sistema no son personal y no arman equipo.
     // Siguen alcanzables en `/personal?tab=externos`.
     const personas = soloPersonalEnPlanilla(base)
-      .filter(e => !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(e.status));
+      .filter(e => !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(e.status))
+      .filter(e => !selectedBranch || selectedBranch === 'ALL' ||
+        String(e.branchId ?? e.branch_id ?? '') === String(selectedBranch));
     if (!busqueda) return personas;
     return smartFilter(busqueda, personas, e => [
       e?.name, e?.role, e?.secondary_role,
       nombreDeSucursal.get(Number(e?.branchId || e?.branch_id)),
     ]).results;
-  }, [employees, getScope, user?.branchId, busqueda, nombreDeSucursal]);
+  }, [employees, getScope, user?.branchId, busqueda, selectedBranch, nombreDeSucursal]);
 
   // ── El reparto ────────────────────────────────────────────────────────
   // Las tres reglas —y por qué el primer boceto las tenía mal— viven en
@@ -541,10 +554,27 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
   const abrir = (emp) => navigate(`/personal/empleado/${emp.id}`);
   const cargando = employeesStatus !== 'ready' && !employees.length;
 
+  const opcionesDeSucursal = useMemo(() => ([
+    { value: 'ALL', label: 'Todas las sucursales' },
+    ...(branches || []).map(b => ({ value: String(b.id), label: b.name })),
+  ]), [branches]);
+
+  // Las acciones de la vista, en la píldora del cuerpo (§17). «Ver como lista»
+  // no es una pestaña: es la salida hacia lo que una tarjeta no puede hacer
+  // —ordenar por columna, y administrar practicantes y cuentas externas—.
+  const acciones = [
+    { key: 'empleado', icon: UserPlus, label: 'Nuevo empleado', variant: 'primary',
+      disabled: !canEdit, onClick: () => openModal?.('newEmployee') },
+    { key: 'lista', icon: List, label: 'Ver como lista', rotulo: 'Lista',
+      onClick: () => navigate('/personal/listado') },
+    ...(canDownload ? [{ key: 'exportar', icon: Download, label: 'Exportar',
+      soloIcono: true, onClick: () => exportarDirectorio(visibles, nombreDeSucursal) }] : []),
+  ];
+
   return (
     <GlassViewLayout
       icon={Users}
-      title="Equipos por sucursal"
+      title="Gestión de personal"
       filtersContent={
         <ViewTabBar
           searchValue={searchTerm}
@@ -555,13 +585,27 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
     >
       <div className="animate-in fade-in space-y-6 p-4 duration-[var(--dur-lento)] md:p-6 lg:p-8">
 
-        <Notice
-          variant="info" icon={Building2}
-          action={<Button variant="secondary" size="sm" onClick={() => navigate('/personal')}>Ir al listado</Button>}
-        >
-          Propuesta en revisión — el listado de personal sigue igual y es el que
-          se usa para ordenar por columna y exportar el directorio.
-        </Notice>
+        <div className="flex justify-end">
+          <FilterBar
+            onClear={() => { setSearchTerm(''); setSelectedBranch?.('ALL'); }}
+            activeCount={[selectedBranch && selectedBranch !== 'ALL'].filter(Boolean).length}
+            acciones={acciones}
+          >
+            {/* La ranura es del ALCANCE, no del catálogo: con alcance de una
+                sala, elegir otra devolvería una vista vacía sin explicar por
+                qué, y un filtro que no puede encontrar nada es peor que no
+                estar. Mismo criterio que el listado. */}
+            {getScope('staff_list') === 'ALL' && (
+              <FilterBar.Section active={selectedBranch && selectedBranch !== 'ALL'} label="sucursal">
+                <FilterBar.Sucursal
+                  value={selectedBranch || 'ALL'}
+                  onChange={val => setSelectedBranch?.(val)}
+                  options={opcionesDeSucursal}
+                />
+              </FilterBar.Section>
+            )}
+          </FilterBar>
+        </div>
 
         {cargando && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -599,12 +643,6 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
           <SeccionSucursal key={s.id} seccion={s} roles={roles} nombreDeSucursal={nombreDeSucursal} abrir={abrir} />
         ))}
 
-        {!cargando && !!secciones.length && (
-          <p className="flex items-center gap-1.5 pt-2 text-caption font-bold text-content-3">
-            <ArrowUpRight size={13} strokeWidth={2.5} className="shrink-0" />
-            Toca una tarjeta para abrir el expediente completo.
-          </p>
-        )}
       </div>
     </GlassViewLayout>
   );

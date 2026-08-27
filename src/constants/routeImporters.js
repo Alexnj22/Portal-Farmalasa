@@ -11,8 +11,7 @@ export const IMPORTADORES = {
     EmployeeDocumentsView: () => import("../views/employee/EmployeeDocumentsView"),
     AttendanceMonitorView: () => import("../views/AttendanceMonitorView"),
     StaffManagementView: () => import("../views/StaffManagementView"),
-    // Boceto de la vista agrupada por sucursal — vive aparte de `/personal`
-    // mientras se decide si la reemplaza o convive con ella.
+    // `/personal` desde el 2026-08-26: el equipo agrupado por sucursal.
     EquiposView: () => import("../views/personal/EquiposView"),
     BranchesView: () => import("../views/BranchesView"),
     BranchDetailView: () => import("../views/BranchDetailView"),
@@ -133,7 +132,7 @@ export const IMPORTADOR_POR_RUTA = {
     // no se precargaban desde que existe el mapa, y no había forma de
     // notarlo — un prefetch que no encuentra su clave no falla, no avisa y
     // no deja rastro. Las encontró el chequeo del gate, no una persona.
-    'personal': IMPORTADORES.StaffManagementView,
+    'personal': IMPORTADORES.EquiposView,
     'sucursales': IMPORTADORES.BranchesView,
     'permisos': IMPORTADORES.PermissionsView,
     'productos': IMPORTADORES.ProductosView,

@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.802.0 — El personal se ve por sala
+
+**`/personal` ya no es una tabla: es el equipo de cada sucursal.** El usuario lo
+confirmó después de ver el boceto — *«confirmo, lo reemplaza»*. La jefatura
+arriba con su segundo (o el hueco, si el puesto está sin cubrir), el equipo
+debajo ordenado por el árbol de cargos, y los adscritos aparte.
+
+**La tabla no se borra: se muda a `/personal/listado`.** Reemplazar de verdad
+habría tirado cosas que una tarjeta no hace y que nadie pidió perder — ordenar
+por columna, y administrar practicantes y cuentas externas, que viven sólo ahí.
+Se llega por la acción «Ver como lista» de la píldora, que no es una pestaña
+rival sino la salida hacia lo que la vista de tarjetas no cubre. `/personal/equipos`
+—la dirección del boceto, que vivió un día y se compartió por chat— queda
+redirigiendo: un favorito no está en ninguna tabla y no hay forma de medirlo.
+
+Lo que viajó con la mudanza para no perderse: el **buscador**, el **filtro de
+sucursal** (con el mismo criterio de alcance: quien sólo ve su sala no recibe una
+ranura que no puede usar), **«Nuevo empleado»** y la **exportación del
+directorio**.
+
+**El CSV salió a `utils/directorioCsv.js`.** Ahora lo ofrecen dos pantallas, y
+dos copias del mismo archivo se separan solas: basta una columna agregada en una
+para que el mismo documento, bajado desde dos botones, traiga datos distintos. Y
+este archivo sale del portal, se anota en `export_log` y termina en el correo de
+alguien.
+
+**La fecha de vuelta dice el mes con todas las letras.** Con el primer dato real
+—una vacación cargada para verlo— la píldora quedaba «vuelve el mié, 2 sept»:
+`es-SV` abrevia el día de la semana con una coma, y esa coma parte la frase justo
+donde no va. Ahora dice «vuelve el 2 de septiembre».
+
+**`ResizeObserver` en `tests/setup.js`.** jsdom no lo implementa y varios
+canónicos lo usan para medirse —`FilterBar` decide con él si la píldora flota—,
+así que cualquier prueba que renderice una vista real moría en el efecto de
+montaje con un error que apunta al componente en vez de al entorno. El doble no
+observa nada a propósito: fingir un tamaño haría pasar una prueba afirmando un
+layout que jsdom no calcula, y eso es una medición inventada.
+
+**`gate:bundle`: `EquiposView` estrena techo de 47 kB** (medida 37, misma fórmula
+de holgura que usa `--update-baseline`), agregado a mano por el motivo ya escrito
+en el manifiesto: regenerar el baseline entero aprieta de paso los techos de las
+otras vistas contra una medición de esta sesión. **Quedaron sin tocar tres
+hallazgos rojos que NO son de este trabajo** —entry 304 contra 303,
+BitacorasView 77 contra 75 y EmployeeFormModal 56 contra 52—. Verificado
+construyendo HEAD en un worktree aparte: los tres dan el mismo número sin
+ninguno de los cambios de esta sesión. Absorberlos sería justo lo que el ratchet
+existe para impedir.
+
 ## v2.801.1 — El segundo puesto vacío se dice siempre
 
 Tres correcciones del usuario sobre `/personal/equipos`, y una tabla que estaba

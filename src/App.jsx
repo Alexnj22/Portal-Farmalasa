@@ -679,7 +679,25 @@ function MainApp() {
 
                                     {/* ── Gestión de personal ── */}
                                     <Route path="personal">
+                                        {/* Desde el 2026-08-26 `/personal` ES el equipo
+                                            agrupado por sucursal: el usuario lo confirmó
+                                            después de ver el boceto. La tabla no se borra
+                                            —se muda a `/personal/listado`— porque hay cosas
+                                            que una tarjeta no hace: ordenar por columna, y
+                                            administrar practicantes y cuentas externas. Se
+                                            llega por la acción «Ver como lista». */}
                                         <Route index element={
+                                            <PermissionGuard moduleKey="staff_list">
+                                                <EquiposView
+                                                    openModal={openModal}
+                                                    searchTerm={searchTerm}
+                                                    setSearchTerm={setSearchTerm}
+                                                    selectedBranch={selectedBranch}
+                                                    setSelectedBranch={setSelectedBranch}
+                                                />
+                                            </PermissionGuard>
+                                        } />
+                                        <Route path="listado" element={
                                             <PermissionGuard moduleKey="staff_list">
                                                 <StaffManagementView
                                                     setView={setView}
@@ -695,21 +713,10 @@ function MainApp() {
                                                 />
                                             </PermissionGuard>
                                         } />
-                                        {/* Boceto de la vista agrupada por sucursal
-                                            (2026-08-26). Mismo permiso que el
-                                            listado y misma búsqueda: lo que cambia
-                                            es cómo se PRESENTA la misma gente. No
-                                            está en el menú a propósito — mientras
-                                            sea una propuesta se llega por la
-                                            dirección o por el aviso del listado. */}
-                                        <Route path="equipos" element={
-                                            <PermissionGuard moduleKey="staff_list">
-                                                <EquiposView
-                                                    searchTerm={searchTerm}
-                                                    setSearchTerm={setSearchTerm}
-                                                />
-                                            </PermissionGuard>
-                                        } />
+                                        {/* La dirección del boceto vivió un día y se compartió
+                                            por chat. Un favorito no está en ninguna tabla y no
+                                            hay forma de medirlo, así que se queda redirigiendo. */}
+                                        <Route path="equipos" element={<Navigate to="/personal" replace />} />
                                         <Route path="empleado/:id" element={
                                             <PermissionGuard moduleKey="staff_detail">
                                                 <EmployeeProfileWrapper
@@ -903,7 +910,7 @@ export default function App() {
 const ROUTE_TITLES = {
     '/inicio':            'Inicio',
     '/personal':          'Gestión de personal',
-    '/personal/equipos':  'Equipos por sucursal',
+    '/personal/listado':  'Listado de personal',
     '/monitor':           'Monitor en tiempo real',
     '/auditoria-de-tiempos':             'Auditoría de tiempos',
     '/horarios':         'Horarios',

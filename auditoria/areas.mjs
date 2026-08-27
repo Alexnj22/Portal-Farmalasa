@@ -179,7 +179,7 @@ export const AREAS = [
         resumen: 'El listado de empleados, el expediente completo, documentos, eventos programados, autogestión y practicantes.',
         modulos: ['staff_list', 'staff_list_descargar', 'staff_detail', 'staff_salary',
                   'emp_profile', 'emp_documents'],
-        rutas: ['/personal', '/personal/equipos', '/personal/empleado/:id', '/mi-perfil', '/mis-documentos'],
+        rutas: ['/personal', '/personal/listado', '/personal/empleado/:id', '/mi-perfil', '/mis-documentos'],
         archivos: [
             'src/views/StaffManagementView.jsx', 'src/views/EmployeeDetailView.jsx',
             'src/views/personal/',

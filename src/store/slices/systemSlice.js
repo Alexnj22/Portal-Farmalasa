@@ -24,6 +24,10 @@ export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
     shifts: safeJsonParse(localStorage.getItem(CACHE_KEYS.SHIFTS), []) || [],
     roles: safeJsonParse(localStorage.getItem(CACHE_KEYS.ROLES), []) || [],
+    // Arranca en `false` a propósito: antes del boot no se sabe si el historial
+    // que hay es completo, y la falla segura es preguntar de más, no afirmar de
+    // más. Lo pone `fetchBoot`.
+    historialCompleto: false,
     announcements: safeJsonParse(localStorage.getItem(CACHE_KEYS.ANNOUNCEMENTS), []) || [],
     holidays: safeJsonParse(localStorage.getItem(CACHE_KEYS.HOLIDAYS), []) || [],
     isBootSyncing: false,
@@ -261,6 +265,20 @@ export const createSystemSlice = (set, get) => ({
                         }
                         const scopeToMyBranch  = !canSeeAllStaff && myBranchId != null;
                         const scopeEventsToMe  = !canSeeAllHistory && myId != null;
+
+                        // ── Que el navegador SEPA si su historial está completo ─────
+                        //
+                        // Cuando `scopeEventsToMe` está encendido, `history` llega
+                        // VACÍO para todos menos uno mismo — y un historial vacío es
+                        // indistinguible de «esta persona no tiene ausencias». Ahí es
+                        // donde el aro de la foto (DESIGN.md §5.4) mentía en silencio:
+                        // decía «está» sobre alguien de quien no sabía nada.
+                        //
+                        // La bandera no arregla el dato, hace algo mejor: lo vuelve una
+                        // pregunta que se puede hacer. Con ella, `AvatarConEstado` sabe
+                        // cuándo puede confiar en lo que tiene y cuándo tiene que ir a
+                        // preguntarle a la base.
+                        set({ historialCompleto: !scopeEventsToMe });
                         const scopeDocsToMe    = !canSeeAllDocs && myId != null;
 
                         // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms

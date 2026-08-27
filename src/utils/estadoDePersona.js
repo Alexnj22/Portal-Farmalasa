@@ -29,6 +29,13 @@ const ROTULO_TEMPORAL = {
     PERMIT:     { texto: 'Con permiso',   variante: 'chart-3' },
 };
 
+// «No está» y nada más. Es lo que recibe quien no tiene permiso para leer los
+// eventos de los demás: sabe que esa persona no está —que es lo que necesita
+// para no confundirla con alguien presente— y no se entera de si es una
+// vacación o una incapacidad. Su color es propio y no se repite en los otros
+// cinco: si reusara el ámbar de vacaciones, dos cosas distintas se verían igual.
+const ROTULO_AUSENTE = { texto: 'No está hoy', variante: 'chart-1' };
+
 const ROTULO_FIJO = {
     INACTIVO:   { texto: 'Inactivo',   variante: 'neutral' },
     BAJA:       { texto: 'Inactivo',   variante: 'neutral' },
@@ -53,6 +60,20 @@ export function fechaDeVuelta(iso) {
     const d = new Date(`${String(iso).slice(0, 10)}T12:00:00`);
     if (Number.isNaN(d.getTime())) return null;
     return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long' });
+}
+
+/**
+ * El mismo estado, armado desde una CLAVE — lo que devuelve
+ * `get_estados_de_personas`. La base manda `{clave, hasta}` y nada más; el
+ * rótulo y el color se ponen acá para que la foto y el texto de al lado no
+ * puedan decir cosas distintas.
+ */
+export function estadoDesdeClave(clave, hasta = null) {
+    if (!clave) return null;
+    if (clave === 'AUSENTE') return { clave, ...ROTULO_AUSENTE, hasta: null };
+    const cfg = ROTULO_TEMPORAL[clave] || ROTULO_FIJO[clave];
+    if (!cfg) return null;
+    return { clave, ...cfg, hasta: fechaDeVuelta(hasta) };
 }
 
 /**

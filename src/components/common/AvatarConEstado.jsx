@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useSyncExternalStore } from 'react';
 import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { estadoDePersona, normalizarPersona } from '../../utils/estadoDePersona';
+import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '../../utils/estadoDePersona';
 import { useStaffStore } from '../../store/staffStore';
+import { leerEstado, pedirEstado, suscribirse } from '../../data/estadosDePersonas';
 
 /**
  * AvatarConEstado — la foto de una persona, y si esa persona está o no.
@@ -71,6 +72,7 @@ const MARCA = {
   'chart-9': { anillo: 'ring-chart-9',   chip: 'bg-chart-9-solid' },
   'chart-6': { anillo: 'ring-chart-6',   chip: 'bg-chart-6-solid' },
   'chart-3': { anillo: 'ring-chart-3',   chip: 'bg-chart-3-solid' },
+  'chart-1': { anillo: 'ring-chart-1',   chip: 'bg-chart-1-solid' },
 };
 
 // Escritas LITERALES y no armadas con plantilla: Tailwind escanea strings del
@@ -87,6 +89,9 @@ const ICONO = {
   INACTIVO:   UserMinus,
   LIQUIDADO:  UserX,
   SUSPENDIDO: HelpCircle,
+  // «No está hoy», sin motivo: el reloj es lo más neutro que hay para decir
+  // «ahora no» sin insinuar por qué.
+  AUSENTE:    Clock,
 };
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
@@ -112,7 +117,51 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
     return (s.employees || []).find(e => String(e.id) === String(emp.id)) || null;
   });
 
-  const estado = useMemo(() => estadoDePersona(ficha || emp), [ficha, emp]);
+  // ── Y cuándo el navegador NO puede saberlo solo ──────────────────────────
+  //
+  // Resolver contra el store parecía suficiente, y no lo era: esa lista está
+  // ACOTADA. Quien no tiene `staff_list.can_view` recibe sólo los empleados de
+  // su sucursal, y `employee_events` exige además `staff_detail` o `schedules`
+  // para leer los eventos de otro — así que para el resto **el historial llega
+  // vacío**, y un historial vacío es indistinguible de «esta persona no tiene
+  // ausencias».
+  //
+  // Ahí el aro mentía en silencio: decía «está» sobre alguien de quien no sabía
+  // nada. Es exactamente el silencio que el aro vino a cerrar, una capa más
+  // abajo — y no se veía porque no falla nada.
+  //
+  // `historialCompleto` lo pone el arranque. Si es cierto, lo local alcanza y
+  // no sale ni una petición. Si no, se le pregunta a la base, que responde el
+  // motivo preciso a quien ya podía verlo y un «AUSENTE» a secas al resto: que
+  // el aro nunca calle no puede costar que toda la empresa se entere de que
+  // alguien está de incapacidad.
+  const historialCompleto = useStaffStore(s => s.historialCompleto);
+  const local = useMemo(() => estadoDePersona(ficha || emp), [ficha, emp]);
+
+  const hayQuePreguntar = !historialCompleto && !local && !!emp?.id;
+
+  // `useSyncExternalStore` y no un efecto con estado: el batcher vive fuera de
+  // React, y suscribirse es justo lo que este hook existe para hacer — sin el
+  // render en cascada que el proyecto prohíbe (`setState` dentro de un efecto).
+  //
+  // La lectura es PURA. React llama a `getSnapshot` varias veces por render
+  // para comparar, así que pedir desde acá dispara la petición N veces y se
+  // realimenta con el aviso que ella misma provoca — costó un proceso de
+  // pruebas muerto sin mensaje. El pedido va en su efecto, abajo.
+  const remoto = useSyncExternalStore(
+    suscribirse,
+    () => (hayQuePreguntar ? leerEstado(emp.id) : null),
+    () => null,
+  );
+
+  useEffect(() => {
+    if (hayQuePreguntar) pedirEstado(emp.id);
+  }, [hayQuePreguntar, emp?.id]);
+
+  // La base manda `{clave, hasta}`; el rótulo y el color los pone
+  // `estadoDesdeClave`, el mismo que usa la rama local. Dos caminos, una sola
+  // tabla de rótulos.
+  const estado = local || (remoto ? estadoDesdeClave(remoto.clave, remoto.hasta) : null);
 
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;

@@ -21,6 +21,69 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.812.0 — El aro deja de depender de quién pregunta
+
+Salió de una pregunta sobre otra cosa —*«¿por qué en esas vistas es
+distinto?»*— y resultó ser un agujero en el canon de ayer, una capa más abajo.
+
+**El aro mentía en silencio para media empresa.** Se resolvía contra la lista de
+empleados del navegador, y esa lista está **acotada**: quien no tiene
+`staff_list.can_view` recibe sólo los de su sucursal (`systemSlice.js:280`), y
+`employee_events` exige además `staff_detail` o `schedules` para leer los
+eventos de otro. O sea que para el resto **el historial llega vacío** — y un
+historial vacío es indistinguible de «esta persona no tiene ausencias».
+
+Una dependienta mirando un pedido despachado desde Bodega veía la foto **sin
+aro**, sin forma de distinguir «sin aro porque está» de «sin aro porque no la
+puedo ver». Es exactamente el silencio que el aro vino a cerrar, y no se veía
+porque no falla nada.
+
+**Ahora el estado sale de la base: `get_estados_de_personas(uuid[])`.**
+`SECURITY DEFINER` justamente para no depender del RLS de quien pregunta, y por
+eso devuelve el mínimo —id, clave y hasta cuándo—: ni nombre, ni nota, ni
+metadata del evento.
+
+**Y devuelve DOS niveles, que es la parte que no se podía saltear.** Que el aro
+nunca calle no puede costar que los 46 se enteren de que alguien está de
+**incapacidad**, que es información de salud:
+
+- quien ya podía leer los eventos —`staff_detail`, `schedules`, o los propios—
+  recibe el motivo preciso, igual que hoy;
+- el resto recibe **`AUSENTE`** a secas: sabe que esa persona no está, que es lo
+  que necesita para no confundirla con alguien presente, y nada más. En pantalla
+  es «No está hoy», con su color propio para que no se confunda con vacaciones.
+
+**Cuarenta caras son UNA consulta, no cuarenta.** `data/estadosDePersonas.js`
+junta los pedidos de todos los avatares de un render en una sola llamada. No es
+«un poco más rápido»: cada petición ocupa una ranura del pool de PostgREST, el
+mismo que una lectura lenta llena hasta tirar el portal. Y sólo se pregunta
+cuando hace falta — quien tiene el historial completo lo resuelve en memoria,
+**sin una sola petición**.
+
+Dos detalles que hacen que el ahorro sea real: la función **descarta a los
+presentes** antes de devolver (la respuesta típica es `[]`), y el cliente
+**cachea también esa ausencia de respuesta** — sin eso, cada render volvería a
+preguntar por la mayoría de la gente, que es justo la que está.
+
+**Medido:** 4,5 ms para las 49 personas de la empresa entera, y **sin
+degradación en la sexta llamada** — la trampa del plan genérico que documenta
+CLAUDE.md no aplica acá. La primera medición dio ocho valores idénticos al
+centésimo y se descartó por eso: `clock_timestamp()` dentro de un subselect se
+evalúa una vez.
+
+**Un error de React que costó un proceso de pruebas muerto**, y queda escrito:
+`leerEstado` y `pedirEstado` son dos funciones porque `getSnapshot` de
+`useSyncExternalStore` **tiene que ser pura**. Juntas, React llamaba a la que
+pedía varias veces por render y se realimentaba con el aviso que ella misma
+provocaba. El síntoma fue «Worker exited unexpectedly», sin una línea que
+dijera dónde.
+
+**Sigue abierto** lo mismo de ayer y por el mismo motivo: tres pantallas —el
+detalle del conteo y las dos de bolsas— no mandan el id de la persona en su
+consulta, así que ni siquiera hay a quién preguntarle por. Ahora es un arreglo
+más chico: con la función en pie, alcanza con que esas cuatro funciones
+devuelvan la columna que ya tienen adentro.
+
 ## v2.811.1 — El carné del documento es el definitivo, y el arranque baja 12 kB
 
 **El carné del documento estaba mal, y la corrección la dio el usuario:** *«no el

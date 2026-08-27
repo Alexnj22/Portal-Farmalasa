@@ -184,6 +184,7 @@ export const AREAS = [
             'src/views/EmployeeDetailView.jsx',
             'src/views/personal/',
             'src/utils/estadoDePersona.js', 'src/utils/mandoDeSala.js', 'src/utils/directorioCsv.js',
+            'src/data/estadosDePersonas.js',
             'src/components/common/AvatarConEstado.jsx',
             'src/views/employee/EmployeeProfileView.jsx', 'src/views/employee/EmployeeDocumentsView.jsx',
             'src/components/practicantes/',

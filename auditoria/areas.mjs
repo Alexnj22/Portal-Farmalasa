@@ -260,7 +260,8 @@ export const AREAS = [
         tablas: ['payroll_entries', 'payroll_periods'],
         edge: [],
         crons: [],
-        docs: ['docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md'],
+        docs: ['docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md',
+               'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },
     {
         id: 'solicitudes',
@@ -405,7 +406,8 @@ export const AREAS = [
                  'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios'],
         edge: ['sync-cortes-caja'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv'],
-        docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md'],
+        docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
+               'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },
     {
         id: 'facturacion-dte',
@@ -498,7 +500,8 @@ export const AREAS = [
                  'ventas_perdidas'],
         edge: ['aplicar-movimiento-inventario', 'analyze-history'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly'],
-        docs: ['docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md'],
+        docs: ['docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md',
+               'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },
     {
         id: 'minmax',

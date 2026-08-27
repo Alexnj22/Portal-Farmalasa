@@ -126,7 +126,10 @@ const PROBATION_EXEMPTION_DAYS = 365;
 // sobre carné≠anualidad. El resto de documentos usa la lista abierta
 // "+ Agregar Documento" (categoría EXTRA_<ts>).
 const FIXED_DOCUMENT_CATEGORIES = [
-    { key: 'CV', label: 'Currículum Vitae (CV)' },
+    // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
+    // certificados de estudio y las referencias van adentro, y por eso no se
+    // piden como documentos aparte (27-ago-2026, decisión del usuario).
+    { key: 'CV', label: 'Currículum Vitae — con sus atestados' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
 ];
 // Art. 23 nº10 CT: el numeral pide «cantidad, CALIDAD Y ESTADO». Es una lista
@@ -967,7 +970,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // que alguien recuerda, porque entra al aviso de documentos por vencer.
         // Es el mismo razonamiento que ya está escrito para el examen del menor.
         { key: 'CERTIFICADO_MEDICO_ANUAL', label: 'Certificado médico anual — heces y orina' },
-        { key: 'CURRICULUM',       label: 'Currículum u hoja de vida (con sus atestados)' },
         { key: 'COPIA_NIT',        label: 'Copia del NIT' },
         { key: 'TARJETA_ISSS',     label: 'Copia de la tarjeta del ISSS' },
         { key: 'TARJETA_AFP',      label: 'Copia de la tarjeta de la AFP' },

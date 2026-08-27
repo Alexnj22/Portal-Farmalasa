@@ -325,9 +325,19 @@ describe('los documentos que pide el expediente', () => {
         path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
 
     it('están los cinco de ingreso', () => {
-        for (const k of ['SOLICITUD_EMPLEO', 'CURRICULUM', 'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP']) {
+        // El currículum es `CV` y NO `CURRICULUM`: ya existía en la lista fija.
+        // Agregarlo con otra clave lo dejó dos veces en la misma pantalla —
+        // alguien lo subía en una y la otra seguía pidiéndolo para siempre.
+        for (const k of ['SOLICITUD_EMPLEO', 'CV', 'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP']) {
             expect(form).toContain(`key: '${k}'`);
         }
+    });
+
+    it('ninguna categoría de documento está repetida', () => {
+        // El defecto anterior en su forma general: dos claves para el mismo
+        // papel se ven como dos pendientes y sólo uno se puede cerrar.
+        const claves = [...form.matchAll(/key: '([A-Z_]+)'/g)].map(m => m[1]);
+        expect(new Set(claves).size).toBe(claves.length);
     });
 
     it('NO pide los que van dentro del currículum', () => {

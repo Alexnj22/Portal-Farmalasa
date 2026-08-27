@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.816.1 — El currículum se pedía dos veces
+
+Salió al barrer el Art. 23 numeral por numeral: al agregar los documentos del
+reglamento le puse `CURRICULUM` a algo que **ya existía** en la lista fija como
+`CV`. Dos claves para el mismo papel, una al lado de la otra en la misma
+pantalla — alguien lo sube en una y **la otra sigue pidiéndolo para siempre**.
+
+Se queda el que ya estaba, con el nombre que dice qué trae adentro:
+«Currículum Vitae — con sus atestados». Los certificados de estudio y las
+referencias van ahí, y por eso no se piden como documentos aparte.
+
+Anclado en su forma general: ninguna categoría de documento puede repetir clave.
+Dos claves para el mismo papel se ven como dos pendientes y sólo uno se puede
+cerrar.
+
 ## v2.816.0 — El certificado médico es anual, no de ingreso
 
 Corrección del usuario: *«certificado médico no se pide al ingreso, pero sí se

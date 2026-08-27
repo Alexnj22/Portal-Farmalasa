@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.821.1 — Horarios: la documentación del área
+
+Lo que las dos tandas anteriores cambiaron, escrito donde se busca.
+
+- **CLAUDE.md** estrena la regla «un día de horario se resuelve en UN solo
+  sitio», con la tabla de las cuatro lecturas que divergían, las **seis** formas
+  de decir «no trabaja» y por qué guardar una celda no toca el estado de
+  publicación.
+- **`docs/HORARIOS-…`** abre con esa misma sección, documenta que el turno del
+  catálogo trae su pausa (y que el catálogo **no** son los turnos del
+  reglamento), cuenta el cron duplicado que dejaba muda a su propia alarma, y
+  suma cuatro reglas al «antes de tocar algo»: entre ellas que un verde de
+  `gate:movil` no dice nada sobre esta área, porque sus detectores miran filas de
+  `DataTable` y acá no hay ninguna.
+
 ## v2.821.0 — Horarios: la pantalla — publicar repetible, el catálogo con dedo, y fuera «Saly»
 
 Segundo bloque de la auditoría. La base quedó en v2.820.0; esto es lo que se ve.

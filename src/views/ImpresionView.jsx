@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { EMPRESA } from '../constants/empresa';
 import { APP_VERSION } from '../version';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 import {
     ANCHOS_ROLLO, construirTicketHtml,
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
@@ -270,7 +271,7 @@ const ImpresionView = () => {
                             </p>
                             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                                 <div>
-                                    <label className="text-label font-bold text-content-2 mb-1 block">
+                                    <label className={rotuloCampo('text-content-2')}>
                                         Sistema de esta computadora
                                     </label>
                                     <LiquidSelect
@@ -342,7 +343,7 @@ const ImpresionView = () => {
                             </p>
                             <div className="mt-3 flex flex-wrap items-end gap-2">
                                 <div className="min-w-[220px] flex-1">
-                                    <label className="text-label font-bold text-content-2 mb-1 block">
+                                    <label className={rotuloCampo('text-content-2')}>
                                         Ancho del rollo
                                     </label>
                                     <LiquidSelect

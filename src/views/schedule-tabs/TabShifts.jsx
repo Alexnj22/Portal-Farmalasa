@@ -16,6 +16,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { EmptyState } from '../../components/common/StateViews';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -436,18 +437,18 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
                             <div className="pt-2 grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
+                                    <label className={rotuloCampo('text-content-3')}>Entrada</label>
                                     <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm(f => ({ ...f, start: v }))} />
                                 </div>
                                 <div>
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
+                                    <label className={rotuloCampo('text-content-3')}>Salida</label>
                                     <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm(f => ({ ...f, end: v }))} />
                                 </div>
                             </div>
                         </div>
 
                         <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
-                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
+                            <label className={rotuloCampo('text-content-3')}>Nombre del turno</label>
                             <div className="flex gap-2 mb-2">
                                 <SegmentedControl
                                     layout="block" columns={3}

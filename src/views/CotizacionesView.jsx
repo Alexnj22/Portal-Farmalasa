@@ -28,6 +28,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -248,13 +249,13 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">
-                    <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Presentación</label>
+                    <label className={rotuloCampo('text-content-2', { denso: true })}>Presentación</label>
                     <LiquidSelect value={item.presentacionId} onChange={v => updateItem(item._id, 'presentacionId', v)}
                         options={presOptions} placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
                         icon={Tag} compact clearable={false} />
                 </div>
                 <div className="col-span-1">
-                    <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Tipo Precio</label>
+                    <label className={rotuloCampo('text-content-2', { denso: true })}>Tipo Precio</label>
                     <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
                         options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                 </div>
@@ -739,13 +740,11 @@ export default function CotizacionesView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Fecha</label>
-                            <div className="w-full bg-surface-card-hover border border-border-card rounded-2xl">
-                                <LiquidDatePicker value={fecha} onChange={setFecha} />
-                            </div>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Fecha</label>
+                            <LiquidDatePicker value={fecha} onChange={setFecha} />
                         </div>
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Cliente</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Cliente</label>
                             <LiquidSelect value={customerId}
                                 onChange={handleCustomerChange}
                                 onSearchChange={searchCustomers}
@@ -754,13 +753,13 @@ export default function CotizacionesView() {
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Tipo Documento</label>
                             <LiquidSelect value={docType}
                                 onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }}
                                 options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
                         </div>
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Forma de pago</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Forma de pago</label>
                             <LiquidSelect value={paymentType} onChange={setPaymentType}
                                 options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
                         </div>
@@ -770,7 +769,7 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         {/* Sucursal */}
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Sucursal</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Sucursal</label>
                             <div data-surface="card" className="flex items-center gap-2 px-4 py-3 min-h-[46px]">
                                 <Building2 size={13} className="text-content-3 shrink-0" />
                                 <span className="text-body-sm font-bold text-content-2 truncate">

@@ -54,6 +54,19 @@ const LiquidDatePicker = ({
     // el campo REAPARECE solo: ahí el año dejó de sobreentenderse y esconderlo
     // sería mentir sobre qué se está filtrando.
     hideYear = false,
+    // ── El campo dibuja su propia caja (2026-08-27) ──────────────────────────
+    // Hasta hoy este control salía SIN superficie: `w-full h-full`, o sea que
+    // tomaba el alto de quien lo envolviera. Consecuencia medida sobre sus 61
+    // llamadores: **30 envoltorios distintos y cinco alturas** —32, 36, 40, 42 y
+    // el token—, así que un campo de fecha al lado de uno de texto coincidía o
+    // no según quién lo hubiera escrito. Es el mismo defecto que el rótulo, un
+    // nivel más abajo.
+    //
+    // Ahora la caja es suya y mide lo mismo que `PortalInput`. El tinte de error
+    // o de aviso entra por prop y no reescribiendo el borde desde afuera: desde
+    // afuera no hay forma de acertarle al radio ni al alto sin repetirlos.
+    hasError = false,
+    tono = null,
 }) => {
     const esTactil = useCoarsePointer();
     const aMedianoche = (iso) => {
@@ -617,8 +630,14 @@ const LiquidDatePicker = ({
                 // El campo entero es el control que abre el calendario, y sólo
                 // respondía al puntero. `active:` en el contenedor y no en cada
                 // casilla: lo que se toca es el campo.
-                className={`w-full h-full flex items-center gap-1 rounded-xl transition-all active:scale-[0.99] hover:bg-surface-card-hover group/picker focus-within:bg-surface-card-hover
-                    ${esTactil ? 'cursor-pointer min-h-[44px]' : 'cursor-text'}
+                data-surface={tono ? undefined : 'input'}
+                className={`w-full flex items-center gap-1 transition-all active:scale-[0.99] group/picker
+                    ${compact ? 'h-8' : 'h-[max(40px,var(--tap-min))]'}
+                    ${tono === 'warning' ? 'rounded-input border border-warning/30 bg-warning/10'
+                      : tono === 'success' ? 'rounded-input border border-success/30 bg-success/10'
+                      : 'hover:bg-surface-card-hover focus-within:bg-surface-card-hover'}
+                    ${hasError ? 'rounded-input outline outline-2 outline-danger/50 !border-danger !bg-danger/10' : ''}
+                    ${esTactil ? 'cursor-pointer' : 'cursor-text'}
                     ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`}
                 onClick={() => {
                     if (!isOpen) openPicker();

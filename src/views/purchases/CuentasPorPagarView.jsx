@@ -25,6 +25,7 @@ import { normalizeText } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
 import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
 import { useStaffStore } from '../../store/staffStore';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // Vista «Cuentas por pagar».
 //
@@ -231,7 +232,7 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
                             <PortalInput label="Límite de crédito" type="number" value={limite}
                                 onChange={e => setLimite(e.target.value)} placeholder="Sin límite" tono="brand" />
                             <div>
-                                <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Forma de pago
                                 </label>
                                 <LiquidSelect value={forma} onChange={v => setForma(v || 'cheque')}

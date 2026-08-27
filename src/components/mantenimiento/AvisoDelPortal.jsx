@@ -13,6 +13,7 @@ import { setBannerPortal, VARIANTES_BANNER } from '../../data/bannerPortal';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 /**
  * Sistema › Mantenimiento — la franja de aviso que se ve en el tope de todas
@@ -183,7 +184,7 @@ export default function AvisoDelPortal() {
                         helperText="Si la dejas vacía, en el teléfono se lee el texto largo repartido en varias líneas."
                     />
                     <div>
-                        <label className="block text-caption font-bold text-content-2 mb-1.5">
+                        <label className={rotuloCampo('text-content-2')}>
                             Apariencia
                         </label>
                         <LiquidSelect

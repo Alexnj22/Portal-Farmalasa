@@ -11,6 +11,7 @@ import Notice from '../../components/common/Notice';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { smartFilter } from '../../utils/searchUtils';
 import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '../../data/pedidos';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoId, pedidoNumero, paginas = null, draftKey = null }) {
     const montadoParaSalida = useMontadoParaSalida(open);
@@ -283,7 +284,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
                     {/* Box count input */}
                     <div>
-                        <label className="block text-label font-bold text-content-2 mb-2 uppercase tracking-wide">
+                        <label className={rotuloCampo('text-content-2')}>
                             ¿Cuántas cajas salen?
                         </label>
                         <div className="relative">

@@ -2,6 +2,7 @@ import React from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
@@ -112,7 +113,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))}
                         />
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
+                        <label className={rotuloCampo('text-content-3')}>Día de Vencimiento (1-31)</label>
                         <PortalInput
                             aria-label="Día de vencimiento del mes" required
                             type="number" min="1" max="31"
@@ -124,14 +125,12 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
 
                 <div className="pt-4 border-t border-divider">
-                    <label className="text-caption font-black uppercase tracking-widest text-brand-text ml-1 mb-2 flex items-center gap-2">
-                        <CalendarCheck size={14}/> Último Mes Pagado
-                    </label>
+                    <label className={rotuloCampo('text-brand-text')}><span className="flex items-center gap-1.5"><CalendarCheck size={14}/> Último Mes Pagado</span></label>
                     <LiquidDatePicker
                         mode="month"
                         value={currentData.paidThrough && currentData.paidThrough.split('-').length === 2 ? `${currentData.paidThrough}-01` : currentData.paidThrough}
                         onChange={(val) => handleChange('paidThrough', val)}
-                    />
+                        />
                     <p className="mt-2 text-caption font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { Clock, SkipForward, CheckCircle2 } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
     const [start, setStart] = useState('08:00');
@@ -38,7 +39,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                 <form onSubmit={handleSubmit} className="space-y-4 [@media(max-height:800px)]:space-y-2.5">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-micro font-bold uppercase tracking-widest text-white/40 block mb-1.5 [@media(max-height:800px)]:mb-1">
+                            <label className={`${rotuloCampo('text-white/40', { denso: true })} [@media(max-height:800px)]:mb-1`}>
                                 Hora Entrada
                             </label>
                             <TimePicker12
@@ -48,7 +49,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-micro font-bold uppercase tracking-widest text-white/40 block mb-1.5 [@media(max-height:800px)]:mb-1">
+                            <label className={`${rotuloCampo('text-white/40', { denso: true })} [@media(max-height:800px)]:mb-1`}>
                                 Hora Salida
                             </label>
                             <TimePicker12

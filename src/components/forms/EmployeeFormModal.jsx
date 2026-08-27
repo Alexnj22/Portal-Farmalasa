@@ -1143,13 +1143,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 />
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
-                        <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-2', { denso: true })}>
                             <span>Fecha de Vencimiento (opcional) — la lee el portal si el documento la trae</span>
-                            {expiryBadge && <Badge variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
+                            {expiryBadge && <Badge size="sm" variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
                         </label>
-                        <div className="bg-surface-card rounded-xl border border-divider h-[36px] flex items-center px-1.5">
-                            <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} />
-                        </div>
+                        <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} />
                     </div>
                 )}
             </>
@@ -1653,7 +1651,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 renderDocUploadArea('DOCUMENTO_IDENTIDAD', { showExpiry: false })
                             ) : duiEnUnArchivo ? (
                                 <div>
-                                    <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                    <label className={rotuloCampo('text-content-2', { denso: true })}>
                                         <span>Documento completo (las dos caras)</span>
                                         {!getDocEntry('DUI_COMPLETO').url && <span className="text-warning font-black">Pendiente</span>}
                                     </label>
@@ -1662,14 +1660,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                        <label className={rotuloCampo('text-content-2', { denso: true })}>
                                             <span>Frente</span>
                                             {!getDocEntry('DUI_FRENTE').url && <span className="text-warning font-black">Pendiente</span>}
                                         </label>
                                         {renderDocUploadArea('DUI_FRENTE', { showExpiry: false })}
                                     </div>
                                     <div>
-                                        <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                        <label className={rotuloCampo('text-content-2', { denso: true })}>
                                             <span>Reverso</span>
                                             {!getDocEntry('DUI_REVERSO').url && <span className="text-warning font-black">Pendiente</span>}
                                         </label>
@@ -1792,9 +1790,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1 leading-none">{birthDateErrorMsg}</span>}
                                     </label>
-                                    <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
-                                        <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} />
-                                    </div>
+                                    <LiquidDatePicker hasError tono="warning" value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} />
                                 </div>
 
                                 {!isMinor && (
@@ -1843,9 +1839,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
-                                    <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                        <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
-                                    </div>
+                                    <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
                                 </div>
 
                                 {isMinor && (
@@ -2586,9 +2580,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)}
                                                                 placeholder="Edad en años" hasError={depAgeInvalid} />
                                                         ) : (
-                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                                                <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} />
-                                                            </div>
+                                                            <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} />
                                                         )}
                                                         <div className="flex items-center justify-between gap-2 mt-1 ml-1">
                                                             {!depAgeOnly && depAge !== null
@@ -2918,9 +2910,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                         <div className="relative z-tabs">
                                             <label className={rotuloCampo('text-content-3')}>Fecha de inicio de labores</label>
-                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                                <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
-                                            </div>
+                                            <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                         </div>
                                         <div className="relative z-content">
                                             <label className={rotuloCampo('text-content-3')}>Cargo Principal <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge></label>
@@ -2991,9 +2981,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="relative z-tabs">
                                             <label className={rotuloCampo('text-content-3')}>Fecha de contratación</label>
-                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                                <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} />
-                                            </div>
+                                            <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} />
                                         </div>
                                     </>
                                 )}
@@ -3004,9 +2992,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge size="sm" variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
                                             {!formData.contract_end_date && <Badge size="sm" variant="danger" uppercase={false}>Obligatorio</Badge>}
                                         </label>
-                                        <div className={`bg-warning/10 rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
-                                            <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} />
-                                        </div>
+                                        <LiquidDatePicker hasError={contractDatesInvalid} tono="warning" value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} />
                                     </div>
                                 )}
 
@@ -3098,9 +3084,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         icon={MapPin} placeholder="Ej. Chalatenango" />
                                     <div className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Fecha de la firma</label>
-                                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                            <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
-                                        </div>
+                                        <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
                                     </div>
                                 </div>
                             </div>
@@ -3199,10 +3183,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div key={idx} data-surface="card" className="p-3">
                                                     <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                                                         <div className="relative z-content">
-                                                            <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 block">Nuevo fin</label>
-                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                                                <LiquidDatePicker value={pr.hasta} onChange={(date) => actualizarProrroga(idx, { hasta: date })} />
-                                                            </div>
+                                                            <label className={rotuloCampo('text-content-2', { denso: true })}>Nuevo fin</label>
+                                                            <LiquidDatePicker value={pr.hasta} onChange={(date) => actualizarProrroga(idx, { hasta: date })} />
                                                         </div>
                                                         <PortalInput aria-label="Motivo" compact value={pr.motivo || ''}
                                                             onChange={(e) => actualizarProrroga(idx, { motivo: e.target.value })}
@@ -3251,9 +3233,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 items-start">
                                             <div className="relative z-content">
                                                 <label className={rotuloCampo('text-content-3')}>Fecha en que se remitió</label>
-                                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
-                                                    <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
-                                                </div>
+                                                <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
                                             </div>
                                             {/* El acuse sellado, adjunto. La fecha sola dice que
                                                 se mandó; el papel es lo que lo prueba. */}

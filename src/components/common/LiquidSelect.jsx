@@ -132,7 +132,19 @@ const LiquidSelect = ({
     // `nano` queda con su 26px a propósito: vive dentro de grillas densas
     // (DESIGN.md §15.12) y ya recibe su área tocable de 44px por el
     // pseudo-elemento `areaTocable`, sin ocupar ese espacio en pantalla.
-    const minHeightClass = nano ? 'min-h-[26px]' : 'min-h-[max(40px,var(--tap-min))]';
+    // ── `compact` tiene que medir lo mismo que el campo compacto ────────────
+    //
+    // Medido el 2026-08-27: `PortalInput` compacto mide **32px** y este medía
+    // **40**, porque `compact` no tenía su propio mínimo y caía en el de un
+    // campo normal. O sea que la MISMA palabra significaba dos alturas según el
+    // control, que es lo contrario de lo que un canónico promete. Con 125
+    // controles compactos en el portal, el que estaba fuera de fila era éste.
+    //
+    // El piso del dedo no se pierde: en táctil sale por `.blanco-tactil` —el
+    // área de impacto crece a 44 sin agrandar lo pintado—, que es la salida que
+    // este mismo archivo ya usa para su aspa y la que documenta §25.6. Estirar
+    // el control en cambio rompería la grilla densa donde `compact` vive.
+    const minHeightClass = nano ? 'min-h-[26px]' : compact ? 'min-h-8' : 'min-h-[max(40px,var(--tap-min))]';
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),
@@ -609,7 +621,7 @@ const LiquidSelect = ({
     // nada (ver memoria feedback_tailwind_v4_outline_solid_gotcha). El anillo de
     // foco va con `focus-visible` para que solo aparezca al navegar con teclado.
     const anilloFoco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
-    const pillBaseClasses = `w-full transition-all duration-[var(--dur-slow)] outline-none ${anilloFoco} ${minHeightClass} flex items-center text-content ${
+    const pillBaseClasses = `w-full transition-all duration-[var(--dur-slow)] outline-none ${anilloFoco} ${minHeightClass} ${compact ? 'relative blanco-tactil' : ''} flex items-center text-content ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
         !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''

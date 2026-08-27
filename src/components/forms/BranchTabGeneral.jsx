@@ -4,6 +4,7 @@ import { Building2, MapPin, Phone, Smartphone, Map, Map as MapIcon, Navigation }
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { LazyInput, formatPhoneMask } from './BranchHelpers';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const BranchTabGeneral = ({
     formData, setFormData, name, openingDate, location, 
@@ -42,8 +43,8 @@ const BranchTabGeneral = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                        <label className={`${rotuloCampo('text-content-3')} transition-colors`}>
+                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                         </label>
                         <LazyInput
                             required
@@ -55,13 +56,11 @@ const BranchTabGeneral = ({
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Apertura</label>
-                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-tabs ${inputHoverClass}`}>
-                            <LiquidDatePicker
-                                value={openingDate}
-                                onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
+                        <label className={rotuloCampo('text-content-3')}>Fecha de Apertura</label>
+                        <LiquidDatePicker
+                            value={openingDate}
+                            onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
                             />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -77,7 +76,7 @@ const BranchTabGeneral = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative z-content"> 
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
+                        <label className={rotuloCampo('text-content-3')}>Departamento</label>
                         <LiquidSelect
                             value={location.department || ""}
                             onChange={(val) => {
@@ -91,9 +90,9 @@ const BranchTabGeneral = ({
                     </div>
 
                     <div className="relative z-base">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Distrito / Municipio
-                            {getTabStatus(1) === 'orange' && !location.municipality && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
+                            {getTabStatus(1) === 'orange' && !location.municipality && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LiquidSelect
                             value={location.municipality || ""}
@@ -106,9 +105,9 @@ const BranchTabGeneral = ({
                     </div>
 
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Dirección Exacta
-                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
+                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             placeholder="Barrio El Centro, 1ra Av. Norte..."
@@ -118,7 +117,7 @@ const BranchTabGeneral = ({
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Enlace Google Maps</label>
+                        <label className={rotuloCampo('text-content-3')}>Enlace Google Maps</label>
                         <LazyInput
                             icon={Map}
                             placeholder="https://maps.google.com/..."
@@ -130,16 +129,14 @@ const BranchTabGeneral = ({
 
                     {/* Coordenadas GPS */}
                     <div className="md:col-span-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center gap-2">
-                            <Navigation size={10} />
+                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><Navigation size={10} />
                             Coordenadas GPS
                             <span className="normal-case tracking-normal font-medium text-content-3 text-micro">
                                 · Google Maps → click derecho → "¿Qué hay aquí?" → copiar lat, lng
-                            </span>
-                        </label>
+                            </span></span></label>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-micro font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
+                                <label className={rotuloCampo('text-content-2', { denso: true })}>Latitud</label>
                                 <LazyInput
                                     placeholder="14.0123456"
                                     value={String(location.lat || '')}
@@ -148,7 +145,7 @@ const BranchTabGeneral = ({
                                 />
                             </div>
                             <div>
-                                <label className="text-micro font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
+                                <label className={rotuloCampo('text-content-2', { denso: true })}>Longitud</label>
                                 <LazyInput
                                     placeholder="-89.1234567"
                                     value={String(location.lng || '')}
@@ -177,9 +174,9 @@ const BranchTabGeneral = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Teléfono Fijo
-                            {getTabStatus(1) === 'orange' && !formData.phone && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
+                            {getTabStatus(1) === 'orange' && !formData.phone && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             icon={Phone}
@@ -191,9 +188,9 @@ const BranchTabGeneral = ({
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Celular / WhatsApp
-                            {getTabStatus(1) === 'orange' && !formData.cell && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
+                            {getTabStatus(1) === 'orange' && !formData.cell && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             icon={Smartphone}

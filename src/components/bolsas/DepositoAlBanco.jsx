@@ -9,6 +9,7 @@ import { fetchBancos, fetchPersonasDeAdministracion, registrarDeposito } from '.
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.
@@ -236,7 +237,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         puede cuadrar contra ningún estado de cuenta, que es lo
                         único para lo que ese registro existe. */}
                     <div className="space-y-1.5">
-                        <label className="text-caption font-bold text-content-2">
+                        <label className={rotuloCampo('text-content-2')}>
                             A qué banco
                         </label>
                         <LiquidSelect
@@ -269,7 +270,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         bolsa cuyo efectivo se retiró en la sala antes de llegar:
                         no hay nada que mover y sí hay a quién nombrar. */}
                     <div className="space-y-1.5">
-                        <label className="text-caption font-bold text-content-2">
+                        <label className={rotuloCampo('text-content-2')}>
                             A quién se le entrega
                         </label>
                         <LiquidSelect
@@ -358,7 +359,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                     entrega en mano quien lo recibe YA es el destino. */}
                 {nMonto > 0 && (
                     <div className="space-y-1.5">
-                        <label className="text-caption font-bold text-content-2">
+                        <label className={rotuloCampo('text-content-2')}>
                             Quién lo lleva al banco
                             <span className="font-normal text-content-3"> (opcional)</span>
                         </label>

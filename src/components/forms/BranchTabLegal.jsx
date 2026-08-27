@@ -5,6 +5,7 @@ import { LazyInput, Switch, FileUploader } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import Button from '../common/Button';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const BranchTabLegal = ({
     legal, updateNestedSetting, availableRegents,
@@ -46,7 +47,7 @@ const BranchTabLegal = ({
                     {/* 🚨 CONTENIDO EN 1 COLUMNA (flex-col) */}
                     <div className="flex flex-col flex-1 gap-4">
                         <div>
-                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Número de Resolución</label>
+                            <label className={rotuloCampo('text-content-3')}>Número de Resolución</label>
                             <LazyInput
                                 placeholder="Ej: SRS-2024-001"
                                 value={legal.srsPermit || ""}
@@ -55,15 +56,11 @@ const BranchTabLegal = ({
                             />
                         </div>
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                <AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia
-                            </label>
-                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.srsExpiration || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)}
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.srsExpiration || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)}
                                 />
-                            </div>
                         </div>
                         {/* mt-auto empuja el uploader siempre al fondo de la tarjeta */}
                         <div className="pt-4 border-t border-divider mt-auto">
@@ -87,9 +84,9 @@ const BranchTabLegal = ({
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
+                            <label className={rotuloCampo('text-content-3')}>
                                 Regente Asignado
-                                {availableRegents.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
+                                {availableRegents.length === 0 && <Badge size="sm" variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
                             <LiquidSelect
                                 value={legal.regentEmployeeId || ""}
@@ -99,15 +96,11 @@ const BranchTabLegal = ({
                             />
                         </div>
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
-                            </label>
-                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.regentCredentialExp || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)}
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.regentCredentialExp || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)}
                                 />
-                            </div>
                         </div>
                         <div className="pt-4 border-t border-divider mt-auto">
                             <FileUploader
@@ -130,9 +123,9 @@ const BranchTabLegal = ({
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
+                            <label className={rotuloCampo('text-content-3')}>
                                 Referente Asignado
-                                {availablePharmacovigilance.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
+                                {availablePharmacovigilance.length === 0 && <Badge size="sm" variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
                             <LiquidSelect
                                 value={legal.pharmacovigilanceEmployeeId || ""}
@@ -142,15 +135,11 @@ const BranchTabLegal = ({
                             />
                         </div>
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
-                            </label>
-                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.pharmacovigilanceExp || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)}
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.pharmacovigilanceExp || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)}
                                 />
-                            </div>
                         </div>
                         <div className="pt-4 border-t border-divider mt-auto">
                             <FileUploader
@@ -177,7 +166,7 @@ const BranchTabLegal = ({
                     {legal.injections ? (
                         <div className="flex flex-col flex-1 gap-4">
                             <div>
-                                <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Enfermeros Autorizados</label>
+                                <label className={rotuloCampo('text-content-3')}>Enfermeros Autorizados</label>
                                 {availableNurses.length === 0 ? (
                                     <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
@@ -231,7 +220,7 @@ const BranchTabLegal = ({
                 {legal.controlledBooks ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-[var(--dur-slow)]">
                         <div>
-                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Nº Resolución Autorización</label>
+                            <label className={rotuloCampo('text-content-3')}>Nº Resolución Autorización</label>
                             <LazyInput
                                 placeholder="Ej: RES-LIB-2025"
                                 value={legal.controlledBooksRes || ""}

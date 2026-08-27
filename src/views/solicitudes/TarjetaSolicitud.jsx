@@ -17,6 +17,7 @@ import {
     personasDe, cuandoSeDecidio, salaQueEspera, motivoDeRechazoCorto,
 } from './movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
 // que muestran solicitudes.
@@ -566,7 +567,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                         preguntar dos veces. */}
                     {decidible && (modo === 'reject' || parcial) && (
                         <div ref={bloqueDecision}>
-                            <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
+                            <label className={rotuloCampo('text-content-2')}>
                                 {modo === 'reject' ? 'Motivo de rechazo' : 'Por qué no entra todo'}
                                 <span className="text-danger ml-1">*</span>
                             </label>

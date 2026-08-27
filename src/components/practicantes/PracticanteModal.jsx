@@ -254,9 +254,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <label className={fieldLabel}>
                                     <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                 </label>
-                                <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
-                                    <LiquidDatePicker value={form.birth_date} onChange={(v) => set('birth_date', v)} />
-                                </div>
+                                <LiquidDatePicker tono="warning" value={form.birth_date} onChange={(v) => set('birth_date', v)} />
                             </div>
                             <PortalInput label="Teléfono" name="phone" value={form.phone} onChange={handleChange} icon={Phone} placeholder="0000-0000" maskType="PHONE" />
 
@@ -322,18 +320,14 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={fieldLabel}><span>Fecha Inicio</span>{!form.fecha_inicio && reqBadge}</label>
-                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-danger !bg-danger/10' : ''}`}>
-                                    <LiquidDatePicker value={form.fecha_inicio} onChange={(v) => set('fecha_inicio', v)} />
-                                </div>
+                                <LiquidDatePicker hasError={!form.fecha_inicio} value={form.fecha_inicio} onChange={(v) => set('fecha_inicio', v)} />
                             </div>
                             <div>
                                 <label className={fieldLabel}>
                                     <span>Fecha Fin {fechasInvalid && <span className="text-danger font-bold ml-1">— debe ser posterior</span>}</span>
                                     {!form.fecha_fin && reqBadge}
                                 </label>
-                                <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                    <LiquidDatePicker value={form.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={form.fecha_inicio || null} />
-                                </div>
+                                <LiquidDatePicker hasError={fechasInvalid || !form.fecha_fin} value={form.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={form.fecha_inicio || null} />
                             </div>
                             <PortalInput label="Horas Requeridas (meta)" name="horas_requeridas" type="number" value={form.horas_requeridas} onChange={handleChange} icon={Clock} placeholder="Ej. 200" />
                             <div>

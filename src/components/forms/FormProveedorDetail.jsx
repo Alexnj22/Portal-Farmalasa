@@ -16,6 +16,7 @@ import {
 } from '../../utils/f07Catalogos';
 import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -343,7 +344,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={Tag}>Clasificación</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
+                        <label className={rotuloCampo('text-content-3')} title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
                             Tipo de Proveedor
                         </label>
                         <div className="h-[44px] flex items-center">
@@ -355,7 +356,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
+                        <label className={rotuloCampo('text-content-3')} title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
                             Categoría Contable
                         </label>
                         <div className="h-[44px] flex items-center">
@@ -365,7 +366,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Categoría</label>
+                        <label className={rotuloCampo('text-content-3')}>Categoría</label>
                         <LiquidSelect
                             icon={Tag}
                             value={categoriaId}
@@ -383,7 +384,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             atrás: la pantalla no nombra el sistema de origen,
                             y el grep no lo encontró porque vivía en un rótulo
                             y en un placeholder. */}
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Registrado como</label>
+                        <label className={rotuloCampo('text-content-3')}>Registrado como</label>
                         <LiquidSelect
                             icon={Building2}
                             value={supplierId}
@@ -433,7 +434,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                        <label className={rotuloCampo('text-content-3')}
                             title="Art. 65 Ley de IVA — sólo es deducible el crédito fiscal de compras indispensables para el giro">
                             ¿Da crédito fiscal?
                         </label>
@@ -448,7 +449,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     </div>
                     {fiscal.iva_deducible === true && (<>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Costo o gasto</label>
+                            <label className={rotuloCampo('text-content-3')}>Costo o gasto</label>
                             <LiquidSelect
                                 value={fiscal.f07_clasificacion}
                                 onChange={(v) => setFiscal(p => ({
@@ -464,7 +465,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Sector</label>
+                            <label className={rotuloCampo('text-content-3')}>Sector</label>
                             <LiquidSelect
                                 value={fiscal.f07_sector}
                                 onChange={(v) => setFiscal(p => ({ ...p, f07_sector: v }))}
@@ -475,7 +476,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                            <label className={rotuloCampo('text-content-3')}
                                 title="Se filtra según Costo o Gasto: el manual del F-07 no admite las mismas opciones para los dos">
                                 Tipo de costo o gasto
                             </label>
@@ -537,7 +538,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         onChange={e => setCredito(p => ({ ...p, limite: e.target.value }))}
                     />
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                        <label className={rotuloCampo('text-content-3')}>
                             Forma de pago
                         </label>
                         <LiquidSelect
@@ -606,7 +607,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={CheckCircle2}>Estado y Notas</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Activo</label>
+                        <label className={rotuloCampo('text-content-3')}>Activo</label>
                         <LiquidSelect
                             value={form.activo ? 'si' : 'no'}
                             onChange={(v) => setForm(p => ({ ...p, activo: v === 'si' }))}
@@ -616,7 +617,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Art. 163 CT — en Automático se enciende solo al observarlo en un DTE; elegir Sí/No lo fija a mano y deja de actualizarse desde los DTE">
+                        <label className={rotuloCampo('text-content-3')} title="Art. 163 CT — en Automático se enciende solo al observarlo en un DTE; elegir Sí/No lo fija a mano y deja de actualizarse desde los DTE">
                             Percibe 1%
                         </label>
                         <LiquidSelect
@@ -639,7 +640,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             mercadería, así que es una decisión del contador y se
                             marca a mano. Si no se retiene, la empresa responde
                             solidariamente por el impuesto no retenido. */}
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                        <label className={rotuloCampo('text-content-3')}
                             title="Art. 156 CT — 10% sobre servicios prestados por personas naturales. Marcarlo incluye a este proveedor en el anexo de retención de Renta">
                             Retención de Renta
                         </label>
@@ -652,7 +653,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>
+                        <label className={rotuloCampo('text-content-3')}>Notas</label>
                         <PortalTextarea
                             value={form.notas}
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}

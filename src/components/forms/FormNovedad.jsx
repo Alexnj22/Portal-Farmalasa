@@ -21,6 +21,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
 import { formatMoney } from '../../utils/formatNumber';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -427,7 +428,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         icon={CalendarDays}
                                         holidays={holidays}
                                         selectedDates={formData?.permissionDates || []}
-                                    />
+                                        />
                                 </div>
                             </div>
                         </div>
@@ -456,17 +457,17 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <LiquidDatePicker
                                     value={formData?.date || ''}
                                     onChange={(val) => setFormData(prev => {
-                                        const days = prev.disabilityDays || 0;
-                                        const newEnd = (isDisability && val && days > 0)
-                                            ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
-                                            : (isDisability ? null : (val && prev.endDate && val > prev.endDate ? null : prev.endDate));
-                                        return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
+                                    const days = prev.disabilityDays || 0;
+                                    const newEnd = (isDisability && val && days > 0)
+                                    ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
+                                    : (isDisability ? null : (val && prev.endDate && val > prev.endDate ? null : prev.endDate));
+                                    return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
                                     })}
                                     icon={CalendarDays}
                                     highlightRangeStart={formData?.date}
                                     highlightRangeEnd={formData?.endDate}
                                     holidays={holidays}
-                                />
+                                    />
                             </div>
                         </div>
 
@@ -477,17 +478,17 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     <LiquidDatePicker
                                         value={formData?.endDate || ''}
                                         onChange={(val) => {
-                                            if (val && formData?.date && val < formData.date) {
-                                                useToastStore.getState().showToast('Fecha inválida', 'La fecha de fin no puede ser anterior al inicio.', 'error');
-                                                return;
-                                            }
-                                            setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }));
+                                        if (val && formData?.date && val < formData.date) {
+                                        useToastStore.getState().showToast('Fecha inválida', 'La fecha de fin no puede ser anterior al inicio.', 'error');
+                                        return;
+                                        }
+                                        setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }));
                                         }}
                                         icon={CalendarClock}
                                         highlightRangeStart={formData?.date}
                                         highlightRangeEnd={formData?.endDate}
                                         holidays={holidays}
-                                    />
+                                        />
                                 </div>
                             </div>
                         )}
@@ -521,7 +522,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 {isPromotion && (
                     <div className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-3xl">
                         <div className="flex items-center justify-between mb-3">
-                            <label className="text-caption font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
+                            <label className={rotuloCampo('text-chart-1-text')}>Nuevo Cargo Asignado</label>
                             <Checkbox size="sm"
                                 checked={formData?.isTransferAndPromotion || false}
                                 onChange={(v) => setFormData(prev => ({...prev, isTransferAndPromotion: v}))}
@@ -554,7 +555,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
                 {isTermination && (
                     <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-3xl">
-                        <label className="text-caption font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
+                        <label className={rotuloCampo('text-danger')}>Motivo Legal de Baja</label>
                         <div className="mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>

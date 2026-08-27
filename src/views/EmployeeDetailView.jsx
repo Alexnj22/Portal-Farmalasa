@@ -38,6 +38,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
 import { clickable } from '../utils/clickable';
 import ModalShell from '../components/common/ModalShell';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -1279,7 +1280,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 >
                         {!isCancelling && (
                             <>
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 self-start">Motivo de cancelación *</label>
+                                <label className={rotuloCampo('text-content-3')}>Motivo de cancelación *</label>
                                 <PortalTextarea
                                     value={cancelReason}
                                     onChange={e => setCancelReason(e.target.value)}

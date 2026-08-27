@@ -5,6 +5,7 @@ import PedidoModal from '../PedidoModal';
 import { ERP_NAMES } from '../../../constants/erp';
 import { PAUSE_REASONS } from './constants';
 import PortalTextarea from '../../../components/common/PortalTextarea';
+import { rotuloCampo } from '../../../utils/rotuloDeCampo';
 
 export default function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
     const alreadyHadAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
@@ -67,7 +68,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                     </div>
 
                     <div>
-                        <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
+                        <label className={rotuloCampo('text-content-2')}>
                             {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
                         </label>
                         <PortalTextarea

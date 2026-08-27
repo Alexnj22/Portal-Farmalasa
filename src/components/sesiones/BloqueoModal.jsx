@@ -6,6 +6,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // Bloquear a alguien es más grave que cerrarle una conexión, y el diálogo tiene
 // que decirlo: cerrar una conexión sólo impide renovar el acceso, mientras que
@@ -66,7 +67,7 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
                 </Notice>
 
                 <div>
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5 block">
+                    <label className={rotuloCampo('text-content-3')}>
                         Por cuánto tiempo
                     </label>
                     {/* `icon` y `clearable={false}` no son adorno:

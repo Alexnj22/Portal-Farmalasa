@@ -4,6 +4,7 @@ import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -73,7 +74,7 @@ function EarlyExitForm({
           </div>
 
 <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-  <label className="text-white/50 text-micro sm:text-micro font-semibold uppercase tracking-widest ml-2">
+  <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-micro`}>
     Motivo autorizado
   </label>
   {/* Este formulario solo se monta dentro de TimeClockView, que fuerza
@@ -101,7 +102,7 @@ function EarlyExitForm({
 </div>
 
           <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-            <label className="text-white/50 text-micro sm:text-micro font-semibold uppercase tracking-widest ml-2">
+            <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-micro`}>
               Justificación (Opcional)
             </label>
             <PortalTextarea

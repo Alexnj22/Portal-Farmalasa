@@ -7,6 +7,7 @@ import TimePicker12 from '../common/TimePicker12';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { WEEK_DAYS } from '../../data/constants';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // --------------------------------------------------------
 // HELPERS DE TIEMPO Y LÓGICA
@@ -154,9 +155,7 @@ const DayRow = memo(({
                             {/* SUCURSAL */}
                             {isMultiBranch && (
                                 <div className="lg:col-span-1 overflow-visible">
-                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
-                                        <Building2 size={12} className="text-chart-3-text"/> Ubicación
-                                    </label>
+                                    <label className={rotuloCampo('text-content-2', { denso: true })}><span className="flex items-center gap-1.5"><Building2 size={12} className="text-chart-3-text"/> Ubicación</span></label>
                                     <LiquidSelect 
                                         value={String(config.branchId || empBaseBranchId || '')}
                                         onChange={(val) => onChange(day.id, 'branchId', val)}
@@ -169,9 +168,7 @@ const DayRow = memo(({
 
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-modal">
-                                <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
-                                    <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand-text'}/> Turno Asignado
-                                </label>
+                                <label className={rotuloCampo('text-content-2', { denso: true })}><span className="flex items-center gap-1.5"><Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand-text'}/> Turno Asignado</span></label>
                                 <LiquidSelect 
                                     value={String(config.shiftId || '')}
                                     onChange={(val) => onChange(day.id, 'shiftId', val ? parseInt(val) : '')}
@@ -185,9 +182,7 @@ const DayRow = memo(({
                             {/* ALMUERZO */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
-                                        <Utensils size={12} className="text-chart-4-text"/> Almuerzo (-1h)
-                                    </label>
+                                    <label className={rotuloCampo('text-content-2', { denso: true })}><span className="flex items-center gap-1.5"><Utensils size={12} className="text-chart-4-text"/> Almuerzo (-1h)</span></label>
                                     <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} />
                                 </div>
                                 {config.lunchTime ? (
@@ -210,9 +205,7 @@ const DayRow = memo(({
                             {/* LACTANCIA */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
-                                        <Baby size={12} className="text-chart-6"/> Lactancia (+1h)
-                                    </label>
+                                    <label className={rotuloCampo('text-content-2', { denso: true })}><span className="flex items-center gap-1.5"><Baby size={12} className="text-chart-6"/> Lactancia (+1h)</span></label>
                                     <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} />
                                 </div>
                                 {config.lactationTime ? (

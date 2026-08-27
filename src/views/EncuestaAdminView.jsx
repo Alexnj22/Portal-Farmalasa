@@ -31,6 +31,7 @@ import {
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -584,7 +585,7 @@ export default function EncuestaAdminView() {
                                             onChange={e => setSfAño(e.target.value)}
                                         />
                                     <div>
-                                        <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
+                                        <label className={rotuloCampo('text-content-3', { denso: true })}>Estado</label>
                                         <SegmentedControl size="sm" tone="neutro" label="Estado de la encuesta"
                                             options={ESTADO_TABS.map(t => ({ value: t.id, label: t.label }))}
                                             value={sfEstado} onChange={setSfEstado} />
@@ -593,7 +594,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Tipo */}
                                 <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
+                                    <label className={rotuloCampo('text-content-3', { denso: true })}>Tipo de encuesta</label>
                                     <SegmentedControl tone="neutro" label="Tipo de encuesta"
                                         options={TIPO_TABS.map(t => ({ value: t.id, label: t.label }))}
                                         value={sfTipo} onChange={setSfTipo} />
@@ -602,7 +603,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Descripción */}
                                 <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
+                                    <label className={rotuloCampo('text-content-3', { denso: true })}>Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <PortalTextarea
                                         value={sfDescripcion}
                                         onChange={e => setSfDescripcion(e.target.value)}
@@ -613,30 +614,22 @@ export default function EncuestaAdminView() {
 
                                 {/* Fechas */}
                                 <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
-                                        <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
-                                    </label>
+                                    <label className={rotuloCampo('text-content-3', { denso: true })}><span className="flex items-center gap-1.5"><CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación</span></label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
-                                                <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} />
-                                            </div>
+                                            <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} />
                                         </div>
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
-                                                <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} />
-                                            </div>
+                                            <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Privacidad */}
                                 <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
-                                        <Lock size={10} strokeWidth={2.5} /> Privacidad
-                                    </label>
+                                    <label className={rotuloCampo('text-content-3', { denso: true })}><span className="flex items-center gap-1.5"><Lock size={10} strokeWidth={2.5} /> Privacidad</span></label>
                                     {/* Cada uno alterna entre DOS estados con nombre
                                         propio ("Anónima"/"No anónima"), así que es un
                                         uno-de-N de dos opciones y no un interruptor:
@@ -678,9 +671,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Audiencia */}
                                 <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
-                                        <Users size={10} strokeWidth={2.5} /> Dirigida a
-                                    </label>
+                                    <label className={rotuloCampo('text-content-3', { denso: true })}><span className="flex items-center gap-1.5"><Users size={10} strokeWidth={2.5} /> Dirigida a</span></label>
                                     <SegmentedControl tone="neutro" label="A quién va dirigida"
                                         options={SCOPE_TABS.map(t => ({ value: t.id, label: t.label }))}
                                         value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
@@ -805,7 +796,7 @@ export default function EncuestaAdminView() {
                             <div className="space-y-5">
                                 {/* Empleado */}
                                 <div>
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
+                                    <label className={rotuloCampo('text-content-3')}>Empleado</label>
                                     {editingResponse ? (
                                         <div data-surface="card" className="flex items-center gap-2.5 py-3 px-4">
                                             <PersonAvatar
@@ -829,7 +820,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Rol */}
                                 <div>
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
+                                    <label className={rotuloCampo('text-content-3')}>Rol en encuesta</label>
                                     {/* Dos opciones excluyentes: es un uno-de-N, no dos
                                         botones. Con `SegmentedControl` gana el
                                         `role="radiogroup"` que un lector de pantalla
@@ -978,7 +969,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Comentario */}
                                 <div>
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
+                                    <label className={rotuloCampo('text-content-3')}>Comentario (opcional)</label>
                                     <PortalTextarea
                                         value={rfComentario}
                                         onChange={e => setRfComentario(e.target.value)}

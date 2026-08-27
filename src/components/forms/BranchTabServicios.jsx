@@ -2,6 +2,7 @@ import React from 'react';
 import { Zap, Droplet, Wifi, Smartphone, CalendarDays } from 'lucide-react';
 import { LazyInput, clampInt } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const BranchTabServicios = ({ services, updateServiceField }) => {
 
@@ -43,7 +44,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                     {/* CAMPOS: Apilados verticalmente */}
                     <div className="flex flex-col gap-5 flex-1">
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Proveedor</label>
+                            <label className={rotuloCampo('text-content-3')}>Proveedor</label>
                             <LazyInput 
                                 placeholder={srv.placeholder} 
                                 value={services[srv.id]?.provider || ""} 
@@ -52,7 +53,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{srv.accountLabel}</label>
+                            <label className={rotuloCampo('text-content-3')}>{srv.accountLabel}</label>
                             <LazyInput 
                                 value={services[srv.id]?.account || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'account', val)} 
@@ -60,7 +61,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Pago (1-31)</label>
+                            <label className={rotuloCampo('text-content-3')}>Día de Pago (1-31)</label>
                             <LazyInput 
                                 type="number" 
                                 placeholder="Ej: 15" 
@@ -72,16 +73,12 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                         
                         {/* 🚨 FIX: LiquidDatePicker con mode="month" */}
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
-                                <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
-                            </label>
-                            <div className="bg-success/10 rounded-2xl border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-success/20">
-                                <LiquidDatePicker
-                                    mode="month" 
-                                    value={services[srv.id]?.paidThrough || ""} 
-                                    onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)}
+                            <label className={rotuloCampo('text-success')}><span className="flex items-center gap-1.5"><CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado</span></label>
+                            <LiquidDatePicker tono="success"
+                                mode="month"
+                                value={services[srv.id]?.paidThrough || ""}
+                                onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)}
                                 />
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -20,6 +20,7 @@ import {
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -516,9 +517,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             {/* Pedidos disponibles */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-                  <Package size={10} />Pedidos a incluir
-                </label>
+                <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><Package size={10} />Pedidos a incluir</span></label>
                 {pedidosDisp.length > 0 && (
                   <Button variant="ghost" onClick={toggleAll}>{selected.size === pedidosDisp.length ? 'Deseleccionar todo' : 'Seleccionar todo'}</Button>
                 )}

@@ -4,6 +4,7 @@ import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmar
 import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -72,8 +73,8 @@ const BranchTabInmueble = ({
                 {isRented ? (
                     <div data-surface="card" className="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
                         <div className="md:col-span-2">
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                            <label className={rotuloCampo('text-content-3')}>
+                                Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -86,8 +87,8 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                            <label className={rotuloCampo('text-content-3')}>
+                                Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -102,8 +103,8 @@ const BranchTabInmueble = ({
 
                         </div>
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                            <label className={rotuloCampo('text-content-3')}>
+                                Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -118,20 +119,18 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                            <label className={rotuloCampo('text-content-3')}>
+                                Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
-                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
-                                <LiquidDatePicker
-                                    value={rentContract.startDate ?? ""}
-                                    onChange={(val) => handleContractChange('startDate', val || null)}
+                            <LiquidDatePicker hasError={getTabStatus(3) === 'red' && !rentContract.startDate}
+                                value={rentContract.startDate ?? ""}
+                                onChange={(val) => handleContractChange('startDate', val || null)}
                                 />
-                            </div>
                         </div>
 
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
+                            <label className={rotuloCampo('text-content-3')}>
+                                Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -191,7 +190,7 @@ const BranchTabInmueble = ({
                     </h4>
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Nº de Cuenta Municipal</label>
+                            <label className={rotuloCampo('text-content-3')}>Nº de Cuenta Municipal</label>
                             <LazyInput
                                 icon={FileText}
                                 placeholder="Ej: 12345-A"
@@ -201,15 +200,11 @@ const BranchTabInmueble = ({
                             />
                         </div>
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                <AlertCircle size={12} strokeWidth={3} /> Próx. Renovación / Pago
-                            </label>
-                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.municipalExpiration || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'municipalExpiration', val)}
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Próx. Renovación / Pago</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.municipalExpiration || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'municipalExpiration', val)}
                                 />
-                            </div>
                         </div>
                         <div className="pt-2">
                             <FileUploader
@@ -253,15 +248,11 @@ const BranchTabInmueble = ({
                     {isWasteManagementActive ? (
                         <div className="space-y-4 flex-1">
                             <div className="relative focus-within:z-sidebar">
-                                <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                    <AlertCircle size={12} strokeWidth={3} /> Vencimiento Contrato
-                                </label>
-                                <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                    <LiquidDatePicker
-                                        value={legal.wasteExpiration || ""}
-                                        onChange={(val) => updateNestedSetting('legal', 'wasteExpiration', val)}
+                                <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Contrato</span></label>
+                                <LiquidDatePicker tono="warning"
+                                    value={legal.wasteExpiration || ""}
+                                    onChange={(val) => updateNestedSetting('legal', 'wasteExpiration', val)}
                                     />
-                                </div>
                             </div>
                             <div className="pt-2">
                                 <FileUploader
@@ -299,7 +290,7 @@ const BranchTabInmueble = ({
 
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Cant. Extintores</label>
+                            <label className={rotuloCampo('text-content-3')}>Cant. Extintores</label>
                             <LazyInput
                                 type="number"
                                 placeholder="Ej: 2"
@@ -310,7 +301,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Tipo Principal</label>
+                            <label className={rotuloCampo('text-content-3')}>Tipo Principal</label>
                             <div className={`rounded-2xl ${inputHoverClass}`}>
                                 <LiquidSelect
                                     value={legal.extinguisherType || ""}
@@ -322,15 +313,11 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
-                                <AlertCircle size={12} strokeWidth={3} /> Vencimiento
-                            </label>
-                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.extinguisherExpiration || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.extinguisherExpiration || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
                                 />
-                            </div>
                         </div>
 
                     </div>
@@ -344,7 +331,7 @@ const BranchTabInmueble = ({
 
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Empresa Proveedora</label>
+                            <label className={rotuloCampo('text-content-3')}>Empresa Proveedora</label>
                             <LazyInput
                                 icon={Building2}
                                 placeholder="Nombre de la empresa"
@@ -355,15 +342,11 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-sidebar">
-                            <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 block flex items-center gap-1.5">
-                                <CalendarDays size={12} strokeWidth={3} /> Última Fumigación
-                            </label>
-                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
-                                <LiquidDatePicker
-                                    value={legal.lastFumigationDate || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
+                            <label className={rotuloCampo('text-success')}><span className="flex items-center gap-1.5"><CalendarDays size={12} strokeWidth={3} /> Última Fumigación</span></label>
+                            <LiquidDatePicker
+                                value={legal.lastFumigationDate || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
                                 />
-                            </div>
                         </div>
 
                         <div className="pt-2 border-t border-divider mt-2">

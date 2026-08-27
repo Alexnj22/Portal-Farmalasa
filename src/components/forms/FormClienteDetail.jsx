@@ -27,6 +27,7 @@ import {
 } from '../../utils/clienteValidacion';
 import useBorrador from '../../hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const CATEGORIAS = [
     'Consumidor', 'Contribuyente', 'Gran Contribuyente',
@@ -397,7 +398,7 @@ const FormClienteDetail = ({ formData }) => {
                                 />
                             </div>
                             <div>
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Categoría
                                 </label>
                                 <LiquidSelect
@@ -494,7 +495,7 @@ const FormClienteDetail = ({ formData }) => {
                                 />
                             </div>
                             <div>
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Departamento
                                 </label>
                                 <LiquidSelect
@@ -508,7 +509,7 @@ const FormClienteDetail = ({ formData }) => {
                                 />
                             </div>
                             <div>
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Municipio
                                 </label>
                                 <LiquidSelect
@@ -522,7 +523,7 @@ const FormClienteDetail = ({ formData }) => {
                                 />
                             </div>
                             <div className="sm:col-span-2">
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Distrito
                                 </label>
                                 <LiquidSelect
@@ -570,7 +571,7 @@ const FormClienteDetail = ({ formData }) => {
                                 </div>
                             </div>
                             <div className="sm:col-span-2">
-                                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                                <label className={rotuloCampo('text-content-3')}>
                                     Notas
                                 </label>
                                 <PortalTextarea

@@ -2046,8 +2046,14 @@ function scanFile(path) {
       let m;
       while ((m = re.exec(sinComentarios2)) !== null) {
         const c = m[1] || m[2] || '';
-        if (!/tracking-widest/.test(c)) continue;
-        if (!/text-caption|text-micro/.test(c)) continue;
+        // ── Ensanchado el 2026-08-27, porque el primer barrido quedó corto ───
+        // La primera versión pedía `tracking-widest` y con eso encontró 114.
+        // Un diff mostró rótulos idénticos escritos con `tracking-[0.15em]`,
+        // con `tracking-wide` o sin tracking: **57 más en 17 archivos**, que ni
+        // el barrido ni el gate miraban. Un rótulo es rótulo por su TAMAÑO y su
+        // PESO, no por cómo le espaciaron las letras.
+        if (!/\btext-(?:caption|micro|label)\b/.test(c)) continue;
+        if (!/\b(?:uppercase|font-black|font-bold|font-semibold)\b/.test(c)) continue;
         const linea = sinComentarios2.slice(0, m.index).split('\n').length;
         findings.push({ line: linea, label: 'rótulo de campo a mano — usar `rotuloCampo()` (DESIGN.md §25.10-ter)',
           category: 'rotulo-de-campo-a-mano', text: c.slice(0, 120) });

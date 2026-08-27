@@ -5,6 +5,7 @@ import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle2, AlertCircle, 
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',
@@ -140,9 +141,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}
                     <div className="space-y-1.5">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
-                            <DollarSign size={12} className="text-brand-text" /> Monto Pagado Exacto
-                        </label>
+                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><DollarSign size={12} className="text-brand-text" /> Monto Pagado Exacto</span></label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span className="text-content-3 font-black text-lg">$</span>
@@ -163,17 +162,15 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                     {/* MES QUE CUBRE (LIQUID DATE PICKER) */}
                     <div className="space-y-1.5">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
-                            <Calendar size={12} className={isConflict ? "text-danger" : "text-brand-text"} /> Mes que Cubre
-                        </label>
-                        <div className={isConflict ? "ring-2 ring-danger/45 rounded-2xl transition-all" : ""}>
-                            <LiquidDatePicker
-                                mode="month"
-                                value={paymentData.billing_month}
-                                onChange={(val) => handleUpdate('billing_month', val)}
-                                required
-                            />
-                        </div>
+                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><Calendar size={12} className={isConflict ? "text-danger" : "text-brand-text"} /> Mes que Cubre</span></label>
+                        <LiquidDatePicker
+                            hasError={isConflict}
+                            mode="month"
+                            value={paymentData.billing_month}
+                            onChange={(val) => handleUpdate('billing_month', val)}
+                            required
+                        />
+                        
                     </div>
                 </div>
 
@@ -191,9 +188,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* NOTAS / OBSERVACIONES */}
                 <div className="space-y-1.5">
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
-                        <FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)
-                    </label>
+                    <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)</span></label>
                     <PortalInput
                         aria-label="Notas del pago"
                         type="text"

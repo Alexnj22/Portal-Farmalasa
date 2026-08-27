@@ -5,6 +5,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
@@ -80,7 +81,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
 
                 {/* FILA 1: SELECT (AHORA OCUPA TODO EL ANCHO PARA NO CORTAR NOMBRES) */}
                 <div className="group/select">
-                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
+                    <label className={`${rotuloCampo('text-content-3')} group-focus-within/select:text-brand-text transition-colors`}>
                         Regente Asignado
                     </label>
                     <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
@@ -99,15 +100,15 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     
                     {/* FECHA VENCIMIENTO CREDENCIAL */}
                     <div className="group/date flex flex-col justify-end">
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
+                        <label className={`${rotuloCampo('text-content-3')} group-focus-within/date:text-brand-text transition-colors`}>
                             Vencimiento Credencial JVQF
                         </label>
                         <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
-                                    value={legalData.regentCredentialExp || ""} 
-                                    onChange={(val) => updateLegalField('regentCredentialExp', val)} 
-                                />
+                                    value={legalData.regentCredentialExp || ""}
+                                    onChange={(val) => updateLegalField('regentCredentialExp', val)}
+                                    />
                             </div>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import { Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
@@ -76,7 +77,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
 
                 {/* SELECT DEL REFERENTE */}
                 <div className="group/select">
-                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-chart-3-text transition-colors">
+                    <label className={`${rotuloCampo('text-content-3')} group-focus-within/select:text-chart-3-text transition-colors`}>
                         Referente Técnico Asignado
                     </label>
                     <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">

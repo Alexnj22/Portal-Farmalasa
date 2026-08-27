@@ -29,6 +29,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const REASONS = [
   'Devolución del cliente',
@@ -535,7 +536,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             de una regla que ya no existe. Lo reemplaza el bloque de arriba. */}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
+          <label className={rotuloCampo('text-content-3')}>Motivo *</label>
           {/* `layout="block"`, como el selector de forma de pago. Sin él, el
               canónico dibuja su RIEL compacto —una sola píldora con las
               opciones adentro— y meterlo en una grilla con `flex-wrap` lo
@@ -552,7 +553,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">
+          <label className={rotuloCampo('text-content-3')}>
             Comentarios {commentRequired && <span className="text-danger-text">*</span>}
           </label>
           <PortalTextarea
@@ -632,7 +633,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
+          <label className={rotuloCampo('text-content-3')}>Cambiar a *</label>
           {/* Sin envoltorio de grilla: el canónico ya dispone las opciones, y
               meterlo dentro de otro `grid-cols-2` lo forzaba a dos por fila —
               cinco formas de pago terminaban en tres renglones dejando media
@@ -647,7 +648,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className={rotuloCampo('text-content-3')}>Motivo</label>
           <PortalTextarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -741,7 +742,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         {/* Lista — solo foto + nombre */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Asignar a *</label>
+          <label className={rotuloCampo('text-content-3')}>Asignar a *</label>
           {vendorList.length === 0 ? (
             <p className="text-label text-content-3 text-center py-3">No hay otros vendedores en esta sucursal</p>
           ) : (
@@ -771,7 +772,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className={rotuloCampo('text-content-3')}>Motivo</label>
           <PortalTextarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -882,7 +883,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         {/* Buscador de cliente nuevo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cliente nuevo *</label>
+          <label className={rotuloCampo('text-content-3')}>Cliente nuevo *</label>
           <SearchInput
             size="sm"
             value={query}
@@ -929,7 +930,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className={rotuloCampo('text-content-3')}>Motivo</label>
           <PortalTextarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -1192,11 +1193,9 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
               puede existir. Y con la ventana adentro de un año el campo del año
               desaparece — reaparece solo la primera semana de enero, que es la
               única en que la ventana cruza (ver `ventanaFiltro`). */}
-          <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center">
-            <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')}
+          <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')}
               icon={CalendarDays} compact hideYear
               min={ventanaFiltro.min} max={ventanaFiltro.max} />
-          </div>
         </div>
       </HerramientasModal>
 

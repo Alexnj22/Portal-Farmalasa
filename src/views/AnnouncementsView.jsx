@@ -26,6 +26,7 @@ import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { EmptyState } from '../components/common/StateViews';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 // Las pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
@@ -590,7 +591,7 @@ const AnnouncementsView = ({ openModal }) => {
 
               <form onSubmit={handlePublish} className="space-y-5 relative z-base">
                 <div>
-                  <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
+                  <label className={rotuloCampo('text-content-3')}>Nivel de Prioridad</label>
                   {/* 2026-07-27: eran dos <button> con `priority === X ? activo :
                       inactivo`, que es exactamente un SegmentedControl. Los había
                       dejado fuera creyendo que eran otro control por ir a dos
@@ -616,7 +617,7 @@ const AnnouncementsView = ({ openModal }) => {
                   />
 
                 <div>
-                  <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
+                  <label className={rotuloCampo('text-content-3')}>Contenido</label>
  <PortalTextarea
      placeholder="Escribe los detalles de tu anuncio aquí..." value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting}
  />
@@ -630,7 +631,7 @@ const AnnouncementsView = ({ openModal }) => {
                     </div>
                   ) : (
                     <>
-                      <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
+                      <label className={rotuloCampo('text-content-3')}>¿A quién va dirigido?</label>
                       <div className="flex items-center gap-1 bg-surface-card-hover/40 p-1.5 rounded-full border border-divider shadow-[var(--shadow-shine)] mb-4">
                         <SegmentedControl
                             disabled={isSubmitting}
@@ -687,9 +688,7 @@ const AnnouncementsView = ({ openModal }) => {
 
                 <div className="pt-3 border-t border-border-card">
                    <div className="flex items-center justify-between mb-3 pl-1">
-                      <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] flex items-center gap-1.5">
-                        <CalendarClock size={14} /> ¿Cuándo se publica?
-                      </label>
+                      <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><CalendarClock size={14} /> ¿Cuándo se publica?</span></label>
                       <Switch
                         checked={publishImmediately}
                         onChange={setPublishImmediately}
@@ -702,9 +701,9 @@ const AnnouncementsView = ({ openModal }) => {
                    <div inert={publishImmediately ? true : undefined} className={`transition-all duration-[var(--dur-slow)] overflow-hidden ${publishImmediately ? 'h-0 opacity-0' : 'h-[60px] opacity-100 mt-2'}`}>
                        <div data-surface="input" className="px-3 py-2 flex items-center">
                           <LiquidDatePicker 
-                            value={scheduledDate} 
-                            onChange={setScheduledDate} 
-                          />
+                              value={scheduledDate}
+                              onChange={setScheduledDate}
+                              />
                        </div>
                    </div>
                    {publishImmediately && (

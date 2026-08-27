@@ -469,13 +469,9 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div data-surface="card" className="mb-4 p-3 bg-surface-card-hover/80 space-y-3 animate-in fade-in slide-in-from-top-1 duration-[var(--dur-base)]">
                                 {/* Date range */}
                                 <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                                        <LiquidDatePicker compact shortcuts value={filterFrom} onChange={setFilterFrom} />
-                                    </div>
+                                    <LiquidDatePicker compact shortcuts value={filterFrom} onChange={setFilterFrom} />
                                     <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
-                                    <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                                        <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
-                                    </div>
+                                    <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
                                     {(filterFrom || filterTo || filterType) && (
                                         <Button tone="danger" soft size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
                                     )}

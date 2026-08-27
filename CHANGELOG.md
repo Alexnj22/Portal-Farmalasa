@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.807.0 — Canónico quiere decir en todas partes
+
+Cerrado el alta de personal, el usuario preguntó lo obvio: *«¿quedó así para
+todos lados?»*. No. Al medirlo salió el mapa completo, y ahora sí.
+
+| | antes | ahora |
+|---|---:|---:|
+| rótulos de campo escritos a mano | **171** en 30 archivos | **0** |
+| recuadros de campo a mano | 24 | 1 — y es una caja de sólo lectura, no un campo |
+| envoltorios del campo de fecha | 30 formas, **cinco alturas** | 0 |
+
+**El campo de fecha no tenía altura propia.** Salía con `w-full h-full`, o sea
+que la tomaba de quien lo envolviera — y sus **61 llamadores** lo envolvieron de
+30 maneras distintas, con alturas de 32, 36, 40, 42 y el token. Un campo de
+fecha al lado de uno de texto coincidía o no según quién lo hubiera escrito.
+Ahora dibuja su propia caja y el tinte de error o de aviso entra por prop: desde
+afuera no había forma de acertarle al radio ni al alto sin repetirlos.
+
+**`compact` significaba dos alturas distintas.** El campo compacto medía 32px y
+el select compacto 40, porque el select no tenía mínimo propio y caía en el de un
+campo normal. Con 125 controles compactos en el portal, el que estaba fuera de
+fila era el select. Hoy los tres miden 32 y el piso del dedo sale del área
+táctil por pseudo-elemento, que es lo que el portal ya usaba para el aspa del
+propio select.
+
+Medido después, con Chromium sobre el CSS compilado: campo, select y fecha en
+**40px** y arrancando en el mismo píxel; compactos, **32** los tres.
+
+### Dos veces se equivocó el barrido, no el portal
+
+- **El detector pedía `tracking-widest`** y con eso encontró 114 rótulos. Un
+  diff mostró rótulos idénticos escritos con `tracking-[0.15em]`, con
+  `tracking-wide` o sin tracking: **57 más en 17 archivos**, invisibles para el
+  barrido *y para el gate*. Un rótulo es rótulo por su tamaño y su peso, no por
+  cómo le espaciaron las letras. Se ensanchó la regla y se le fabricó la forma
+  vieja para confirmar que ahora la caza.
+- **El canónico separó un icono de su texto.** Manda a los extremos lo que va a
+  cada lado, y un icono con su rótulo son UNA cosa: en 27 rótulos el icono se
+  fue a la izquierda y el texto a la derecha. Ahora van agrupados.
+
+Los dos los encontró mirar el diff, no el gate en verde.
+
+La categoría `rotulo-de-campo-a-mano` queda en **cero y bloqueante**: cualquier
+rótulo nuevo escrito a mano falla el gate.
+
 ## v2.806.0 — La sala tiene su apartado de Diferencias y puede explicarlas
 
 > «¿qué pasa si una sala tiene diferencia, cómo lo ven ellos? ¿cuál es el flujo?

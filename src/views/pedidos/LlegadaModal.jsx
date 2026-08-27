@@ -12,6 +12,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -223,7 +224,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {hayProblemas && (
                     <div>
-                        <label className="text-caption font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
+                        <label className={rotuloCampo('text-content-3')}>Nota (opcional)</label>
                         <PortalTextarea
                             value={nota}
                             onChange={e => setNota(e.target.value)}

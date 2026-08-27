@@ -14,6 +14,7 @@ import { upsertShift, updateShiftFlags } from '../../data/system';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState } from '../common/StateViews';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const FormTurnos = ({ branches }) => {
     // 1. Conexión directa con Supabase para acciones de persistencia
@@ -238,12 +239,12 @@ const FormTurnos = ({ branches }) => {
 
                     <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-divider">
                         <div className="flex-1">
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Entrada</label>
                             <p className="text-body-sm md:text-body font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
                         </div>
                         <div className="w-px h-8 bg-divider"></div>
                         <div className="flex-1">
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Salida</label>
                             <p className="text-body-sm md:text-body font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
                         </div>
                     </div>
@@ -276,7 +277,7 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="flex-1 space-y-6">
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest">Sucursal Asignada</label>
+                        <label className={rotuloCampo('text-content-3')}>Sucursal Asignada</label>
                         <div className="mt-2">
                             <LiquidSelect
                                 value={currentForm.branchId}
@@ -298,11 +299,11 @@ const FormTurnos = ({ branches }) => {
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-caption font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Entrada</label>
+                            <label className={rotuloCampo('text-content-3')}>Hora de Entrada</label>
                             <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm({ ...currentForm, start: v })} />
                         </div>
                         <div>
-                            <label className="text-caption font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Salida</label>
+                            <label className={rotuloCampo('text-content-3')}>Hora de Salida</label>
                             <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm({ ...currentForm, end: v })} />
                         </div>
                     </div>

@@ -39,6 +39,7 @@ import { upsertWeeklyRoster, upsertBulkWeeklyRosters } from '../data/system';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -102,7 +103,7 @@ const HolidaysPanel = ({
                     <p className="text-caption font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Nombre</label>
                             <PortalInput
                                         aria-label="Nombre del feriado"
                                         value={hName} onChange={e => setHName(e.target.value)}
@@ -110,7 +111,7 @@ const HolidaysPanel = ({
                                     />
                         </div>
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Fecha</label>
                             <LiquidDatePicker value={hDate} onChange={setHDate} />
                         </div>
                     </div>

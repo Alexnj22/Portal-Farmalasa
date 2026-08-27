@@ -10,6 +10,7 @@ import { useStaffStore } from '../../../store/staffStore';
 import { timeToMins, formatHourAMPM } from '../../../utils/scheduleHelpers';
 import { clickable } from '../../../utils/clickable';
 import { shortEmployeeName } from '../../../utils/nameUtils';
+import { rotuloCampo } from '../../../utils/rotuloDeCampo';
 
 // Helper para convertir 24h string ("16:00") a 12h string ("4:00 pm")
 const formatTime12hStr = (time24) => {
@@ -398,11 +399,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
-                                    <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Entrada</label>
+                                    <label className={`${rotuloCampo('text-content-2')} group-hover/time:text-brand-text transition-colors`}>Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
                                 <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
-                                    <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Salida</label>
+                                    <label className={`${rotuloCampo('text-content-2')} group-hover/time:text-brand-text transition-colors`}>Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
                             </div>

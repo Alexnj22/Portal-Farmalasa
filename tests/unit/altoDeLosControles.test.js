@@ -44,6 +44,29 @@ describe('el alto de los controles de formulario', () => {
         expect(sinNano).not.toMatch(/\bpt-|\bpb-/);
     });
 
+    it('los TRES canónicos de campo miden lo mismo, normal y compacto', () => {
+        // Medido con Chromium: campo 40, select 40, fecha 40; y compactos, 32
+        // los tres. Antes el select medía 46.3 y la fecha no tenía altura
+        // propia —la tomaba de quien la envolviera, y sus 61 llamadores usaban
+        // CINCO alturas distintas—.
+        const fecha = leer('src/components/common/LiquidDatePicker.jsx');
+        const alto = 'max(40px,var(--tap-min))';
+        expect(select).toContain(`min-h-[${alto}]`);
+        expect(input).toContain(`h-[${alto}]`);
+        expect(fecha).toContain(`h-[${alto}]`);
+        // `compact` significa lo mismo en los tres: 32px.
+        expect(input).toContain("compact ? 'h-8'");
+        expect(select).toContain("compact ? 'min-h-8'");
+        expect(fecha).toContain("compact ? 'h-8'");
+    });
+
+    it('el campo de fecha dibuja su propia caja', () => {
+        // Sin esto vuelve a depender del envoltorio de cada llamador, que es de
+        // donde salieron las cinco alturas.
+        const fecha = leer('src/components/common/LiquidDatePicker.jsx');
+        expect(fecha).toMatch(/data-surface=\{tono \? undefined : 'input'\}/);
+    });
+
     it('el formulario de personal no escribe alturas a mano', () => {
         // 20 recuadros llevaban `h-[40px]` literal: en escritorio coincidían con
         // los canónicos y en un teléfono no, porque ahí los canónicos suben a 44

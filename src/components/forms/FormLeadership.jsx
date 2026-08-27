@@ -13,6 +13,7 @@ import { clickable } from '../../utils/clickable';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 import { opcionesDeCargo, buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // A dónde va quien es relevado de una jefatura. Es una lista CURADA a
 // propósito —no son los 24 cargos de la tabla—, pero los nombres se resuelven
@@ -257,7 +258,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                         {formData.outgoingAction === 'REASSIGN' && (
                                                             <div className="mt-4 grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                                                                 <div className="space-y-1.5">
-                                                                    <label className="text-micro font-bold text-content-3 uppercase tracking-widest">A Sucursal</label>
+                                                                    <label className={rotuloCampo('text-content-3', { denso: true })}>A Sucursal</label>
                                                                     <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
                                                                         <LiquidSelect 
                                                                             options={branches.map(b => ({ value: b.id, label: b.name }))}
@@ -269,7 +270,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                                     </div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
-                                                                    <label className="text-micro font-bold text-content-3 uppercase tracking-widest">Nuevo Rol</label>
+                                                                    <label className={rotuloCampo('text-content-3', { denso: true })}>Nuevo Rol</label>
                                                                     <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
                                                                         <LiquidSelect
                                                                             options={opcionesSalida}
@@ -320,22 +321,16 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                                     {formData.isPermanent === false && (
                                         <div data-surface="card" className="border-warning/30 p-5 animate-in slide-in-from-top-2">
-                                            <label className="text-caption font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
-                                                <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
-                                            </label>
-                                            <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl">
-                                                <LiquidDatePicker 
-                                                    value={formData.interimEndDate || ''}
-                                                    onChange={(date) => setFormData({...formData, interimEndDate: date})}
+                                            <label className={rotuloCampo('text-warning-text')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato</span></label>
+                                            <LiquidDatePicker
+                                                value={formData.interimEndDate || ''}
+                                                onChange={(date) => setFormData({...formData, interimEndDate: date})}
                                                 />
-                                            </div>
                                         </div>
                                     )}
 
                                     <div>
-                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 flex items-center gap-1.5 ml-1">
-                                            <FileText size={12} strokeWidth={3}/> Observaciones / Motivo
-                                        </label>
+                                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><FileText size={12} strokeWidth={3}/> Observaciones / Motivo</span></label>
                                         <PortalTextarea
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
                                             value={formData.notes || ''}

@@ -4,6 +4,7 @@ import Button from '../../../components/common/Button';
 import { Ban, AlertTriangle, Loader2 } from 'lucide-react';
 import PedidoModal from '../PedidoModal';
 import PortalTextarea from '../../../components/common/PortalTextarea';
+import { rotuloCampo } from '../../../utils/rotuloDeCampo';
 
 export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
     const [motivo, setMotivo] = useState('');
@@ -33,7 +34,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                             </p>
                         </div>
                         <div>
-                            <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
+                            <label className={rotuloCampo('text-content-2')}>
                                 Motivo de anulación *
                             </label>
                             <PortalTextarea

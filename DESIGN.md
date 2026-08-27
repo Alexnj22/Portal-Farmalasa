@@ -5293,6 +5293,50 @@ falla avisa; uno que se quedó ciego da verde, y el verde es indistinguible del
 verde de verdad. Antes de creerle un cero a una categoría nueva, fabricarle la
 regresión que debería cazar — que es como se encontró esto.
 
+### 25.10-quater Canónico quiere decir en todas partes (2026-08-27)
+
+Cerrado el alta de personal, el usuario preguntó lo obvio: *«¿quedó así para
+todos lados?»*. No. Y al medirlo salió el mapa completo.
+
+| | antes | ahora |
+|---|---:|---:|
+| rótulos de campo escritos a mano | **171** en 30 archivos | **0** |
+| recuadros de campo a mano | 24 | 1 (una caja de sólo lectura, no es un campo) |
+| envoltorios del campo de fecha | 30 formas, **cinco alturas** (32/36/40/42/token) | 0 |
+
+**El campo de fecha no tenía altura propia.** `LiquidDatePicker` salía con
+`w-full h-full`, o sea que la tomaba de quien lo envolviera — y sus **61
+llamadores** lo envolvieron de 30 maneras distintas. Ahora dibuja su caja, mide
+lo mismo que `PortalInput`, y el tinte de error o de aviso entra por prop
+(`hasError`, `tono`): desde afuera no hay forma de acertarle al radio ni al alto
+sin repetirlos.
+
+**`compact` significaba dos alturas.** `PortalInput` compacto medía 32px y
+`LiquidSelect` compacto medía 40, porque no tenía mínimo propio y caía en el de
+un campo normal. Con 125 controles compactos en el portal, el que estaba fuera
+de fila era el select. Hoy los tres miden 32, y el piso del dedo sale de
+`.blanco-tactil` — el área crece a 44 sin agrandar lo pintado, que es lo que
+§25.6 documenta y lo que ese mismo archivo ya hacía con su aspa.
+
+Medido después, con Chromium sobre el CSS compilado: campo, select y fecha en
+**40px** y en el mismo píxel; compactos, **32** los tres.
+
+#### Dos veces se equivocó el barrido, no el portal
+
+- **El detector pedía `tracking-widest`.** Con eso encontró 114 rótulos. Un diff
+  mostró rótulos idénticos escritos con `tracking-[0.15em]`, con `tracking-wide`
+  o sin tracking: **57 más en 17 archivos**, invisibles para el barrido *y para
+  el gate*. Un rótulo es rótulo por su **tamaño y su peso**, no por cómo le
+  espaciaron las letras. Se ensanchó la regla y se le fabricó la forma vieja
+  para confirmar que ahora la caza.
+- **`justify-between` separó un icono de su texto.** El canónico manda a los
+  extremos lo que va a cada lado; un icono y su rótulo son UNA cosa. En 27
+  rótulos el icono se fue a la izquierda y el texto a la derecha. Van agrupados
+  en el span de la izquierda, que además es el que el canónico recorta cuando no
+  entra.
+
+Los dos los encontró mirar el diff, no el gate en verde.
+
 ### 25.11 Toda capa que se monta sobre la pantalla es un diálogo
 
 Una capa que cubre la pantalla, atrapa el clic de afuera y contiene controles

@@ -53,9 +53,31 @@ describe('rotuloCampo', () => {
         expect(input).not.toMatch(/className=\{`text-caption font-black uppercase tracking-widest/);
     });
 
-    it('el alta de personal no escribe ni un rótulo a mano', () => {
-        const form = leer('src/components/forms/EmployeeFormModal.jsx');
-        expect(form).not.toMatch(/<label\s+className="[^"]*tracking-widest/);
+    it('NINGÚN archivo de src/ escribe un rótulo a mano', () => {
+        // Eran 114 en 30 archivos. El gate lo vigila con ratchet; esto lo ancla
+        // en cero, que es lo que el usuario pidió: «canónico es canónico para
+        // todos».
+        const sospechosos = [];
+        const recorrer = (dir) => {
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const ruta = path.join(dir, e.name);
+                if (e.isDirectory()) { recorrer(ruta); continue; }
+                if (!e.name.endsWith('.jsx')) continue;
+                // Un rótulo es rótulo por su TAMAÑO y su PESO, no por cómo le
+                // espaciaron las letras: la primera versión pedía
+                // `tracking-widest` y se le escaparon 57 escritos con
+                // `tracking-[0.15em]`, `tracking-wide` o sin tracking.
+                const txt = fs.readFileSync(ruta, 'utf8');
+                for (const m of txt.matchAll(/<label\s+className="([^"]*)"/g)) {
+                    const c = m[1];
+                    if (!/\btext-(?:caption|micro|label)\b/.test(c)) continue;
+                    if (!/\b(?:uppercase|font-black|font-bold|font-semibold)\b/.test(c)) continue;
+                    sospechosos.push(`${ruta}: ${c}`);
+                }
+            }
+        };
+        recorrer(path.join(process.cwd(), 'src'));
+        expect(sospechosos).toEqual([]);
     });
 });
 

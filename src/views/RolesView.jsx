@@ -22,6 +22,7 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import { smartFilter } from '../utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { rotuloCampo } from '../utils/rotuloDeCampo';
 
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.
@@ -553,7 +554,7 @@ const RolesView = ({ openModal }) => {
 
                                 <form className="space-y-4">
                                     <div>
-                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className={rotuloCampo('text-content-3')}>
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
@@ -575,7 +576,7 @@ const RolesView = ({ openModal }) => {
                                     {/* 🚨 CONTROLES DE HEADCOUNT */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="relative z-dropdown">
-                                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className={rotuloCampo('text-content-3')}>
                                                 Alcance
                                             </label>
                                             <LiquidSelect
@@ -588,7 +589,7 @@ const RolesView = ({ openModal }) => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className={rotuloCampo('text-content-3')}>
                                                 Límite de Plazas
                                             </label>
                                             <div className="relative group">
@@ -610,7 +611,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-sidebar-desktop">
-                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className={rotuloCampo('text-content-3')}>
                                             Dependencia (Reporta a)
                                         </label>
                                         <LiquidSelect 
@@ -625,7 +626,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-sidebar">
-                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className={rotuloCampo('text-content-3')}>
                                             Reporte Matricial
                                         </label>
                                         <LiquidSelect 

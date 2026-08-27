@@ -5,6 +5,7 @@ import Button from './Button';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
 import { openStoredFile } from '../../utils/storageFiles';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 /**
  * FileField — adjuntar un archivo a un formulario.
@@ -217,7 +218,7 @@ const FileField = memo(({
             onDragLeave={alSalir} onDrop={alSoltar}>
 
             {label && (
-                <label className="block text-caption font-black uppercase tracking-[0.15em] text-content-3 ml-1 mb-1.5">
+                <label className={rotuloCampo('text-content-3')}>
                     {label}
                 </label>
             )}

@@ -5,6 +5,7 @@ import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 function fmtEntradaParts(iso) {
     if (!iso) return { date: '', time: '' };
@@ -64,7 +65,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 <div className="space-y-1.5">
-                    <label className="text-label font-semibold text-content-3 uppercase tracking-wide">
+                    <label className={rotuloCampo('text-content-3')}>
                         Fecha y hora estimada de llegada
                     </label>
                     <div className="flex items-center gap-2">

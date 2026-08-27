@@ -10,6 +10,7 @@ import {
 import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
 import PortalInput from '../common/PortalInput';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const KioskConfigModal = ({
   isOpen,
@@ -108,7 +109,7 @@ const KioskConfigModal = ({
               
               {/* 🚨 REEMPLAZO DEL SELECT NATIVO POR LIQUIDSELECT */}
               <div className="flex flex-col gap-1.5 relative z-header">
-                <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
+                <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-caption`}>
                   Sucursal Física
                 </label>
                 {/* Este modal solo se monta dentro de TimeClockView, que fuerza

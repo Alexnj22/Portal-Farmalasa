@@ -6,6 +6,7 @@ import Checkbox from '../../components/common/Checkbox';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import Notice from '../../components/common/Notice';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import {
     CLASIFICACION_OPTIONS, SECTOR_OPTIONS,
     tiposCostoGasto, clasificacionLabel, sectorLabel, tipoCostoGastoLabel, fmtMoneda,
@@ -298,21 +299,21 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                     {respuesta ? (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
-                                <label className="text-micro font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Costo o gasto</label>
+                                <label className={rotuloCampo('text-content-3', { denso: true })}>Costo o gasto</label>
                                 <LiquidSelect
                                     value={anexo.f07_clasificacion || ''}
                                     onChange={(v) => setAnexo(a => ({ ...a, f07_clasificacion: v, f07_tipo_costo_gasto: '' }))}
                                     options={CLASIFICACION_OPTIONS} placeholder="Sin definir" clearable={false} compact />
                             </div>
                             <div>
-                                <label className="text-micro font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Sector</label>
+                                <label className={rotuloCampo('text-content-3', { denso: true })}>Sector</label>
                                 <LiquidSelect
                                     value={anexo.f07_sector || ''}
                                     onChange={(v) => setAnexo(a => ({ ...a, f07_sector: v }))}
                                     options={SECTOR_OPTIONS} placeholder="Sin definir" clearable={false} compact />
                             </div>
                             <div>
-                                <label className="text-micro font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                                <label className={rotuloCampo('text-content-3', { denso: true })}
                                     title="Se filtra según Costo o Gasto: el manual del F-07 no admite las mismas opciones para los dos">
                                     Tipo de costo o gasto
                                 </label>

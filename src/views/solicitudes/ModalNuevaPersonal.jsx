@@ -21,6 +21,7 @@ import { useToastStore } from '../../store/toastStore';
 import { REQUEST_TYPES } from '../../store/slices/requestsSlice';
 import { fetchEmployeeEventsByTypes } from '../../data/employeeSelfService';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 /**
  * El formulario de una solicitud personal, en un modal.
@@ -481,7 +482,7 @@ export default function ModalNuevaPersonal({
                         <>
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] ml-1">
+                                    <label className={rotuloCampo('text-content-3')}>
                                         Período de Vacaciones
                                     </label>
                                     {hayRango && (
@@ -523,14 +524,10 @@ export default function ModalNuevaPersonal({
                         </div>
                     )}
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
-                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
+                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
-                            {dias.length > 0 && <span className="text-content-3 normal-case tracking-normal font-bold">· {dias.length}</span>}
-                        </label>
-                        <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                            <LiquidDatePicker key={permPickerKey} value="" onChange={agregarDiaPermiso} holidays={holidays} />
-                        </div>
+                            {dias.length > 0 && <span className="text-content-3 normal-case tracking-normal font-bold">· {dias.length}</span>}</span></label>
+                        <LiquidDatePicker key={permPickerKey} value="" onChange={agregarDiaPermiso} holidays={holidays} />
                     </div>
                     {dias.length > 0 && (
                         <div className="flex flex-wrap gap-2">
@@ -553,7 +550,7 @@ export default function ModalNuevaPersonal({
             return (
                 <div className="space-y-3">
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className={rotuloCampo('text-content-3')}>
                             Compañero de intercambio
                         </label>
                         <LiquidSelect
@@ -569,14 +566,10 @@ export default function ModalNuevaPersonal({
                         )}
                     </div>
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
-                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-9" />
-                            Fecha del cambio
-                        </label>
-                        <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                            <LiquidDatePicker value={payload.date || ''}
-                                onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
-                        </div>
+                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><CalendarDays size={11} strokeWidth={2.5} className="text-chart-9" />
+                            Fecha del cambio</span></label>
+                        <LiquidDatePicker value={payload.date || ''}
+                            onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
                     </div>
 
                     {payload.date && choqueEnDia(payload.date) && (
@@ -631,7 +624,7 @@ export default function ModalNuevaPersonal({
         if (tipo === 'CERTIFICATE') {
             return (
                 <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">
+                    <label className={rotuloCampo('text-content-3')}>
                         Tipo de Constancia
                     </label>
                     <LiquidSelect
@@ -656,13 +649,11 @@ export default function ModalNuevaPersonal({
             return (
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className={rotuloCampo('text-content-3')}>
                             Fecha
                         </label>
-                        <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                            <LiquidDatePicker value={payload.date || ''}
-                                onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
-                        </div>
+                        <LiquidDatePicker value={payload.date || ''}
+                            onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
                     </div>
                     <PortalInput
                         label="Cantidad de horas" name="sol-horas"
@@ -680,14 +671,12 @@ export default function ModalNuevaPersonal({
                 <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            <label className={rotuloCampo('text-content-3')}>
                                 Primer día
                             </label>
-                            <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                                <LiquidDatePicker value={payload.startDate || ''}
-                                    onChange={v => setPayload(p => ({ ...p, startDate: v }))}
-                                    holidays={holidays} />
-                            </div>
+                            <LiquidDatePicker value={payload.startDate || ''}
+                                onChange={v => setPayload(p => ({ ...p, startDate: v }))}
+                                holidays={holidays} />
                         </div>
                         <PortalInput
                             label="Cantidad de días" name="sol-dias"
@@ -712,7 +701,7 @@ export default function ModalNuevaPersonal({
                     )}
 
                     <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className={rotuloCampo('text-content-3')}>
                             {necesitaISSS
                                 ? <span>Boleta ISSS <span className="text-danger">*</span><span className="text-content-3 ml-1 normal-case font-medium">(obligatoria para cobertura ISSS)</span></span>
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>}
@@ -790,7 +779,7 @@ export default function ModalNuevaPersonal({
                 )}
 
                 <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">
+                    <label className={rotuloCampo('text-content-3')}>
                         Tipo de Solicitud
                     </label>
                     {tipoAbierto ? (
@@ -826,7 +815,7 @@ export default function ModalNuevaPersonal({
                 {detalle()}
 
                 <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                    <label className={rotuloCampo('text-content-3')}>
                         Motivo / Descripción <span className="text-danger">*</span>
                     </label>
                     <PortalTextarea

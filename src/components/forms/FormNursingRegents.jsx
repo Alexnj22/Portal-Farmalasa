@@ -9,6 +9,7 @@ import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
@@ -57,7 +58,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="group/input">
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/input:text-brand-text transition-colors">
+                        <label className={`${rotuloCampo('text-content-3')} group-focus-within/input:text-brand-text transition-colors`}>
                             N° Permiso / Licencia
                         </label>
                         <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-2xl">
@@ -74,15 +75,15 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     </div>
                     
                     <div className="group/date flex flex-col justify-end">
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
+                        <label className={`${rotuloCampo('text-content-3')} group-focus-within/date:text-brand-text transition-colors`}>
                             Vencimiento Permiso
                         </label>
                         <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
-                                    value={legalData.nursingServicePermitExp || ""} 
-                                    onChange={(val) => updateLegalField('nursingServicePermitExp', val)} 
-                                />
+                                    value={legalData.nursingServicePermitExp || ""}
+                                    onChange={(val) => updateLegalField('nursingServicePermitExp', val)}
+                                    />
                             </div>
                         </div>
                     </div>
@@ -118,7 +119,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                             <div className="space-y-5">
                                 {/* SELECT DEL EMPLEADO */}
                                 <div className="group/select">
-                                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
+                                    <label className={`${rotuloCampo('text-content-3')} group-focus-within/select:text-brand-text transition-colors`}>
                                         Empleado en Planilla
                                     </label>
                                     <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
@@ -174,13 +175,13 @@ const FormNursingRegents = ({ formData, setFormData }) => {
 
                                         {/* Fecha Anualidad */}
                                         <div className="group/date-amber flex flex-col justify-end">
-                                            <label className="text-micro font-black text-warning/80 uppercase tracking-widest ml-1 mb-1 block group-focus-within/date-amber:text-warning-text transition-colors">Vencimiento</label>
+                                            <label className={`${rotuloCampo('text-warning/80', { denso: true })} group-focus-within/date-amber:text-warning-text transition-colors`}>Vencimiento</label>
                                             <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-xl h-[46px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-glow-warning-sm)] flex items-center border border-warning/30 hover:border-warning focus-within:border-warning overflow-hidden">
                                                  <div className="w-full relative -top-0.5">
                                                     <LiquidDatePicker 
-                                                        value={nurse.anualidadExp || ""} 
-                                                        onChange={(val) => updateNurse(index, 'anualidadExp', val)} 
-                                                    />
+                                                        value={nurse.anualidadExp || ""}
+                                                        onChange={(val) => updateNurse(index, 'anualidadExp', val)}
+                                                        />
                                                 </div>
                                             </div>
                                         </div>

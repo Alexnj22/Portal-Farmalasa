@@ -74,7 +74,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                     value={formData?.recall_date || ''}
                     onChange={val => set('recall_date', val)}
                     icon={Calendar}
-                />
+                    />
                 {vacStart && vacEnd && formData?.recall_date &&
                     (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (
                     <p className="text-caption text-danger-text font-bold mt-1 ml-1">

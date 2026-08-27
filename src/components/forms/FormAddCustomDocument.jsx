@@ -7,6 +7,7 @@ import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, opcionesDeCatalogo } from '../../data/constants';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 // La categoría se guarda por CLAVE (`PERMISOS`, `LEGALES`…). Antes se guardaba
 // el rótulo, así que corregirle una mayúscula desincronizaba lo guardado de las
@@ -95,9 +96,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
 
             {/* 2. Categoría */}
             <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <Tag size={12} className="text-chart-3-text"/> Categoría
-                </label>
+                <label className={rotuloCampo('text-content-2')}><span className="flex items-center gap-1.5"><Tag size={12} className="text-chart-3-text"/> Categoría</span></label>
                 <LiquidSelect
                     value={data.category}
                     onChange={(val) => updateField('category', val)}
@@ -140,7 +139,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <LiquidDatePicker
                                 value={data.issueDate}
                                 onChange={(date) => updateField('issueDate', date)}
-                            />
+                                />
                         </div>
                     )}
                 </div>
@@ -163,7 +162,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <LiquidDatePicker
                                 value={data.expDate}
                                 onChange={(date) => updateField('expDate', date)}
-                            />
+                                />
                         </div>
                     )}
                 </div>

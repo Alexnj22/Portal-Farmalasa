@@ -204,7 +204,7 @@ function Area({ area, puedeEditar, onGuardado }) {
                                 <LiquidDatePicker value={calibradoEl} onChange={(v) => {
                                     setCalibradoEl(v || '');
                                     if (v && !calibrado) setCalibrado(unAnoDespues(v));
-                                }} />
+                                    }} />
                                 <p className="text-label text-content-3 ml-1">
                                     La fecha del certificado
                                 </p>

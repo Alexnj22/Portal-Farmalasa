@@ -7,6 +7,7 @@ import LiquidAvatar from '../common/LiquidAvatar';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { rotuloCampo } from '../../utils/rotuloDeCampo';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
@@ -23,8 +24,6 @@ const portalProps = {
     menuPosition: 'fixed',
     styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) },
 };
-
-const inputHover = 'transition-all duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
 const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]';
 const reqBadge  = <Badge variant="danger" size="sm" uppercase={false}>Requerido</Badge>;
 
@@ -79,24 +78,22 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Fecha de ingreso */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
-                        <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-divider'}`}>
-                            <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} />
-                        </div>
+                        <LiquidDatePicker hasError={!formData.rehire_hire_date} value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} />
                     </div>
 
                     {/* Tipo de contrato */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de contrato</label>
+                        <label className={rotuloCampo('text-content-3')}>Tipo de contrato</label>
                         <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
                             options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
                     </div>
 
                     {/* Sucursal */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Sucursal {reqBadge}
                         </label>
                         <LiquidSelect invalid={!formData.rehire_branch_id} value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
@@ -105,7 +102,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Cargo principal */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className={rotuloCampo('text-content-3')}>
                             Cargo Principal {reqBadge}
                         </label>
                         <LiquidSelect invalid={!formData.rehire_role_id} value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
@@ -114,7 +111,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Cargo secundario */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
+                        <label className={rotuloCampo('text-content-3')}>Cargo Secundario (Apoyo)</label>
                         <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
                             options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
                     </div>
@@ -137,7 +134,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Motivo */}
                     <div className="md:col-span-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Motivo / Notas</label>
+                        <label className={rotuloCampo('text-content-3')}>Motivo / Notas</label>
                         <PortalTextarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
                             placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..." />

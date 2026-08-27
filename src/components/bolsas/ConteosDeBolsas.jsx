@@ -273,14 +273,16 @@ const COLUMNAS_BOLSA = [
  * Sin foto NO se cae a texto pelado: `LiquidAvatar` pinta las iniciales, así
  * que la columna mantiene su forma y la fila no cambia de alto según quién sea.
  */
-function Persona({ nombre, foto, className = '' }) {
+function Persona({ persona, className = '' }) {
+    const nombre = persona?.name ?? persona?.nombre;
     if (!nombre) return <span className="text-content-3">—</span>;
     return (
         <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
-            {/* Sin aro: el RPC de conteos resuelve `contado_por` a un NOMBRE y no
-                devuelve el id, así que el estado no se puede resolver. Declarado
-                en la excepción `foto-sin-aro` de `gate:design`. */}
-            <AvatarConEstado emp={{ name: nombre, photo: foto }} px={20} radio="rounded-full" marco="" />
+            {/* Recibe la persona ENTERA y no `nombre`+`foto` sueltos: el aro se
+                resuelve por id, y el envoltorio que se quedaba con la foto y
+                tiraba a la persona era justo lo que lo impedía. El id lo devuelve
+                `get_conteos` desde la migración 20260827185652. */}
+            <AvatarConEstado emp={persona} px={20} radio="rounded-full" marco="" />
             <span className="text-caption text-content-2 whitespace-nowrap">{nombre}</span>
         </span>
     );
@@ -344,7 +346,7 @@ function BolsasDeLaSala({ bolsas }) {
                                 : <Diferencia valor={dif} />}
                         </DataCell>
                         <DataCell hideBelow="md">
-                            <Persona nombre={b.contado_por} foto={b.contado_por_foto} />
+                            <Persona persona={{ id: b.contado_por_id, name: b.contado_por, photo: b.contado_por_foto }} />
                         </DataCell>
                         <DataCell hideBelow="lg">
                             {b.dif_causa ? (
@@ -442,13 +444,13 @@ function Detalle({ conteo, onClose }) {
                         </span>
                         {(c.contaron || []).length
                             ? c.contaron.map((p) => (
-                                <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
+                                <Persona key={p.id || p.name} persona={p} />
                             ))
                             : <span className="text-content-3">—</span>}
                     </span>
                     <span className="flex items-center gap-2">
                         <span className="text-caption font-bold text-content">La firmó</span>
-                        <Persona nombre={c.cerrado_por} foto={c.cerrado_por_foto} />
+                        <Persona persona={{ id: c.cerrado_por_id, name: c.cerrado_por, photo: c.cerrado_por_foto }} />
                     </span>
                 </div>
 
@@ -664,7 +666,7 @@ export default function ConteosDeBolsas({
                             {(c.contaron || []).length ? (
                                 <span className="inline-flex items-center gap-2 flex-wrap">
                                     {c.contaron.slice(0, 2).map((p) => (
-                                        <Persona key={p.name} nombre={p.name} foto={p.photo_url} />
+                                        <Persona key={p.id || p.name} persona={p} />
                                     ))}
                                     {c.contaron.length > 2 && (
                                         <span className="text-caption text-content-3">

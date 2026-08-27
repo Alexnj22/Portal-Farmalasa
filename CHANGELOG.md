@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.813.0 — Una consulta que muestra a alguien devuelve su id
+
+Cierra el último hueco del aro. Cuatro funciones resolvían el nombre y la foto
+**en SQL** y devolvían eso ya armado, dejándose el id adentro:
+
+| función | qué faltaba |
+|---|---|
+| `get_conteos` | `cerrado_por_id`, `contado_por_id`, y el `id` de cada quien contó |
+| `get_conteo_items_search` | `contado_por` y `recontado_por` |
+| `get_conteo_item_history` | `contado_por` |
+| `get_bolsa_eventos` | *ya lo devolvía* — el único que no hizo falta tocar |
+
+**Y era una decisión razonable, no un descuido.** Resolver el nombre del lado
+del servidor ahorra una consulta y le evita al navegador necesitar la lista de
+empleados. Dejó de servir el día que la foto tiene que decir algo **de** la
+persona —si está o no, DESIGN.md §5.4—, porque el estado se pregunta por id.
+Las columnas crudas siempre fueron ids: `bolsas.contado_por`,
+`conteo_inventario_items.contado_por`, todas son referencias a `employees`.
+
+**Ninguna rompe a quien no lea la clave nueva.** `get_conteos` devuelve `json`,
+así que agregar claves es aditivo. Las dos de `RETURNS TABLE` fueron DROP +
+CREATE —Postgres no admite columnas nuevas con `CREATE OR REPLACE`— con las
+columnas al **final** de la lista: el orden tiene que coincidir con el del
+SELECT, y meterlas en el medio obligaría a recontar treinta posiciones a mano
+por ningún beneficio, porque PostgREST devuelve JSON con nombres.
+
+Un detalle que costó una corrida: el `DISTINCT` de «quiénes contaron» ahora
+incluye el id. Sin eso `x.id` no existe en el subselect y la lista salía vacía —
+o sea que agregar la columna la habría **borrado**.
+
+**Se van las excepciones que ya no lo son.** El detalle del conteo y los dos de
+bolsas estaban declarados en `foto-sin-aro` con el motivo «su consulta no
+devuelve el id». Ya lo devuelve, así que las tres pasan a llevar aro como el
+resto. Quedan cuatro excepciones, y ninguna es por falta de dato: son por lo que
+la foto **es** —una opción de desplegable que puede no ser una persona, un blob
+sin guardar, el kiosco sin un `px` único, y la encuesta que ya usa el aro para
+decir «es jefe»—.
+
+Verificado contra producción: la función devuelve sus filas y la columna nueva
+existe. Los siete gates en verde, incluido el cruce de migraciones contra el
+registro de prod.
+
 ## v2.812.0 — El aro deja de depender de quién pregunta
 
 Salió de una pregunta sobre otra cosa —*«¿por qué en esas vistas es

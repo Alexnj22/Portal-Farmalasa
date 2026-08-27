@@ -1017,12 +1017,37 @@ Las cuatro excepciones están en `EXCEPTIONS` con su motivo: `LiquidSelect` (su
 local sin guardar), el kiosco (dimensiona con cuatro consultas de medio, no hay
 un `px`) y la encuesta (ya usa el aro para decir «es jefe»).
 
-#### Lo que queda abierto
+#### El estado NO sale del store — y ésa fue la segunda mitad
 
-Tres pantallas muestran la foto sin aro porque **su consulta devuelve nombre y
-foto pero no el id**: el detalle del conteo de inventario y los dos de bolsas.
-`get_conteo_items` expone `contado_por_nombre` y `contado_por_photo_url` y no
-`contado_por`. Para cerrarlo hay que agregarle el id a esas funciones.
+Resolverlo contra la lista de empleados del navegador parecía suficiente y era
+un agujero: esa lista está **acotada**. Quien no tiene `staff_list.can_view`
+recibe sólo los de su sucursal, y `employee_events` exige además `staff_detail`
+o `schedules` para leer los eventos de otro. Para el resto **el historial llega
+vacío** — indistinguible de «esta persona no tiene ausencias»—, así que el aro
+decía «está» sobre alguien de quien no sabía nada.
+
+Hoy el estado sale de **`get_estados_de_personas(uuid[])`**, `SECURITY DEFINER`
+justamente para no depender del RLS de quien pregunta, devolviendo el mínimo:
+id, clave y hasta cuándo. Y en **dos niveles**, que no es un detalle: quien ya
+podía leer los eventos recibe el motivo preciso; el resto recibe `AUSENTE` a
+secas. Que el aro nunca calle no puede costar que toda la empresa se entere de
+que alguien está de **incapacidad**.
+
+**Cuarenta caras son una consulta.** `data/estadosDePersonas.js` junta los
+pedidos de un render entero. Y no se pregunta nada cuando el navegador ya tiene
+el historial completo. Medido: 4,5 ms para las 49 personas de la empresa.
+
+> ⚠️ `leerEstado` y `pedirEstado` son **dos** funciones. El `getSnapshot` de
+> `useSyncExternalStore` tiene que ser **puro**: juntas, React llamaba a la que
+> pedía varias veces por render y se realimentaba con su propio aviso. El
+> síntoma fue un proceso de pruebas muerto sin una línea que dijera dónde.
+
+Para que eso funcione, **una consulta que muestra a una persona tiene que
+devolver su `id`**, no sólo su nombre y su foto. Cuatro funciones resolvían el
+nombre en SQL y se quedaban con el id adentro —`get_conteos`,
+`get_conteo_items_search`, `get_conteo_item_history` y la de bolsas—: era
+razonable cuando el avatar sólo necesitaba una imagen, y dejó de serlo el día
+que tiene que decir algo **de** la persona. Ya lo devuelven las cuatro.
 
 ## 5.bis Material — lo que cambió en agosto 2026
 

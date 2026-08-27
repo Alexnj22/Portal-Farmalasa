@@ -311,7 +311,7 @@ const TAPADO = '•••';
 // Una sola línea a propósito: en el teléfono hay una de estas por LOTE, y
 // apilarla en tres renglones (avatar, nombre, fecha) empujaba el siguiente lote
 // fuera de la pantalla.
-function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
+function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
     if (!nombre && !cuando) return null;
     // Primer nombre + primer apellido, que es el estándar del portal entero
     // (`nameUtils`). Se normaliza ACÁ y no sólo en quien pasa la prop porque
@@ -330,12 +330,10 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
         // sigue midiendo 44px.
         <Button variant="ghost" size="xs" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
             <span className="flex items-center gap-1.5 min-w-0">
-                {/* Sin aro: `get_conteo_items` devuelve `contado_por_nombre` y
-                    `contado_por_photo_url` pero NO el id, así que el estado no se
-                    puede resolver. Para que lo lleve hay que agregar el id a esa
-                    función (y a su gemela de vencidos) — está declarado en la
-                    excepción `foto-sin-aro` de `gate:design`. */}
-                <AvatarConEstado emp={{ name: nombre, photo: fotoUrl }} px={20} radio="rounded-full" marco="" />
+                {/* El id lo devuelve `get_conteo_items_search` desde la migración
+                    20260827185952 — antes resolvía el nombre en SQL y el aro no
+                    tenía a quién preguntarle por. */}
+                <AvatarConEstado emp={{ id, name: nombre, photo: fotoUrl }} px={20} radio="rounded-full" marco="" />
                 <span className="text-label font-bold text-content-2 truncate">{corto || 'Desconocido'}</span>
                 <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
                 {/* `Contador`, no `Badge`. Su propia documentación lo dice: un chip
@@ -374,6 +372,7 @@ function ItemRow({
     const [revelado, setRevelado] = useState(false);
     const [nota, setNota] = useState(item.nota ?? '');
     const [sistema, setSistema] = useState(item.sistema_cantidad);
+    const [contadoPorId, setContadoPorId] = useState(item.contado_por ?? null);
     const [contadoPorNombre, setContadoPorNombre] = useState(item.contado_por_nombre ?? null);
     const [contadoPorFoto, setContadoPorFoto] = useState(item.contado_por_photo_url ?? null);
     const [contadoAt, setContadoAt] = useState(item.contado_at ?? null);
@@ -389,13 +388,14 @@ function ItemRow({
         setRevelado(false);
         setNota(item.nota ?? '');
         setSistema(item.sistema_cantidad);
+        setContadoPorId(item.contado_por ?? null);
         setContadoPorNombre(item.contado_por_nombre ?? null);
         setContadoPorFoto(item.contado_por_photo_url ?? null);
         setContadoAt(item.contado_at ?? null);
         setEdiciones(item.ediciones_count ?? 0);
         setEstadoItem(item.estado_item);
         lastSaved.current = { fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item };
-    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre,
+    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por, item.contado_por_nombre,
         item.contado_por_photo_url, item.ediciones_count, item.estado_item, item.nota, recuento]);
 
     // Estimado inmediato con el "sistema" ya visible — el valor definitivo llega
@@ -596,7 +596,7 @@ function ItemRow({
             </DataCell>
             <DataCell hideBelow="1440">
                 <AutorLinea
-                    nombre={contadoPorNombre} fotoUrl={contadoPorFoto} cuando={contadoAt}
+                    id={contadoPorId} nombre={contadoPorNombre} fotoUrl={contadoPorFoto} cuando={contadoAt}
                     ediciones={ediciones} onClick={() => onShowHistory(item)}
                 />
             </DataCell>
@@ -1330,7 +1330,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                             return (
                                 <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <AvatarConEstado emp={{ name: h.contado_por_nombre, photo: h.contado_por_photo_url }}
+                                        <AvatarConEstado emp={{ id: h.contado_por, name: h.contado_por_nombre, photo: h.contado_por_photo_url }}
                                             px={36} radio="rounded-full" marco="" />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5 flex-wrap">

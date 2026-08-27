@@ -413,10 +413,55 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         : null;
                     if (created?.tempPassword) {
                         try { await navigator.clipboard.writeText(created.tempPassword); } catch { /* sin permiso de clipboard */ }
+
+                        // ── El documento que se le entrega a la persona ──────────
+                        // La contraseña temporal SÓLO existe en esta respuesta: si
+                        // nadie la anota en los 20 segundos del aviso, se pierde y
+                        // hay que reiniciarla. El documento la guarda, y de paso
+                        // dice lo que la persona necesita saber — cómo entrar, qué
+                        // le toca con su ISSS y su AFP, y su carné mientras le
+                        // llega el de plástico.
+                        //
+                        // El carné se emite ACÁ y no antes: emitirlo mata el
+                        // anterior, así que hacerlo en un alta que después falla
+                        // dejaría a alguien sin el papel que ya tenía.
+                        let valorDelCarne = null, carneVenceEl = null;
+                        try {
+                            const { emitirCarneTemporal } = await import('../data/carneTemporal');
+                            const emitido = await emitirCarneTemporal(created.id, 'alta de personal', finalData.branch_id ?? null);
+                            if (emitido?.ok) { valorDelCarne = emitido.secreto; carneVenceEl = emitido.vence_el; }
+                        } catch { /* sin carné, el documento sale igual con usuario y contraseña */ }
+
+                        // Por `await import()`: el módulo trae el texto entero del
+                        // documento y lo importa un archivo que viaja en el arranque.
+                        // Medido: importarlo estático subía el entry de 303 a 308 kB
+                        // para todo el que abre el portal, incluida la gente de sala
+                        // que nunca da de alta a nadie.
+                        const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
+                        const doc = await descargarDocumentoDeBienvenida({
+                            nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
+                            cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',
+                            sala: branches?.find(b => String(b.id) === String(finalData.branch_id))?.name || '',
+                            fechaDeInicio: finalData.hire_date || null,
+                            usuario: created.username,
+                            contrasenaTemporal: created.tempPassword,
+                            valorDelCarne, carneVenceEl,
+                            isss_estado: finalData.isss_estado || null,
+                            afp_estado: finalData.afp_estado || null,
+                        });
+                        // Un documento con credenciales es una salida de datos del
+                        // portal, y las salidas se anotan (`export_log`).
+                        if (doc.ok) {
+                            const { registrarEgreso } = await import('../data/egreso');
+                            registrarEgreso('staff_list', { formato: 'pdf', filas: 1, detalle: { motivo: 'documento de accesos al crear personal' } });
+                        }
+
                         if (showToast) showToast(
-                            enlazado ? "Expediente Enlazado — Contraseña Temporal" : "Empleado Creado — Contraseña Temporal",
-                            `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
-                            "success",
+                            enlazado ? "Expediente Enlazado — Documento de Accesos" : "Empleado Creado — Documento de Accesos",
+                            doc.ok
+                                ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento con su usuario, su contraseña temporal y su carné. Entrégaselo o imprímelo.`
+                                : `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). No se pudo generar el documento — anótala antes de cerrar.`,
+                            doc.ok ? "success" : "warning",
                             20000
                         );
                     } else if (showToast) {

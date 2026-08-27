@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.811.0 — El documento de accesos que se le entrega a la persona
+
+La pregunta fue *«¿por qué no sale el usuario y la contraseña?»*. Salían — en un
+**aviso de 20 segundos**. La contraseña temporal sólo existe en esa respuesta del
+servidor: si nadie la anotaba en esos 20 segundos se perdía, y recuperarla es
+reiniciarla. Y aunque alguien la anotara, quedaba un papelito con una credencial
+y sin ninguna de las cosas que la persona necesita saber.
+
+**Ahora al guardar se descarga un documento**, personalizado con su nombre, su
+cargo, su sala y su fecha de inicio:
+
+- **Cómo entrar al portal** — la dirección, su usuario, su contraseña temporal y
+  el aviso de que el portal le va a pedir cambiarla.
+- **Su carné temporal** — el código de barras, para marcar y para entrar
+  mientras le entregan el de plástico, con la fecha en que deja de servir.
+- **Su ISSS y su AFP**, sólo si le falta alguno, y **dicho del lado correcto**:
+  al ISSS lo inscribe la empresa —no tiene que ir a ninguna oficina— y la AFP la
+  elige el trabajador, así que ahí sí se le dice qué hacer, con qué y dónde.
+
+Tres cosas que el documento **no** hace, y las tres a propósito:
+
+- **No escribe el valor del carné en texto.** Es la instrucción de agosto sobre
+  el carné de papel —*«JAMÁS lo debes mostrar»*— y vale igual acá: es una
+  credencial que abre el portal, y en claro basta una foto. Va sólo como código
+  de barras.
+- **No orienta a quien no se le preguntó.** Un ISSS o una AFP sin contestar no
+  generan texto: decirle «tienes que afiliarte» a quien quizá ya lo está es peor
+  que no decir nada.
+- **No se manda a ningún lado.** Se descarga y ya; quien lo entrega decide cómo.
+
+Si el documento falla, el aviso vuelve a mostrar la contraseña como antes: la
+ficha ya se guardó y tumbar el alta por un PDF sería cambiar un problema chico
+por uno grande. El carné se emite al final y no antes, porque emitir uno mata el
+anterior — hacerlo en un alta que después falla dejaría a alguien sin el papel
+que ya tenía. Y como es una salida de datos del portal, queda anotada en
+`export_log`.
+
+**El módulo va por `await import()`.** Importarlo de forma estática subía el
+arranque del portal de 303 a 308 kB para todo el mundo, incluida la gente de
+sala que nunca da de alta a nadie.
+
 ## v2.810.0 — Siete arreglos del alta, mirando la pantalla
 
 Siete cosas reportadas sobre capturas del alta de personal. Ninguna daba error.

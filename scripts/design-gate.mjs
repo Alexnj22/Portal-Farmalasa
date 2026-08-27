@@ -365,6 +365,7 @@ const EXCEPTIONS = {
   // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
+  'src/utils/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
   'src/utils/corteZPrint.js': ['hex'],           // idem: el PDF del Corte Z no pasa por CSS ni por los tokens del tema
   // pdfmake: docDefinition, no CSS. `formato-cifra`: el PDF del conteo tiene su
   // propio `fmtMoney` porque va a papel, no a pantalla.

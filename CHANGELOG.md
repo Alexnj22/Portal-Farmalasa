@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.814.0 — El DUI que vence avisa, y el número de la acreditación sale del papel
+
+Los dos huecos que quedaban del expediente de Talento Humano.
+
+### El DUI que vence avisa solo
+
+El portal leía la fecha de vencimiento del documento, la guardaba… y ahí se
+acababa. **Nadie volvía a mirarla.** Un dato que se captura y no se vigila es lo
+mismo que no tenerlo, con la diferencia de que da la impresión contraria.
+
+Ahora hay un aviso diario, a las 7:00, y son **dos avisos distintos a propósito**:
+
+- **A la persona**, en segunda persona y una sola vez por etapa: es la única que
+  puede ir a renovarlo.
+- **A Talento Humano**, UN resumen por día con la lista completa. No un aviso por
+  cabeza: cuarenta y nueve avisos iguales el mismo día no avisan cuarenta y nueve
+  veces — se archivan de una pasada y el próximo también.
+
+Las etapas son dos y no una escala: *por vencer* (30 días o menos) y *vencido*.
+Pasar de la primera a la segunda **sí vuelve a avisar**, porque es otra noticia.
+El freno vive en el `metadata` del aviso —fuente, persona, etapa— y no en el
+texto: el texto cambia, la clave no.
+
+**La primera versión no encontraba a nadie, nunca.** Su filtro comparaba
+`tipo_ficha` contra un valor que no existe en la base, así que devolvía «0
+personas» — un cero indistinguible del cero legítimo de un día sin vencimientos.
+Lo destapó fabricarle el caso que debía cazar: con un DUI venciendo en 10 días
+seguía diciendo 0. Sin esa prueba habría quedado publicada y en silencio, que es
+el modo de falla más caro que tiene una alarma.
+
+Probado después de corregirlo, con dos personas fabricadas y la transacción
+deshecha: 2 avisos y 1 resumen; segunda corrida el mismo día, **0 duplicados**; y
+al pasar una de «por vencer» a «vencido», 1 aviso nuevo.
+
+**Y `npm run gate:migrations` levantó un hueco de verdad**: el REVOKE le quitaba
+el permiso a `PUBLIC` y a `anon`, pero Supabase se lo concede a `authenticated`
+por defecto. La función escribe avisos — cualquiera con sesión podía publicarle
+comunicaciones a Talento Humano y a cualquier persona. Cerrado.
+
+### El número de la acreditación sale del comprobante
+
+El punto 3 pedía que del comprobante salieran **número y vencimiento**. El
+vencimiento ya salía; el número había que teclearlo mirando el papel que se
+acababa de subir. Ahora el lector de documentos también lo busca.
+
+Sólo llena lo que está **vacío**, y sólo en el documento de **esa** junta — es la
+misma regla del DUI. Escribir encima de un número tecleado sería contradecirlo
+sin avisar, y el número de una junta en la casilla de otra es peor que ninguno:
+manda a verificarlo al organismo equivocado.
+
+### «Prácticas»: se queda, y por qué
+
+Las menciones que quedan son tolerancia de **lectura**, no un tipo que se pueda
+elegir: si una ficha vieja lo tuviera, quitarlo de golpe le dejaría el tipo de
+contrato en blanco sin que nadie lo note. Medido: **0 fichas** con ese valor.
+
 ## v2.813.0 — Una consulta que muestra a alguien devuelve su id
 
 Cierra el último hueco del aro. Cuatro funciones resolvían el nombre y la foto

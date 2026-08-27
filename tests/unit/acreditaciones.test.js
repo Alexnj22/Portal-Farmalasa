@@ -137,3 +137,29 @@ describe('el sello provisional', () => {
         expect(acreditacionesProvisionales({}, aplicables)).toEqual([]);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El número sale del comprobante, no del teclado
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Pedido de Talento Humano: del documento salen «número y vencimiento». El
+// vencimiento ya salía; el número había que teclearlo mirando el papel que se
+// acababa de subir.
+//
+// Lo que se ancla acá es la CORRESPONDENCIA: cada acreditación tiene que saber
+// en qué documento vive su número. Sin eso, el número de una junta puede caer en
+// la casilla de otra — y eso es peor que no tener número, porque manda a
+// verificarlo al organismo equivocado.
+
+describe('el número que se lee del comprobante', () => {
+    it('cada acreditación sabe cuál es su documento, y no lo comparte', () => {
+        const docs = ACREDITACIONES.map(a => a.doc);
+        expect(new Set(docs).size).toBe(docs.length);
+    });
+
+    it('cada documento apunta a UNA sola casilla', () => {
+        const campos = ACREDITACIONES.map(a => a.campo);
+        expect(new Set(campos).size).toBe(campos.length);
+        for (const a of ACREDITACIONES) expect(a.campo).toMatch(/_license_number$/);
+    });
+});

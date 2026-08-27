@@ -4,7 +4,7 @@ import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
 import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
-import { acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
+import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
 import { estadoRemisionMtps, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
@@ -976,6 +976,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 });
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
                     expiryDate = aiResponse.aiData.expDate;
+                }
+                // ── El número de la acreditación también sale del papel ──────
+                //
+                // Pedido de Talento Humano: del comprobante salen «número y
+                // vencimiento». El vencimiento ya salía; el número había que
+                // teclearlo mirando el documento que se acababa de subir.
+                //
+                // Sólo llena lo que está VACÍO, y sólo en el documento de ESA
+                // junta: es la misma regla del DUI. Escribir encima de un número
+                // que alguien tecleó sería contradecirlo sin avisar, y el número
+                // de una junta puesto en la casilla de otra es peor que ninguno
+                // —manda a verificarlo al organismo equivocado—.
+                const numeroLeido = aiResponse?.aiData?.numeroDeRegistro;
+                if (!aiError && numeroLeido) {
+                    const laDeEsteDoc = ACREDITACIONES.find(a => a.doc === category);
+                    if (laDeEsteDoc && !formData?.[laDeEsteDoc.campo]) {
+                        handleSelectChange(laDeEsteDoc.campo, String(numeroLeido).trim());
+                    }
                 }
             }
             // Anualidad JVPQF/JVPE: fecha límite fija del CSSP (31 de marzo, igual para

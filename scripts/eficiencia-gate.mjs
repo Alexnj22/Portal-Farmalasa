@@ -89,6 +89,18 @@ const CRONS = [
           + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
   },
   {
+    job: 'avisar-dui-por-vencer-diario', slug: null, cadencia: '0 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: es SQL puro contra la propia base. Sin `slug` '
+          + 'porque no llama a ninguna edge function — `pg_cron` ejecuta la función directamente. '
+          + 'Diario y no semanal a propósito: la ventana es de 30 días y el freno vive en el '
+          + '`metadata` del aviso (fuente + persona + etapa), así que correr todos los días no '
+          + 'produce un aviso de más; lo que evita es que alguien espere una semana para '
+          + 'enterarse de que su documento ya venció. A la persona se le avisa una vez por etapa '
+          + 'y a Talento Humano se le manda UN resumen diario con la lista, no un aviso por '
+          + 'cabeza: cuarenta y nueve avisos iguales el mismo día se archivan de una pasada.',
+  },
+  {
     job: 'avisar-bultos-viejos-daily', slug: 'avisar-bultos-viejos', cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: sólo lee la base y escribe avisos. Una vez al '

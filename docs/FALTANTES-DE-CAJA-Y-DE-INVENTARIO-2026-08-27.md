@@ -119,7 +119,86 @@ lo que se devenga por trabajar no lo saca del salario.
 
 El corte es **habitual vs. ocasional**, no «mínimo vs. excedente».
 
-### 3.2 El 20% sobre el excedente existe, pero es de un juez, no de la empresa
+### 3.2 «Variable» no es «ocasional» — son dos cosas distintas
+
+Repreguntado por el usuario el mismo día: *«esos $150 no son fijos, sólo fue un
+ejemplo; así como pueden ganar $50 pueden ganar $150.»* La duda es razonable —
+si el monto cambia mes a mes, no se parece a un sueldo. Pero la excepción del
+RIT Art. 32 pide **dos** cosas **a la vez**, y son cumulativas:
+
+> «las sumas que **ocasionalmente** *y* **por mera liberalidad** reciben…»
+
+- **Ocasionalmente** = esporádica en el tiempo. No es «de monto incierto», es
+  «no todos los períodos».
+- **Por mera liberalidad** = un regalo. No una contraprestación por el trabajo.
+
+Un bono que llega **todos los meses** porque vendieron falla las dos: es
+habitual en el tiempo, y es exactamente lo que el primer inciso del mismo
+artículo declara salario — «todo lo que reciben en dinero y que **implique
+retribución de servicios**». La variabilidad afecta el **monto**, no la
+**naturaleza**.
+
+**Y el Código no sólo lo contempla: le da fórmula.** Cuatro artículos, y el
+último es el que cierra la discusión:
+
+- **Art. 126 lit. e)** — «**Por comisión**: cuando el trabajador recibe un
+  porcentaje o cantidad convenida por cada una de las operaciones que realiza…
+  La Comisión **se devengará** desde el momento en que se hubiere perfeccionado
+  la operación respectiva.» Variable por definición, y *devengada* — o sea,
+  debida.
+- **Art. 130 num. 3** — la comisión se liquida «por lo menos **cada quince
+  días**». Tiene calendario de pago obligatorio, como cualquier salario.
+- **Art. 138** — la planilla debe hacer constar «los salarios que en forma de
+  **comisión** se hayan devengado».
+- **Art. 142 A) num. 7** — «Si el salario hubiere sido estipulado por comisión,
+  **o por cualquiera otra forma distinta de las anteriores**, el básico por día
+  será el que resulte de dividir el total de los salarios ordinarios devengados
+  en los **seis meses anteriores**… entre el número de días laborables
+  comprendidos en dichos seis meses.»
+
+Ese último es la prueba definitiva: **si un salario variable no fuera salario,
+el Código no tendría una regla para promediarlo.** La variabilidad no es una
+excepción — es un caso previsto, con su cálculo escrito.
+
+#### El esquema de la empresa ya es habitual, en los hechos
+
+No es hipotético. `metas_config` paga bono cuando la sala llega al **100%** de
+su meta, y el **50%** del bono si llega al **95%**; el bono es **0.5% de la
+venta** (`bono_pct_venta`). Eso es, palabra por palabra, la comisión sobre
+operaciones del Art. 126 lit. e) con otro nombre.
+
+Y `metas_resultado` lleva la bolsa calculada **14 meses corridos**, de jun-2025
+a jul-2026, **sin un solo mes en cero**:
+
+| | |
+|---|---:|
+| Meses con bolsa | **14 de 14** |
+| Bolsa por sala, mínima | $29.13 |
+| Bolsa por sala, máxima | $269.90 |
+| Mes más flojo (total) | $118.92 · 1 sala |
+| Mes más alto (total) | $1,029.12 · 5 salas |
+
+Ése es el rango de $50 a $150 del que hablaba la pregunta, y catorce meses
+seguidos de un pago ligado al desempeño es **habitualidad construida**, no
+liberalidad. (Hoy `bonificaciones_activas` está en `false` y `payroll_entries`
+está vacía, así que el portal nunca pagó una: si se pagaron, fue por fuera —
+conviene confirmar cuántos meses efectivamente se entregaron, porque de eso
+depende cuán consolidada está la habitualidad.)
+
+#### Lo que la variabilidad SÍ cambia, y conviene revisar aparte
+
+Si esas bonificaciones son salario —y por lo de arriba lo son—, entonces el
+**salario básico** del Art. 140 «servirá de base para calcular **cualquier**
+obligación pecuniaria del patrono a favor del trabajador», y el Art. 142 A) 7
+manda promediar los **seis meses anteriores**. Eso alcanza a vacaciones,
+aguinaldo, indemnización, horas extras y la cotización de ISSS y AFP.
+
+O sea que la pregunta abre una exposición distinta —y probablemente mayor— que
+la del faltante: **si esos pagos no están entrando al promedio de seis meses, el
+problema no es si se puede descontar de ellos, sino si se están calculando bien
+las prestaciones sobre ellos.** Vale medirlo por separado.
+
+### 3.3 El 20% sobre el excedente existe, pero es de un juez, no de la empresa
 
 La intuición viene del **Art. 133 CT** (RIT Art. 35):
 
@@ -138,7 +217,7 @@ que **un juez** podría alcanzar. Confundir inembargabilidad con
 incompensabilidad es el error central: son dos reglas distintas, en dos
 artículos consecutivos, y sólo una tiene excepción por monto.
 
-### 3.3 Lo que SÍ es legal: un incentivo condicionado de antemano
+### 3.4 Lo que SÍ es legal: un incentivo condicionado de antemano
 
 Existe un diseño válido, y probablemente es el que el usuario tiene en mente:
 
@@ -170,6 +249,23 @@ Art. 138 CT y el RIT Art. 38 obligan a que el recibo diga «todos los elementos
 de su remuneración y de los descuentos que se han practicado». Un faltante
 apareciendo en la columna de descuentos es la prueba escrita en contra, firmada
 por la propia empresa.
+
+#### El caso concreto de esta empresa
+
+El bono de metas **ya lleva 14 meses corridos** (§3.2), así que el punto 3 de la
+lista de arriba ya está ocurriendo: en los hechos es habitual. Eso no lo vuelve
+intocable, pero sí cambia el procedimiento — condicionarlo a que la caja cuadre
+es **modificar una condición de trabajo**, y eso se hace:
+
+- **por escrito y antes del período** al que va a aplicar, nunca sobre un mes ya
+  empezado;
+- **sin tocar lo ya devengado** (Art. 30 ord. 10: prohibido «reducir, directa o
+  indirectamente, los salarios que pagan, así como suprimir o mermar las
+  prestaciones»);
+- **como umbral, no como resta.** El esquema ya funciona por umbrales (100% paga
+  completo, 95% paga la mitad): la forma correcta es **un umbral más** —«sin
+  diferencias de caja sin explicar en el período»— y no restarle el faltante a
+  la bolsa. Un umbral se cumple o no; una resta es compensación.
 
 ---
 

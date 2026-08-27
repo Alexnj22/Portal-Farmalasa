@@ -1732,8 +1732,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <label htmlFor="photo-upload" className="absolute inset-0 cursor-pointer"></label>
                                 </div>
                                 <div className="text-center sm:text-left">
-                                    <h4 className="text-body-xl font-black text-content tracking-tight">Fotografía Oficial</h4>
-                                    <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Usa una imagen clara y profesional. Aparecerá en el portal web y el kiosko biométrico.</p>
+                                    <h4 className="text-body-xl font-black text-content tracking-tight">Identidad</h4>
+                                    <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Quién es la persona. La foto aparece en el portal y en el kiosco: usa una imagen clara.</p>
                                     {/* Tocar el avatar abre el explorador de archivos: dentro
                                         de la app eso NUNCA ofrece la cámara, hace falta un
                                         input propio con `accept` comodín + `capture` juntos
@@ -1918,6 +1918,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2 flex items-center gap-2">
+                                    <MapPin size={14} className="text-content-3" strokeWidth={2.5} />
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Dónde vive</h4>
+                                </div>
                                 <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
 
                                 <div className="relative z-content">
@@ -2381,6 +2385,45 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                     </div>
                                 </div>
+                                {/* Los NÚMEROS viven junto a su ESTADO y no en Nómina.
+                                    Estaban partidos entre dos pestañas: acá se preguntaba si
+                                    tiene ISSS y allá se escribía su número, así que había que
+                                    cruzar el formulario para completar una sola cosa. Fue el
+                                    pedido textual: «agregar si tiene AFP e ISSS, para agregar
+                                    los datos». Nómina se queda con el banco y la cuenta, que
+                                    sí son datos de pago. */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
+                                    {/* El NUP quedó homologado al DUI en enero de 2023: es con el
+                                        número de DUI que uno se afilia y hace cualquier trámite de
+                                        pensiones. Así que dejó de ser un campo que se teclea — se
+                                        muestra el DUI, que se captura en Datos Personales y ahí sí
+                                        se le comprueba el dígito verificador.
+
+                                        El valor viejo NO se borra ni se pisa: si una ficha trae un
+                                        NUP anterior distinto del DUI, se sigue viendo. Borrarlo
+                                        sería decidir por alguien que ese número ya no importa. */}
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
+                                        <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-3 gap-2`}>
+                                            <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
+                                            <span className="text-body-xl font-bold text-content-2 truncate">
+                                                {formData.dui || '—'}
+                                            </span>
+                                        </div>
+                                        <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                            Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
+                                            {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
+                                        </p>
+                                    </div>
+
+                                    <div className="relative z-content">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
+                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
+                                    </div>
+
+                                </div>
+
                                 {pendientesDePrevision.length > 0 && (
                                     <div className="mt-3 flex flex-col gap-2">
                                         {pendientesDePrevision.map(t => (
@@ -2493,7 +2536,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         </div>
 
                         <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
-                            <h4 className="text-body-sm font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Ficha Médica y Emergencia</h4>
+                            <h4 className="text-body-sm font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Salud y a quién avisar</h4>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
@@ -2703,6 +2746,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 {activeTab === 'laboral' && (
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                    <Briefcase size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El puesto</h4>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {isEditMode ? (
                                     <>
@@ -2793,6 +2842,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         )}
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
+                                    <FileText size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El contrato</h4>
+                            </div>
                             <div className={`grid grid-cols-1 gap-4 ${contractHasEndDate ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
                                     <>
@@ -3184,38 +3239,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-shine)]">
                                     <CreditCard size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Cuentas y Retenciones</h4>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Dónde se le deposita</h4>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
-                                {/* El NUP quedó homologado al DUI en enero de 2023: es con el
-                                    número de DUI que uno se afilia y hace cualquier trámite de
-                                    pensiones. Así que dejó de ser un campo que se teclea — se
-                                    muestra el DUI, que se captura en Datos Personales y ahí sí
-                                    se le comprueba el dígito verificador.
-
-                                    El valor viejo NO se borra ni se pisa: si una ficha trae un
-                                    NUP anterior distinto del DUI, se sigue viendo. Borrarlo
-                                    sería decidir por alguien que ese número ya no importa. */}
-                                <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
-                                    <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-3 gap-2`}>
-                                        <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
-                                        <span className="text-body-xl font-bold text-content-2 truncate">
-                                            {formData.dui || '—'}
-                                        </span>
-                                    </div>
-                                    <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
-                                        Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
-                                        {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
-                                    </p>
-                                </div>
-
-                                <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
-                                    <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
-                                </div>
-
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Banco (Planilla)</label>
                                     <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar banco…" icon={Building2} clearable={false} {...portalSelectProps} />

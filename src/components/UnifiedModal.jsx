@@ -419,25 +419,21 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         // nadie la anota en los 20 segundos del aviso, se pierde y
                         // hay que reiniciarla. El documento la guarda, y de paso
                         // dice lo que la persona necesita saber — cómo entrar, qué
-                        // le toca con su ISSS y su AFP, y su carné mientras le
-                        // llega el de plástico.
+                        // le toca con su ISSS y su AFP, y su carné.
                         //
-                        // El carné se emite ACÁ y no antes: emitirlo mata el
-                        // anterior, así que hacerlo en un alta que después falla
-                        // dejaría a alguien sin el papel que ya tenía.
-                        let valorDelCarne = null, carneVenceEl = null;
-                        try {
-                            const { emitirCarneTemporal } = await import('../data/carneTemporal');
-                            const emitido = await emitirCarneTemporal(created.id, 'alta de personal', finalData.branch_id ?? null);
-                            if (emitido?.ok) { valorDelCarne = emitido.secreto; carneVenceEl = emitido.vence_el; }
-                        } catch { /* sin carné, el documento sale igual con usuario y contraseña */ }
-
-                        // Por `await import()`: el módulo trae el texto entero del
-                        // documento y lo importa un archivo que viaja en el arranque.
-                        // Medido: importarlo estático subía el entry de 303 a 308 kB
-                        // para todo el que abre el portal, incluida la gente de sala
-                        // que nunca da de alta a nadie.
-                        const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
+                        // ── El carné que va acá es el DEFINITIVO ─────────────────
+                        // Es el `kiosk_pin`: el MISMO código que va a llevar su
+                        // carné de plástico. No se emite uno del día. La primera
+                        // versión sí lo hacía y estaba mal por dos motivos: ese
+                        // vence a medianoche —o sea que el papel deja de servir el
+                        // mismo día que se lo entregan— y emitirlo MATA el anterior,
+                        // así que un alta que después falla dejaba a alguien sin el
+                        // papel que ya tenía.
+                        //
+                        // Que sea la credencial permanente sube la apuesta y por eso
+                        // el documento no la escribe nunca en texto y lo dice: este
+                        // papel vale lo mismo que el carné, hasta que llegue el
+                        // plástico y también después.
                         const doc = await descargarDocumentoDeBienvenida({
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
                             cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',
@@ -445,7 +441,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             fechaDeInicio: finalData.hire_date || null,
                             usuario: created.username,
                             contrasenaTemporal: created.tempPassword,
-                            valorDelCarne, carneVenceEl,
+                            valorDelCarne: finalData.kiosk_pin || null,
                             isss_estado: finalData.isss_estado || null,
                             afp_estado: finalData.afp_estado || null,
                         });

@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.811.1 — El carné del documento es el definitivo, y el arranque baja 12 kB
+
+**El carné del documento estaba mal, y la corrección la dio el usuario:** *«no el
+temporal, el carné real — digo temporal porque no es plastificado»*. El documento
+emitía un carné del DÍA, y eso tenía dos defectos: vence a medianoche —o sea que
+el papel deja de servir el mismo día que se lo entregan— y emitirlo **mata el
+anterior**, así que un alta que después fallara dejaba a alguien sin el papel que
+ya tenía.
+
+Ahora lleva el **mismo código que va a llevar su carné de plástico**. No caduca:
+sirve para marcar y para entrar al portal desde el primer día y sigue sirviendo
+después. Que sea la credencial permanente sube la apuesta, así que el documento
+lo dice en voz alta —*cualquiera que le tome una foto puede marcar por ti*— y
+sigue sin escribirlo nunca en texto.
+
+### El `gate:bundle`: verificado y corregido
+
+Lo primero fue **medir de quién era**. Compilando el árbol tal como estaba antes
+del barrido de rótulos, con el mismo gate: entry **305** contra un techo de 303,
+`BitacorasView` 76 contra 75, `EmployeeFormModal` 57 contra 52. Los tres ya
+estaban en rojo antes.
+
+El desglose del arranque con mapa de fuentes dio el culpable: **`UnifiedModal`,
+72 kB de fuente viajando en el ENTRY**. Es el modal de las fichas, y lo bajaba
+todo el mundo en cada despliegue — incluida la gente de sala, que entra a vender
+y nunca abre una ficha.
+
+Pasó a diferido, como las vistas. **El arranque cayó de 306 a 294 kB.** Se monta
+en el primer uso y ya no se desmonta: gatearlo con el interruptor de abierto le
+habría comido la animación de salida, que `useMontadoParaSalida` sostiene un
+instante después de cerrar.
+
+El peso se reparte entre las cuatro rutas que sí lo abren (+1 a +3 kB cada una).
+El cambio es a favor y por eso se declara: **el arranque se paga en frío después
+de cada despliegue y lo paga todo el mundo; una ruta se paga una vez y queda en
+caché.**
+
+Y el techo del entry **baja** de 303 a 296. Un techo que se queda arriba después
+de una mejora no protege nada: deja el hueco justo para que la mejora se pierda
+sin que nada avise.
+
 ## v2.811.0 — El documento de accesos que se le entrega a la persona
 
 La pregunta fue *«¿por qué no sale el usuario y la contraseña?»*. Salían — en un

@@ -18,7 +18,17 @@ import AvisoVersionNueva from "./components/common/AvisoVersionNueva";
 
 // Layouts (shell — necesarios en toda ruta, se quedan eager)
 import AppLayout from "./components/layout/AppLayout";
-import UnifiedModal from "./components/UnifiedModal";
+// ── Diferido, como las vistas (2026-08-27) ──────────────────────────────────
+// Son 72 kB de fuente que viajaban en el ARRANQUE para todo el mundo, y el
+// modal de fichas no lo abre nadie hasta que decide abrirlo: la gente de sala
+// entra al portal a vender, no a dar de alta a alguien. Medido con el gate:
+// el entry estaba en 306 kB contra un techo de 303.
+//
+// Se monta en el PRIMER `modalOpen` y ya no se desmonta. No se gatea con
+// `modalOpen` a secas a propósito: `useMontadoParaSalida` lo mantiene montado un
+// instante después de cerrar para su animación de salida, y desmontarlo con el
+// interruptor se la comería.
+const UnifiedModal = lazy(() => import("./components/UnifiedModal"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 
@@ -322,6 +332,10 @@ function MainApp() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedBranch, setSelectedBranch] = useState("ALL");
     const [modalOpen, setModalOpen] = useState(false);
+    // Una vez abierto, el modal se queda montado: bajar su trozo una sola vez y
+    // no cortarle la animación de salida.
+    const [modalYaUsado, setModalYaUsado] = useState(false);
+    useEffect(() => { if (modalOpen) setModalYaUsado(true); }, [modalOpen]);
     const [modalType, setModalType] = useState("");
 
     // Estado global de Empleado (Para modales)
@@ -847,6 +861,8 @@ function MainApp() {
                             </AppLayout>
                         </div>
 
+                        {modalYaUsado && (
+                        <Suspense fallback={null}>
                         <UnifiedModal
                             isOpen={modalOpen}
                             onClose={() => setModalOpen(false)}
@@ -856,6 +872,8 @@ function MainApp() {
                             handleSubmit={handleSubmit}
                             activeEmployee={activeEmployee || user}
                         />
+                        </Suspense>
+                        )}
                         <AlertModal
                             isOpen={alertConfig.isOpen}
                             title={alertConfig.title}

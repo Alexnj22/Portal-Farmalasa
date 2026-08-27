@@ -11,7 +11,19 @@
  *
  * Un documento resuelve las dos: se guarda, se imprime, se entrega, y puede
  * decir todo lo demás —cómo entrar, qué le toca hacer con su ISSS y su AFP, y
- * su carné mientras le llega el de plástico—.
+ * su carné—.
+ *
+ * ── El carné que va acá es el DEFINITIVO ────────────────────────────────────
+ *
+ * Es el `kiosk_pin`: el MISMO código que va a llevar su carné de plástico. La
+ * primera versión emitía uno del día y estaba mal por dos motivos — ése vence a
+ * medianoche, o sea que el papel deja de servir el mismo día que se lo
+ * entregan, y emitirlo MATA el anterior, así que un alta que después falla
+ * dejaba a alguien sin el papel que ya tenía.
+ *
+ * Que sea la credencial permanente sube la apuesta: por eso el documento lo
+ * dice en voz alta —cualquiera que le tome una foto puede marcar por esa
+ * persona— y por eso nunca lo escribe en texto.
  *
  * ── Lo que este documento NO hace ───────────────────────────────────────────
  *
@@ -128,7 +140,7 @@ export function orientacionPrevisional({ isss_estado, afp_estado } = {}) {
  */
 export function definicionDelDocumento({
     nombre, cargo = '', sala = '', usuario, contrasenaTemporal,
-    barrasPng = null, carneVenceEl = null, previsional = [],
+    barrasPng = null, previsional = [],
     fechaDeInicio = null,
 }) {
     const gris = '#6B7280';
@@ -169,19 +181,22 @@ export function definicionDelDocumento({
 
     if (barrasPng) {
         cuerpo.push(linea);
-        cuerpo.push({ text: 'Tu carné temporal', style: 'seccion' });
+        cuerpo.push({ text: 'Tu carné', style: 'seccion' });
         cuerpo.push({
-            text: carneVenceEl
-                ? `Sirve para marcar y para entrar al portal hasta el ${soloFecha(carneVenceEl) || carneVenceEl}. `
-                  + 'Después de esa fecha deja de funcionar solo — no es el carné de plástico.'
-                : 'Sirve para marcar y para entrar al portal mientras te entregan el de plástico.',
+            text: 'Éste es el mismo código que va a llevar tu carné de plástico. Sirve para marcar tu '
+                + 'entrada y tu salida y para entrar al portal, y sigue sirviendo cuando te entreguen '
+                + 'el plástico — no caduca. Mientras tanto, recorta este pedazo y guárdalo.',
             style: 'texto', margin: [0, 0, 0, 8],
         });
         cuerpo.push({ image: barrasPng, width: 230, margin: [0, 0, 0, 4] });
         cuerpo.push({ text: nombre || '', style: 'pie' });
         // El número NO se escribe: quien lo lee es el lector, y en claro basta
         // una foto desde el otro lado del mostrador.
-        cuerpo.push({ text: 'No compartas esta imagen: es tu credencial.', style: 'nota', margin: [0, 6, 0, 0] });
+        cuerpo.push({
+            text: 'Cuídalo como cuidarías el carné: cualquiera que le tome una foto puede marcar por ti '
+                + 'y entrar al portal como tú. Si lo pierdes, avísale a Talento Humano y se cambia el código.',
+            style: 'nota', margin: [0, 6, 0, 0],
+        });
     }
 
     if (previsional.length) {

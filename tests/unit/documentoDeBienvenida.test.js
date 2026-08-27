@@ -31,11 +31,21 @@ describe('el documento de accesos', () => {
     });
 
     it('el valor del carné NO se escribe en texto', () => {
-        const t = textoDe(definicionDelDocumento({
-            ...base, barrasPng: 'data:image/png;base64,AAAA', carneVenceEl: '2026-08-28T06:00:00Z',
-        }));
+        const t = textoDe(definicionDelDocumento({ ...base, barrasPng: 'data:image/png;base64,AAAA' }));
         expect(t).toContain('data:image/png;base64,AAAA');   // el código va como imagen
-        expect(t).not.toContain('X7K2M9QP');                 // …y su valor, nunca
+        expect(t).not.toContain('O25CPB1J');                 // …y su valor, nunca
+    });
+
+    it('el carné es el DEFINITIVO, y el documento lo dice', () => {
+        // No es un carné del día: es el mismo código del plástico. Que no
+        // caduque es lo que lo vuelve útil hasta que llega la tarjeta — y lo que
+        // obliga a decir en voz alta lo que vale.
+        const t = textoDe(definicionDelDocumento({ ...base, barrasPng: 'data:image/png;base64,AAAA' }));
+        expect(t).toMatch(/mismo código que va a llevar tu carné de plástico/);
+        expect(t).toMatch(/no caduca/);
+        expect(t).toMatch(/puede marcar por ti/);
+        // Y NO promete un vencimiento que ya no existe.
+        expect(t).not.toMatch(/hasta el \d/);
     });
 
     it('sin carné, el documento sale igual', () => {

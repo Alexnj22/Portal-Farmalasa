@@ -10,13 +10,18 @@ import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import {
+    fetchHorariosDeLaSemana,
+    guardarDiaDeHorario as guardarDiaRpc,
+    publicarHorariosDeSala as publicarHorariosRpc,
+} from '../../data/schedules';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
     insertEmployeeBranches, insertEmployeeDocument, insertRole, updateRoleRow, deleteRoleRow,
     insertAnnouncement, updateAnnouncementFull, updateAnnouncementFields, deleteAnnouncementRow,
     insertShift, deleteShiftRow, updateShiftRow, setShiftActive, insertHoliday, deleteHolidayRow,
-    fetchWeekRostersRaw, upsertWeeklyRoster, upsertBulkWeeklyRosters, publishWeekRostersQuery,
     fetchBranchesBasic, fetchBranchesFull,
 } from '../../data/system';
 
@@ -1222,7 +1227,16 @@ export const createSystemSlice = (set, get) => ({
 
     addShift: async (shiftData) => {
         try {
-            const payload = { branch_id: shiftData.branchId, name: shiftData.name, start_time: `${shiftData.start}:00`, end_time: `${shiftData.end}:00` };
+            const payload = {
+                branch_id: shiftData.branchId,
+                name: shiftData.name,
+                start_time: `${shiftData.start}:00`,
+                end_time: `${shiftData.end}:00`,
+                // La pausa alimenticia es del TURNO desde el 2026-08-27: el día
+                // la hereda al asignarse, en vez de marcarse celda por celda.
+                lunch_start: shiftData.lunchStart ? `${shiftData.lunchStart}:00` : null,
+                lunch_minutes: shiftData.lunchMinutes ?? 60,
+            };
             const { data, error } = await insertShift(payload);
             if (error) throw error;
             await get().appendAuditLog('CREAR_TURNO_CATALOGO', data.id, {
@@ -1234,7 +1248,11 @@ export const createSystemSlice = (set, get) => ({
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-            const newShift = { id: data.id, branchId: data.branch_id, name: data.name, start: data.start_time.substring(0, 5), end: data.end_time.substring(0, 5) };
+            const newShift = {
+                id: data.id, branchId: data.branch_id, name: data.name,
+                start: data.start_time.substring(0, 5), end: data.end_time.substring(0, 5),
+                lunch_start: data.lunch_start, lunch_minutes: data.lunch_minutes,
+            };
             set((state) => {
                 const next = [...state.shifts, newShift];
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
@@ -1273,8 +1291,20 @@ export const createSystemSlice = (set, get) => ({
 
     updateShift: async (id, shiftData) => {
         try {
+            const antes = get().shifts.find(s => String(s.id) === String(id));
             const { data, error } = await updateShiftRow(id, shiftData);
             if (error) throw error;
+
+            // Cambiarle la hora a un turno del catálogo mueve el horario de
+            // TODOS los que lo usan, y hasta el 2026-08-27 no dejaba rastro:
+            // `addShift` y `deleteShift` auditaban, ésta no.
+            await get().appendAuditLog('EDITAR_TURNO_CATALOGO', String(data.id), {
+                timeline_title: `Turno editado: ${data.name}`,
+                dimension: 'OPERATIVE',
+                branch_id: data.branch_id,
+                old_value: antes ? `${antes.start} a ${antes.end}` : null,
+                new_value: `${String(data.start_time).substring(0, 5)} a ${String(data.end_time).substring(0, 5)}`,
+            });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
@@ -1285,6 +1315,8 @@ export const createSystemSlice = (set, get) => ({
                     name: data.name,
                     start: data.start_time.substring(0, 5),
                     end: data.end_time.substring(0, 5),
+                    lunch_start: data.lunch_start,
+                    lunch_minutes: data.lunch_minutes,
                     is_active: data.is_active
                 } : s);
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
@@ -1300,6 +1332,12 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await setShiftActive(id, false);
             if (error) throw error;
+            const t = get().shifts.find(s => String(s.id) === String(id));
+            await get().appendAuditLog('ARCHIVAR_TURNO_CATALOGO', String(id), {
+                timeline_title: `Turno archivado: ${t?.name || id}`,
+                dimension: 'OPERATIVE',
+                new_value: 'Fuera del catálogo',
+            });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
@@ -1318,6 +1356,12 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await setShiftActive(id, true);
             if (error) throw error;
+            const t = get().shifts.find(s => String(s.id) === String(id));
+            await get().appendAuditLog('REACTIVAR_TURNO_CATALOGO', String(id), {
+                timeline_title: `Turno reactivado: ${t?.name || id}`,
+                dimension: 'OPERATIVE',
+                new_value: 'De vuelta en el catálogo',
+            });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
@@ -1335,6 +1379,13 @@ export const createSystemSlice = (set, get) => ({
     addHoliday: async ({ holiday_date, name, type = 'NATIONAL', municipality = null, is_recurring = false }) => {
         const { data, error } = await insertHoliday({ holiday_date, name, type, municipality: municipality || null, is_recurring });
         if (error) throw error;
+        // Un asueto cambia lo que se PAGA ese día (CT Art. 190 y siguientes),
+        // así que agregarlo o quitarlo tiene que quedar en la bitácora.
+        await get().appendAuditLog('AGREGAR_FERIADO', String(data.id), {
+            timeline_title: `Feriado agregado: ${name}`,
+            dimension: 'HR',
+            new_value: `${holiday_date} · ${type === 'NATIONAL' ? 'Nacional' : `Municipal${municipality ? ` (${municipality})` : ''}`}${is_recurring ? ' · recurrente' : ''}`,
+        });
         set(state => {
             const next = [...state.holidays, data].sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
             localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
@@ -1344,8 +1395,14 @@ export const createSystemSlice = (set, get) => ({
     },
 
     deleteHoliday: async (id) => {
+        const previo = get().holidays.find(h => String(h.id) === String(id));
         const { error } = await deleteHolidayRow(id);
         if (error) throw error;
+        await get().appendAuditLog('ELIMINAR_FERIADO', String(id), {
+            timeline_title: `Feriado eliminado: ${previo?.name || id}`,
+            dimension: 'HR',
+            old_value: previo ? `${previo.holiday_date} · ${previo.name}` : null,
+        });
         set(state => {
             const next = state.holidays.filter(h => String(h.id) !== String(id));
             localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
@@ -1353,13 +1410,27 @@ export const createSystemSlice = (set, get) => ({
         });
     },
 
-    fetchWeekRosters: async (weekStartDate) => {
+    /* Los horarios de UNA sala en UNA semana.
+     *
+     * Dos cambios, y los dos por el mismo motivo: **una semana vacía y una
+     * semana que no cargó se veían igual.**
+     *
+     *   · El `catch` devolvía `{}`, así que la pantalla quedaba con la semana
+     *     en blanco —indistinguible de una semana sin armar— y desde ahí
+     *     «Publicar» escribía `schedule_data: {}` sobre TODA la sucursal. Un
+     *     corte de red se convertía en un borrado. Ahora devuelve `fallo` y la
+     *     vista apaga el botón.
+     *   · Bajaba las OCHO salas para pintar una. Hoy el filtro está en la base.
+     */
+    fetchWeekRosters: async (weekStartDate, branchId) => {
         try {
-            const { data, error } = await fetchWeekRostersRaw(weekStartDate);
+            if (!branchId) return { rosters: {}, publishedIds: new Set(), borradores: 0 };
+            const { data, error } = await fetchHorariosDeLaSemana(weekStartDate, branchId);
             if (error) throw error;
 
             const rosterMap = {};
             const publishedIds = new Set();
+            let borradores = 0;
             (data || []).forEach(r => {
                 let parsedSchedule = r.schedule_data;
                 if (typeof parsedSchedule === 'string') {
@@ -1367,84 +1438,53 @@ export const createSystemSlice = (set, get) => ({
                 }
                 rosterMap[r.employee_id] = parsedSchedule;
                 if (r.status === 'PUBLISHED') publishedIds.add(String(r.employee_id));
+                else borradores++;
             });
 
-            return { rosters: rosterMap, publishedIds };
+            return { rosters: rosterMap, publishedIds, borradores };
         } catch (err) {
             console.error("Error cargando el roster semanal:", err);
-            return {};
+            return { fallo: mensajeAmigable(err, 'No se pudieron cargar los horarios de la semana.') };
         }
     },
 
-    saveWeeklyRoster: async (employeeId, weekStartDate, scheduleData) => {
-        try {
-            const payload = { employee_id: employeeId, week_start_date: weekStartDate, schedule_data: scheduleData };
-            const { error } = await upsertWeeklyRoster(payload);
-            if (error) throw error;
-            await get().appendAuditLog('ASIGNAR_TURNO_SEMANAL', employeeId, {
-                timeline_title: `Asignación de Horario Semanal`,
-                dimension: 'HR',
-                new_value: `Semana: ${weekStartDate}`
-            });
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            return true;
-        } catch (err) {
-            console.error("Error guardando el roster:", err);
-            throw new Error("Error guardando el roster.");
-        }
+    /* Guarda UN día. No pisa los otros ni toca el estado de publicación.
+     *
+     * Antes la vista llamaba a `upsertWeeklyRoster` de `data/system` a mano,
+     * con el roster entero y `status: 'DRAFT'`. Eso hacía tres cosas mal a la
+     * vez: despublicaba la semana, se pisaba con otra sesión editando otro día
+     * de la misma persona, y **se saltaba la bitácora** — que es lo que hace
+     * esta acción y por lo que existe. */
+    guardarDiaDeHorario: async (employeeId, weekStartDate, dia, datos) => {
+        const { data, error } = await guardarDiaRpc(employeeId, weekStartDate, dia, datos);
+        if (error) throw error;
+        await get().appendAuditLog('ASIGNAR_TURNO_DIARIO', String(employeeId), {
+            timeline_title: 'Horario del día',
+            dimension: 'HR',
+            new_value: datos?.isOff
+                ? `${weekStartDate} · día ${dia}: descanso`
+                : `${weekStartDate} · día ${dia}: ${datos?.customStart || '—'} a ${datos?.customEnd || '—'}`,
+        });
+        return data;
     },
 
-    saveBulkWeeklyRosters: async (weekStartDate, schedulesMap) => {
-        try {
-            const inserts = Object.keys(schedulesMap).map(empId => ({
-                employee_id: empId,
-                week_start_date: weekStartDate,
-                schedule_data: schedulesMap[empId],
-                status: 'DRAFT',
-                updated_at: new Date().toISOString()
-            }));
-
-            const { error } = await upsertBulkWeeklyRosters(inserts);
-
-            if (error) throw error;
-
-            await get().fetchWeekRosters(weekStartDate);
-            return true;
-        } catch (err) {
-            console.error("Error guardando roster masivo de IA:", err);
-            throw new Error("No se pudo guardar la sugerencia de la IA.");
-        }
+    /* Publica los borradores de una sala y devuelve CUÁNTOS publicó.
+     *
+     * Antes bajaba los identificadores de la sala al navegador y mandaba un
+     * `.in(...)`; hoy el filtro vive donde está el dato. Y es **repetible**: lo
+     * que ya estaba publicado no se toca, así que corregir un día y volver a
+     * publicar ya no es imposible. */
+    publishWeekRosters: async (weekStartDate, branchId) => {
+        const { data, error } = await publicarHorariosRpc(weekStartDate, branchId);
+        if (error) throw error;
+        await get().appendAuditLog('PUBLICAR_HORARIOS', String(branchId), {
+            timeline_title: 'Publicación de horarios',
+            dimension: 'HR',
+            new_value: `Semana del ${weekStartDate} · ${data ?? 0} horario(s)`,
+        });
+        return data ?? 0;
     },
 
-    publishWeekRosters: async (weekStartDate, branchId = 'ALL') => {
-        try {
-            let branchEmployees = null;
-            if (branchId !== 'ALL') {
-                const state = get();
-                branchEmployees = state.employees
-                    .filter(e => String(e.branchId || e.branch_id) === String(branchId))
-                    .map(e => e.id);
-
-                if (branchEmployees.length === 0) return true;
-            }
-
-            const { error } = await publishWeekRostersQuery(weekStartDate, branchEmployees);
-            if (error) throw error;
-
-            await get().appendAuditLog('PUBLICAR_HORARIOS', branchId === 'ALL' ? 'GLOBAL' : branchId, {
-                timeline_title: `Publicación de Horarios`,
-                dimension: 'HR',
-                new_value: `Semana del ${weekStartDate}`
-            });
-
-            return true;
-        } catch (err) {
-            console.error("Error publicando horarios:", err);
-            throw new Error("No se pudieron publicar los horarios.");
-        }
-    },
     fetchKioskBoot: async () => {
         try {
             const { data: bData } = await fetchBranchesBasic();

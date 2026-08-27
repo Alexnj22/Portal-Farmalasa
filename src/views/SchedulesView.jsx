@@ -8,7 +8,8 @@ import { tokenMatch, normSearch } from '../utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     X, Save, Loader2,
-    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle2
+    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle2,
+    AlertTriangle
 } from 'lucide-react';
 
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -23,7 +24,12 @@ import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 
-import { formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
+import {
+    formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM,
+    resolverTurnoDelDia, claveDeDia, descansoInsuficiente,
+    HORAS_SEMANA_DIURNA, DESCANSOS_POR_SEMANA,
+} from '../utils/scheduleHelpers';
+import { shortEmployeeName } from '../utils/nameUtils';
 import { getLocalMonday, formatWeekRange } from '../utils/semana';
 
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
@@ -35,7 +41,6 @@ import {
     fetchBranchHourlySales, deleteScheduleCoverage, upsertScheduleCoverage,
 } from '../data/schedules';
 import { fetchRostersForWeekByEmployees } from '../data/requests';
-import { upsertWeeklyRoster, upsertBulkWeeklyRosters } from '../data/system';
 import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { soloPersonalEnPlanilla } from '../utils/tipoDeFicha';
@@ -234,6 +239,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const holidays = useStaff(s => s.holidays);
     const fetchWeekRosters = useStaff(s => s.fetchWeekRosters);
     const publishWeekRosters = useStaff(s => s.publishWeekRosters);
+    const guardarDia = useStaff(s => s.guardarDiaDeHorario);
     const fetchBoot = useStaff(s => s.fetchBoot);
     const addHoliday = useStaff(s => s.addHoliday);
     const deleteHoliday = useStaff(s => s.deleteHoliday);
@@ -249,7 +255,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const [publishState, setPublishState] = useState({
         isOpen: false, isDestructive: false,
-        title: '', message: '', confirmText: '', bulkUpdates: null,
+        title: '', message: '', confirmText: '',
     });
 
     const [viewMode, setViewMode] = usePestanaEnUrl(SCHED_TABS.length ? SCHED_TABS : ALL_SCHED_TABS, 'calendar');
@@ -286,6 +292,11 @@ const SchedulesView = ({ openModal, setView }) => {
     const [weeklyRosters, setWeeklyRosters] = useState({});
     const [publishedIds, setPublishedIds] = useState(new Set());
     const [isLoading, setIsLoading]       = useState(true);
+    // Una semana vacía y una semana que NO CARGÓ se veían igual, y desde ahí
+    // «Publicar» escribía `{}` sobre toda la sucursal: un corte de red se
+    // convertía en un borrado. Con esto la pantalla lo dice y el botón se apaga.
+    const [falloDeCarga, setFalloDeCarga] = useState(null);
+    const [borradores, setBorradores]     = useState(0);
     const [editingCell, setEditingCell]   = useState(null);
 
     const [chartView, setChartView]       = useState('DAYS');
@@ -339,13 +350,18 @@ const SchedulesView = ({ openModal, setView }) => {
         let isMounted = true;
         const loadRosters = (isSilent = false) => {
             if (viewMode === 'shifts' || !filterBranch) return;
-            if (!isSilent) { setIsLoading(true); setWeeklyRosters({}); }
-            fetchWeekRosters(startDate).then(result => {
-                if (isMounted) {
+            if (!isSilent) { setIsLoading(true); setWeeklyRosters({}); setFalloDeCarga(null); }
+            fetchWeekRosters(startDate, filterBranch).then(result => {
+                if (!isMounted) return;
+                if (result?.fallo) {
+                    setFalloDeCarga(result.fallo);
+                } else {
+                    setFalloDeCarga(null);
                     setWeeklyRosters(result?.rosters || {});
                     setPublishedIds(result?.publishedIds || new Set());
-                    if (!isSilent) setIsLoading(false);
+                    setBorradores(result?.borradores || 0);
                 }
+                if (!isSilent) setIsLoading(false);
             });
         };
         loadRosters(false);
@@ -561,24 +577,28 @@ const SchedulesView = ({ openModal, setView }) => {
     }, [employeesInView, publishedIds]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
-        let latestRoster;
+        // Se pinta primero para que la celda responda al toque sin esperar la
+        // red, pero si la escritura falla se REVIERTE y se avisa. Antes esto
+        // era un `console.error` a secas: la persona veía el turno puesto y no
+        // estaba.
+        let anterior;
         setWeeklyRosters(prev => {
             const cur = prev[empId] || {};
             const sch = (typeof cur === 'string') ? JSON.parse(cur || '{}') : { ...cur };
+            anterior = cur;
             sch[dayId] = newCellData;
-            latestRoster = sch;
             return { ...prev, [empId]: sch };
         });
         try {
-            const { error } = await upsertWeeklyRoster({
-                employee_id: empId, week_start_date: startDate,
-                schedule_data: latestRoster, status: 'DRAFT',
-            });
-            if (error) console.error("Error guardando borrador:", error);
+            // `guardarDiaDeHorario` escribe UN día: no pisa los otros —dos
+            // personas editando días distintos de la misma persona ya no se
+            // pisan— y no toca el estado de publicación.
+            await guardarDia(empId, startDate, dayId, newCellData);
         } catch (err) {
-            console.error("Error de red guardando borrador:", err);
+            setWeeklyRosters(prev => ({ ...prev, [empId]: anterior }));
+            showToast('No se guardó el turno', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
-    }, [startDate]);
+    }, [startDate, guardarDia, showToast]);
 
     const handleEditCell = useCallback((empId, dayId, dateStr, currentData, rect) => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });
@@ -591,13 +611,17 @@ const SchedulesView = ({ openModal, setView }) => {
     const handleRemoveCoverageEmployee = useCallback(async (empId) => {
         setCoveragesAtBranch(prev => prev.filter(e => e.employee_id !== empId));
         setAddedCoverageEmpIds(prev => { const s = new Set(prev); s.delete(empId); return s; });
-        await deleteScheduleCoverage(empId, filterBranch, startDate);
+        const { error } = await deleteScheduleCoverage(empId, filterBranch, startDate);
+        if (error) {
+            showToast('No se quitó la cobertura', mensajeAmigable(error, 'Intenta de nuevo.'), 'error');
+            return;
+        }
         // Una cobertura dice que alguien de otra sala trabaja acá esa semana.
         // Quitarla o ponerla cambia dónde se espera a una persona, y de eso
         // dependen la marcación y el reclamo de después.
         useStaff.getState().appendAuditLog('QUITAR_COBERTURA', String(empId),
             { sucursal_id: Number(filterBranch), semana: startDate });
-    }, [filterBranch, startDate]);
+    }, [filterBranch, startDate, showToast]);
 
     const handleSaveCoverageCell = useCallback(async (empId, homeBranchId, dayOfWeek, scheduleData) => {
         const entry = {
@@ -615,48 +639,79 @@ const SchedulesView = ({ openModal, setView }) => {
             return [...prev, entry];
         });
         const { error } = await upsertScheduleCoverage(entry);
-        if (error) { console.error('Error guardando cobertura:', error); return; }
+        if (error) {
+            // Revertir y decirlo: el estado local ya pintó la cobertura, y
+            // dejarla puesta hace creer que alguien va a estar en esa sala.
+            setCoveragesAtBranch(prev => prev.filter(
+                e => !(e.employee_id === empId && e.day_of_week === dayOfWeek && e.updated_at === entry.updated_at)));
+            showToast('No se guardó la cobertura', mensajeAmigable(error, 'Intenta de nuevo.'), 'error');
+            return;
+        }
         useStaff.getState().appendAuditLog('GUARDAR_COBERTURA', String(empId),
             { sucursal_id: Number(filterBranch), semana: startDate, dia: dayOfWeek });
-    }, [filterBranch, startDate]);
+    }, [filterBranch, startDate, showToast]);
 
+    /* La revisión previa a publicar.
+     *
+     * Ya no arma `bulkUpdates`: publicar dejó de reescribir el horario y pasó a
+     * ser sólo un cambio de estado en la base. Antes se mandaba el roster
+     * entero con `status: 'DRAFT'` y eso, sobre una semana que no había
+     * cargado, escribía `{}` sobre TODA la sucursal.
+     *
+     * Los reparos salen del reglamento y no de un número suelto: 44 h la semana
+     * diurna y un día de descanso (Art. 16 y 19), y ocho horas entre el fin de
+     * una jornada y el inicio de la siguiente (Art. 21) — que con turnos
+     * rotativos es el que más se escapa. */
     const triggerPublishAudit = () => {
-        let incompleteCount = 0, excessCount = 0;
-        const bulkUpdates = employeesInView.map(emp => {
+        let incompletos = 0, excedidos = 0, sinDescanso = 0;
+        const seguidos = [];
+
+        employeesInView.forEach(emp => {
             const raw = weeklyRosters[emp.id] || {};
             const sch = (typeof raw === 'string') ? JSON.parse(raw || '{}') : raw;
-            const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
-            let daysOff = 0;
-            calendarDates.forEach(date => {
-                const dId   = new Date(date + 'T00:00:00').getDay();
-                const dayData = sch[dId] || {};
-                const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
-                const hasShift = !dayData.isOff &&
-                    (dayData.customStart || shift?.start_time?.substring(0,5) || shift?.start) &&
-                    (dayData.customEnd   || shift?.end_time?.substring(0,5)   || shift?.end);
-                if (!hasShift) daysOff++;
-            });
-            if (hours > 44 || daysOff === 0) excessCount++;
-            else if (hours < 44 || daysOff > 1) incompleteCount++;
-            return { id: emp.id, weekly_schedule: sch };
+            const horas = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
+
+            const dias = calendarDates.map(fecha => ({
+                fecha,
+                resuelto: resolverTurnoDelDia(sch[claveDeDia(new Date(fecha + 'T00:00:00'))], shifts),
+            }));
+            const descansos = dias.filter(d => !d.resuelto.trabaja).length;
+
+            if (descansos === 0) sinDescanso++;
+            else if (horas > HORAS_SEMANA_DIURNA) excedidos++;
+            else if (horas < HORAS_SEMANA_DIURNA || descansos > DESCANSOS_POR_SEMANA) incompletos++;
+
+            if (descansoInsuficiente(dias).length > 0) seguidos.push(shortEmployeeName(emp));
         });
 
-        if (incompleteCount > 0 || excessCount > 0) {
-            const msgs = [];
-            if (incompleteCount > 0) msgs.push(`${incompleteCount} empleado(es) con horarios incompletos.`);
-            if (excessCount > 0)     msgs.push(`${excessCount} empleado(es) con exceso de horas.`);
+        const reparos = [];
+        if (sinDescanso > 0) reparos.push(`${sinDescanso} sin ningún día de descanso.`);
+        if (excedidos > 0)   reparos.push(`${excedidos} con más de ${HORAS_SEMANA_DIURNA} horas.`);
+        if (incompletos > 0) reparos.push(`${incompletos} con la semana incompleta.`);
+        if (seguidos.length > 0) {
+            reparos.push(seguidos.length === 1
+                ? `${seguidos[0]} entra a menos de 8 horas de haber salido.`
+                : `${seguidos.length} personas entran a menos de 8 horas de haber salido.`);
+        }
+
+        const cuantos = employeesInView.filter(e => !publishedIds.has(String(e.id))).length;
+        const queSeVaAPublicar = cuantos === 1
+            ? 'Se publicará 1 horario'
+            : `Se publicarán ${cuantos} horarios`;
+
+        if (reparos.length > 0) {
             setPublishState({
                 isOpen: true, isDestructive: true,
-                title: "⚠️ Planificación No Óptima",
-                message: `Se detectaron deficiencias:\n${msgs.join('\n')}\n\n¿Deseas publicar de todas formas?`,
-                confirmText: "Publicar con Errores", bulkUpdates,
+                title: 'La semana tiene reparos',
+                message: `${reparos.join('\n')}\n\n${queSeVaAPublicar} de la semana del ${formatDateLocal(startDate)}. ¿Publicar de todas formas?`,
+                confirmText: 'Publicar con reparos',
             });
         } else {
             setPublishState({
                 isOpen: true, isDestructive: false,
-                title: "✅ Planificación Perfecta",
-                message: `Todos los empleados están en verde. ¿Deseas publicar los horarios de la semana del ${formatDateLocal(startDate)}?`,
-                confirmText: "Publicar Horarios", bulkUpdates,
+                title: 'La semana está completa',
+                message: `${queSeVaAPublicar} de la semana del ${formatDateLocal(startDate)}.`,
+                confirmText: 'Publicar horarios',
             });
         }
     };
@@ -664,25 +719,21 @@ const SchedulesView = ({ openModal, setView }) => {
     const executePublish = async () => {
         setIsPublishing(true);
         try {
-            const rosterInserts = publishState.bulkUpdates.map(item => ({
-                employee_id: item.id, week_start_date: startDate,
-                schedule_data: item.weekly_schedule, status: 'DRAFT',
-                updated_at: new Date().toISOString(),
-            }));
-            const { error: bulkError } = await upsertBulkWeeklyRosters(rosterInserts);
-            if (bulkError) throw bulkError;
-            if (typeof publishWeekRosters === 'function') await publishWeekRosters(startDate, filterBranch);
-            setPublishedIds(prev => {
-                const next = new Set(prev);
-                publishState.bulkUpdates.forEach(item => next.add(String(item.id)));
-                return next;
-            });
-            showToast('Horarios publicados', `Semana del ${formatDateLocal(startDate)} publicada correctamente.`, 'success');
+            const cuantos = await publishWeekRosters(startDate, filterBranch);
+            setPublishedIds(new Set(employeesInView
+                .filter(e => (weeklyRosters[e.id] && Object.keys(weeklyRosters[e.id]).length > 0) || publishedIds.has(String(e.id)))
+                .map(e => String(e.id))));
+            setBorradores(0);
+            showToast(
+                'Horarios publicados',
+                cuantos === 1
+                    ? `1 horario de la semana del ${formatDateLocal(startDate)}.`
+                    : `${cuantos} horarios de la semana del ${formatDateLocal(startDate)}.`,
+                'success');
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
-            setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '', bulkUpdates: null });
+            setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '' });
         } catch (error) {
-            console.error("Error publicando horarios:", error);
-            showToast('Error al publicar', 'Hubo un error de conexión. Intenta de nuevo.', 'error');
+            showToast('No se pudieron publicar', mensajeAmigable(error, 'Intenta de nuevo.'), 'error');
         } finally {
             setIsPublishing(false);
         }
@@ -722,17 +773,35 @@ const SchedulesView = ({ openModal, setView }) => {
     // como un filtro más; ahora las acciones van tras un divisor y en su propio
     // bloque, que es lo que las distingue.
     const puedePublicar = viewMode === 'calendar' && canEdit && getScope('schedules') === 'ALL';
+
+    // Publicar dejó de ser un booleano.
+    //
+    // Antes el botón quedaba `disabled` con `onClick: undefined` en cuanto UNA
+    // persona de la sala figuraba publicada. Y como guardar una celda mandaba
+    // `status: 'DRAFT'`, corregir un día de una semana publicada la devolvía a
+    // borrador… y ya no se podía volver a publicar. Esas horas no llegaban a
+    // planilla y la pantalla decía «Publicado».
+    //
+    // Hoy guardar no cambia el estado y publicar es repetible, así que lo único
+    // que hay que saber es CUÁNTOS quedan sin publicar.
+    const sinPublicar = borradores;
+    const todoPublicado = !falloDeCarga && employeesInView.length > 0 && sinPublicar === 0 && weekIsPublished;
     const accionesHorarios = puedePublicar ? [{
         key: 'publicar',
-        icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle2 : Save,
-        label: isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar',
+        icon: isPublishing ? Loader2 : todoPublicado ? CheckCircle2 : Save,
+        label: isPublishing ? 'Publicando…'
+             : todoPublicado ? 'Publicado'
+             : sinPublicar > 0 ? `Publicar (${sinPublicar})`
+             : 'Publicar',
         // Bajo el pulgar el rótulo es fijo: los tres estados los dicen el ícono
         // (guardar / reloj / ✔) y el color, y "PUBLICANDO…" no entra en la columna.
         rotulo: 'Publicar',
-        variant: weekIsPublished ? 'quiet' : 'primary',
+        variant: todoPublicado ? 'quiet' : 'primary',
         tone: 'success',
-        disabled: isPublishing || weekIsPublished || employeesInView.length === 0 || isPastWeek,
-        onClick: weekIsPublished ? undefined : triggerPublishAudit,
+        // El botón se apaga si la semana NO CARGÓ: publicar sobre una pantalla
+        // en blanco es lo que convertía un corte de red en un borrado.
+        disabled: isPublishing || todoPublicado || employeesInView.length === 0 || isPastWeek || Boolean(falloDeCarga),
+        onClick: todoPublicado ? undefined : triggerPublishAudit,
     }] : [];
 
     let currentChartData = [];
@@ -864,7 +933,20 @@ const SchedulesView = ({ openModal, setView }) => {
                         </div>
                     </div>
 
-                    {employeesInView.length === 0 ? (
+                    {falloDeCarga ? (
+                        <EmptyState
+                            icon={AlertTriangle}
+                            iconClass="text-danger"
+                            glowClass="bg-danger/30"
+                            title="No se pudieron cargar los horarios"
+                            subtitle={`${falloDeCarga} La semana que ves está en blanco porque no cargó, no porque esté vacía — por eso no se puede publicar.`}
+                            action={
+                                <Button icon={RefreshCw} onClick={() => window.dispatchEvent(new CustomEvent('force-history-refresh'))}>
+                                    Reintentar
+                                </Button>
+                            }
+                        />
+                    ) : employeesInView.length === 0 ? (
                         <EmptyState
                             icon={CalendarDays}
                             title="Sin empleados"
@@ -885,7 +967,6 @@ const SchedulesView = ({ openModal, setView }) => {
                                 shifts={shifts}
                                 handleEditCell={handleEditCell}
                                 salesStats={salesStats}
-                                onSalyAlertsUpdate={() => {}}
                                 isReadOnly={isPastWeek || !hasPermission('schedules', 'can_edit')}
                                 coveragesAtBranch={coveragesAtBranch}
                                 coveragesFromBranch={coveragesFromBranch}

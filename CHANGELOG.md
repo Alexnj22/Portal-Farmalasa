@@ -21,6 +21,121 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.821.0 — Horarios: la pantalla — publicar repetible, el catálogo con dedo, y fuera «Saly»
+
+Segundo bloque de la auditoría. La base quedó en v2.820.0; esto es lo que se ve.
+
+### Publicar dejó de ser un booleano
+
+El botón decía «Publicado» y quedaba `disabled` en cuanto UNA persona de la sala
+figuraba publicada. Ahora dice **cuántos faltan** —«Publicar (7)»— y publicar es
+repetible, así que corregir un día y volver a publicar ya no es imposible.
+
+Y **el botón se apaga si la semana no cargó.** Antes una semana vacía y una
+semana que falló se veían igual; desde ahí «Publicar con Errores» escribía
+`schedule_data: {}` sobre toda la sucursal. Hoy la pantalla lo dice con todas las
+letras —*«La semana que ves está en blanco porque no cargó, no porque esté
+vacía»*— y ofrece reintentar.
+
+### Guardar una celda ya no falla en silencio
+
+La celda se pinta primero para que responda al toque sin esperar la red, pero si
+la escritura falla **se revierte y avisa**. Antes era un `console.error`: la
+persona veía el turno puesto y no estaba. Igual con la cobertura.
+
+### Los reparos salen del reglamento, y se ven
+
+Tres cosas que el portal no miraba:
+
+- **Ocho horas entre jornadas (Art. 21).** Con turnos rotativos es el reparo que
+  más se escapa: cerrar a las 22:00 y entrar a las 6:00 deja ocho justas. Sale
+  arriba del calendario, con nombre.
+- **La jornada nocturna se limita a 7 h, no a 8** (Art. 16: más de cuatro horas
+  nocturnas vuelven nocturna a toda la jornada).
+- **La lactancia que SOLAPA la pausa.** El reglamento dice que la interrupción
+  «no podrá ser utilizada en la hora de almuerzo»; el editor sólo comparaba
+  igualdad, así que 12:00 contra 12:30 pasaba.
+
+Y los avisos de almuerzo —*«el almuerzo de Ana y Luis a las 12:00 pm deja la sala
+SIN NADIE por 40 min»*— **se calculaban desde siempre y la vista los tiraba**:
+el padre pasaba `onSalyAlertsUpdate={() => {}}`. Ahora se ven.
+
+### El catálogo, con el dedo
+
+En el teléfono Duplicar, Editar y Archivar vivían en un clúster
+`opacity-0 group-hover/card:opacity-100 focus-within:opacity-100`. Sin cursor no
+hay hover y sin teclado no hay `focus-within`: **las tres acciones no existían**
+y el catálogo era de sólo lectura. Hoy salen de mantener presionado
+(`usePulsacionLarga` + `HojaMovil`, DESIGN.md §32.7) y un ícono anuncia el gesto.
+
+`gate:movil` daba 0 hallazgos y era correcto: sus cinco detectores miran filas de
+`DataTable`, y esta área no usa ninguna.
+
+### El editor de día es una hoja, no un globo pegado a la celda
+
+Era un popover de 290px anclado a una celda de una matriz que se arrastra de
+lado, encajado con `window.innerHeight - 10` —o sea ignorando el área segura— y
+con esto adentro:
+
+```js
+window.addEventListener('scroll', () => onClose())
+```
+
+Abrir el teclado del selector de hora desplaza la ventana: **el editor se cerraba
+solo y lo escrito se perdía**, sin guardar y sin avisar. En el teléfono ahora es
+`ModalShell align="bottom"` + `HojaMovil`; en escritorio sigue siendo el popover
+y se cierra sólo si la tabla se desplaza, que es cuando la celda se movió de
+verdad.
+
+### La pausa la trae el turno
+
+Al elegir «Apertura» en una celda, la pausa queda puesta sola. Antes se marcaba
+celda por celda —**329 veces por semana**— y sólo se aceptaba entre las 11:00 y
+las 14:30, una ventana escrita a mano sin fuente. El reglamento tiene pausas a
+las 12:00, 13:00, 18:00 y 19:00: el portal rechazaba las del propio reglamento, y
+un turno de cierre no podía tener descanso.
+
+### Fuera «Saly»
+
+«SALY AI AUDITOR», «SALY SUGIERE», «SALY REQUIERE DATOS», «Auditoría Saly». Era
+el **único** texto visible del portal con ese nombre —en el resto sólo aparece en
+comentarios, y el `SalyCopilot.jsx` que DESIGN.md cita ya no existe— y detrás no
+hay ninguna IA: son `if (duration > 9)`. Hoy dice «Revisión del turno»,
+«Sugerencia» y «No se puede guardar: …».
+
+También se fueron los emoji de los rótulos: «⚠️ Sin Horario Operativo» → «La sala
+no tiene horario».
+
+### Lo demás
+
+- **Editar un turno agrupado tocaba sólo el primero.** El catálogo agrupa por
+  nombre+horas y guarda todos los identificadores, pero `handleSaveShift` hacía
+  `updateShift(shifts_data[0].id, …)`: los demás quedaban con las horas viejas e
+  invisibles, porque la agrupación ya no los juntaba.
+- **El badge decía «+8H» con un umbral de 9**, y sobre horas brutas mientras el
+  editor medía netas. Hoy es un solo umbral, el del reglamento, sobre horas
+  pagadas — y el badge dice el número real.
+- **`44` estaba escrito seis veces y `8*60` tres.** Salen de
+  `utils/turnoDelDia.js`, con el artículo del reglamento al lado.
+- **Una QUINTA forma de decir «día libre»:** `{ shiftId: 'LIBRE' }`, que escriben
+  marcar incapacidad, marcar vacaciones y el regreso anticipado — y que sólo
+  `consolidate-timesheets` conocía. Funcionaba de casualidad; ahora está dicho en
+  el resolvedor y en su gemelo de SQL.
+- **Tres sitios más dejaron de reescribir el roster entero** para tocar un día:
+  leer, cambiar una clave y reescribir pisa lo que otra sesión guardó en otro día
+  de esa misma semana.
+- **La geometría del catálogo** usaba `100vh` (el viewport *grande* en iOS) con
+  un descuento fijo de 230px sobre un hijo de `100dvh` con márgenes negativos
+  compensados: debajo de `lg` quedaban dos scrolls anidados y el interno se
+  robaba el gesto.
+- **1.266 líneas de código inalcanzable borradas** — `FormTurnos` (anotado desde
+  v2.17.28), `FormPlanificador` y `FormAiSchedulerPreview`, que no estaban
+  anotados. Con ellas, `saveWeeklyRoster`, `saveBulkWeeklyRosters`, `upsertShift`,
+  `updateShiftFlags`, `fetchWeekRostersRaw`, `upsertBulkWeeklyRosters` y
+  `publishWeekRostersQuery`.
+- Dos `<style>` en línea menos, reinyectados en cada montaje.
+- El área de auditoría **subió a 95%**.
+
 ## v2.820.0 — Horarios: un solo resolvedor del día, y la escritura deja de despublicar
 
 Primer bloque de la auditoría del área. Cinco migraciones y una edge function

@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-08-23",
+  "recalculado": "2026-08-27",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -518,7 +518,7 @@
       "ejes": {
         "flujo": {
           "pct": 95,
-          "evidencia": "sin pendientes declarados en memoria",
+          "evidencia": "2026-08-27: «¿qué turno tiene hoy?» estaba respondida CUATRO veces con reglas distintas; hoy hay un resolvedor (`utils/turnoDelDia.js` + `turno_del_dia()` en SQL), anclado en 55 pruebas y enfrentado contra su gemelo sobre 16 casos — 0 distintas. Corregir una semana publicada la devolvía a borrador y no se podía volver a publicar, así que esas horas no llegaban a planilla.",
           "hallazgos": []
         },
         "datos": {
@@ -533,19 +533,17 @@
         },
         "seguridad": {
           "pct": 96,
-          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "holidays y shifts: legibles por anon con USING(true), sin motivo escrito"
-          ]
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función. · 2026-08-27: `shifts` y `holidays` dejaron de ser legibles por `anon` — el kiosco los recibe dentro de `get_kiosk_boot_payload`, que es DEFINER y los arma adentro, así que la policy `read_all` no hacía falta. `estoy_en_turno()` (SECURITY DEFINER, cero llamadores) borrada. Y `schedule_coverage` pasó a respetar el alcance por sala: tenía `USING (true)` para leer y ninguna condición de sucursal para escribir, mientras `employee_rosters` —el mismo tipo de dato— sí la tiene.",
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
-          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador · 2026-08-27: guardar una celda fallaba en silencio (un `console.error` sobre un estado ya pintado). Y `fetchWeekRosters` devolvía `{}` al fallar, así que una semana que NO CARGÓ se veía igual que una vacía — y desde ahí «Publicar» escribía `{}` sobre toda la sucursal. Hoy revierte y avisa, y el botón se apaga cuando la carga falló.",
           "hallazgos": []
         },
         "observabilidad": {
           "pct": 96,
-          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo) · 2026-08-27: la acción principal del módulo NO quedaba en la bitácora — la vista llamaba a `upsertWeeklyRoster` de `data/system` en vez de al store, que es quien audita. Tampoco auditaban editar, archivar ni reactivar un turno del catálogo, ni agregar o borrar un feriado (que cambia lo que se paga). Las seis pasan por `appendAuditLog`.",
           "hallazgos": []
         },
         "vista": {
@@ -557,19 +555,19 @@
         },
         "movil": {
           "pct": 95,
-          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1). · 2026-08-27: tres defectos que el gate no puede ver porque sus detectores miran filas de `DataTable` y esta área no usa ninguna — el catálogo de turnos era de SÓLO LECTURA con el dedo (Duplicar/Editar/Archivar detrás de un `group-hover`, hoy con `usePulsacionLarga` + `HojaMovil`), el editor de día se cerraba con cualquier desplazamiento de la ventana y perdía lo escrito (hoy es hoja inferior), y las celdas respondían al toque sin anunciarse.",
           "hallazgos": [
             "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
           ]
         },
         "ux": {
           "pct": 95,
-          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s) · 2026-08-27: «SALY AI AUDITOR» / «SALY SUGIERE» / «Auditoría Saly» eran el único texto visible del portal con ese nombre, y detrás no había ninguna IA: son `if`s. Rótulos llanos.",
           "hallazgos": []
         },
         "eficiencia": {
           "pct": 95,
-          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240) · 2026-08-27: el cálculo de cobertura reservaba 20.160 `Set` por semana y se rehacía en cada celda guardada — reescrito con aritmética de intervalos. `turno_del_dia` pasó de `LANGUAGE sql` a plpgsql: 0,44 → 0,042 ms por llamada. Y la lectura de la semana dejó de bajar las ocho salas para pintar una.",
           "hallazgos": []
         },
         "pruebas": {

@@ -74,6 +74,14 @@ describe('resolverTurnoDelDia — las cuatro lecturas que divergían', () => {
         expect(resolverTurnoDelDia({ shiftId: 1 }, TURNOS).inicio).toBe('07:00');
     });
 
+    // La QUINTA forma de decir «libre», y sólo `consolidate-timesheets` la
+    // conocía: la escriben marcar incapacidad, marcar vacaciones y el regreso
+    // anticipado de vacaciones.
+    it.each([['LIBRE'], ['libre']])('`shiftId: %s` es día libre', (valor) => {
+        const r = resolverTurnoDelDia({ shiftId: valor, note: 'Incapacidad', customStart: '07:00', customEnd: '15:30' }, TURNOS);
+        expect(r.trabaja).toBe(false);
+    });
+
     it('un turno que ya no existe en el catálogo no inventa horas', () => {
         expect(resolverTurnoDelDia({ shiftId: 4242 }, TURNOS).trabaja).toBe(false);
     });

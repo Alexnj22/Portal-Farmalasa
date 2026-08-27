@@ -120,7 +120,17 @@ export function resolverTurnoDelDia(datosDelDia, turnos) {
     // libre». Escribirlo al revés es lo que hacía invisible al día en SQL.
     if (dia.isOff || dia.isOffDay) return libre;
 
+    // `'LIBRE'` es la QUINTA forma de decir «este día no trabaja», y la
+    // escriben tres sitios: marcar una incapacidad, marcar vacaciones y el
+    // regreso anticipado de vacaciones. `consolidate-timesheets` la conoce
+    // (`dayData.shiftId !== 'LIBRE'`) y nadie más la tenía escrita.
+    //
+    // Funcionaba de casualidad —ningún turno del catálogo se llama así, la
+    // búsqueda no encuentra nada y el día se queda sin horas—, pero de
+    // casualidad no es lo mismo que a propósito: acá queda dicho.
     const turnoId = dia.shiftId ?? dia.shift_id ?? null;
+    if (String(turnoId).toUpperCase() === 'LIBRE') return libre;
+
     const turno = turnoId != null && turnoId !== ''
         ? (turnos || []).find(t => String(t.id) === String(turnoId))
         : null;

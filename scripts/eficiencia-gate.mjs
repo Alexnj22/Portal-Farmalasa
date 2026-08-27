@@ -218,8 +218,14 @@ const CRONS = [
   { job: 'ccf-repaso-22h-sv',                   slug: 'check-sales-alerts',          cadencia: '0 4 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'heal-dte-sync',                       slug: 'heal-dte-sync',               cadencia: '0 */2 * * *', corridasDia: 12, sistema: null, motivo: 'SIN MEDIR. Repara huecos del sync.' },
   { job: 'backup-critical-tables-weekly',       slug: 'backup-critical-tables',      cadencia: '0 8 * * 0',  corridasDia: 0, sistema: 0, motivo: 'Semanal. Ya estuvo 17 días muerto sin que nadie lo viera.' },
+  // Eran DOS sobre la misma función. El de las 06:00 UTC (sábado a medianoche
+  // en El Salvador) copiaba, y éste de las 16:00 encontraba todo hecho y salía
+  // sin tocar nada: ninguna corrección hecha el sábado se propagaba. Y como
+  // `notify_missing_roster` corre a las 15:00 UTC y pregunta si faltan
+  // horarios, con la copia de medianoche ya hecha esa alarma no podía sonar
+  // NUNCA. El de las 06:00 se apagó el 2026-08-27; queda éste, después de la
+  // alarma, que es el orden que el diseño quería.
   { job: 'auto-copy-weekly-roster',             slug: 'auto-copy-weekly-roster',     cadencia: '0 16 * * 6', corridasDia: 0, sistema: 0, motivo: 'Semanal.' },
-  { job: 'auto-copy-roster-saturday',           slug: 'auto-copy-weekly-roster',     cadencia: '0 6 * * 6',  corridasDia: 0, sistema: 0, motivo: 'Semanal.' },
   { job: 'purchases-fastbackfill-semanal',      slug: 'sync-erp-purchases',          cadencia: '0 9 * * 0',  corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Semanal.' },
   { job: 'auto-calculate-minmax-monthly',       slug: 'auto-calculate-minmax',       cadencia: '0 9 1 * *',  corridasDia: 0, sistema: 0, motivo: 'Mensual, sólo base.' },
   { job: 'corte-z-mensual',                     slug: 'sync-corte-z',                cadencia: '0 9 1 * *',  corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual.' },

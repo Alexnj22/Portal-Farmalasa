@@ -186,7 +186,6 @@
   "alerta-barrido-dte-8am-sv",
   "apply-scheduled-employee-events-daily",
   "auto-calculate-minmax-monthly",
-  "auto-copy-roster-saturday",
   "auto-copy-weekly-roster",
   "avisar-envios-sin-decidir",
   "avisar-facturas-de-sala-0830-sv",
@@ -270,9 +269,7 @@
    "verify_kiosk_pin"
   ],
   "tablas": [
-   "branches",
-   "holidays",
-   "shifts"
+   "branches"
   ]
  }
 }

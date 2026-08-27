@@ -103,14 +103,7 @@ export function updateShiftRow(id, patch) {
     return supabase.from('shifts').update(patch).eq('id', id).select().single();
 }
 
-// FormTurnos.jsx (3 sitios — upsert crea/edita, updateShiftFlags archiva/restaura)
-export function upsertShift(shiftObject) {
-    return supabase.from('shifts').upsert(shiftObject).select();
-}
 
-export function updateShiftFlags(id, patch) {
-    return supabase.from('shifts').update(patch).eq('id', id);
-}
 
 export function setShiftActive(id, isActive) {
     return supabase.from('shifts').update({ is_active: isActive }).eq('id', id);
@@ -128,23 +121,16 @@ export function deleteHolidayRow(id) {
 
 // ── Rosters semanales ────────────────────────────────────────────────────────
 
-export function fetchWeekRostersRaw(weekStartDate) {
-    return supabase.from('employee_rosters').select('*').eq('week_start_date', weekStartDate);
-}
 
+// Escribe el roster COMPLETO de una semana. Lo usan el intercambio de turnos y
+// el cambio de horario aprobados. Para una celda suelta va
+// `guardarDiaDeHorario` de `data/schedules.js`, que escribe un día y no pisa
+// los otros ni toca el estado de publicación.
 export function upsertWeeklyRoster(payload) {
     return supabase.from('employee_rosters').upsert(payload, { onConflict: 'employee_id, week_start_date' });
 }
 
-export function upsertBulkWeeklyRosters(rows) {
-    return supabase.from('employee_rosters').upsert(rows, { onConflict: 'employee_id,week_start_date' });
-}
 
-export function publishWeekRostersQuery(weekStartDate, employeeIds) {
-    let q = supabase.from('employee_rosters').update({ status: 'PUBLISHED' }).eq('week_start_date', weekStartDate);
-    if (employeeIds) q = q.in('employee_id', employeeIds);
-    return q;
-}
 
 
 export function updateEmployeeRosterById(rosterId, patch) {

@@ -5,18 +5,29 @@ import { tokenMatch } from '../../utils/searchUtils';
 import {
     X, Archive, Target, Pencil, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
-    CheckCircle2, Sparkles, Bot, Zap
+    CheckCircle2, Sparkles, Zap, UtensilsCrossed as IconoPausa, MoreHorizontal
 } from 'lucide-react';
 import TimePicker12 from '../../components/common/TimePicker12';
 import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
+import {
+    formatHourAMPM, timeToMins, resolverTurnoDelDia, reparosDelDia,
+    HORAS_JORNADA_DIURNA, MINUTOS_DE_PAUSA,
+} from '../../utils/scheduleHelpers';
+import usePulsacionLarga from '../../hooks/usePulsacionLarga';
+import ModalShell from '../../components/common/ModalShell';
+import HojaMovil from '../../components/common/HojaMovil';
+import ListRow from '../../components/common/ListRow';
+import Checkbox from '../../components/common/Checkbox';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { EmptyState } from '../../components/common/StateViews';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import { clickable } from '../../utils/clickable';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -33,7 +44,7 @@ const formatBranchNames = (names) => {
 };
 
 // ============================================================================
-// SALY SUGGESTION CARD
+// TARJETA DE SUGERENCIA DEL CATÁLOGO
 // ============================================================================
 const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     const isError = insight.type === 'error';
@@ -48,7 +59,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
             </div>
 
             <div className="flex items-center justify-between relative z-base pr-8">
-                <Badge variant={isError ? 'danger' : 'chart-9'} icon={Bot}>{isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}</Badge>
+                <Badge variant={isError ? 'danger' : 'chart-9'} icon={isError ? AlertTriangle : Sparkles}>{isError ? 'Falta un dato' : 'Sugerencia'}</Badge>
                 {isError
                     ? <AlertTriangle size={16} className="text-danger-text animate-pulse" />
                     : <Sparkles size={16} className="text-chart-9 animate-pulse" />}
@@ -73,7 +84,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 // ============================================================================
 // TURNO CARD
 // ============================================================================
-const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, isEditingThis, onCancelEditing }) => {
+const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, isEditingThis, onCancelEditing, enTelefono, onOpciones }) => {
     const [confirmAction, setConfirmAction] = useState(null);
     const isArchived = group.shifts_data.every(s => s.is_active === false || s.isActive === false);
 
@@ -88,17 +99,34 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
         return () => window.removeEventListener('keydown', handleEscape);
     }, [confirmAction, isEditingThis, onCancelEditing]);
 
-    const hours = useMemo(() => {
-        if (!group.start) return 0;
-        let mins = timeToMins(group.end) - timeToMins(group.start);
-        if (mins < 0) mins += 1440;
-        return mins / 60;
-    }, [group]);
+    // Horas PAGADAS: brutas menos la pausa del turno. El cálculo viejo era
+    // bruto y el badge rotulaba «+8H» sobre un umbral de 9, así que un turno de
+    // 8,5 h netas no disparaba nada y el número del rótulo no era el evaluado.
+    const resuelto = useMemo(() => resolverTurnoDelDia({
+        customStart: group.start, customEnd: group.end,
+        hasLunch: Boolean(group.lunchStart), lunchStart: group.lunchStart,
+        lunchMinutes: group.lunchMinutes,
+    }, []), [group]);
+    const horasPagadas = resuelto.minutosPagados / 60;
+
+    /* En el teléfono las tres acciones NO EXISTÍAN.
+     *
+     * Viven en un clúster `opacity-0 group-hover/card:opacity-100
+     * focus-within:opacity-100`: sin cursor no hay hover y sin teclado no hay
+     * `focus-within`, así que Duplicar, Editar y Archivar eran invisibles y el
+     * catálogo era de sólo lectura con el dedo. El canon (DESIGN.md §32.7) es
+     * mantener presionado, con `usePulsacionLarga` — que resuelve el toque y la
+     * mantenida juntos, porque al soltar el navegador dispara `click` igual. */
+    const mantenida = usePulsacionLarga({
+        alMantener: () => onOpciones?.(group),
+        activo: enTelefono && !confirmAction,
+    });
 
     return (
         <div data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
+            {...(enTelefono ? mantenida : {})}
                     className={`p-5 flex flex-col gap-4 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group/card relative transform-gpu w-full h-full ${
-                        isEditingThis ? 'animate-subtle-shake z-tabs'
+                        isEditingThis ? 'ring-2 ring-warning/45 z-tabs'
                         : isArchived ? 'opacity-80 hover:opacity-100 z-base'
                         : 'z-base hover:z-content'
                     }`}>
@@ -128,7 +156,9 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                 </div>
             )}
 
-            <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
+            {/* El clúster de escritorio: se revela al pasar el mouse. En el
+                teléfono no se pinta — ahí las acciones salen de la mantenida. */}
+            <div className={`absolute top-4 right-4 hidden md:flex items-center gap-1.5 transition-opacity duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
                         <Button variant="secondary" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
@@ -150,17 +180,24 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex flex-wrap items-center gap-1 pr-16 relative z-base">
-                <Badge size="sm" icon={Globe}>Catálogo Global</Badge>
-                {hours > 9 && (
-                    <Badge variant="danger" tone="solid" size="sm" icon={AlertTriangle}>+8H</Badge>
+                
+                {horasPagadas > HORAS_JORNADA_DIURNA && (
+                    <Badge variant="danger" tone="solid" size="sm" icon={AlertTriangle}>
+                        {Number(horasPagadas.toFixed(1))} h
+                    </Badge>
                 )}
                 {isArchived && (
                     <Badge size="sm" icon={Archive}>Archivo</Badge>
                 )}
             </div>
 
-            <div className="pr-2 relative z-base">
+            <div className="pr-2 relative z-base flex items-start justify-between gap-2">
                 <h4 className="font-black text-content text-body-xl leading-tight tracking-tight line-clamp-2">{group.name}</h4>
+                {/* Un gesto que no se ve no existe: en el teléfono el ícono
+                    anuncia que la tarjeta tiene opciones. */}
+                {enTelefono && (
+                    <MoreHorizontal size={18} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2.5} />
+                )}
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-base">
@@ -173,6 +210,13 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>
             </div>
+
+            {group.lunchStart && (
+                <div className="flex items-center gap-1.5 text-caption font-bold text-chart-4-text relative z-base -mt-1">
+                    <IconoPausa size={12} />
+                    Pausa a las {formatTime12h(group.lunchStart)} · {Number(horasPagadas.toFixed(1))} h pagadas
+                </div>
+            )}
         </div>
     );
 });
@@ -190,9 +234,11 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
     const [isLoading, setIsLoading]       = useState(false);
     const [editingGroup, setEditingGroup] = useState(null);
-    const [currentForm, setCurrentForm]   = useState({ start: '', end: '', name: '' });
+    const [currentForm, setCurrentForm]   = useState({ start: '', end: '', name: '', lunchStart: '', lunchMinutes: MINUTOS_DE_PAUSA });
     const [dismissedSugs, setDismissedSugs] = useState(new Set());
     const [shiftTab, setShiftTab]         = useState('ACTIVE');
+    const enTelefono = useMediaQuery(CORTE_TELEFONO);
+    const [opciones, setOpciones]         = useState(null);
 
     useEffect(() => {
         if (currentForm.start && !currentForm.end) {
@@ -235,13 +281,13 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
         return { minOpen: minO, maxClose: maxC, hasValidHours, branchName: b?.name };
     }, [validBranches]);
 
-    // ── SALY AI INSIGHTS ────────────────────────────────────────────────────
+    // ── Lo que le falta al catálogo, mirado contra el horario de cada sala ──
     const globalInsights = useMemo(() => {
         if (editingGroup || currentForm.start) return [];
         const activeShifts = shifts.filter(s => s.is_active !== false && s.isActive !== false);
 
         if (activeShifts.length === 0) {
-            return [{ key: 'empty_catalog', type: 'suggestion', branch: 'Catálogo Vacío', text: 'No tienes ningún turno creado. Te sugiero crear el turno estándar de apertura (7:00 am - 4:00 pm).', action: { start: '07:00', end: '16:00' } }];
+            return [{ key: 'empty_catalog', type: 'suggestion', branch: 'El catálogo está vacío', text: 'Todavía no hay ningún turno. Sin catálogo no se puede publicar ningún horario. Empieza por el de apertura (7:00 am a 4:00 pm).', action: { start: '07:00', end: '16:00' } }];
         }
 
         const catalogMins = activeShifts.map(s => {
@@ -287,8 +333,8 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 const isPlural = val.branches.length > 1;
                 const branch = formatBranchNames([...val.branches]);
                 let text = '';
-                if (val.reason === 'no_hours') text = isPlural ? 'No tienen su horario operativo configurado. Configúralo en el Módulo Sucursales para que Saly pueda auditar.' : 'No tiene su horario operativo configurado. Configúralo en el Módulo Sucursales para que Saly pueda auditar.';
-                else if (val.reason === 'no_valid_shifts') text = isPlural ? `Operan de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno global encaja legalmente aquí.` : `Opera de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno global encaja legalmente aquí.`;
+                if (val.reason === 'no_hours') text = isPlural ? 'No tienen su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.' : 'No tiene su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.';
+                else if (val.reason === 'no_valid_shifts') text = isPlural ? `Operan de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno del catálogo cabe en ese horario.` : `Opera de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno del catálogo cabe en ese horario.`;
                 else if (val.reason === 'apertura_global') text = isPlural ? `Abren a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.` : `Abre a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.`;
                 else if (val.reason === 'cierre_global') text = isPlural ? `Cierran a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.` : `Cierra a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.`;
                 return { key, type: val.type, branch, text, action: val.action };
@@ -296,22 +342,30 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             .slice(0, 6);
     }, [validBranches, shifts, editingGroup, currentForm.start, getBranchLimits, dismissedSugs]);
 
-    const { autoName, activeAlerts, hasBlockingError } = useMemo(() => {
-        let classification = 'Turno Estándar';
+    const { autoName, activeAlerts, hasBlockingError, primerReparo } = useMemo(() => {
+        let clasificacion = 'Turno estándar';
         const alerts = [];
-        let isBlocking = false;
+        let bloqueante = false;
 
         if (currentForm.start && currentForm.end) {
             const sMins = timeToMins(currentForm.start);
             let eMins   = timeToMins(currentForm.end);
             if (eMins < sMins) eMins += 1440;
 
-            if (sMins <= 480)       classification = 'Apertura';
-            else if (eMins >= 1020) classification = 'Cierre';
-            else                    classification = 'Enlace';
+            if (sMins <= 480)       clasificacion = 'Apertura';
+            else if (eMins >= 1020) clasificacion = 'Cierre';
+            else                    clasificacion = 'Enlace';
 
-            const duration = (eMins - sMins) / 60;
-            if (duration > 9) alerts.push({ type: 'warning', text: `El turno excede las 9 horas (${duration.toFixed(1)}h). Considera el cansancio del personal.` });
+            // Los reparos salen del reglamento, no de un número suelto: el tope
+            // diario es de 8 h (7 si la jornada es nocturna, Art. 16) sobre las
+            // horas PAGADAS, y la pausa tiene que caer dentro de la jornada.
+            const r = resolverTurnoDelDia({
+                customStart: currentForm.start, customEnd: currentForm.end,
+                hasLunch: Boolean(currentForm.lunchStart),
+                lunchStart: currentForm.lunchStart,
+                lunchMinutes: currentForm.lunchMinutes,
+            }, []);
+            reparosDelDia(r).forEach(texto => alerts.push({ type: 'warning', text: texto }));
 
             const isDuplicate = shifts.some(s => {
                 if (s.is_active === false || s.isActive === false) return false;
@@ -320,9 +374,17 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 const isNotCurrent = editingGroup ? !editingGroup.all_ids.includes(s.id) : true;
                 return sStart === currentForm.start && sEnd === currentForm.end && isNotCurrent;
             });
-            if (isDuplicate) { alerts.push({ type: 'error', text: 'Ya existe un turno global con exactamente este mismo horario.' }); isBlocking = true; }
+            if (isDuplicate) {
+                alerts.push({ type: 'error', text: 'Ya existe un turno con exactamente estas mismas horas.' });
+                bloqueante = true;
+            }
         }
-        return { autoName: classification, activeAlerts: alerts, hasBlockingError: isBlocking };
+        return {
+            autoName: clasificacion,
+            activeAlerts: alerts,
+            hasBlockingError: bloqueante,
+            primerReparo: alerts.find(a => a.type === 'error')?.text || alerts[0]?.text || null,
+        };
     }, [currentForm, shifts, editingGroup]);
 
     // ── FILTERED + SORTED SHIFTS ─────────────────────────────────────────────
@@ -337,7 +399,14 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             })
             .reduce((map, s) => {
                 const key = `${s.name}_${s.start_time || s.start}_${s.end_time || s.end}`;
-                if (!map[key]) map[key] = { groupId: key, name: s.name, start: s.start_time || s.start, end: s.end_time || s.end, all_ids: [s.id], shifts_data: [s] };
+                if (!map[key]) map[key] = {
+                    groupId: key, name: s.name,
+                    start: (s.start_time || s.start || '').substring(0, 5),
+                    end:   (s.end_time   || s.end   || '').substring(0, 5),
+                    lunchStart: s.lunch_start ? String(s.lunch_start).substring(0, 5) : '',
+                    lunchMinutes: s.lunch_minutes ?? 60,
+                    all_ids: [s.id], shifts_data: [s],
+                };
                 else { map[key].all_ids.push(s.id); map[key].shifts_data.push(s); }
                 return map;
             }, {});
@@ -350,8 +419,8 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
     // ── ACCIONES ─────────────────────────────────────────────────────────────
     const applySuggestion = useCallback((action) => {
         setEditingGroup(null);
-        setCurrentForm({ start: action.start, end: action.end, name: '' });
-        showToast('Sugerencia Aplicada', 'Verifica las horas y guarda el turno.', 'info');
+        setCurrentForm({ start: action.start, end: action.end, name: '', lunchStart: '', lunchMinutes: MINUTOS_DE_PAUSA });
+        showToast('Sugerencia aplicada', 'Revisa las horas y guarda el turno.', 'info');
     }, [showToast]);
 
     const dismissSuggestion = useCallback((key) => {
@@ -361,16 +430,32 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
     const handleSaveShift = async (e) => {
         if (e) e.preventDefault();
         if (!currentForm.start || !currentForm.end) { showToast('Campos incompletos', 'Asegúrate de darle horas al turno.', 'error'); return; }
-        if (hasBlockingError) { showToast('Error Operativo', 'Resuelve las advertencias de Saly antes de guardar.', 'error'); return; }
+        if (hasBlockingError) { showToast('No se puede guardar', primerReparo || 'Revisa las advertencias antes de guardar.', 'error'); return; }
         const effectiveName = currentForm.name.trim() || autoName;
         setIsLoading(true);
         try {
             if (editingGroup) {
-                await updateShift(editingGroup.shifts_data[0].id, { name: effectiveName, start_time: `${currentForm.start}:00`, end_time: `${currentForm.end}:00`, branch_id: null });
-                showToast('Éxito', 'Turno actualizado en el catálogo global', 'success');
+                // TODOS los del grupo, no sólo el primero. El catálogo agrupa
+                // por nombre+horas, así que editar sólo `shifts_data[0]` dejaba
+                // a los demás con las horas viejas — invisibles, porque la
+                // agrupación ya no los juntaba.
+                const parche = {
+                    name: effectiveName,
+                    start_time: `${currentForm.start}:00`,
+                    end_time: `${currentForm.end}:00`,
+                    branch_id: null,
+                    lunch_start: currentForm.lunchStart ? `${currentForm.lunchStart}:00` : null,
+                    lunch_minutes: currentForm.lunchMinutes ?? 60,
+                };
+                for (const id of editingGroup.all_ids) await updateShift(id, parche);
+                showToast('Turno actualizado', `«${effectiveName}» quedó guardado.`, 'success');
             } else {
-                await addShift({ name: effectiveName, start: currentForm.start, end: currentForm.end, branchId: null });
-                showToast('Éxito', 'Turno añadido al catálogo global', 'success');
+                await addShift({
+                    name: effectiveName, start: currentForm.start, end: currentForm.end, branchId: null,
+                    lunchStart: currentForm.lunchStart || null,
+                    lunchMinutes: currentForm.lunchMinutes ?? 60,
+                });
+                showToast('Turno creado', `«${effectiveName}» ya se puede asignar.`, 'success');
             }
             cancelEditing();
         } catch (err) {
@@ -380,8 +465,8 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
     const handleDuplicate = useCallback((group) => {
         setEditingGroup(null);
-        setCurrentForm({ start: group.start, end: group.end, name: group.name });
-        showToast('Modo Duplicar', 'Ajusta las horas o el nombre y guarda el nuevo turno.', 'info');
+        setCurrentForm({ start: group.start, end: group.end, name: group.name, lunchStart: group.lunchStart || '', lunchMinutes: group.lunchMinutes ?? MINUTOS_DE_PAUSA });
+        showToast('Copia del turno', 'Cámbiale las horas o el nombre y guárdalo.', 'info');
     }, [showToast]);
 
     const handleArchiveGroup = useCallback(async (ids) => {
@@ -396,19 +481,32 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
     const startEditing = useCallback((group) => {
         setEditingGroup(group);
-        setCurrentForm({ start: group.start, end: group.end, name: group.name });
+        setCurrentForm({
+            start: group.start, end: group.end, name: group.name,
+            lunchStart: group.lunchStart || '', lunchMinutes: group.lunchMinutes ?? MINUTOS_DE_PAUSA,
+        });
     }, []);
 
     const cancelEditing = useCallback(() => {
         setEditingGroup(null);
-        setCurrentForm({ start: '', end: '', name: '' });
+        setCurrentForm({ start: '', end: '', name: '', lunchStart: '', lunchMinutes: MINUTOS_DE_PAUSA });
     }, []);
 
     const isEmpty = sortedShifts.length === 0 && globalInsights.length === 0;
 
     return (
-        <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-[calc(100vh-230px)] lg:h-[calc(100vh-180px)]">
-            <style>{`@keyframes subtle-shake { 0%,100%{transform:rotate(0deg) scale(1.01);}25%{transform:rotate(-0.5deg) scale(1.01);}75%{transform:rotate(0.5deg) scale(1.01);}} .animate-subtle-shake{animation:subtle-shake 0.4s ease-in-out infinite;}`}</style>
+        /* La geometría estaba escrita para escritorio y sólo cuadraba a un
+           ancho concreto: `h-[calc(100vh-230px)]` —con `100vh`, que en iOS es el
+           viewport GRANDE, y un descuento de 230px que era una conjetura sobre
+           el alto del encabezado— sobre un hijo de `h-[100dvh]` con
+           `-mt-[140px] pt-[140px]`. Debajo de `lg` el `fixedScrollMode` de
+           `GlassViewLayout` no aplica, así que quedaban DOS scrolls anidados y
+           el interno se robaba el gesto.
+
+           Debajo de `lg` la página scrollea sola, que es lo que el teléfono
+           espera. El alto fijo y el par de columnas empiezan en `lg`, donde el
+           layout sí tiene un alto que descontar. */
+        <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full lg:h-[calc(100dvh-180px)]">
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar">
@@ -430,7 +528,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="bg-surface-card-hover border border-divider p-3 rounded-xl flex items-start gap-2.5 mb-2">
                             <Globe size={16} className="text-content-3 mt-0.5 shrink-0" strokeWidth={2.5} />
                             <p className="text-label font-medium text-content-3 leading-snug">
-                                Este turno se añadirá al <strong>Catálogo Global</strong> y podrá ser utilizado por cualquier sucursal.
+                                El turno queda disponible para <strong>todas las salas</strong>. Cada sala sólo verá los que caben en su horario de atención.
                             </p>
                         </div>
 
@@ -446,6 +544,44 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* La pausa es del TURNO desde el 2026-08-27.
+                            Antes se marcaba celda por celda —329 veces por
+                            semana— y sólo se aceptaba entre las 11:00 y las
+                            14:30, una ventana escrita a mano en este archivo.
+                            El reglamento interno (Art. 18) tiene pausas a las
+                            12:00, 13:00, 18:00 y 19:00, así que el portal
+                            rechazaba las pausas del propio reglamento. */}
+                        {currentForm.start && currentForm.end && (
+                            <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
+                                <div
+                                    {...clickable(() => setCurrentForm(f => ({
+                                        ...f,
+                                        lunchStart: f.lunchStart ? '' : '12:00',
+                                    })))}
+                                    className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-[var(--dur-slow)] cursor-pointer min-h-[var(--tap-min)]"
+                                >
+                                    <div className="flex items-center gap-2.5 pointer-events-none">
+                                        <Checkbox checked={Boolean(currentForm.lunchStart)} size="sm" />
+                                        <span className="text-body-sm font-bold text-chart-4-text">Pausa alimenticia</span>
+                                    </div>
+                                    {currentForm.lunchStart && (
+                                        <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-[var(--dur-slow)]" {...clickable((e) => e.stopPropagation())}>
+                                            <TimePicker12
+                                                value={currentForm.lunchStart}
+                                                onChange={v => setCurrentForm(f => ({ ...f, lunchStart: v }))}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                {currentForm.lunchStart && (
+                                    <p className="text-caption text-content-3 mt-1.5 px-1">
+                                        Dura una hora y se descuenta de las horas pagadas. Al asignar
+                                        este turno, la pausa queda puesta sola.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
                             <label className={rotuloCampo('text-content-3')}>Nombre del turno</label>
@@ -471,7 +607,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-9 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-base">
                                         <div className="flex items-center gap-1.5 text-caption font-black text-chart-9 uppercase tracking-widest">
-                                            <Bot size={13} /> SALY AI AUDITOR
+                                            <CheckCircle2 size={13} /> Revisión del turno
                                         </div>
                                         <div className="flex items-center gap-1 text-chart-9/70 font-bold text-body-sm uppercase tracking-tight">
                                             <Sparkles size={13} className="text-chart-9" /> {autoName}
@@ -514,7 +650,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             </div>
 
             {/* ── COLUMNA DERECHA: CATÁLOGO ── */}
-            <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+            <div className="flex-1 flex flex-col min-w-0 w-full lg:h-full lg:overflow-y-auto lg:overscroll-contain pb-[calc(2rem+var(--sa-bottom))] scrollbar-hide pointer-events-auto">
 
                 {/* Sub-tabs: Activos / Archivo */}
                 <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
@@ -543,6 +679,8 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 <TurnoCard
                                     key={group.groupId}
                                     group={group}
+                                    enTelefono={enTelefono}
+                                    onOpciones={setOpciones}
                                     onEdit={() => editingGroup?.groupId === group.groupId ? cancelEditing() : startEditing(group)}
                                     onDuplicate={handleDuplicate}
                                     onArchive={handleArchiveGroup}
@@ -555,6 +693,50 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                     )}
                 </div>
             </div>
+
+            {/* Las opciones de un turno en el teléfono (DESIGN.md §32.7). Hasta
+                hoy Duplicar, Editar y Archivar vivían detrás de un hover, así
+                que con el dedo el catálogo era de sólo lectura. */}
+            <ModalShell
+                open={Boolean(opciones)}
+                onClose={() => setOpciones(null)}
+                align="bottom"
+                maxWidthClass="max-w-none"
+                surface={null}
+                ariaLabel="Opciones del turno"
+            >
+                {opciones && (() => {
+                    const archivado = opciones.shifts_data.every(t => t.is_active === false || t.isActive === false);
+                    return (
+                        <HojaMovil
+                            titulo={opciones.name}
+                            subtitulo={`${formatTime12h(opciones.start)} a ${formatTime12h(opciones.end)}`}
+                            icono={Target}
+                        >
+                            <div className="space-y-2">
+                                {!archivado && (
+                                    <>
+                                        <ListRow icon={Pencil} title="Editar turno"
+                                            subtitle="Cambiar horas, pausa o nombre"
+                                            onClick={() => { const g = opciones; setOpciones(null); startEditing(g); }} />
+                                        <ListRow icon={Copy} title="Duplicar"
+                                            subtitle="Partir de éste para crear otro"
+                                            onClick={() => { const g = opciones; setOpciones(null); handleDuplicate(g); }} />
+                                        <ListRow icon={Archive} tone="danger" title="Archivar"
+                                            subtitle="Deja de ofrecerse al armar horarios"
+                                            onClick={() => { const g = opciones; setOpciones(null); handleArchiveGroup(g.all_ids); }} />
+                                    </>
+                                )}
+                                {archivado && (
+                                    <ListRow icon={RotateCcw} title="Reactivar"
+                                        subtitle="Vuelve a estar disponible"
+                                        onClick={() => { const g = opciones; setOpciones(null); handleUnarchiveGroup(g.all_ids); }} />
+                                )}
+                            </div>
+                        </HojaMovil>
+                    );
+                })()}
+            </ModalShell>
         </div>
     );
 };

@@ -34,8 +34,6 @@ const FormEmpleadoNuevo = React.lazy(() => import('./forms/EmployeeFormModal'));
 const FormRehireEmployee = React.lazy(() => import('./forms/FormRehireEmployee'));
 const FormVacationRecall = React.lazy(() => import('./forms/FormVacationRecall'));
 
-const FormPlanificador = React.lazy(() => import('./forms/FormPlanificador'));
-const FormTurnos = React.lazy(() => import('./forms/FormTurnos'));
 const FormRoleEmployees = React.lazy(() => import('./forms/FormRoleEmployees'));
 const FormAnnouncements = React.lazy(() => import('./forms/FormAnnouncements'));
 const FormSrsPermit = React.lazy(() => import('./forms/FormSrsPermit'));
@@ -51,7 +49,6 @@ const FormRegisterPayment = React.lazy(() => import('./forms/FormRegisterPayment
 const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
 const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
-const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
 const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
 const FormChangeOwnPassword = React.lazy(() => import('./forms/FormChangeOwnPassword'));
 const FormEditContact = React.lazy(() => import('./forms/FormEditContact'));
@@ -61,7 +58,7 @@ const FormNewPayrollPeriod = React.lazy(() => import('./forms/FormNewPayrollPeri
 const FormEditPayrollEntry = React.lazy(() => import('./forms/FormEditPayrollEntry'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte", "viewSalesDte"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -216,7 +213,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const { user: quienEmite } = useAuth();
     const montadoParaSalida = useMontadoParaSalida(isOpen);
 
-    const { branches, roles, shifts, saveWeeklyRoster, updateBranch, addBranch } = useStaff();
+    const { branches, roles, updateBranch, addBranch } = useStaff();
 
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -252,8 +249,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const getModalSize = () => {
         switch (type) {
-            case "planSchedule": return "max-w-6xl";
-            case "manageShifts": return "max-w-5xl";
             case "uploadDocument": return "max-w-md";
             case "manageKiosks": return "max-w-lg";
             case "viewAuditDetail": return "max-w-4xl";
@@ -282,7 +277,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "addCustomDocument":
             case "editCustomDocument": return "max-w-md";
             case "viewWfmAnalytics": return "max-w-4xl";
-            case "aiSchedulerPreview": return "max-w-5xl";
             case "setEmployeePassword": return "max-w-sm";
             case "changeOwnPassword": return "max-w-sm";
             case "editContact": return "max-w-sm";
@@ -298,8 +292,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         switch (type) {
             case "viewAuditDetail": return "Detalle de Auditoría";
             case "manageKiosks": return "Dispositivos Kiosco";
-            case "planSchedule": return "Planificación Semanal";
-            case "manageShifts": return "Catálogo de turnos";
             case "newEmployee": return "Nuevo empleado";
             case "editEmployee": return "Actualizar Información";
             case "rehireEmployee": return "Recontratación";
@@ -322,7 +314,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "addCustomDocument": return "Nuevo Documento";
             case "editCustomDocument": return "Actualizar Documento";
             case "viewWfmAnalytics": return "Monitor de ventas";
-            case "aiSchedulerPreview": return "Planificación propuesta por el portal";
             case "setEmployeePassword": return "Establecer Contraseña";
             case "changeOwnPassword": return "Cambiar Contraseña";
             case "editContact": return "Editar Perfil";
@@ -336,7 +327,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
-        if (type === "planSchedule") return `${shortEmployeeName(formData?.employee)} • ${formData?.employee?.role}`;
         if (type === "newEmployee") return null;
         if (type === "editEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
@@ -899,34 +889,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
-        if (type === "planSchedule") {
-            const { employee, weekStartDate, schedule } = formData;
-
-            if (!employee?.id || !weekStartDate || !schedule) {
-                setValidationError("Datos de planificación incompletos o corruptos.");
-                return;
-            }
-
-            setIsSaving(true);
-            try {
-                const { saveWeeklyRoster, fetchEmployees } = useStaff.getState();
-                await saveWeeklyRoster(employee.id, weekStartDate, schedule);
-                if (fetchEmployees) await fetchEmployees();
-
-                window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-                const { showToast } = useToastStore.getState();
-                if (showToast) showToast("Turnos Asignados", `Horario de ${shortEmployeeName(employee)} actualizado con éxito.`, "success");
-
-                onClose();
-            } catch {
-                setValidationError("Ocurrió un error al intentar guardar la programación.");
-            } finally {
-                setIsSaving(false);
-            }
-            return;
-        }
-
         if (handleSubmit) {
             setIsSaving(true);
             try {
@@ -976,8 +938,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <div className="flex items-center gap-4">
 
                                 {(() => {
-                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-brand-text`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-brand-text`}><BookOpen size={22} strokeWidth={2.5} /></div>;
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand-text`}><Building2 size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-brand-text`}><UserPlus size={22} strokeWidth={2.5} /></div>;
@@ -988,7 +948,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand-text`}><Clock size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLeadership") return <div className={`${squircleClass} text-warning`}><Star size={22} strokeWidth={2.5} /></div>;
                                     if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand-text`}><FilePlus size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-chart-3-text`}><Sparkles size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand-text`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Pencil size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editProveedor") return <div className={`${squircleClass} text-brand-text`}><Truck size={22} strokeWidth={2.5} /></div>;
@@ -1084,28 +1043,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={setIsFormValid} />}
                                 
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
-                                {type === "planSchedule" && <FormPlanificador formData={formData} setFormData={setFormData} shifts={shifts} saveWeeklyRoster={saveWeeklyRoster} onClose={onClose} />}
-                                {/* ⚠️ INALCANZABLE — `manageShifts` no lo abre NADA.
-                                    Verificado el 2026-07-28 con un grep de todo el
-                                    repo: este `type` solo aparece en este archivo
-                                    (acá, en el título, en el ancho y en el ícono).
-                                    Ningún `openModal('manageShifts')` en `src/`.
-
-                                    Lo reemplazó la pestaña "Catálogo" de Horarios
-                                    (`views/schedule-tabs/TabShifts.jsx`), que está
-                                    viva, es más completa y hace lo mismo.
-
-                                    NO se borra porque `updateShiftFlags` solo existe
-                                    en `FormTurnos`: sacarlo se lleva la única UI de
-                                    esas banderas. Si se decide que esas banderas ya
-                                    no se usan, se pueden borrar los dos juntos —
-                                    `forms/FormTurnos.jsx` (365 líneas) y las cuatro
-                                    menciones de `manageShifts` de este archivo.
-
-                                    Anotado en el CHANGELOG desde v2.17.28 sin que
-                                    nadie actuara; queda acá para que se vea al
-                                    tocar el modal, no solo al buscar en el historial. */}
-                                {type === "manageShifts" && <FormTurnos branches={branches} />}
                                 {type === "viewRoleEmployees" && <FormRoleEmployees formData={formData} />}
                                 {type === "viewAnnouncementReaders" && <FormAnnouncements data={formData} onClose={onClose} />}
                                 {type === "editSrsPermit" && <FormSrsPermit formData={formData} setFormData={setFormData} />}
@@ -1121,7 +1058,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "manageService" && <FormServicePayment formData={formData} setFormData={setFormData} />}
                                 {type === "registerPayment" && <FormRegisterPayment formData={formData} setFormData={setFormData} />}
                                 {type === "editBranchLeadership" && <FormLeadership formData={formData} setFormData={setFormData} />}
-                                {type === "aiSchedulerPreview" && <FormAiSchedulerPreview formData={formData} onClose={onClose} />}
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
 
                                 {type === "setEmployeePassword" && <FormSetPassword formData={formData} onClose={onClose} />}

@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
           'La copia lo armó como un día normal — hay que decidir quién trabaja.',
         );
       }
-      partes.push('', 'Revisá y ajustá en Horarios antes del lunes.');
+      partes.push('', 'Revisa y ajusta en Horarios antes del lunes.');
 
       const title = feriadosDeLaSemana.length > 0 && conflicted.length === 0
         ? `La semana del ${nextWeekStr} tiene asueto`

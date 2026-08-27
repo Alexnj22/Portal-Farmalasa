@@ -6,6 +6,41 @@
 // data/system.js — mismos queries exactos, no se duplican.
 import { supabase } from '../supabaseClient';
 
+// ── Horarios de la semana ────────────────────────────────────────────────────
+
+/** Los horarios de UNA sala en UNA semana.
+ *
+ *  Antes esto era `select('*').eq('week_start_date', …)` sin filtro de
+ *  sucursal: bajaba los horarios de las OCHO salas —con el `jsonb` completo de
+ *  cada persona— para pintar una sola. Y el efecto que lo llamaba tenía la sala
+ *  en sus dependencias, así que cambiar de sala volvía a bajar lo mismo. */
+export function fetchHorariosDeLaSemana(weekStart, branchId) {
+    return supabase.rpc('horarios_de_la_semana', {
+        p_week_start: weekStart,
+        p_branch_id: Number(branchId),
+    });
+}
+
+/** Escribe UN día del horario. No toca el estado de publicación ni pisa los
+ *  otros días — ver la migración `guardar_un_dia_no_despublica_la_semana`. */
+export function guardarDiaDeHorario(employeeId, weekStart, dia, datos) {
+    return supabase.rpc('guardar_dia_de_horario', {
+        p_employee_id: employeeId,
+        p_week_start: weekStart,
+        p_dia: String(dia),
+        p_datos: datos,
+    });
+}
+
+/** Publica los horarios en borrador de una sala. Devuelve CUÁNTOS publicó, y es
+ *  repetible: lo que ya estaba publicado no se toca. */
+export function publicarHorariosDeSala(weekStart, branchId) {
+    return supabase.rpc('publicar_horarios_de_sala', {
+        p_week_start: weekStart,
+        p_branch_id: Number(branchId),
+    });
+}
+
 export function fetchScheduleCoverageAtBranch(branchId, weekStart) {
     return supabase.from('schedule_coverage')
         .select('*')

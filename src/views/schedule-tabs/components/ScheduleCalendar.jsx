@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useEffect, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
@@ -9,7 +9,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch } from '../../../utils/searchUtils';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
-import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
+import {
+    getRoleTheme, getDayConflictLocal, calculateEmployeeWeeklyHoursLocal, timeToMins,
+    resolverTurnoDelDia, tramosDeLaJornada, descansoInsuficiente,
+    HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA, DESCANSOS_POR_SEMANA, HORAS_ENTRE_JORNADAS,
+} from '../../../utils/scheduleHelpers';
 import { clickable } from '../../../utils/clickable';
 
 // ============================================================================
@@ -57,146 +61,109 @@ const formatNames = (setOfNames) => {
 };
 
 // ============================================================================
-// 🧠 CEREBRO DE SALY (EVALÚA HUECOS DIARIOS)
+// COBERTURA DEL DÍA — cuánta gente hay a cada hora, y quién queda solo
 // ============================================================================
-const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
-    const coverageByHour = {};
-    for (let h = 0; h < 24; h++) coverageByHour[h] = 0;
-    
-    const activeStaffNamesByMinute = new Array(1440).fill(null).map(() => new Set()); 
-    const employeesOnLunch = new Array(1440).fill(null).map(() => new Set());
-    let scheduledPeopleCount = 0;
-
-    allSchedules.forEach(empSch => {
-        const dayData = empSch[dNum];
-        if (!dayData || dayData.isOff) return;
-
-        const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
-        const startStr = dayData.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
-        const endStr = dayData.customEnd || shift?.end_time?.substring(0, 5) || shift?.end;
-        
-        if (!startStr || !endStr) return;
-        scheduledPeopleCount++;
-
-        let startMins = timeToMins(startStr);
-        let endMins = timeToMins(endStr);
-        if (endMins < startMins) endMins += 1440;
-
-        const empName = empSch.name || 'Personal';
-
-        let startH = Math.floor(startMins / 60);
-        let endH = Math.floor(endMins / 60);
-        for (let h = startH; h < endH; h++) {
-            let actualH = h >= 24 ? h - 24 : h;
-            coverageByHour[actualH] += 1;
+//
+// Se reescribió el 2026-08-27 con aritmética de intervalos. Antes reservaba dos
+// arreglos de 1.440 `Set` por día —2.880 × 7 = **20.160 `Set` por semana**— y
+// recorría minuto a minuto el turno de cada persona. Y dependía de
+// `weeklyRosters`, o sea que el cálculo entero se rehacía **en cada celda que
+// se guardaba**.
+//
+// La cuenta es la misma: se ordenan los bordes de cada tramo y se barren. Lo
+// que sale de acá son dos cosas distintas:
+//
+//   · `huecosCriticos` — horas de mucha venta con menos de tres personas.
+//   · `avisos` — el almuerzo que deja la sala vacía o a una sola persona. Se
+//     calculaba desde siempre y **la vista lo tiraba** (`onSalyAlertsUpdate`
+//     era `() => {}`), así que era trabajo perdido y una función construida que
+//     nadie veía.
+const evaluarCoberturaDelDia = (dNum, horarios, turnos, ventasDelDia) => {
+    // Un tramo por persona: cuándo entra, cuándo sale, y cuándo se va a comer.
+    const tramos = [];
+    horarios.forEach(horarioSemanal => {
+        const r = resolverTurnoDelDia(horarioSemanal[dNum], turnos);
+        if (!r.trabaja) return;
+        const nombre = horarioSemanal.name || 'Personal';
+        let ini = timeToMins(r.inicio);
+        let fin = timeToMins(r.fin);
+        if (fin < ini) fin += 1440;
+        const t = { nombre, ini, fin, pausaIni: null, pausaFin: null };
+        if (r.pausa) {
+            let p = timeToMins(r.pausa.inicio);
+            if (p < ini) p += 1440;
+            t.pausaIni = p;
+            t.pausaFin = p + r.pausa.minutos;
         }
-
-        for (let m = startMins; m < endMins; m++) {
-            let actualM = m >= 1440 ? m - 1440 : m;
-            activeStaffNamesByMinute[actualM].add(empName);
-        }
-
-        if (dayData.hasLunch && dayData.lunchStart) {
-            let lStart = timeToMins(dayData.lunchStart);
-            let lEnd = lStart + 60; 
-            for (let m = lStart; m < lEnd; m++) {
-                let actualM = m >= 1440 ? m - 1440 : m;
-                activeStaffNamesByMinute[actualM].delete(empName); 
-                employeesOnLunch[actualM].add(empName); 
-            }
-        }
+        tramos.push(t);
     });
 
-    let rawGaps = [];
-    let copilotAlerts = [];
-    
-    if (daySalesStats && daySalesStats.length > 0) {
-        daySalesStats.forEach(stat => {
-            const h = stat.hour;
-            let minActiveInHour = 999;
-            for(let m = h * 60; m < (h + 1) * 60; m++) {
-                const count = activeStaffNamesByMinute[m].size;
-                if (count < minActiveInHour) minActiveInHour = count;
-            }
-            if (minActiveInHour === 999) minActiveInHour = 0;
-            
-            if (stat.color === 'var(--txvol-critica)' && minActiveInHour < 3) {
-                rawGaps.push(h);
-            }
-        });
-    }
+    if (tramos.length === 0) return { huecosCriticos: [], avisos: [] };
 
-    let criticalGaps = [];
-    if (rawGaps.length > 0) {
-        rawGaps = [...new Set(rawGaps)].sort((a, b) => a - b);
-        criticalGaps = rawGaps.map(h => ({ 
-            time: formatHourCompact(h) 
-        }));
-    }
-
-    if (scheduledPeopleCount > 0) {
-        let blocks = [];
-        let currentBlock = null;
-
-        for(let m = 0; m <= 1440; m++) {
-            let activeNames = m < 1440 ? activeStaffNamesByMinute[m] : new Set();
-            let eaters = m < 1440 ? employeesOnLunch[m] : new Set();
-            let activeCount = activeNames.size;
-
-            let stateKey = 'normal';
-            let survivorName = null;
-
-            if (eaters.size > 0) {
-                if (activeCount === 0) {
-                    stateKey = 'empty';
-                } else if (activeCount === 1) {
-                    stateKey = 'alone';
-                    survivorName = Array.from(activeNames)[0]; 
-                }
-            }
-
-            if (currentBlock && (currentBlock.stateKey !== stateKey || currentBlock.survivorName !== survivorName)) {
-                blocks.push(currentBlock);
-                currentBlock = null;
-            }
-
-            if (stateKey !== 'normal') {
-                if (!currentBlock) {
-                    currentBlock = {
-                        startMin: m,
-                        duration: 0,
-                        stateKey: stateKey,
-                        survivorName: survivorName,
-                        eaters: new Set()
-                    };
-                }
-                currentBlock.duration++;
-                eaters.forEach(e => currentBlock.eaters.add(e));
+    // Cuántas personas hay ACTIVAS (dentro del turno y fuera de su pausa) en un
+    // minuto dado, y quiénes están comiendo.
+    const enElMinuto = (m) => {
+        const activos = [], comiendo = [];
+        for (const t of tramos) {
+            for (const desfase of [0, 1440]) {       // el tramo puede haber cruzado
+                const mm = m + desfase;
+                if (mm < t.ini || mm >= t.fin) continue;
+                if (t.pausaIni !== null && mm >= t.pausaIni && mm < t.pausaFin) comiendo.push(t.nombre);
+                else activos.push(t.nombre);
             }
         }
+        return { activos, comiendo };
+    };
 
-        blocks.forEach(b => {
-            const namesStr = formatNames(b.eaters);
-            const timeStr = formatMins12h(b.startMin);
-
-            if (b.stateKey === 'empty' && b.duration > 0) {
-                copilotAlerts.push({
-                    type: 'danger',
-                    emp: null,
-                    msg: `¡ALERTA CRÍTICA! El almuerzo de ${namesStr} a las ${timeStr} deja la sucursal COMPLETAMENTE VACÍA por ${b.duration} min.`
-                });
-            } else if (b.stateKey === 'alone' && b.duration >= 30) {
-                const survivorStr = b.survivorName || '1 persona';
-                copilotAlerts.push({
-                    type: 'warning',
-                    emp: null,
-                    msg: `Riesgo Operativo: El almuerzo de ${namesStr} a las ${timeStr} deja a ${survivorStr} sin apoyo atendiendo por ${b.duration} min continuos. Se sugiere escalonar.`
-                });
-            }
+    // Los bordes: sólo ahí puede cambiar la cuenta. Con 10 personas son ~40
+    // instantes, no 1.440.
+    const bordes = new Set([0, 1440]);
+    tramos.forEach(t => {
+        [t.ini, t.fin, t.pausaIni, t.pausaFin].forEach(b => {
+            if (b === null) return;
+            bordes.add(((b % 1440) + 1440) % 1440);
         });
+    });
+    const instantes = [...bordes].sort((a, b) => a - b);
+
+    // ── Huecos en las horas de más venta ────────────────────────────────────
+    const huecosCriticos = [];
+    (ventasDelDia || []).forEach(stat => {
+        if (stat.color !== 'var(--txvol-critica)') return;
+        const desde = stat.hour * 60, hasta = desde + 60;
+        let minimo = Infinity;
+        for (const m of instantes) {
+            if (m < desde || m >= hasta) continue;
+            minimo = Math.min(minimo, enElMinuto(m).activos.length);
+        }
+        minimo = Math.min(minimo, enElMinuto(desde).activos.length);
+        if (minimo < 3) huecosCriticos.push({ time: formatHourCompact(stat.hour) });
+    });
+
+    // ── El almuerzo que deja la sala corta ──────────────────────────────────
+    const avisos = [];
+    for (let i = 0; i < instantes.length; i++) {
+        const desde = instantes[i];
+        const hasta = i + 1 < instantes.length ? instantes[i + 1] : 1440;
+        if (hasta <= desde) continue;
+        const { activos, comiendo } = enElMinuto(desde);
+        if (comiendo.length === 0) continue;
+        const duracion = hasta - desde;
+
+        if (activos.length === 0) {
+            avisos.push({
+                tipo: 'danger',
+                texto: `El almuerzo de ${formatNames(new Set(comiendo))} a las ${formatMins12h(desde)} deja la sala SIN NADIE por ${duracion} min.`,
+            });
+        } else if (activos.length === 1 && duracion >= 30) {
+            avisos.push({
+                tipo: 'warning',
+                texto: `El almuerzo de ${formatNames(new Set(comiendo))} a las ${formatMins12h(desde)} deja a ${activos[0]} atendiendo solo por ${duracion} min. Conviene escalonarlo.`,
+            });
+        }
     }
 
-    return { criticalGaps, copilotAlerts };
+    return { huecosCriticos, avisos };
 };
 
 // ============================================================================
@@ -209,23 +176,21 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     // 🚨 CÁLCULO DE HORAS Y DÍAS LIBRES
     const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
     
+    // El día lo resuelve `resolverTurnoDelDia` y no una copia local. La copia
+    // que había acá exigía horas de inicio Y fin propias o del turno, que es
+    // una de las cuatro lecturas que divergían. Ver `utils/turnoDelDia.js`.
     let daysOffCount = 0;
     calendarDates.forEach(date => {
         const dId = new Date(date + 'T00:00:00').getDay();
-        const dayData = sch[dId] || {};
-        const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
-        const startStr = dayData.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
-        const endStr = dayData.customEnd || shift?.end_time?.substring(0, 5) || shift?.end;
-        
-        // Si tiene marcado isOff explícitamente, o no tiene turno asignado
-        const hasShift = !dayData.isOff && startStr && endStr;
-        if (!hasShift) daysOffCount++;
+        if (!resolverTurnoDelDia(sch[dId], shifts).trabaja) daysOffCount++;
     });
 
-    const isHoursPerfect = hours === 44;
-    const isHoursOver = hours > 44;
-    const isHoursUnder = hours < 44;
-    const isDaysOffPerfect = daysOffCount === 1;
+    // 44 h la semana diurna y un día de descanso — RIT Art. 16 y 19. Estaban
+    // escritos a mano en seis sitios; hoy salen de `utils/turnoDelDia.js`.
+    const isHoursPerfect = hours === HORAS_SEMANA_DIURNA;
+    const isHoursOver = hours > HORAS_SEMANA_DIURNA;
+    const isHoursUnder = hours < HORAS_SEMANA_DIURNA;
+    const isDaysOffPerfect = daysOffCount === DESCANSOS_POR_SEMANA;
 
     // Configuración visual de la barra de progreso
     let barColor = 'bg-success shadow-[var(--shadow-glow-chart-9-md)]'; // Estado Perfecto
@@ -358,7 +323,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     {/* Validar Horas */}
                                     {!isHoursPerfect && (
                                         <span className={`text-micro 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${isHoursOver ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
-                                            {isHoursOver ? `+${Number((hours - 44).toFixed(1))}h` : `${Number((hours - 44).toFixed(1))}h`}
+                                            {isHoursOver ? `+${Number((hours - HORAS_SEMANA_DIURNA).toFixed(1))}h` : `${Number((hours - HORAS_SEMANA_DIURNA).toFixed(1))}h`}
                                         </span>
                                     )}
                                     {/* Todo Perfecto */}
@@ -369,7 +334,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             </div>
                             
                             <div className="h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden shadow-inner shrink-0">
-                                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${barColor}`} style={{ width: `${Math.min((hours / 44) * 100, 100)}%` }} />
+                                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${barColor}`} style={{ width: `${Math.min((hours / HORAS_SEMANA_DIURNA) * 100, 100)}%` }} />
                             </div>
                         </div>
 
@@ -381,28 +346,22 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const dId = new Date(date + 'T00:00:00').getDay();
                 const conf = getDayConflictLocal(date, emp.history);
                 const dayData = sch[dId] || {};
-                const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
+                const r = resolverTurnoDelDia(dayData, shifts);
+                const hasShift = r.trabaja;
 
-                const startStr = dayData.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
-                const endStr = dayData.customEnd || shift?.end_time?.substring(0, 5) || shift?.end;
-                const hasShift = !dayData.isOff && startStr && endStr;
+                // El tope diario del reglamento son 8 h (7 si la jornada es
+                // nocturna, Art. 16). Estaba escrito `8 * 60` a mano y sin la
+                // excepción nocturna.
+                const netShiftDurationHrs = hasShift
+                    ? (r.minutosPagados / 60).toFixed(1).replace('.0', '')
+                    : 0;
+                const topeDiario = r.esJornadaNocturna ? 7 : HORAS_JORNADA_DIURNA;
+                const isDailyOvertime = hasShift && r.minutosPagados > topeDiario * 60;
 
-                let netShiftDurationHrs = 0;
-                let isDailyOvertime = false;
-                if (hasShift) {
-                    let sMins = timeToMins(startStr);
-                    let eMins = timeToMins(endStr);
-                    if (eMins < sMins) eMins += 1440; 
-                    
-                    const grossMins = eMins - sMins;
-                    const lunchMins = dayData.hasLunch ? 60 : 0; 
-                    
-                    const paidMins = grossMins - lunchMins; 
-                    netShiftDurationHrs = (paidMins / 60).toFixed(1).replace('.0', '');
-                    isDailyOvertime = paidMins > (8 * 60); 
-                }
-
-                const timeBlocks = hasShift ? getTimeBlocks(startStr, endStr, dayData.hasLunch, dayData.lunchStart, dayData.hasLactation, dayData.lactationStart) : [];
+                const timeBlocks = tramosDeLaJornada(r).map(t => ({
+                    type: t.tipo === 'pausa' ? 'lunch' : t.tipo === 'lactancia' ? 'lactation' : 'work',
+                    start: t.inicio, end: t.fin,
+                }));
 
                 const apoyoBranch = apoyoDaysByDow?.[dId];
 
@@ -422,8 +381,13 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[var(--shadow-shine)]' : ''}
                         `}>
 
+                            {/* Con el dedo no hay hover, así que un `opacity-0
+                                group-hover` no existe: la celda respondía al toque pero
+                                nada decía que fuera editable ANTES de tocarla. En el
+                                teléfono se ve tenue y siempre; con mouse aparece al
+                                pasar por encima. */}
                             {!conf && !isReadOnly && !apoyoBranch && (
-                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all z-sidebar hover:bg-chart-1">
+                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-60 md:opacity-0 md:group-hover/cell:opacity-100 focus-within:opacity-100 transition-all z-sidebar hover:bg-chart-1">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
@@ -441,7 +405,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         <span className="text-[7.5px] 2xl:text-micro font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
                                         {hasShift && (
                                             <span className="text-[6.5px] font-bold mt-1 opacity-60 truncate px-1 text-center leading-tight">
-                                                {shift?.name || 'Manual'} · {netShiftDurationHrs}h
+                                                {r.nombre} · {netShiftDurationHrs}h
                                             </span>
                                         )}
                                     </div>
@@ -449,7 +413,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
                                             <span className="text-[7.5px] 2xl:text-micro font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
-                                                {shift?.name || 'Manual'}
+                                                {r.nombre}
                                             </span>
                                             <div data-surface={isDailyOvertime ? undefined : 'card'} className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                                 {isDailyOvertime && <Flame size={8} className="animate-pulse" />}
@@ -542,18 +506,11 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                 const displayData = coverageData || homeData;
                 const isCoverageDay = Boolean(coverageData);
 
-                const shift = shifts.find(s => String(s.id) === String(displayData?.shiftId));
-                const startStr = displayData?.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
-                const endStr   = displayData?.customEnd   || shift?.end_time?.substring(0, 5)   || shift?.end;
-                const hasShift = !displayData?.isOff && startStr && endStr;
-
-                const netHrs = (() => {
-                    if (!hasShift) return '';
-                    let s = timeToMins(startStr), e = timeToMins(endStr);
-                    if (e < s) e += 1440;
-                    const paid = e - s - (displayData?.hasLunch ? 60 : 0);
-                    return (paid / 60).toFixed(1).replace('.0', '');
-                })();
+                const r = resolverTurnoDelDia(displayData, shifts);
+                const hasShift = r.trabaja;
+                const startStr = r.inicio;
+                const endStr   = r.fin;
+                const netHrs   = hasShift ? (r.minutosPagados / 60).toFixed(1).replace('.0', '') : '';
 
                 return (
                     <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop active:scale-[0.98] transition-transform"
@@ -565,8 +522,12 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     ? 'bg-surface-card border border-divider opacity-40'
                                     : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
                             }`}>
-                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all z-sidebar shadow-sm
-                                ${isCoverageDay ? 'bg-chart-3-solid text-white' : 'bg-content-3 text-white'}">
+                            {/* Antes esto llevaba comillas dobles con un `${…}` adentro:
+                                la interpolación se emitía LITERAL como nombre de clase y
+                                el botón salía sin fondo ni color de ícono. */}
+                            <div className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center transition-all z-sidebar shadow-sm
+                                opacity-70 md:opacity-0 md:group-hover/cell:opacity-100 focus-within:opacity-100
+                                ${isCoverageDay ? 'bg-chart-3-solid text-white' : 'bg-content-3 text-white'}`}>
                                 {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
                             </div>
 
@@ -576,7 +537,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                         <div className="flex items-start justify-between w-full mb-1">
                                             <span className={`text-[7.5px] font-black uppercase px-1 py-[1px] rounded border truncate max-w-[68%]
                                                 ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
-                                                {shift?.name || 'Manual'}
+                                                {r.nombre}
                                             </span>
                                             <span className={`text-micro font-black px-1 py-[1px] rounded border
                                                 ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
@@ -609,7 +570,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
 // ============================================================================
 const ScheduleCalendar = memo(({
     isLoading, calendarDates, employeesInView, weeklyRosters, shifts,
-    handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly,
+    handleEditCell, salesStats, isReadOnly,
     coveragesAtBranch = [], coveragesFromBranch = [], coverageRosters = {},
     addedCoverageEmpIds = new Set(), allEmployees = [], branches = [],
     currentBranchId, onAddCoverageEmployee, onRemoveCoverageEmployee, onEditCoverageCell,
@@ -639,7 +600,7 @@ const ScheduleCalendar = memo(({
         const result = {};
         calendarDates.forEach(date => {
             const dNum = new Date(date + 'T00:00:00').getDay();
-            result[dNum] = evaluateDayCoverage(
+            result[dNum] = evaluarCoberturaDelDia(
                 dNum, allSchedulesArray, shifts,
                 salesStats?.specificHours?.[dNum] || []
             );
@@ -690,24 +651,73 @@ const ScheduleCalendar = memo(({
         }).slice(0, 8);
     }, [coverageSearchTerm, coverageEmpIds, allEmployees, currentBranchId]);
 
-    useEffect(() => {
-        let weeklyCopilotAlerts = [];
+    /* Los avisos de cobertura de TODA la semana.
+     *
+     * Se calculaban desde siempre y la vista los tiraba: el padre pasaba
+     * `onSalyAlertsUpdate={() => {}}`. O sea que el trabajo se hacía y el
+     * resultado —«el almuerzo de Ana y Luis deja la sala sin nadie por 40
+     * min»— no lo veía nadie. */
+    const avisosDeLaSemana = useMemo(() => {
+        const salida = [];
         calendarDates.forEach(date => {
             const dNum = new Date(date + 'T00:00:00').getDay();
-            const result = coverageByDay[dNum];
-            if (result?.copilotAlerts?.length > 0) {
-                const dayName = new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' });
-                weeklyCopilotAlerts = [
-                    ...weeklyCopilotAlerts,
-                    ...result.copilotAlerts.map(a => ({ ...a, msg: `[${dayName.toUpperCase()}] ${a.msg}` }))
-                ];
-            }
+            const dia = new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' });
+            (coverageByDay[dNum]?.avisos || []).forEach(a => salida.push({ ...a, dia }));
         });
-        if (onSalyAlertsUpdate) onSalyAlertsUpdate(weeklyCopilotAlerts);
-    }, [coverageByDay, calendarDates, onSalyAlertsUpdate]);
+        return salida;
+    }, [coverageByDay, calendarDates]);
+
+    /* RIT Art. 21 — entre el fin de una jornada y el inicio de la siguiente
+     * deben mediar ocho horas. Con turnos rotativos es el reparo que más se
+     * escapa: cerrar a las 22:00 y abrir a las 7:00 deja nueve, pero cerrar a
+     * las 22:00 y entrar a las 6:00 deja ocho justas. Nadie lo miraba. */
+    const descansoCorto = useMemo(() => {
+        const salida = [];
+        employeesInView.forEach(emp => {
+            const raw = weeklyRosters[emp.id] || {};
+            const sch = (typeof raw === 'string') ? JSON.parse(raw || '{}') : raw;
+            const dias = calendarDates.map(fecha => ({
+                fecha,
+                resuelto: resolverTurnoDelDia(sch[new Date(fecha + 'T00:00:00').getDay()], shifts),
+            }));
+            descansoInsuficiente(dias).forEach(f => salida.push({ emp: shortEmployeeName(emp), ...f }));
+        });
+        return salida;
+    }, [employeesInView, weeklyRosters, calendarDates, shifts]);
+
+    const reparos = [
+        ...descansoCorto.map(f => ({
+            tipo: 'danger',
+            texto: `${f.emp} sale y vuelve a entrar con ${f.horas} h de descanso. El reglamento pide ${HORAS_ENTRE_JORNADAS} (Art. 21).`,
+        })),
+        ...avisosDeLaSemana.map(a => ({ ...a, texto: `${a.dia.charAt(0).toUpperCase()}${a.dia.slice(1)}: ${a.texto}` })),
+    ];
 
     return (
         <div className="w-full relative z-base shrink-0 mt-4">
+            {/* Lo que la semana tiene mal, dicho antes de publicarla.
+                Estos avisos se calculaban desde siempre y la vista los tiraba
+                (`onSalyAlertsUpdate` era `() => {}`), así que el trabajo se
+                hacía y el resultado no lo veía nadie. */}
+            {reparos.length > 0 && (
+                <div className="px-2 pb-3 flex flex-col gap-2">
+                    {reparos.slice(0, 6).map((a, i) => (
+                        <div key={i} data-surface="card" data-tono={a.tipo === 'danger' ? 'danger' : 'warning'}
+                            className="flex items-start gap-2.5 px-3 py-2">
+                            <AlertTriangle size={14} strokeWidth={2.5}
+                                className={`shrink-0 mt-0.5 ${a.tipo === 'danger' ? 'text-danger-text' : 'text-warning'}`} />
+                            <p className={`text-label font-bold leading-snug ${a.tipo === 'danger' ? 'text-danger-text' : 'text-warning-text'}`}>
+                                {a.texto}
+                            </p>
+                        </div>
+                    ))}
+                    {reparos.length > 6 && (
+                        <p className="text-caption font-bold text-content-3 px-1">
+                            y {reparos.length - 6} aviso(s) más.
+                        </p>
+                    )}
+                </div>
+            )}
             <div id="schedule-table-scroll" className="overflow-x-auto hide-scrollbar pb-10 px-2 pt-4" style={{ overflowAnchor: 'none' }}>
                 {/* ── Esta tabla se queda tabla en el teléfono, a propósito ──
                     El canon (DESIGN.md §32.8) manda que una lista de registros
@@ -729,7 +739,7 @@ const ScheduleCalendar = memo(({
                         <tr>
                             <th className="p-0 sticky left-0 z-dropdown min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
                                 <div data-surface="card" className="pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-micro font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
-                                    Personal <span className="bg-surface-card px-2 py-0.5 rounded-lg text-content-3 border border-border-card">44H / 1 DESCANSO</span>
+                                    Personal <span className="bg-surface-card px-2 py-0.5 rounded-lg text-content-3 border border-border-card">{HORAS_SEMANA_DIURNA}H / {DESCANSOS_POR_SEMANA} DESCANSO</span>
                                 </div>
                             </th>
                             
@@ -763,9 +773,9 @@ const ScheduleCalendar = memo(({
                                             
                                             <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-content pointer-events-none">
                                                 <div className="flex flex-wrap justify-center items-end gap-[3px] w-full max-h-[40px] overflow-hidden">
-                                                    {coverageData?.criticalGaps?.length > 0 && (
+                                                    {coverageData?.huecosCriticos?.length > 0 && (
                                                         <>
-                                                            {coverageData.criticalGaps.map((gap, i) => (
+                                                            {coverageData.huecosCriticos.map((gap, i) => (
                                                                 <Badge key={i} variant="danger" tone="solid" size="sm">{gap.time}</Badge>
                                                             ))}
                                                         </>

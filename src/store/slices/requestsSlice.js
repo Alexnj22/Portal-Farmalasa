@@ -12,8 +12,10 @@ import {
     aplicarMovimientoInventarioEnErp,
     fetchPersonasDeSolicitudes,
 } from '../../data/requests';
-import { fetchEmployeeRosterSchedule } from '../../data/employees';
-import { upsertWeeklyRoster } from '../../data/system';
+// El horario se escribe UN día a la vez desde el 2026-08-27: leer el roster,
+// tocarle una clave y reescribirlo entero pierde lo que otra sesión haya
+// guardado en otro día de esa misma semana.
+import { guardarDiaDeHorario } from '../../data/schedules';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 
@@ -624,17 +626,11 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
         }
 
         for (const [weekStart, dayIds] of Object.entries(weekMap)) {
-            const { data: roster, error: rosterErr } = await fetchEmployeeRosterSchedule(employeeId, weekStart);
-            if (rosterErr) console.error('markDisabilityDaysInRoster: fetch roster failed:', rosterErr.message);
-
-            const raw = roster?.schedule_data || {};
-            const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
-
             for (const dayId of dayIds) {
-                sched[dayId] = { shiftId: 'LIBRE', note: 'Incapacidad' };
+                const { error } = await guardarDiaDeHorario(
+                    employeeId, weekStart, dayId, { shiftId: 'LIBRE', note: 'Incapacidad' });
+                if (error) throw error;
             }
-
-            await upsertWeeklyRoster({ employee_id: employeeId, week_start_date: weekStart, schedule_data: sched });
         }
         return true;
     } catch (err) {
@@ -655,14 +651,11 @@ const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
             weekMap[weekKey].push(dayId);
         }
         for (const [weekStart, dayIds] of Object.entries(weekMap)) {
-            const { data: roster, error: rosterErr } = await fetchEmployeeRosterSchedule(employeeId, weekStart);
-            if (rosterErr) console.error('markVacationDaysInRoster: fetch roster failed:', rosterErr.message);
-            const raw = roster?.schedule_data || {};
-            const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
             for (const dayId of dayIds) {
-                sched[dayId] = { shiftId: 'LIBRE', note: 'Vacaciones' };
+                const { error } = await guardarDiaDeHorario(
+                    employeeId, weekStart, dayId, { shiftId: 'LIBRE', note: 'Vacaciones' });
+                if (error) throw error;
             }
-            await upsertWeeklyRoster({ employee_id: employeeId, week_start_date: weekStart, schedule_data: sched });
         }
         return true;
     } catch (err) {

@@ -6,10 +6,13 @@ import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDE
 import {
     codigoDeCarneLibre, duiDisponible,
     upsertEducationCatalogEntries, insertEmployee, updateEmployee, updateEmployeeReturning,
-    fetchEmployeeRosterSchedule, insertEmployeeEventRaw, fetchAttendanceSince,
+    insertEmployeeEventRaw, fetchAttendanceSince,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
-import { insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster } from '../../data/system';
+import { insertEmployeeBranches, deleteEmployeeBranches } from '../../data/system';
+// Un día a la vez: reescribir el roster entero pisa lo que otra sesión guardó
+// en otro día de la misma semana.
+import { guardarDiaDeHorario } from '../../data/schedules';
 import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
 import { claveDeDia } from '../../utils/scheduleHelpers';
 
@@ -1308,11 +1311,9 @@ export const createEmployeeSlice = (set, get) => ({
         // una clave que ni la pantalla de horarios ni la planilla leen.
         const dayId   = claveDeDia(new Date(date + 'T00:00:00'));
 
-        const { data: roster } = await fetchEmployeeRosterSchedule(id, weekStart);
-        const raw = roster?.schedule_data || {};
-        const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
-        sched[dayId] = { shiftId: shift_id, note: 'Ingreso en vacaciones' };
-        await upsertWeeklyRoster({ employee_id: id, week_start_date: weekStart, schedule_data: sched });
+        const { error: rosterErr } = await guardarDiaDeHorario(
+            id, weekStart, dayId, { shiftId: shift_id, note: 'Ingreso en vacaciones' });
+        if (rosterErr) throw rosterErr;
 
         // 2. Calcular horas del turno para sumar a hours_owed
         const shifts = get().shifts || [];

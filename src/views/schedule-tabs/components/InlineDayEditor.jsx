@@ -8,7 +8,11 @@ import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound, Building2 } from 
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '../../../store/staffStore'; 
-import { timeToMins, formatHourAMPM } from '../../../utils/scheduleHelpers';
+import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia } from '../../../utils/scheduleHelpers';
+import ModalShell from '../../../components/common/ModalShell';
+import HojaMovil from '../../../components/common/HojaMovil';
+import useMediaQuery from '../../../hooks/useMediaQuery';
+import { CORTE_TELEFONO } from '../../../components/common/usarExpediente';
 import { clickable } from '../../../utils/clickable';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 import { rotuloCampo } from '../../../utils/rotuloDeCampo';
@@ -25,6 +29,9 @@ const formatTime12hStr = (time24) => {
 
 const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect, coverageMeta }) => {
     const branches = useStaffStore(s => s.branches);
+    // El mismo corte que usa el resto del portal. Con un `useMediaQuery` propio
+    // habría un ancho donde la celda es ficha y el editor se abre como popover.
+    const enTelefono = useMediaQuery(CORTE_TELEFONO);
 
     const [shiftId, setShiftId] = useState(() => {
         if (currentData?.shiftId) return String(currentData.shiftId);
@@ -49,80 +56,22 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
     const showTimePickers = shiftId !== 'OFF' && shiftId !== 'NO_SHIFTS';
 
-    // ============================================================================
-    // 🧠 CÁLCULO DE HORAS EN TIEMPO REAL (HORA LABORAL EFECTIVA)
-    // ============================================================================
-    const netHours = useMemo(() => {
-        if (!customStart || !customEnd || !showTimePickers) return null;
-        let sMins = timeToMins(customStart);
-        let eMins = timeToMins(customEnd);
-        if (eMins < sMins) eMins += 1440; 
-        
-        const grossMins = eMins - sMins;
-        const lunchMins = hasLunch ? 60 : 0; 
-        
-        // Lactancia no resta horas pagadas, solo el almuerzo.
-        const paidMins = grossMins - lunchMins; 
-        return (paidMins / 60).toFixed(1).replace('.0', '');
-    }, [customStart, customEnd, hasLunch, showTimePickers]);
+    // ── El día, resuelto ────────────────────────────────────────────────────
+    // Sale de `resolverTurnoDelDia`, igual que la pantalla, el kiosco y la
+    // planilla. Antes acá había una copia con su propia aritmética.
+    const resuelto = useMemo(() => resolverTurnoDelDia({
+        shiftId: showTimePickers ? shiftId : '',
+        customStart, customEnd,
+        hasLunch, lunchStart,
+        hasLactation, lactationStart,
+        isOff: !showTimePickers,
+    }, shifts), [shiftId, customStart, customEnd, hasLunch, lunchStart, hasLactation, lactationStart, showTimePickers, shifts]);
 
-    // ============================================================================
-    // 🧠 AUDITORÍA SALY: SENTIDO COMÚN DE HORARIOS (LÍMITES LÓGICOS)
-    // ============================================================================
-    const timeAuditErrors = useMemo(() => {
-        const errors = [];
-        if (!showTimePickers || !customStart || !customEnd) return errors;
+    const netHours = resuelto.trabaja
+        ? (resuelto.minutosPagados / 60).toFixed(1).replace('.0', '')
+        : null;
 
-        const sMins = timeToMins(customStart);
-        let eMins = timeToMins(customEnd);
-        if (eMins < sMins) eMins += 1440; // Ajuste si cruza medianoche
-
-        if (sMins === eMins && customStart !== '') {
-            errors.push("La hora de entrada y salida no pueden ser iguales.");
-            return errors;
-        }
-
-        // Regla General: El receso debe estar entre 1 hora antes de entrar y la hora de salida.
-        const minValid = sMins - 60;
-        const maxValid = eMins;
-
-        const getAdjustedMins = (tStr) => {
-            let m = timeToMins(tStr);
-            // Si el turno cruzó medianoche y el receso es en la madrugada
-            if (eMins > 1440 && m < sMins) m += 1440;
-            return m;
-        };
-
-        if (hasLunch && lunchStart) {
-            const lMins = getAdjustedMins(lunchStart);
-            
-            // 🚨 REGLA ESTRICTA DE ALMUERZO: Solo entre 11:00 AM (660) y 2:30 PM (870)
-            if (lMins < 660 || lMins > 870) {
-                errors.push(`El horario de almuerzo solo está permitido entre las 11:00 am y las 2:30 pm.`);
-            } else if (lMins < minValid || lMins > maxValid) {
-                // Sigue verificando que además tenga sentido con el turno
-                errors.push(`El almuerzo (${formatTime12hStr(lunchStart)}) está fuera de los límites de este turno.`);
-            }
-        }
-
-        if (hasLactation && lactationStart) {
-            const lacMins = getAdjustedMins(lactationStart);
-            // La lactancia no tiene ventana estricta universal, solo debe encajar en el turno
-            if (lacMins < minValid || lacMins > maxValid) {
-                errors.push(`La lactancia (${formatTime12hStr(lactationStart)}) está fuera de los límites lógicos del turno.`);
-            }
-        }
-
-        if (hasLunch && hasLactation && lunchStart === lactationStart) {
-            errors.push("El almuerzo y la lactancia no pueden chocar a la misma hora.");
-        }
-
-        return errors;
-    }, [showTimePickers, customStart, customEnd, hasLunch, lunchStart, hasLactation, lactationStart]);
-
-    // ============================================================================
-    // 🧠 CEREBRO DE SALY: EXTRACCIÓN DEL HORARIO DIARIO DE LA SUCURSAL
-    // ============================================================================
+    // ── El horario de atención de la sala ese día ────────────────────────────
     const branchLimits = useMemo(() => {
         let minO = 1440; 
         let maxC = 0;
@@ -160,9 +109,32 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     }, [branches, filterBranch, dayId]);
 
 
-    // ============================================================================
-    // 🧠 CEREBRO DE SALY: FILTRO INTELIGENTE DEL CATÁLOGO
-    // ============================================================================
+    // ── Los turnos del catálogo que caben en el horario de la sala ───────────
+    /* Lo que el reglamento no deja pasar en este día.
+     *
+     * Antes esto era una ventana FIJA: la pausa sólo se aceptaba entre las
+     * 11:00 y las 14:30, un número escrito acá sin fuente. El reglamento
+     * interno (Art. 18) tiene pausas a las 12:00, 13:00, 18:00 y 19:00 — o sea
+     * que este editor rechazaba las pausas del PROPIO reglamento, y un turno de
+     * cierre no podía tener descanso.
+     *
+     * Y la comparación entre almuerzo y lactancia era de IGUALDAD, así que
+     * 12:00 contra 12:30 pasaba. El reglamento dice que la interrupción «no
+     * podrá ser utilizada en la hora de almuerzo»: es solapamiento.
+     *
+     * También revisa contra el horario de atención de la sala, que hasta hoy
+     * sólo se miraba para filtrar el desplegable: las horas escritas a mano
+     * se guardaban fuera del horario sin una queja. */
+    const reparos = useMemo(() => {
+        if (!showTimePickers) return [];
+        if (customStart && customEnd && timeToMins(customStart) === timeToMins(customEnd)) {
+            return ['La hora de entrada y la de salida no pueden ser la misma.'];
+        }
+        return reparosDelDia(resuelto, branchLimits.hasValidHours && !branchLimits.isClosedToday
+            ? { horaDeApertura: branchLimits.minOpen, horaDeCierre: branchLimits.maxClose }
+            : {});
+    }, [resuelto, showTimePickers, customStart, customEnd, branchLimits]);
+
     const filteredShifts = useMemo(() => {
         if (!shifts || !filterBranch) return [];
         
@@ -197,8 +169,17 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             if (shiftId && shiftId !== 'OFF' && shiftId !== 'NO_SHIFTS') {
                 const template = filteredShifts.find(s => String(s.id) === String(shiftId));
                 if (template) {
-                    setCustomStart(template.start_time?.substring(0, 5) || template.start); // eslint-disable-line react-hooks/set-state-in-effect -- autocompleta horas al cambiar de turno (guardado contra prevShiftIdRef)
+                     
+                    setCustomStart(template.start_time?.substring(0, 5) || template.start);
                     setCustomEnd(template.end_time?.substring(0, 5) || template.end);
+                    // Y su PAUSA. Desde el 2026-08-27 el turno del catálogo la
+                    // trae, así que asignarlo la deja puesta en vez de obligar a
+                    // marcarla a mano en cada una de las 329 celdas de la semana.
+                    if (template.lunch_start) {
+                        setHasLunch(true);
+                        setLunchStart(String(template.lunch_start).substring(0, 5));
+                    }
+                     
                 }
             }
             prevShiftIdRef.current = shiftId;
@@ -206,43 +187,47 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     }, [shiftId, filteredShifts]);
 
     useEffect(() => {
-        if (popoverRef.current && anchorRect) {
-            const popRect = popoverRef.current.getBoundingClientRect();
+        if (enTelefono || !popoverRef.current || !anchorRect) return;
+        const popRect = popoverRef.current.getBoundingClientRect();
 
-            let left = anchorRect.left + 10;
-            let top;
+        let left = anchorRect.left + 10;
+        let top;
 
-            if (anchorRect.top > window.innerHeight / 2) {
-                top = anchorRect.top - popRect.height - 10;
-            } else {
-                top = anchorRect.bottom + 10;
-            }
-
-            if (top < 10) top = 10;
-            if (top + popRect.height > window.innerHeight) {
-                top = window.innerHeight - popRect.height - 10;
-            }
-            if (left + popRect.width > window.innerWidth) {
-                left = window.innerWidth - popRect.width - 10;
-            }
-
-            setPos({ top, left }); // eslint-disable-line react-hooks/set-state-in-effect -- mide el popover real (getBoundingClientRect) para posicionarlo
-            // Give browser one frame to paint at scale(0.96) before animating in
-            requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
+        if (anchorRect.top > window.innerHeight / 2) {
+            top = anchorRect.top - popRect.height - 10;
+        } else {
+            top = anchorRect.bottom + 10;
         }
-    }, [anchorRect, shiftId, hasLunch, hasLactation, timeAuditErrors.length]);
 
+        if (top < 10) top = 10;
+        if (top + popRect.height > window.innerHeight) {
+            top = window.innerHeight - popRect.height - 10;
+        }
+        if (left + popRect.width > window.innerWidth) {
+            left = window.innerWidth - popRect.width - 10;
+        }
+
+        setPos({ top, left });  
+        // Give browser one frame to paint at scale(0.96) before animating in
+        requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
+    }, [anchorRect, shiftId, hasLunch, hasLactation, reparos.length, enTelefono]);
+
+    /* Se cierra si la TABLA se desplaza, porque el popover queda anclado a una
+     * celda que se movió. Ya NO se cierra con el scroll de la ventana:
+     *
+     *   window.addEventListener('scroll', () => onClose())
+     *
+     * En un teléfono eso lo cerraba con cualquier cosa —abrir el teclado del
+     * selector de hora desplaza la ventana— y lo escrito se perdía sin guardar
+     * y sin avisar. En el teléfono el editor es una hoja inferior, que no está
+     * anclada a nada, así que no hay motivo para cerrarla al desplazarse. */
     useEffect(() => {
-        const handleScroll = () => onClose();
-        const tableScroll = document.getElementById('schedule-table-scroll');
-        if (tableScroll) tableScroll.addEventListener('scroll', handleScroll, { passive: true });
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            if (tableScroll) tableScroll.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [onClose]);
+        if (enTelefono) return;
+        const alDesplazar = () => onClose();
+        const tabla = document.getElementById('schedule-table-scroll');
+        if (tabla) tabla.addEventListener('scroll', alDesplazar, { passive: true });
+        return () => { if (tabla) tabla.removeEventListener('scroll', alDesplazar); };
+    }, [onClose, enTelefono]);
 
     const handleClose = () => {
         setIsExiting(true);
@@ -270,13 +255,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         const baseOptions = [{ value: 'OFF', label: 'Libre / descanso' }];
 
         if (!branchLimits.hasValidHours) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: '⚠️ Sin Horario Operativo' }];
+            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sala no tiene horario' }];
         }
         if (branchLimits.isClosedToday) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: '🔒 Sucursal Cerrada Hoy' }];
+            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sala cierra este día' }];
         }
         if (filteredShifts.length === 0) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: '⚠️ Ningún turno global encaja' }];
+            return [...baseOptions, { value: 'NO_SHIFTS', label: 'Ningún turno cabe en este horario' }];
         }
 
         return [
@@ -296,55 +281,36 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         ];
     }, [filteredShifts, branchLimits]);
 
-    const isSaveDisabled = shiftId === 'NO_SHIFTS' || (!shiftId && !customStart) || timeAuditErrors.length > 0;
+    const isSaveDisabled = shiftId === 'NO_SHIFTS' || (!shiftId && !customStart) || reparos.length > 0;
 
-    return createPortal(
+    const encabezado = (
+        <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
+                {employee?.photo_url
+                    ? <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
+                    : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
+            </div>
+            <div className="min-w-0">
+                <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>
+                <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
+                    {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}{' '}
+                    <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
+                </p>
+            </div>
+        </div>
+    );
+
+    const avisoDeCobertura = coverageMeta && (
+        <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10 border border-chart-3/30 rounded-2xl flex gap-2 items-start shrink-0">
+            <Building2 size={13} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5} />
+            <p className="text-caption font-bold text-chart-3-text leading-snug">
+                Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
+            </p>
+        </div>
+    );
+
+    const cuerpo = (
         <>
-            <style>{`
-                .editor-scrollbar::-webkit-scrollbar { width: 6px; }
-                .editor-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .editor-scrollbar::-webkit-scrollbar-thumb { background-color: var(--divider); border-radius: 10px; }
-            `}</style>
-            
-            <div className="fixed inset-0 z-popover" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
-
-            <motion.div
-                ref={popoverRef}
-                style={{ top: pos.top, left: pos.left, visibility: pos.top === -9999 ? 'hidden' : 'visible' }}
-                animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
-                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                onAnimationComplete={() => { if (isExiting) onClose(); }}
-                data-surface="dropdown"
-                className="fixed z-popover w-[290px] max-h-[85vh] flex flex-col cursor-default transform-gpu overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-surface-card shrink-0 z-header">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
-                            {employee?.photo_url
-                                ? <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
-                                : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>
-                            <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
-                                {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}{' '}
-                                <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
-                            </p>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
-                </div>
-
-                {coverageMeta && (
-                    <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10 border border-chart-3/30 rounded-2xl flex gap-2 items-start shrink-0">
-                        <Building2 size={13} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                        <p className="text-caption font-bold text-chart-3-text leading-snug">
-                            Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
-                        </p>
-                    </div>
-                )}
-
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
                     <div className={`group/select hover:shadow-md transition-shadow duration-[var(--dur-slow)] rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
@@ -358,24 +324,24 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     </div>
                 </div>
 
-                <div className="px-4 pb-4 space-y-4 overflow-y-auto editor-scrollbar flex-1 relative z-base">
+                <div className="px-4 pb-4 space-y-4 overflow-y-auto hide-scrollbar flex-1 relative z-base">
                     
                     {shiftId === 'NO_SHIFTS' && (
                         <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-[var(--dur-slow)]">
                             <Bot size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-1">Auditoría Saly</h4>
+                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-1">No se puede asignar</h4>
                                 {branchLimits.isClosedToday ? (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
-                                        La sucursal está configurada como <strong>cerrada</strong> este día. Selecciona "Libre" o ajusta el horario en Configuración.
+                                        La sala está configurada como <strong>cerrada</strong> este día. Elige «Libre / descanso», o cámbiale el horario de atención en Sucursales.
                                     </p>
                                 ) : !branchLimits.hasValidHours ? (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
-                                        Faltan los horarios operativos de {branchLimits.branchName}.
+                                        Falta configurarle el horario de atención a {branchLimits.branchName}.
                                     </p>
                                 ) : (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
-                                        El horario de hoy es de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo encaja aquí.
+                                        La sala atiende de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo cabe ahí.
                                     </p>
                                 )}
                             </div>
@@ -383,17 +349,17 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div data-surface="card" data-tono={timeAuditErrors.length > 0 ? 'danger' : undefined}
+                        <div data-surface="card" data-tono={reparos.length > 0 ? 'danger' : undefined}
                     className="flex flex-col gap-3 p-3 relative z-base animate-in zoom-in-95 duration-[var(--dur-base)]">
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
-                                    <Clock size={10} /> Cálculo de Horas
+                                    <Clock size={10} /> Horas del día
                                 </span>
-                                {netHours !== null && timeAuditErrors.length === 0 && (
+                                {netHours !== null && reparos.length === 0 && (
                                     <div className={`px-2 py-[2px] rounded border text-micro font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-[var(--dur-slow)] ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                         {Number(netHours) > 8 && <Flame size={10} className="animate-pulse" />}
-                                        {netHours}H TOTALES
+                                        {netHours} h pagadas
                                     </div>
                                 )}
                             </div>
@@ -447,12 +413,12 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         </div>
                     )}
 
-                    {timeAuditErrors.length > 0 && (
+                    {reparos.length > 0 && (
                         <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-[var(--dur-slow)] shadow-sm mt-2">
                             <AlertTriangle size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div className="flex flex-col gap-1.5">
-                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-0.5">Error de Lógica</h4>
-                                {timeAuditErrors.map((err, i) => (
+                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-0.5">Revisa esto antes de guardar</h4>
+                                {reparos.map((err, i) => (
                                     <p key={i} className="text-label font-medium text-danger-text/90 leading-snug">
                                         {err}
                                     </p>
@@ -461,11 +427,77 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         </div>
                     )}
                 </div>
+        </>
+    );
+
+
+    const pieDeGuardar = (
+        <Button size="lg" onClick={handleSave} disabled={isSaveDisabled} className="w-full">
+            {shiftId === 'OFF' ? 'Asignar descanso' : 'Guardar cambios'}
+        </Button>
+    );
+
+    /* En el teléfono NO es un popover.
+     *
+     * Era uno de 290px anclado a una celda de una matriz que se arrastra de
+     * lado, encajado contra el borde con `window.innerHeight - 10` —o sea
+     * ignorando el área segura— y que se cerraba con cualquier desplazamiento
+     * de la ventana. Abrir el teclado del selector de hora desplaza la ventana:
+     * el editor se cerraba solo y lo escrito se perdía.
+     *
+     * `ModalShell align="bottom"` + `HojaMovil` es el cuerpo canónico
+     * (DESIGN.md §32): nace en gota del punto que se tocó, resuelve el área
+     * segura y no está anclada a nada que se pueda mover. */
+    if (enTelefono) {
+        return (
+            <ModalShell
+                open={!isExiting}
+                onClose={handleClose}
+                align="bottom"
+                maxWidthClass="max-w-none"
+                surface={null}
+                ariaLabel={`Horario de ${shortEmployeeName(employee)}`}
+            >
+                <HojaMovil
+                    titulo={shortEmployeeName(employee)}
+                    subtitulo={`${new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })} ${new Date(dateStr + 'T00:00:00').getDate()}`}
+                    icono={Clock}
+                >
+                    {avisoDeCobertura}
+                    <div className="max-h-[60vh] overflow-y-auto hide-scrollbar">
+                        {cuerpo}
+                    </div>
+                    <div className="pt-3">{pieDeGuardar}</div>
+                </HojaMovil>
+            </ModalShell>
+        );
+    }
+
+    return createPortal(
+        <>
+            <div className="fixed inset-0 z-popover" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
+
+            <motion.div
+                ref={popoverRef}
+                style={{ top: pos.top, left: pos.left, visibility: pos.top === -9999 ? 'hidden' : 'visible' }}
+                animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                onAnimationComplete={() => { if (isExiting) onClose(); }}
+                data-surface="dropdown"
+                className="fixed z-popover w-[290px] max-h-[85vh] flex flex-col cursor-default transform-gpu overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-surface-card shrink-0 z-header">
+                    {encabezado}
+                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
+                </div>
+
+                {avisoDeCobertura}
+
+                {cuerpo}
 
                 <div className="p-3 border-t border-border-card bg-surface-card shrink-0 z-tabs">
-                    <Button size="lg" onClick={handleSave} disabled={isSaveDisabled} className="w-full">
-                        {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
-                    </Button>
+                    {pieDeGuardar}
                 </div>
             </motion.div>
         </>,

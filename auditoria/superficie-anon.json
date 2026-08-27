@@ -108,18 +108,6 @@
    "area": "sucursales",
    "estado": "necesaria",
    "motivo": "El kiosco tiene que saber en qué sala está antes de que nadie inicie sesión. La policy se llama `kiosk_read` y es USING(true): expone el listado de sucursales de la empresa, que no es un dato sensible, pero conviene saber que está abierto."
-  },
-  {
-   "nombre": "holidays",
-   "area": "horarios",
-   "estado": "revisar",
-   "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). No hay motivo escrito de por qué anon necesita los feriados. Candidata a acotar a authenticated."
-  },
-  {
-   "nombre": "shifts",
-   "area": "horarios",
-   "estado": "revisar",
-   "motivo": "Policy `read_all` para {anon,authenticated} con USING(true). El catálogo de turnos probablemente lo necesita el kiosco; no está escrito. Candidata a acotar."
   }
  ]
 }

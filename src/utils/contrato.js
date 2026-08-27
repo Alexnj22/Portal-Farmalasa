@@ -85,6 +85,50 @@ export function estadoRemisionMtps(datos, hoy = new Date()) {
 }
 
 /**
+ * ── El horario, para el CONTRATO ────────────────────────────────────────────
+ *
+ * El Art. 23 nº 7 exige que el contrato diga «el horario de trabajo». Con turnos
+ * que rotan cada quince días, escribir un horario fijo lo vuelve falso a los
+ * quince días — y cambiarlo obligaría a modificar TODOS los contratos.
+ *
+ * El propio Código resuelve el problema: su **Art. 304** manda que el horario
+ * viva en el reglamento interno («horas de entrada y salida», «horas y lapsos
+ * destinados para las comidas»). Así que el contrato lo cumple por REMISIÓN: la
+ * sala y el régimen de turnos, apuntando al reglamento donde están escritos.
+ *
+ * Es la misma mecánica del lugar de pago (Art. 128) — el Código pone el dato en
+ * el reglamento y el contrato lo referencia.
+ *
+ * ⚠️ Esto NO es el catálogo de turnos. El catálogo y los horarios semanales se
+ * arman en el módulo de horarios, que es donde se decide quién trabaja qué día.
+ * Acá sólo se redacta la frase que va en el papel.
+ */
+const HORARIO_FIJO_ADMINISTRATIVO =
+    'De lunes a viernes de 8:00 a.m. a 12:00 m. y de 1:00 p.m. a 5:00 p.m., con pausa '
+    + 'alimenticia de 12:00 m. a 1:00 p.m. Sábado de 8:00 a.m. a 12:00 m. Domingo, día de descanso.';
+
+/** Las áreas que NO rotan: su horario es fijo y el contrato puede decirlo entero. */
+const AREAS_DE_HORARIO_FIJO = /administra|bodega|compras/i;
+
+/**
+ * @param {string} sala  el nombre del área de trabajo de la persona
+ * @returns {{ fijo: boolean, texto: string }}
+ */
+export function horarioParaElContrato(sala) {
+    if (!sala) {
+        return { fijo: false, texto: 'Se define al elegir el área de trabajo.' };
+    }
+    if (AREAS_DE_HORARIO_FIJO.test(sala)) {
+        return { fijo: true, texto: HORARIO_FIJO_ADMINISTRATIVO };
+    }
+    return {
+        fijo: false,
+        texto: `Turnos rotativos cada quince días, conforme a los horarios establecidos para ${sala} `
+             + 'en el Reglamento Interno de Trabajo.',
+    };
+}
+
+/**
  * ── El OTRO plazo de ocho días, y no es el del Ministerio ───────────────────
  *
  * El portal ya vigilaba uno: desde la FIRMA, ocho días para remitirle el

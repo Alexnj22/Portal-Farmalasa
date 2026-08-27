@@ -162,3 +162,48 @@ describe('el plazo para firmar el contrato', () => {
         expect(r.aplica).toBe(false);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El horario que va en el CONTRATO — que no es el catálogo de turnos
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Art. 23 nº 7: el contrato debe decir «el horario de trabajo». Con turnos que
+// rotan cada quince días, escribirlo fijo lo vuelve falso a los quince días y
+// cambiarlo obligaría a modificar todos los contratos.
+//
+// El Art. 304 resuelve el problema poniendo el horario en el REGLAMENTO, así que
+// el contrato lo cumple por remisión. Es la misma mecánica del lugar de pago.
+//
+// Lo que se prueba acá es que el texto REMITE y no INVENTA un horario — y que
+// las áreas que no rotan sí lo dicen entero, porque ahí sí es verdad.
+
+import { horarioParaElContrato } from '../../src/utils/contrato';
+
+describe('el horario que va en el contrato', () => {
+    it('una sala remite al reglamento, no fija horas', () => {
+        const h = horarioParaElContrato('Salud 3');
+        expect(h.fijo).toBe(false);
+        expect(h.texto).toMatch(/rotativos cada quince días/i);
+        expect(h.texto).toMatch(/Reglamento Interno/);
+        expect(h.texto).toMatch(/Salud 3/);
+        // Y NO inventa un horario que a los quince días sería mentira.
+        expect(h.texto).not.toMatch(/\d{1,2}:\d{2}/);
+    });
+
+    it('administración no rota: dice el horario completo', () => {
+        const h = horarioParaElContrato('Administracion');
+        expect(h.fijo).toBe(true);
+        expect(h.texto).toMatch(/lunes a viernes/i);
+        expect(h.texto).toMatch(/pausa alimenticia/i);
+    });
+
+    it('bodega tampoco rota', () => {
+        expect(horarioParaElContrato('Bodega').fijo).toBe(true);
+    });
+
+    it('sin área elegida no promete nada', () => {
+        // Un texto inventado acá termina impreso en un contrato.
+        const h = horarioParaElContrato('');
+        expect(h.texto).toMatch(/Se define al elegir/i);
+    });
+});

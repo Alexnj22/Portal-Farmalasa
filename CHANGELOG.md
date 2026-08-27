@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.818.0 — El contrato dice el horario por remisión, y Bodega toma el de Administración
+
+**Bodega ya tiene turnos** — los mismos de Administración, como pidió el usuario.
+Quedan 39 franjas en las 8 áreas.
+
+**Y una corrección del usuario que apuntaba a algo que faltaba:** *«esos horarios
+son sólo para contrato, los verdaderos catálogos y turnos se hacen desde el
+módulo de horario»*. Tiene razón, y el contrato **seguía sin decir el horario** —
+que es un numeral exigido (Art. 23 nº 7).
+
+Ahora lo dice, y **por remisión**:
+
+> «Turnos rotativos cada quince días, conforme a los horarios establecidos para
+> Salud 3 en el Reglamento Interno de Trabajo.»
+
+No es una elección ni un campo que alguien llene: se redacta solo a partir del
+área. **Y a propósito no lleva horas.** Con turnos que rotan cada quince días, un
+horario escrito en el contrato es falso a los quince días — y cambiarlo obligaría
+a modificar todos los contratos en vez de modificar el reglamento.
+
+El Código lo resuelve así: su **Art. 304** manda el horario al reglamento («horas
+de entrada y salida», «horas y lapsos destinados para las comidas»), y el
+contrato lo referencia. Es la misma mecánica del lugar de pago (Art. 128).
+
+**Las áreas que no rotan sí lo dicen entero**, porque ahí es verdad:
+Administración, Bodega y Compras llevan el horario fijo del Art. 18 a) escrito
+completo, con su pausa alimenticia.
+
+La pantalla lo dice en una línea: *«quién trabaja qué día se decide en
+Horarios»*. Son dos cosas distintas y ahora se ven distintas.
+
 ## v2.817.0 — Los turnos salían del reglamento, no había que inventarlos
 
 Durante varios días le pedí al usuario los turnos como si hubiera que

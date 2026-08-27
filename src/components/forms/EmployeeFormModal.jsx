@@ -7,7 +7,7 @@ import { aplicarDuiLeido, ROTULO_DUI } from '../../utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '../../utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
-    estadoRemisionMtps, estadoFirmaDelContrato, esContratoCivil, ART20_ADVERTENCIA,
+    estadoRemisionMtps, estadoFirmaDelContrato, horarioParaElContrato, esContratoCivil, ART20_ADVERTENCIA,
          FORMA_ESTIPULACION_OPTIONS, PLAZO_DE_PAGO, MEDIO_PAGO_OPTIONS } from '../../utils/contrato';
 
 // La clave del borrador del alta. Una sola, porque el alta es una sola: dos
@@ -3186,6 +3186,39 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     prestar servicios más de dos días seguidos o probando
                                     subordinación. Talento Humano pidió «horas mensuales»; la
                                     respuesta de la ley es que no hay horas. */}
+                                {/* ── El horario, que el Art. 23 nº 7 exige ──────────────────
+                                    Se REDACTA, no se elige: con turnos que rotan cada quince
+                                    días, un horario fijo escrito acá es falso a los quince
+                                    días, y cambiarlo obligaría a modificar todos los
+                                    contratos. El Art. 304 pone el horario en el reglamento
+                                    interno, así que el contrato lo cumple por remisión — la
+                                    misma mecánica del lugar de pago.
+
+                                    Y NO es el catálogo de turnos: ése se arma en el módulo de
+                                    horarios, que es donde se decide quién trabaja qué día.
+                                    Acá sólo se dice lo que va en el papel. */}
+                                {!esContratoCivil(formData.contract_type) && (() => {
+                                    const h = horarioParaElContrato(
+                                        branches?.find(b => String(b.id) === String(formData.branch_id))?.name);
+                                    return (
+                                        <div className="md:col-span-3">
+                                            <label className={rotuloCampo('text-content-3')}>
+                                                <span className="flex items-center gap-1.5">
+                                                    <Clock size={12} strokeWidth={2.5} /> Horario de trabajo
+                                                </span>
+                                            </label>
+                                            <p data-surface="card" className="p-3 text-label text-content-2 font-medium leading-snug">
+                                                {h.texto}
+                                            </p>
+                                            <p className="text-micro text-content-3 font-medium mt-1.5 ml-1 leading-snug">
+                                                {h.fijo
+                                                    ? 'Esta área no rota, así que el contrato dice el horario completo.'
+                                                    : 'El contrato remite al reglamento en vez de fijar un horario: los turnos rotan, y uno escrito aquí sería falso a los quince días. Quién trabaja qué día se decide en Horarios.'}
+                                            </p>
+                                        </div>
+                                    );
+                                })()}
+
                                 {!esContratoCivil(formData.contract_type) && (
                                     <div className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Horas semanales</label>

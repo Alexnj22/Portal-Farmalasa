@@ -88,7 +88,23 @@ const LiquidSelect = ({
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO/NANO ---
     const textStyle = nano ? 'text-label font-black' : `${compact ? 'text-body-sm' : 'text-body'} font-bold`;
-    const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
+    // ── El relleno vertical le ganaba a la altura del canónico ──────────────
+    //
+    // El disparador ya declara `min-h-[max(40px,var(--tap-min))]` y `flex
+    // items-center`: la altura y el centrado son suyos. Pero el `py-3.5` de
+    // adentro se SUMABA a eso, así que el control terminaba en **46.3px**
+    // mientras `PortalInput` mide **40** — medido con Chromium sobre el CSS
+    // compilado el 2026-08-26. O sea que un select y un campo de texto puestos
+    // uno al lado del otro NUNCA quedaban alineados, en ninguna pantalla del
+    // portal.
+    //
+    // Es la unificación de §25.10 que no se completó: a este control le pusieron
+    // el `min-h` correcto y le dejaron el relleno viejo, que lo pisa. Sin
+    // relleno vertical la altura la decide el `min-h` y da 40px exactos.
+    //
+    // `nano` conserva el suyo: su mínimo son 26px y ahí el relleno sí es lo que
+    // separa el texto del borde.
+    const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6' : 'pl-[3.5rem] pr-12';
     const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
     // El ícono se ve del tamaño de siempre; lo que llega al piso de §25.6 en
     // táctil es el ÁREA del botón de limpiar (el chevron de al lado es

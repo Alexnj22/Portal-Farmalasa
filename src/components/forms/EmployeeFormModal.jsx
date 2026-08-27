@@ -287,7 +287,7 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
             <span>{label}</span>
             <Badge size="sm" icon={Lock} uppercase={false}>Acción RRHH</Badge>
         </label>
-        <div className="flex items-center gap-2 w-full h-[40px] px-3 bg-surface-card-hover/60 border border-divider rounded-2xl cursor-not-allowed opacity-70">
+        <div className="flex items-center gap-2 w-full h-[max(40px,var(--tap-min))] px-3 bg-surface-card-hover/60 border border-divider rounded-2xl cursor-not-allowed opacity-70">
             <Lock size={12} className="text-content-3 shrink-0" />
             <span className="text-body font-bold text-content-3 truncate">{value || '—'}</span>
         </div>
@@ -1791,7 +1791,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
                                     </label>
-                                    <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
+                                    <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} />
                                     </div>
                                 </div>
@@ -1842,7 +1842,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de expedición</label>
-                                    <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                    <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                         <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
                                     </div>
                                 </div>
@@ -1896,7 +1896,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
                                         return (
                                             <div key={idx} className="flex items-center gap-1.5">
-                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                     <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                                     <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
                                                         className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
@@ -1912,7 +1912,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Correo Electrónico {emailInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Correo inválido</span>}</span>
                                         <Button variant="ghost" icon={Plus} onClick={addEmail}>Agregar</Button>
                                     </label>
-                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emailInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${emailInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                         <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
                                         <input type="email" name="email" value={formData.email || ''} onChange={handleChange} placeholder="nombre@correo.com"
                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -1922,7 +1922,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const emErr = !!em && em.trim() !== '' && !isValidEmail(em.trim());
                                         return (
                                             <div key={idx} className="flex items-center gap-1.5">
-                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                     <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
                                                     <input type="email" value={em} onChange={(e) => updateEmail(idx, e.target.value)} placeholder="otro@correo.com"
                                                         className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
@@ -2015,7 +2015,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </div>
                                                         <div className="md:col-span-2">
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
-                                                            <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                            <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
                                                                 <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
                                                                 <input type="text" value={addr.address || ''} onChange={(e) => updateAddress(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
                                                                     className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -2274,7 +2274,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Totales</label>
                                                         <input type="number" min="0" value={entry.hours || ''} onChange={(e) => updateSkill(idx, 'hours', e.target.value)} placeholder="Ej. 40"
-                                                            className={`w-full h-[40px] px-4 bg-surface-card border border-divider rounded-2xl text-body-xl font-bold text-content-2 outline-none shadow-sm ${inputHoverClass}`} />
+                                                            className={`w-full h-[max(40px,var(--tap-min))] px-4 bg-surface-card border border-divider rounded-2xl text-body-xl font-bold text-content-2 outline-none shadow-sm ${inputHoverClass}`} />
                                                     </div>
                                                     {isOtherInstitution && (
                                                         <div className="md:col-span-2">
@@ -2506,7 +2506,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {formData.afp_estado !== 'NO_TIENE' && (
                                     <div className="relative z-content">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">NUP (AFP)</label>
-                                        <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-3 gap-2`}>
+                                        <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-3 gap-2`}>
                                             <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                                             <span className="text-body-xl font-bold text-content-2 truncate">
                                                 {formData.dui || '—'}
@@ -2582,7 +2582,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nombre</label>
-                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
                                                             <div className="absolute left-3 text-content-3"><User size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.name || ''} onChange={(e) => updateDependent(idx, 'name', e.target.value)} placeholder="Nombre completo"
                                                                 className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -2600,12 +2600,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                         </label>
                                                         {depAgeOnly ? (
-                                                            <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                            <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                                 <input type="number" min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
                                                                     className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-4 pr-4" />
                                                             </div>
                                                         ) : (
-                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                                 <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} />
                                                             </div>
                                                         )}
@@ -2644,7 +2644,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
-                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] ${inputHoverClass}`}>
                                                             <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.address || ''} onChange={(e) => updateDependent(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
                                                                 className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -2791,19 +2791,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
 
-                                <div>
-                                    <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
-                                        <Button variant="ghost" icon={Plus} onClick={addEmergencyPhone}>Agregar</Button>
-                                    </label>
-                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] z-base border-divider ${inputHoverClass} ${emergPhoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
-                                        <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                        <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone || ''}
-                                            onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
-                                            placeholder="0000-0000"
-                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                    </div>
-                                </div>
+                                <PortalInput
+                                    label="Teléfono" name="emergency_contact_phone" icon={Phone}
+                                    value={formData.emergency_contact_phone} onChange={handleChange}
+                                    maskType="PHONE" placeholder="0000-0000"
+                                    hasError={emergPhoneHasError} errorMessage={emergPhoneErrorMsg}
+                                    labelAction={<Button variant="ghost" size="xs" icon={Plus} onClick={addEmergencyPhone}>Agregar</Button>} />
 
                                 {(formData.emergency_contact_extra_phones || []).length > 0 && (
                                     <div className="md:col-span-3 flex flex-col gap-2">
@@ -2812,11 +2805,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
                                             return (
                                                 <div key={idx} className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                        <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                                        <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
-                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                    </div>
+                                                    <PortalInput
+                                                        aria-label={`Otro teléfono ${idx + 2}`} icon={Phone} className="flex-1"
+                                                        value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)}
+                                                        maskType="PHONE" placeholder="0000-0000" hasError={phErr} />
                                                     <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removeEmergencyPhone(idx)} />
                                                 </div>
                                             );
@@ -2861,9 +2853,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <Button variant="ghost" size="xs" icon={X} title="Quitar contacto" iconOnly onClick={() => removeContactoExtra(idx)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <PortalInput aria-label="Nombre" compact value={c.nombre || ''}
+                                                    <PortalInput label="Nombre" aria-label="Nombre" value={c.nombre || ''}
                                                         onChange={(e) => updateContactoExtra(idx, { nombre: e.target.value })} placeholder="Nombre" />
                                                     <div className="relative z-content">
+                                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Parentesco</label>
                                                         <LiquidSelect value={c.parentesco || ''}
                                                             onChange={(val) => updateContactoExtra(idx, { parentesco: val })}
                                                             options={PARENTESCO_OPTIONS} placeholder="Parentesco…" {...portalSelectProps} />
@@ -2876,12 +2869,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </label>
                                                         {tels.map((t, i) => (
                                                             <div key={i} className="flex items-center gap-1.5">
-                                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                                    <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                                                    <input type="tel" value={t || ''} placeholder="0000-0000"
-                                                                        onChange={(e) => ponerTel(i, applyMask(e.target.value, 'PHONE'))}
-                                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
-                                                                </div>
+                                                                <PortalInput
+                                                                    aria-label={`Teléfono ${i + 1}`} icon={Phone} className="flex-1 min-w-0"
+                                                                    value={t || ''} placeholder="0000-0000" maskType="PHONE"
+                                                                    onChange={(e) => ponerTel(i, e.target.value)} />
                                                                 {tels.length > 1 && (
                                                                     <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly
                                                                         onClick={() => updateContactoExtra(idx, { telefonos: tels.filter((_, k) => k !== i), telefono: undefined })} />
@@ -2949,7 +2940,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                         <div className="relative z-tabs">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de inicio de labores</label>
-                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                             </div>
                                         </div>
@@ -3022,7 +3013,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="relative z-tabs">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de contratación</label>
-                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                 <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} />
                                             </div>
                                         </div>
@@ -3035,7 +3026,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
                                             {!formData.contract_end_date && <Badge variant="danger" uppercase={false}>Obligatorio</Badge>}
                                         </label>
-                                        <div className={`bg-warning/10 rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
+                                        <div className={`bg-warning/10 rounded-2xl border shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} />
                                         </div>
                                     </div>
@@ -3129,7 +3120,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         icon={MapPin} placeholder="Ej. Chalatenango" />
                                     <div className="relative z-content">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de la firma</label>
-                                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                             <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
                                         </div>
                                     </div>
@@ -3231,7 +3222,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                                                         <div className="relative z-content">
                                                             <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 block">Nuevo fin</label>
-                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                            <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                                 <LiquidDatePicker value={pr.hasta} onChange={(date) => actualizarProrroga(idx, { hasta: date })} />
                                                             </div>
                                                         </div>
@@ -3282,7 +3273,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 items-start">
                                             <div className="relative z-content">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha en que se remitió</label>
-                                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}`}>
                                                     <LiquidDatePicker value={formData.mtps_remitido_fecha} onChange={(date) => handleDateChange('mtps_remitido_fecha', date)} />
                                                 </div>
                                             </div>
@@ -3461,7 +3452,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="mt-3 animate-in fade-in">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">PIN del Carné (SHA-256)</label>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-[40px] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
+                                                <div className="flex-1 h-[max(40px,var(--tap-min))] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
                                                     {formData.kiosk_pin}
                                                 </div>
                                                 <Button variant="secondary" icon={Copy} title="Copiar PIN" iconOnly onClick={async () => {

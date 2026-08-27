@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.803.2 — Un select y un campo de texto miden lo mismo
+
+Reportado mirando el alta de personal: *«no me gusta que hay distintos tamaños en
+los inputs, que no están alineados»*. No era de esa pantalla.
+
+**Medido con Chromium sobre el CSS compilado: `PortalInput` mide 40px y
+`LiquidSelect` medía 46.3.** Los dos controles más usados del portal nunca
+quedaron a la misma altura, en ninguna pantalla, desde siempre.
+
+La causa es una unificación que quedó a medias. En julio se les puso a los
+canónicos el alto `max(40px, var(--tap-min))` para que en un teléfono llegaran al
+piso del dedo; al select le pusieron ese mínimo **y le dejaron el relleno
+vertical viejo**. Un mínimo no compite con un relleno: se suman. Y en el fuente
+las dos líneas se ven correctas, así que ningún gate lo iba a ver — sólo aparece
+midiendo.
+
+Sin relleno vertical la altura la decide el mínimo y da **40px exactos**, igual
+que el campo de texto. `nano` conserva el suyo: su mínimo son 26px y ahí el
+relleno es lo que separa el texto del borde.
+
+**La regla, ampliada** (DESIGN.md §25.10-bis): cuando la altura de un control ya
+está declarada, su contenido **no lleva relleno vertical**. El centrado es del
+contenedor.
+
+**En el alta de personal**, además:
+
+- El teléfono de emergencia, sus teléfonos extra y los de cada contacto estaban
+  **escritos a mano** en vez de usar el campo canónico. Ahora lo usan.
+- El rótulo decía «Teléfono de Emergencia» y con el botón «Agregar» al lado se
+  **partía en dos líneas**, empujando el campo hacia abajo. Dice «Teléfono» — la
+  sección de arriba ya dice de qué contacto se trata.
+- En la tarjeta de otro contacto, el nombre era un campo **denso** (32px) al lado
+  de un select de 40, y ninguno de los dos tenía rótulo. Los dos al alto normal y
+  los dos con rótulo.
+- **20 recuadros llevaban `h-[40px]` literal.** En escritorio coincidían con los
+  canónicos; en un teléfono no, porque ahí el canónico sube a 44 y el literal se
+  queda en 40. Pasaron al token.
+
+Verificado después del cambio: los tres campos de la fila arrancan en el mismo
+píxel, miden lo mismo y terminan en el mismo píxel.
+
+Lo ancla `tests/unit/altoDeLosControles.test.js`, al que se le fabricó el defecto
+para confirmar que lo caza. Quedan **21 recuadros con altura literal en otros
+seis archivos**, contados y anotados en DESIGN.md.
+
 ## v2.803.1 — Se ve de un vistazo quién no está
 
 Dos correcciones del usuario mirando la vista con el primer dato real encima.

@@ -5184,6 +5184,44 @@ pseudo-elemento sin ocupar ese espacio en pantalla.
 `max(<altura de diseño>, var(--tap-min))` — o por `--control-h`, que ya lo
 incluye.
 
+### 25.10-bis El `min-h` correcto con el relleno viejo encima (2026-08-26)
+
+La unificación de arriba **no se completó en `LiquidSelect`**, y nadie lo notó
+durante un mes porque el gate lee el fuente y ahí las dos líneas se ven bien: el
+disparador declaraba `min-h-[max(40px,var(--tap-min))]`, que es lo que pide
+§25.10, **y además conservaba el `py-3.5` de la versión vieja**. Un mínimo no
+compite con un relleno: se suman.
+
+Medido con Chromium sobre el CSS compilado:
+
+| control | medía |
+|---|---:|
+| `PortalInput` | **40.0px** |
+| `LiquidSelect` | **46.3px** |
+
+O sea que los dos controles más usados del portal **nunca** quedaron a la misma
+altura, en ninguna pantalla. Lo reportó el usuario mirando el alta de personal:
+*«no me gusta que hay distintos tamaños en los inputs, que no están alineados»*.
+
+**La regla, ampliada:** cuando la altura de un control ya está declarada —por
+`h-`, por `min-h-` o por `--control-h`—, **su contenido no lleva relleno
+vertical**. El centrado es del contenedor (`flex items-center`), no del padding.
+Un relleno debajo de una altura declarada es invisible en el fuente y sólo
+aparece midiendo.
+
+Lo ancla `tests/unit/altoDeLosControles.test.js`, que vigila la FORMA que
+produjo el defecto —relleno vertical encima de un alto ya declarado— y no el
+número: jsdom no calcula layout, así que la medición se hace con un navegador de
+verdad y la prueba es la red para la regresión. Se le fabricó el defecto para
+confirmar que lo caza.
+
+**Y el otro lado del mismo problema:** un recuadro con `h-[40px]` literal al
+lado de un canónico coincide en escritorio y **no en un teléfono**, donde el
+canónico sube a 44 y el literal se queda en 40. El alta de personal tenía 20.
+Quedan **21 en otros seis archivos**, medidos: `BranchTabGeneral` (9),
+`FormNovedad` (4), `PracticanteModal` (3), y uno cada uno en `RangeDatePicker`,
+`CatalogSelect`, `FormRehireEmployee` y `ScheduleCalendar`.
+
 ### 25.11 Toda capa que se monta sobre la pantalla es un diálogo
 
 Una capa que cubre la pantalla, atrapa el clic de afuera y contiene controles

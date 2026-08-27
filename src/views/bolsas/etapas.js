@@ -1,4 +1,4 @@
-import { Banknote, Package, Send, ShieldCheck } from 'lucide-react';
+import { Banknote, Package, Scale, Send, ShieldCheck } from 'lucide-react';
 
 /* ── Las cuatro etapas, en el orden en que pasan las cosas ──────────────────
  *
@@ -23,6 +23,23 @@ import { Banknote, Package, Send, ShieldCheck } from 'lucide-react';
  */
 export const ETAPAS = [
     { key: 'sala',        label: 'En la sala',          icon: Package,     estado: 'ABIERTA'   },
+    /* ── «Diferencias» NO es una etapa del circuito, y por eso va aparte ────
+     *
+     * Es la única pestaña que la sala comparte con administración, y existe
+     * porque el aviso llegaba a una puerta cerrada (2026-08-26). Cuando una
+     * bolsa no cuadra, `confirmar_conteo` ya le avisa a la sala —eso funcionaba
+     * desde el principio— y el aviso apuntaba a `/bolsas?tab=finalizadas`, que
+     * es `soloAdmin`. O sea: le llegaba la notificación, tocaba, y caía en «En
+     * la sala», donde esa bolsa ya no está porque se contó hace días.
+     *
+     * Y la sala SÍ puede resolverla: `resolver_diferencia_bolsa` acepta a quien
+     * tenga `bolsas` con `can_edit` sobre una bolsa de su propia sucursal. El
+     * permiso estaba; faltaba la pantalla.
+     *
+     * Va sin `estado` porque no lo tiene: son bolsas CONTADAS con una condición
+     * —no cuadraron y nadie anotó por qué—. Va segunda, que para la sala es la
+     * de al lado. */
+    { key: 'diferencias', label: 'Diferencias',         icon: Scale,       estado: null },
     { key: 'camino',      label: 'Esperando recepción', icon: Send,        estado: 'ENTREGADA', soloAdmin: true },
     { key: 'contar',      label: 'Por contar',          icon: Banknote,    estado: 'RECIBIDA',  soloAdmin: true },
     { key: 'finalizadas', label: 'Finalizadas',         icon: ShieldCheck, estado: 'CONTADA',   soloAdmin: true },

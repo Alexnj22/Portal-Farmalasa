@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Package, Scale } from 'lucide-react';
 import Badge from '../common/Badge';
-import Notice from '../common/Notice';
 import LiquidAvatar from '../common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
@@ -545,14 +544,11 @@ export default function ConteosDeBolsas({
     const totales = useMemo(() => filas.reduce((a, c) => ({
         contado: a.contado + Number(c.total_contado || 0),
         abiertas: a.abiertas + Math.max(0, Number(c.descuadradas || 0) - Number(c.resueltas || 0)),
-        /* Lo EXPLICADO del período, sumado. Es la cifra que no existía en
-           ninguna parte de la pantalla: cada tanda la tenía adentro y nadie las
-           juntaba, así que $5,786.80 que salieron de las bolsas no aparecían en
-           ningún renglón. */
+        /* Lo EXPLICADO del período. Ya no arma un aviso —ver el comentario de
+           abajo— pero se queda calculado: es una línea, y el día que alguien
+           quiera la cifra del mes ya está. */
         justificado: a.justificado + Number(c.justificado || 0),
-        // Salas que se quedaron esperando en alguna tanda del período.
-        salasFuera: a.salasFuera + (Array.isArray(c.salas_fuera) ? c.salas_fuera.length : 0),
-    }), { contado: 0, abiertas: 0, justificado: 0, salasFuera: 0 }), [filas]);
+    }), { contado: 0, abiertas: 0, justificado: 0 }), [filas]);
 
     return (
         <section className="space-y-2">
@@ -578,31 +574,23 @@ export default function ConteosDeBolsas({
                     )}
                 </span>
             </div>
-            {(Math.abs(totales.justificado) >= 0.01 || totales.salasFuera > 0) && (
-                <Notice variant={totales.salasFuera > 0 ? 'danger' : 'warning'}
-                    icon={AlertTriangle} bloque className="mx-1">
-                    <span className="font-bold">Para mirar en estas fechas</span>
-                    <span className="block mt-1.5 space-y-1 font-normal">
-                        {Math.abs(totales.justificado) >= 0.01 && (
-                            <span className="block text-caption text-content-2">
-                                <b className="font-bold text-content tabular-nums">
-                                    {`${totales.justificado < 0 ? '−' : '+'}${formatMoney(Math.abs(totales.justificado))}`}
-                                </b>
-                                {' '}salieron de las bolsas y quedaron explicados con una nota.
-                                Explicado no es recuperado.
-                            </span>
-                        )}
-                        {totales.salasFuera > 0 && (
-                            <span className="block text-caption text-content-2">
-                                {totales.salasFuera === 1
-                                    ? 'Una sala se quedó fuera de su tanda y se contó después.'
-                                    : `${totales.salasFuera} salas se quedaron fuera de su tanda y se contaron después.`}
-                                {' '}Está marcado en la columna de cobertura.
-                            </span>
-                        )}
-                    </span>
-                </Notice>
-            )}
+            {/* ── Por qué acá NO hay aviso (usuario, 2026-08-26) ─────────────
+                Hubo uno, y duró un día. Decía tres cosas: cuánto se justificó,
+                cuántas notas iban sin foto, y qué sala se había quedado fuera de
+                su tanda.
+
+                «si está justificado no es error. si no estuviera justificado ahí
+                sí es problema.» Las tres eran HECHOS y ninguna era un pendiente:
+                una diferencia con su causa anotada está cerrada, la foto es
+                opcional por decisión, y lo de la sala fuera de tanda es historia
+                de antes del arranque. Un aviso rojo permanente sobre cosas que
+                nadie va a corregir es cómo se aprende a no leer el que sí
+                importa.
+
+                Lo que queda pendiente —una bolsa que no cuadra y todavía no
+                tiene causa— ya lo dice la línea de abajo, y desde el 2026-08-26
+                tiene su propia pestaña: «Diferencias», que la sala también ve.
+                Los hechos siguen en sus columnas, en tono neutro y en su fila. */}
 
             {!plegada && (<>
             <p className="text-caption text-content-3 px-1">

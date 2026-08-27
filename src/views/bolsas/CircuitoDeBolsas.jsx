@@ -1305,7 +1305,10 @@ export default function CircuitoDeBolsas({
     // Las diferencias sin resolver se dibujan aparte y sin período, así que
     // una pantalla con diferencias NO está vacía: decir «sin bolsas en estas
     // fechas» arriba de una bolsa que falta cuadrar es contradecirse.
-    const vacioTotal = enPantalla.length === 0 && !(!alcanceTodos && diferencias.length > 0);
+    /* Las diferencias ya NO cuentan acá: desde que tienen su propia pestaña
+     * (2026-08-26) no se dibujan dentro de ésta, así que dejarlas en la cuenta
+     * escondía el vacío del período sobre una pantalla que sí estaba vacía. */
+    const vacioTotal = enPantalla.length === 0;
 
     const masViejaFuera = useMemo(
         () => pendientesFuera.reduce((min, b) => (min && min <= b.fecha ? min : b.fecha), null),
@@ -1745,11 +1748,20 @@ export default function CircuitoDeBolsas({
     // no dibujan nada.
     const conteos = useMemo(() => ({
         sala: enSala.length,
+        /* SIEMPRE en rojo cuando hay alguna: una diferencia sin causa es lo
+           único de esta pantalla que no puede esperar a que alguien pase. Y no
+           lleva el recorte del período —salen todas— así que el contador tampoco
+           puede depender de las fechas. */
+        diferencias: sinResolver.length,
         camino: enCamino.length,
         contar: porContar.length,
         finalizadas: contadas.length,
-        tonos: { camino: enCaminoViejas.length ? 'danger' : undefined },
-    }), [enSala.length, enCamino.length, porContar.length, contadas.length, enCaminoViejas.length]);
+        tonos: {
+            camino: enCaminoViejas.length ? 'danger' : undefined,
+            diferencias: sinResolver.length ? 'danger' : undefined,
+        },
+    }), [enSala.length, sinResolver.length, enCamino.length, porContar.length,
+        contadas.length, enCaminoViejas.length]);
 
     useEffect(() => { onConteos?.(conteos); }, [conteos, onConteos]);
 
@@ -2010,11 +2022,12 @@ export default function CircuitoDeBolsas({
                 dirección apuntando ahí — se puede pasar el enlace. Y no sale en
                 «Finalizadas», donde el botón llevaría al sitio donde ya se
                 está. */}
-            {alcanceTodos && sinResolver.length > 0 && etapa !== 'finalizadas' && (
+            {alcanceTodos && sinResolver.length > 0 && etapa !== 'finalizadas'
+                && etapa !== 'diferencias' && (
                 <Notice variant="danger" icon={AlertTriangle}
                     action={(
                         <Button variant="secondary" size="sm" icon={Scale}
-                            onClick={() => onIrAEtapa?.('finalizadas', { sinResolver: true })}>
+                            onClick={() => onIrAEtapa?.('diferencias')}>
                             Ver
                         </Button>
                     )}>
@@ -2024,27 +2037,50 @@ export default function CircuitoDeBolsas({
                             : `Hay ${sinResolver.length} bolsas contadas que no cuadraron y siguen sin resolver`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Están en «Finalizadas».
+                        Están en «Diferencias».
                     </span>
                 </Notice>
             )}
 
-            {/* ── Lo único que vuelve a la sala después de entregar ──────
-                «al entregarlos ya no es responsabilidad de la sala, solo que
-                les aparezca si se reporta una diferencia encontrada en alguna
-                bolsa de efectivo, para buscar solucion» (usuario, 2026-08-24).
+            {/* ── La pestaña «Diferencias»: la sala CONTESTA ─────────────────
+                «al entregarlos ya no es responsabilidad de la sala, solo que les
+                aparezca si se reporta una diferencia encontrada en alguna bolsa
+                de efectivo, para buscar solucion» (usuario, 2026-08-24), y el
+                2026-08-26: «ellos deben de poder justificar esa diferencia, que
+                llegue notificación con la opción de contestar y explicar. y en
+                las bolsas de efectivo que tengan un apartado de esto».
 
-                Va con el MONTO de la diferencia aunque la sala no tenga
-                `bolsas_ver_montos`, y es deliberado: ese permiso esconde cuánto
-                efectivo hay en juego —para no publicar el dinero en sala—, no
-                cuánto falta en la bolsa propia. Buscar $8 y buscar $600 son dos
-                búsquedas distintas, y el aviso que el servidor ya le manda a la
-                sala al contar dice exactamente esa cifra desde el 15-ago. Lo que
-                sigue sin verse es el saldo de la bolsa, que es lo que el permiso
-                protege.
+                ── Lo que faltaba NO era el permiso ni el aviso ────────────────
+                Los dos existían y estaban bien. `confirmar_conteo` le avisa a la
+                sala desde el 15-ago, con el folio y cuánto faltó; y
+                `resolver_diferencia_bolsa` acepta a quien tenga `bolsas` con
+                `can_edit` sobre una bolsa de SU sucursal, que es exactamente lo
+                que tienen los cuatro cargos de sala.
 
-                Sin botón de resolver: eso lo decide quien contó. */}
-            {!alcanceTodos && sinResolver.length > 0 && (
+                Lo que fallaba era el DESTINO. El aviso apuntaba a
+                `/bolsas?tab=finalizadas`, y esa pestaña es `soloAdmin`: la sala
+                tocaba la notificación y caía en «En la sala», donde su bolsa ya
+                no está porque se contó hace días. Y acá abajo, esta misma lista
+                estaba metida dentro de esa pestaña, sin contador y sin botón —
+                el comentario viejo decía «sin botón de resolver: eso lo decide
+                quien contó», que es la línea que el usuario corrigió.
+
+                Hoy es su propia pestaña, con su contador en rojo, y el aviso
+                apunta ahí.
+
+                ── El monto se ve aunque falte `bolsas_ver_montos` ────────────
+                Deliberado, y ya era así antes de la pestaña: ese permiso esconde
+                cuánto efectivo hay en juego —para no publicar el dinero en
+                sala—, no cuánto falta en la bolsa propia. Buscar $8 y buscar
+                $600 son dos búsquedas distintas. Lo que sigue sin verse es el
+                saldo de la bolsa, que es lo que el permiso protege. */}
+            {etapa === 'diferencias' && (
+                sinResolver.length === 0 ? (
+                    <EmptyState icon={Scale} title="Sin diferencias por resolver"
+                        subtitle={alcanceTodos
+                            ? 'Cuando una tanda deje una diferencia sin causa anotada, aparece aquí.'
+                            : 'Si alguna bolsa de la sala no cuadra al contarla, aparece aquí y llega un aviso.'} />
+                ) : (
                 <section className="space-y-2">
                     <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
                         <h3 className="text-label font-bold text-content flex items-center gap-2">
@@ -2056,8 +2092,9 @@ export default function CircuitoDeBolsas({
                         </span>
                     </div>
                     <p className="text-caption text-content-3 px-1">
-                        Administración contó estas bolsas y el dinero no coincidió. Ya
-                        no están en la sala: se muestran para buscar qué pasó.
+                        {alcanceTodos
+                            ? 'Bolsas que se contaron y no cuadraron, y todavía no tienen causa anotada. Salen TODAS, sin importar el período.'
+                            : 'Estas bolsas se contaron y el dinero no coincidió. Ya no están en la sala: al anotar qué pasó, la diferencia queda explicada.'}
                     </p>
                     <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
                         {sinResolver.map((b) => {
@@ -2073,14 +2110,24 @@ export default function CircuitoDeBolsas({
                                     <span className="text-caption text-content-3">
                                         Contada el {selloDeTiempo(b.contado_at)}
                                     </span>
+                                    {(puedeContar || puedeEntregar) && (
+                                        <Resolver bolsa={b} ocupado={ocupado === `resolver-${b.id}`}
+                                            onResolver={resolver}
+                                            salaId={b.branch_id} userId={user?.id} />
+                                    )}
                                 </Bolsa>
                             );
                         })}
                     </div>
                 </section>
+                )
             )}
 
-            {vacioTotal ? (
+            {/* La pestaña «Diferencias» ya se dibujó entera arriba —con su propio
+                vacío— así que acá se corta: el vacío del período hablaría de
+                bolsas que esa pestaña ni mira, porque las diferencias salen sin
+                importar el rango. */}
+            {etapa === 'diferencias' ? null : vacioTotal ? (
                 <EmptyState
                     icon={Package}
                     title="Sin bolsas en estas fechas"

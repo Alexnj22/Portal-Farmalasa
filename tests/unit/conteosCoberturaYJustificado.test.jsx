@@ -63,10 +63,8 @@ describe('Conteos · lo justificado', () => {
         pintar([COMPLETA]);
         // El cero es cierto: no queda nada por explicar.
         expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
-        // Y esto es lo que faltaba: ese dinero salió igual. Sale DOS veces —en
-        // el aviso de arriba y en la columna— y así tiene que ser: el aviso se
-        // lee con la sección plegada, la columna dice de qué tanda es.
-        expect(screen.getAllByText('−$4,592.24').length).toBe(2);
+        // Y esto es lo que faltaba: ese dinero salió igual.
+        expect(screen.getByText('−$4,592.24')).toBeTruthy();
     });
 
     it('NO señala la falta de foto: es opcional por decisión', () => {
@@ -101,20 +99,21 @@ describe('Conteos · cobertura', () => {
     });
 });
 
-describe('Conteos · el aviso de arriba', () => {
-    it('sale aunque la sección esté PLEGADA, que es como arranca', () => {
-        // El motivo de la prueba: el aviso nació dentro del bloque plegable y
-        // por lo tanto invisible por defecto, que es exactamente el defecto que
-        // venía a corregir.
+describe('Conteos · sin aviso agregado', () => {
+    /* Hubo uno y duró un día. «si está justificado no es error. si no estuviera
+     * justificado ahí sí es problema» (usuario, 2026-08-26): lo justificado, la
+     * foto opcional y la sala fuera de tanda son HECHOS, no pendientes, y un
+     * aviso rojo permanente sobre cosas que nadie va a corregir enseña a no leer
+     * el que sí importa. Los hechos siguen en sus columnas. */
+    it('no arma un aviso rojo con hechos que ya están cerrados', () => {
         render(<ConteosDeBolsas lista={[COMPLETA, INCOMPLETA]} plegada onPlegar={() => {}} />);
-        expect(screen.getByText('Para mirar en estas fechas')).toBeTruthy();
-        // Plegada, la columna no se pinta: queda sólo la del aviso.
-        expect(screen.getAllByText('−$4,592.24').length).toBe(1);
+        expect(screen.queryByText('Para mirar en estas fechas')).toBeNull();
     });
 
-    it('se calla cuando no hay nada que mirar', () => {
-        const limpia = { ...INCOMPLETA, salas: 6, salas_fuera: [] };
-        render(<ConteosDeBolsas lista={[limpia]} plegada onPlegar={() => {}} />);
-        expect(screen.queryByText('Para mirar en estas fechas')).toBeNull();
+    it('lo pendiente de verdad sí se dice: bolsas sin causa anotada', () => {
+        // `descuadradas` sin `resueltas` es lo único que queda por hacer.
+        const abierta = { ...COMPLETA, resueltas: 0, pendiente: -4592.24 };
+        pintar([abierta]);
+        expect(screen.getByText(/siguen sin causa anotada/)).toBeTruthy();
     });
 });

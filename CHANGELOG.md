@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.806.0 — La sala tiene su apartado de Diferencias y puede explicarlas
+
+> «¿qué pasa si una sala tiene diferencia, cómo lo ven ellos? ¿cuál es el flujo?
+> ellos deben de poder justificar esa diferencia, que llegue notificación con la
+> opción de contestar y explicar. y en las bolsas de efectivo que tengan un
+> apartado de esto.» (usuario, 2026-08-26)
+
+**Lo que faltaba no era el aviso ni el permiso: los dos existían.**
+`confirmar_conteo` le avisa a la sala desde el 15 de agosto, con el folio y
+cuánto faltó. Y `resolver_diferencia_bolsa` acepta a quien tenga `bolsas` con
+`can_edit` sobre una bolsa de **su** sucursal — que es exactamente lo que tienen
+los cuatro cargos de sala.
+
+Fallaba el **destino**. El aviso apuntaba a `/bolsas?tab=finalizadas`, y esa
+pestaña es `soloAdmin`: la sala tocaba la notificación, la pestaña no existía
+para ella, y caía en «En la sala» — donde esa bolsa ya no está, porque se contó
+hace días. La lista sí estaba, metida al fondo de esa misma pestaña, sin
+contador y **sin botón**: el comentario del código decía *«sin botón de resolver:
+eso lo decide quien contó»*, que es justo la línea que el usuario corrigió.
+
+**«Diferencias» es ahora su propia pestaña**, la única que las dos partes
+comparten: la sala ve las suyas, administración ve todas. Contador en rojo
+mientras haya alguna, y sin recorte de período —una diferencia no se esconde por
+mover unas fechas—. Adentro, cada bolsa con cuánto faltó o sobró y el botón para
+explicar. El aviso ahora apunta ahí (migración `20260827042151`).
+
+El monto se ve **aunque la sala no tenga `bolsas_ver_montos`**, y ya era así
+antes: ese permiso esconde cuánto efectivo hay en juego, no cuánto falta en la
+bolsa propia. Buscar $8 y buscar $600 son dos búsquedas distintas.
+
+### Y el aviso rojo de «Finalizadas» se retira
+
+> «si está justificado no es error. si no estuviera justificado ahí sí es
+> problema.» — y del tercer punto: «es por lo mismo, no hace falta ahorita, el
+> lunes inicio.»
+
+Duró un día. Decía tres cosas —cuánto se justificó, cuántas notas iban sin foto,
+qué sala se quedó fuera de su tanda— y **las tres eran hechos, no pendientes**:
+una diferencia con causa anotada está cerrada, la foto es opcional por decisión,
+y lo de la sala es historia de antes del arranque. Un aviso rojo permanente sobre
+cosas que nadie va a corregir es cómo se aprende a no leer el que sí importa.
+
+Lo que queda pendiente de verdad —una bolsa que no cuadra y todavía no tiene
+causa— lo dice la línea de la sección y, desde hoy, su propia pestaña. Los hechos
+siguen en sus columnas, en tono neutro y en su fila.
+
 ## v2.805.3 — Un rótulo mide siempre lo mismo, y el gate deja de estar ciego
 
 _(La versión quedó en 2.805.2 al commitearse: otra sesión commiteó este trabajo junto con el suyo. Este commit la alinea.)_

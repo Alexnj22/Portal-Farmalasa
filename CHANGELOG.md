@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.801.0 — El circuito de bolsas arrancó el lunes 24, no el 15
+
+Decisión del usuario sobre el aviso de v2.800.2: **«cortes anteriores al 24,
+dejalos como finalizados. no importa, se inició el lunes»**.
+
+`bolsas_circuito_desde()` marcaba el **15-ago 21:43 UTC** — el instante en que la
+migración del disparador entró a producción. Esa fecha describía el **código**,
+no la operación: la sala no empezó a guardar bolsas hasta el lunes siguiente. Con
+la raya ahí, los once cortes del 15 y 16 de agosto de Salud 2, Salud 3 y Salud 4
+—$8,166.15, y ni una bolsa— quedaban denunciados todos los días como efectivo
+contado que nunca se guardó. Técnicamente cierto; **pendiente**, no: es historia
+de dos días en que el sistema todavía no se usaba.
+
+Y una alarma que denuncia algo que nadie va a resolver se termina ignorando, y
+con ella la que sí importa. Es el mismo razonamiento que ya había dejado fuera
+los 16 cortes previos al disparador (*«lo de antes es historia, y la historia no
+se embolsa hoy»*); lo único que cambia es dónde cae la raya: **lunes 24-ago,
+00:00 SV**.
+
+Es también donde el dato se parte solo. Medido antes de mover nada:
+
+| | sala-días | descuadre |
+|---|---:|---|
+| desde el lunes 24 | **18** (6 locales × 3 días) | **0.00 en los dieciocho** |
+| antes del 24 | 98 bolsas, **todas ya en `CONTADA`** | los 6 sala-días del aviso |
+
+O sea que la raya no esconde nada a medias: lo de antes está cerrado y lo de
+después cuadra al centavo. Y el tablero no queda mudo — la baldosa «El corte y su
+bolsa» pasa a decir **«18 días revisados»** en verde, que es lo que distingue
+«todo bien» de «no cargó».
+
+**No se tocó ni una fila.** Las 98 bolsas viejas siguen con su folio, su conteo y
+su historia, y se ven poniendo el período en esas fechas. Lo que cambia es hasta
+dónde retrocede la **vigilancia** — reescribir efectivo ya contado para que una
+alarma calle sería exactamente al revés.
+
+Migración `20260827024206_bolsas_el_circuito_arranco_el_lunes_24`.
+
 ## v2.800.2 — El aviso del efectivo sin guardar dice qué pasó y deja de ser un óvalo
 
 Reportado mirando `/bolsas`: **«no entiendo el error. y se ve fatal»**. Las dos
@@ -59,13 +97,13 @@ está guardado en bolsas que nadie puede ir a buscar; es el mismo razonamiento p
 el que la migración del arranque dejó fuera los 16 cortes previos al disparador.
 Qué se hace con esos días es una decisión, no un arreglo.
 
-Y queda una discrepancia anotada: el aviso muestra **cinco** de esos seis días.
-`get_bolsas_invariante` recorta por `min(resuelto_at)` sobre *todos* los cortes
-del día, descartados incluidos, así que Salud 4 del 15 de agosto —cuyo primer
-corte se descartó a las 18:52, antes del disparador de las 21:43— queda fuera del
-invariante aunque su corte confirmado sea posterior. `get_cortes_por_embolsar`
-usa el `resuelto_at` del corte confirmado y sí lo cuenta. Las dos funciones miran
-el mismo hecho y responden distinto.
+El aviso muestra **cinco** de esos seis días, y no es un defecto: las dos
+funciones trabajan a distinta granularidad a propósito. `get_bolsas_invariante`
+va por **día** y sólo entra si *todos* los cortes confirmados de ese día son
+posteriores al arranque —un día empezado antes del circuito nunca podría cuadrar,
+así que denunciarlo sería ruido—; Salud 4 del 15 de agosto confirmó su primer
+corte a las 18:52, antes del disparador de las 21:43, y queda fuera.
+`get_cortes_por_embolsar` va por **corte** y sí lo cuenta.
 
 ## v2.800.1 — Equipos: la sala tiene una jefatura, no tres
 

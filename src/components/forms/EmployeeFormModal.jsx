@@ -895,16 +895,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const edad = calcAge(formData?.birth_date);
         return edad !== null && edad < MINOR_AGE;
     })();
-    // El reglamento interno le pide pasaporte o carné de residente a quien no es
-    // salvadoreño (su Art. 8, letra g). Sale de la nacionalidad que ya está
-    // escrita: una casilla aparte sería el mismo dato preguntado dos veces, y el
-    // día que se contradigan nadie sabría cuál vale.
-    //
-    // Sin nacionalidad NO se pide el documento: «nadie contestó» no es
-    // «extranjero», y pedirle un pasaporte a quien todavía no dijo de dónde es
-    // convierte un campo vacío en un pendiente falso.
-    const esExtranjero = !!formData?.nationality &&
-        !/salvadore/i.test(String(formData.nationality));
     // Se suben en la sección Acreditaciones, no en Documentación: ahí el
     // archivo es el que trae el número y el vencimiento.
     const EN_ACREDITACIONES = ['SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
@@ -937,31 +927,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
         // ── Lo que el reglamento interno pide para ingresar (su Art. 8) ─────
         //
-        // La lista estaba completa en el reglamento aprobado por la Dirección
-        // General de Trabajo, y NINGUNO tenía dónde guardarse acá: el expediente
-        // pedía las acreditaciones profesionales —que son de unos pocos— y no
-        // los documentos que se le piden a TODA persona que entra.
+        // La lista del Art. 8 tiene diez letras y acá están CINCO. Las otras no
+        // se descartaron por criterio propio: el usuario dijo cuáles pide de
+        // verdad esta empresa y cuáles no —27-ago-2026—, y eso es un dato que el
+        // reglamento no contiene.
         //
-        // Van al final y sin condición: son de todos. Los tres primeros son los
-        // que el reglamento nombra sin salvedad; los que llevan «si aplica» la
-        // llevan porque el propio Art. 8 la escribe.
-        { key: 'SOLICITUD_EMPLEO',   label: 'Solicitud de empleo' },
-        { key: 'CURRICULUM',         label: 'Currículum u hoja de vida' },
-        // El certificado médico del Art. 8 NO es el examen del Art. 117 (ése es
-        // sólo de menores y se repite cada año). Éste es de ingreso y el
-        // reglamento dice qué tiene que traer adentro.
-        { key: 'CERTIFICADO_MEDICO', label: 'Certificado médico — heces, orina y hemograma' },
-        { key: 'SOLVENCIA_PNC',      label: 'Solvencia de la Policía Nacional Civil' },
-        { key: 'COPIA_NIT',          label: 'Copia del NIT' },
-        { key: 'TARJETA_ISSS',       label: 'Copia de la tarjeta del ISSS' },
-        { key: 'TARJETA_AFP',        label: 'Copia de la tarjeta de la AFP' },
-        { key: 'REFERENCIAS',        label: 'Referencias personales y familiares' },
-        { key: 'REFERENCIAS_LABORALES', label: 'Referencias de trabajos anteriores (si aplica)' },
-        ...(formData.education_level ? [{ key: 'CERTIFICADO_ESTUDIOS', label: 'Certificados de estudio' }] : []),
-        // Extranjero: el reglamento pide pasaporte o carné de residente. Sale de
-        // la nacionalidad que ya está escrita y no de una casilla aparte.
-        ...(esExtranjero ? [{ key: 'PASAPORTE_RESIDENCIA', label: 'Pasaporte o carné de residente' }] : []),
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente, formData.education_level, esExtranjero]);
+        //   · certificado médico, solvencia de la PNC y referencias: «no
+        //     solicitamos, normalmente van en el currículum».
+        //   · certificados de estudio: «van en los atestados del currículum».
+        //   · pasaporte o carné de residente: «no lo pedimos, sólo el DUI».
+        //
+        // O sea que el currículum acá hace de sobre: adentro vienen los
+        // atestados. Por eso queda, y por eso los otros no se piden dos veces.
+        //
+        // ⚠️ La diferencia entre el reglamento y la práctica NO la resuelve el
+        // portal. El reglamento está aprobado por la Dirección General de
+        // Trabajo y es el que se lee en una inspección; si la empresa dejó de
+        // pedir tres de sus requisitos, lo que corresponde es reformarlo, no que
+        // esta lista finja que dice otra cosa. El texto completo está en
+        // `docs/legal/reglamento_interno_de_trabajo.txt` para cuando se decida.
+        //
+        // La solicitud de empleo SÍ se queda: es requisito del Art. 8 letra b) y
+        // el usuario lo confirmó — «si es así, se debe adjuntar».
+        { key: 'SOLICITUD_EMPLEO', label: 'Solicitud de empleo' },
+        { key: 'CURRICULUM',       label: 'Currículum u hoja de vida (con sus atestados)' },
+        { key: 'COPIA_NIT',        label: 'Copia del NIT' },
+        { key: 'TARJETA_ISSS',     label: 'Copia de la tarjeta del ISSS' },
+        { key: 'TARJETA_AFP',      label: 'Copia de la tarjeta de la AFP' },
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});

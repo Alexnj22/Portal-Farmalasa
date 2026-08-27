@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.815.1 — Sólo los documentos que la empresa pide de verdad
+
+La versión anterior agregó los **once** documentos del Art. 8 del reglamento. El
+usuario corrigió cuáles pide esta empresa de verdad, que es un dato que el
+reglamento no contiene:
+
+| queda | se va |
+|---|---|
+| Solicitud de empleo | Certificado médico |
+| Currículum (con sus atestados) | Solvencia de la PNC |
+| Copia del NIT | Referencias personales y laborales |
+| Copia de la tarjeta del ISSS | Certificados de estudio |
+| Copia de la tarjeta de la AFP | Pasaporte o carné de residente |
+
+El criterio no fue mío. *«Certificado médico, solvencia PNC, referencias: no
+solicitamos, normalmente van en el currículum. Certificados de estudio también
+van en los atestados del currículum. Y el pasaporte no lo pedimos, sólo el DUI.»*
+
+O sea que acá **el currículum hace de sobre**: adentro vienen los atestados. Por
+eso se queda, y por eso los otros no se piden dos veces. La **solicitud de
+empleo** sí se queda — es requisito del Art. 8 letra b), y confirmado: *«si es
+así, se debe adjuntar»*.
+
+**Lo que el portal NO hace, y hay que decirlo.** El reglamento sigue diciendo que
+esos cinco son requisitos de ingreso, y está aprobado por la Dirección General de
+Trabajo: es el documento que se lee en una inspección. Que la empresa haya dejado
+de pedir tres de ellos es una diferencia entre el reglamento y la práctica, y
+**esa diferencia no la arregla el portal** — se arregla reformando el reglamento.
+Esta lista no va a fingir que el reglamento dice otra cosa; el texto completo
+está en `docs/legal/reglamento_interno_de_trabajo.txt` para cuando se decida.
+
 ## v2.815.0 — El reglamento interno también manda: once documentos y el plazo de la firma
 
 Con el Código de Trabajo ya en el repo, faltaba leer el otro documento que

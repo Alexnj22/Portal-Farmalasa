@@ -1834,6 +1834,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
+                                {/* El campo y sus extras son UNA celda de la rejilla.
+                                    Antes los extras iban en su propia fila `col-span-2`: un
+                                    teléfono agregado aparecía a ancho completo y varias filas
+                                    más abajo, debajo de los correos, lejos del campo que lo
+                                    generó. El segundo teléfono de alguien tiene que estar
+                                    donde está el primero. */}
+                                <div className="flex flex-col gap-2">
                                 <PortalInput
                                     label="Teléfono"
                                     name="phone"
@@ -1849,9 +1856,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <Button variant="ghost" size="xs" icon={Plus} onClick={addPhone}>Agregar</Button>
                                     }
                                 />
+                                    {(formData.extra_phones || []).map((ph, idx) => {
+                                        const dLen = digitsLen(ph);
+                                        const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
+                                        return (
+                                            <div key={idx} className="flex items-center gap-1.5">
+                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                    <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
+                                                    <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
+                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
+                                                </div>
+                                                <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
 
-                                <div>
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 -mb-0.5 flex items-center justify-between">
                                         <span>Correo Electrónico {emailInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Correo inválido</span>}</span>
                                         <Button variant="ghost" icon={Plus} onClick={addEmail}>Agregar</Button>
                                     </label>
@@ -1860,44 +1882,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <input type="email" name="email" value={formData.email || ''} onChange={handleChange} placeholder="nombre@correo.com"
                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                     </div>
+
+                                    {(formData.extra_emails || []).map((em, idx) => {
+                                        const emErr = !!em && em.trim() !== '' && !isValidEmail(em.trim());
+                                        return (
+                                            <div key={idx} className="flex items-center gap-1.5">
+                                                <div className={`relative flex-1 min-w-0 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                                    <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
+                                                    <input type="email" value={em} onChange={(e) => updateEmail(idx, e.target.value)} placeholder="otro@correo.com"
+                                                        className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-3" />
+                                                </div>
+                                                <Button variant="ghost" size="sm" icon={X} title="Quitar correo" iconOnly onClick={() => removeEmail(idx)} />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
 
-                                {(formData.extra_emails || []).length > 0 && (
-                                    <div className="md:col-span-2 flex flex-col gap-2">
-                                        {(formData.extra_emails || []).map((em, idx) => {
-                                            const emErr = !!em && em.trim() !== '' && !isValidEmail(em.trim());
-                                            return (
-                                                <div key={idx} className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${emErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                        <div className="absolute left-3 text-content-3"><Mail size={14} strokeWidth={2.5} /></div>
-                                                        <input type="email" value={em} onChange={(e) => updateEmail(idx, e.target.value)} placeholder="otro@correo.com"
-                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                    </div>
-                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar correo" iconOnly onClick={() => removeEmail(idx)} />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
 
-                                {(formData.extra_phones || []).length > 0 && (
-                                    <div className="md:col-span-2 flex flex-col gap-2">
-                                        {(formData.extra_phones || []).map((ph, idx) => {
-                                            const dLen = digitsLen(ph);
-                                            const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
-                                            return (
-                                                <div key={idx} className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                                        <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                                        <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
-                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                                    </div>
-                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">

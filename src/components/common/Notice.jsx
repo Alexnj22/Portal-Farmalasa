@@ -57,12 +57,29 @@ Object.assign(VARIANTES, {
     'chart-3': { caja: 'bg-chart-3/10 border-chart-3/30 text-chart-3-text', icono: Info },
 });
 
+/**
+ * `bloque` — el aviso que ocupa varios renglones.
+ *
+ * El radio del aviso sale de `--btn-radius`, y en el tema Liquid ese token vale
+ * **9999px**. En un aviso de un renglón eso es exactamente lo que se quiere: se
+ * ve como los botones y las píldoras que tiene al lado. En uno de siete —un
+ * título, una explicación y una lista de días— el mismo token dibuja un óvalo
+ * gigante con las esquinas comiéndose el texto. Reportado el 2026-08-26 sobre el
+ * aviso del invariante de Bolsas: «se ve fatal».
+ *
+ * No se puede deducir: desde adentro, `children` es una caja cerrada y el
+ * componente no sabe cuántos renglones va a ocupar. Así que lo declara quien lo
+ * escribe, igual que `usarAccionDeFila` en `DataTable` y por el mismo motivo.
+ * Con `bloque`, el radio pasa a ser el de una tarjeta y el relleno crece — que
+ * es lo que un párrafo con lista adentro necesita.
+ */
 const Notice = memo(({
     variant = 'info',
     icon: IconoPropio,
     children,
     action,
     compact = false,
+    bloque = false,
     className = '',
     ...rest
 }) => {
@@ -74,11 +91,14 @@ const Notice = memo(({
         // `alert` obliga al lector de pantalla a cortar lo que esté leyendo, y
         // eso es para errores de verdad, no para una nota al pie de un campo.
         <div role="status"
-            className={`flex items-start gap-2 rounded-btn border font-bold
-                ${compact ? 'px-2.5 py-1.5 text-micro' : 'px-3 py-2 text-label'}
+            className={`flex items-start gap-2 border font-bold
+                ${bloque ? 'rounded-card' : 'rounded-btn'}
+                ${compact ? 'px-2.5 py-1.5 text-micro'
+                          : bloque ? 'px-4 py-3 text-label' : 'px-3 py-2 text-label'}
                 ${v.caja} ${className}`}
             {...rest}>
-            {Icono && <Icono size={compact ? 12 : 14} strokeWidth={2.5} className="shrink-0 mt-px" />}
+            {Icono && <Icono size={compact ? 12 : 14} strokeWidth={2.5}
+                className={`shrink-0 ${bloque ? 'mt-0.5' : 'mt-px'}`} />}
             <span className="min-w-0 flex-1 leading-snug">{children}</span>
             {action && <span className="shrink-0 -my-0.5">{action}</span>}
         </div>

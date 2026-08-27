@@ -1309,6 +1309,25 @@ export default function CircuitoDeBolsas({
         [invariante, sala],
     );
 
+    /* ¿Ninguno de esos días llegó a abrir una bolsa? El aviso lo tiene que
+     * DECIR, y es una frase distinta.
+     *
+     * El texto original hablaba siempre de «menos efectivo guardado» y remataba
+     * con «faltan $909.84 de $909.84 declarados» — o sea, el mismo número dos
+     * veces, que es como se lee «falta TODO» cuando en realidad no se guardó
+     * nada. Reportado el 2026-08-26: «no entiendo el error». Y el cuerpo era
+     * directamente falso: decía «las bolsas también cuadraron» sobre días que no
+     * tienen ni una bolsa.
+     *
+     * Los dos casos son problemas distintos. Con bolsas de menos, la caja
+     * guardó parte y hay que buscar el resto; con CERO bolsas, el corte se
+     * confirmó y el circuito nunca supo de ese dinero — que es el modo en que
+     * arrancó el sistema el 15 y 16 de agosto en tres salas. */
+    const ningunaBolsa = useMemo(
+        () => diasQueNoCuadran.length > 0 && diasQueNoCuadran.every((d) => Number(d.bolsas) === 0),
+        [diasQueNoCuadran],
+    );
+
     // Las que además quedaron fuera del rango: el aviso no puede decir «están
     // abajo, en Contadas» sobre una bolsa que el período no dibuja.
     /* Las que ya se contaron y esperan el cierre, y las que faltan. El botón de
@@ -1853,29 +1872,52 @@ export default function CircuitoDeBolsas({
                 Nombra los días uno por uno. La baldosa dice cuántos son, y una
                 cifra sin forma de llegar a lo que cuenta es la mitad de un
                 aviso — es la lección de «Sin resolver», que decía 11 y no había
-                manera de ver las 11. */}
+                manera de ver las 11.
+
+                Va con `bloque` porque son siete renglones: sin eso el radio del
+                aviso es el de un botón, que en el tema Liquid vale 9999px, y la
+                caja sale como un óvalo con las esquinas comiéndose el texto. Ver
+                el encabezado de `Notice`. */}
             {diasQueNoCuadran.length > 0 && (
-                <Notice variant="danger" icon={AlertTriangle}>
+                <Notice variant="danger" icon={AlertTriangle} bloque>
                     <span className="font-bold">
-                        {diasQueNoCuadran.length === 1
-                            ? 'Un día cerró con menos efectivo guardado del que declaró el corte'
-                            : `${diasQueNoCuadran.length} días cerraron con menos efectivo guardado del que declaró el corte`}
+                        {ningunaBolsa
+                            ? (diasQueNoCuadran.length === 1
+                                ? 'Un día cerró sin guardar nada del efectivo que declaró el corte'
+                                : `${diasQueNoCuadran.length} días cerraron sin guardar nada del efectivo que declaró el corte`)
+                            : (diasQueNoCuadran.length === 1
+                                ? 'Un día cerró con menos efectivo guardado del que declaró el corte'
+                                : `${diasQueNoCuadran.length} días cerraron con menos efectivo guardado del que declaró el corte`)}
                     </span>
                     <span className="block mt-1 font-normal text-content-2">
-                        El corte de esos días cuadró y las bolsas también: lo que no cuadra es
-                        cuánto llegó a guardarse. Hay que revisar la caja de esa sala.
+                        {ningunaBolsa
+                            ? `Esos días el corte se confirmó y no se abrió ninguna bolsa, así que ese
+                               efectivo nunca entró al circuito. Hay que averiguar qué se hizo con ese
+                               dinero en la sala antes de darlo por guardado.`
+                            : `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
+                               cuánto llegó a guardarse. Hay que revisar la caja de esa sala.`}
                     </span>
-                    <span className="block mt-1.5 space-y-0.5">
-                        {diasQueNoCuadran.map((d) => (
-                            <span key={`${d.branch_id}-${d.fecha}`}
-                                className="block text-caption font-normal text-content-2 tabular-nums">
-                                {nombreSala[d.branch_id] || 'Sala'} · {rotularDia(d.fecha)}
-                                {' · '}
-                                {verMontos
-                                    ? `faltan ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)} declarados`
-                                    : `${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'} guardadas`}
-                            </span>
-                        ))}
+                    <span className="block mt-2.5 border-t border-danger/20 pt-2 space-y-1">
+                        {diasQueNoCuadran.map((d) => {
+                            const sinBolsa = Number(d.bolsas) === 0;
+                            return (
+                                <span key={`${d.branch_id}-${d.fecha}`}
+                                    className="flex items-baseline justify-between gap-3 text-caption font-normal text-content-2">
+                                    <span className="min-w-0 truncate">
+                                        {nombreSala[d.branch_id] || 'Sala'} · {rotularDia(d.fecha)}
+                                    </span>
+                                    <span className="shrink-0 tabular-nums">
+                                        {verMontos
+                                            ? (sinBolsa
+                                                ? `${formatMoney(d.declarado)} sin guardar · ninguna bolsa`
+                                                : `faltan ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)} · ${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'}`)
+                                            : (sinBolsa
+                                                ? 'ninguna bolsa'
+                                                : `${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'} guardadas`)}
+                                    </span>
+                                </span>
+                            );
+                        })}
                     </span>
                 </Notice>
             )}

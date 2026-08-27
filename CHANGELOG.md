@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.800.2 — El aviso del efectivo sin guardar dice qué pasó y deja de ser un óvalo
+
+Reportado mirando `/bolsas`: **«no entiendo el error. y se ve fatal»**. Las dos
+cosas eran ciertas y son dos defectos distintos.
+
+**El texto decía lo contrario de lo que pasó.** El aviso del invariante hablaba
+siempre de «menos efectivo guardado del que declaró el corte» y remataba cada
+día con `faltan $909.84 de $909.84 declarados` — el mismo número dos veces, que
+es como se escribe «falta TODO» sin decirlo. Y el cuerpo era directamente falso:
+afirmaba que «el corte cuadró y las bolsas también» sobre cinco días que **no
+tienen ni una bolsa**. Medido en producción: Salud 2, Salud 3 y Salud 4, los días
+15 y 16 de agosto, cero bolsas — son los dos días del arranque del circuito, y
+desde el 17 las seis salas abren su bolsa solas.
+
+Son dos problemas distintos y ahora el aviso los separa. Con bolsas de menos, la
+caja guardó una parte y hay que buscar el resto. Con **cero** bolsas, el corte se
+confirmó y el circuito nunca supo de ese dinero, así que la frase es otra: *«N
+días cerraron sin guardar nada del efectivo que declaró el corte»*, y cada
+renglón dice `$909.84 sin guardar · ninguna bolsa` en vez de restar un número
+contra sí mismo. La lista además se alinea: sala y día a la izquierda, la cifra a
+la derecha con `tabular-nums`.
+
+**Y el óvalo.** `Notice` toma su radio de `--btn-radius`, que en el tema Liquid
+vale **9999px**. En un aviso de un renglón eso es exactamente lo correcto —se ve
+como los botones y las píldoras que tiene al lado—; en uno de siete dibuja una
+cápsula gigante con las esquinas comiéndose el texto, que es lo que se ve en la
+captura. Nuevo prop **`bloque`**: radio de tarjeta y relleno de párrafo. No se
+puede deducir desde adentro —`children` es una caja cerrada y el componente no
+sabe cuántos renglones va a ocupar—, así que lo declara quien escribe el aviso,
+igual que `usarAccionDeFila` en `DataTable`. Documentado en DESIGN.md §15.6.
+
+**Lo que NO se tocó, a propósito:** los 11 cortes del 15 y 16 de agosto siguen sin
+bolsa — **$8,166.15** en seis sala-días, contando el último corte de cada día y no
+la suma de todos, que son acumulativos. Crearlas hoy sería afirmar que ese dinero
+está guardado en bolsas que nadie puede ir a buscar; es el mismo razonamiento por
+el que la migración del arranque dejó fuera los 16 cortes previos al disparador.
+Qué se hace con esos días es una decisión, no un arreglo.
+
+Y queda una discrepancia anotada: el aviso muestra **cinco** de esos seis días.
+`get_bolsas_invariante` recorta por `min(resuelto_at)` sobre *todos* los cortes
+del día, descartados incluidos, así que Salud 4 del 15 de agosto —cuyo primer
+corte se descartó a las 18:52, antes del disparador de las 21:43— queda fuera del
+invariante aunque su corte confirmado sea posterior. `get_cortes_por_embolsar`
+usa el `resuelto_at` del corte confirmado y sí lo cuenta. Las dos funciones miran
+el mismo hecho y responden distinto.
+
 ## v2.800.1 — Equipos: la sala tiene una jefatura, no tres
 
 Correcciones del usuario sobre el boceto de `/personal/equipos`, mirándolo en

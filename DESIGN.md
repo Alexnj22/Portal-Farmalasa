@@ -2991,6 +2991,20 @@ El del medio entre `AlertModal` (interrumpe) y los banners de página. Dice algo
 *acá*, junto a lo que se habla. `role="status"`, no `alert`: informar no es
 interrumpir.
 
+**Un aviso de varios renglones lleva `bloque`.** El radio sale de
+`--btn-radius`, que en Liquid vale **9999px**: en un renglón eso es lo correcto
+—se ve como los botones y las píldoras de al lado—, pero en siete dibuja un
+óvalo gigante con las esquinas comiéndose el texto. Reportado el 2026-08-26
+sobre el aviso del invariante de Bolsas: «se ve fatal». Con `bloque` el radio
+pasa a `rounded-card` y el relleno crece a `px-4 py-3`.
+
+No se puede deducir desde adentro: `children` es una caja cerrada y el
+componente no sabe cuántos renglones va a ocupar. Lo declara quien lo escribe,
+igual que `usarAccionDeFila` en `DataTable` (§32.8) y por el mismo motivo — con
+la misma consecuencia, que es la de
+`feedback_una_prop_opt_in_es_una_prop_olvidada`: al escribir un aviso con
+título, párrafo y lista, se declara.
+
 ---
 
 ### 15.7 `ListRow` — fila de lista

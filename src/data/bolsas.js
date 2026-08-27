@@ -87,6 +87,13 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
  * `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`. Y sólo mira los días
  * nacidos dentro del circuito; antes del disparador hay cortes confirmados sin
  * bolsa que no son dinero perdido, y una alarma siempre roja se ignora.
+ *
+ * ⚠️ **Estuvo escrita y sin consumidor hasta el 2026-08-26.** La función, su
+ * RPC y sus permisos existían; no la llamaba ninguna pantalla, así que el único
+ * control que detecta el caso peor del circuito no miraba nada. Lo encontró una
+ * auditoría, no un fallo — un control sin puerta no falla, simplemente no está.
+ * Hoy la consume el carril de `/bolsas`; si alguna vez se le quita la baldosa,
+ * esto vuelve a ser código muerto y hay que decirlo aquí.
  */
 export async function fetchInvariante({ desde, hasta }) {
     const { data, error } = await supabase.rpc('get_bolsas_invariante', {
@@ -397,6 +404,29 @@ export async function fetchConteos({ desde, hasta } = {}) {
     // reemplaza in place, así que alcanza con una llamada acá.
     await signPhotosDeep(data || []);
     return data || [];
+}
+
+/**
+ * Corregir un cierre: las bolsas vuelven a estar por cerrar.
+ *
+ * Era el único paso con dinero sin marcha atrás, y el que más campos tiene para
+ * equivocarse —banco, persona, reparto, comprobante—. No borra nada: el cierre
+ * queda anulado con su motivo y su firma, igual que un vale anulado.
+ */
+export function anularDeposito(id, motivo) {
+    return supabase.rpc('anular_deposito', { p_id: id, p_motivo: motivo });
+}
+
+/**
+ * Anexa la boleta del banco a un cierre ya hecho.
+ *
+ * Se anexa DESPUÉS de cerrar y no al cerrar: la boleta sale al volver de la
+ * ventanilla, y exigirla antes empujaría a registrar el efectivo tarde — que es
+ * peor. `url` es la que devolvió `subirComprobante`, en formato público: la
+ * firmada expira. Pasar `null` la quita.
+ */
+export function adjuntarComprobanteDeposito(id, url) {
+    return supabase.rpc('adjuntar_comprobante_deposito', { p_id: id, p_url: url || null });
 }
 
 /** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */

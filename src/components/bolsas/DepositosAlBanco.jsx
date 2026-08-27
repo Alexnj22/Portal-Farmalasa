@@ -1,10 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Landmark, Package } from 'lucide-react';
+import { Ban, ChevronDown, ChevronUp, Image as ImageIcon, Landmark, Package, Paperclip } from 'lucide-react';
 import Badge from '../common/Badge';
+import Button from '../common/Button';
+import FileField from '../common/FileField';
+import Notice from '../common/Notice';
+import PhotoLightbox from '../common/PhotoLightbox';
+import PromptModal from '../common/PromptModal';
 import { DataTable, DataRow, DataCell } from '../common/DataTable';
 import LiquidModal from '../common/LiquidModal';
-import { fetchDepositos } from '../../data/bolsas';
+import {
+    adjuntarComprobanteDeposito, anularDeposito, fetchDepositos, subirComprobante,
+} from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import { getSignedFileUrl } from '../../utils/storageFiles';
+import { useToastStore } from '../../store/toastStore';
 
 /**
  * El archivo de los depósitos al banco.
@@ -65,8 +75,57 @@ const rangoDeDias = (d) => {
 };
 
 /** El detalle: la cuenta que se hizo y qué bolsas se fueron adentro. */
-function Detalle({ deposito, nombreSala, onClose }) {
+function Detalle({ deposito, nombreSala, onClose, onCambio }) {
     const d = deposito;
+    const showToast = useToastStore((st) => st.showToast);
+    const [ocupado, setOcupado] = useState(null);
+    const [error, setError] = useState(null);
+    const [ampliada, setAmpliada] = useState(null);
+    const [corrigiendo, setCorrigiendo] = useState(false);
+    const anulado = !!d.anulado_at;
+    const anterior = d.destino === 'ANTERIOR';
+
+    /* La boleta se ve firmada y en el momento: el bucket es privado y la URL
+     * guardada es la pública, que sola no abre nada (regla 10). */
+    const verComprobante = async () => {
+        setOcupado('ver'); setError(null);
+        try {
+            const firmada = await getSignedFileUrl(d.comprobante_url);
+            if (firmada) setAmpliada(firmada);
+            else setError('No se pudo abrir el comprobante. Vuelve a intentar en un momento.');
+        } catch { setError('No se pudo abrir el comprobante.'); }
+        setOcupado(null);
+    };
+
+    const anexar = async (archivo) => {
+        if (!archivo) return;
+        setOcupado('subir'); setError(null);
+        try {
+            const url = await subirComprobante(archivo, { salaId: 'cierres', userId: d.id });
+            const { error: err } = await adjuntarComprobanteDeposito(d.id, url);
+            if (err) throw err;
+            showToast('Comprobante anexado', d.folio, 'success');
+            onCambio?.();
+            onClose?.();
+        } catch (e) {
+            setError(mensajeAmigable(e, 'No se pudo anexar el comprobante.'));
+        }
+        setOcupado(null);
+    };
+
+    const corregir = async (motivo) => {
+        setOcupado('corregir'); setError(null);
+        const { error: err } = await anularDeposito(d.id, motivo);
+        setOcupado(null);
+        if (err) { setError(mensajeAmigable(err, 'No se pudo corregir el cierre.')); return; }
+        setCorrigiendo(false);
+        showToast('Cierre corregido',
+            `${d.folio} · sus ${d.cuantas} ${Number(d.cuantas) === 1 ? 'bolsa vuelve' : 'bolsas vuelven'} a estar por cerrar`,
+            'success');
+        onCambio?.();
+        onClose?.();
+    };
+
     return (
         <LiquidModal open={!!d} onClose={onClose}
             maxWidth="max-w-lg" className="h-fit" ariaLabel={`Depósito ${d.folio}`}>
@@ -200,7 +259,83 @@ function Detalle({ deposito, nombreSala, onClose }) {
                         ))}
                     </div>
                 </div>
+
+                {error && <Notice variant="danger">{error}</Notice>}
+
+                {/* ── El comprobante del banco ────────────────────────────────
+                    «que se pueda anexar el comprobante del banco» (usuario,
+                    2026-08-26). Se anexa DESPUÉS de cerrar y no al cerrar: la
+                    boleta sale al volver de la ventanilla, y exigirla antes
+                    empujaría a registrar el efectivo tarde — que es peor.
+
+                    Sólo donde significa algo: un cierre entero en mano no tiene
+                    boleta de banco que anexar, y uno anterior al circuito
+                    tampoco. */}
+                {!anterior && Number(d.monto_deposito) > 0 && (
+                    <div className="space-y-1.5">
+                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
+                            Comprobante del banco
+                        </h4>
+                        {d.comprobante_url ? (
+                            <Button variant="secondary" size="sm" icon={ImageIcon}
+                                loading={ocupado === 'ver'} onClick={verComprobante}>
+                                Ver el comprobante
+                            </Button>
+                        ) : anulado ? (
+                            <p className="text-caption text-content-3">
+                                Este cierre se corrigió: ya no lleva comprobante.
+                            </p>
+                        ) : (
+                            <FileField
+                                label="Anexar la boleta"
+                                accept="image/*,application/pdf"
+                                onChange={anexar}
+                                disabled={ocupado === 'subir'}
+                            />
+                        )}
+                    </div>
+                )}
+
+                {anulado && (
+                    <Notice variant="warning" icon={Ban}>
+                        <span className="font-bold">Este cierre se corrigió</span>
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            {d.anulado_motivo} · {d.anulado_por || '—'} · {selloDeTiempo(d.anulado_at)}.
+                            {' '}Sus bolsas volvieron a estar por cerrar.
+                        </span>
+                    </Notice>
+                )}
             </LiquidModal.Body>
+
+            {/* Corregir es la única marcha atrás del cierre, y hasta hoy no
+                existía: era el paso con más campos donde equivocarse —banco,
+                persona, reparto, comprobante— y ninguna forma de deshacerlo.
+                No borra: deja el cierre anulado con su motivo y devuelve las
+                bolsas a pendiente, igual que anular un vale. */}
+            {!anulado && !anterior && (
+                <LiquidModal.Footer>
+                    <Button variant="ghost" size="sm" icon={Ban}
+                        onClick={() => setCorrigiendo(true)}>
+                        Corregir el cierre
+                    </Button>
+                    <Button variant="secondary" className="ml-auto" onClick={onClose}>Cerrar</Button>
+                </LiquidModal.Footer>
+            )}
+
+            <PhotoLightbox src={ampliada} alt={`Comprobante de ${d.folio}`}
+                onClose={() => setAmpliada(null)} />
+
+            <PromptModal
+                isOpen={corrigiendo}
+                onClose={() => setCorrigiendo(false)}
+                onConfirm={corregir}
+                isProcessing={ocupado === 'corregir'}
+                required
+                title={`Corregir el cierre ${d.folio}`}
+                message={`Sus ${d.cuantas} ${Number(d.cuantas) === 1 ? 'bolsa vuelve' : 'bolsas vuelven'} a estar por cerrar y este registro queda anulado con tu nombre. No se borra nada.`}
+                placeholder="Por qué se corrige…"
+                confirmText="Corregir"
+            />
         </LiquidModal>
     );
 }
@@ -220,11 +355,18 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al entrar y al mover el período
 
-    const totales = useMemo(() => lista.reduce((a, d) => ({
-        banco: a.banco + Number(d.monto_deposito || 0),
-        efectivo: a.efectivo + Number(d.monto_efectivo || 0),
-        remanente: a.remanente + Number(d.remanente || 0),
-    }), { banco: 0, efectivo: 0, remanente: 0 }), [lista]);
+    /* Un cierre CORREGIDO ya no cuenta —sus bolsas volvieron a estar por
+     * cerrar— y uno `ANTERIOR` tampoco: su «remanente» no es dinero que alguien
+     * tenga, es «no se registró a dónde fue». Sumarlo pondría $32,006.16 en el
+     * acumulado del Gerente General, que es exactamente lo contrario de
+     * seguirle la pista al remanente. */
+    const totales = useMemo(() => lista
+        .filter((d) => !d.anulado_at && d.destino !== 'ANTERIOR')
+        .reduce((a, d) => ({
+            banco: a.banco + Number(d.monto_deposito || 0),
+            efectivo: a.efectivo + Number(d.monto_efectivo || 0),
+            remanente: a.remanente + Number(d.remanente || 0),
+        }), { banco: 0, efectivo: 0, remanente: 0 }), [lista]);
 
     return (
         <section className="space-y-2">
@@ -266,7 +408,17 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                 {lista.map((d, i) => (
                     <DataRow key={d.id} index={i} onClick={() => setAbierto(d)}>
                         <DataCell>
-                            <span className="font-bold text-content">{d.folio}</span>
+                            <span className="inline-flex items-center gap-1.5 flex-wrap">
+                                <span className={`font-bold ${d.anulado_at ? 'text-content-3 line-through' : 'text-content'}`}>
+                                    {d.folio}
+                                </span>
+                                {d.anulado_at && <Badge variant="neutral" size="sm">Corregido</Badge>}
+                                {d.destino === 'ANTERIOR' && <Badge variant="neutral" size="sm">Anterior</Badge>}
+                                {d.comprobante_url && (
+                                    <Paperclip size={12} className="text-content-3 shrink-0"
+                                        aria-label="Con comprobante del banco" />
+                                )}
+                            </span>
                         </DataCell>
                         <DataCell>{fechaLarga(d.fecha)}</DataCell>
                         {/* Los días que cubre y lo contado. Van ANTES de «Al
@@ -320,7 +472,8 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
             </>)}
 
             {abierto && (
-                <Detalle deposito={abierto} nombreSala={nombreSala} onClose={() => setAbierto(null)} />
+                <Detalle deposito={abierto} nombreSala={nombreSala}
+                    onClose={() => setAbierto(null)} onCambio={cargar} />
             )}
         </section>
     );

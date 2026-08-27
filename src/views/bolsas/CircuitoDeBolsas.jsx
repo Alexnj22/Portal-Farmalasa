@@ -16,7 +16,8 @@ import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
-    fetchConteos, fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos, marcarConteoBolsa,
+    fetchConteos, fetchInvariante, fetchPersonasDeBolsas, fetchPorDepositar, fetchSaldos,
+    marcarConteoBolsa,
     recibirBolsas, resolverDiferenciaBolsa, subirComprobante,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -1080,6 +1081,15 @@ export default function CircuitoDeBolsas({
      * ranura quedaría vacía con la sección plegada — o sea, un filtro sin
      * opciones justo cuando más se busca. */
     const [tandas, setTandas] = useState([]);
+    /* ── El invariante: Σ bolsas del día == declarado del último corte ──────
+     * Es lo ÚNICO que detecta el caso peor del circuito —efectivo contado en la
+     * sala que nunca llegó a una bolsa—, porque un corte que cuadra no dice
+     * nada sobre si el dinero se guardó.
+     *
+     * Estuvo escrito y SIN CONSUMIDOR hasta el 2026-08-26: la función, su RPC y
+     * sus permisos existían, y no lo llamaba ninguna pantalla. Un control sin
+     * puerta no falla — simplemente no está, y nadie se entera. */
+    const [invariante, setInvariante] = useState([]);
     const [depositando, setDepositando] = useState(false);
     const { cerradas, alternar: plegar } = usePlegado();
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
@@ -1131,14 +1141,20 @@ export default function CircuitoDeBolsas({
         // pendientes fuera de estas fechas» necesita saber que existen: son las
         // que el filtro esconde, y esconderlas sin decirlo es justo lo que no
         // puede pasar con dinero esperando en una sala.
-        const [vivas, contadas, conDif, lasTandas] = await Promise.all([
+        // Las seis en UNA tanda de red. `fetchPorDepositar` corría suelto
+        // después del `Promise.all` sin depender de nada, o sea un viaje de ida
+        // y vuelta de más en cada carga Y en cada acción — y contar bolsa por
+        // bolsa recarga en silencio treinta veces seguidas.
+        const [vivas, contadas, conDif, lasTandas, paraBanco, invar] = await Promise.all([
             fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
             fetchBolsasConDiferencia(),
             fetchConteos({ desde, hasta }),
+            fetchPorDepositar(),
+            fetchInvariante({ desde, hasta }),
         ]);
         setTandas(lasTandas || []);
-        const paraBanco = await fetchPorDepositar();
+        setInvariante(invar || []);
         // Una diferencia puede estar además dentro del rango: se deduplica por
         // id para no dibujar la misma bolsa dos veces en «Contadas».
         const vistas = new Set((contadas || []).map((b) => b.id));
@@ -1285,6 +1301,15 @@ export default function CircuitoDeBolsas({
         () => (sala ? diferencias.filter((b) => String(b.branch_id) === String(sala)) : diferencias)
             .filter(coincide),
         [diferencias, sala, coincide],
+    );
+
+    /* Los días en que lo declarado en el corte NO llegó entero a una bolsa. El
+     * `descuadre` lo calcula el servidor; acá sólo se recorta por la sala que
+     * la pantalla esté mirando, igual que todo lo demás. */
+    const diasQueNoCuadran = useMemo(
+        () => (sala ? invariante.filter((d) => String(d.branch_id) === String(sala)) : invariante)
+            .filter((d) => Math.abs(Number(d.descuadre || 0)) >= 0.01),
+        [invariante, sala],
     );
 
     // Las que además quedaron fuera del rango: el aviso no puede decir «están
@@ -1776,8 +1801,28 @@ export default function CircuitoDeBolsas({
               iconBg: sinResolver.length ? 'bg-danger/10' : 'bg-success/10',
               iconCls: sinResolver.length ? 'text-danger-text' : 'text-success-text',
               valueCls: sinResolver.length ? 'text-danger-text' : 'text-success-text' },
+            /* La CUARTA, y la que faltaba: el efectivo que se contó en la sala
+               y nunca llegó a una bolsa. Es el caso peor del circuito y hasta
+               hoy no lo miraba nadie — la función existía sin pantalla.
+
+               Dice los días que NO cuadran, no los que sí: el servidor devuelve
+               los dos para poder distinguir «todo bien» de «no cargó», y esa
+               distinción se ve en el subtexto («N días revisados»), no en la
+               cifra. Una baldosa que dice 0 sobre una lista vacía y sobre una
+               lista sana se lee igual, y una de las dos es un problema. */
+            { clave: 'invariante', icon: ShieldCheck, label: 'El corte y su bolsa',
+              value: String(diasQueNoCuadran.length),
+              sub: invariante.length
+                  ? (diasQueNoCuadran.length
+                      ? `${cuantas(diasQueNoCuadran.length)} sin guardar · ${invariante.length} revisados`
+                      : `${invariante.length} ${invariante.length === 1 ? 'día revisado' : 'días revisados'}`)
+                  : 'sin días que revisar',
+              iconBg: diasQueNoCuadran.length ? 'bg-danger/10' : 'bg-success/10',
+              iconCls: diasQueNoCuadran.length ? 'text-danger-text' : 'text-success-text',
+              valueCls: diasQueNoCuadran.length ? 'text-danger-text' : 'text-success-text' },
         ];
-    }, [verCards, verMontos, enSala, enCamino, porContar, sinResolver, nombreSala]);
+    }, [verCards, verMontos, enSala, enCamino, porContar, sinResolver, nombreSala,
+        invariante, diasQueNoCuadran]);
 
     useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
     useEffect(() => () => onMetricas?.(VACIO), [onMetricas]);
@@ -1798,6 +1843,46 @@ export default function CircuitoDeBolsas({
 
     return (
         <div className="space-y-6">
+            {/* ── El corte que cuadró y su dinero que no llegó ────────────────
+                El caso PEOR del circuito, y el único que ninguna otra cifra de
+                la pantalla puede delatar: un corte confirmado dice que había
+                $X en efectivo, y las bolsas de ese día suman menos. El corte
+                cuadró, la bolsa cuadró, y falta plata.
+
+                Va arriba de todo y en las cuatro etapas porque no pertenece a
+                ninguna: el hueco está entre la caja y la bolsa, o sea antes de
+                que empiece cualquiera de ellas.
+
+                Nombra los días uno por uno. La baldosa dice cuántos son, y una
+                cifra sin forma de llegar a lo que cuenta es la mitad de un
+                aviso — es la lección de «Sin resolver», que decía 11 y no había
+                manera de ver las 11. */}
+            {diasQueNoCuadran.length > 0 && (
+                <Notice variant="danger" icon={AlertTriangle}>
+                    <span className="font-bold">
+                        {diasQueNoCuadran.length === 1
+                            ? 'Un día cerró con menos efectivo guardado del que declaró el corte'
+                            : `${diasQueNoCuadran.length} días cerraron con menos efectivo guardado del que declaró el corte`}
+                    </span>
+                    <span className="block mt-1 font-normal text-content-2">
+                        El corte de esos días cuadró y las bolsas también: lo que no cuadra es
+                        cuánto llegó a guardarse. Hay que revisar la caja de esa sala.
+                    </span>
+                    <span className="block mt-1.5 space-y-0.5">
+                        {diasQueNoCuadran.map((d) => (
+                            <span key={`${d.branch_id}-${d.fecha}`}
+                                className="block text-caption font-normal text-content-2 tabular-nums">
+                                {nombreSala[d.branch_id] || 'Sala'} · {rotularDia(d.fecha)}
+                                {' · '}
+                                {verMontos
+                                    ? `faltan ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)} declarados`
+                                    : `${d.bolsas} ${Number(d.bolsas) === 1 ? 'bolsa' : 'bolsas'} guardadas`}
+                            </span>
+                        ))}
+                    </span>
+                </Notice>
+            )}
+
             {/* Lo que el rango dejó afuera se DICE. Es la contraparte de que el
                 período ahora recorte también lo pendiente: sin este aviso, una
                 bolsa que lleva tres semanas en una sala desaparecería de la

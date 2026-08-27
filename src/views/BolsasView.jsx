@@ -48,7 +48,10 @@ import { ETAPAS } from './bolsas/etapas';
  * · La píldora del CUERPO (`FilterBar`, §17) contesta «¿qué recorte, y qué hago
  *   con él?»: sucursal, período y las acciones que publica la etapa abierta.
  * · El carril (`CarrilCards`, §17.0) son CUATRO cifras fijas de la vista, nunca
- *   un desglose del dato — y ninguna repite el contador de una pestaña.
+ *   un desglose del dato — y ninguna repite el contador de una pestaña. La
+ *   cuarta llegó el 2026-08-26: hasta entonces eran tres y el comentario ya
+ *   decía cuatro, porque el invariante del circuito estaba escrito sin
+ *   pantalla que lo mostrara.
  *
  * El carril y la píldora comparten UNA fila: las dos mitades —`lg:flex-row` acá
  * y `flex-1` en el carril— son obligatorias, porque `useMedidaFila` busca el

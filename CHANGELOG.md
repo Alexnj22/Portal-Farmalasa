@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.799.0 — El circuito se cierra: el invariante a la vista, el comprobante del banco y la corrección del cierre
+
+Lo que salió de auditar el módulo entero.
+
+**Las 54 bolsas anteriores al circuito quedan finalizadas.** $32,006.16 contados
+entre el 14 y el 20 de agosto, antes de que existiera el paso de cierre. Las
+escondía un corte de fecha en `get_por_depositar`, y eso era peor que tenerlas a
+la vista: la pantalla decía «0 pendientes» sobre 54 que sí lo estaban. Se cierran
+con destino **`ANTERIOR`**, que no se disfraza de banco ni de mano — decir
+cualquiera de los dos sería inventar un hecho que nadie registró. Su remanente va
+sin receptor y la pantalla lo excluye del acumulado: significa «no se registró a
+dónde fue», no «se lo quedó alguien». **Y el corte se va**: con ellas cerradas,
+dejarlo puesto significaba que la próxima bolsa vieja se escondería igual y en
+silencio.
+
+**El invariante del circuito deja de ser código muerto.** `get_bolsas_invariante`
+compara, sala por sala y día por día, **Σ bolsas del día contra lo declarado en
+el último corte confirmado** — es lo único que detecta *efectivo contado en la
+sala que nunca llegó a una bolsa*, el caso peor, porque un corte que cuadra no
+dice nada sobre si el dinero se guardó. La función, su RPC y sus permisos
+existían desde el 16-ago y **no la llamaba ninguna pantalla**. Un control sin
+puerta no falla: simplemente no está. Ahora es la cuarta baldosa del carril
+—«El corte y su bolsa»— y, cuando algún día no cuadra, un aviso arriba de todo
+que nombra los días uno por uno con cuánto faltó.
+
+**El cierre lleva su comprobante del banco.** Se anexa DESPUÉS de cerrar y no al
+cerrar: la boleta sale al volver de la ventanilla, y exigirla antes empujaría a
+registrar el efectivo tarde. Sólo aparece donde significa algo — un cierre entero
+en mano no tiene boleta de banco. La fila del archivo lo marca con un clip.
+
+**Un cierre se puede corregir.** Era el único paso con dinero sin marcha atrás, y
+el que más campos tiene para equivocarse: banco, persona, reparto, comprobante.
+No borra nada — deja el cierre anulado con su motivo y su firma, y sus bolsas
+vuelven a estar por cerrar, igual que anular un vale. Un cierre corregido deja de
+contar en los totales y se ve tachado.
+
+**Menores de la misma auditoría:**
+
+- Un viaje de red menos en cada carga: `fetchPorDepositar` corría suelto después
+  del `Promise.all` sin depender de nada — y contar bolsa por bolsa recarga en
+  silencio treinta veces seguidas.
+- Se dropea `contar_bolsa`, la función de antes del 24-ago cuando contar cerraba
+  la bolsa. Nadie la llamaba desde que existe `marcar_conteo_bolsa`.
+- El comentario del carril decía «CUATRO cifras» y eran tres. Ahora son cuatro de
+  verdad.
+
 ## v2.798.0 — Boceto: el personal agrupado por sucursal
 
 Propuesta a pedido del usuario: *«no soy fan de la vista, ¿cómo la podemos

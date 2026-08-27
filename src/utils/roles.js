@@ -67,3 +67,51 @@ export function opcionesDeCargo(roles, nombresDeseados) {
         })
         .map(fila => ({ value: fila.name, label: fila.name }));
 }
+
+// ── La jerarquía REAL vive en `roles.parent_role_id` ────────────────────────
+//
+// El portal venía deduciendo el rango de una persona leyendo el TEXTO de su
+// cargo: `getRoleWeight` en `StaffManagementView` hace `r.includes('JEFE')`,
+// `r.includes('REGENTE')`, y devuelve un número escrito a mano. Funciona para
+// ordenar una lista y se rompe el día que alguien crea un cargo cuyo nombre no
+// contiene ninguna de esas palabras — que es exactamente
+// «un rótulo no es una clave» (CLAUDE.md) aplicado al organigrama.
+//
+// La clave existe y está en la base: las 25 filas de `roles` forman un árbol de
+// seis niveles por `parent_role_id`, y ya viaja al navegador —`fetchRoles`
+// (`data/permissions.js`) la selecciona y el boot la guarda en el store—. O sea
+// que preguntarle al árbol no cuesta una consulta más.
+//
+// El corte contra ciclos no es paranoia de más: `parent_role_id` es una FK a la
+// misma tabla, así que nada en la base impide que dos cargos se apunten entre
+// sí. Sin el `visto`, eso sería un cuelgue del navegador y no un dato raro.
+
+/** Los ids de los cargos por encima de `roleId`, del inmediato al más alto. */
+export function cadenaDeSuperiores(roles, roleId) {
+    const porId = new Map((roles || []).map(r => [String(r?.id), r]));
+    const cadena = [];
+    const visto = new Set();
+    let actual = porId.get(String(roleId));
+    while (actual?.parent_role_id != null) {
+        const padreId = String(actual.parent_role_id);
+        if (visto.has(padreId)) break;
+        visto.add(padreId);
+        cadena.push(Number(actual.parent_role_id));
+        actual = porId.get(padreId);
+    }
+    return cadena;
+}
+
+/**
+ * Profundidad del cargo en el árbol. 0 es la raíz (Gerente General).
+ *
+ * `null` cuando el cargo no está en la tabla — y `null` NO es 0: un cargo
+ * desconocido no es la raíz de la empresa. Quien ordene con esto tiene que
+ * decidir dónde va lo desconocido, y hacerlo explícito.
+ */
+export function nivelDeCargo(roles, roleId) {
+    if (roleId == null) return null;
+    const existe = (roles || []).some(r => String(r?.id) === String(roleId));
+    if (!existe) return null;
+    return cadenaDeSuperiores(roles, roleId).length;
+}

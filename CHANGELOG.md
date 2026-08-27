@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.798.0 — Boceto: el personal agrupado por sucursal
+
+Propuesta a pedido del usuario: *«no soy fan de la vista, ¿cómo la podemos
+mejorar? ¿cards? ¿seccionado por sucursal?»*. Va en **`/personal/equipos`**, una
+dirección propia, y `/personal` no cambia ni una línea mientras se decide.
+
+**Por qué agrupar es lo que más cambia.** Son 46 personas en 8 sucursales, de 5
+a 8 por sala. La tabla ya ordena por sucursal, pero no lo *dice*: el grupo hay
+que adivinarlo leyendo una columna que se repite. Y pagina de a 25, así que la
+mitad de la empresa vive en la página 2 sin ningún motivo. Agrupada, entra
+entera en una pantalla.
+
+**Quién manda sale del ÁRBOL, no del texto del cargo.** El listado deduce el
+rango leyendo el nombre —`r.includes('JEFE')`, `r.includes('REGENTE')`— y
+devuelve un número escrito a mano. La clave existe y está en la base: las 25
+filas de `roles` forman un árbol de seis niveles por `parent_role_id`, y ya
+viaja al navegador. Cada sección destaca a **quien no tiene a nadie de su cadena
+de mando dentro de la sala**, con la línea «responde a …» debajo.
+
+Eso hace que una sala pueda tener más de un referente, y está bien que se vea:
+en **Salud 4 son tres** —Jefe/a de Sala, Regente de Enfermería y el Técnico de
+Mantenimiento— y los tres responden a Administración, no entre ellos. Un
+criterio por «nivel más alto» habría coronado al técnico (nivel 2) y dejado al
+jefe de sala (nivel 3) en el montón: al revés de lo que la sala entiende. Está
+anclado en `tests/unit/equiposPorSucursal.test.jsx` con los ids reales.
+
+**No cuesta ni una consulta.** Todo lo que la tarjeta muestra ya viaja en el
+boot: `history` son los eventos, `role`/`secondary_role` los cargos,
+`documents` el expediente y `roles` trae `parent_role_id`.
+
+**Lo que el boceto NO puede mostrar, y por qué se dice acá.** Medido en
+producción: `employee_events` tiene **cuatro filas en toda la tabla** —3
+traslados y 1 ascenso—. Ni una vacación, ni un permiso, ni una incapacidad, ni
+vigente ni histórica. O sea que el estado efectivo es «Activo» para las 46
+fichas. Por eso la franja de estado se pinta **sólo cuando hay algo que decir**:
+una píldora «Activo» repetida 46 veces enseña a no mirarla, y el día que
+aparezca la primera vacación pasaría desapercibida entre las otras 45. Cuando la
+haya, la tarjeta dice además **hasta cuándo** — «En vacaciones · vuelve el mar 2
+de sep»—, que es el dato que hoy no está en ninguna pantalla.
+
+Otras dos cosas que la tarjeta corrige del listado: el **teléfono y el WhatsApp
+van visibles** (en la tabla son `opacity-0 group-hover`, o sea invisibles en el
+teléfono, que es justo donde a alguien le hace falta llamar a un compañero de
+otra sala), y las alertas —datos pendientes, documento por vencer, cumpleaños,
+aniversario— bajan a **su propia línea** en vez de las cuatro insignias que hoy
+compiten al lado del nombre.
+
+También se corrige un rótulo que nada leía: `document.title` resolvía por la
+**base** de la ruta, así que toda subruta heredaba el título de su padre y su
+entrada en `ROUTE_TITLES` no se usaba nunca. Ahora el path completo gana y la
+base queda de respaldo.
+
 ## v2.797.3 — Un sello que cambie tampoco pasa desapercibido
 
 Última esquina del repaso de hoy. El sello de recepción de Hacienda sólo se

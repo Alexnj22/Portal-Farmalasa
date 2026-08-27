@@ -29,6 +29,7 @@ const EmployeeProfileView = lazy(IMPORTADORES.EmployeeProfileView);
 const EmployeeDocumentsView = lazy(IMPORTADORES.EmployeeDocumentsView);
 const AttendanceMonitorView = lazy(IMPORTADORES.AttendanceMonitorView);
 const StaffManagementView = lazy(IMPORTADORES.StaffManagementView);
+const EquiposView = lazy(IMPORTADORES.EquiposView);
 const BranchesView = lazy(IMPORTADORES.BranchesView);
 const BranchDetailView = lazy(IMPORTADORES.BranchDetailView);
 const RolesView = lazy(IMPORTADORES.RolesView);
@@ -694,6 +695,21 @@ function MainApp() {
                                                 />
                                             </PermissionGuard>
                                         } />
+                                        {/* Boceto de la vista agrupada por sucursal
+                                            (2026-08-26). Mismo permiso que el
+                                            listado y misma búsqueda: lo que cambia
+                                            es cómo se PRESENTA la misma gente. No
+                                            está en el menú a propósito — mientras
+                                            sea una propuesta se llega por la
+                                            dirección o por el aviso del listado. */}
+                                        <Route path="equipos" element={
+                                            <PermissionGuard moduleKey="staff_list">
+                                                <EquiposView
+                                                    searchTerm={searchTerm}
+                                                    setSearchTerm={setSearchTerm}
+                                                />
+                                            </PermissionGuard>
+                                        } />
                                         <Route path="empleado/:id" element={
                                             <PermissionGuard moduleKey="staff_detail">
                                                 <EmployeeProfileWrapper
@@ -887,6 +903,7 @@ export default function App() {
 const ROUTE_TITLES = {
     '/inicio':            'Inicio',
     '/personal':          'Gestión de personal',
+    '/personal/equipos':  'Equipos por sucursal',
     '/monitor':           'Monitor en tiempo real',
     '/auditoria-de-tiempos':             'Auditoría de tiempos',
     '/horarios':         'Horarios',
@@ -953,9 +970,13 @@ const AppWithToast = () => {
         const path = location.pathname;
         const base = '/' + path.split('/')[1];
         const esFichaDePersonal = path.startsWith('/personal/empleado/');
+        // El path COMPLETO primero y la base como respaldo. Con la base sola,
+        // toda subruta heredaba el título de su padre: `/personal/equipos`
+        // decía «Gestión de personal» y su entrada en el mapa no se usaba
+        // nunca — un rótulo escrito que nada leía, y nada lo iba a delatar.
         const label = esFichaDePersonal
             ? 'Perfil de empleado'
-            : (ROUTE_TITLES[base] ?? null);
+            : (ROUTE_TITLES[path] ?? ROUTE_TITLES[base] ?? null);
         document.title = label ? `${label} — FarmaSalud` : 'Portal FarmaSalud';
     }, [location.pathname]);
 

@@ -11,6 +11,9 @@ export const IMPORTADORES = {
     EmployeeDocumentsView: () => import("../views/employee/EmployeeDocumentsView"),
     AttendanceMonitorView: () => import("../views/AttendanceMonitorView"),
     StaffManagementView: () => import("../views/StaffManagementView"),
+    // Boceto de la vista agrupada por sucursal — vive aparte de `/personal`
+    // mientras se decide si la reemplaza o convive con ella.
+    EquiposView: () => import("../views/personal/EquiposView"),
     BranchesView: () => import("../views/BranchesView"),
     BranchDetailView: () => import("../views/BranchDetailView"),
     RolesView: () => import("../views/RolesView"),

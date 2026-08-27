@@ -18,7 +18,7 @@ import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import Notice from '../common/Notice';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote, Smartphone } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -39,6 +39,9 @@ import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } fr
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
+import { abrirCaptura, esperarFoto, fotoComoArchivo, enlaceDeCaptura } from '../../data/capturaDeFoto';
+import QrDeCaptura from '../common/QrDeCaptura';
+import ModalShell from '../common/ModalShell';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import FileField from '../common/FileField';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
@@ -1005,6 +1008,39 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const [duiFallo, setDuiFallo] = useState(null);
     const [leyendoDui, setLeyendoDui] = useState(false);
 
+    // ── La foto que se toma con el teléfono ──────────────────────────────────
+    //
+    // `captura` guarda el código vivo; mientras exista, la computadora está
+    // escuchando. Al llegar la foto se convierte en un `File` y sigue el camino
+    // NORMAL de guardado — no hay una segunda rama para «vino del teléfono»,
+    // que es como dos copias del mismo flujo se desincronizan.
+    const [captura, setCaptura] = useState(null);
+
+    const cerrarCaptura = () => setCaptura(null);
+
+    const pedirFotoAlTelefono = async () => {
+        const r = await abrirCaptura(formData?.id || null);
+        if (!r.ok) { useToastStore.getState().showToast('No se pudo', r.motivo, 'error'); return; }
+        setCaptura(r);
+    };
+
+    useEffect(() => {
+        if (!captura?.id) return undefined;
+        return esperarFoto(captura.id, async (url) => {
+            try {
+                const file = await fotoComoArchivo(url);
+                setFormData(prev => ({ ...prev, file, photoPreview: URL.createObjectURL(file) }));
+                setCaptura(null);
+                useToastStore.getState().showToast('Foto recibida', 'Llegó desde el teléfono.', 'success');
+            } catch {
+                // La foto SÍ se subió; lo que falló es traerla. Se dice, en vez
+                // de cerrar el diálogo como si nada hubiera pasado.
+                useToastStore.getState().showToast('Llegó pero no se pudo abrir', 'Intenta de nuevo desde el teléfono.', 'error');
+                setCaptura(null);
+            }
+        });
+    }, [captura?.id, setFormData]);
+
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
         || { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
 
@@ -1887,6 +1923,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         (ver `capturaDeFoto.js`). En escritorio no aparece
                                         porque ahí `capture` se ignora y sería el mismo
                                         diálogo dos veces. */}
+                                    {/* ── Tomarla con el teléfono ────────────────────────
+                                        El alta se llena en una computadora que casi nunca
+                                        tiene una cámara usable, y la foto sale del teléfono
+                                        que quien la llena trae en la mano. Hasta hoy el camino
+                                        era mandársela por WhatsApp a uno mismo.
+
+                                        Sólo en escritorio: en el teléfono ya está el botón de
+                                        la cámara, y ofrecer un QR para escanearse a sí mismo
+                                        sería ofrecer un rodeo. */}
+                                    {!esTactil && (
+                                        <Button
+                                            type="button" variant="secondary" size="sm" icon={Smartphone}
+                                            className="mt-2" onClick={pedirFotoAlTelefono} disabled={!!captura}>
+                                            {captura ? 'Esperando el teléfono…' : 'Tomar con el teléfono'}
+                                        </Button>
+                                    )}
                                     {esTactil && (
                                         <>
                                             <input type="file" {...PROPS_CAMARA} className="hidden"
@@ -1900,6 +1952,29 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </>
                                     )}
                                 </div>
+
+                                {/* El QR vive en un diálogo y no incrustado: ocupa 200px y
+                                    sólo hace falta en el momento de escanear. Al llegar la
+                                    foto se cierra solo — pedirle a alguien que cierre una
+                                    ventana que ya hizo su trabajo es un paso de más. */}
+                                {captura && (
+                                    <ModalShell open onClose={cerrarCaptura} maxWidthClass="max-w-sm"
+                                        ariaLabel="Tomar la foto con el teléfono">
+                                        <div className="p-5 flex flex-col items-center gap-4">
+                                            <p className="text-body-sm font-black uppercase tracking-widest text-content-3">
+                                                Tomar la foto con el teléfono
+                                            </p>
+                                            <p className="text-label text-content-2 font-medium text-center leading-snug max-w-[260px]">
+                                                Escanea este código con la cámara del teléfono. La foto va a aparecer
+                                                aquí sola.
+                                            </p>
+                                            <QrDeCaptura
+                                                enlace={enlaceDeCaptura(captura.secreto)}
+                                                venceEl={captura.vence_el}
+                                                alRenovar={pedirFotoAlTelefono} />
+                                        </div>
+                                    </ModalShell>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

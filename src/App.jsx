@@ -29,6 +29,8 @@ import AppLayout from "./components/layout/AppLayout";
 // instante después de cerrar para su animación de salida, y desmontarlo con el
 // interruptor se la comería.
 const UnifiedModal = lazy(() => import("./components/UnifiedModal"));
+// Diferida como las vistas: la abre un teléfono que llegó por un QR, no el arranque.
+const CapturaDeFotoView = lazy(() => import("./views/CapturaDeFotoView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 
@@ -652,6 +654,24 @@ function MainApp() {
                         </div>
                     </div>
                 ) : <Navigate to={defaultRedirect} replace />
+            } />
+
+            {/* ── La foto que llega del teléfono ────────────────────────────
+                Va ANTES del comodín y FUERA del layout, y sobre todo sin pedir
+                sesión: quien escanea el QR puede no tener el portal abierto en
+                ese teléfono, y mandarlo a iniciar sesión con la cámara
+                esperando mata la fluidez que esto viene a dar.
+
+                La llave es el código del QR — cinco minutos, un solo uso— y lo
+                único que consigue quien lo robe es meter una imagen en un
+                formulario que una persona está mirando y todavía no guardó. */}
+            <Route path="/foto/:secreto" element={
+                <div className="relative min-h-[100dvh] w-full bg-surface-page">
+                    <GlobalBackground />
+                    <div className="relative z-base">
+                        <Suspense fallback={null}><CapturaDeFotoView /></Suspense>
+                    </div>
+                </div>
             } />
 
             {/* Sin acceso — fuera del layout para no mostrar el menú */}

@@ -194,6 +194,9 @@ export const AREAS = [
             'src/utils/ageUtils.js', 'src/utils/nameUtils.js', 'src/utils/staffHelpers.js',
             'src/utils/economicDependents.js', 'src/utils/educationCatalogs.js',
             'src/components/forms/EmployeeFormModal.jsx', 'src/components/forms/FormRehireEmployee.jsx',
+            // La foto que se toma con el teléfono y llega a la computadora: es
+            // parte del alta de personal, aunque su pantalla viva fuera del menú.
+            'src/data/capturaDeFoto.js', 'src/views/CapturaDeFotoView.jsx',
             'src/components/forms/FormAddCustomDocument.jsx', 'src/components/forms/FormDocumentViewer.jsx',
             'src/components/forms/FormEditContact.jsx', 'src/components/forms/FormUploadOnly.jsx',
             'src/components/forms/FormNovedad.jsx',

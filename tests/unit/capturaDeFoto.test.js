@@ -1,64 +1,105 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// La foto que se toma con el teléfono y llega a la computadora
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lo que se ancla acá no es «funciona»: son las propiedades de seguridad, que
+// son invisibles mirando la pantalla y las únicas que hacen defendible que esta
+// pantalla abra SIN sesión.
+//
+//   · el secreto del QR vale CINCO minutos y UN solo uso;
+//   · la foto viaja REDUCIDA — mandar 5 MB por datos móviles es lo que tumbó
+//     `leer-dui` por memoria, y un avatar no los necesita;
+//   · la computadora no se queda esperando para siempre si el canal en vivo no
+//     conecta: hay un sondeo debajo.
+//
+// El ciclo completo (sirve → guarda → el segundo intento se rechaza) se probó
+// contra la base dentro de una transacción deshecha, que es donde vive esa
+// lógica; acá se vigila que el lado del navegador no la contradiga.
+
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PROPS_CAMARA, aceptaImagenes } from '../../src/utils/capturaDeFoto.js';
+import { enlaceDeCaptura } from '../../src/data/capturaDeFoto';
 
-// El bug que originó esto no dio error ni se vio en pantalla: el input decía
-// `capture="environment"` y aun así abría el explorador de archivos, porque su
-// `accept` era una lista fina. Lo que hay que anclar es exactamente eso — la
-// condición que la WebView de Capacitor evalúa:
-//
-//     captureEnabled && acceptTypes.contains("image/*")
-//
-// Es una comparación de cadenas EXACTA sobre la lista partida por comas.
+const leer = (rel) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
 
-describe('PROPS_CAMARA — la pareja que abre la cámara', () => {
-    it('trae el token image/* tal cual, sin nada más en la lista', () => {
-        expect(PROPS_CAMARA.accept).toBe('image/*');
-        expect(PROPS_CAMARA.accept.split(',').map(s => s.trim())).toContain('image/*');
-    });
-
-    it('trae capture, que sin él nunca se evalúa el accept', () => {
-        expect(PROPS_CAMARA.capture).toBe('environment');
-    });
-
-    it('no lleva el type adentro: los gates leen el marcado como texto', () => {
-        expect(PROPS_CAMARA.type).toBeUndefined();
+describe('el enlace del QR', () => {
+    it('apunta a la pantalla del teléfono con el secreto', () => {
+        // `window.location.origin` en jsdom.
+        expect(enlaceDeCaptura('ABC123')).toMatch(/\/foto\/ABC123$/);
     });
 });
 
-describe('aceptaImagenes — cuándo vale la pena ofrecer la cámara', () => {
-    it('reconoce el comodín y los MIME sueltos', () => {
-        expect(aceptaImagenes('image/*')).toBe(true);
-        expect(aceptaImagenes('image/*,application/pdf')).toBe(true);
-        expect(aceptaImagenes('application/pdf,image/jpeg,image/png,image/webp')).toBe(true);
+describe('las propiedades que hacen defendible abrir sin sesión', () => {
+    const sql = leer('supabase/migrations/20260827215918_las_tres_funciones_del_traspaso_de_foto.sql');
+
+    it('el código vive cinco minutos', () => {
+        expect(sql).toMatch(/interval '5 minutes'/);
     });
 
-    it('reconoce los accept escritos por extensión (expediente del empleado)', () => {
-        expect(aceptaImagenes('.pdf,.jpg,.jpeg,.png')).toBe(true);
-        expect(aceptaImagenes('.pdf,image/*')).toBe(true);
+    it('es de un solo uso, y lo garantiza el UPDATE', () => {
+        // La condición va DENTRO del UPDATE, no en un `if` previo: con el mismo
+        // QR en dos teléfonos, sólo el primero escribe. Un chequeo antes del
+        // UPDATE los dejaría pasar a los dos.
+        const guardar = sql.slice(sql.indexOf('guardar_foto_de_captura'));
+        expect(guardar).toMatch(/UPDATE public\.capturas_de_foto[\s\S]*?AND usada_el IS NULL/);
     });
 
-    it('dice que no cuando sólo se admiten documentos', () => {
-        expect(aceptaImagenes('application/pdf')).toBe(false);
-        expect(aceptaImagenes('.pdf,.doc,.docx')).toBe(false);
-        expect(aceptaImagenes('text/csv')).toBe(false);
+    it('en la base vive el hash, nunca el secreto', () => {
+        expect(sql).toMatch(/digest\(v_secreto, 'sha256'\)/);
+        expect(sql).not.toMatch(/VALUES \(v_secreto/);
     });
 
-    it('sin accept se admite todo, foto incluida', () => {
-        expect(aceptaImagenes()).toBe(true);
-        expect(aceptaImagenes('')).toBe(true);
+    it('sólo puede abrirla quien ya edita personal', () => {
+        expect(sql).toMatch(/auth_can_edit_any\(ARRAY\['staff_list'\]\)/);
+    });
+
+    it('abrir una nueva mata la anterior', () => {
+        // Dos QR vivos son dos llaves, y la vieja se queda en una pantalla que
+        // alguien dejó abierta.
+        expect(sql).toMatch(/SET usada_el = now\(\)\s*\n\s*WHERE solicitada_por = v_yo/);
     });
 });
 
-// La otra mitad del arreglo vive fuera de JavaScript: sin el <queries> del
-// manifiesto, `resolveActivity(ACTION_IMAGE_CAPTURE)` devuelve null en Android
-// 11+ y Capacitor cae al explorador igual que antes. Un `capture` correcto no
-// alcanza, así que las dos mitades se vigilan juntas.
-describe('AndroidManifest — la app tiene que poder VER la cámara', () => {
-    it('declara el <queries> de IMAGE_CAPTURE', () => {
-        const manifiesto = fs.readFileSync(
-            path.join(process.cwd(), 'android/app/src/main/AndroidManifest.xml'), 'utf8');
-        expect(manifiesto).toMatch(/<queries>[\s\S]*android\.media\.action\.IMAGE_CAPTURE[\s\S]*<\/queries>/);
+describe('lo que hace el navegador', () => {
+    const cliente = leer('src/data/capturaDeFoto.js');
+
+    it('la foto se reduce antes de mandarla', () => {
+        expect(cliente).toMatch(/ladoMaximo = 1024/);
+        expect(cliente).toMatch(/toDataURL\('image\/jpeg', 0\.82\)/);
+    });
+
+    it('una foto ya chica NO se agranda', () => {
+        // Reescalar hacia arriba sólo agrega peso y le quita nitidez.
+        expect(cliente).toMatch(/Math\.min\(1, ladoMaximo/);
+    });
+
+    it('esperar la foto NO depende sólo del canal en vivo', () => {
+        // Si la suscripción no conecta —una red que bloquea websockets, una
+        // pestaña dormida— el usuario se queda mirando un QR que ya sirvió.
+        const esperar = cliente.slice(cliente.indexOf('export function esperarFoto'));
+        expect(esperar).toMatch(/postgres_changes/);
+        expect(esperar).toMatch(/setInterval/);
+    });
+
+    it('la foto entra al formulario como archivo, no como URL suelta', () => {
+        // Así sigue el camino normal de guardado: una segunda rama para «vino
+        // del teléfono» es otra que mantener y que se desincroniza.
+        expect(cliente).toMatch(/new File\(\[blob\]/);
+    });
+});
+
+describe('la pantalla del teléfono', () => {
+    const vista = leer('src/views/CapturaDeFotoView.jsx');
+
+    it('dice en qué estado está, siempre', () => {
+        for (const t of ['comprobando', 'mandando', 'hecho', 'error']) {
+            expect(vista).toContain(`'${t}'`);
+        }
+    });
+
+    it('no ofrece reintentar cuando el código ya venció', () => {
+        // Un botón que promete algo que no puede cumplir.
+        expect(vista).toMatch(/!\/venció\|usó\/\.test\(motivo\)/);
     });
 });

@@ -21,6 +21,79 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.822.0 — Tomar la foto con el teléfono y verla aparecer en la computadora
+
+El alta se llena en una computadora que casi nunca tiene una cámara usable, y la
+foto sale del teléfono que quien la llena trae en la mano. Hasta hoy el camino
+era mandársela por WhatsApp a uno mismo.
+
+**Ahora son cuatro toques:** «Tomar con el teléfono» → sale un QR → se escanea →
+se dispara. La foto **aparece sola** en el formulario abierto, sin recargar nada.
+
+### El QR es una credencial, y se trata como una
+
+La pantalla del teléfono abre **sin sesión** — quien escanea puede no tener el
+portal abierto ahí, y mandarlo a iniciar sesión con la cámara esperando mata la
+fluidez que esto viene a dar. Entonces el secreto del QR **es** la llave:
+
+- vive **cinco minutos**, con la cuenta regresiva a la vista para que el
+  vencimiento no sea una sorpresa;
+- sirve **una vez** — y eso lo garantiza el `usada_el IS NULL` **dentro** del
+  UPDATE: con el mismo QR en dos teléfonos, sólo el primero escribe. Un chequeo
+  antes del UPDATE los dejaría pasar a los dos;
+- pedir uno nuevo **mata el anterior**: dos QR vivos son dos llaves, y la vieja
+  se queda en una pantalla que alguien dejó abierta;
+- sólo lo abre quien ya puede editar personal;
+- en la base vive el **hash**, nunca el secreto.
+
+Y lo que consigue quien lo robe es meter una imagen en un formulario que una
+persona está mirando y todavía no guardó. No lee nada del expediente.
+
+Probado contra la base dentro de una transacción deshecha: sirve → guarda → **el
+segundo intento se rechaza** → deja de resolver.
+
+### Tres decisiones que no se ven
+
+**La foto viaja reducida** — 1024 px, JPEG al 82%, ~150 kB. Una cámara de
+teléfono da 4000 px y varios megas; esto se va a usar por datos móviles, y
+mandar el archivo entero es exactamente lo que tumbó `leer-dui` por memoria. Una
+foto que ya es chica **no se agranda**: reescalar hacia arriba sólo agrega peso.
+
+**El bucket sigue cerrado.** El teléfono no sube a Storage —eso obligaría a
+abrirle el bucket a `anon`, y entonces escribiría cualquiera, no sólo quien tiene
+el QR—. Manda la imagen a una función que comprueba el código y **después**
+escribe con permisos de servidor. La URL que vuelve es **firmada**: el bucket de
+fotos de personal es privado y sigue siéndolo.
+
+**La computadora no espera sólo por Realtime.** Hay un sondeo de 3 segundos
+debajo, y no es redundancia por miedo: si la suscripción no conecta —una red que
+bloquea websockets, una pestaña dormida— quien escaneó manda la foto y la
+computadora se queda mirando un código que ya sirvió, sin ninguna señal. El
+sondeo se apaga solo al llegar la foto o al vencer el código.
+
+**La foto entra al formulario como archivo**, no como URL suelta, así que sigue
+el camino normal de guardado. Una segunda rama para «vino del teléfono» es otra
+que mantener y que se desincroniza.
+
+### Lo que el gate levantó, y estaba bien levantado
+
+- **`ModalShell` no acepta `size` ni `title`.** React los ignoraba en silencio:
+  el diálogo se habría dibujado sin título y sin ancho. Su API real es `open`,
+  `maxWidthClass` y `ariaLabel`.
+- **El QR usa negro puro sobre blanco puro** y eso dispara la regla de colores
+  crudos. Es una excepción con motivo: un token de tema lo dejaría claro sobre
+  claro en oscuro, ilegible para cualquier teléfono. Mismo criterio que la guía
+  de encuadre de la cámara.
+- **Un sondeo más en el navegador** (8 → 9), declarado con su motivo: es el único
+  de los nueve que **no** corre una vez por pestaña abierta.
+
+**Sin dependencia nueva:** `@zxing/library` ya estaba —lo usa el lector del
+login— y sabe escribir QR además de leerlos.
+
+**Falta probarlo con un teléfono de verdad.** Todo lo anterior está verificado
+contra la base, contra la función desplegada y con 2.090 pruebas; el escaneo real
+no se puede medir desde acá.
+
 ## v2.821.2 — Horarios: el mapa de auditoría al día
 
 `auditoria/areas.mjs` decía cosas que ya no existen: el cron

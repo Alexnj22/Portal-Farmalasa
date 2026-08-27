@@ -261,3 +261,42 @@ describe('los practicantes', () => {
         expect(espia.primero('eq')).toEqual(['id', 4]);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// «Áreas que cubre»: el clic funcionaba y no lo decía
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Reportado como «al dar click no hace nada». Hacía exactamente lo que tenía que
+// hacer: `isActive` se calculaba, el estado se guardaba… y no se usaba en NINGUNA
+// clase, así que las ocho píldoras se pintaban idénticas estuvieran elegidas o
+// no. Un control que responde sin acusar recibo es indistinguible de uno roto, y
+// el que lo usa reporta lo segundo.
+//
+// Se ancla en el fuente porque el defecto ES del fuente: un valor calculado que
+// no llega al render. jsdom no puede distinguir dos píldoras que se pintan igual
+// mejor de lo que puede leerse acá.
+
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+describe('las píldoras de «Áreas que cubre»', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+    const bloque = form.slice(form.indexOf('Áreas que cubre'),
+                              form.indexOf('Áreas que cubre') + 2200);
+
+    it('lo que se calcula llega al render', () => {
+        expect(bloque).toContain('const isActive');
+        // Relleno cuando está elegida, translúcida cuando no.
+        expect(bloque).toContain('soft={!isActive}');
+    });
+
+    it('un lector de pantalla también se entera', () => {
+        expect(bloque).toContain('aria-pressed={isActive}');
+    });
+
+    it('el campo explica qué es antes de pedir que se toque', () => {
+        expect(bloque).toMatch(/no es una sala/);
+    });
+});

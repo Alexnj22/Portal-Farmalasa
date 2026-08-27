@@ -2887,6 +2887,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         {cubreVariasAreas && (
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
                                                 <label className={rotuloCampo('text-chart-9-text')}>Áreas que cubre</label>
+                                                <p className="text-micro text-content-3 font-medium leading-snug mb-2 ml-1">
+                                                    {selectedBranch?.name} no es una sala, pero esta persona sí atiende salas.
+                                                    Toca las que le tocan: va a salir en el equipo de cada una.
+                                                </p>
                                                 <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-2xl min-h-[44px]">
                                                     {areasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
@@ -2895,6 +2899,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             <Button
                                                                 size="xs"
                                                                 tone="chart-9"
+                                                                soft={!isActive}
+                                                                aria-pressed={isActive}
+                                                                icon={isActive ? CheckCircle2 : undefined}
                                                                 key={opt.value}
                                                                 type="button"
                                                                 onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}

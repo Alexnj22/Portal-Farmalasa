@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.808.2 — La píldora dice si está elegida
+
+Reportado como *«áreas que cubre, no entiendo, al dar click no hace nada»*.
+
+**Hacía exactamente lo que tenía que hacer.** `isActive` se calculaba, el toque
+guardaba la elección… y ese valor **no se usaba en ninguna clase**, así que las
+ocho píldoras se pintaban idénticas estuvieran elegidas o no. Un control que
+responde sin acusar recibo es indistinguible de uno roto, y quien lo usa reporta
+lo segundo — que es lo que pasó.
+
+Ahora la elegida va rellena y con su marca; la que no, translúcida. Y lo dice
+también `aria-pressed`, para quien no ve la pantalla.
+
+**Y el campo explica qué es antes de pedir que lo toquen.** Decía «Áreas que
+cubre» y nada más. Hoy dice, con el nombre del área que esa persona tiene puesta:
+«Administración no es una sala, pero esta persona sí atiende salas. Toca las que
+le tocan: va a salir en el equipo de cada una.» Que es para lo que sirve — de ahí
+sale la cobertura que muestra `/personal`.
+
+Anclado en `tests/unit/expedienteYPersonalMinimo.test.js`: lo que se calcula
+tiene que llegar al render.
+
 ## v2.808.1 — La cuenta de pruebas no vive en ninguna sala
 
 *«El de QA que no esté en Salud 1, por defecto que esté sin sucursal; cuando se

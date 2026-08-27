@@ -46,12 +46,6 @@
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
     },
-    "empleados_en_turno": {
-      "ms": "11",
-      "casos": "la sala con más gente",
-      "divergencia": null,
-      "nota": "DEVUELVE 0 FILAS incluso ahí — posible defecto aparte, verificar"
-    },
     "envios_por_continuar": {
       "ms": null,
       "casos": null,

@@ -1,4 +1,4 @@
-import { claveDeDia } from './scheduleHelpers';
+import { claveDeDia, resolverTurnoDelDia } from './turnoDelDia';
 
 // --- FECHAS Y TIEMPO (CORREGIDO UTC vs LOCAL) ---
 
@@ -138,25 +138,30 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
     const dbDay = claveDeDia(specificDateObj);
 
     const scheduleBase = employee.weekly_roster || employee.weeklySchedule || {};
-    const dayConfig = scheduleBase[dbDay] || scheduleBase[Number(dbDay)];
+    const dayConfig = scheduleBase[dbDay] ?? scheduleBase[Number(dbDay)];
 
-    if (!dayConfig || dayConfig.isOffDay || dayConfig.isOff || (!dayConfig.shiftId && !dayConfig.shift_id)) {
-        return { isOffDay: true, shift: null };
-    }
-
-    const targetShiftId = dayConfig.shiftId || dayConfig.shift_id;
-    const shift = (shifts || []).find(s => String(s.id) === String(targetShiftId));
-
-    // Honour per-day overrides written by SHIFT_CHANGE approval or TH manual edits.
-    // customStart/customEnd take precedence over the base shift's published times.
-    const resolvedStart = dayConfig.customStart || shift?.start || shift?.start_time || null;
-    const resolvedEnd   = dayConfig.customEnd   || shift?.end   || shift?.end_time   || null;
+    // Y el turno lo resuelve `resolverTurnoDelDia`, no un `if` propio.
+    //
+    // Éste EXIGÍA `shiftId`: `(!dayConfig.shiftId && !dayConfig.shift_id)`
+    // devolvía día libre. Pero el editor deja guardar un día con horas propias
+    // y sin turno del catálogo —la pantalla lo pinta «Manual» y lo cuenta en
+    // las 44 h—, así que para el kiosco esa persona estaba libre: le pedía
+    // autorización de supervisor para marcar y la asistencia la daba ausente.
+    // Ver la tabla de las cuatro lecturas en `utils/turnoDelDia.js`.
+    const resuelto = resolverTurnoDelDia(dayConfig, shifts);
+    if (!resuelto.trabaja) return { isOffDay: true, shift: null };
 
     return {
         isOffDay: false,
-        shift: { ...(shift || {}), id: targetShiftId, name: shift?.name || 'Turno Modificado', start: resolvedStart, end: resolvedEnd },
-        lunchTime: dayConfig.lunchTime || dayConfig.lunch_time || dayConfig.lunchStart,
-        lactationTime: dayConfig.lactationTime || dayConfig.lactation_time || dayConfig.lactationStart
+        shift: {
+            ...(shifts || []).find(s => String(s.id) === String(resuelto.turnoId)),
+            id: resuelto.turnoId || 'CUSTOM',
+            name: resuelto.nombre,
+            start: resuelto.inicio,
+            end: resuelto.fin,
+        },
+        lunchTime:     resuelto.pausa?.inicio ?? null,
+        lactationTime: resuelto.lactancia?.inicio ?? null,
     };
 };
 

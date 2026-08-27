@@ -21,6 +21,116 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.820.0 — Horarios: un solo resolvedor del día, y la escritura deja de despublicar
+
+Primer bloque de la auditoría del área. Cinco migraciones y una edge function
+redesplegada; la pantalla va en la tanda siguiente.
+
+### «¿Qué turno tiene hoy esta persona?» estaba respondida cuatro veces
+
+Un día de `employee_rosters.schedule_data` puede traer un turno del catálogo, o
+horas propias, o las dos. Cada consumidor lo resolvía por su cuenta:
+
+| quién leía | catálogo | horas propias | `isOff` ausente |
+|---|---|---|---|
+| `consolidate-timesheets` (planilla) | sí | sí | trabaja |
+| las 44 h de la pantalla | sí | sí | trabaja |
+| `getTodayScheduleConfig` (kiosco) | sí | **NO** | trabaja |
+| `empleados_en_turno()` (avisos de sala) | **NO** | sí | **LIBRE** |
+
+El kiosco exigía `shiftId`. Pero el editor **deja guardar un día con horas
+propias y sin turno del catálogo** —la pantalla lo pinta «Manual» y lo cuenta en
+las 44 h—, así que para el reloj de la sala esa persona estaba **libre**: le
+pedía autorización de supervisor para marcar y la asistencia la daba ausente.
+
+Y la función de SQL invertía el valor por defecto:
+`coalesce((isOff)::boolean, true) = false` da por libre al día que no trae la
+clave, **al revés de JavaScript**, que es quien escribió el dato. Es la misma
+regla que ya costó `get_traslados_por_recibir`.
+
+Dos rastros lo habían anotado sin cerrarlo: `scripts/planes-genericos.json`
+decía *«DEVUELVE 0 FILAS incluso [en la sala con más gente] — posible defecto
+aparte, verificar»*, y la migración del 17-ago, *«la cascada NUNCA encontró a
+nadie en turno, ni una vez»*.
+
+Hoy hay **un** resolvedor: `src/utils/turnoDelDia.js` y su gemelo de SQL
+`turno_del_dia(jsonb, jsonb)`. Los dos están anclados sobre los mismos casos en
+`tests/unit/turnoDelDia.test.js` (53 pruebas), y se enfrentaron uno contra otro
+sobre los 16 casos que importan: **iguales, 0 distintas**.
+
+`empleados_en_turno` además estrena algo que le faltaba: **mira la cobertura**.
+Quien viene de otra sala a cubrir acá está trabajando acá, y quien se fue a
+cubrir a otra no está. La tabla existía justo para eso y nadie la consultaba.
+
+### Corregir una semana publicada dejaba las horas sin pagar
+
+Guardar una celda mandaba `status: 'DRAFT'` y el roster entero. O sea que
+corregir un día de una semana ya publicada **la devolvía a borrador** — y el
+botón de publicar quedaba `disabled` con `onClick: undefined` en cuanto la
+semana figuraba publicada. Como `consolidate-timesheets` sólo lee los
+`PUBLISHED`, esas horas **no llegaban a planilla**, y la pantalla mientras tanto
+decía «Publicado».
+
+`guardar_dia_de_horario` escribe **un** día con `||` sobre el `jsonb` y no toca
+el estado. De paso arregla otra cosa que nadie había visto: mandar el objeto
+completo hacía que dos personas editando días distintos de la misma persona se
+pisaran, y ganaba la última en guardar.
+
+### El aviso del sábado no podía sonar
+
+Había **dos** crons sobre la misma edge function:
+
+| cron | UTC | hora SV | qué hacía de verdad |
+|---|---|---|---|
+| `auto-copy-roster-saturday` | 0 6 * * 6 | sáb 00:00 | copiaba |
+| `roster-missing-alert-saturday` | 0 15 * * 6 | sáb 09:00 | **no podía avisar nunca** |
+| `auto-copy-weekly-roster` | 0 16 * * 6 | sáb 10:00 | no tocaba nada |
+
+El de medianoche ganaba siempre, así que **ninguna corrección hecha el sábado se
+propagaba**. Y como `notify_missing_roster` pregunta si hay filas para la semana
+entrante, con la copia ya hecha el contador nunca era cero: la alarma de «faltan
+horarios» **no podía dispararse**. El orden que el diseño quería era alarma →
+copia, y el cron de más lo había invertido. Se apagó el duplicado.
+
+La alarma además contaba filas de **toda la empresa** —un solo horario de una
+sola sala la apagaba para las seis—. Ahora cuenta personas sin horario **por
+sala** y las nombra. Medido hoy: *«46 persona(s) todavía no tienen horario»*, con
+las ocho salas listadas.
+
+### El turno del catálogo trae su pausa
+
+La pausa alimenticia se marcaba celda por celda, duraba una hora fija y sólo se
+aceptaba **entre las 11:00 y las 14:30** — una ventana escrita en un `.jsx`, sin
+fuente. El reglamento interno (Art. 18) tiene pausas a las 12:00, 13:00, 18:00 y
+19:00: o sea que el editor **rechazaba las pausas del propio reglamento**.
+
+Ahora `shifts` guarda `lunch_start` y `lunch_minutes`, el día las hereda al
+asignarse el turno, y la única regla es que la pausa caiga dentro de la jornada.
+
+### Lo demás
+
+- **La cobertura respeta la sala.** `schedule_coverage` tenía `USING (true)` para
+  leer y ninguna condición de sucursal para escribir, mientras `employee_rosters`
+  —el mismo tipo de dato— sí la tiene. Un jefe con alcance de una sala podía leer
+  y **borrar** la cobertura de cualquier otra.
+- **`shifts` y `holidays` dejan de ser legibles sin iniciar sesión.** Estaba
+  declarado como «revisar» en `auditoria/superficie-anon.json` sin motivo
+  escrito; hoy se cierra con una razón medida: el kiosco los recibe dentro de
+  `get_kiosk_boot_payload`, que es DEFINER y los arma adentro.
+- **`estoy_en_turno()` se borró.** SECURITY DEFINER y sin un solo llamador en
+  producción: quedó huérfana el 17-ago.
+- **La copia del sábado ya no le arma la semana a quien se fue**, ni a las fichas
+  que no son personas, y **avisa cuando cae un asueto** — `holidays` no se
+  consultaba, así que una semana con feriado se copiaba como una semana normal.
+- **El token de servicio salió del `cron.job.command`.** La función se redesplegó
+  con `--no-verify-jwt` (se valida sola con `x-cron-secret`, que sí sale de
+  Vault). Verificado: responde 200.
+- **`turno_del_dia` pasó a `plpgsql` y quedó 10× más rápido** — 0,44 ms → 0,042 ms
+  por llamada. `LANGUAGE sql` con `SET` no se inlinea *y* replanifica en cada
+  llamada; es la otra cara de la trampa 4 de CLAUDE.md.
+- Índice en `employee_rosters(week_start_date)` y en
+  `schedule_coverage(home_branch_id)`, que era una clave foránea sin cubrir.
+
 ## v2.819.0 — La prórroga reinicia el plazo del Ministerio, y el acuse va con los documentos
 
 Dos preguntas del usuario sobre la misma pantalla, y la primera destapó un

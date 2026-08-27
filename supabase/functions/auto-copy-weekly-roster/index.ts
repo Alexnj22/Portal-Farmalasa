@@ -39,8 +39,15 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
-  // Auditoría 2026-07: gate obligatorio — los 2 cron.job (jobid 144, 146)
-  // ya envían x-cron-secret, confirmado. Ver AUDITORIA-2026-07.md.
+  // Auditoría 2026-07: gate obligatorio — el cron envía x-cron-secret.
+  //
+  // Eran DOS crons sobre esta misma función (jobid 144 a las 16:00 UTC y 146 a
+  // las 06:00), y el de medianoche ganaba siempre: copiaba, y el de las 10:00
+  // encontraba todo hecho. O sea que ninguna corrección hecha el sábado se
+  // propagaba. Peor: `notify_missing_roster` corre a las 15:00 UTC y pregunta
+  // si hay filas para la semana entrante — con la copia de las 06:00 ya hecha,
+  // el contador nunca era cero y esa alarma NO PODÍA SONAR NUNCA. El 146 se
+  // apagó el 2026-08-27; queda sólo el de las 16:00, después de la alarma.
   if (!checkCronSecret(req)) {
     return new Response(JSON.stringify({ ok: false, error: 'UNAUTHORIZED' }), {
       status: 401,
@@ -77,11 +84,21 @@ Deno.serve(async (req) => {
 
     console.log(`Reference: ${todayStr}, current week: ${curWeekStr}, next week: ${nextWeekStr}–${nextSunStr}`);
 
-    // 1. Load all rosters for the current week
+    // 1. Load all rosters for the current week — but only for people who are
+    //    still on the payroll.
+    //
+    //    Antes salía de `employee_rosters` a secas, sin cruzar `employees`:
+    //    a quien se fue se le seguía armando la semana para siempre, y a las
+    //    fichas que no son personas (la cuenta de pruebas, el contador
+    //    externo) también. `tipo_ficha` es la misma pregunta que hace
+    //    `esPersonalEnPlanilla` en el navegador; la falla segura apunta a
+    //    'empleado', así que una ficha sin marcar SÍ se copia.
     const { data: currentRosters, error: crErr } = await supabase
       .from('employee_rosters')
-      .select('employee_id, schedule_data')
-      .eq('week_start_date', curWeekStr);
+      .select('employee_id, schedule_data, employees!inner(status, tipo_ficha, branch_id)')
+      .eq('week_start_date', curWeekStr)
+      .eq('employees.status', 'ACTIVO')
+      .or('tipo_ficha.is.null,tipo_ficha.eq.empleado', { referencedTable: 'employees' });
     if (crErr) throw crErr;
 
     if (!currentRosters || currentRosters.length === 0) {
@@ -127,6 +144,35 @@ Deno.serve(async (req) => {
       conflictMap.get(empId)!.push({ type: ev.type, date: ev.date, note: ev.note });
     }
 
+    // 3b. ¿Cae un feriado en la semana que viene?
+    //
+    // La copia NO se frena por eso —quién trabaja un asueto es una decisión de
+    // Talento Humano, no del cron— pero el aviso tiene que decirlo. Antes la
+    // tabla `holidays` no se consultaba, así que una semana con feriado
+    // nacional se copiaba como una semana normal y nadie se enteraba.
+    const diasDeLaSemana: string[] = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(nextMon);
+      d.setUTCDate(d.getUTCDate() + i);
+      return toISO(d);
+    });
+
+    const { data: feriados, error: fErr } = await supabase
+      .from('holidays')
+      .select('holiday_date, name, type, municipality, is_recurring');
+    if (fErr) throw new Error(`feriados de la semana entrante: ${fErr.message}`);
+
+    // Un feriado recurrente guarda el día y el mes; el año de la fila es el que
+    // se cargó y no significa nada. Por eso la comparación es por mes-día.
+    const feriadosDeLaSemana = (feriados || [])
+      .map(h => {
+        const mmdd = String(h.holiday_date).substring(5);
+        const cae  = h.is_recurring
+          ? diasDeLaSemana.find(d => d.substring(5) === mmdd)
+          : (diasDeLaSemana.includes(h.holiday_date) ? h.holiday_date : undefined);
+        return cae ? { ...h, cae } : null;
+      })
+      .filter((h): h is NonNullable<typeof h> => h !== null);
+
     // 4. Copy rosters for employees without conflicts; collect conflicted ones
     const toCopy    = missing.filter(r => !conflictMap.has(String(r.employee_id)));
     const conflicted = missing.filter(r =>  conflictMap.has(String(r.employee_id)));
@@ -150,8 +196,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Notify about conflicts using the priority chain
-    if (conflicted.length > 0) {
+    // 5. Notify about conflicts using the priority chain.
+    //    También se avisa cuando la semana entrante trae un feriado, aunque no
+    //    haya ni un conflicto: la copia le armó a todo el mundo un día normal
+    //    sobre un asueto, y eso lo tiene que decidir una persona.
+    if (conflicted.length > 0 || feriadosDeLaSemana.length > 0) {
       // Resolve names for conflicted employees
       // Los cuatro queries de este bloque resuelven A QUIÉN se le avisa. Si
       // fallan en silencio, la lista queda vacía, el aviso "se manda" y el
@@ -233,12 +282,37 @@ Deno.serve(async (req) => {
         ? ' (Talento Humano no disponible hoy)'
         : '';
 
-      const title   = `Turnos próxima semana requieren revisión (${nextWeekStr})`;
-      const message =
-        `El sistema copió automáticamente los turnos de esta semana hacia la semana del ${nextWeekStr}, ` +
-        `pero los siguientes empleados tienen eventos registrados que podrían requerir ajustes en su horario:\n\n` +
-        lines.join('\n') +
-        `\n\nPor favor verifique y realice las modificaciones necesarias en el módulo de Turnos antes del lunes.`;
+      const lineasFeriado = feriadosDeLaSemana.map(h => {
+        const donde = h.type === 'MUNICIPAL'
+          ? ` (municipal${h.municipality ? ` · ${h.municipality}` : ''})`
+          : '';
+        return `• ${h.cae}: ${h.name}${donde}`;
+      });
+
+      const partes: string[] = [
+        `Se copiaron los horarios de esta semana hacia la semana del ${nextWeekStr}.`,
+      ];
+      if (lines.length > 0) {
+        partes.push(
+          '',
+          'Estas personas tienen algo anotado que puede cambiarles el horario:',
+          ...lines,
+        );
+      }
+      if (lineasFeriado.length > 0) {
+        partes.push(
+          '',
+          lineasFeriado.length === 1 ? 'Y esa semana cae un asueto:' : 'Y esa semana caen asuetos:',
+          ...lineasFeriado,
+          'La copia lo armó como un día normal — hay que decidir quién trabaja.',
+        );
+      }
+      partes.push('', 'Revisá y ajustá en Horarios antes del lunes.');
+
+      const title = feriadosDeLaSemana.length > 0 && conflicted.length === 0
+        ? `La semana del ${nextWeekStr} tiene asueto`
+        : `Horarios de la próxima semana para revisar (${nextWeekStr})`;
+      const message = partes.join('\n');
 
       await supabase.from('announcements').insert({
         title,
@@ -250,13 +324,14 @@ Deno.serve(async (req) => {
           source:            'auto-copy-weekly-roster',
           next_week_start:   nextWeekStr,
           conflicted_count:  conflicted.length,
+          feriados:          feriadosDeLaSemana.map(h => `${h.cae} ${h.name}`),
           copied_count:      copied,
           notified_group:    recipientLabel + thUnavailableNote,
           th_available:      availableTH.length,
         },
       });
 
-      console.log(`Notified ${recipientLabel}${thUnavailableNote} about ${conflicted.length} conflicts`);
+      console.log(`Notified ${recipientLabel}${thUnavailableNote} about ${conflicted.length} conflicts and ${feriadosDeLaSemana.length} holidays`);
     }
 
     return new Response(
@@ -267,6 +342,7 @@ Deno.serve(async (req) => {
         evaluated:         missing.length,
         copied,
         conflicts:         conflicted.length,
+        feriados:          feriadosDeLaSemana.map(h => `${h.cae} ${h.name}`),
         conflict_employees: conflicted.map(r => String(r.employee_id)),
       }),
       { headers: { 'Content-Type': 'application/json' } },

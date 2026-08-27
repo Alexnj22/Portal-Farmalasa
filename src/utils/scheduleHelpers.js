@@ -7,35 +7,29 @@ import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-r
  * puertas. */
 export { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe, rangoDeSemana } from './semana';
 
-// Clave del día dentro de `employee_rosters.schedule_data` y de
-// `schedule_coverage.day_of_week`.
-//
-// **Domingo es 0**, que es lo que devuelve `Date.getDay()` y lo que hay
-// guardado: medido sobre las 103 filas de producción, las únicas claves que
-// existen son "0".."6" y no hay ni una "7".
-//
-// Existía por escrito la convención contraria (domingo = 7) en seis lugares —el
-// lector del kiosco, el aviso del turno de mañana, la vista de auditoría, el
-// regreso de vacaciones y el marcado de incapacidad/vacaciones en el horario—,
-// así que el domingo era invisible: el kiosco buscaba una clave inexistente,
-// daba el día por libre y pedía autorización de supervisor en cada marcaje
-// dominical; y marcar una incapacidad que cae domingo escribía una clave "7"
-// que ni la pantalla de horarios ni la consolidación de planilla leen jamás.
-//
-// Esta función es el único lugar donde vive la convención. No escribirla a mano
-// de nuevo. Está anclada en `tests/unit/kioscoHorario.test.js`.
-export const claveDeDia = (date) => String(new Date(date).getDay());
+// `claveDeDia` y la resolución del día viven en `utils/turnoDelDia.js` desde el
+// 2026-08-27: hasta ese día la pregunta «¿qué turno tiene hoy esta persona?»
+// estaba respondida cuatro veces con cuatro reglas distintas. Se re-exportan
+// acá porque es donde media pantalla las venía a buscar.
+import {
+    resolverTurnoDelDia, tramosDeLaJornada, aMinutos,
+} from './turnoDelDia';
+export {
+    claveDeDia, resolverTurnoDelDia, tramosDeLaJornada, reparosDelDia,
+    descansoInsuficiente, aMinutos, aHora,
+    HORAS_SEMANA_DIURNA, HORAS_SEMANA_NOCTURNA,
+    HORAS_JORNADA_DIURNA, HORAS_JORNADA_NOCTURNA,
+    DESCANSOS_POR_SEMANA, HORAS_ENTRE_JORNADAS, MINUTOS_DE_PAUSA,
+} from './turnoDelDia';
+
+// `timeToMins` es el nombre viejo de `aMinutos`. Sigue exportado porque lo
+// importan diez archivos; el nuevo se llama en español como el resto del módulo.
+export const timeToMins = aMinutos;
 
 export const formatDateLocal = (dateStr) => {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     return `${d}/${m}/${y}`;
-};
-
-export const timeToMins = (timeStr) => {
-    if (!timeStr) return 0;
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
 };
 
 export const minsToTimeStr = (mins) => {
@@ -62,30 +56,17 @@ export const formatHourAMPM = (hour) => {
 
 export const DAY_NAMES = { 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 0: 'Dom' };
 
+// Los tramos de una jornada los parte `tramosDeLaJornada`. Esta firma se queda
+// porque la llaman las celdas del calendario con los valores sueltos.
 export const getTimeBlocks = (startStr, endStr, hasLunch, lunchStart, hasLactation, lactationStart) => {
-    if (!startStr || !endStr) return [];
-    let s = timeToMins(startStr);
-    let e = timeToMins(endStr);
-    if (e < s) e += 1440;
-    let intervals = [];
-    if (hasLunch && lunchStart) {
-        let ls = timeToMins(lunchStart);
-        intervals.push({ type: 'lunch', start: ls, end: ls + 60, label: 'almuerzo' });
-    }
-    if (hasLactation && lactationStart) {
-        let lacS = timeToMins(lactationStart);
-        intervals.push({ type: 'lactation', start: lacS, end: lacS + 60, label: 'lactancia' });
-    }
-    intervals.sort((a, b) => a.start - b.start);
-    let blocks = [];
-    let curr = s;
-    intervals.forEach(inv => {
-        if (curr < inv.start) blocks.push({ type: 'work', start: curr, end: inv.start });
-        blocks.push(inv);
-        curr = inv.end;
-    });
-    if (curr < e) blocks.push({ type: 'work', start: curr, end: e });
-    return blocks;
+    const resuelto = resolverTurnoDelDia(
+        { customStart: startStr, customEnd: endStr, hasLunch, lunchStart, hasLactation, lactationStart },
+        [],
+    );
+    return tramosDeLaJornada(resuelto).map(t => ({
+        type: t.tipo === 'pausa' ? 'lunch' : t.tipo === 'lactancia' ? 'lactation' : 'work',
+        start: t.inicio, end: t.fin, label: t.etiqueta,
+    }));
 };
 
 const parseMeta = (ev) =>
@@ -110,6 +91,12 @@ const isConflictOnDate = (ev, dateStr) => {
     return ev.date <= dateStr && (!meta.endDate || meta.endDate >= dateStr);
 };
 
+// Las horas que se le pagan a alguien en una semana. Un día con vacaciones,
+// incapacidad, permiso, asueto o apoyo en otra sala no suma acá.
+//
+// Desde el 2026-08-27 el día lo resuelve `resolverTurnoDelDia` y no una copia
+// local: la copia exigía `shiftId || customStart` y descontaba una hora fija de
+// almuerzo, así que no veía la pausa que hoy declara el turno del catálogo.
 export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, calendarDates) => {
     if (!schedule || !shifts) return 0;
     let totalMins = 0;
@@ -119,20 +106,7 @@ export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, cal
             ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY', 'SUPPORT'].includes(ev.type) && isConflictOnDate(ev, dateStr)
         );
         if (hasConflict) return;
-
-        const dayConf = schedule[dayId];
-        if (dayConf && !dayConf.isOff && (dayConf.shiftId || dayConf.customStart)) {
-            const shift = shifts.find(s => String(s.id) === String(dayConf.shiftId)) || {};
-            const start = dayConf.customStart || shift.start_time || shift.start;
-            const end = dayConf.customEnd || shift.end_time || shift.end;
-
-            if (start && end) {
-                let mins = timeToMins(end) - timeToMins(start);
-                if (mins < 0) mins += 1440;
-                if (dayConf.hasLunch) mins -= 60;
-                totalMins += mins;
-            }
-        }
+        totalMins += resolverTurnoDelDia(schedule[dayId], shifts).minutosPagados;
     });
     return Number((totalMins / 60).toFixed(1));
 };

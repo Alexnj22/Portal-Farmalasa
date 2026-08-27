@@ -1,0 +1,141 @@
+import React, { useMemo } from 'react';
+import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle } from 'lucide-react';
+import LiquidAvatar from './LiquidAvatar';
+import { shortEmployeeName } from '../../utils/nameUtils';
+import { estadoDePersona } from '../../utils/estadoDePersona';
+
+/**
+ * AvatarConEstado — la foto de una persona, y si esa persona está o no.
+ *
+ * ── Por qué no es una píldora más ─────────────────────────────────────────
+ * El primer intento puso el estado como un badge debajo de los cargos. El
+ * usuario lo miró y dijo *«no distingo que está de vacación»*: quedaba cuarto
+ * en una pila de badges y el de arriba —«Faltan 2 datos»— era del mismo ámbar,
+ * del mismo tamaño y de la misma forma. **Un dato importante en el mismo
+ * envase que los demás queda escondido, por bien que esté redactado.**
+ *
+ * El segundo intento apagó la foto a gris. También lo levantó: *«parece
+ * muerto»*. Y es exacto — el gris es el vocabulario de «dado de baja», no el
+ * de «vuelve el martes».
+ *
+ * ── El aro, y por qué es EL que sobrevive ─────────────────────────────────
+ * Se eligió sobre otros cuatro tratamientos (halo, corona, arco inferior, foto
+ * teñida) por una razón medible: **el aro no se encoge como un ícono.** En el
+ * portal la foto va de 20 px —las firmas de bitácoras, los chips de pedidos, la
+ * campana— a 160 px en la ficha del empleado, o sea ocho veces. Un ícono de 20
+ * px en el escalón chico pasa a 7 y se vuelve una mancha; el aro sigue siendo
+ * un círculo entero de color y su grosor es ABSOLUTO, no proporcional.
+ *
+ * Lo que se pierde al achicar no es el aro: es el chip. Por eso la escalera:
+ *
+ *   ≥ 48 px   aro + chip con ícono   → dice QUÉ pasa
+ *   28–47 px  aro solo (2.5 px)      → dice QUE pasa algo
+ *   < 28 px   aro de 2 px            → igual, y la palabra la pone el texto
+ *
+ * Ese último escalón no es una concesión: **en todos los sitios donde la foto
+ * es chica, el nombre de la persona está escrito al lado**. Ahí el aro no
+ * necesita explicar nada — alcanza con que llame la atención para ir a mirar. Y
+ * el `title` lleva la frase completa a CUALQUIER tamaño, así que el dato nunca
+ * depende de distinguir un color.
+ *
+ * ── Lo que queda pendiente y hay que saber ────────────────────────────────
+ * Los estados se distinguen sólo por COLOR: ámbar (vacaciones), rojo
+ * (incapacidad), violeta (permiso), verde azulado (apoyo). Con daltonismo
+ * rojo-verde —alrededor de 1 de cada 12 hombres— ámbar, rojo y verde azulado
+ * dejan de ser tres colores distintos, y eso pasa igual a 160 px que a 20. Se
+ * le propuso al usuario codificar también la FORMA del aro (continuo,
+ * punteado, doble) y eligió el aro a secas. Queda anotado acá porque el día que
+ * alguien lo levante como hallazgo, ésta es la respuesta: se midió, se mostró y
+ * se decidió. El `title` es hoy la red que lo cubre.
+ *
+ * ── Uso ───────────────────────────────────────────────────────────────────
+ *     <AvatarConEstado emp={emp} px={52} />
+ *
+ * `px` es OBLIGATORIO y es un número, no una clase: la escalera necesita el
+ * tamaño real y desde una clase de Tailwind no se puede leer. Es la misma razón
+ * por la que `data-lugar` existe — en tiempo de render se sabe, desde afuera no.
+ */
+
+const MARCA = {
+  warning:   { anillo: 'ring-warning',   chip: 'bg-warning-solid' },
+  danger:    { anillo: 'ring-danger',    chip: 'bg-danger-solid' },
+  neutral:   { anillo: 'ring-chart-8',   chip: 'bg-chart-8-solid' },
+  'chart-9': { anillo: 'ring-chart-9',   chip: 'bg-chart-9-solid' },
+  'chart-6': { anillo: 'ring-chart-6',   chip: 'bg-chart-6-solid' },
+  'chart-3': { anillo: 'ring-chart-3',   chip: 'bg-chart-3-solid' },
+};
+
+// Escritas LITERALES y no armadas con plantilla: Tailwind escanea strings del
+// fuente, y con `ring-${variante}` no ve nada y no emite la clase — el aro
+// saldría sin color y en silencio. Es la trampa que `Badge.jsx` documenta en su
+// tabla SOLID, y que ya costó tres variantes invisibles una vez.
+
+const ICONO = {
+  VACATION:   Palmtree,
+  DISABILITY: Stethoscope,
+  SUPPORT:    Briefcase,
+  INDUCTION:  Baby,
+  PERMIT:     Clock,
+  INACTIVO:   UserMinus,
+  LIQUIDADO:  UserX,
+  SUSPENDIDO: HelpCircle,
+};
+
+export default function AvatarConEstado({ emp, px, className = '', mostrarChip = true }) {
+  const estado = useMemo(() => estadoDePersona(emp), [emp]);
+
+  const marca = estado ? MARCA[estado.variante] : null;
+  const Icono = estado ? ICONO[estado.clave] : null;
+
+  // Los tres escalones. `ring-[Npx]` con el número escrito: el grosor no puede
+  // ser proporcional, porque eso es justo lo que hace desaparecer a un ícono.
+  const grosor = px >= 28 ? 'ring-[2.5px]' : 'ring-2';
+  const conChip = mostrarChip && px >= 48;
+
+  const titulo = estado
+    ? `${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`
+    : undefined;
+
+  return (
+    <span
+      className={`relative inline-flex shrink-0 ${className}`}
+      style={{ width: px, height: px }}
+      /* ── El conjunto ES un gráfico, y por eso se anuncia como uno ─────────
+         Sin `role="img"`, el `title` cuelga de un `<span>` mudo: el lector de
+         pantalla no lo lee y el gate de diseño lo marca con razón (§15.10).
+         El rol va en el CONJUNTO —foto más aro— y no en el chip, porque lo que
+         significa algo es el conjunto; el chip solo es un pedazo. Cuando la
+         persona está presente no hay nada que anunciar y el rol no se pone: la
+         foto ya se describe sola desde `LiquidAvatar`. */
+      {...(estado ? { role: 'img', 'aria-label': titulo, title: titulo } : {})}
+      /* Que la marca EXISTA es la pregunta que una prueba tiene que poder
+         hacer, y desde afuera se contestaría por el color del aro — que es
+         CSS, y jsdom no calcula ninguno. */
+      data-estado={estado ? estado.clave : undefined}
+    >
+      <span className={`block h-full w-full overflow-hidden rounded-xl
+        ${marca ? `ring-inset ${grosor} ${marca.anillo}` : 'border border-border-card'}`}>
+        <LiquidAvatar
+          src={emp?.photo || emp?.photo_url}
+          alt={emp?.name || 'Empleado'}
+          fallbackText={shortEmployeeName(emp)}
+          className="h-full w-full"
+        />
+      </span>
+
+      {conChip && Icono && (
+        <span
+          className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full
+            border-2 border-surface-card shadow-sm ${marca.chip}`}
+          style={{ width: Math.round(px * 0.34), height: Math.round(px * 0.34) }}
+          /* Decorativo: su significado ya lo lleva el `aria-label` del
+             conjunto, y anunciarlo aparte sería decir «palmera» después de
+             decir «en vacaciones». */
+          aria-hidden="true" data-chip-estado={estado.clave}
+        >
+          <Icono size={Math.round(px * 0.19)} strokeWidth={2.5} className="text-white" />
+        </span>
+      )}
+    </span>
+  );
+}

@@ -83,15 +83,25 @@ test.describe('Flujos autenticados', () => {
             await personalGroup.click();
         }
         await page.getByText('Listado', { exact: true }).click();
-        await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
 
-        // El lápiz "Edición rápida" (StaffManagementView.jsx) abre el modal
-        // directo — NO es el último botón de la fila (ese es "Ver perfil
-        // completo", que navega al dossier de solo lectura). Apuntar por
-        // title en vez de .last() evita el falso negativo si se agregan más
-        // botones de fila en el futuro. Requiere staff_list.can_edit (la
-        // cuenta QA lo tiene; staff_detail.can_edit deliberadamente no).
-        await page.locator('table tbody tr').first().locator('button[title="Edición rápida"]').click();
+        // Desde v2.804.0 `/personal` no es una tabla sino el equipo de cada
+        // sucursal en tarjetas, y la tabla se eliminó — así que el ancla ya no
+        // puede ser `table tbody tr`. `data-lugar` lo estampa la vista en cada
+        // tarjeta de persona; se espera por él y no por un texto, que cambiaría
+        // con cualquier retoque de copy.
+        await expect(page.locator('[data-lugar]').first()).toBeVisible({ timeout: 15_000 });
+
+        // El lápiz "Edición rápida" abre el modal directo — NO es el ojo de la
+        // tarjeta (ese navega al expediente de solo lectura). Apuntar por title
+        // evita el falso negativo si se agregan más botones. Requiere
+        // staff_list.can_edit (la cuenta QA lo tiene; staff_detail.can_edit
+        // deliberadamente no).
+        //
+        // Y lo que este smoke protege NO es el botón: es el freno de arranque
+        // que vivía en la vista de lista y viajó a `editarRapido` con ella. Sin
+        // ese freno, abrir "Editar" antes de que el boot termine muestra DUI,
+        // ISSS y banco vacíos, y guardar los escribe como NULL.
+        await page.locator('button[title="Edición rápida"]').first().click();
 
         const duiInput = page.locator('input[name="dui"]');
         await expect(duiInput).toBeVisible({ timeout: 15_000 });

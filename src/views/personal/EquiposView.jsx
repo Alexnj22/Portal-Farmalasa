@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
-  Cake, Medal, Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus,
-  UserX, HelpCircle, CornerDownRight, UserPlus, Download, List,
+  Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
+  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -11,22 +11,33 @@ import FilterBar from '../../components/common/FilterBar';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
-import LiquidAvatar from '../../components/common/LiquidAvatar';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
+import ConfirmModal from '../../components/common/ConfirmModal';
+// El formulario del practicante sólo existe si alguien aprieta «Nuevo
+// practicante», y trae su propio validador, sus catálogos y su red. Estático
+// viajaba en el paquete de una pantalla que se abre para MIRAR — es la regla de
+// «librerías pesadas sólo por await import()» aplicada a un formulario: al
+// absorber lo que hacía el listado, esta vista pasó de 37 a 54 kB y cruzó su
+// techo. Diferido vuelve a entrar.
+const PracticanteModal = lazy(() => import('../../components/practicantes/PracticanteModal'));
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { clickable } from '../../utils/clickable';
-import { getEffectiveStatus } from '../../utils/helpers';
+import { estadoDePersona } from '../../utils/estadoDePersona';
 import { getRoleTheme } from '../../utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import { repartirSala } from '../../utils/mandoDeSala';
 import { getExpiringDocuments } from '../../utils/documentExpiry';
-import { soloPersonalEnPlanilla } from '../../utils/tipoDeFicha';
+import { soloPersonalEnPlanilla, soloNoEmpleados } from '../../utils/tipoDeFicha';
 import { exportarDirectorio } from '../../utils/directorioCsv';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { usePestanaEnUrl } from '../../hooks/usePestanaEnUrl';
+import { useToastStore } from '../../store/toastStore';
+import { mensajeAmigable } from '../../utils/errorMessages';
 import { smartFilter } from '../../utils/searchUtils';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { SIN_ASIGNAR } from '../../data/constants';
@@ -60,79 +71,19 @@ import { SIN_ASIGNAR } from '../../data/constants';
  * que aparezca la primera vacación va a pasar desapercibida entre las otras 45.
  */
 
-// ── Estado vigente, con la fecha de vuelta ─────────────────────────────────
+// ── Las cinco vistas que ofrece la píldora ────────────────────────────────
 //
-// `getEffectiveStatus` devuelve el ROTULO y nada más, y ese es justo el dato
-// que le falta a quien mira: «En Vacaciones» sin fecha no dice si la persona
-// vuelve mañana o en dos semanas. El evento que lo causa ya está en
-// `emp.history` con su `endDate` — sólo hay que devolverlo junto al rótulo.
-//
-// Si el boceto se aprueba, esto sube a `utils/helpers.js` al lado de
-// `getEffectiveStatus`; se queda acá mientras la vista sea una propuesta.
-const TEMPORALES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION'];
-
-const ROTULO_TEMPORAL = {
-  DISABILITY: { texto: 'Incapacitado',  icon: Stethoscope, variante: 'danger'  },
-  VACATION:   { texto: 'En vacaciones', icon: Palmtree,    variante: 'warning' },
-  SUPPORT:    { texto: 'En apoyo',      icon: Briefcase,   variante: 'chart-9' },
-  INDUCTION:  { texto: 'En inducción',  icon: Baby,        variante: 'chart-6' },
-  PERMIT:     { texto: 'Con permiso',   icon: Clock,       variante: 'chart-3' },
-};
-
-const ROTULO_FIJO = {
-  Inactivo:   { texto: 'Inactivo',   icon: UserMinus, variante: 'neutral' },
-  Liquidado:  { texto: 'Liquidado',  icon: UserX,     variante: 'danger'  },
-  Suspendido: { texto: 'Suspendido', icon: HelpCircle,variante: 'danger'  },
-};
-
-// El relleno de la marca de la foto. Escritos LITERALES, no armados con
-// plantilla: Tailwind escanea strings del fuente, y con `bg-${'$'}{v}-solid` no ve
-// nada y no emite la clase — la marca saldría sin fondo y en silencio. Es la
-// misma trampa que `Badge.jsx` documenta en su tabla SOLID.
-const MARCA = {
-  warning: 'bg-warning-solid',
-  danger:  'bg-danger-solid',
-  neutral: 'bg-chart-8-solid',
-  'chart-9': 'bg-chart-9-solid',
-  'chart-6': 'bg-chart-6-solid',
-  'chart-3': 'bg-chart-3-solid',
-};
-
-const hoyISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-// «Vuelve el 2 de septiembre», no «2026-09-02». La fecha cruda obliga a contar
-// días con los dedos; lo que se necesita saber es si la persona está mañana.
-//
-// Sin el día de la semana a propósito: `es-SV` lo abrevia con coma —«mié, 2
-// sept»— y dentro de la píldora eso se lee «vuelve el mié, 2 sept», con una
-// coma que parte la frase justo donde no va. El mes largo entra igual y se lee
-// como una fecha dicha en voz alta.
-const fechaCorta = (iso) => {
-  if (!iso) return null;
-  const d = new Date(`${String(iso).slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long' });
-};
-
-function estadoVigente(emp) {
-  const fijo = ROTULO_FIJO[getEffectiveStatus(emp)];
-  if (fijo) return { ...fijo, hasta: null };
-
-  const t = hoyISO();
-  const ev = (emp?.history || []).find(h =>
-    TEMPORALES.includes(h.type) &&
-    h.date <= t &&
-    ((h.metadata?.endDate ?? h.endDate) >= t || !(h.metadata?.endDate ?? h.endDate))
-  );
-  if (!ev) return null;                      // Activo: no se pinta nada.
-
-  const cfg = ROTULO_TEMPORAL[ev.type];
-  if (!cfg) return null;
-  return { ...cfg, hasta: fechaCorta(ev.metadata?.endDate ?? ev.endDate) };
-}
+// Los valores son SLUGS y viajan en la dirección (`?tab=practicantes`): un
+// rótulo como `?tab=Externos+y+sistema` es feo de compartir, se rompe al
+// escribirlo a mano, y deja de funcionar el día que alguien corrige el texto.
+// Es «un rótulo no es una clave» aplicado a una pestaña.
+const VISTAS = [
+  { value: 'todos',        label: 'Todos' },
+  { value: 'activos',      label: 'Activos' },
+  { value: 'ausentes',     label: 'Ausentes' },
+  { value: 'practicantes', label: 'Practicantes' },
+  { value: 'externos',     label: 'Externos y sistema' },
+];
 
 // ── Lo que hoy vive escondido tras `hover` ─────────────────────────────────
 // En la tabla los enlaces de teléfono son `opacity-0 group-hover:opacity-100`,
@@ -227,12 +178,13 @@ const pesoDeSucursal = (nombre) => {
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a
 // mano deja el radio FIJO cuando `--card-radius` cambia por tema, y falla la
 // categoría `tarjeta-a-mano` de `gate:design`.
-function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir }) {
-  const estado = useMemo(() => estadoVigente(emp), [emp]);
+function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar }) {
+  const estado = useMemo(() => estadoDePersona(emp), [emp]);
   const ausente = !!estado;
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
+  const inactiva = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status);
 
   // ── Las áreas que cubre, cuando son más de la suya ─────────────────────
   // Hay puestos que existen porque recorren —mantenimiento repara en las
@@ -285,42 +237,10 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
     >
       <OjoDeTarjeta className="absolute top-3 right-3" />
 
-      {/* ── La foto dice si la persona ESTÁ ────────────────────────────────
-          Primer intento: una píldora ámbar más, debajo de los cargos. El
-          usuario la miró y dijo «no distingo que está de vacación», y tenía
-          razón — quedaba **cuarta en una pila de píldoras**, y la de arriba
-          («Faltan 2 datos») es del mismo ámbar, del mismo tamaño y de la misma
-          forma. Poner un dato importante en el mismo envase que los demás lo
-          esconde, por mucho que diga lo correcto.
-
-          Tres cosas a la vez, y ninguna es «otra píldora»: la foto se apaga a
-          gris, le aparece una marca con el ícono del estado —el mismo sitio
-          donde el listado ponía su punto de disponibilidad—, y el rótulo pasa
-          a relleno, así que es el ÚNICO chip sólido de la tarjeta. */}
-      <div className="relative shrink-0">
-        <div className={`overflow-hidden rounded-xl border border-border-card bg-surface-card
-          transition-all duration-[var(--dur-base)]
-          ${ausente ? 'grayscale opacity-60' : ''}
-          ${destacada ? 'h-16 w-16' : 'h-12 w-12'}`}>
-          <LiquidAvatar
-            src={emp.photo || emp.photo_url}
-            alt={emp.name || 'Empleado'}
-            fallbackText={shortEmployeeName(emp)}
-            className="h-full w-full"
-          />
-        </div>
-        {ausente && (
-          <span
-            /* `border-2` del color de la tarjeta, no un aro de color: la marca
-               tiene que despegarse de la foto sin depender de qué foto es. */
-            className={`absolute -bottom-1 -right-1 flex h-[22px] w-[22px] items-center justify-center
-              rounded-full border-2 border-surface-card shadow-sm ${MARCA[estado.variante]}`}
-            role="img" aria-label={estado.texto}
-          >
-            <estado.icon size={12} strokeWidth={2.5} className="text-white" />
-          </span>
-        )}
-      </div>
+      {/* La foto y su aro. La marca vive en `AvatarConEstado` —y no acá— porque
+          el usuario pidió que valga «en todos lados que salga la foto», y son
+          48 pantallas: repetirla sería garantizar que once se queden atrás. */}
+      <AvatarConEstado emp={emp} px={destacada ? 64 : 48} className="rounded-xl" />
 
       <div className="min-w-0 flex-1 space-y-1.5">
         <p className={`truncate pr-6 font-black tracking-tight
@@ -368,12 +288,32 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
           </div>
         )}
 
+        {/* ── La fila de abajo: dónde trabaja, y qué se puede hacer ──────────
+            Las acciones van VISIBLES y no detrás de `hover`. Es la misma
+            decisión que con el teléfono: en el teléfono no hay puntero que las
+            revele, así que una acción escondida en hover es una acción que en
+            la mitad de las pantallas no existe.
+
+            `inactiva` en vez de `dado de baja`: la edición rápida está apagada
+            para quien ya no trabaja acá —igual que en el listado— porque
+            reincorporar es otra cosa y tiene su propio botón. */}
         <div className="flex items-center gap-2 pt-0.5">
           <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
             {sucursal || SIN_ASIGNAR}
           </span>
+          <span className="ml-auto flex items-center gap-1.5">
+            {inactiva && puedeEditar && recontratar && (
+              <Button tone="success" size="sm" icon={RefreshCw} iconOnly title="Recontratar"
+                onClick={e => { e.stopPropagation(); recontratar(emp); }} />
+            )}
+            {editar && (
+              <Button tone="warning" size="sm" icon={Pencil} iconOnly title="Edición rápida"
+                disabled={!puedeEditar || inactiva}
+                onClick={e => { e.stopPropagation(); editar(emp); }} />
+            )}
+          </span>
           {tel.length >= 8 && (
-            <span className="ml-auto flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               {/* `stopPropagation`: la tarjeta entera abre la ficha, así que sin
                   esto llamar por teléfono además navegaría. */}
               <a href={`https://wa.me/${tel}`} target="_blank" rel="noreferrer"
@@ -389,6 +329,68 @@ function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = fa
               </a>
             </span>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── El practicante ────────────────────────────────────────────────────────
+//
+// Tabla aparte de `employees` a propósito (migración 20260709): un practicante
+// hace horas sociales, no está en planilla y no tiene DUI, ISSS, expediente ni
+// nómina. Por eso NO se reusa `TarjetaPersona`: sus alertas —«faltan 4 datos»—
+// se dispararían todas, sobre campos que en esta tabla no existen. Sería
+// inventarle un problema a alguien por no ser un empleado.
+const PRACTICANTE_ESTADO = {
+  ACTIVO:     { icon: ShieldCheck, label: 'Activo',     variante: 'success' },
+  FINALIZADO: { icon: CalendarDays, label: 'Finalizado', variante: 'neutral' },
+  CANCELADO:  { icon: Trash2,      label: 'Cancelado',  variante: 'danger' },
+};
+
+const fechaCortaDMA = (d) => {
+  if (!d) return '—';
+  const [y, m, dd] = String(d).split('-');
+  return `${dd}/${m}/${y}`;
+};
+
+function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
+  const est = PRACTICANTE_ESTADO[p.estado] || PRACTICANTE_ESTADO.ACTIVO;
+  const nombre = `${p.first_names || ''} ${p.last_names || ''}`.trim();
+
+  return (
+    <div data-surface="card" data-lugar="practicante"
+      className="group relative flex gap-3 p-3.5 transition-all duration-[var(--dur-base)]">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
+        border border-chart-3/30 bg-chart-3/10 text-chart-3-text">
+        <GraduationCap size={20} strokeWidth={2} />
+      </span>
+
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <p className="truncate font-black tracking-tight text-content text-body-sm" title={nombre}>
+          {nombre}
+        </p>
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge variant="chart-3" size="sm" icon={GraduationCap}>Practicante</Badge>
+          <Badge variant={est.variante} size="sm" icon={est.icon} uppercase={false}>{est.label}</Badge>
+        </div>
+        <p className="truncate text-micro font-bold text-content-2" title={p.institucion_educativa}>
+          {p.institucion_educativa || 'Sin institución'}
+        </p>
+        <p className="text-micro font-bold text-content-3" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {fechaCortaDMA(p.fecha_inicio)} → {fechaCortaDMA(p.fecha_fin)}
+        </p>
+
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
+            {sucursal || SIN_ASIGNAR}
+          </span>
+          <span className="ml-auto flex items-center gap-1.5">
+            <Button tone="warning" size="sm" icon={Pencil} iconOnly title="Editar practicante"
+              disabled={!puedeEditar} onClick={() => onEdit(p)} />
+            <Button variant="destructive" size="sm" icon={Trash2} iconOnly title="Eliminar practicante"
+              disabled={!puedeEditar} onClick={() => onDelete(p)} />
+          </span>
         </div>
       </div>
     </div>
@@ -424,7 +426,7 @@ function PulsoDeSala({ personas }) {
   const conteo = useMemo(() => {
     const m = new Map();
     personas.forEach(p => {
-      const e = estadoVigente(p);
+      const e = estadoDePersona(p);
       const k = e ? e.texto : 'Activos';
       m.set(k, (m.get(k) || 0) + 1);
     });
@@ -441,7 +443,7 @@ function PulsoDeSala({ personas }) {
   );
 }
 
-function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
+function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar }) {
   const { sucursal, sinSede, personas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
   return (
@@ -472,10 +474,10 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
       {(jefe || !!vacantesDeSegundo.length) && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {jefe && (
-            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="jefatura" abrir={abrir} />
+            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="jefatura" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           )}
           {segundos.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="segundo" abrir={abrir} />
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="segundo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           ))}
           {vacantesDeSegundo.map(cargo => (
             <PuestoVacante key={cargo.id} cargo={cargo.name} />
@@ -486,7 +488,7 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
       {!!equipo.length && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {equipo.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="equipo" abrir={abrir} />
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="equipo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           ))}
         </div>
       )}
@@ -500,7 +502,7 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {adscritos.map(emp => (
-              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} conSuperior lugar="adscrito" abrir={abrir} />
+              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} conSuperior lugar="adscrito" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
             ))}
           </div>
         </>
@@ -515,6 +517,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const branches = useStaff(s => s.branches);
   const roles = useStaff(s => s.roles);
   const employeesStatus = useStaff(s => s.employeesStatus);
+  const practicantes = useStaff(s => s.practicantes);
+  const practicantesLoading = useStaff(s => s.practicantesLoading);
+  const fetchPracticantes = useStaff(s => s.fetchPracticantes);
+  const deletePracticante = useStaff(s => s.deletePracticante);
   const { user, getScope, hasPermission } = useAuth();
   const canEdit = hasPermission('staff_list', 'can_edit');
   // El CSV se lleva el padrón fuera del portal — permiso aparte de consultarlo
@@ -522,6 +528,26 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const canDownload = hasPermission('staff_list_descargar');
 
   const busqueda = (searchTerm || '').trim();
+
+  // Cuál de las cinco vistas está abierta ES una pestaña —«Practicantes» ni
+  // siquiera lista los mismos registros— y una pestaña vive en la DIRECCIÓN.
+  // En `useState` se perdía con cualquier recarga, y acá la recarga llega sola:
+  // la sesión de sala se cierra a los 5 minutos y el service worker recarga al
+  // publicar. Quien estaba en Practicantes volvía a Todos sin que nada fallara.
+  const [vista, setVista] = usePestanaEnUrl(VISTAS, 'todos');
+  const esPracticantes = vista === 'practicantes';
+  const esExternos = vista === 'externos';
+
+  const [modalPracticante, setModalPracticante] = useState(false);
+  // Se monta la PRIMERA vez que se abre y ya no se desmonta: con el montaje
+  // atado a `modalPracticante` el diálogo desaparecería de golpe al cerrar, sin
+  // su animación de salida.
+  const [pidioModal, setPidioModal] = useState(false);
+  const [practicanteEnEdicion, setPracticanteEnEdicion] = useState(null);
+  const [practicanteABorrar, setPracticanteABorrar] = useState(null);
+  const [borrando, setBorrando] = useState(false);
+
+  useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
 
   const nombreDeSucursal = useMemo(() => {
     const m = new Map();
@@ -550,8 +576,23 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       : (employees || []);
     // Las cuentas externas y del sistema no son personal y no arman equipo.
     // Siguen alcanzables en `/personal?tab=externos`.
-    const personas = soloPersonalEnPlanilla(base)
-      .filter(e => !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(e.status))
+    // «Externos y sistema» es la ÚNICA vista que muestra fichas que no son
+    // personal contratado. Las otras parten de la planilla, así que ninguna las
+    // cuenta ni las exporta.
+    const conTipo = esExternos ? soloNoEmpleados(base) : soloPersonalEnPlanilla(base);
+
+    const personas = conTipo
+      // Un solo predicado, y sale de `estadoDePersona`: devuelve algo cuando la
+      // persona NO está —de vacaciones, incapacitada, o dada de baja—, y `null`
+      // cuando está. Escribir «activos» como «no inactivo Y sin ausencia» era
+      // decir dos veces lo mismo y abrir la puerta a que las dos listas se
+      // separaran. «Ausentes» incluye a quien ya no trabaja acá a propósito:
+      // es la vista donde se lo va a buscar para reincorporarlo.
+      .filter(e => {
+        if (vista === 'activos') return !estadoDePersona(e);
+        if (vista === 'ausentes') return !!estadoDePersona(e);
+        return true;
+      })
       .filter(e => !selectedBranch || selectedBranch === 'ALL' ||
         String(e.branchId ?? e.branch_id ?? '') === String(selectedBranch));
     if (!busqueda) return personas;
@@ -559,7 +600,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       e?.name, e?.role, e?.secondary_role,
       nombreDeSucursal.get(Number(e?.branchId || e?.branch_id)),
     ]).results;
-  }, [employees, getScope, user?.branchId, busqueda, selectedBranch, nombreDeSucursal]);
+  }, [employees, getScope, user?.branchId, busqueda, selectedBranch, vista, esExternos, nombreDeSucursal]);
 
   // ── El reparto ────────────────────────────────────────────────────────
   // Las tres reglas —y por qué el primer boceto las tenía mal— viven en
@@ -604,24 +645,113 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   // negocio. Quien mira la pantalla quiere ver su equipo, no por qué el
   // algoritmo puso a cada uno donde lo puso. El hueco que sí importa —el
   // segundo puesto de la sala— ya se ve como tarjeta, en su sección.
+  // Practicantes: mismo alcance, misma sucursal y misma búsqueda que la gente,
+  // pero en su propio carril — la tabla está separada a propósito y sus campos
+  // no calzan con los de un empleado.
+  const practicantesVisibles = useMemo(() => {
+    if (!esPracticantes) return [];
+    const base = getScope('staff_list') !== 'ALL'
+      ? (practicantes || []).filter(p => String(p.branch_id) === String(user?.branchId))
+      : (practicantes || []);
+    const porSala = base.filter(p => !selectedBranch || selectedBranch === 'ALL' ||
+      String(p.branch_id) === String(selectedBranch));
+    if (!busqueda) return porSala;
+    return smartFilter(busqueda, porSala, p => [
+      `${p.first_names || ''} ${p.last_names || ''}`.trim(),
+      p.institucion_educativa, p.tutor_nombre,
+      nombreDeSucursal.get(Number(p.branch_id)),
+    ]).results;
+  }, [esPracticantes, practicantes, getScope, user?.branchId, selectedBranch, busqueda, nombreDeSucursal]);
+
+  const practicantesPorSala = useMemo(() => {
+    const m = new Map();
+    practicantesVisibles.forEach(p => {
+      const id = Number(p.branch_id) || 0;
+      if (!m.has(id)) m.set(id, []);
+      m.get(id).push(p);
+    });
+    return [...m.entries()]
+      .map(([id, lista]) => ({ id, sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR, lista }))
+      .sort((a, b) => {
+        const pa = pesoDeSucursal(a.sucursal), pb = pesoDeSucursal(b.sucursal);
+        return pa !== pb ? pa - pb : a.sucursal.localeCompare(b.sucursal);
+      });
+  }, [practicantesVisibles, nombreDeSucursal]);
+
   const abrir = (emp) => navigate(`/personal/empleado/${emp.id}`);
-  const cargando = employeesStatus !== 'ready' && !employees.length;
+
+  // ── El freno del arranque, que viajó con la mudanza ──────────────────────
+  //
+  // Tras un boot fresco, `employees` arranca con el snapshot SANITIZADO de
+  // `localStorage` —`persistEmployees` le quita DUI, ISSS, AFP, banco y el
+  // código de carné a propósito, para no dejarlos en texto plano en el disco de
+  // una computadora compartida— mientras el fetch real todavía no responde. Si
+  // alguien abre «Editar» en esa ventana de milisegundos, esos campos se ven
+  // vacíos, y si guarda sin notarlo se sobrescriben con NULL en la base.
+  //
+  // Vivía en el listado, y borrar el listado se lo habría llevado. Es un freno
+  // que no se puede perder por una mudanza de pantalla.
+  const editarRapido = useCallback((emp) => {
+    if (employeesStatus !== 'ready') {
+      useToastStore.getState().showToast(
+        'Cargando datos completos…',
+        'Espera un momento y vuelve a intentar — se están terminando de traer los datos del empleado.',
+        'info');
+      return;
+    }
+    openModal?.('editEmployee', emp);
+  }, [openModal, employeesStatus]);
+
+  const recontratar = useCallback((emp) => openModal?.('rehireEmployee', emp), [openModal]);
+
+  const borrarPracticante = useCallback(async () => {
+    if (!practicanteABorrar) return;
+    setBorrando(true);
+    try {
+      await deletePracticante(practicanteABorrar.id);
+      useToastStore.getState().showToast('Eliminado',
+        `${practicanteABorrar.first_names} ${practicanteABorrar.last_names}`, 'success');
+      setPracticanteABorrar(null);
+    } catch (err) {
+      useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
+    } finally {
+      setBorrando(false);
+    }
+  }, [deletePracticante, practicanteABorrar]);
+
+  const cargando = esPracticantes
+    ? (practicantesLoading && !practicantes.length)
+    : (employeesStatus !== 'ready' && !employees.length);
+
+  const hayAlgo = esPracticantes ? practicantesPorSala.length > 0 : secciones.length > 0;
+  const hayFiltros = !!busqueda || (selectedBranch && selectedBranch !== 'ALL') || vista !== 'todos';
+  const limpiar = useCallback(() => {
+    setSearchTerm('');
+    setSelectedBranch?.('ALL');
+    setVista('todos');
+  }, [setSearchTerm, setSelectedBranch, setVista]);
 
   const opcionesDeSucursal = useMemo(() => ([
     { value: 'ALL', label: 'Todas las sucursales' },
     ...(branches || []).map(b => ({ value: String(b.id), label: b.name })),
   ]), [branches]);
 
-  // Las acciones de la vista, en la píldora del cuerpo (§17). «Ver como lista»
-  // no es una pestaña: es la salida hacia lo que una tarjeta no puede hacer
-  // —ordenar por columna, y administrar practicantes y cuentas externas—.
+  // Las tres acciones de la vista, en la píldora del cuerpo (§17).
   const acciones = [
     { key: 'empleado', icon: UserPlus, label: 'Nuevo empleado', variant: 'primary',
       disabled: !canEdit, onClick: () => openModal?.('newEmployee') },
-    { key: 'lista', icon: List, label: 'Ver como lista', rotulo: 'Lista',
-      onClick: () => navigate('/personal/listado') },
-    ...(canDownload ? [{ key: 'exportar', icon: Download, label: 'Exportar',
-      soloIcono: true, onClick: () => exportarDirectorio(visibles, nombreDeSucursal) }] : []),
+    // `rotulo`: bajo el pulgar la columna mide 60px y «PRACTICANTE» pide 76,8 —
+    // es la única palabra del portal que no entra por sí sola. Se dice
+    // «PASANTE», que es la misma persona en una palabra que sí entra; el nombre
+    // completo sigue en el `aria-label` y en la píldora de escritorio.
+    { key: 'practicante', icon: GraduationCap, label: 'Nuevo practicante', rotulo: 'Pasante',
+      tone: 'chart-3', disabled: !canEdit,
+      onClick: () => { setPracticanteEnEdicion(null); setPidioModal(true); setModalPracticante(true); } },
+    // En «Externos y sistema» no se ofrece: lo único que exporta esta vista es
+    // el directorio de PERSONAL, y ahí no hay ninguno.
+    ...(canDownload && !esExternos && !esPracticantes ? [{ key: 'exportar', icon: Download,
+      label: 'Exportar', soloIcono: true,
+      onClick: () => exportarDirectorio(visibles, nombreDeSucursal) }] : []),
   ];
 
   return (
@@ -640,8 +770,8 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
 
         <div className="flex justify-end">
           <FilterBar
-            onClear={() => { setSearchTerm(''); setSelectedBranch?.('ALL'); }}
-            activeCount={[selectedBranch && selectedBranch !== 'ALL'].filter(Boolean).length}
+            onClear={limpiar}
+            activeCount={[selectedBranch && selectedBranch !== 'ALL', vista !== 'todos'].filter(Boolean).length}
             acciones={acciones}
           >
             {/* La ranura es del ALCANCE, no del catálogo: con alcance de una
@@ -657,6 +787,17 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
                 />
               </FilterBar.Section>
             )}
+
+            <FilterBar.Section active={vista !== 'todos'} onClear={() => setVista('todos')} label="vista">
+              <FilterBar.Opciones
+                label="Vista"
+                icon={ShieldCheck}
+                value={vista}
+                onChange={val => setVista(val || 'todos')}
+                options={VISTAS}
+                ancho="170px"
+              />
+            </FilterBar.Section>
           </FilterBar>
         </div>
 
@@ -668,22 +809,76 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
           </div>
         )}
 
-        {!cargando && !secciones.length && (
+        {!cargando && !hayAlgo && (
           <EmptyState
-            icon={Search}
-            title="Sin personal"
-            subtitle={busqueda ? 'Prueba con otro nombre o cargo.' : 'Todavía no hay personal cargado.'}
-            action={busqueda
-              ? <Button variant="secondary" size="sm" onClick={() => setSearchTerm('')}>Limpiar búsqueda</Button>
+            icon={esPracticantes ? GraduationCap : Search}
+            title={esPracticantes ? 'Sin practicantes' : esExternos ? 'Sin cuentas externas' : 'Sin personal'}
+            subtitle={busqueda
+              ? 'Prueba con otro nombre o cargo.'
+              : 'Ajusta el filtro de sucursal o cambia de vista.'}
+            action={hayFiltros
+              ? <Button variant="secondary" size="sm" onClick={limpiar}>Limpiar filtros</Button>
               : undefined}
           />
         )}
 
-        {!cargando && secciones.map(s => (
-          <SeccionSucursal key={s.id} seccion={s} roles={roles} nombreDeSucursal={nombreDeSucursal} abrir={abrir} />
+        {/* Practicantes: agrupados por sala como todo lo demás, pero sin
+            jefatura — hacen horas sociales y no cuelgan de nadie del
+            organigrama. Por eso la sección es una lista y no un reparto. */}
+        {!cargando && esPracticantes && practicantesPorSala.map(g => (
+          <section key={g.id} className="space-y-3">
+            <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-divider pb-2">
+              <h2 className="flex items-center gap-2 text-body font-black tracking-tight text-content">
+                <MapPin size={15} strokeWidth={2.5} className="shrink-0 text-content-3" />
+                {g.sucursal}
+              </h2>
+              <p className="text-caption font-bold text-content-2">
+                {g.lista.length} practicante{g.lista.length === 1 ? '' : 's'}
+              </p>
+            </header>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {g.lista.map(p => (
+                <TarjetaPracticante
+                  key={p.id} p={p} sucursal={g.sucursal} puedeEditar={canEdit}
+                  onEdit={pr => { setPracticanteEnEdicion(pr); setPidioModal(true); setModalPracticante(true); }}
+                  onDelete={setPracticanteABorrar}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {!cargando && !esPracticantes && secciones.map(s => (
+          <SeccionSucursal
+            key={s.id} seccion={s} roles={roles} nombreDeSucursal={nombreDeSucursal}
+            abrir={abrir} editar={editarRapido} recontratar={recontratar} puedeEditar={canEdit}
+          />
         ))}
 
       </div>
+
+      {pidioModal && (
+        <Suspense fallback={null}>
+          <PracticanteModal
+            isOpen={modalPracticante}
+            onClose={() => setModalPracticante(false)}
+            practicante={practicanteEnEdicion}
+            onSaved={() => fetchPracticantes()}
+          />
+        </Suspense>
+      )}
+
+      <ConfirmModal
+        isOpen={!!practicanteABorrar}
+        onClose={() => setPracticanteABorrar(null)}
+        onConfirm={borrarPracticante}
+        title="Eliminar registro"
+        message={`¿Eliminar el registro de "${practicanteABorrar?.first_names} ${practicanteABorrar?.last_names}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isProcessing={borrando}
+        isDestructive
+      />
     </GlassViewLayout>
   );
 }

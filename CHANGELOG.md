@@ -21,6 +21,91 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.805.0 — El aro de la foto, y la lista se va
+
+Dos decisiones del usuario después de ver cinco tratamientos comparados a los
+tamaños reales del portal.
+
+### El aro de color, y por qué gana
+
+El estado de una persona pasó por tres formas antes de ésta, y las dos primeras
+las levantó el usuario mirando la pantalla: una píldora debajo de los cargos
+(*«no distingo que está de vacación»* — quedaba cuarta en una pila de píldoras
+del mismo ámbar) y la foto en gris (*«parece muerto»* — el gris es el
+vocabulario de «dado de baja», no el de «vuelve el martes»).
+
+Ahora es un **aro de color alrededor de la foto**, y se eligió sobre halo,
+corona, arco inferior y foto teñida por una razón medible: **el aro no se
+encoge como un ícono**. En el portal la foto va de **20 px** —las firmas de
+bitácoras, los chips de pedidos, la campana— a **160 px** en la ficha del
+empleado, ocho veces. Un ícono de 20 px pasa a 7 y se vuelve una mancha; el aro
+sigue siendo un círculo entero de color y su grosor es absoluto.
+
+De ahí la escalera, que es la respuesta a *«¿qué pasa cuando son pequeñas?»*:
+
+| tamaño | qué lleva |
+|---|---|
+| ≥ 48 px | aro **y** chip con ícono — dice **qué** pasa |
+| 28 – 47 px | aro solo — dice **que** pasa algo |
+| &lt; 28 px | aro de 2 px — y la palabra la pone el texto de al lado |
+
+Ese último escalón no es una concesión: **en todos los sitios donde la foto es
+chica, el nombre está escrito al lado**. Y el `title` lleva la frase completa a
+cualquier tamaño, así que el dato nunca depende de distinguir un color.
+
+Vive en **`AvatarConEstado`** y no dentro de la vista porque el usuario pidió
+que valga «en todos lados que salga la foto», y son **48 pantallas**: repetirlo
+sería garantizar que once se queden atrás. El estado salió a
+`utils/estadoDePersona.js` para que el aro y el chip de texto no puedan decir
+cosas distintas.
+
+**Queda anotado un pendiente que se midió y se decidió:** los estados se
+distinguen sólo por color, y con daltonismo rojo-verde —1 de cada 12 hombres—
+ámbar, rojo y verde azulado dejan de ser tres colores. Se le mostró al usuario
+la alternativa (codificar también la forma del aro: continuo, punteado, doble) y
+eligió el aro a secas. El `title` es hoy la red que lo cubre; la nota está en el
+componente para que el día que alguien lo levante, ésta sea la respuesta.
+
+### La vista de lista se elimina
+
+*«Quita la vista de lista, sólo asegurate que los filter pills estén completos»*.
+`StaffManagementView` se borra —1,134 líneas— y `/personal/listado` redirige.
+
+⚠️ **El borrado del archivo quedó dentro de `v2.804.2`, un commit de bolsas.**
+No fue un error de esa sesión: el `git rm` de ésta lo dejó preparado en el
+índice, y el índice es estado COMPARTIDO entre las sesiones que trabajan sobre
+el mismo árbol. Quien commiteó después se lo llevó sin verlo. Queda anotado acá
+para que quien lea la historia entienda por qué un commit de efectivo borra una
+vista de personal.
+Lo que vivía SÓLO ahí viajó, que era la condición:
+
+- **La píldora ahora tiene las cinco vistas** —Todos · Activos · Ausentes ·
+  Practicantes · Externos y sistema— además del filtro de sucursal, y la
+  elegida viaja en la dirección (`?tab=practicantes`).
+- **Practicantes**: se ven agrupados por sala en tarjetas propias, con alta,
+  edición y borrado. Tarjeta aparte y no `TarjetaPersona` reusada: sus alertas
+  —«faltan 4 datos»— se dispararían todas sobre campos que en esa tabla no
+  existen, o sea inventarle un problema a alguien por no ser un empleado.
+- **La edición rápida y la reincorporación** pasan a la tarjeta, visibles y no
+  detrás de `hover` — en el teléfono no hay puntero que las revele.
+- **Y con ellas viajó su freno**, que es lo que de verdad no se podía perder:
+  abrir «Editar» antes de que termine el arranque muestra DUI, ISSS y banco
+  vacíos, y guardarlos los escribe como NULL. Ese guardia vivía en el listado.
+- **El CSV** ya había salido a `utils/directorioCsv.js` en v2.802.0.
+
+Lo único que se perdió es **ordenar por columna**, que en una vista agrupada no
+significa nada.
+
+También se movió el ancla del smoke de Playwright: apuntaba a
+`table tbody tr` y ahora espera por `data-lugar`, que la vista estampa en cada
+tarjeta — un atributo no cambia con un retoque de copy, un texto sí.
+
+**`gate:bundle`**: absorber lo del listado llevó `EquiposView` de 37 a 54 kB,
+sobre su techo de 47. Se corrigió difiriendo el formulario de practicante con
+`lazy()` —sólo existe si alguien aprieta el botón— y volvió a entrar sin subir
+el techo. Siguen sin tocar los dos hallazgos rojos ajenos a este trabajo
+(entry 304/303 y BitacorasView 77/75), verificados contra un build de HEAD.
+
 ## v2.804.2 — Lo que se vigila se ve; lo que se consulta se desplaza
 
 Segunda pasada mirando la vista publicada. La tabla de conteos tiene ocho

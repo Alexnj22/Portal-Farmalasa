@@ -97,6 +97,13 @@ const estado = {
     branches: BRANCHES,
     roles: ROLES,
     employeesStatus: 'ready',
+    // La vista pide practicantes al montar. No son el tema de esta prueba, pero
+    // sin el par lista/función el efecto de montaje lanza y las 14 se caen con
+    // un error que apunta al store en vez de a la vista.
+    practicantes: [],
+    practicantesLoading: false,
+    fetchPracticantes: () => {},
+    deletePracticante: () => {},
 };
 
 vi.mock('../../src/store/staffStore', () => ({
@@ -106,6 +113,10 @@ vi.mock('../../src/store/staffStore', () => ({
 vi.mock('../../src/context/AuthContext', () => ({
     useAuth: () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true }),
 }));
+
+// El alta de practicante y el diálogo de borrado no participan del reparto, y
+// el primero trae su propio formulario con red y estado.
+vi.mock('../../src/components/practicantes/PracticanteModal', () => ({ default: () => null }));
 
 // El layout trae `framer-motion`, observadores de tamaño y el canal de vista:
 // nada de eso participa del reparto, y montarlo convertiría un fallo de
@@ -277,8 +288,8 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
             expect(iEstado).toBeGreaterThanOrEqual(0);
             expect(iEstado).toBeLessThan(iCargo);
 
-            // Y la foto lleva su marca, con el estado como nombre accesible.
-            expect(suya.querySelector('[role="img"][aria-label="En vacaciones"]')).toBeTruthy();
+            // Y la foto lleva su aro, con el estado como nombre accesible.
+            expect(suya.querySelector('[data-estado="VACATION"]')).toBeTruthy();
         } finally {
             estado.employees = previo;
         }

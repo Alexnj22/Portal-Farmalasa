@@ -10,7 +10,6 @@ export const IMPORTADORES = {
     EmployeeProfileView: () => import("../views/employee/EmployeeProfileView"),
     EmployeeDocumentsView: () => import("../views/employee/EmployeeDocumentsView"),
     AttendanceMonitorView: () => import("../views/AttendanceMonitorView"),
-    StaffManagementView: () => import("../views/StaffManagementView"),
     // `/personal` desde el 2026-08-26: el equipo agrupado por sucursal.
     EquiposView: () => import("../views/personal/EquiposView"),
     BranchesView: () => import("../views/BranchesView"),

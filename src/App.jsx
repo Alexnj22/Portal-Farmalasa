@@ -28,7 +28,6 @@ const EmployeeAnnouncementsView = lazy(IMPORTADORES.EmployeeAnnouncementsView);
 const EmployeeProfileView = lazy(IMPORTADORES.EmployeeProfileView);
 const EmployeeDocumentsView = lazy(IMPORTADORES.EmployeeDocumentsView);
 const AttendanceMonitorView = lazy(IMPORTADORES.AttendanceMonitorView);
-const StaffManagementView = lazy(IMPORTADORES.StaffManagementView);
 const EquiposView = lazy(IMPORTADORES.EquiposView);
 const BranchesView = lazy(IMPORTADORES.BranchesView);
 const BranchDetailView = lazy(IMPORTADORES.BranchDetailView);
@@ -679,13 +678,15 @@ function MainApp() {
 
                                     {/* ── Gestión de personal ── */}
                                     <Route path="personal">
-                                        {/* Desde el 2026-08-26 `/personal` ES el equipo
-                                            agrupado por sucursal: el usuario lo confirmó
-                                            después de ver el boceto. La tabla no se borra
-                                            —se muda a `/personal/listado`— porque hay cosas
-                                            que una tarjeta no hace: ordenar por columna, y
-                                            administrar practicantes y cuentas externas. Se
-                                            llega por la acción «Ver como lista». */}
+                                        {/* Desde el 2026-08-26 `/personal` ES el equipo agrupado
+                                            por sucursal, y la tabla ya no existe: el usuario la
+                                            mandó quitar el mismo día, con una condición —«asegurate
+                                            que los filter pills estén completos»—. Lo que vivía
+                                            SÓLO en la tabla viajó a la píldora y a la tarjeta:
+                                            practicantes, cuentas externas, la edición rápida (con
+                                            su freno de arranque) y la reincorporación. Lo único
+                                            que se perdió es ordenar por columna, que en una vista
+                                            agrupada no significa nada. */}
                                         <Route index element={
                                             <PermissionGuard moduleKey="staff_list">
                                                 <EquiposView
@@ -697,26 +698,12 @@ function MainApp() {
                                                 />
                                             </PermissionGuard>
                                         } />
-                                        <Route path="listado" element={
-                                            <PermissionGuard moduleKey="staff_list">
-                                                <StaffManagementView
-                                                    setView={setView}
-                                                    setActiveEmployee={(emp) => {
-                                                        setActiveEmployee(emp);
-                                                        navigate(`/personal/empleado/${emp.id}`);
-                                                    }}
-                                                    openModal={openModal}
-                                                    searchTerm={searchTerm}
-                                                    setSearchTerm={setSearchTerm}
-                                                    selectedBranch={selectedBranch}
-                                                    setSelectedBranch={setSelectedBranch}
-                                                />
-                                            </PermissionGuard>
-                                        } />
-                                        {/* La dirección del boceto vivió un día y se compartió
+                                        {/* `/personal/equipos` (el boceto) y `/personal/listado`
+                                            (la tabla) vivieron un día cada una y se compartieron
                                             por chat. Un favorito no está en ninguna tabla y no
-                                            hay forma de medirlo, así que se queda redirigiendo. */}
+                                            hay forma de medirlo, así que las dos redirigen. */}
                                         <Route path="equipos" element={<Navigate to="/personal" replace />} />
+                                        <Route path="listado" element={<Navigate to="/personal" replace />} />
                                         <Route path="empleado/:id" element={
                                             <PermissionGuard moduleKey="staff_detail">
                                                 <EmployeeProfileWrapper
@@ -910,7 +897,6 @@ export default function App() {
 const ROUTE_TITLES = {
     '/inicio':            'Inicio',
     '/personal':          'Gestión de personal',
-    '/personal/listado':  'Listado de personal',
     '/monitor':           'Monitor en tiempo real',
     '/auditoria-de-tiempos':             'Auditoría de tiempos',
     '/horarios':         'Horarios',

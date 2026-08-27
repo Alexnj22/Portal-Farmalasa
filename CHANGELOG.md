@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.817.0 — Los turnos salían del reglamento, no había que inventarlos
+
+Durante varios días le pedí al usuario los turnos como si hubiera que
+inventarlos. **Estaban escritos y aprobados**: el Art. 18 del reglamento interno
+los define uno por uno, por sucursal, con hora de entrada, pausa alimenticia,
+hora de salida y día de descanso — y dice «los horarios son rotativos cada 15
+días».
+
+Y el Código es el que manda el dato ahí: su **Art. 304** obliga al reglamento a
+contener «horas de entrada y salida» y «horas y lapsos destinados para las
+comidas». Por eso **el contrato no lleva el horario escrito**: lleva la remisión
+—sucursal y turno— y el horario vive donde la ley lo puso. Escribirlo en el
+contrato lo volvería falso a los 15 días, y cambiarlo obligaría a modificar todos
+los contratos en vez de modificar el reglamento.
+
+### El catálogo, cargado
+
+**37 franjas en las 7 salas.** El reglamento define el turno como una semana
+completa; el módulo guarda franjas con nombre y el horario semanal dice cuál va
+cada día y dónde cae el almuerzo. Los 15 turnos del Art. 18 se descomponen así:
+
+| Sala | Franjas | De | A |
+|---|---:|---|---|
+| Salud 1 | 7 | 07:00 | 22:00 |
+| Salud 3 | 7 | 07:00 | 21:00 |
+| Salud 4 | 7 | 07:00 | 21:00 |
+| Salud 2 | 5 | 07:00 | 19:00 |
+| Salud 5 | 5 | 07:00 | 19:00 |
+| La Popular | 4 | 07:00 | 19:00 |
+| Administración | 2 | 08:00 | 17:00 |
+
+Salud 3 y Salud 5 no están en el reglamento; van por decisión del usuario —
+Salud 3 toma los turnos de Salud 4 y Salud 5 los de Salud 2.
+
+### Tres trampas del PDF, las tres medidas
+
+1. **El mediodía se escribe «m.d.»** y rompía el patrón de hora. Un turno de El
+   Paraíso salía empezando **a las 19:00 en vez de las 12:30**, porque su primera
+   franja no se reconocía.
+2. **La pausa no se deduce del hueco entre dos franjas.** Con tres franjas la del
+   medio ES la pausa, y deducirla daba «13:00–13:00».
+3. **El sello de la Dirección General de Trabajo se cuela en medio de la frase**:
+   «pausa alimenticia de 12:00 m.d. a — 9 — APROBADO DIRECCIÓN GENERAL DE TRABAJO
+   1:00 p.m.».
+
+Las tres se encontraron **mirando el resultado contra el texto crudo**, no
+leyendo el código. Un parseo de un PDF escaneado que «anda» es un parseo que
+todavía no se comparó con su fuente.
+
+El extractor queda en `scripts/turnos_desde_el_reglamento.py` y **no escribe en
+la base**: imprime lo que leyó para que alguien lo compare, que es justo el paso
+que esas tres trampas hacen indispensable.
+
+### Lo que el reglamento no cubre
+
+**Bodega** no está y no se definió. Y el reglamento dice que la casa matriz es la
+de Calle Morazán (hoy Salud 2), cuando el usuario confirmó que **hoy es Salud 3**.
+El reglamento está en modificación; mientras tanto se trabaja sobre él. Eso no lo
+arregla el portal: el Art. 302 exige que la modificación también la apruebe la
+Dirección General de Trabajo.
+
 ## v2.816.1 — El currículum se pedía dos veces
 
 Salió al barrer el Art. 23 numeral por numeral: al agregar los documentos del

@@ -1834,6 +1834,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
+                                {/* TELÉFONO Y CORREO VAN EN SU PROPIA FILA, uno al lado del
+                                    otro. Antes el teléfono caía en la columna derecha y el
+                                    correo en la IZQUIERDA DE LA FILA SIGUIENTE: al agregar
+                                    teléfonos esa columna crecía sola y dejaba un hueco del
+                                    alto de todos ellos junto a «Fecha de expedición».
+
+                                    Se agrupan en un `col-span-2` con su propia rejilla de dos
+                                    —y no reordenando los campos de alrededor— para que queden
+                                    juntos pase lo que pase con lo que tienen arriba, que es
+                                    justo lo que falló la primera vez. `items-start` evita que
+                                    el que no creció se estire a la altura del que sí. */}
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+
                                 {/* El campo y sus extras son UNA celda de la rejilla.
                                     Antes los extras iban en su propia fila `col-span-2`: un
                                     teléfono agregado aparecía a ancho completo y varias filas
@@ -1897,8 +1910,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         );
                                     })}
                                 </div>
-
-
+                                </div>
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">

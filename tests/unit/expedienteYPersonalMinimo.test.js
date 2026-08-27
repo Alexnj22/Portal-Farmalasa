@@ -360,3 +360,27 @@ describe('los documentos que pide el expediente', () => {
         expect(form).toMatch(/setFullYear\(d\.getFullYear\(\) \+ 1\)/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El menor de edad: la ley Y el reglamento
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El aviso citaba el Código (turno nocturno prohibido, examen médico previo) y
+// le faltaban los Art. 55 y 56 del reglamento interno: labores peligrosas o
+// insalubres, y trabajo que le impida ir a la escuela. El reglamento manda
+// tanto como la ley, y en esto agrega.
+
+describe('el aviso del menor de edad', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+
+    it('cubre lo del Código', () => {
+        expect(form).toMatch(/turno\s*\n?\s*nocturno/);
+        expect(form).toMatch(/examen médico previo/i);
+    });
+
+    it('cubre también lo que agrega el reglamento', () => {
+        expect(form).toMatch(/labores peligrosas o insalubres/i);
+        expect(form).toMatch(/le impida ir a la\s*\n?\s*escuela/i);
+    });
+});

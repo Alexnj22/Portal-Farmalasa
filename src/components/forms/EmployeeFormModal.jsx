@@ -1965,8 +1965,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
                                         <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <p className="text-label text-warning-text font-medium leading-tight">
-                                            <span className="font-black">Menor de edad (16-17 años).</span> Por Ley (Art. 116-117 Código de Trabajo): prohibido asignar turno nocturno, y requiere examen médico previo gratuito antes de admitirlo (con repetición anual hasta los 18 años). En El Salvador el DUI no se tramita hasta los 18 — por eso se pide un documento alterno (partida de nacimiento, carné de minoridad).
-                                        </p>
+                                            <span className="font-black">Menor de edad (16-17 años).</span> No se le puede asignar turno nocturno, y antes de admitirlo necesita examen médico previo gratuito, que se repite cada año hasta los 18. Tampoco puede hacer labores peligrosas o insalubres, ni un trabajo que le impida ir a la escuela — eso último lo agrega el reglamento interno de la empresa, no sólo la ley.</p>
                                     </div>
                                 )}
 

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.818.2 — El menor: el reglamento agrega dos prohibiciones que la ley no dice
+
+Salió del último barrido, leyendo el capítulo del reglamento sobre la persona
+adolescente trabajadora. El aviso del portal citaba el Código —turno nocturno
+prohibido, examen médico previo gratuito— y le faltaban los **Art. 55 y 56 del
+reglamento interno**: nada de **labores peligrosas o insalubres**, y **ningún
+trabajo que le impida ir a la escuela**.
+
+Es la misma lección de esta semana: el reglamento manda tanto como la ley, y en
+esto **agrega**. Un aviso que sólo cita el Código deja fuera lo que la empresa
+misma se obligó a cumplir.
+
+Y de paso el aviso dejó de nombrar artículos: dice qué no se puede hacer, que es
+lo que quien lo lee necesita saber.
+
 ## v2.818.1 — El catálogo de turnos es del módulo, no del reglamento
 
 Corrección del usuario: *«eso debe estar sólo para contratos, los shifts son

@@ -207,11 +207,23 @@ const pesoDeSucursal = (nombre) => {
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a
 // mano deja el radio FIJO cuando `--card-radius` cambia por tema, y falla la
 // categoría `tarjeta-a-mano` de `gate:design`.
-function TarjetaPersona({ emp, sucursal, roles, destacada = false, conSuperior = false, lugar, abrir }) {
+function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir }) {
   const estado = useMemo(() => estadoVigente(emp), [emp]);
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
+
+  // ── Las áreas que cubre, cuando son más de la suya ─────────────────────
+  // Hay puestos que existen porque recorren —mantenimiento repara en las
+  // ocho—. Decirlo es lo contrario de «se sobreentiende que las cubre todas»:
+  // ese default es indistinguible de «nadie lo llenó», y el día que alguien
+  // cubra sólo tres, nadie lo nota.
+  const cobertura = useMemo(() => {
+    const ids = emp.assigned_branch_ids || [];
+    if (ids.length < 2) return null;
+    const nombres = ids.map(id => nombreDeSucursal?.get(Number(id))).filter(Boolean);
+    return { cuantas: ids.length, detalle: nombres.join(', ') };
+  }, [emp.assigned_branch_ids, nombreDeSucursal]);
 
   // A quién responde — sale del árbol de `roles`, no de adivinar por el
   // nombre del cargo. Sólo en la jefatura y en los adscritos: en el equipo el
@@ -269,6 +281,12 @@ function TarjetaPersona({ emp, sucursal, roles, destacada = false, conSuperior =
           ))}
           {!cargos.length && <Badge variant="neutral" size="sm">Sin cargo</Badge>}
         </div>
+
+        {cobertura && (
+          <Badge variant="chart-9" size="sm" icon={MapPin} uppercase={false} title={cobertura.detalle}>
+            Cubre {cobertura.cuantas} áreas
+          </Badge>
+        )}
 
         {respondeA && (
           <p className="flex items-center gap-1 text-micro font-bold uppercase tracking-widest text-content-3">
@@ -367,7 +385,7 @@ function PulsoDeSala({ personas }) {
   );
 }
 
-function SeccionSucursal({ seccion, roles, abrir }) {
+function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir }) {
   const { sucursal, sinSede, personas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
   return (
@@ -398,10 +416,10 @@ function SeccionSucursal({ seccion, roles, abrir }) {
       {(jefe || !!vacantesDeSegundo.length) && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {jefe && (
-            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} destacada lugar="jefatura" abrir={abrir} />
+            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="jefatura" abrir={abrir} />
           )}
           {segundos.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} destacada lugar="segundo" abrir={abrir} />
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="segundo" abrir={abrir} />
           ))}
           {vacantesDeSegundo.map(cargo => (
             <PuestoVacante key={cargo.id} cargo={cargo.name} />
@@ -412,7 +430,7 @@ function SeccionSucursal({ seccion, roles, abrir }) {
       {!!equipo.length && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {equipo.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} lugar="equipo" abrir={abrir} />
+            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="equipo" abrir={abrir} />
           ))}
         </div>
       )}
@@ -426,7 +444,7 @@ function SeccionSucursal({ seccion, roles, abrir }) {
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {adscritos.map(emp => (
-              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} conSuperior lugar="adscrito" abrir={abrir} />
+              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} conSuperior lugar="adscrito" abrir={abrir} />
             ))}
           </div>
         </>
@@ -450,6 +468,20 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
     (branches || []).forEach(b => m.set(Number(b.id), b.name));
     return m;
   }, [branches]);
+
+  // ── Dos listas, y la diferencia importa ────────────────────────────────
+  //
+  // `plantilla` es todo lo que hay con vida en el alcance, fichas técnicas y de
+  // servicio incluidas. NO se dibuja: contesta «¿alguien ocupa este cargo?».
+  // `visibles` es lo que sí se pinta. Medirlo todo sobre la lista visible haría
+  // que Administración anunciara «Contador Externo: puesto sin cubrir» sobre un
+  // puesto ocupado que sólo no se muestra.
+  const plantilla = useMemo(() => {
+    const base = getScope('staff_list') !== 'ALL'
+      ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
+      : (employees || []);
+    return base.filter(e => !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(e.status));
+  }, [employees, getScope, user?.branchId]);
 
   // Mismo alcance que el listado: quien sólo ve su sala, sólo ve su sala.
   const visibles = useMemo(() => {
@@ -488,7 +520,7 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
         // disfraza de sala — ver el aviso de la sección.
         sinSede: id === 0,
         sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR,
-        ...repartirSala({ personas, todos: visibles, roles }),
+        ...repartirSala({ personas, todos: plantilla, roles, sucursalId: id || null }),
         personas,
       }))
       .sort((a, b) => {
@@ -499,12 +531,12 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
         if (pa !== pb) return pa - pb;
         return a.sucursal.localeCompare(b.sucursal);
       });
-  }, [visibles, roles, nombreDeSucursal]);
+  }, [visibles, plantilla, roles, nombreDeSucursal]);
 
   // Los puestos intermedios que nadie ocupa, dichos UNA vez para toda la
   // empresa en vez de repetir la explicación en cada tarjeta.
   const vacantes = useMemo(
-    () => puestosVacantesConGente({ todos: visibles, roles }), [visibles, roles]);
+    () => puestosVacantesConGente({ todos: plantilla, roles }), [plantilla, roles]);
 
   const abrir = (emp) => navigate(`/personal/empleado/${emp.id}`);
   const cargando = employeesStatus !== 'ready' && !employees.length;
@@ -564,7 +596,7 @@ export default function EquiposView({ searchTerm, setSearchTerm }) {
         )}
 
         {!cargando && secciones.map(s => (
-          <SeccionSucursal key={s.id} seccion={s} roles={roles} abrir={abrir} />
+          <SeccionSucursal key={s.id} seccion={s} roles={roles} nombreDeSucursal={nombreDeSucursal} abrir={abrir} />
         ))}
 
         {!cargando && !!secciones.length && (

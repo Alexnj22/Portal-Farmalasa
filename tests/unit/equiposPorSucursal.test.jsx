@@ -33,6 +33,10 @@ import { MemoryRouter } from 'react-router-dom';
 const ROLES = [
     { id: 2,  name: 'Gerente General',                              parent_role_id: null },
     { id: 3,  name: 'Administrador',                                parent_role_id: 2 },
+    { id: 35, name: 'Contador Externo',                             parent_role_id: 2 },
+    { id: 12, name: 'Jefe/a de Compras y Logistica',                parent_role_id: 3 },
+    { id: 14, name: 'Asistente de Logistica',                       parent_role_id: 12 },
+    { id: 15, name: 'Auxiliar de Bodega',                           parent_role_id: 14 },
     { id: 13, name: 'Supervisor/a de Ventas',                       parent_role_id: 3 },
     { id: 22, name: 'Supervisor del Departamento Medico y Enfermería', parent_role_id: 3 },
     { id: 27, name: 'Tecnico de Mantenimiento y Servicios Generales', parent_role_id: 3 },
@@ -64,13 +68,32 @@ const EMPLEADOS = [
     persona(6, 'Regente de Salud 3',    23, 'Regente de Enfermeria',                          43),
     persona(7, 'Jefe de Salud 3',       19, 'Jefe/a de Sala',                                 43),
     persona(8, 'Dependiente Tres',      30, 'Dependiente de Farmacia',                        43),
-    persona(9, 'El Administrador',       3, 'Administrador',                                  99),
+    persona(9,  'El Administrador',      3, 'Administrador',                                  99),
+    // Mantenimiento: sede en casa matriz y cobertura declarada sobre las
+    // cuatro áreas. Su superior existe y está en Administración, así que en
+    // Salud 4 quedaría adscrito — pero acá su sede ES Administración.
+    { ...persona(13, 'El de Mantenimiento', 27, 'Tecnico de Mantenimiento y Servicios Generales', 99),
+      assigned_branch_ids: [99, 50, 44, 43] },
+    // Bodega: su segundo puesto —Asistente de Logística— no lo ocupa NADIE en
+    // toda la empresa. El hueco tiene que verse igual; corrección del usuario.
+    persona(10, 'Jefa de Bodega',       12, 'Jefe/a de Compras y Logistica',                  50),
+    persona(11, 'Auxiliar Uno',         15, 'Auxiliar de Bodega',                             50),
+    persona(12, 'Auxiliar Dos',         15, 'Auxiliar de Bodega',                             50),
 ];
 
-const BRANCHES = [{ id: 44, name: 'Salud 4' }, { id: 43, name: 'Salud 3' }, { id: 99, name: 'Administracion' }];
+// El Contador Externo NO se dibuja —no es personal— pero SÍ ocupa un cargo que
+// cuelga del Gerente General. Vive aparte para que la prueba distinga las dos
+// listas: si la ocupación se midiera sobre lo dibujado, Administración
+// inventaría «Contador Externo: puesto sin cubrir» sobre un puesto ocupado.
+const NO_PERSONAL = [
+    { ...persona(90, 'Contador Externo', 35, 'Contador Externo', 99), tipo_ficha: 'servicio_externo' },
+];
+
+const BRANCHES = [{ id: 44, name: 'Salud 4' }, { id: 43, name: 'Salud 3' },
+                  { id: 99, name: 'Administracion' }, { id: 50, name: 'Bodega' }];
 
 const estado = {
-    employees: EMPLEADOS,
+    employees: [...EMPLEADOS, ...NO_PERSONAL],
     branches: BRANCHES,
     roles: ROLES,
     employeesStatus: 'ready',
@@ -137,12 +160,40 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
         expect(conJefatura(container)).toContain('Regente de Salud 4');
     });
 
+    const vacantes = (container) => tarjetas(container)
+        .filter(c => c.textContent.includes('Puesto sin cubrir'))
+        .map(c => c.querySelector('span')?.textContent?.trim());
+
     it('la sala sin subjefe muestra el puesto sin cubrir, con su nombre', () => {
         const { container } = montar();
-        // Salud 3 no tiene subjefe y Salud 4 sí: el hueco se dibuja UNA vez.
-        expect(container.textContent).toContain('Puesto sin cubrir');
-        expect(container.textContent).toContain('Subjefe/a de Sala');
-        expect(tarjetas(container).filter(c => c.textContent.includes('Puesto sin cubrir'))).toHaveLength(1);
+        // Salud 3 no tiene subjefe y Salud 4 sí: el hueco sale una sola vez.
+        expect(vacantes(container)).toContain('Subjefe/a de Sala');
+        expect(vacantes(container).filter(v => v === 'Subjefe/a de Sala')).toHaveLength(1);
+    });
+
+    it('el segundo puesto que NADIE ocupa en la empresa también se muestra', () => {
+        // Corrección del usuario: «asistente de logística es como subjefe,
+        // dejalo como pendiente». La versión anterior lo escondía justo porque
+        // estaba vacío en todos lados — o sea, apagaba la alarma más fuerte.
+        const { container } = montar();
+        expect(vacantes(container)).toContain('Asistente de Logistica');
+    });
+
+    it('quien cubre varias áreas lo DICE, con cuántas y cuáles', () => {
+        const { container } = montar();
+        const suya = tarjetas(container).find(c => textoDe(c) === 'El de Mantenimiento');
+        expect(suya.textContent).toContain('Cubre 4 áreas');
+        // El detalle va en el `title`, para no gastar cuatro renglones de
+        // tarjeta en algo que casi nadie necesita leer entero.
+        expect(suya.querySelector('[title*="Salud 4"]')).toBeTruthy();
+    });
+
+    it('un puesto ocupado por una ficha que no se dibuja NO cuenta como vacante', () => {
+        // El Contador Externo cuelga del Gerente General y no aparece en los
+        // equipos —no es personal—. Medir la ocupación sobre lo dibujado
+        // inventaría una vacante sobre un puesto que está cubierto.
+        const { container } = montar();
+        expect(vacantes(container)).not.toContain('Contador Externo');
     });
 
     it('la regente de Salud 3 NO es jefatura: su superior está vacante y responde a la sala', () => {

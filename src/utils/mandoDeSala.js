@@ -31,12 +31,27 @@
 //      falta para no mentir sobre quién lo dirige.
 //
 // El segundo puesto se busca entre los HIJOS DIRECTOS del cargo del jefe, y
-// cuando no hay nadie el hueco se muestra —pedido del usuario— pero sólo si
-// ese cargo está ocupado en alguna otra parte de la empresa. Si no lo está en
-// ninguna, no es una vacante: es un puesto que no se usa, y anunciarlo en las
-// ocho salas sería ruido. Hoy la diferencia es real: «Subjefe/a de Sala»
-// existe en Salud 1 y Salud 4 y falta en las otras cuatro; «Asistente de
-// Logística» no existe en ninguna.
+// cuando en la sala no lo ocupa nadie, el hueco SE MUESTRA. Pedido del
+// usuario, dos veces: primero «si no hay subjefe, que aparezca el espacio
+// pendiente», y después —al ver que Bodega no lo mostraba— «asistente de
+// logística es como subjefe, dejalo como pendiente».
+//
+// La primera versión pedía además que ese cargo estuviera ocupado en OTRA
+// parte de la empresa, con el argumento de que un puesto que nadie ocupa en
+// ningún lado no es una vacante sino un puesto en desuso. El usuario lo
+// corrigió: en Bodega el Asistente de Logística **sí** es el segundo, y que
+// esté vacío en las ocho salas no lo vuelve menos pendiente — lo vuelve MÁS
+// pendiente. Un filtro que esconde el hueco justo cuando es total es un filtro
+// que apaga la alarma más fuerte.
+//
+// ── Y por eso la ocupación se pregunta sobre la PLANTILLA, no sobre lo que se
+// dibuja ────────────────────────────────────────────────────────────────────
+// Las fichas que no son personal —el Contador Externo, las cuentas del
+// sistema— no salen en los equipos, y si la ocupación se midiera sobre lo
+// dibujado, Administración anunciaría «Contador Externo: puesto sin cubrir»
+// sobre un puesto que está cubierto y sólo no se muestra. La lista completa
+// contesta «¿alguien lo ocupa?» y la visible contesta «¿a quién dibujo?». Son
+// dos preguntas distintas y confundirlas inventa una vacante.
 
 import { cadenaDeSuperiores, nivelDeCargo } from './roles';
 
@@ -69,12 +84,18 @@ const porNombre = (a, b) => String(a?.name || '').localeCompare(String(b?.name |
 /**
  * Reparte a la gente de UNA sala en jefatura, segundos, equipo y adscritos.
  *
- * `todos` es la plantilla COMPLETA que se está mirando, no sólo la sala: hace
- * falta para saber si un puesto intermedio está vacante en la empresa (regla 2)
- * y si el segundo puesto existe en otra sala (el hueco que se muestra).
+ * `personas` son las que se van a DIBUJAR. `todos` es la plantilla completa
+ * —incluidas las fichas que no son personal— y sólo se usa para contestar
+ * quién ocupa qué cargo: en la sala y en la empresa. Ver la nota de arriba
+ * sobre por qué esas dos preguntas no se pueden mezclar.
  */
-export function repartirSala({ personas, todos, roles }) {
-    const cargosEnLaSala = new Set(personas.flatMap(cargosDe).map(String));
+export function repartirSala({ personas, todos, roles, sucursalId }) {
+    const mismaSala = (p) => sucursalId == null ||
+        String(p?.branchId ?? p?.branch_id ?? '') === String(sucursalId);
+    const enLaSala = (todos || []).filter(mismaSala);
+
+    const cargosEnLaSala = new Set(
+        (enLaSala.length ? enLaSala : personas).flatMap(cargosDe).map(String));
     const cargosEnLaEmpresa = new Set((todos || []).flatMap(cargosDe).map(String));
 
     // Cuánta gente de la sala cuelga de este cargo. El `!== cargo` evita que
@@ -113,10 +134,11 @@ export function repartirSala({ personas, todos, roles }) {
     const resto = personas.filter(p => p !== jefe);
     const segundos = resto.filter(p => cargosDe(p).some(c => hijosDirectos.includes(c)));
 
-    // El hueco del segundo puesto: sólo el que existe en otra parte de la
-    // empresa, y sólo si acá no lo ocupa nadie.
-    const vacantesDeSegundo = segundos.length ? [] : hijosDirectos
-        .filter(c => cargosEnLaEmpresa.has(String(c)) && !cargosEnLaSala.has(String(c)))
+    // El hueco del segundo puesto: el hijo directo que en ESTA sala no ocupa
+    // nadie. Que tampoco lo ocupe nadie en el resto de la empresa no lo
+    // descarta — al revés.
+    const vacantesDeSegundo = hijosDirectos
+        .filter(c => !cargosEnLaSala.has(String(c)))
         .map(c => (roles || []).find(r => Number(r.id) === c))
         .filter(Boolean);
 

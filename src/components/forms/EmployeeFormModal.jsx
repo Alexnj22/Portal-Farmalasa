@@ -1414,13 +1414,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ];
     });
 
-    // Farmacias disponibles para asignar a externos
-    const farmaciasOpts = (branches || [])
-        .filter(b => (b.type || 'FARMACIA') === 'FARMACIA')
+    // ── Las áreas que la persona CUBRE, además de su sede ──────────────────
+    //
+    // El área de trabajo dice de dónde depende; esto dice dónde trabaja. Para
+    // casi todo el mundo es lo mismo y el campo ni aparece, pero hay puestos
+    // que existen justamente porque recorren: mantenimiento repara en las
+    // ocho, y el regente farmacéutico responde por los establecimientos que
+    // regenta (RTS 11.02.04:24 §6.3.7 pide poder verificar sus visitas).
+    //
+    // ⚠️ El campo estaba escrito y era INALCANZABLE. Se mostraba sólo con
+    // `type === 'EXTERNA'`, y no existe ni una sucursal de ese tipo: las ocho
+    // son FARMACIA, BODEGA o ADMINISTRATIVA. O sea que la tabla
+    // `employee_branches` estaba vacía no porque nadie cubriera varias áreas,
+    // sino porque la pantalla no dejaba decirlo — y eso no da error, no falla
+    // ningún gate y no deja rastro.
+    //
+    // El corte es «la sede NO es una farmacia»: quien está asignado a una sala
+    // trabaja en esa sala, y ofrecerle el campo invitaría a repartir gente en
+    // dos lados. Quien depende de casa matriz, de bodega o de un tercero es
+    // quien puede recorrer.
+    //
+    // Y las opciones son las OCHO áreas, no sólo las farmacias: mantenimiento
+    // también repara en bodega y en administración. Que el rótulo dijera
+    // «Farmacias» y la lista excluyera bodega era el mismo recorte dos veces.
+    const areasOpts = (branches || [])
         .map(b => ({ value: String(b.id), label: b.name }));
 
     const selectedBranch = (branches || []).find(b => String(b.id) === String(formData.branch_id));
-    const isExterna = selectedBranch?.type === 'EXTERNA';
+    const cubreVariasAreas = !!selectedBranch && (selectedBranch.type || 'FARMACIA') !== 'FARMACIA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
     // Quién lo cubre mientras no está. Sale de la tabla —nunca de una lista
@@ -2775,15 +2796,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </>
                                 ) : (
                                     <>
-                                        <div className={`relative z-tabs ${isExterna ? 'md:col-span-2' : ''}`}>
+                                        <div className={`relative z-tabs ${cubreVariasAreas ? 'md:col-span-2' : ''}`}>
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
-                                            <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
+                                            <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (((branches||[]).find(b=>String(b.id)===String(val))?.type || 'FARMACIA') === 'FARMACIA') setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                         </div>
-                                        {isExterna && (
+                                        {cubreVariasAreas && (
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
-                                                <label className="text-caption font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Farmacias Asignadas</label>
+                                                <label className="text-caption font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Áreas que cubre</label>
                                                 <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-2xl min-h-[44px]">
-                                                    {farmaciasOpts.map(opt => {
+                                                    {areasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
                                                         const isActive = assigned.includes(opt.value);
                                                         return (
@@ -2797,7 +2818,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         );
                                                     })}
                                                 </div>
-                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-micro text-chart-9-text font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>}
+                                                {/* «Se sobreentiende que las cubre todas» es indistinguible de
+                                                    «nadie lo llenó», y el día que alguien cubra sólo tres no hay
+                                                    forma de notar la diferencia. Se dice cuáles. */}
+                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-micro text-chart-9-text font-bold mt-1.5 ml-1">Sin áreas elegidas — sólo trabaja en su área de trabajo.</p>}
                                             </div>
                                         )}
                                         <div className="relative z-tabs">

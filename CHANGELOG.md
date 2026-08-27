@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.801.1 — El segundo puesto vacío se dice siempre
+
+Tres correcciones del usuario sobre `/personal/equipos`, y una tabla que estaba
+vacía por un motivo que no era el que parecía.
+
+**El hueco del segundo puesto ya no se filtra.** v2.800.1 lo mostraba sólo si
+ese cargo estaba ocupado en otra parte de la empresa, con el argumento de que un
+puesto que nadie ocupa en ningún lado es un puesto en desuso y no una vacante.
+El usuario lo corrigió: *«asistente de logística es como subjefe, dejalo como
+pendiente»*. Tenía razón, y el defecto era peor que un filtro de más — **estar
+vacío en las ocho salas no vuelve al puesto menos pendiente, lo vuelve más
+pendiente**, así que la condición apagaba justo la alarma más fuerte. Hoy Bodega
+muestra su «Asistente de Logística — puesto sin cubrir» igual que las cuatro
+salas muestran el suyo de subjefe.
+
+**Y por eso la ocupación se pregunta sobre la plantilla, no sobre lo dibujado.**
+Al quitar el filtro apareció el reverso: el Contador Externo cuelga del Gerente
+General y no sale en los equipos —no es personal—, así que medir la ocupación
+sobre la lista visible habría hecho que Administración anunciara «Contador
+Externo: puesto sin cubrir» sobre un puesto que está cubierto. Son dos preguntas
+distintas —«¿alguien lo ocupa?» y «¿a quién dibujo?»— y confundirlas inventa una
+vacante.
+
+**«Áreas que cubre» existía y era inalcanzable.** El campo estaba escrito en el
+formulario de empleado desde hace tiempo, con su selector y su tabla
+(`employee_branches`), y se mostraba **sólo si la sucursal era de tipo
+`EXTERNA`** — un tipo que no tiene ninguna de las ocho: son FARMACIA, BODEGA o
+ADMINISTRATIVA. O sea que la tabla estaba vacía no porque nadie cubriera varias
+áreas, sino porque la pantalla no dejaba decirlo, y eso no da error, no falla
+ningún gate y no deja rastro. Ahora el campo aparece cuando la sede **no** es una
+farmacia —quien depende de casa matriz o de bodega es quien recorre— y ofrece las
+**ocho áreas**, no sólo las farmacias: mantenimiento también repara en bodega y
+en administración. De paso muere el texto «Sin farmacias asignadas — el personal
+externo cubre todas por defecto»: un default que significa «todas» es
+indistinguible de «nadie lo llenó».
+
+**Datos corregidos, a pedido del usuario:**
+
+- **Edemir Quintanilla** no tenía sucursal, así que no entraba en ningún equipo
+  ni en el conteo de ninguna sala. Queda con sede en **Administración** —que es
+  de donde depende: su superior es el Administrador— y cobertura declarada sobre
+  las **ocho áreas**. Casa matriz es físicamente Salud 3, y ahí están también
+  Bodega y Administración, pero `branch_id` en este portal no es una dirección:
+  es de quién dependés. Ponerlo en Salud 3 lo habría hecho contar como personal
+  de esa sala, con una jefatura que no es la suya.
+- **Mayerli Gutiérrez** pasa de «Técnico de Mantenimiento y Servicios Generales»
+  a **«Auxiliar de Servicios Generales»**, que es lo que hace: limpieza de su
+  sala. Ese cargo cuelga de Subjefe/a de Sala, así que ahora aparece en el equipo
+  de Salud 4 en vez de como adscrita. **Verificado antes de tocarla: los dos
+  cargos tienen exactamente los mismos 8 módulos con `can_view` y ninguno con
+  `can_edit`**, así que el cambio no le quita ni le da acceso a nada.
+
+La tarjeta de quien cubre más de un área lo dice —«Cubre 8 áreas», con el
+detalle en el `title`—. Anclado en `tests/unit/equiposPorSucursal.test.jsx`, que
+pasó de 5 a 13 pruebas.
+
 ## v2.801.0 — El circuito de bolsas arrancó el lunes 24, no el 15
 
 Decisión del usuario sobre el aviso de v2.800.2: **«cortes anteriores al 24,

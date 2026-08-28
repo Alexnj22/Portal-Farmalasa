@@ -1081,7 +1081,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 {!hidesFooter && (() => {
                     const isEmpForm = type === 'newEmployee' || type === 'editEmployee';
-                    const isEditingEmp = type === 'editEmployee';
                     const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina', 'documentos'];
                     const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina', documentos: 'Documentos' };
                     const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
@@ -1104,19 +1103,30 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {/* CENTER: Cancelar */}
                                 <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
 
-                                {/* RIGHT: Siguiente y/o Guardar — en edición, Guardar siempre está
-                                    presente (no hace falta llegar a Documentos para guardar) */}
+                                {/* RIGHT: Siguiente y Guardar.
+                                    ── Guardar SIEMPRE está en pantalla ────────────────────
+                                    Hasta el 2026-08-28, en un ALTA sólo aparecía en la última
+                                    pestaña: para guardar había que atravesar Personal,
+                                    Contrato y Nómina aunque no hubiera nada que poner ahí. Eso
+                                    tenía sentido cuando el alta exigía media ficha; desde que
+                                    «vacío se guarda, mal escrito no» (ver `isFormFullyValid`),
+                                    esconderlo sólo obliga a caminar hasta el final para
+                                    ejercer algo que ya se podía hacer desde el principio.
+
+                                    Sigue pudiendo estar DESHABILITADO —lo decide
+                                    `empSaveDisabled`— y ahí el `title` dice qué falta. Un
+                                    botón apagado que explica es información; uno ausente no
+                                    dice nada, y quien lo busca concluye que no se puede
+                                    guardar nunca. */}
                                 <div className="flex items-center gap-2">
                                     {nextStep && (
-                                        <Button disabled={isSaving} onClick={() => setEmpActiveTab(nextStep)}>{EMP_STEP_LABELS[nextStep]}
+                                        <Button variant="secondary" disabled={isSaving} onClick={() => setEmpActiveTab(nextStep)}>{EMP_STEP_LABELS[nextStep]}
                                             <ChevronRight size={15} strokeWidth={2.5} /></Button>
                                     )}
-                                    {(isEditingEmp || !nextStep) && (
-                                        <Button type="submit" form="unified-modal-form" size="lg"
-                                    disabled={empSaveDisabled} loading={isSaving} icon={Save} title={empSaveTitle}>
-                                    {isSaving ? 'Guardando' : 'Guardar'}
-                                </Button>
-                                    )}
+                                    <Button type="submit" form="unified-modal-form" size="lg"
+                                        disabled={empSaveDisabled} loading={isSaving} icon={Save} title={empSaveTitle}>
+                                        {isSaving ? 'Guardando' : 'Guardar'}
+                                    </Button>
                                 </div>
                             </LiquidModal.Footer>
                         );

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.823.2 — Guardar siempre está en pantalla al dar de alta a alguien
+
+En un **alta**, el botón Guardar sólo aparecía en la última pestaña: para
+guardar había que atravesar Personal, Contrato y Nómina aunque no hubiera nada
+que poner ahí. Tenía sentido cuando el alta exigía media ficha; desde que la
+regla es «vacío se guarda, mal escrito no», esconderlo sólo obliga a caminar
+hasta el final para ejercer algo que ya se podía hacer desde el principio.
+
+Ahora está siempre. Puede estar **deshabilitado** —y ahí el `title` dice qué
+falta—: un botón apagado que explica es información, uno ausente no dice nada y
+quien lo busca concluye que no se puede guardar nunca.
+
+«Siguiente» pasa a secundario, para que Guardar sea el botón que pesa cuando los
+dos están en pantalla.
+
 ## v2.823.1 — El documento de bienvenida nunca se pudo generar, y el aviso culpaba al alta
 
 Reportado como `Can't find variable: descargarDocumentoDeBienvenida`.

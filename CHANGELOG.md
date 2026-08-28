@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.827.3 — El aviso de duplicado ya no acusa a quien acabás de enlazar, y la foto sigue a la persona
+
+Dos defectos del cambio de ayer, los dos vistos en pantalla y los dos con la
+misma raíz: **al llenar el formulario con datos reales, dos guardas que nunca se
+habían ejercitado empezaron a recibir justo el caso que no sabían distinguir.**
+
+### «Si la estoy enlazando, ¿por qué sale el aviso siempre?»
+
+El aviso de **Posible Duplicado** decía «si es la misma persona, enlázala abajo»
+sobre alguien a quien ya se había enlazado **dos centímetros más abajo en la
+misma pantalla**.
+
+Antes no se notaba porque enlazar dejaba el formulario vacío: no había nombre con
+qué chocar. Al empezar a traer la ficha entera, el nombre pasó a venir de esa
+misma ficha y el choque quedó garantizado — el aviso saltaba el **100%** de las
+veces.
+
+La exclusión de la ficha enlazada ya existía en el chequeo del DUI repetido, con
+este mismo motivo escrito al lado. No llegó a su gemelo.
+
+Lo que **sí** se sigue avisando: que exista un **tercero** con ese nombre. Ahí el
+aviso es correcto y sigue haciendo falta.
+
+### «Cambié de persona a enlazar y la foto no se actualizó (los datos sí)»
+
+La cara de alguien sobre el expediente de otro. La guarda miraba
+`photoPreview` **y** `file`: después del primer enlace ya había vista previa, así
+que la daba por puesta a mano y no la tocaba.
+
+`file` solo es el discriminador correcto, y ya existía —se llena **sólo** cuando
+alguien eligió una imagen o la tomó con el teléfono, verificado en el código: los
+dos únicos sitios que ponen una vista previa real ponen también el archivo—. Una
+vista previa sin archivo no puede venir de otro lado que de un enlace.
+
+**Y ahí apareció el tercer hallazgo, en la prueba y no en el portal.** La prueba
+que decía «una foto recién tomada no se pisa» estaba escrita con un caso
+**imposible** —vista previa sin archivo— y por eso pasaba en verde mientras el
+portal se quedaba con la foto de la persona anterior. Corregida al caso real.
+
 ## v2.827.2 — El aviso dice que el producto está deshabilitado, y las sombras del detalle dejan de verse cortadas
 
 *«ese mensaje me da, porque no me dices eso, el producto esta deshabilitado»* ·

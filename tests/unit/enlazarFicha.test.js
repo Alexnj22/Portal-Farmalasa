@@ -16,7 +16,7 @@
 // ¿por qué no se ponen los datos que ya están guardados?».
 
 import { describe, it, expect } from 'vitest';
-import { aplicarFichaEnlazada } from '../../src/components/forms/EmployeeFormModal';
+import { aplicarFichaEnlazada, hayHomonimo } from '../../src/components/forms/EmployeeFormModal';
 
 const FICHA = {
     id: 'uuid-adriana',
@@ -102,7 +102,12 @@ describe('lo que el humano ya eligió', () => {
     });
 
     it('una foto recién tomada no se pisa', () => {
-        const r = aplicarFichaEnlazada({ ...VACIO, photoPreview: 'blob:nueva' }, 'uuid-adriana', FICHA);
+        // Con `file`, que es como llega de verdad: verificado en el código —los
+        // DOS sitios que ponen una vista previa real (elegir un archivo y la
+        // foto del teléfono) ponen también el archivo. Esta prueba nació con un
+        // caso imposible —vista previa sin archivo— y por eso pasaba mientras el
+        // portal se quedaba con la foto de la persona anterior.
+        const r = aplicarFichaEnlazada({ ...VACIO, file: {}, photoPreview: 'blob:nueva' }, 'uuid-adriana', FICHA);
         expect(r.photoPreview).toBe('blob:nueva');
     });
 });
@@ -121,5 +126,73 @@ describe('casos de borde', () => {
     it('un `null` de la ficha no pisa lo que hay escrito', () => {
         const r = aplicarFichaEnlazada({ ...VACIO, secondary_role_id: 5 }, 'uuid-adriana', FICHA);
         expect(r.secondary_role_id).toBe(5);
+    });
+});
+
+/* ── Los dos defectos que trajo traer la ficha entera ─────────────────────────
+ *
+ * Los dos aparecieron el mismo día y por el mismo cambio, y los dos los vio el
+ * usuario en pantalla. Van juntos porque la lección es una sola: al llenar el
+ * formulario con datos reales, dos guardas que nunca se habían ejercitado —el
+ * detector de homónimos y el de «ya hay foto»— empezaron a recibir justo el
+ * caso que no sabían distinguir.
+ */
+
+const OTRA = { id: 'uuid-adriana', name: 'Adriana Vanessa Ramirez Pascacio' };
+const TERCERA = { id: 'uuid-tercera', name: 'Adriana Vanessa Ramirez Pascacio' };
+const NOMBRE = { first_names: 'Adriana Vanessa', last_names: 'Ramirez Pascacio' };
+
+describe('el aviso de posible duplicado', () => {
+    it('NO acusa a la ficha que se acaba de enlazar', () => {
+        // Decía «si es la misma persona, enlázala abajo» sobre alguien a quien
+        // ya se había enlazado dos centímetros más abajo en la misma pantalla.
+        expect(hayHomonimo({ ...NOMBRE, enlazar_con_id: 'uuid-adriana' }, [OTRA])).toBe(false);
+    });
+
+    it('pero SÍ avisa si hay un tercero con ese nombre', () => {
+        // Acá el aviso es correcto y sigue haciendo falta: enlazaste con una y
+        // existe otra igual.
+        expect(hayHomonimo({ ...NOMBRE, enlazar_con_id: 'uuid-adriana' }, [OTRA, TERCERA])).toBe(true);
+    });
+
+    it('sin enlazar, avisa — que es para lo que existe', () => {
+        expect(hayHomonimo(NOMBRE, [OTRA])).toBe(true);
+    });
+
+    it('no se acusa a sí misma al editar', () => {
+        expect(hayHomonimo({ ...NOMBRE, id: 'uuid-adriana' }, [OTRA])).toBe(false);
+    });
+
+    it('ignora acentos y mayúsculas, y calla sin nombre', () => {
+        expect(hayHomonimo({ first_names: 'ADRIÁNA VANESSA', last_names: 'Ramírez Pascacio' }, [OTRA])).toBe(true);
+        expect(hayHomonimo({ first_names: '', last_names: '' }, [OTRA])).toBe(false);
+    });
+});
+
+describe('cambiar de persona enlazada', () => {
+    const A = { id: 'a', name: 'Ana', photo: 'https://x/ana.jpg' };
+    const B = { id: 'b', name: 'Bea', photo: 'https://x/bea.jpg' };
+
+    it('la foto SIGUE a la persona', () => {
+        // Se quedaba en la del primero: después del primer enlace ya había vista
+        // previa y la guarda la daba por puesta a mano. O sea la cara de alguien
+        // sobre el expediente de otro.
+        const uno = aplicarFichaEnlazada({}, 'a', A);
+        expect(uno.photoPreview).toBe('https://x/ana.jpg');
+        const dos = aplicarFichaEnlazada(uno, 'b', B);
+        expect(dos.photoPreview).toBe('https://x/bea.jpg');
+    });
+
+    it('pero una foto que alguien TOMÓ no se pisa', () => {
+        // `file` es el discriminador: sólo se llena cuando alguien eligió una
+        // imagen o la tomó con el teléfono.
+        const conFoto = { file: {}, photoPreview: 'blob:recien-tomada' };
+        expect(aplicarFichaEnlazada(conFoto, 'b', B).photoPreview).toBe('blob:recien-tomada');
+    });
+
+    it('y si la nueva ficha no tiene foto, no queda la vieja', () => {
+        const uno = aplicarFichaEnlazada({}, 'a', A);
+        const dos = aplicarFichaEnlazada(uno, 'c', { id: 'c', name: 'Caro' });
+        expect(dos.photoPreview).toBeNull();
     });
 });

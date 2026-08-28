@@ -96,6 +96,39 @@ const ELEGIBLES_AL_ENLAZAR = ['branch_id', 'role_id', 'secondary_role_id'];
  * @param {string} val    id elegido (cadena vacía = se quitó el enlace)
  * @param {object|null} ficha  la ficha de esa persona, si se encontró
  */
+/**
+ * ¿Ya hay alguien registrado con este mismo nombre completo?
+ *
+ * ── A quién NO se acusa ────────────────────────────────────────────────────
+ *
+ * A la ficha que se está editando, y —desde el 2026-08-28— a la que se acaba de
+ * ENLAZAR. Faltaba la segunda, y el aviso salía siempre: decía «si es la misma
+ * persona, enlázala abajo» sobre alguien a quien ya se había enlazado ahí mismo,
+ * dos centímetros más abajo en la pantalla.
+ *
+ * Antes no se notaba porque enlazar dejaba el formulario vacío, así que no había
+ * nombre con qué chocar. Al empezar a traer la ficha entera —que es lo que se
+ * pidió— el nombre pasó a venir de esa misma ficha, y el choque quedó
+ * garantizado: el aviso saltaba el 100% de las veces.
+ *
+ * La exclusión ya existía en el chequeo del DUI repetido, con este mismo motivo
+ * escrito al lado. No llegó a su gemelo — es
+ * [[feedback_el_arreglo_de_un_canonico_no_llega_a_su_gemelo]].
+ *
+ * Lo que SÍ se sigue avisando: que exista un TERCERO con ese nombre. Ahí el
+ * aviso es correcto y sigue haciendo falta.
+ */
+export function hayHomonimo(formData, employees) {
+    if (!formData?.first_names || !formData?.last_names) return false;
+    const norm = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const nombreActual = `${norm(formData.first_names)} ${norm(formData.last_names)}`;
+    return (employees || []).some(emp => {
+        if (String(emp.id) === String(formData.id)) return false;
+        if (formData.enlazar_con_id && String(emp.id) === String(formData.enlazar_con_id)) return false;
+        return norm(emp.name) === nombreActual;
+    });
+}
+
 export function aplicarFichaEnlazada(prev, val, ficha) {
     const next = { ...prev, enlazar_con_id: val };
     if (!ficha) return next;
@@ -107,10 +140,22 @@ export function aplicarFichaEnlazada(prev, val, ficha) {
         next[campo] = valor;
     }
 
-    // La foto entra como vista previa y no como archivo: no hay `File` que
-    // subir, la imagen ya está guardada. Y no se pisa la que alguien acabe de
-    // tomar con el teléfono.
-    if (!prev.photoPreview && !prev.file) {
+    /* La foto entra como vista previa y no como archivo: no hay `File` que
+     * subir, la imagen ya está guardada.
+     *
+     * ── La condición mira `file`, NO `photoPreview` ────────────────────────
+     *
+     * Miraba los dos, y por eso al CAMBIAR de persona enlazada la foto se
+     * quedaba en la del anterior: después del primer enlace ya había vista
+     * previa, así que la guarda la daba por «puesta a mano» y no la tocaba. Lo
+     * vio el usuario: «cambié de persona a enlazar y la foto no se actualizó
+     * (los datos sí)» — o sea la cara de alguien sobre el expediente de otro.
+     *
+     * `file` es el discriminador correcto y ya existía: se llena SÓLO cuando
+     * alguien eligió una imagen o la tomó con el teléfono. Una vista previa sin
+     * archivo no puede venir de otro lado que de un enlace, así que pisarla es
+     * exactamente lo que hay que hacer. */
+    if (!prev.file) {
         next.photoPreview = ficha.photo || ficha.photo_url || null;
     }
     return next;
@@ -1606,18 +1651,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     else if (isDuiInvalid) duiErrorMsg = "DUI Inválido";
     else if (isDuiIncomplete) duiErrorMsg = "Incompleto";
 
-    const isHomonymWarning = useMemo(() => {
-        if (!formData?.first_names || !formData?.last_names) return false;
-        
-        const normalizeStr = (str) => (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        const currentFullName = `${normalizeStr(formData.first_names)} ${normalizeStr(formData.last_names)}`;
-        
-        return employees.some(emp => {
-            if (String(emp.id) === String(formData.id)) return false; 
-            const empName = normalizeStr(emp.name);
-            return empName === currentFullName;
-        });
-    }, [formData?.first_names, formData?.last_names, formData?.id, employees]);
+    const isHomonymWarning = useMemo(
+        () => hayHomonimo(formData, employees),
+        [formData?.first_names, formData?.last_names, formData?.id, formData?.enlazar_con_id, employees]);
 
     /* ── Enlazar con una ficha que ya existe ────────────────────────────────
      *

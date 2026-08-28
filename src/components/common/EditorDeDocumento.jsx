@@ -382,7 +382,7 @@ async function revisar(src, cropPx, rotacion, doc) {
  * @param {string} tipo      clave de `DOCS` — hoy `receta`, `boleta` o `dui`
  * @param {func}   onConfirm recibe el `File` ya recortado y normalizado
  */
-export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, onConfirm, onCancel }) {
+export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, onConfirm, onCancel }) {
     const doc = DOCS[tipo] || DOCS.receta;
     /* Con el dedo se arrastra la foto y se pellizca para acercar —el canónico de
      * recorte lo trae y está medido: 60 cuadros por segundo con el procesador
@@ -393,7 +393,11 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
     const [src, setSrc] = useState(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
-    const [rotacion, setRotacion] = useState(0);
+    /* El cuarto de vuelta que la sugerencia dice que hace falta. Arranca en él y
+     * no en cero: una tarjeta apoyada de lado en un escritorio sale girada, y
+     * abrir el editor con ella derecha es la mitad del trabajo hecho. Sigue
+     * siendo un punto de partida — el botón Girar está ahí para corregirlo. */
+    const [rotacion, setRotacion] = useState(giroSugerido || 0);
     /* El enderezado fino, aparte del cuarto de vuelta.
      *
      * Una boleta sobre un mostrador sale torcida 3 o 4 grados casi siempre —se

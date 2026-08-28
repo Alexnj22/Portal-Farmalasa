@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.835.0 — El editor abre con el documento ya encuadrado y derecho
+
+*«¿No hay forma de que al subir la foto la recorte y la deje como ésa
+automáticamente, incluyendo la rotación?»*
+
+Sí. Al elegir una imagen, el portal pregunta **dónde está el papel dentro de la
+foto** y cuántos cuartos de vuelta hay que girarla, y el editor se acomoda solo.
+
+**Es una sugerencia, no una decisión.** El recuadro entra como punto de partida y
+la persona confirma o corrige; «Recorte sugerido» devuelve a la propuesta si se
+movió sin querer. `EditorDeDocumento` tiene escrito desde que se evaluó la
+primera vez por qué el recorte automático **a ciegas** es peor que el manual —
+recorta medio documento y nadie lo mira antes de guardar—, y que lo proponga un
+modelo no cambia eso. Lo que cambia es que ahora el punto de partida suele estar
+bien.
+
+**El editor no espera.** Abre en el acto y se reacomoda cuando llega la
+respuesta, uno o dos segundos después. Mirar una pantalla en blanco mientras
+tanto sería peor que encuadrar a mano.
+
+**Y si no llega, no pasa nada.** Sin red, sin permiso, o con una foto donde no
+hay ningún documento reconocible, el editor sigue como siempre. Una ayuda que se
+cae no puede impedir adjuntar un papel.
+
+### Cómo se preguntó sin encarecer la lectura
+
+`leer-dui` gana un modo **«sólo dónde está el papel»**: un prompt corto y una
+respuesta de cinco números. Existe porque el editor se abre **antes** de subir el
+archivo y la lectura completa corre **después**, sobre lo ya guardado — así que
+para abrir con el recorte puesto hay que preguntar sobre el archivo que está en
+la computadora, y por eso este modo recibe la imagen en el cuerpo y no una ruta
+del bucket.
+
+La imagen se achica a **1024 px** antes de preguntar: para decir *dónde* está un
+documento no hace falta resolución, y así la pregunta viaja en ~150 kB en vez de
+varios megas. La lectura de los **datos** sí necesita la foto grande, y por eso
+son dos cosas distintas.
+
+**El costo, dicho:** es **una llamada de IA más por imagen adjuntada**. No la
+mide `gate:eficiencia` —ése vigila crons y llamadas al sistema de origen— así que
+queda anotado acá.
+
+### Lo que esto NO hace
+
+**No corrige la perspectiva.** Con las cuatro esquinas se puede enderezar y
+recortar, pero una homografía de verdad no la hace el lienzo con una
+transformación: hay que dibujar por triángulos o usar WebGL. Una foto tomada muy
+de costado va a quedar recortada y derecha, no rectificada.
+
 ## v2.834.0 — «Nítida»: la foto de un documento deja de guardarse lavada
 
 *«Que se vea más nítido y más claro.»*

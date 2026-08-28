@@ -210,6 +210,7 @@ export const AREAS = [
             // dirección, no una foto.
             'src/utils/carneDeDependiente.js', 'src/components/common/CarneDeDependiente.jsx',
             'src/utils/nupAfp.js',
+            'src/data/recorteSugerido.js',
             'src/utils/leerQrDeImagen.js',
             'src/components/common/VisorDeDocumento.jsx',
             'src/utils/contrato.js', 'src/utils/acreditaciones.js',

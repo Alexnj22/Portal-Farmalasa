@@ -133,6 +133,23 @@ REGLAS QUE NO PUEDES ROMPER:
 - Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.
 - "caras" tiene EXACTAMENTE tantas entradas como archivos recibiste, en orden. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
 
+const PROMPT_RECUADRO = `En esta foto hay UN documento de identidad o un papel apoyado sobre una superficie.
+
+Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
+{
+  "x": la fracción del ANCHO donde empieza el documento, de 0 a 1.
+  "y": la fracción del ALTO donde empieza, de 0 a 1.
+  "w": cuánto del ANCHO ocupa, de 0 a 1.
+  "h": cuánto del ALTO ocupa, de 0 a 1.
+  "giro": cuántos grados hay que girar la FOTO para que el texto del documento quede derecho y legible. Sólo 0, 90, 180 o 270.
+}
+
+REGLAS QUE NO PUEDES ROMPER:
+- El recuadro es el del DOCUMENTO, no el de la foto: si el documento ocupa un tercio de la imagen, w y h valen alrededor de 0.33.
+- Ajústate a los bordes del documento, incluyendo su borde impreso. No dejes fuera ninguna esquina.
+- Si en la foto no hay ningún documento reconocible, devuelve los cuatro números en null.
+- "giro" mira cómo está el TEXTO: si para leerlo hay que inclinar la cabeza a la derecha, son 90.`
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "POST, OPTIONS" }
   const json = (body: unknown) =>
@@ -165,6 +182,60 @@ Deno.serve(async (req: Request) => {
     if (!permiso.puede) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS" })
 
     const body = await req.json().catch(() => ({}))
+
+    /* ── Modo «sólo dónde está el papel» ────────────────────────────────────
+     *
+     * Devuelve el RECUADRO del documento dentro de la foto y cuántos cuartos de
+     * vuelta está girado. Nada más: ni datos, ni número, ni caras.
+     *
+     * Existe porque el editor de recorte se abre ANTES de subir el archivo, y
+     * la lectura completa corre DESPUÉS, sobre lo ya guardado. Para que el
+     * editor pueda abrir con el recorte ya puesto hace falta preguntar sobre el
+     * archivo que está en la computadora, y por eso este modo recibe la imagen
+     * en el cuerpo en vez de una ruta del bucket.
+     *
+     * Es una pregunta mucho más barata que la lectura completa: un prompt corto
+     * y una respuesta de cinco números.
+     *
+     * Y lo que devuelve es una SUGERENCIA. El editor la aplica como punto de
+     * partida y la persona la confirma o la corrige — un recorte automático
+     * equivocado que nadie mira es peor que uno manual, y eso no cambia porque
+     * lo proponga un modelo. Está escrito así desde que se evaluó la primera
+     * vez, en `EditorDeDocumento`.
+     */
+    if (body?.soloRecuadro) {
+      const b64 = String(body?.imagenBase64 || '').replace(/^data:[^,]+,/, '')
+      if (!b64) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaba la imagen." })
+      // El tamaño se mide ANTES de decodificar: decodificar para después
+      // rechazar es pagar la memoria que se quería evitar.
+      if (Math.floor(b64.length * 3 / 4) > TOPE_BYTES) {
+        return json({ ok: false, error: "ARCHIVO_MUY_GRANDE" })
+      }
+      const mime = typeof body?.tipo === 'string' && /^image\//.test(body.tipo) ? body.tipo : 'image/jpeg'
+      const crudoR = await callGemini({
+        prompt: PROMPT_RECUADRO,
+        inlineData: [{ mimeType: mime, data: b64 }],
+        jsonOutput: true,
+      })
+      const r = parseGeminiJson<Record<string, unknown>>(crudoR)
+      const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+      const x = num(r?.x), y = num(r?.y), w = num(r?.w), h = num(r?.h)
+      // Sin los cuatro números no hay recuadro. Devolver uno a medias sería
+      // proponer un recorte que corta el documento.
+      if (x === null || y === null || w === null || h === null || w <= 0 || h <= 0) {
+        return json({ ok: true, recuadro: null, giro: 0 })
+      }
+      const acotar = (v: number) => Math.min(1, Math.max(0, v))
+      const gx = acotar(x), gy = acotar(y)
+      return json({
+        ok: true,
+        recuadro: { x: gx, y: gy, w: Math.min(1 - gx, w), h: Math.min(1 - gy, h) },
+        // Cuartos de vuelta, y sólo los cuatro válidos: un valor cualquiera
+        // giraría la foto a un ángulo que nadie pidió.
+        giro: [0, 90, 180, 270].includes(Number(r?.giro)) ? Number(r?.giro) : 0,
+      })
+    }
+
     const caras = [body?.frente, body?.reverso].filter(
       (c: unknown): c is { bucket: string; path: string } =>
         !!c && typeof (c as any).bucket === 'string' && typeof (c as any).path === 'string')

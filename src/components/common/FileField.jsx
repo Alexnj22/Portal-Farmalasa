@@ -25,6 +25,9 @@ const VisorDeDocumento = lazy(() => import('./VisorDeDocumento'));
    no escucha nada hasta que hay un código vivo. Estáticos costaban 1 kB en cada
    vista que adjunta algo — medido con `gate:bundle`. */
 const traspaso = () => import('../../data/capturaDeFoto');
+/* Preguntar dónde está el papel dentro de la foto. Por `await import()` como
+   todo lo demás: sólo corre cuando alguien eligió una imagen. */
+const sugerencia = () => import('../../data/recorteSugerido');
 
 /**
  * FileField — adjuntar un archivo a un formulario.
@@ -182,6 +185,9 @@ const FileField = memo(({
     // archivo» y «se lo entrego al formulario»: cancelar acá deja el campo como
     // estaba, sin nada a medio guardar.
     const [porEditar, setPorEditar] = useState(null);
+    /* El recorte que propuso la lectura, si llegó a tiempo. Ver el efecto de
+       más abajo: el editor NO espera por esto. */
+    const [sugerido, setSugerido] = useState(null);
     // El código del QR vivo. Mientras exista, esta computadora está escuchando.
     const [captura, setCaptura] = useState(null);
     const [pidiendoQr, setPidiendoQr] = useState(false);
@@ -220,6 +226,7 @@ const FileField = memo(({
         // Una IMAGEN pasa primero por el editor; un PDF va derecho. Recortar un
         // PDF exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
         if (conEditor && archivo.type?.startsWith('image/')) {
+            setSugerido(null);
             setPorEditar(archivo);
             return;
         }
@@ -269,6 +276,31 @@ const FileField = memo(({
         e.preventDefault(); e.stopPropagation();
         setViendo(true);
     }, []);
+
+    /* ── El recorte que propone la lectura ──────────────────────────────────
+     *
+     * El editor abre YA, sin esperar: la respuesta tarda un segundo o dos y
+     * mirar una pantalla en blanco mientras tanto es peor que encuadrar a mano.
+     * Cuando llega, el editor se remonta con el recuadro puesto —su `key`
+     * depende de la sugerencia— y quien estaba mirando ve el documento
+     * encuadrado y derecho.
+     *
+     * Si no llega, o si en la foto no hay ningún documento reconocible, no pasa
+     * nada: el editor sigue como siempre. Una ayuda que se cae no puede impedir
+     * adjuntar un papel. */
+    useEffect(() => {
+        if (!porEditar) return undefined;
+        let vivo = true;
+        (async () => {
+            const { sugerirRecorte } = await sugerencia();
+            const r = await sugerirRecorte(porEditar);
+            // Se comprueba que siga siendo LA MISMA foto: alguien pudo cancelar
+            // y elegir otra mientras la pregunta viajaba, y aplicar el recuadro
+            // de la anterior sería recortar por donde no va.
+            if (vivo && r) setSugerido(prev => (prev === null ? r : prev));
+        })();
+        return () => { vivo = false; };
+    }, [porEditar]);
 
     // ── Tomar la foto con el teléfono ──────────────────────────────────────
     const cerrarCaptura = useCallback(() => setCaptura(null), []);
@@ -455,10 +487,15 @@ const FileField = memo(({
             {porEditar && (
                 <Suspense fallback={null}>
                     <EditorDeDocumento
+                        // Remonta cuando llega la sugerencia: el canónico lee su
+                        // caja inicial UNA vez, al montarse.
+                        key={sugerido ? 'sugerido' : 'libre'}
                         tipo={tipoDeDocumento}
                         file={porEditar}
-                        onCancel={() => setPorEditar(null)}
-                        onConfirm={(listo) => { setPorEditar(null); entregar(listo); }}
+                        recuadro={sugerido?.recuadro || null}
+                        giroSugerido={sugerido?.giro || 0}
+                        onCancel={() => { setPorEditar(null); setSugerido(null); }}
+                        onConfirm={(listo) => { setPorEditar(null); setSugerido(null); entregar(listo); }}
                     />
                 </Suspense>
             )}

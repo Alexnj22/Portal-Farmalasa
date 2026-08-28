@@ -481,7 +481,17 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                     )}
                 </>}
             >
-                <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto pr-1">
+                {/* `px-3 -mx-3 py-3` y no `pr-1` (2026-08-28).
+                    `overflow-y-auto` recorta en los DOS ejes, así que con 4px
+                    de aire a la derecha y cero en los otros tres lados este
+                    recorrido le cortaba a cada tarjeta de adentro su sombra y
+                    el bloom de su canto — el borde quedaba a ras del corte y se
+                    veía como una línea partida. Los 12px salen de la sombra que
+                    de verdad se dibuja —`0 8px 32px`, o sea ~16px a los lados—;
+                    el margen negativo los devuelve, así que el contenido no se
+                    mueve ni un píxel y siguen cabiendo dentro del relleno de
+                    24px del diálogo. */}
+                <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto px-3 -mx-3 py-3">
                     <Suspense fallback={null}>
                         <DetalleSolicitud req={req} employeesById={employeesById}
                             seleccion={porLinea ? seleccion : undefined}

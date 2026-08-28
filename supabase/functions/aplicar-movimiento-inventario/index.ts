@@ -433,11 +433,39 @@ Deno.serve(async (req) => {
       }), { extra: { Referer: pagina } });
       const c = leerConsulta(cuerpo);
 
-      if (!c.ok)
+      // «No pertenece a ningun producto» NO significa que el producto no exista:
+      // significa que está DESHABILITADO. Medido el 2026-08-28 con PREDNICORT 15
+      // JARABE X 60 ML (2909), que el catálogo publica con `activo: false` y su
+      // presentación FRASCO activa. Como el portal deriva «activo» de las
+      // presentaciones, lo sigue ofreciendo para cargar y el movimiento recién
+      // falla acá, al aprobarlo — con el formulario ya llenado y la solicitud ya
+      // en la cola de alguien.
+      //
+      // El aviso anterior decía «El sistema no reconoce el producto 2909: El
+      // codigo ingresado no pertenece a ningun producto.» y tenía los tres
+      // defectos juntos: un número que nadie conoce en vez del nombre, el eco
+      // crudo del sistema de origen —lo que la pantalla NUNCA nombra— y ninguna
+      // pista de qué hacer. Quien lo leyó salió a buscar el defecto al portal.
+      if (!c.ok) {
+        const nombre = l.descripcion ?? `el producto ${l.erp_product_id}`;
+        // El nombre abre una de las dos frases y va en medio de la otra, así que
+        // la mayúscula se decide acá y no escribiendo el nombre dos veces. Una
+        // descripción real ya viene en mayúsculas y no la toca.
+        const Nombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+        // Se reconoce por el texto porque es el único dato que hay: la respuesta
+        // no trae código. Si algún día cambia la redacción, cae a la rama
+        // genérica —que dice el nombre igual— y no a un mensaje equivocado.
+        const deshabilitado = /no pertenece a ning/i.test(c.msg ?? "");
         return json({
           ok: false,
-          error: `El sistema no reconoce el producto ${l.erp_product_id}${c.msg ? `: ${c.msg}` : ""}.`,
+          codigo: deshabilitado ? "PRODUCTO_DESHABILITADO" : "PRODUCTO_ILEGIBLE",
+          error: deshabilitado
+            ? `${Nombre} está deshabilitado, así que no se le puede `
+              + `${esCarga ? "cargar" : "descargar"} existencia. `
+              + `Hay que habilitarlo antes de volver a intentarlo.`
+            : `No se pudo leer ${nombre}${c.msg ? `: ${c.msg}` : ""}.`,
         }, 502);
+      }
 
       // La presentación se resuelve por su SIGNIFICADO contra lo que el ERP
       // ofrece ahora. Si el producto dejó de tener esa presentación, se corta:

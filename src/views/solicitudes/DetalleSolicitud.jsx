@@ -162,7 +162,14 @@ export const LineasMovimiento = memo(({
     const decidiendo = typeof onToggle === 'function';
 
     return (
-        <div data-surface="card" className="overflow-hidden">
+        /* SIN `overflow-hidden` (2026-08-28). No había nada que recortar —los
+           renglones no tienen fondo propio, sólo un filete entre ellos— y en
+           cambio recortaba lo que la tarjeta dibuja FUERA de su caja de relleno:
+           el bloom del canto vivo (`::after` con tres `drop-shadow`) y el halo
+           de su sombra. Lo que quedaba era una línea blanca dura al pasar el
+           mouse, sin resplandor, que se lee como un borde cortado.
+           Reportado con captura: «corrige las sombras, parece hidden». */
+        <div data-surface="card">
             {items.map((it, i) => {
                 const motivoRechazo = rechazadas?.get(i);
                 const marcada  = decidiendo ? seleccion?.has(i) : !motivoRechazo;

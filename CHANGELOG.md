@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.827.2 — El aviso dice que el producto está deshabilitado, y las sombras del detalle dejan de verse cortadas
+
+*«ese mensaje me da, porque no me dices eso, el producto esta deshabilitado»* ·
+*«además corrige las sombras, parece hidden»*
+
+Salud 2 pidió cargar un frasco de **PREDNICORT 15 JARABE X 60 ML** —lo tenían en
+la sala y no en el sistema— y la solicitud no se podía aprobar. El aviso decía:
+
+> El sistema no reconoce el producto 2909: El codigo ingresado no pertenece a
+> ningun producto.
+
+Tres cosas mal en una sola línea: un número que nadie conoce en vez del nombre,
+el eco crudo de un sistema que la pantalla nunca nombra, y ninguna pista de qué
+hacer. Ahora dice **qué producto es y qué le pasa**: «PREDNICORT 15 JARABE X 60
+ML está deshabilitado, así que no se le puede cargar existencia. Hay que
+habilitarlo antes de volver a intentarlo.»
+
+El producto está dado de baja en el catálogo, pero el portal lo sigue ofreciendo
+para cargar porque decide si está activo mirando **sólo sus presentaciones**, y
+la única del frasco sigue activa. Hoy hay **13 productos así** —dos con
+«(INACTIVO)» escrito en el propio nombre—, y todos se pueden pedir aunque
+ninguno se pueda aplicar. Eso se corrige aparte: acá lo que cambia es que el
+aviso nombre el problema en vez de mandar a buscarlo al portal.
+
+**Y las sombras del detalle de una solicitud dejaron de verse cortadas.** El
+recorrido de ese diálogo tenía 4px de aire a la derecha y cero en los otros tres
+lados; como `overflow-y-auto` recorta en los dos ejes, a cada tarjeta de adentro
+le cortaba la sombra y el resplandor de su canto justo donde empieza. Lo que
+quedaba era un borde blanco duro, a ras del corte. Además la lista de productos
+recortaba **su propia** sombra sin necesitarlo: no tiene nada que recortar —los
+renglones no llevan fondo, sólo un filete entre ellos—.
+
 ## v2.827.1 — El aro de foco sigue la forma del control, no la caja del botón
 
 *«Visualmente no se ve bien ese recuadro con el efecto en esa sección. Rompe que

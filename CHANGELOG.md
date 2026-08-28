@@ -21,6 +21,105 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.838.0 — La caja anota lo que se edita y lo que se borra
+
+Un movimiento de caja —un vale, un ingreso— **se puede editar y borrar en el
+sistema de origen sin dejar rastro**, y hasta hoy el portal no se enteraba de
+ninguna de las dos cosas: la captura hacía `upsert` de lo que veía, así que uno
+borrado allá **seguía apareciendo acá para siempre** y uno editado se pisaba sin
+guardar el valor viejo.
+
+No es teórico. El **22-ago en Salud 1** apareció un ingreso de **$454.00** —el
+monto exacto del sobrante del corte anterior— que dejó la diferencia en cero.
+Nada lo señaló, y no quedó historia de nada.
+
+Desde esta versión cada movimiento lleva `visto_at` (la última vez que se lo
+confirmó en el origen), `desaparecido_at` (cuándo dejó de estar) y `origen`
+—hoy todos `CAJA`, o sea tecleados allá—, y cada cambio observado queda en
+`cortes_caja_movimientos_historial` con el antes, el después y **el corte
+vigente en ese instante**: lo que importa no es que un movimiento cambie, es que
+cambie *después* de un corte.
+
+Dos frenos para no inventar hallazgos: una respuesta que no se pudo leer **no
+es «cero movimientos»** —con la sesión vencida esa pantalla devuelve HTML en vez
+de JSON—, y si el listado viniera lleno (1000 filas) no se marca nada como
+desaparecido, porque lo que no salió está cortado, no borrado.
+
+Es la primera pieza de `docs/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`, que nació de
+un faltante que no existía: una remesa pagada con plata de la bolsa del día deja
+la caja esperando dinero que ya salió. Medido, **5 de 6 salidas** de bolsas del
+mismo día quedaron como faltantes falsos.
+
+## v2.836.1 — Reeditar ya no recorta: el recuadro cubre la foto entera
+
+*«Sigue recortando al reeditar.»* — y con razón, por tercera vez.
+
+Las dos correcciones anteriores arreglaron lo que se **guarda** (la imagen vuelve
+completa) y la **proporción** del recuadro. El margen seguía ahí: la foto se
+dibujaba un 7% más grande que el recuadro, y eso se lee como «me va a recortar
+otra vez» aunque el archivo salga entero. **Nadie juzga por lo que no ve.**
+
+Ahora el recuadro cubre el **100%** de la foto. Medido: 622×435 de foto, 622×435
+de recuadro, y el original vuelve idéntico —1600×1120— con su borde intacto en
+los cuatro lados.
+
+### Lo que no funcionó, y por qué
+
+- **Mover el acercamiento.** Es una prop controlada, el mínimo del canónico es 1
+  y acá hacía falta **alejar** — el factor medido era 0.95. Bajarle el mínimo
+  tampoco alcanzó: cambiar la forma del recuadro **remonta** el componente, así
+  que el ajuste quedaba calculado con la medida vieja. Quedó en 95%.
+- **Darle el tamaño que informa el canónico.** `onMediaLoaded` devuelve la medida
+  con la que él encajó la foto **dentro** del recuadro, o sea ya con el margen
+  adentro: 592 contra los 622 que la foto ocupa de verdad. También 95%.
+
+Lo que funcionó fue medir **el elemento dibujado** y darle ese tamaño al
+recuadro. Lo que hay que igualar es lo que se ve.
+
+### Y un control que prometí y no había renderizado
+
+El conmutador de **Perspectiva**. Lo destapó el linter —`setEnderezarPerspectiva`
+asignado y nunca usado—, no una prueba: la función de enderezar estaba entera y
+sin forma de apagarla, que es justo la vuelta atrás que hace defendible aplicarla
+sola. Aparece sólo cuando hay algo que enderezar.
+
+## v2.837.0 — El portal pregunta por el rango del cargo, no por system_role
+
+*«la verdad system role no tiene sentido, para eso está el rol que es el cargo,
+al cual se le asignan permisos por vistas y cosas. mejor hagamos más fuertes los
+roles y eliminemos system role»*
+
+La mitad de código del plan (`docs/PLAN-ROLES-SIN-SYSTEM-ROLE-2026-08-28.md`).
+La base ya no consultaba esa columna; ahora tampoco el portal.
+
+**Qué cambia para la gente.** El aprobador de respaldo —el último recurso cuando
+no hay jefatura ni supervisión disponible— pasa de **una sola persona a tres**.
+Con una sola, una solicitud podía quedarse sin quién la firme cada vez que esa
+persona estuviera de vacaciones. Y quien tiene el cargo *Administrador* entra
+por fin donde su cargo dice: hasta hoy no entraba a ninguna de las dos listas
+porque su columna estaba en blanco.
+
+**Qué cambia por dentro.** El enrutador de aprobadores pedía la gente con
+`.in('system_role', ['ADMIN','SUPERADMIN'])`, con los valores escritos a mano en
+cada consulta. Ahora pregunta por un **tramo de la escala** y la regla vive en la
+base (`empleados_por_rango`). Un tramo y no un mínimo, porque el enrutador sube
+escalón por escalón: con un «de acá para arriba», el primer intento se llevaría
+también a la dirección y nadie escalaría nunca.
+
+**La llave maestra se retiró de las funciones del servidor.** Era la rama que se
+saltaba el permiso por módulo, y la única ficha que la portaba se borró: código
+muerto medido, no supuesto.
+
+**Y dos rótulos dejaron de mentir.** La barra lateral traducía `ADMIN` →
+«Administrador» con un diccionario de dos entradas, así que a una jefatura de
+sala le pintaba `JEFE` en mayúsculas, que no es como se llama ningún cargo. Y las
+pantallas de «sin acceso» ofrecían ese mismo valor técnico como el cargo de la
+persona en el mensaje de ayuda que le manda a soporte.
+
+Falta el último paso, y va aparte: quitar la columna. Antes hay que redesplegar
+las 13 funciones que comparten `_shared/security.ts`, porque cada una lleva su
+propia copia y la copia vieja todavía la nombra en un `select`.
+
 ## v2.836.0 — Endereza la perspectiva, y reeditar deja de comerse el borde
 
 ### La perspectiva

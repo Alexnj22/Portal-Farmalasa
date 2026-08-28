@@ -189,6 +189,9 @@ export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento'
                 <Suspense fallback={null}>
                     <EditorDeDocumento
                         tipo={tipo}
+                        // Se abre sobre algo YA guardado: la imagen es el
+                        // documento, no una foto por encuadrar.
+                        yaRecortado
                         file={editando}
                         onCancel={() => setEditando(null)}
                         onConfirm={(corregido) => {

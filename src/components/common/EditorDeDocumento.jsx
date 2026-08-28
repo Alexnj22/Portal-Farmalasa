@@ -383,7 +383,11 @@ async function revisar(src, cropPx, rotacion, doc) {
  * @param {string} tipo      clave de `DOCS` — hoy `receta`, `boleta` o `dui`
  * @param {func}   onConfirm recibe el `File` ya recortado y normalizado
  */
-export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, esquinas = null, onConfirm, onCancel }) {
+/**
+ * @param {boolean} [yaRecortado] la imagen YA es el documento — se abre para
+ *   enderezarla o mejorarla, no para encuadrarla de nuevo.
+ */
+export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, esquinas = null, yaRecortado = false, onConfirm, onCancel }) {
     const doc = DOCS[tipo] || DOCS.receta;
     /* Con el dedo se arrastra la foto y se pellizca para acercar —el canónico de
      * recorte lo trae y está medido: 60 cuadros por segundo con el procesador
@@ -519,7 +523,67 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * volver a ella. */
     const aspectoDelPapel = useRef(null);
     const aspectoAplicado = useRef(false);
+    /* ── Que la foto LLENE el recuadro al reeditar ──────────────────────────
+     *
+     * El canónico deja un margen entre el marco y el recuadro: medido, la foto
+     * se dibujaba un 7% más grande, y eso se lee como «me va a recortar otra
+     * vez» aunque lo guardado ya salga completo. El usuario lo reportó tres
+     * veces, y las tres con razón — las dos correcciones anteriores arreglaron
+     * lo que se GUARDA y la PROPORCIÓN, pero el margen seguía ahí.
+     *
+     * Se intentó primero moviendo el acercamiento, y no sirvió: es una prop
+     * controlada, el mínimo del canónico es 1 y acá hace falta ALEJAR (el factor
+     * medido era 0.95). Y cambiar la forma remonta el componente, así que el
+     * ajuste quedaba calculado con la medida vieja.
+     *
+     * El camino directo es decirle el TAMAÑO del recuadro. Con `cropSize` el
+     * canónico lo usa tal cual —ignora la proporción— así que el recuadro es
+     * exactamente la foto. Sólo al reeditar: en una foto recién tomada el margen
+     * es correcto, porque deja ver qué queda afuera del recorte. */
+    /* El tamaño se mide del ELEMENTO dibujado, no del que informa el canónico.
+     *
+     * `onMediaLoaded` devuelve la medida con la que él encajó la foto DENTRO del
+     * recuadro —o sea ya con el margen adentro—, así que usarla deja el mismo 5%
+     * de diferencia: medido, 592 contra los 622 que la foto ocupa de verdad. Lo
+     * que hay que igualar es lo que se VE. */
+    const marcoRef = useRef(null);
+    const [tamanoDeLaFoto, setTamanoDeLaFoto] = useState(null);
+    const recuadroFijo = yaRecortado && tamanoDeLaFoto ? tamanoDeLaFoto : undefined;
+
+    useEffect(() => {
+        if (!yaRecortado || !src) return undefined;
+        const buscar = () => {
+            const el = marcoRef.current?.querySelector('.reactEasyCrop_Image');
+            if (!el) return;
+            const { width, height } = el.getBoundingClientRect();
+            if (!width || !height) return;
+            setTamanoDeLaFoto(prev => (prev && Math.abs(prev.width - width) < 1 ? prev : { width, height }));
+        };
+        // Dos veces: al pintar, y otra vez cuando el canónico ya reacomodó la
+        // foto con el recuadro que se le acaba de dar. Sin la segunda queda a
+        // mitad de camino, que es exactamente lo que se venía midiendo.
+        const t1 = setTimeout(buscar, 60);
+        const t2 = setTimeout(buscar, 260);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, [yaRecortado, src, aspectoBase]);
+
     const alCargarLaFoto = useCallback(({ naturalWidth, naturalHeight }) => {
+        /* ── Al REEDITAR, el marco toma la forma de la propia imagen ─────────
+         *
+         * Un documento que ya se recortó ES el documento: forzarle la
+         * proporción del catálogo deja el recuadro metido adentro y con margen
+         * por los cuatro lados, o sea que abrir el editor para enderezar o
+         * aclarar parece que va a recortar otra vez. Lo reportó el usuario dos
+         * veces, y la segunda con razón: la primera corrección arregló lo que se
+         * GUARDA y no lo que se VE, y nadie juzga por lo que no ve.
+         *
+         * Con la forma de la imagen, el recuadro la cubre entera. Si hace falta
+         * otra, el selector de formas sigue ahí. */
+        if (yaRecortado && naturalWidth && naturalHeight && !aspectoAplicado.current) {
+            aspectoAplicado.current = true;
+            setAspectoBase(naturalWidth / naturalHeight);
+            return;
+        }
         if (!recuadro || !naturalWidth || !naturalHeight) return;
         const { w, h } = recuadro;
         if (!(w > 0) || !(h > 0)) return;
@@ -532,7 +596,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
         if (aspectoAplicado.current) return;
         aspectoAplicado.current = true;
         setAspectoBase(a);
-    }, [recuadro]);
+    }, [recuadro, yaRecortado]);
 
     /* Un solo ángulo para las dos cosas que tienen que coincidir: lo que se ve
      * mientras se encuadra y lo que se dibuja al guardar. */
@@ -715,7 +779,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                     todo el mostrador alrededor, que es justo lo que hay que
                     sacar. Con el marco alto la tira ocupa casi toda la altura y
                     el recorte se hace con el dedo, no con la uña. */}
-                <div onPointerDown={() => setTocado(true)}
+                <div ref={marcoRef} onPointerDown={() => setTocado(true)}
                     className="relative w-full flex-1 min-h-32 rounded-card overflow-hidden bg-surface-card-hover">
                     {src && (
                         <Cropper
@@ -738,6 +802,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             // acostado, que sobre una tira de 58 mm obliga a
                             // meter medio mostrador para poder encuadrarla.
                             aspect={aspecto}
+                            cropSize={recuadroFijo}
                             // El tope del acercamiento y el del carril de abajo
                             // tienen que ser el MISMO número: el canónico trae 3
                             // de fábrica y el carril llegaba a 4, así que en el
@@ -847,6 +912,19 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             options={doc.formas.map(({ value, label }) => ({ value, label }))}
                             label="Forma del papel"
                         />
+                    )}
+                    {/* El conmutador de la perspectiva sólo aparece cuando hay
+                        algo que enderezar. Un interruptor que no hace nada en la
+                        mayoría de las fotos es un control de más en una pantalla
+                        que ya tiene cinco. */}
+                    {sePuedeEnderezar && (
+                        <Button variant={enderezarPerspectiva ? 'primary' : 'secondary'} size="sm"
+                            onClick={() => setEnderezarPerspectiva(v => !v)}
+                            title={enderezarPerspectiva
+                                ? 'Se enderezó la perspectiva. Apágalo si el resultado se ve deformado.'
+                                : 'La foto está tomada de costado: esto la endereza.'}>
+                            Perspectiva
+                        </Button>
                     )}
                     <div className="ml-auto">
                         <SegmentedControl size="sm" value={modo} onChange={setModo} options={modosDe(doc)} />

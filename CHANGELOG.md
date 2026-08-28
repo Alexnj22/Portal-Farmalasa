@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.828.2 — Girar la imagen ya no voltea el recuadro: los dos rotaban juntos y nunca coincidían
+
+*«No tiene sentido, al dar en girar el formato no cambió del recorte.»*
+
+El recuadro se volteaba **junto con** la imagen. El comentario que lo justificaba
+sonaba razonable —«un cuarto de vuelta acuesta el papel, así que también acuesta
+su recuadro»— y era exactamente al revés: `react-easy-crop` gira la **imagen**
+debajo de un recuadro fijo, así que voltear también el recuadro hace que la
+orientación del papel **respecto del recuadro** no cambie nunca. Los dos rotan
+juntos y el botón deja de servir para lo único que sirve.
+
+Y no era un caso raro. Con la tarjeta fotografiada de lado —como sale al
+apoyarla en un escritorio, que es justo la foto que lo destapó— la posición
+inicial ya no encuadraba, y girar la dejaba igual de mal del otro lado. **No
+había forma de recortarla.**
+
+Ahora el recuadro se queda quieto y Girar hace lo que dice. La forma del recuadro
+la decide el papel, y donde hay varias, el selector de formas — que es una
+elección explícita y no el efecto colateral de otro botón.
+
+Medido en Chromium con una foto igual a la reportada: el recuadro se queda en
+**1.59** —ID-1— mientras la imagen rota 0°, 90° y 180°.
+
 ## v2.828.1 — El visor decidía por el nombre del archivo: una foto sin nombre se veía como PDF
 
 *«Al abrir la foto no me la muestra al 100% sino ampliada, ¿y si la quiero

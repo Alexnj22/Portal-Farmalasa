@@ -1,6 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
 import EditorDeDocumento from '../../src/components/common/EditorDeDocumento';
 import { DOCS, avisosDeFoto, sePuedeGuardar } from '../../src/utils/fotoDocumento';
 
@@ -122,5 +124,35 @@ describe('sePuedeGuardar', () => {
         // como roto.
         expect(sePuedeGuardar(null, DOCS.dui).sePuede).toBe(true);
         expect(sePuedeGuardar({ ancho: 0, alto: 0 }, DOCS.dui).sePuede).toBe(true);
+    });
+});
+
+/* ── Girar la imagen NO voltea el recuadro ───────────────────────────────────
+ *
+ * Esto no se puede medir en jsdom —`react-easy-crop` necesita layout real— así
+ * que se ancla la ESCRITURA, con el motivo al lado. La medición de verdad se
+ * hizo en Chromium: el recuadro se queda en 1.59 mientras la imagen rota 0°,
+ * 90° y 180°.
+ *
+ * Lo que había volteaba el recuadro junto con la imagen, y eso hace que la
+ * orientación del papel RESPECTO DEL RECUADRO no cambie nunca: los dos rotan
+ * juntos y el botón deja de servir para lo único que sirve. Con una tarjeta
+ * fotografiada de lado —como sale al apoyarla en un escritorio— no había forma
+ * de encuadrarla, ni antes ni después de girar.
+ */
+describe('el recuadro no gira con la imagen', () => {
+    const fuente = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+    // Sin comentarios: el archivo EXPLICA en prosa la expresión que se quitó, y
+    // buscarla sobre el texto crudo la encuentra ahí. Mismo error que ya costó
+    // una prueba en `capturaDeFoto`.
+    const codigo = fuente.split('\n').filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('/*')).join('\n');
+
+    it('el aspecto del recuadro no depende de la rotación', () => {
+        expect(codigo).not.toMatch(/rotacion\s*%\s*180[\s\S]{0,40}aspectoBase/);
+    });
+
+    it('y sigue saliendo de la forma del papel', () => {
+        expect(codigo).toMatch(/const aspecto = aspectoBase;/);
     });
 });

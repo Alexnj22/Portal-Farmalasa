@@ -323,10 +323,29 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * mientras se encuadra y lo que se dibuja al guardar. */
     const giro = rotacion + inclinacion;
 
-    /* Un cuarto de vuelta ACUESTA el papel, así que también acuesta su recuadro:
-     * si no, girar una boleta la deja de costado dentro de un recorte que sigue
-     * siendo alto y no hay forma de encuadrarla. Media vuelta no cambia nada. */
-    const aspecto = rotacion % 180 === 90 ? 1 / aspectoBase : aspectoBase;
+    /* ── El recuadro NO gira con la imagen ──────────────────────────────────
+     *
+     * Acá había un `rotacion % 180 === 90 ? 1 / aspectoBase : aspectoBase`, con
+     * un comentario que sonaba razonable: «un cuarto de vuelta acuesta el papel,
+     * así que también acuesta su recuadro». Y era exactamente al revés.
+     *
+     * `react-easy-crop` gira la IMAGEN debajo de un recuadro fijo. Si al girar
+     * la imagen se voltea también el recuadro, los dos rotan juntos y la
+     * orientación del papel RESPECTO DEL RECUADRO no cambia nunca: el botón
+     * Girar deja de servir para lo único que sirve. Lo dijo el usuario mirando
+     * un DUI acostado dentro de un recuadro de pie: «no tiene sentido, al dar en
+     * girar el formato no cambió del recorte».
+     *
+     * Y no era un caso raro: con la tarjeta fotografiada de lado —que es como
+     * sale cuando se apoya en un escritorio— la posición inicial ya no
+     * encuadraba, y girar la dejaba igual de mal del otro lado. No había forma
+     * de recortarla.
+     *
+     * Ahora el recuadro se queda quieto y Girar hace lo que dice. Qué forma
+     * tiene el recuadro lo decide el papel (`aspecto` de `DOCS`) y, donde hay
+     * varias, el selector de formas — que es una elección explícita y no un
+     * efecto colateral de otro botón. */
+    const aspecto = aspectoBase;
 
     /* Volver a la sugerencia del lector.
      *

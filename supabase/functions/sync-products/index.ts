@@ -31,6 +31,174 @@ async function getSessionCookie(): Promise<string> {
   return cookie;
 }
 
+/**
+ * Avisa cuando un producto DEJA DE VENIR en el catálogo y una sala todavía lo
+ * tiene en existencia.
+ *
+ * Son dos casos distintos y sólo uno estaba cubierto. El producto que se da de
+ * BAJA sigue llegando —con su bandera apagada— y el sincronizador lo apaga acá
+ * también. El que DESAPARECE no llega, y el recorrido de arriba sólo camina lo
+ * que el catálogo manda: a ése no lo toca nadie nunca, así que se queda como
+ * esté para siempre. Medido el 2026-08-28: cuatro productos en esa situación,
+ * los cuatro figurando como disponibles, uno de ellos un medicamento real
+ * (URELOG X 100 TABLETAS, dado de alta el 29 de julio).
+ *
+ * **No se lo da de baja solo** —decisión del usuario, 2026-08-28—: entre los que
+ * faltan hay tres de comisiones y servicios que TIENEN que seguir vivos.
+ * Se avisa a la jefatura de Logística y a Supervisión, y **sólo si alguna sala
+ * todavía tiene existencia**: un producto sin existencia que deja de venir no le
+ * cuesta nada a nadie, y un aviso que se dispara por algo que no hay que
+ * atender es cómo se aprende a ignorar los avisos.
+ */
+async function avisarFueraDeCatalogo(
+  supabase: any,
+  delCatalogo: any[],
+  enElPortal: any[],
+): Promise<{ fuera: number; con_existencia: number; avisados: number; motivo?: string }> {
+  const idsDelCatalogo = new Set(delCatalogo.map((p: any) => Number(p.id)));
+  const fuera = enElPortal.filter((p: any) => !idsDelCatalogo.has(Number(p.id)));
+  if (fuera.length === 0) return { fuera: 0, con_existencia: 0, avisados: 0 };
+
+  // La guarda que hace confiable al aviso. El catálogo a veces contesta a medias,
+  // y con una respuesta corta TODO lo que falta parecería haber desaparecido:
+  // saldrían cientos de avisos falsos de una sola corrida y nadie volvería a
+  // creerle a éste. Con menos del 90% del padrón no se decide nada — el resto
+  // del sync ya corrió y eso no cambia.
+  const cobertura = idsDelCatalogo.size / Math.max(1, enElPortal.length);
+  if (cobertura < 0.9) {
+    console.warn(`[fuera-de-catalogo] el catálogo trajo ${idsDelCatalogo.size} de ${enElPortal.length}: no se avisa nada.`);
+    return { fuera: fuera.length, con_existencia: 0, avisados: 0, motivo: 'catalogo_corto' };
+  }
+
+  // La existencia se pagina a mano: `erp_product_id` se REPITE en `inventory`
+  // —una fila por sucursal y por área— así que acotar la entrada no acota la
+  // salida, y el corte de 1000 filas de PostgREST no avisa cuando muerde.
+  const idsFuera = fuera.map((p: any) => Number(p.id));
+  const existencias: any[] = [];
+  for (let i = 0; i < idsFuera.length; i += CHUNK) {
+    const tanda = idsFuera.slice(i, i + CHUNK);
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('erp_product_id, erp_sucursal_id, cantidad')
+        .in('erp_product_id', tanda)
+        .gt('cantidad', 0)
+        .order('erp_product_id')
+        .range(from, from + CHUNK - 1);
+      if (error) { console.error('[fuera-de-catalogo] inventario:', error.message); return { fuera: fuera.length, con_existencia: 0, avisados: 0, motivo: 'inventario_ilegible' }; }
+      if (!data || data.length === 0) break;
+      existencias.push(...data);
+      if (data.length < CHUNK) break;
+      from += CHUNK;
+    }
+  }
+
+  const porProducto = new Map<number, { unidades: number; salas: Set<number> }>();
+  for (const r of existencias) {
+    const id = Number(r.erp_product_id);
+    const acc = porProducto.get(id) ?? { unidades: 0, salas: new Set<number>() };
+    acc.unidades += Number(r.cantidad) || 0;
+    acc.salas.add(Number(r.erp_sucursal_id));
+    porProducto.set(id, acc);
+  }
+  const conExistencia = fuera.filter((p: any) => porProducto.has(Number(p.id)));
+  if (conExistencia.length === 0) return { fuera: fuera.length, con_existencia: 0, avisados: 0 };
+
+  // Se avisa UNA vez por producto. La corrida es cada 10 minutos y la condición
+  // dura hasta que alguien la resuelve: sin esto serían 144 avisos por día del
+  // mismo producto. El anuncio anterior es el registro de que ya se avisó —por
+  // eso la marca va en `metadata` y no en el título, que es texto que alguien
+  // puede querer reescribir.
+  // El filtro va POR los productos que se van a avisar y no por el tipo a secas:
+  // así la consulta queda acotada por lo que se está mirando ahora y no por
+  // cuántos avisos se acumularon desde siempre, que es la lista que un día cruza
+  // el corte de 1000 filas sin decirlo.
+  const { data: yaAvisados, error: avErr } = await supabase
+    .from('announcements')
+    .select('metadata')
+    .eq('metadata->>type', 'PRODUCTO_FUERA_DE_CATALOGO')
+    .in('metadata->>product_id', conExistencia.map((p: any) => String(p.id)));
+  if (avErr) { console.error('[fuera-de-catalogo] anuncios:', avErr.message); return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0, motivo: 'anuncios_ilegibles' }; }
+  const yaVistos = new Set((yaAvisados ?? []).map((a: any) => Number(a.metadata?.product_id)));
+  const nuevos = conExistencia.filter((p: any) => !yaVistos.has(Number(p.id)));
+  if (nuevos.length === 0) return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0 };
+
+  // Los destinatarios: la jefatura de Logística —con su suplencia por vacaciones
+  // ya resuelta adentro— y Supervisión. `tipo_ficha = 'empleado'` deja afuera la
+  // cuenta técnica: tiene los poderes de un supervisor y no es una persona, así
+  // que un aviso dirigido a ella no lo lee nadie.
+  const [{ data: jefatura }, { data: supervision }] = await Promise.all([
+    supabase.rpc('get_logistics_chief_ids'),
+    supabase.from('employees').select('id')
+      .in('system_role', ['SUPERVISOR', 'ADMIN', 'SUPERADMIN'])
+      .eq('status', 'ACTIVO')
+      .eq('tipo_ficha', 'empleado'),
+  ]);
+  const destinatarios = [...new Set([
+    ...((jefatura ?? []) as string[]),
+    ...((supervision ?? []) as any[]).map((e) => String(e.id)),
+  ])];
+  if (destinatarios.length === 0) {
+    console.warn('[fuera-de-catalogo] sin destinatarios activos.');
+    return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0, motivo: 'sin_destinatarios' };
+  }
+
+  const pushUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push-notification`;
+  let avisados = 0;
+
+  for (const p of nuevos) {
+    const acc    = porProducto.get(Number(p.id))!;
+    const salas  = acc.salas.size;
+    const title  = `${p.nombre} salió del catálogo y todavía hay existencia`;
+    // El aviso dice lo que hay que hacer, no sólo lo que pasó. Y no nombra de
+    // dónde salió el dato: la pantalla habla del portal.
+    const message =
+      `${p.nombre} dejó de aparecer en el catálogo, pero ${salas === 1 ? 'una sala tiene' : `${salas} salas tienen`} `
+      + `${acc.unidades} unidad${acc.unidades === 1 ? '' : 'es'} en existencia. `
+      + `Hay que decidir qué se hace con lo que queda antes de que el producto deje de poder moverse.`;
+
+    try {
+      await fetch(pushUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+          'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
+        },
+        body: JSON.stringify({
+          title, message, url: '/inventario', urgent: false,
+          target_type: 'EMPLOYEE', target_value: destinatarios,
+        }),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch (err) {
+      console.error('[fuera-de-catalogo] push:', err);
+    }
+
+    const { error: annErr } = await supabase.from('announcements').insert({
+      title, message,
+      target_type: 'EMPLOYEE', target_value: destinatarios,
+      read_by: [], is_archived: false, created_by: null, priority: 'NORMAL',
+      metadata: {
+        type: 'PRODUCTO_FUERA_DE_CATALOGO',
+        product_id: Number(p.id),
+        nombre: p.nombre,
+        unidades: acc.unidades,
+        salas: [...acc.salas],
+        url: '/inventario',
+      },
+    });
+    // El anuncio ES la marca de «ya se avisó». Si no entra, el push salió y la
+    // próxima corrida volvería a mandarlo: se dice en el log en vez de contarlo
+    // como avisado.
+    if (annErr) console.error('[fuera-de-catalogo] anuncio:', annErr.message);
+    else avisados++;
+  }
+
+  return { fuera: fuera.length, con_existencia: conExistencia.length, avisados };
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -188,9 +356,27 @@ Deno.serve(async (req) => {
           });
         }
       }
-      // activo change — trigger upsert without logging to changelog
+      // Que un producto se dé de baja SÍ se anota (2026-08-28). Antes iba como
+      // `_activoOnly`, o sea que disparaba el upsert y quedaba fuera del
+      // historial: el producto desaparecía del portal y no había dónde ver
+      // cuándo ni que hubiera pasado. `products.updated_at` no sirve para eso —
+      // lo mueve cualquiera de los otros campos, así que dice «algo cambió» y no
+      // qué.
+      //
+      // Los valores se guardan YA LEGIBLES, no como `true`/`false`: la pantalla
+      // de Productos imprime `campo`, `valor_anterior` y `valor_nuevo` crudos,
+      // sin mapa de rótulos. Escribirlos acá es la única forma de que el
+      // renglón se lea como una frase y no como el volcado de una columna — y
+      // de que no haya un rótulo en otro archivo que alguien tenga que acordarse
+      // de agregar.
       if ((ep.activo ?? true) !== (np.activo ?? true)) {
-        productChangelogs.push({ product_id: np.id, _activoOnly: true });
+        productChangelogs.push({
+          product_id:     np.id,
+          campo:          'disponibilidad',
+          valor_anterior: (ep.activo ?? true) ? 'Disponible' : 'Dado de baja',
+          valor_nuevo:    (np.activo ?? true) ? 'Disponible' : 'Dado de baja',
+          detected_at:    now,
+        });
       }
       // Lo mismo para el control de lote: sólo se escriben las filas marcadas
       // como cambiadas, así que sin esta comparación un producto al que le
@@ -215,6 +401,19 @@ Deno.serve(async (req) => {
     const realProductChangelogs = productChangelogs.filter((c: any) => !c._activoOnly);
     if (realProductChangelogs.length > 0) {
       await supabase.from('products_changelog').insert(realProductChangelogs);
+    }
+
+    // El producto que DEJÓ DE VENIR en el catálogo — ver `avisarFueraDeCatalogo`.
+    // Va después del upsert a propósito: se compara contra el padrón que acaba
+    // de quedar al día, no contra el de hace un momento. Y nunca tumba el sync:
+    // si algo de esto falla, lo dice en el log y devuelve su motivo — un aviso
+    // que no se pudo mandar no puede costar la sincronización del catálogo.
+    let fueraDeCatalogo: Record<string, unknown> = { fuera: 0, con_existencia: 0, avisados: 0 };
+    try {
+      fueraDeCatalogo = await avisarFueraDeCatalogo(supabase, productos, existingProductsAll);
+    } catch (err) {
+      console.error('[fuera-de-catalogo] no se pudo revisar:', err);
+      fueraDeCatalogo = { fuera: 0, con_existencia: 0, avisados: 0, motivo: 'excepcion' };
     }
 
     // 5. Build precio rows — descripcion and factor are per product+presentacion
@@ -299,6 +498,10 @@ Deno.serve(async (req) => {
         product_changes:  realProductChangelogs.length,
         precios_total:    precioRows.length,
         deactivated:      deactivatedCount,
+        // Lo que dejó de venir en el catálogo va en la respuesta y no sólo en el
+        // log: es la única forma de mirar el estado de este control sin buscar
+        // en los registros de una corrida vieja.
+        fuera_de_catalogo: fueraDeCatalogo,
         errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

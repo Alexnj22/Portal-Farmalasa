@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.828.3 — El producto que sale del catálogo con existencia avisa a Logística y Supervisión
+
+Dos preguntas del usuario destaparon dos huecos distintos, y éste es el segundo.
+
+**El primero: no se veía cuándo un producto se daba de baja.** El historial del
+producto guardaba cambios de nombre y de laboratorio —1,224 renglones desde
+mayo— y el cambio de disponibilidad estaba **excluido a propósito**: disparaba la
+actualización y no dejaba rastro. `updated_at` tampoco servía, porque lo mueve
+cualquier otro campo: dice «algo cambió», no qué. Ahora la baja deja su renglón
+con fecha en «Cambios en el producto», escrito como una frase —
+`disponibilidad · Disponible → Dado de baja`— porque esa pantalla imprime el
+historial crudo y no tiene mapa de rótulos.
+
+**El segundo: un producto que DESAPARECE del catálogo no lo tocaba nadie.** No es
+lo mismo que darlo de baja: el dado de baja sigue llegando con su bandera
+apagada, y el que desaparece no llega. Como el sincronizador sólo recorre lo que
+el catálogo manda, ése se quedaba como estuviera, para siempre. Medido: **cuatro
+productos así, los cuatro figurando como disponibles**, uno de ellos un
+medicamento real dado de alta el 29 de julio.
+
+No se dan de baja solos —entre los que faltan hay tres de comisiones y servicios
+que tienen que seguir vivos—: **se avisa a la jefatura de Logística y a
+Supervisión, y sólo si alguna sala todavía tiene existencia.** Un producto sin
+existencia que deja de venir no le cuesta nada a nadie, y un aviso que se dispara
+por algo que no hay que atender es cómo se aprende a ignorar los avisos.
+
+Tres cosas que el aviso necesitaba para ser creíble:
+
+- **Se avisa UNA vez por producto.** La corrida es cada 10 minutos y la condición
+  dura hasta que alguien la resuelva: sin eso serían 144 avisos por día del mismo
+  producto. El anuncio anterior es la marca de que ya se avisó.
+- **Con el catálogo corto no se decide nada.** Si la respuesta viene a medias,
+  todo lo que falta parecería haber desaparecido y saldrían cientos de avisos
+  falsos de una sola corrida. Por debajo del 90% del padrón, el aviso se calla y
+  lo dice en el registro.
+- **La existencia se pagina.** `erp_product_id` se repite en el inventario —una
+  fila por sucursal y por área— así que acotar la entrada no acota la salida.
+
 ## v2.828.2 — Girar la imagen ya no voltea el recuadro: los dos rotaban juntos y nunca coincidían
 
 *«No tiene sentido, al dar en girar el formato no cambió del recorte.»*

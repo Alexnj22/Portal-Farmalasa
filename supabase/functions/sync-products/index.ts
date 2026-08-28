@@ -107,13 +107,29 @@ Deno.serve(async (req) => {
     if (presErr) throw new Error(`Presentaciones upsert: ${presErr.message}`);
 
     // 4. Build product rows
-    // activo is derived from whether any presentation is active — the ERP product-level flag
-    // is unreliable (ERP UI shows a product as active when it has ≥1 active presentation).
+    // Activo = la bandera del producto Y al menos una presentación activa.
+    //
+    // Hasta el 2026-08-28 la bandera del producto se descartaba: bastaba una
+    // presentación activa. La mitad de esa regla es correcta —un producto con
+    // TODAS sus presentaciones de baja no se puede vender aunque su bandera diga
+    // que sí— pero al descartar la bandera el portal daba por activos productos
+    // que el catálogo tiene dados de baja. **Y para el inventario esa bandera SÍ
+    // manda**: la pantalla de ingreso no los reconoce, contesta «el codigo
+    // ingresado no pertenece a ningun producto», y el movimiento falla recién al
+    // aprobarlo — con el formulario llenado y la solicitud en la cola de alguien.
+    // Reportado el 2026-08-28 con PREDNICORT 15 JARABE X 60 ML (2909), que viene
+    // `activo: false` con su única presentación FRASCO activa.
+    //
+    // Medido sobre el catálogo entero antes de cambiarlo: de 5,214 productos,
+    // **13 pasan de activo a inactivo y ninguno al revés** — dos de ellos con
+    // «(INACTIVO)» escrito en el propio nombre. Los 13 tienen existencia CERO en
+    // las siete salas y CERO ventas en 90 días; la última venta de cualquiera de
+    // ellos fue el 26-may-2026. O sea que no desaparece nada que se esté usando.
     const productRowsRaw = productos.map((p: any) => {
       const pres: any[] = p.presentaciones ?? [];
-      const activo = pres.length > 0
+      const activo = (p.activo ?? true) && (pres.length > 0
         ? pres.some((pr: any) => pr.activo !== false)
-        : (p.activo ?? true);
+        : true);
       return {
         id:             p.id,
         nombre:         p.nombre,

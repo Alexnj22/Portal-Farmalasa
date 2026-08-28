@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.827.4 — Los 13 productos dados de baja dejan de ofrecerse para cargar
+
+La otra mitad de v2.827.2. El aviso ya explica por qué un producto dado de baja
+no entra; esto hace que no se pueda ni pedir, que es donde se pierde el trabajo:
+la sala llena el formulario, la solicitud entra a la cola de alguien, y recién al
+aprobarla se descubre que no había nada que hacer.
+
+El portal decidía si un producto está activo mirando **sólo sus presentaciones**
+y descartando la bandera del producto. La mitad de esa regla es correcta —uno con
+todas sus presentaciones de baja no se puede vender aunque su bandera diga que
+sí—, pero al descartar la bandera daba por activos productos que el catálogo
+tiene dados de baja. Ahora hacen falta las dos cosas.
+
+Medido sobre el catálogo entero antes de tocarlo: de 5,214 productos, **13 pasan
+de activo a inactivo y ninguno al revés**. Los 13 tienen existencia CERO en las
+siete salas y CERO ventas en 90 días —la última venta de cualquiera de ellos fue
+el 26 de mayo—, así que no desaparece nada que se esté usando. Dos de ellos
+llevan «(INACTIVO)» escrito en el propio nombre.
+
 ## v2.827.3 — El aviso de duplicado ya no acusa a quien acabás de enlazar, y la foto sigue a la persona
 
 Dos defectos del cambio de ayer, los dos vistos en pantalla y los dos con la
@@ -81,8 +100,8 @@ El producto está dado de baja en el catálogo, pero el portal lo sigue ofrecien
 para cargar porque decide si está activo mirando **sólo sus presentaciones**, y
 la única del frasco sigue activa. Hoy hay **13 productos así** —dos con
 «(INACTIVO)» escrito en el propio nombre—, y todos se pueden pedir aunque
-ninguno se pueda aplicar. Eso se corrige aparte: acá lo que cambia es que el
-aviso nombre el problema en vez de mandar a buscarlo al portal.
+ninguno se pueda aplicar. Que dejen de ofrecerse es v2.827.4; acá lo que cambia
+es que el aviso nombre el problema en vez de mandar a buscarlo al portal.
 
 **Y las sombras del detalle de una solicitud dejaron de verse cortadas.** El
 recorrido de ese diálogo tenía 4px de aire a la derecha y cero en los otros tres

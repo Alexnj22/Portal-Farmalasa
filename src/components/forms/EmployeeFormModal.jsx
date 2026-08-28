@@ -397,16 +397,33 @@ const SECCIONES_DE_DOCUMENTOS = [
         claves: ['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO', 'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE'],
     },
     {
-        id: 'ejercer',
-        titulo: 'Para ejercer su profesión',
-        bajada: 'Lo que habilita a la persona ante su junta de vigilancia o ante el ISSS y la AFP.',
-        claves: ['CONTRATO_REGENCIA', 'CERTIFICACION_DISCAPACIDAD', 'TARJETA_ISSS', 'TARJETA_AFP'],
+        /* El ISSS y la AFP son su propia sección, y no un apartado de «ejercer
+         * la profesión» como estuvieron un rato. Lo señaló el usuario: «no tiene
+         * sentido el ISSS y AFP ahí».
+         *
+         * No habilitan a nadie a ejercer nada — los tiene cualquier persona que
+         * trabaja, sea regente o dependiente. Y no se tramitan igual, que es la
+         * distinción que el portal ya hace en Contrato: al ISSS lo inscribe el
+         * PATRONO, la AFP la elige el TRABAJADOR. */
+        id: 'prevision',
+        titulo: 'ISSS y AFP',
+        bajada: 'La copia de cada tarjeta es la prueba de la afiliación. Al ISSS lo inscribe la empresa; la AFP la elige la persona.',
+        claves: ['TARJETA_ISSS', 'TARJETA_AFP'],
     },
     {
+        id: 'ejercer',
+        titulo: 'Para ejercer su profesión',
+        bajada: 'Lo que habilita a la persona ante su junta de vigilancia.',
+        claves: ['CONTRATO_REGENCIA'],
+    },
+    {
+        /* La certificación de discapacidad se movió acá desde «ejercer la
+         * profesión», donde tampoco pertenecía: no habilita a ejercer nada, es
+         * una condición de la persona con efectos legales propios. */
         id: 'siaplica',
         titulo: 'Sólo si aplica',
         bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
-        claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO'],
+        claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
     },
 ];
 

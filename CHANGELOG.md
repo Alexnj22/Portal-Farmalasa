@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.833.1 — El ISSS y la AFP tienen su propia sección, no la de ejercer la profesión
+
+*«No tiene sentido el ISSS y AFP ahí.»*
+
+Habían quedado dentro de «Para ejercer su profesión», y no habilitan a nadie a
+ejercer nada: los tiene cualquiera que trabaje, sea regente o dependiente. Ahora
+son su propia sección, con la distinción que el portal ya hace en Contrato: **al
+ISSS lo inscribe la empresa, la AFP la elige la persona**.
+
+La **certificación de discapacidad** se movió por lo mismo — tampoco habilita a
+ejercer: es una condición de la persona con efectos legales propios. Pasa a
+«Sólo si aplica», junto a las licencias.
+
+### Y la prueba que las ancla también falló primero
+
+Se le fabricaron las dos regresiones que tiene que cazar: un documento en dos
+secciones, y un documento en ninguna. La primera la cazó; **la segunda no**.
+
+El extractor cortaba cada arreglo en el primer `\n];`, y `EN_ACREDITACIONES` se
+declara en **una sola línea**: no había dónde cortar, `indexOf` devolvía −1 y el
+recorte se llevaba medio archivo — así que cualquier documento parecía estar ahí
+dentro y ninguno quedaba «sin sección». Ahora cuenta corchetes, y comprobado en
+los dos sentidos.
+
 ## v2.833.0 — un solo vale por salida, con el detalle de cada bolsa
 
 La primera corrida real de «Cambio por monedas» —**CMB-1032**, $2,000 de cuatro

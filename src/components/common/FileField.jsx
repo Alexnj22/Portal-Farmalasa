@@ -506,6 +506,13 @@ const FileField = memo(({
                         analizando={!sugerido && buscandoRecorte}
                         recuadro={sugerido?.recuadro || null}
                         giroSugerido={sugerido?.giro || 0}
+                        /* Las esquinas del papel — sin esto el enderezado de
+                           perspectiva NUNCA corría desde un adjunto. La lectura
+                           las devolvía, el editor sabía usarlas, y acá se
+                           perdían: una función entera muerta sin dar error, que
+                           es exactamente por qué «lo de las esquinas no
+                           funciona del todo bien». */
+                        esquinas={sugerido?.esquinas || null}
                         onCancel={() => { setPorEditar(null); setSugerido(null); }}
                         onConfirm={(listo) => { setPorEditar(null); setSugerido(null); entregar(listo); }}
                     />

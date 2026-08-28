@@ -16,12 +16,28 @@
  * «tomá la foto», «mandando», «lista». Un botón que no acusa recibo en un
  * teléfono es indistinguible de uno roto.
  */
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { capturaVigente, mandarFoto } from '../data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '../utils/capturaDeFoto';
 import Button from '../components/common/Button';
+
+/* ── El teléfono también AJUSTA, no sólo dispara ────────────────────────────
+ *
+ * Hasta hoy esta pantalla mandaba la foto tal cual y todo el arreglo pasaba en
+ * la computadora. Pero quien tiene el documento en la mano es quien está acá:
+ * ve si salió torcida, si le faltó una esquina, si quedó oscura — y tenía que
+ * mandarla mal igual y avisarle a otra persona. El usuario lo pidió así: «si el
+ * editor es desde el teléfono también, no sólo tomarla si no ahí mismo
+ * ajustarla».
+ *
+ * Es el MISMO editor de la computadora, no una versión chica: un segundo
+ * recortador para el teléfono se desincroniza del primero, que es la lección de
+ * las dos copias del carné. Va diferido porque quien vuelve a tomar la foto
+ * porque salió movida no necesita bajarlo dos veces.
+ */
+const EditorDeDocumento = lazy(() => import('../components/common/EditorDeDocumento'));
 
 export default function CapturaDeFotoView() {
     const { secreto } = useParams();
@@ -29,6 +45,8 @@ export default function CapturaDeFotoView() {
     const [motivo, setMotivo] = useState('');
     const [para, setPara] = useState('');
     const [vista, setVista] = useState(null);
+    // La foto recién tomada, esperando que la persona la ajuste o la mande.
+    const [porAjustar, setPorAjustar] = useState(null);
 
     useEffect(() => {
         let vivo = true;
@@ -46,9 +64,7 @@ export default function CapturaDeFotoView() {
         return () => { vivo = false; };
     }, [secreto]);
 
-    const tomar = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const mandar = async (file) => {
         // La vista previa se pinta ANTES de mandar: en una red lenta, esos
         // segundos sin nada en pantalla se leen como que no pasó nada.
         setVista(URL.createObjectURL(file));
@@ -57,6 +73,20 @@ export default function CapturaDeFotoView() {
         if (r.ok) { setEstado('hecho'); return; }
         setEstado('error');
         setMotivo(r.motivo);
+    };
+
+    /* No se manda sola: se abre el editor. Mandarla y ADEMÁS ofrecer ajustarla
+     * sería mandar dos veces la misma foto, y quien la tomó torcida no quiere
+     * que la torcida llegue igual. Si no hay nada que arreglar, el editor se
+     * confirma con un toque. */
+    const tomar = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setPorAjustar(file);
+        // El `input` se limpia para que volver a elegir el MISMO archivo
+        // dispare el evento otra vez: sin esto, cancelar el editor y reintentar
+        // con la misma foto no hace nada.
+        e.target.value = '';
     };
 
     return (
@@ -89,7 +119,8 @@ export default function CapturaDeFotoView() {
                     </label>
                     <input id="captura-foto" type="file" {...PROPS_CAMARA} className="hidden" onChange={tomar} />
                     <p className="text-caption text-content-3 font-medium text-center max-w-xs leading-snug">
-                        Se va a ver sola en la computadora. Este código sirve una vez.
+                        Puedes recortarla y enderezarla aquí mismo antes de mandarla.
+                        Se va a ver sola en la computadora, y este código sirve una vez.
                     </p>
                 </>
             )}
@@ -108,6 +139,21 @@ export default function CapturaDeFotoView() {
                         Ya está en la computadora. Puedes cerrar esta pantalla.
                     </p>
                 </div>
+            )}
+
+            {porAjustar && (
+                <Suspense fallback={
+                    <p className="text-body text-content-3 font-bold flex items-center gap-2">
+                        <Loader2 size={16} className="animate-spin" /> Abriendo el editor…
+                    </p>
+                }>
+                    <EditorDeDocumento
+                        tipo="documento"
+                        file={porAjustar}
+                        onCancel={() => setPorAjustar(null)}
+                        onConfirm={(listo) => { setPorAjustar(null); mandar(listo); }}
+                    />
+                </Suspense>
             )}
 
             {estado === 'error' && (

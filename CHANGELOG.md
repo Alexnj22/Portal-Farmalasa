@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.842.0 — El editor grande, las esquinas a mano y el ajuste en el teléfono
+
+Tres cosas del editor de documentos, las tres reportadas juntas.
+
+**El editor era chico de verdad, y ahora usa la pantalla.** Estaba topado en
+672 px de ancho y apilaba cinco filas de controles debajo del recorte, así que
+cada fila se la sacaba al área de trabajo. En una pantalla de 1440 el recorte
+medía **308×398 px**. Ahora el diálogo llega a 1280 y los
+controles van **al lado** en pantalla ancha, no debajo — el recorte quedó en
+**436×565**, casi el doble de superficie. En el teléfono se sigue apilando: ahí
+el ancho es lo que escasea y una segunda columna dejaría dos tiras inservibles.
+
+**Las cuatro esquinas se pueden marcar a mano.** Y acá había un defecto de
+fondo: el enderezado de perspectiva estaba entero —el algoritmo, el efecto del
+editor, el conmutador— y **nunca corría desde un adjunto**, porque la lectura
+devolvía las esquinas y el adjunto no se las pasaba al editor. Una función
+completa muerta, sin dar un error. Eso explica «lo de las esquinas no funciona
+del todo bien»: no funcionaba mal, no funcionaba.
+
+Conectado eso, faltaba lo otro: cuando la lectura se equivoca, el papel se
+endereza usando una esquina que está en el mostrador y sale deformado. Ahora hay
+un botón **«Esquinas»** —siempre, no sólo cuando la lectura encontró algo, que
+es justo el caso que hay que cubrir— con cuatro puntos que se arrastran con el
+dedo sobre la foto **original**, y el polígono se dibuja mientras se mueven.
+Marcarlas a mano enciende el enderezado aunque la deformación sea chica: si
+alguien las marcó, quiere que se usen.
+
+**El teléfono ya no sólo dispara: ajusta.** Quien tiene el documento en la mano
+es quien está ahí y ve si salió torcida — y hasta hoy tenía que mandarla mal
+igual. Ahora, después de tomar la foto, se abre el **mismo** editor de la
+computadora (no una versión chica: un segundo recortador se desincroniza del
+primero) y se manda ya recortada y enderezada.
+
+Medido en Chromium: las cuatro manijas aparecen, el arrastre mueve la esquina,
+y «Enderezar» redibuja la foto.
+
 ## v2.841.0 — Las ventas que ganan puntos salen del portal, no de una hoja de cálculo
 
 **El portal ya sabe qué ventas ganan puntos y las anota.** Hasta hoy eso lo

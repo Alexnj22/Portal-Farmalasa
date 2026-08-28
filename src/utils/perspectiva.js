@@ -182,3 +182,14 @@ function dibujarTriangulo(ctx, imagen, orig, dest) {
     ctx.drawImage(imagen, 0, 0);
     ctx.restore();
 }
+
+/**
+ * Las cuatro esquinas de la imagen ENTERA, en fracciones y en orden ↖ ↗ ↘ ↙.
+ *
+ * Vive acá y no en el componente que las dibuja porque es un dato del dominio
+ * —el punto de partida cuando no hay lectura automática— y porque un archivo de
+ * componentes que además exporta constantes rompe el recargado en caliente.
+ */
+export const ESQUINAS_ENTERAS = [
+    { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 },
+];

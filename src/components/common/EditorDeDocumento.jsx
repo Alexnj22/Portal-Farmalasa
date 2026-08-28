@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
-import { AlertTriangle, Check, Loader2, RotateCw, Sparkles, Undo2, ZoomIn } from 'lucide-react';
+import { AlertTriangle, Check, Frame, Loader2, RotateCw, Sparkles, Undo2, ZoomIn } from 'lucide-react';
 import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
@@ -8,6 +8,10 @@ import SegmentedControl from './SegmentedControl';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
 import { rectificar, deformacion } from '../../utils/perspectiva';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
+
+/* Diferido: marcar las esquinas es un desvío que la mayoría de las fotos no
+   toma, y su código no tiene por qué viajar en el chunk de cada adjunto. */
+const AjusteDeEsquinas = lazy(() => import('./AjusteDeEsquinas'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El editor de la foto de un DOCUMENTO DE PAPEL.
@@ -478,8 +482,35 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
      *    atrás. Por eso el conmutador está a la vista y no escondido.
      */
     const [enderezarPerspectiva, setEnderezarPerspectiva] = useState(true);
-    const seTorcio = useMemo(() => (esquinas ? deformacion(esquinas) : 0), [esquinas]);
-    const sePuedeEnderezar = seTorcio > 0.06;
+    /* ── Las esquinas se pueden CORREGIR ────────────────────────────────────
+     *
+     * Salían siempre de la lectura automática, y cuando ésa se equivoca no hay
+     * vuelta: el papel se endereza usando una esquina que está en el mostrador
+     * y sale deformado, sin error y sin aviso. El usuario: «la IA de ajustar
+     * las esquinas no funciona del todo bien».
+     *
+     * Ahora la propuesta es el punto de partida y quien está mirando la
+     * corrige con el dedo (`AjusteDeEsquinas`). Un ajuste a mano ADEMÁS
+     * enciende el enderezado aunque la deformación no llegue al umbral: si
+     * alguien marcó las cuatro esquinas, quiere que se use.
+     */
+    const [esquinasAMano, setEsquinasAMano] = useState(null);
+    const [marcandoEsquinas, setMarcandoEsquinas] = useState(false);
+    /* La foto TAL COMO LLEGÓ. `src` puede ser la versión ya enderezada, y sobre
+     * ésa las esquinas del papel ya no están donde estaban: marcar ahí sería
+     * corregir encima del error que se viene a corregir. */
+    const [urlOriginal, setUrlOriginal] = useState(null);
+    useEffect(() => {
+        if (!file) return undefined;
+        const u = URL.createObjectURL(file);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- nace del archivo elegido
+        setUrlOriginal(u);
+        return () => URL.revokeObjectURL(u);
+    }, [file]);
+    const esquinasEnUso = esquinasAMano || esquinas;
+    const seTorcio = useMemo(
+        () => (esquinasEnUso ? deformacion(esquinasEnUso) : 0), [esquinasEnUso]);
+    const sePuedeEnderezar = !!esquinasAMano || seTorcio > 0.06;
 
     useEffect(() => {
         if (!file) return undefined;
@@ -504,7 +535,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
                 });
                 // Las esquinas llegan en FRACCIONES; el redibujo trabaja en
                 // píxeles de esta imagen.
-                const enPx = esquinas.map(p => ({ x: p.x * img.width, y: p.y * img.height }));
+                const enPx = esquinasEnUso.map(p => ({ x: p.x * img.width, y: p.y * img.height }));
                 const lienzo = rectificar(img, enPx, img.width, img.height);
                 if (!vivo) { URL.revokeObjectURL(original); return; }
                 if (!lienzo) { creada = original; setSrc(original); return; }
@@ -519,7 +550,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
             }
         })();
         return () => { vivo = false; soltar(); };
-    }, [file, esquinas, sePuedeEnderezar, enderezarPerspectiva]);
+    }, [file, esquinasEnUso, sePuedeEnderezar, enderezarPerspectiva]);
 
     const alRecortar = useCallback((_a, px) => setCropPx(px), []);
 
@@ -831,7 +862,21 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
            El ANCHO sí es del documento: una tira de 58 mm en un diálogo ancho
            deja dos franjas muertas a los lados. */
         <LiquidModal open onClose={guardando ? undefined : onCancel}
-            maxWidth={doc.marco === 'alto' ? 'max-w-md' : 'max-w-2xl'}
+            /* ── El editor OCUPA la pantalla, no una tarjeta en el medio ─────
+               Estaba en `max-w-2xl` —672 px— y el usuario lo dijo: «se ve súper
+               pequeño, no logro ver bien todo». Y no era un gusto: en un
+               monitor de 1920 el trabajo es encuadrar un documento, y encuadrar
+               sobre una miniatura es adivinar. El recorte se lleva el espacio
+               que aparezca (`flex-1`), así que un diálogo más ancho es
+               literalmente un documento más grande.
+
+               La tira térmica se queda angosta —`max-w-md`— pero sube a
+               `max-w-xl`: es alta y flaca, y un diálogo ancho le deja dos
+               franjas muertas a los lados. Ahí lo que faltaba era ALTO. */
+            maxWidth={doc.marco === 'alto' ? 'max-w-xl' : 'max-w-7xl'}
+            /* El alto lo topa el canónico en 88dvh y está bien: pedir más deja
+               el diálogo pegado a los bordes de la pantalla. Lo que hace `h-` es
+               USAR ese tope siempre, en vez de encoger con el contenido. */
             className="h-[88dvh]"
             ariaLabel={doc.titulo}>
             <LiquidModal.Header>
@@ -857,7 +902,17 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
 
             {/* `space-y-2` y no 3: cinco huecos de 12 px son medio renglón de
                 controles, y en un teléfono eso sale del recorte. */}
-            <LiquidModal.Body className="space-y-2 flex flex-col">
+            {/* ── En pantalla ancha, los controles van AL LADO ────────────────
+                Apilados debajo, cada fila de controles se la sacaba al recorte:
+                con el diálogo en 1024×792 el área de trabajo quedaba en 308×398
+                —medido— o sea que la mitad del ancho no la usaba nadie y el alto
+                se lo comían cinco filas de botones. «No logro ver bien todo» era
+                literal.
+
+                En una columna aparte, el recorte se queda con TODO el alto del
+                diálogo. En el teléfono se apila como siempre: ahí el ancho es lo
+                que escasea y una segunda columna dejaría dos tiras inservibles. */}
+            <LiquidModal.Body className="flex flex-col lg:flex-row gap-2 lg:gap-4">
                 {/* El marco tiene la forma del PAPEL, no la del diálogo.
                     Una boleta térmica es una tira de 58 mm fotografiada con el
                     teléfono parado: en el marco ancho y bajo de una hoja se
@@ -867,7 +922,25 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
                     sacar. Con el marco alto la tira ocupa casi toda la altura y
                     el recorte se hace con el dedo, no con la uña. */}
                 <div ref={marcoRef} onPointerDown={() => setTocado(true)}
-                    className="relative w-full flex-1 min-h-32 rounded-card overflow-hidden bg-surface-card-hover">
+                    className="relative w-full flex-1 min-h-32 lg:min-w-0 rounded-card overflow-hidden bg-surface-card-hover">
+                    {/* Se marca sobre la foto ORIGINAL, no sobre la ya
+                        enderezada: si se enderezó con esquinas equivocadas, esa
+                        imagen ya no tiene las esquinas del papel donde están, y
+                        corregir sobre ella sería corregir sobre el error. */}
+                    {marcandoEsquinas && (
+                        <Suspense fallback={null}>
+                            <AjusteDeEsquinas
+                                src={urlOriginal}
+                                iniciales={esquinasEnUso}
+                                onCancelar={() => setMarcandoEsquinas(false)}
+                                onListo={(nuevas) => {
+                                    setMarcandoEsquinas(false);
+                                    setEsquinasAMano(nuevas);
+                                    setEnderezarPerspectiva(true);
+                                }}
+                            />
+                        </Suspense>
+                    )}
                     {src && (
                         <Cropper
                             // La proporción entra en la `key` porque la caja
@@ -932,6 +1005,11 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
                     )}
                 </div>
 
+                {/* La columna de controles. Ancho fijo en pantalla ancha para
+                    que el recorte no cambie de tamaño cuando un aviso aparece o
+                    desaparece — el mismo motivo por el que la zona de avisos
+                    tiene alto fijo. */}
+                <div className="shrink-0 lg:w-[19rem] flex flex-col gap-2 lg:overflow-y-auto">
                 {/* Dos carriles, cada uno con su rótulo: acercar y enderezar se
                     usan uno tras otro sobre la misma foto y sin rótulo no se
                     distinguen. El de enderezar llega a ±10°, que es lo que se
@@ -1015,6 +1093,16 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
                         algo que enderezar. Un interruptor que no hace nada en la
                         mayoría de las fotos es un control de más en una pantalla
                         que ya tiene cinco. */}
+                    {/* Marcar las esquinas a mano está SIEMPRE disponible, y no
+                        sólo cuando la lectura encontró algo: el caso que hay que
+                        cubrir es justamente el que no encontró nada o encontró
+                        mal. Sin foto no hay nada que marcar. */}
+                    <Button variant="secondary" size="sm" icon={Frame}
+                        iconOnly={conElDedo} disabled={!src}
+                        title="Marcar a mano las cuatro esquinas del papel"
+                        onClick={() => setMarcandoEsquinas(true)}>
+                        {conElDedo ? null : 'Esquinas'}
+                    </Button>
                     {sePuedeEnderezar && (
                         <Button variant={enderezarPerspectiva ? 'primary' : 'secondary'} size="sm"
                             onClick={() => setEnderezarPerspectiva(v => !v)}
@@ -1070,6 +1158,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: rec
                         // y el resto de la pista es de escritorio.
                         <Notice variant="info" compact icon={Sparkles}>{doc.pista}</Notice>
                     ) : null}
+                </div>
                 </div>
             </LiquidModal.Body>
 

@@ -143,3 +143,56 @@ describe('la pantalla del teléfono', () => {
         expect(vista).toMatch(/!\/venció\|usó\/\.test\(motivo\)/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Las esquinas del papel: propuestas, pero corregibles — y CONECTADAS
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El enderezado de perspectiva existía completo —`utils/perspectiva.js`, el
+// efecto del editor, el conmutador— y NUNCA corría desde un adjunto: la lectura
+// devolvía las cuatro esquinas y `FileField` no se las pasaba al editor. Una
+// función entera muerta sin dar un error, que es exactamente por qué «lo de las
+// esquinas no funciona del todo bien».
+//
+// Lo que se ancla es el CABLE, no el algoritmo: el algoritmo tiene sus pruebas
+// y ninguna se enteró de que nadie lo llamaba.
+
+describe('las cuatro esquinas del papel', () => {
+    const field = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/FileField.jsx'), 'utf8');
+    const editor = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+    const telefono = fs.readFileSync(
+        path.join(process.cwd(), 'src/views/CapturaDeFotoView.jsx'), 'utf8');
+
+    it('el adjunto se las pasa al editor', () => {
+        expect(field).toMatch(/esquinas=\{sugerido\?\.esquinas \|\| null\}/);
+    });
+
+    // Marcarlas a mano tiene que estar SIEMPRE, no sólo cuando la lectura
+    // encontró algo: el caso que hay que cubrir es el que no encontró nada.
+    it('se pueden marcar a mano aunque la lectura no haya encontrado nada', () => {
+        const iBoton = editor.indexOf("onClick={() => setMarcandoEsquinas(true)}");
+        expect(iBoton).toBeGreaterThan(-1);
+        // El botón NO está dentro del `{sePuedeEnderezar && (…)}`.
+        const iGuarda = editor.indexOf('{sePuedeEnderezar && (');
+        expect(iBoton).toBeLessThan(iGuarda);
+    });
+
+    // Se marcan sobre la foto COMO LLEGÓ. Si se marcaran sobre la ya enderezada,
+    // corregir un enderezado equivocado sería corregir encima del error.
+    it('se marcan sobre la foto original, no sobre la ya enderezada', () => {
+        expect(editor).toMatch(/<AjusteDeEsquinas[\s\S]{0,120}src=\{urlOriginal\}/);
+    });
+
+    it('un ajuste a mano enciende el enderezado aunque la deformación sea chica', () => {
+        expect(editor).toMatch(/const sePuedeEnderezar = !!esquinasAMano \|\| seTorcio > 0\.06/);
+    });
+
+    // El teléfono ajusta antes de mandar, con el MISMO editor: un segundo
+    // recortador para el teléfono se desincroniza del primero.
+    it('el teléfono abre el editor en vez de mandar la foto tal cual', () => {
+        expect(telefono).toMatch(/lazy\(\(\) => import\('\.\.\/components\/common\/EditorDeDocumento'\)\)/);
+        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);
+    });
+});

@@ -5,9 +5,8 @@
 > por vistas y cosas. mejor hagamos más fuertes los roles y eliminemos system
 > role»*.
 
-Estado: **pasos 1 a 7 EJECUTADOS y verificados** (2026-08-28). Falta sólo el
-último: quitar la columna. Ver §11, que es lo que queda y lo que la ejecución
-enseñó de nuevo.
+Estado: **CERRADO** (2026-08-28). `employees.system_role` ya no existe. Ver §11
+—lo que la ejecución enseñó— y §12, la única deuda que queda.
 
 ---
 
@@ -394,21 +393,29 @@ menos el último.
    importan ese archivo NO la pedían: usan `requireActiveEmployeeUser`, que
    selecciona `id, status, code, name`.
 
-### Lo que falta — y por qué no se hizo hoy
+## 12. Cómo se cerró, y la única deuda que queda
 
-Queda **un solo objeto en toda la base** nombrándola: la vista `employees_safe`.
-Y después, la columna.
+Quedaba la vista y la columna, y el plan decía esperar a que todo el mundo
+tuviera el portal nuevo. El usuario preguntó si no se podía forzar una recarga a
+todos. **No se puede**, y no por la regla —que él aceptó romper una vez— sino
+porque no hay palanca:
 
-**La vista no se toca hasta que todo el mundo tenga el portal nuevo.** No por el
-`DROP`+`CREATE` —eso es una transacción de milisegundos y nada depende de la
-vista—, sino porque quien tenga la pantalla abierta sigue con el paquete viejo, y
-ése lee `emp.system_role`. Sin la columna no recibe un error: recibe `undefined`,
-y `undefined || 'EMPLEADO'` lo degrada a colaborador **en silencio**. No rompe
-permisos —los decide la base— pero le apaga botones a quien sí puede.
+- El vigía de versión (`versionNueva.js`) **avisa y nunca recarga**; la única
+  recarga es el botón, decisión suya del 2026-08-25.
+- El service worker se registra en `load` y **nadie llama a
+  `registration.update()`**, así que una pestaña abierta no busca uno nuevo.
 
-Después, `ALTER TABLE employees DROP COLUMN system_role`, sola y en un rato
-tranquilo: es metadata, milisegundos, pero toma el lock exclusivo sobre una tabla
-que se lee en cada login. Con `lock_timeout = '5s'` el peor caso es que la
-migración se cancele y haya que reintentarla.
+O sea que cualquier mecanismo de recarga forzada que se agregue hoy **sólo lo
+entiende el paquete que esa gente todavía no tiene**. Es circular.
 
-Y al cerrar, la categoría en `gate:data` para que la columna no vuelva.
+**La salida fue no necesitar la recarga.** `employees_safe` dejó de LEER la
+columna y pasó a CALCULAR el mismo campo desde el rango: rango 4 → `ADMIN`,
+3 → `SUPERVISOR`, 1-2 → `JEFE`, resto → `EMPLEADO`. El paquete viejo sigue
+funcionando —y mejor, porque ese valor ya no puede contradecir al organigrama— y
+la columna quedó libre. Se borró el mismo día, con `lock_timeout`, sobre una
+tabla de 48 filas que no está entre las calientes.
+
+**La deuda:** el apodo `system_role` de la vista. Es una expresión, no un dato,
+así que no puede envejecer mal — pero se retira cuando ya nadie corra un paquete
+anterior al 2026-08-28. Con eso, y con la categoría de `gate:data` para que la
+columna no vuelva, el trabajo queda sin restos.

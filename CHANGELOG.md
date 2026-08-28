@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.841.0 — Las ventas que ganan puntos salen del portal, no de una hoja de cálculo
+
+**El portal ya sabe qué ventas ganan puntos y las anota.** Hasta hoy eso lo
+hacía un script de Google que entraba al sistema de origen sala por sala con
+seis usuarios, pegaba las filas en seis pestañas de una hoja de cálculo, armaba
+una séptima y de ahí escribía en la base de puntos. El portal ya tiene esas
+ventas —las sincroniza cada minuto—, así que la hoja no aportaba el dato:
+aportaba puntos de falla, y venía fallando.
+
+**Tres condiciones, y cada una se decidió mirando el 27-ago** (730 facturas,
+631 de más de $1, **601 enviables**):
+
+1. **La venta tiene que estar viva.** Hay tres estados y **dos son anulación**:
+   «NULA» (9 en toda la historia, ninguna llegó a Hacienda) y «DTE INVALIDADO EN
+   MH» (**1,024, y las 1,024 con sello de Hacienda** — se enviaron y después se
+   anularon ante Hacienda). El circuito viejo descartaba sólo por la palabra
+   NULA, así que **las 1,024 ganaron puntos estando anuladas**, 52 nada más en
+   agosto.
+2. **Más de $1.**
+3. **Ningún renglón vendido por debajo del precio 3.** No es «coincide exacto
+   con el precio 1, 2 o 3»: eso se midió y castiga las ventas a precio lleno —
+   STORVAS 20MG se vendió a $31.10 contra un precio 3 de $31.05 y quedaba afuera
+   **por cinco centavos**, y SKAR 10MG a $34.05 con un precio 1 de $30.00, o sea
+   arriba de todo. El piso deja pasar esas dos y sigue descartando las que
+   importan (MELATONINA a $6.40 con precio 3 de $6.75). Son 601 contra 591, y no
+   pierde ninguna de las 591.
+
+El precio con el que se compara es **el vigente el día de la venta**, no el de
+hoy. Ésa es la respuesta de fondo a que los precios cambian; el margen del 2%
+es sólo para el redondeo y, medido, no cambia el resultado. **No puede crecer
+sin mirar esto:** la distancia entre el precio 3 y el precio 4 tiene mediana
+2.91%, así que con un 5% el filtro dejaría pasar el precio de clínica en dos
+tercios del catálogo — o sea, dejaría de filtrar.
+
+**Un código de barra en el campo del vendedor ya no tumba la tanda entera.** Hay
+21 facturas (de 358,263) con un código de 13 a 17 dígitos: alguien escaneó un
+producto donde va el código de quien vende. Todos son números, todos pasaban el
+filtro, y ninguno cabe en un entero — y eso no falla una fila: **falla la
+consulta entera**, o sea que una venta mal digitada de abril deja sin puntos a
+todo un mes. Es candidato serio a por qué la hoja venía fallando: allá el mismo
+dato llegaba a `setInt` de JDBC.
+
+**Y una factura que llega tarde ya no se pierde para siempre.** El circuito
+viejo avanzaba por número de correlativo (`lastSync_<sala>`): una que entrara
+después de que el número ya hubiera pasado quedaba debajo y **no se mandaba
+nunca**. Ahora la bitácora es por factura — `puntos_enviados` —, así que llegue
+cuando llegue se manda una vez y una sola.
+
+**Lo que se anula después de haber sumado puntos ahora le llega a la sala.** El
+circuito viejo mandaba un mensaje de chat con un botón que sólo editaba el
+propio mensaje: no restaba nada ni dejaba rastro consultable. Hoy el aviso va a
+la gente de esa sala y la cola queda en la base con su fecha. **La resta todavía
+no se hace y es deliberado:** no se sabe cómo representa una reversión el
+sistema de puntos, y una resta inventada es peor que ninguna.
+
+**Falta encenderlo.** El puente (`scripts/puntos/puntos-portal.php`) hay que
+subirlo al servidor donde vive esa base, poner sus dos secretos en el portal y
+crear la tarea programada. El puerto de MySQL no acepta conexiones desde afuera
+—se probó desde el portal y da `timeout`, el firewall corta antes de pedir
+credenciales—, así que el puente vive adentro de ese servidor y habla por
+localhost.
+
 ## v2.840.2 — El DUI dice hasta cuándo vale
 
 **La ficha ya no tira el vencimiento del documento de identidad.** La columna

@@ -312,9 +312,16 @@ Deno.serve(async (req) => {
       } catch (e) {
         const msg = (e as Error)?.message ?? String(e);
         if (!simular) {
-          await supabase.from("caja_vales_portal")
+          // Se recoge el error y NO se lanza: estamos dentro de un `catch`, y
+          // lanzar acá taparía el error original que se está intentando anotar.
+          // Pero tampoco puede irse a ciegas — si este UPDATE falla (RLS, una
+          // columna que cambió), `ultimo_error` queda vacío y el vale aparece
+          // fallado sin decir por qué, que es justo lo que esta línea existe
+          // para evitar.
+          const { error: errAnotar } = await supabase.from("caja_vales_portal")
             .update({ ultimo_error: msg, updated_at: new Date().toISOString() })
             .eq("branch_id", branchId).in("estado", ["PENDIENTE", "ANOTADO"]);
+          if (errAnotar) console.error(`no se pudo anotar el error del vale (${branchId}): ${errAnotar.message}`);
         }
         resultados.push({ branchId, error: msg });
       }

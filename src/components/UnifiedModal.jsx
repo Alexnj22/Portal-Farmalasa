@@ -64,16 +64,42 @@ const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharma
 
 const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService", "editBranchLeadership", "addCustomDocument", "editCustomDocument"]);
 
-// Únicos campos que BLOQUEAN el guardado del empleado (a diferencia de los
-// "pendientes" — DUI/documento alterno en imagen, ISSS/AFP — que se pueden
-// completar después, ver getPendingItems en StaffManagementView). Misma
-// función para validar en el submit (handleLocalSubmit) y para deshabilitar
-// el botón Guardar antes de intentar guardar, para que el estado visual del
-// botón refleje si falta algo obligatorio.
+/* Únicos campos que BLOQUEAN el guardado del empleado.
+ *
+ * Lo que falta y NO bloquea no desaparece: sale en «Información Pendiente» del
+ * propio formulario y en el listado de personal, con su numeral del Art. 23
+ * (`faltantesDelExpediente`, en `src/utils/expediente.js`). Son dos preguntas
+ * distintas a propósito — **guardar** mira si lo escrito está bien escrito;
+ * **pendiente** mira si lo que la ley pide está presente— y un expediente puede
+ * guardarse perfecto y estar incompleto, que es el estado normal el día que
+ * entra alguien.
+ *
+ * Misma función para validar en el submit y para deshabilitar el botón, así el
+ * estado del botón nunca miente sobre lo que va a pasar al apretarlo.
+ *
+ * ── Sucursal y cargo dejaron de bloquear (2026-08-28) ─────────────────────
+ *
+ * Pedido del usuario, y es la continuación de lo que ya se había hecho en
+ * `isFormFullyValid` el 26-ago: ahí la regla pasó a «vacío se guarda, mal
+ * escrito no» y esta función quedó sin actualizar, así que el alta seguía
+ * exigiendo media ficha mientras la edición no. Los dos son datos del Art. 23
+ * —cargo es el nº3 y área de trabajo el nº6— pero eso los hace **pendientes**,
+ * no impedimentos: exigirlos para poder anotar a alguien es
+ * [[feedback_una_verificacion_que_traba_la_accion_no_se_hace]], y el atajo que
+ * produce es elegir cualquier cargo con tal de guardar — que es peor que
+ * dejarlo vacío, porque un cargo inventado nadie lo vuelve a mirar.
+ *
+ * La base los acepta nulos y `addEmployee` ya los manda como `null`;
+ * `assertHeadcountAvailable` sale temprano sin cargo. O sea que no había nada
+ * técnico que lo pidiera: era sólo esta línea.
+ *
+ * El DUI SÍ sigue bloqueando: el usuario no lo levantó, y el Art. 23 nº2 lo
+ * pide como identificación de quien firma.
+ */
 const getEmployeeValidationError = (formData, type) => {
     if (type === 'newEmployee') {
-        if (!formData?.first_names?.trim() || !formData?.last_names?.trim() || !formData?.code?.trim() || !formData?.branch_id || !formData?.role_id) {
-            return "Faltan campos obligatorios: Nombres, Apellidos, Código, Sucursal Base o Cargo.";
+        if (!formData?.first_names?.trim() || !formData?.last_names?.trim() || !formData?.code?.trim()) {
+            return "Faltan campos obligatorios: Nombres, Apellidos o Código.";
         }
         // Art. 23.2 Código de Trabajo: DUI obligatorio en el contrato — salvo
         // menores de edad (no se tramita antes de los 18 en El Salvador), a

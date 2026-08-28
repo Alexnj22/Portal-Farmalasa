@@ -3199,8 +3199,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 ) : (
                                     <>
                                         <div className={`relative z-tabs ${cubreVariasAreas ? 'md:col-span-2' : ''}`}>
-                                            <label className={rotuloCampo('text-content-3')}>Área de Trabajo <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge></label>
-                                            <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (((branches||[]).find(b=>String(b.id)===String(val))?.type || 'FARMACIA') === 'FARMACIA') setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
+                                            {/* «Pendiente», no «Requerido» — y el control no se pinta
+                                                en rojo. Desde el 2026-08-28 el área de trabajo NO
+                                                bloquea el guardado: sigue siendo el Art. 23 nº6 y sigue
+                                                saliendo en Información Pendiente, pero un rótulo rojo
+                                                que dice «Requerido» sobre un campo que sí deja guardar
+                                                le miente a quien lo lee, y `invalid` además pone
+                                                `aria-invalid`, o sea que un lector de pantalla lo
+                                                anuncia como un error que no existe. */}
+                                            <label className={rotuloCampo('text-content-3')}>
+                                                <span>Área de Trabajo</span>
+                                                {/* Condicional, al revés que el «Requerido» que reemplaza:
+                                                    «requerido» es una propiedad del campo y vale siempre;
+                                                    «pendiente» es un ESTADO, y sobre un campo ya elegido
+                                                    sería falso. */}
+                                                {!formData.branch_id && <Badge size="sm" variant="warning" uppercase={false}>Pendiente</Badge>}
+                                            </label>
+                                            <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (((branches||[]).find(b=>String(b.id)===String(val))?.type || 'FARMACIA') === 'FARMACIA') setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                         </div>
                                         {cubreVariasAreas && (
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
@@ -3253,8 +3268,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                         </div>
                                         <div className="relative z-content">
-                                            <label className={rotuloCampo('text-content-3')}>Cargo Principal <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge></label>
-                                            <LiquidSelect invalid={!formData.role_id} value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
+                                            {/* Igual que el Área de Trabajo: pendiente, no requerido. */}
+                                            <label className={rotuloCampo('text-content-3')}>
+                                                <span>Cargo Principal</span>
+                                                {!formData.role_id && <Badge size="sm" variant="warning" uppercase={false}>Pendiente</Badge>}
+                                            </label>
+                                            <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-base">
                                             <label className={rotuloCampo('text-content-3')}>Cargo Secundario (Apoyo)</label>

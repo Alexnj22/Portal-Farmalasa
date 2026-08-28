@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.823.3 — Sucursal y cargo dejan de bloquear el alta: quedan como pendientes
+
+Continuación de lo que se hizo el 26-ago. Aquel día la regla del formulario pasó
+a **«vacío se guarda, mal escrito no»**, pero eso sólo se aplicó a
+`isFormFullyValid`: la otra comprobación —la del alta— quedó sin tocar, así que
+dar de alta a alguien seguía exigiendo **sucursal y cargo** mientras editar a esa
+misma persona no exigía ninguno de los dos.
+
+Ahora el alta bloquea sólo por **nombres, apellidos, código** (que se
+autogenera) y **DUI** —o el documento alterno si es menor—, más la base legal y
+el motivo cuando el contrato es a plazo.
+
+**No desaparecen: pasan a pendientes.** Cargo es el Art. 23 nº3 y área de trabajo
+el nº6, y los dos siguen saliendo en «Información Pendiente» y en el listado de
+personal con su numeral. Lo que cambia es el momento: exigirlos para poder
+anotar a alguien es una verificación que traba la acción, y el atajo que produce
+es **elegir cualquier cargo con tal de guardar** — peor que dejarlo vacío,
+porque un cargo inventado nadie lo vuelve a mirar.
+
+Los dos campos dejan de decir **«Requerido»** en rojo y pasan a **«Pendiente»**
+en ámbar, y el selector ya no se pinta como error. Un rótulo rojo sobre un campo
+que sí deja guardar le miente a quien lo lee, y `invalid` además ponía
+`aria-invalid`, o sea que un lector de pantalla anunciaba un error inexistente.
+La insignia ahora es **condicional**: «requerido» es una propiedad del campo y
+vale siempre, «pendiente» es un estado y sobre un campo ya elegido sería falso.
+
+Medido en el navegador: el rótulo mide **20 px con insignia y sin ella**, así que
+elegir la sucursal no mueve el formulario, y la insignia no se recorta.
+
+No hacía falta nada más: la base acepta los dos nulos, `addEmployee` ya los
+mandaba como `null` y el control de plazas sale temprano cuando no hay cargo.
+
 ## v2.823.2 — Guardar siempre está en pantalla al dar de alta a alguien
 
 En un **alta**, el botón Guardar sólo aparecía en la última pestaña: para

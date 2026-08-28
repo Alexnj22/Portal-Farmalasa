@@ -290,7 +290,16 @@ Deno.serve(async (req) => {
         const viva = await aperturaViva(cookie);
         if (!viva) throw new Error("la sala no tiene una caja abierta ahora");
 
-        const concepto = conceptoDe(vale.id, g.movs.length + (vale.erp_movimiento_id ? 1 : 0));
+        // Cuántas salidas cubre EN TOTAL, no cuántas trae esta corrida. La
+        // primera versión decía `nuevas + 1` cuando ya existía el vale, o sea
+        // que un vale que cubría tres salidas se anunciaba como dos. El número
+        // sale de contar las que están ligadas más las que se van a ligar.
+        const { count: yaCubiertas, error: errCuenta } = await supabase
+          .from("bolsas_movimientos")
+          .select("id", { count: "exact", head: true })
+          .eq("caja_vale_id", vale.id);
+        if (errCuenta) throw new Error(`contando lo que ya cubre: ${errCuenta.message}`);
+        const concepto = conceptoDe(vale.id, (yaCubiertas ?? 0) + g.movs.length);
         // Freno 1: ¿ya está escrito? Un reintento después de un timeout es el
         // escenario obvio, y duplicar el vale es peor que no ponerlo.
         const yaEsta = await yaEscrito(cookie, g.dia, vale.id);

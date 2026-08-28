@@ -195,6 +195,10 @@ export const AREAS = [
             'src/utils/ageUtils.js', 'src/utils/nameUtils.js', 'src/utils/staffHelpers.js',
             'src/utils/economicDependents.js', 'src/utils/educationCatalogs.js',
             'src/components/forms/EmployeeFormModal.jsx', 'src/components/forms/FormRehireEmployee.jsx',
+            // Un documento que nombra a VARIAS personas —el acuse del Ministerio
+            // por una recontratación—: el reparto y su cruce de nombres contra
+            // el padrón. Va en Personal porque lo que escribe es el expediente.
+            'src/components/forms/AsignarDocumentoAVarios.jsx', 'src/data/documentosCompartidos.js',
             // La foto que se toma con el teléfono y llega a la computadora: es
             // parte del alta de personal, aunque su pantalla viva fuera del menú.
             'src/data/capturaDeFoto.js', 'src/views/CapturaDeFotoView.jsx',

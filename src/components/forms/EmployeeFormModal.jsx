@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import useBorrador from '../../hooks/useBorrador';
+
+/* Diferido: repartir un documento colectivo pasa una vez cada tanto, y su
+   código no tiene por qué viajar con cada apertura de una ficha. */
+const AsignarDocumentoAVarios = lazy(() => import('./AsignarDocumentoAVarios'));
 import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
 import { faltantesDelExpediente } from '../../utils/expediente';
@@ -450,6 +454,18 @@ const DOS_CARAS = new Set([
     'SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA',
     'TARJETA_ISSS', 'TARJETA_AFP',
 ]);
+/* ── Documentos que NO son de una sola persona ──────────────────────────────
+ *
+ * El acuse sellado del Ministerio de Trabajo por una recontratación nombra a
+ * TODOS los que entran en esa tanda: es un papel de la empresa, no de cada
+ * quien. Subirlo a una ficha y después repetirlo ficha por ficha era el único
+ * camino, y nada decía a quiénes cubre.
+ *
+ * Es una lista y no un `if` sobre `ACUSE_MTPS` porque el mecanismo es general:
+ * el día que aparezca otro papel colectivo se agrega acá y funciona. Hoy hay
+ * uno solo, que es el que nombró el usuario. */
+const COMPARTIBLES = new Set(['ACUSE_MTPS']);
+
 const VARIAS_HOJAS = new Set([
     'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS', 'CONTRATO_REGENCIA',
     'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
@@ -1340,6 +1356,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
+    // El papel colectivo esperando que alguien decida a quiénes cubre.
+    const [docParaVarios, setDocParaVarios] = useState(null);
     // Lo que dijo el DUI, esperando que alguien lo confirme. NO se aplica solo:
     // un formulario que se llena y se guarda solo convierte un error de lectura
     // en un dato del expediente, y después nadie sabe si el DUI dice eso o si
@@ -1595,7 +1613,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             let aiError = null;
             if (stored) {
                 ({ data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
-                    body: { filePath: stored.path, bucketName: stored.bucket }
+                    // Los nombres SÓLO en los papeles colectivos: pedirlos en
+                    // cada documento agrega trabajo al modelo para una respuesta
+                    // que en un carné no se usa, y un campo que nadie mira es un
+                    // campo que se llena mal sin que nadie lo note.
+                    body: { filePath: stored.path, bucketName: stored.bucket,
+                            ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}) }
                 }));
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
                     expiryDate = aiResponse.aiData.expDate;
@@ -1642,6 +1665,31 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 }
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
+
+            /* ── ¿Este papel nombra a más gente? ────────────────────────────
+             *
+             * Se pregunta DESPUÉS de guardarlo en esta ficha: si la persona
+             * cierra el diálogo sin repartirlo, el documento igual quedó donde
+             * se subió. Al revés —preguntar antes— un «cancelar» dejaría el
+             * archivo subido y ninguna ficha apuntándolo.
+             *
+             * Con un solo nombre no se pregunta nada: un acuse de una sola
+             * persona es un documento normal, y abrir un diálogo para confirmar
+             * lo obvio enseña a cerrarlo sin leer. */
+            if (COMPARTIBLES.has(category)) {
+                const leidas = Array.isArray(aiResponse?.aiData?.personas)
+                    ? aiResponse.aiData.personas.filter(n => String(n || '').trim())
+                    : [];
+                if (leidas.length > 1) {
+                    setDocParaVarios({
+                        category,
+                        nombres: leidas,
+                        documento: { category, title: rotuloDelDoc(category), url,
+                                     file_name: file.name, expiry_date: expiryDate || null,
+                                     uploaded_at: new Date().toISOString() },
+                    });
+                }
+            }
 
             // ── El DUI se lee cuando están las DOS caras ────────────────────
             //
@@ -4716,6 +4764,36 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 )}
             </div>
 
+            {/* El reparto de un documento colectivo. Va acá, fuera de las
+                pestañas: se abre después de subir el acuse y tiene que verse
+                esté donde esté la persona. */}
+            {docParaVarios && (
+                <Suspense fallback={null}>
+                    <AsignarDocumentoAVarios
+                        nombres={docParaVarios.nombres}
+                        documento={docParaVarios.documento}
+                        rotulo={rotuloDelDoc(docParaVarios.category)}
+                        empleados={employees}
+                        fichaAbierta={formData?.id || null}
+                        alCerrar={() => setDocParaVarios(null)}
+                        alTerminar={({ asignados, pendientes, omitidos }) => {
+                            setDocParaVarios(null);
+                            const partes = [];
+                            if (asignados) partes.push(`${asignados} expediente${asignados === 1 ? '' : 's'}`);
+                            if (pendientes) partes.push(`${pendientes} en espera de su ficha`);
+                            // Lo omitido se DICE: quien ya tenía uno no recibió
+                            // éste, y callarlo dejaría creer que sí.
+                            const yaTenian = (omitidos || []).filter(o => o.motivo === 'ya tiene uno');
+                            useToastStore.getState().showToast(
+                                'Documento repartido',
+                                [partes.join(' · ') || 'Sin cambios',
+                                 yaTenian.length ? `${yaTenian.length} ya tenía uno cargado y no se reemplazó.` : '']
+                                    .filter(Boolean).join(' '),
+                                'success');
+                        }}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };

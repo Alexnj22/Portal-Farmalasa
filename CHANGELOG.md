@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.845.0 — Un documento del Ministerio para varias personas
+
+El acuse sellado del Ministerio de Trabajo por una recontratación **no es un
+papel por persona**: el Ministerio devuelve UNO con la lista de todos. El portal
+sólo sabía adjuntar un documento a la ficha abierta, así que el mismo papel había
+que subirlo una vez por cada quien —buscando cada ficha a mano— y nada decía a
+quiénes cubre.
+
+Ahora, al subir el acuse, el portal **lee la lista de nombres** y pregunta a
+quiénes se les adjunta. Cada nombre aparece con lo que se sabe de él:
+
+| lo que dice la fila | qué pasa |
+|---|---|
+| **Tiene ficha** | se le escribe el documento ahora |
+| **Sin ficha todavía** | el documento queda esperando por su nombre, y se le pega solo el día que alguien la cree |
+| **Es la ficha que estás editando** | ya lo tiene; se muestra apagada |
+
+**El archivo se sube una sola vez y las fichas comparten su dirección.** No se
+copia: copiarlo daría N archivos que después divergen —uno se reemplaza y los
+otros no— y ninguno sería «el acuse», serían copias parecidas.
+
+Cinco decisiones que hacen que esto sea seguro:
+
+- **Pregunta, no asigna sola.** La lista la leyó un modelo sobre una foto, y un
+  documento en el expediente equivocado es una prueba en el expediente
+  equivocado: no se deshace con un botón, se explica en una inspección.
+- **Nunca pisa un documento que ya está.** A quien ya tenía su acuse cargado —de
+  otra recontratación— no se le reemplaza, y el portal lo **dice** en el aviso
+  en vez de callarlo.
+- **Sólo pide los nombres en los papeles colectivos.** Pedirlos en cada documento
+  agrega trabajo para una respuesta que en un carné no se usa, y un campo que
+  nadie mira se llena mal sin que nadie lo note. Y la instrucción es estrecha a
+  propósito —*trabajadores listados*, no *nombres*— porque en ese papel también
+  aparecen el representante legal y quien firma en el Ministerio.
+- **Dos fichas con el mismo nombre se avisan, no se eligen.** Un nombre no
+  distingue a dos personas; elegir una sería escribir por orden de carga.
+- **Los permisos y el rastro viven en la base**, no en el navegador: las tres
+  funciones exigen permiso de edición en Personal y dejan su entrada en la
+  bitácora. Verificado: sin sesión, las tres responden `FORBIDDEN`.
+
+El cruce de nombres —sin tildes, sin puntuación, un solo espacio— existe **dos
+veces**: en el navegador y en la base. Son gemelas y se enfrentaron sobre 15
+casos medidos contra producción: **0 distintas**. Si una cambia y la otra no, el
+circuito se parte en silencio.
+
+Los dos archivos nuevos quedaron mapeados al área **Personal** de
+`auditoria/areas.mjs`: un archivo sin área no entra en ningún porcentaje, y el
+portal diría estar auditado sobre un denominador que ya no es el suyo.
+
 ## v2.844.0 — Los documentos de dos caras y de varias hojas
 
 Cada documento del expediente era **un** archivo. Una licencia y un carné de

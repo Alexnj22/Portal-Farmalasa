@@ -10,6 +10,7 @@ import {
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches } from '../../data/system';
+import { aplicarPendientes } from '../../data/documentosCompartidos';
 // Un día a la vez: reescribir el roster entero pisa lo que otra sesión guardó
 // en otro día de la misma semana.
 import { guardarDiaDeHorario } from '../../data/schedules';
@@ -845,6 +846,30 @@ export const createEmployeeSlice = (set, get) => ({
                 const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents);
                 await updateEmployee(newEmp.id, { employee_documents: uploadedDocs });
                 newEmp.employee_documents = uploadedDocs;
+            }
+
+            /* ── Los documentos que estaban esperando a esta persona ────────
+             *
+             * Un acuse del Ministerio que nombraba a alguien sin ficha quedó
+             * guardado por su NOMBRE. Ahora la ficha existe: se le pegan solos.
+             *
+             * Va acá y no en un trigger de INSERT a propósito: las tres líneas
+             * de arriba vuelven a escribir `employee_documents` con la lista del
+             * formulario, así que lo que hubiera puesto un trigger se perdería
+             * en ese segundo paso — sin error y sin que nadie lo note.
+             *
+             * Y no puede tumbar el alta: la persona ya está creada. Es la
+             * lección del PDF de bienvenida, que hacía decir «no se pudo guardar
+             * la ficha» sobre un empleado que sí se había guardado. */
+            const pegados = await aplicarPendientes(newEmp.id);
+            if (pegados?.puestos?.length) {
+                // La relectura es sólo para que la copia en memoria muestre lo
+                // que la base ya escribió. Si falla, el documento ESTÁ puesto:
+                // se avisa y se sigue, no se finge que no pasó nada.
+                const { data: recargado, error: errRelectura } = await supabase
+                    .from('employees').select('employee_documents').eq('id', newEmp.id).maybeSingle();
+                if (errRelectura) console.warn('documentos pendientes, relectura:', errRelectura.message);
+                else if (recargado?.employee_documents) newEmp.employee_documents = recargado.employee_documents;
             }
 
             // Asignar sucursales adicionales si aplica (empleados externos).

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.829.0 — Lo que el DUI dice distinto ya no se tira: se muestra y se puede aplicar
+
+*«¿No actualizó el nombre, ni los demás datos?»*
+
+La regla era —y sigue siendo— **no pisar lo que un humano escribió**: quien carga
+puede estar corrigiendo una lectura anterior, o el documento puede estar
+desactualizado. Lo que estaba mal es que además el dato del documento se
+**tiraba**: no llegaba a ninguna pantalla.
+
+No se notaba mientras el formulario arrancaba vacío. Al **enlazar** con una ficha
+que ya existe llega **lleno**, así que el documento choca con casi todo y lo suyo
+se pierde entero. El caso que lo destapó: el DUI decía
+`NUNEZ<JOYA<<EDWIN<ALEXANDER` y la ficha tenía «EDWIN» y «NUÑEZ». El nombre
+completo estaba en la foto.
+
+Ahora el panel lista **«El documento dice otra cosa»** —lo que hay tachado, lo
+que dice el documento— con un botón para aplicarlo todo. Las dos reglas se
+cumplen a la vez: no contradecir en silencio, y no descartar en silencio.
+
+Este archivo ya decía en su encabezado que *«un dato que el documento traía y el
+portal tiró en silencio es peor que uno que no leyó»*. Estaba implementado sólo
+para lo que no encaja en un catálogo; lo que se descartaba por estar el campo
+ocupado no se contaba en ninguna parte.
+
+Un acento, una mayúscula o un espacio de más **no** cuentan como diferencia:
+ofrecer ruido entrena a ignorar la lista.
+
+Y cuando el documento no completó ningún campo pero sí dice algo distinto, el
+mensaje deja de ser «lo que dice el documento ya estaba escrito» —que era falso—
+y pasa a decir en cuántos datos difiere.
+
 ## v2.828.5 — Los tres cobros que salieron del catálogo no disparan el aviso
 
 El aviso de v2.828.3, con los datos de hoy, disparaba **uno solo y era el

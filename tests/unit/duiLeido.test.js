@@ -202,3 +202,56 @@ describe('avisoDeCaras', () => {
         });
     });
 });
+
+/* ── Lo que el documento dice DISTINTO ───────────────────────────────────────
+ *
+ * `poner` nunca pisa lo que un humano escribió, y eso está bien. Lo que estaba
+ * mal es que además lo TIRABA: el dato del documento no llegaba a ninguna
+ * pantalla.
+ *
+ * No se notaba mientras el formulario arrancaba vacío. Al enlazar con una ficha
+ * que ya existe llega LLENO, así que el documento choca con casi todo — y el
+ * usuario lo vio con su propio DUI: decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la
+ * ficha tenía «EDWIN» y «NUÑEZ». El nombre completo estaba en la foto y se
+ * perdía.
+ */
+describe('diferencias', () => {
+    it('EL CASO REAL: el nombre completo del documento no se pierde', () => {
+        const { parche, diferencias } = aplicarDuiLeido(
+            { nombres: 'EDWIN ALEXANDER', apellidos: 'NUÑEZ JOYA' },
+            { first_names: 'EDWIN', last_names: 'NUÑEZ' });
+        // No se pisa nada solo.
+        expect(parche.first_names).toBeUndefined();
+        // Pero se ofrece.
+        expect(diferencias.map(d => d.campo).sort()).toEqual(['first_names', 'last_names']);
+        expect(diferencias.find(d => d.campo === 'first_names')).toMatchObject({
+            actual: 'EDWIN', documento: 'EDWIN ALEXANDER', rotulo: 'Nombres',
+        });
+    });
+
+    it('un acento o una mayúscula NO son una diferencia', () => {
+        // Ofrecer ruido entrena a ignorar la lista.
+        const { diferencias } = aplicarDuiLeido(
+            { nombres: 'JOSÉ', apellidos: 'peréz' },
+            { first_names: 'jose', last_names: 'PEREZ' });
+        expect(diferencias).toEqual([]);
+    });
+
+    it('un campo VACÍO se llena y no cuenta como diferencia', () => {
+        const { parche, diferencias } = aplicarDuiLeido(
+            { nombres: 'ANA' }, { first_names: '' });
+        expect(parche.first_names).toBe('ANA');
+        expect(diferencias).toEqual([]);
+    });
+
+    it('lo que el documento no trae no inventa diferencias', () => {
+        const { diferencias } = aplicarDuiLeido({}, { first_names: 'ANA', last_names: 'LOPEZ' });
+        expect(diferencias).toEqual([]);
+    });
+
+    it('cada diferencia trae su rótulo legible', () => {
+        const { diferencias } = aplicarDuiLeido(
+            { numero: '01234567-8' }, { dui: '09876543-2' });
+        expect(diferencias[0]).toMatchObject({ campo: 'dui', rotulo: 'DUI' });
+    });
+});

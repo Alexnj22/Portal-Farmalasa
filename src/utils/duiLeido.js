@@ -48,20 +48,72 @@ const deCatalogo = (v, lista) => {
 
 const vacio = (v) => v === null || v === undefined || String(v).trim() === '';
 
+/** Rótulo legible de cada campo, para decir qué se va a llenar. */
+export const ROTULO_DUI = {
+    dui: 'DUI',
+    first_names: 'Nombres',
+    last_names: 'Apellidos',
+    gender: 'Género',
+    marital_status: 'Estado familiar',
+    birth_date: 'Fecha de nacimiento',
+    lugar_nacimiento: 'Lugar de nacimiento',
+    nationality: 'Nacionalidad',
+    dui_lugar_expedicion: 'Lugar de expedición',
+    dui_fecha_expedicion: 'Fecha de expedición',
+    dui_fecha_vencimiento: 'Vence el',
+    profession: 'Profesión u oficio',
+    education_level: 'Nivel académico',
+    education_specialty: 'Especialidad',
+    address: 'Dirección',
+    department: 'Departamento',
+    municipality: 'Municipio',
+    distrito: 'Distrito',
+    blood_type: 'Tipo de sangre',
+};
+
+
 /**
  * @param {object} leido    lo que devolvió `leer-dui` (`datos`)
  * @param {object} actual   el `formData` de ahora
- * @returns {{ parche: object, descartados: string[] }}
+ * @returns {{ parche: object, descartados: string[], diferencias: object[] }}
  */
 export function aplicarDuiLeido(leido, actual = {}) {
     const parche = {};
     const descartados = [];
+    const diferencias = [];
 
-    // Sólo si está vacío. `poner` es la única puerta: ninguna asignación
-    // esquiva esta comprobación.
+    /* Sólo si está vacío. `poner` es la única puerta: ninguna asignación
+     * esquiva esta comprobación.
+     *
+     * ── Y lo que NO entra por estar ocupado, se OFRECE ─────────────────────
+     *
+     * Callarse era el defecto. Este archivo ya decía en su encabezado que «un
+     * dato que el documento traía y el portal tiró en silencio es peor que uno
+     * que no leyó», pero eso sólo estaba implementado para lo que no encaja en
+     * un catálogo. Lo que se descartaba por estar el campo ocupado no se
+     * contaba en ninguna parte.
+     *
+     * No se notaba mientras el formulario arrancaba vacío. Al enlazar con una
+     * ficha que ya existe llega LLENO, así que el documento pasó a chocar con
+     * casi todo — y el usuario lo vio: «¿no actualizó el nombre, ni los demás
+     * datos?». El DUI decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la ficha tenía
+     * «EDWIN» y «NUÑEZ»: el nombre completo estaba en la foto y se tiró.
+     *
+     * Sigue sin pisarse nada solo —el humano manda— pero la diferencia se
+     * muestra y se puede aplicar. Las dos reglas se cumplen: no contradecir en
+     * silencio, y no descartar en silencio. */
     const poner = (campo, valor) => {
         if (valor === null || valor === undefined || valor === '') return;
-        if (!vacio(actual[campo])) return;
+        if (!vacio(actual[campo])) {
+            // Sólo cuenta como diferencia si de verdad dice OTRA cosa. Un
+            // acento, una mayúscula o un espacio de más no son un cambio, y
+            // ofrecerlos como si lo fueran entrena a ignorar la lista.
+            if (sinTildes(actual[campo]) !== sinTildes(valor)) {
+                diferencias.push({ campo, rotulo: ROTULO_DUI[campo] || campo,
+                                   actual: String(actual[campo]), documento: String(valor) });
+            }
+            return;
+        }
         parche[campo] = valor;
     };
 
@@ -137,31 +189,9 @@ export function aplicarDuiLeido(leido, actual = {}) {
         }
     }
 
-    return { parche, descartados };
+    return { parche, descartados, diferencias };
 }
 
-/** Rótulo legible de cada campo, para decir qué se va a llenar. */
-export const ROTULO_DUI = {
-    dui: 'DUI',
-    first_names: 'Nombres',
-    last_names: 'Apellidos',
-    gender: 'Género',
-    marital_status: 'Estado familiar',
-    birth_date: 'Fecha de nacimiento',
-    lugar_nacimiento: 'Lugar de nacimiento',
-    nationality: 'Nacionalidad',
-    dui_lugar_expedicion: 'Lugar de expedición',
-    dui_fecha_expedicion: 'Fecha de expedición',
-    dui_fecha_vencimiento: 'Vence el',
-    profession: 'Profesión u oficio',
-    education_level: 'Nivel académico',
-    education_specialty: 'Especialidad',
-    address: 'Dirección',
-    department: 'Departamento',
-    municipality: 'Municipio',
-    distrito: 'Distrito',
-    blood_type: 'Tipo de sangre',
-};
 
 /**
  * Qué era cada archivo que se subió, dicho para quien lo subió.

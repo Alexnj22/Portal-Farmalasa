@@ -1221,6 +1221,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setDuiLeido({
             aplicados: Object.keys(resumen?.parche || {}).length,
             descartados: resumen?.descartados || [],
+            // Lo que el documento dice DISTINTO de lo que ya estaba escrito. No
+            // se aplica solo —el humano manda— pero tampoco se tira en silencio.
+            diferencias: resumen?.diferencias || [],
             numeroIlegible: leido.numeroIlegible,
         });
     };
@@ -1999,8 +2002,50 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <p className="text-label text-content font-medium leading-snug">
                                                 {duiLeido.aplicados > 0
                                                     ? <>Se completaron <span className="font-black">{duiLeido.aplicados}</span> dato{duiLeido.aplicados === 1 ? '' : 's'} con el documento.</>
-                                                    : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
+                                                    : duiLeido.diferencias?.length
+                                                        ? <>El documento no completó ningún campo vacío, pero dice algo distinto en {duiLeido.diferencias.length === 1 ? 'un dato' : `${duiLeido.diferencias.length} datos`}.</>
+                                                        : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
                                             </p>
+
+                                            {/* ── Lo que el documento dice DISTINTO ───────────────
+                                                No se aplica solo: pisar lo que alguien escribió es
+                                                contradecirlo sin avisar, y quien carga puede estar
+                                                corrigiendo una lectura anterior.
+
+                                                Pero tampoco se tira en silencio, que es lo que
+                                                pasaba. No se notaba mientras el formulario arrancaba
+                                                vacío; al enlazar con una ficha que ya existe llega
+                                                LLENO, así que el documento chocaba con casi todo y
+                                                lo suyo se perdía entero. El usuario lo vio con su
+                                                propio DUI: decía `NUNEZ<JOYA<<EDWIN<ALEXANDER` y la
+                                                ficha tenía «EDWIN» y «NUÑEZ». */}
+                                            {duiLeido.diferencias?.length > 0 && (
+                                                <div className="mt-2">
+                                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-1">
+                                                        El documento dice otra cosa
+                                                    </p>
+                                                    <ul className="flex flex-col gap-1">
+                                                        {duiLeido.diferencias.map(d => (
+                                                            <li key={d.campo} className="text-label text-content-2 font-medium leading-snug">
+                                                                <span className="font-black text-content">{d.rotulo}:</span>{' '}
+                                                                <span className="line-through opacity-70">{d.actual}</span>{' → '}
+                                                                <span className="font-black text-content">{d.documento}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <Button variant="secondary" size="sm" className="mt-2"
+                                                        onClick={() => {
+                                                            setFormData(prev => {
+                                                                const next = { ...prev };
+                                                                for (const d of duiLeido.diferencias) next[d.campo] = d.documento;
+                                                                return next;
+                                                            });
+                                                            setDuiLeido(l => ({ ...l, diferencias: [], aplicados: (l.aplicados || 0) + l.diferencias.length }));
+                                                        }}>
+                                                        Usar lo que dice el documento
+                                                    </Button>
+                                                </div>
+                                            )}
 
                                             {(duiLeido.numeroIlegible || duiLeido.descartados.length > 0) && (
                                                 <div className="mt-2">

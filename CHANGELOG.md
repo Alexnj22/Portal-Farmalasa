@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.838.1 — La sugerencia de recorte espera su turno
+
+Al adjuntar una foto, el portal la manda a leer para proponer por dónde
+recortarla. Esa respuesta tarda uno o dos segundos, y **caía encima de quien ya
+estaba encuadrando a mano**: la forma del recuadro cambiaba sola y el ajuste en
+curso se perdía. Lo reportó el usuario con una foto mandada desde el teléfono —
+*«mientras ajustaba se actualizó y cambió el formato del recorte»*.
+
+Tres cambios, y los tres son sobre **quién decide**:
+
+- **La propuesta se adopta sólo si nadie tocó nada.** Antes `FileField` remontaba
+  el editor entero con una `key`, así que la respuesta no proponía: mandaba.
+  Ahora viaja como un dato más y el editor resuelve qué hacer con ella.
+- **Si ya hay trabajo en pantalla, la propuesta no se pierde:** queda detrás del
+  botón **«Usar el recorte sugerido»**, que aparece con su nombre en vez del
+  ícono solo. Sin el rótulo, una propuesta que llegó y no se aplicó sería una
+  propuesta que nadie sabe que existe.
+- **La espera se ve.** El editor abría con aspecto de terminado mientras la
+  lectura seguía en vuelo. Ahora dice *«Buscando el documento en la foto…»* con
+  su rueda, y se apaga al contestar. Palabras del usuario: *«si hay algo cargando
+  que se vea cargando, para mí ya estaba listo»*.
+
+Medido en Chromium sobre los cuatro casos: se ve cargando; sin tocar nada la
+propuesta se aplica sola; ajustando, el acercamiento y el recuadro quedan
+**idénticos**; y al pedirla con el botón, se aplica.
+
 ## v2.838.0 — La caja anota lo que se edita y lo que se borra
 
 Un movimiento de caja —un vale, un ingreso— **se puede editar y borrar en el

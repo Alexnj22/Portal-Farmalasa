@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
-import { AlertTriangle, Check, RotateCw, Sparkles, Undo2, ZoomIn } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, RotateCw, Sparkles, Undo2, ZoomIn } from 'lucide-react';
 import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
@@ -387,7 +387,7 @@ async function revisar(src, cropPx, rotacion, doc) {
  * @param {boolean} [yaRecortado] la imagen YA es el documento — se abre para
  *   enderezarla o mejorarla, no para encuadrarla de nuevo.
  */
-export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, esquinas = null, yaRecortado = false, onConfirm, onCancel }) {
+export default function EditorDeDocumento({ file, tipo = 'receta', recuadro: recuadroPropuesto = null, giroSugerido = 0, esquinas = null, yaRecortado = false, analizando = false, onConfirm, onCancel }) {
     const doc = DOCS[tipo] || DOCS.receta;
     /* Con el dedo se arrastra la foto y se pellizca para acercar —el canónico de
      * recorte lo trae y está medido: 60 cuadros por segundo con el procesador
@@ -402,7 +402,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * no en cero: una tarjeta apoyada de lado en un escritorio sale girada, y
      * abrir el editor con ella derecha es la mitad del trabajo hecho. Sigue
      * siendo un punto de partida — el botón Girar está ahí para corregirlo. */
-    const [rotacion, setRotacion] = useState(giroSugerido || 0);
+    const [rotacion, setRotacion] = useState(0);
     /* El enderezado fino, aparte del cuarto de vuelta.
      *
      * Una boleta sobre un mostrador sale torcida 3 o 4 grados casi siempre —se
@@ -426,6 +426,19 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * proporción es la de esta boleta y elegir otra es empeorarla. El camino de
      * vuelta, si alguien la cambió, es «Recorte sugerido». */
     const [papelMedido, setPapelMedido] = useState(false);
+    /* ── El recuadro EN USO, que no es el que llega ─────────────────────────
+     *
+     * La lectura tarda uno o dos segundos y la respuesta llegaba directo al
+     * recorte: si en ese rato la persona ya estaba encuadrando a mano, la forma
+     * le cambiaba debajo de la mano y el trabajo se perdía. Lo reportó el
+     * usuario con una foto mandada desde el teléfono: «mientras ajustaba se
+     * actualizó y cambió el formato del recorte».
+     *
+     * Así que la propuesta se ADOPTA, y sólo mientras nadie haya tocado nada. Si
+     * ya tocaron, no se descarta: queda guardada y el botón «Recorte sugerido»
+     * la aplica cuando la persona quiera. Quien decide es quien está mirando. */
+    const [recuadro, setRecuadro] = useState(null);
+    const [propuestaEnEspera, setPropuestaEnEspera] = useState(null);
     /* Si ya tocaron la vista previa. Sólo apaga el cartel del gesto — una vez
      * que la persona arrastró, decirle cómo arrastrar es tapar la foto. */
     const [tocado, setTocado] = useState(false);
@@ -522,6 +535,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * referencia guarda la medida para «Recorte sugerido», que tiene que poder
      * volver a ella. */
     const aspectoDelPapel = useRef(null);
+    const tamanoNatural = useRef(null);
     const aspectoAplicado = useRef(false);
     /* ── Que la foto LLENE el recuadro al reeditar ──────────────────────────
      *
@@ -584,6 +598,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
             setAspectoBase(naturalWidth / naturalHeight);
             return;
         }
+        if (naturalWidth && naturalHeight) tamanoNatural.current = { naturalWidth, naturalHeight };
         if (!recuadro || !naturalWidth || !naturalHeight) return;
         const { w, h } = recuadro;
         if (!(w > 0) || !(h > 0)) return;
@@ -631,14 +646,72 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * Existe porque el recorte propuesto es lo mejor que hay cuando la foto se
      * leyó bien, y hasta ahora un arrastre sin querer lo perdía para siempre:
      * la única salida era cancelar el editor y volver a elegir la foto. */
+    /* Poner la propuesta a trabajar: la forma sale del papel MEDIDO sobre esta
+     * foto, no de una estimación del catálogo. Se remonta el canónico —lee su
+     * caja inicial una sola vez— y se vuelve al punto de partida. */
+    const adoptar = useCallback((prop) => {
+        const { naturalWidth, naturalHeight } = tamanoNatural.current || {};
+        const { w, h } = prop.recuadro || {};
+        if (naturalWidth && naturalHeight && w > 0 && h > 0) {
+            const a = (w * naturalWidth) / (h * naturalHeight);
+            if (a > 0.1 && a < 10) {
+                aspectoDelPapel.current = a;
+                aspectoAplicado.current = true;
+                setPapelMedido(true);
+                setAspectoBase(a);
+            }
+        }
+        setRecuadro(prop.recuadro);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setInclinacion(0);
+        setRotacion(prop.giro || 0);
+        setIntento((i) => i + 1);
+    }, []);
+
+    /* La propuesta que llega TARDE no pisa a nadie. Ver el bloque del recuadro
+     * en uso, arriba. */
+    const vista = useRef(null);
+    useEffect(() => {
+        if (!recuadroPropuesto) return;
+        const firma = JSON.stringify(recuadroPropuesto);
+        if (vista.current === firma) return;   // ya se resolvió qué hacer con ésta
+        vista.current = firma;
+        const prop = { recuadro: recuadroPropuesto, giro: giroSugerido || 0 };
+        const huboMano = tocado || zoom !== 1 || inclinacion !== 0 || rotacion !== 0;
+        if (huboMano) setPropuestaEnEspera(prop);
+        else adoptar(prop);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- se decide al LLEGAR; seguir el trabajo en curso la re-dispararía
+    }, [recuadroPropuesto]);
+
+    /* ── La sugerencia que llega TARDE no pisa a nadie ──────────────────────
+     *
+     * La respuesta del lector tarda uno o dos segundos, y en ese rato la persona
+     * ya puede estar arrastrando el recorte. Aplicarla ahí le cambia la forma
+     * debajo de la mano y le tira el trabajo — lo reportó el usuario ajustando
+     * una foto que había mandado desde el teléfono: «mientras ajustaba se
+     * actualizó y cambió el formato del recorte».
+     *
+     * Así que se aplica SÓLO si nadie tocó nada todavía. Si ya tocaron, la
+     * sugerencia no se pierde: queda detrás del botón «Recorte sugerido», que ya
+     * existía para volver de un arrastre sin querer. La diferencia es quién
+     * decide — y mientras haya trabajo de alguien en pantalla, decide esa
+     * persona.
+     *
+     * `intentoDeSugerencia` recuerda cuál se aplicó, para no volver a aplicar la
+     * misma en cada render. */
     const volverAlaSugerencia = useCallback(() => {
+        // Si llegó una propuesta mientras la persona trabajaba, ESTE es su
+        // momento: la pidió.
+        if (propuestaEnEspera) { adoptar(propuestaEnEspera); setPropuestaEnEspera(null); return; }
         if (aspectoDelPapel.current) setAspectoBase(aspectoDelPapel.current);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
         setRotacion(0);
         setInclinacion(0);
         setIntento((i) => i + 1);
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `adoptar` es estable
+    }, [propuestaEnEspera]);
 
     /* Elegir la forma del papel vuelve a encuadrar sobre la sugerencia: cambiar
      * la proporción sin reencuadrar deja el recuadro donde estaba pero de otro
@@ -740,7 +813,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * Girar o inclinar SÍ cuentan como tocar: al rotar, la caja deja de
      * corresponderse con la imagen y el recorte del canónico es el bueno. */
     const recorteIntacto = !recuadro && !tocado && zoom === 1
-        && rotacion === (giroSugerido || 0) && inclinacion === 0;
+        && rotacion === 0 && inclinacion === 0;
 
     const confirmar = useCallback(async () => {
         setGuardando(true);
@@ -764,7 +837,21 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
             <LiquidModal.Header>
                 <div className="min-w-0">
                     <h3 className="text-body font-bold text-content">{doc.titulo}</h3>
-                    <p className="text-caption text-content-3">{doc.bajada}</p>
+                    {/* ── Lo que está por llegar, SE VE llegando ──────────────
+                        Sin esto el editor abre listo para trabajar y la
+                        respuesta cae encima uno o dos segundos después. El
+                        usuario lo dijo exacto: «si hay algo cargando que se vea
+                        cargando, para mí ya estaba listo». Decirlo no es
+                        decoración: es lo que separa esperar de que te
+                        interrumpan. */}
+                    {analizando ? (
+                        <p className="text-caption text-content-3 flex items-center gap-1.5">
+                            <Loader2 size={12} className="animate-spin shrink-0" />
+                            Buscando el documento en la foto…
+                        </p>
+                    ) : (
+                        <p className="text-caption text-content-3">{doc.bajada}</p>
+                    )}
                 </div>
             </LiquidModal.Header>
 
@@ -895,7 +982,18 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                     {/* Sólo cuando hay sugerencia que recuperar: un botón que no
                         puede hacer nada se aprieta igual y no pasa nada, que es
                         peor que no estar. */}
-                    {cajaInicial && (
+                    {/* Con una propuesta en espera el botón lleva su nombre: la
+                        lectura terminó y encontró el documento, pero no se
+                        aplicó porque esta persona ya estaba encuadrando. Un
+                        ícono solo no cuenta eso, y la propuesta se perdería sin
+                        que nadie supiera que existió. */}
+                    {propuestaEnEspera ? (
+                        <Button variant="secondary" size="sm" icon={Undo2}
+                            title="Usar el recorte que encontró el portal"
+                            onClick={volverAlaSugerencia}>
+                            Usar el recorte sugerido
+                        </Button>
+                    ) : cajaInicial && (
                         <Button variant="ghost" size="sm" icon={Undo2} iconOnly
                             title="Volver al recorte sugerido"
                             onClick={volverAlaSugerencia} />

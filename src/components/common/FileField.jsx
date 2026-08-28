@@ -188,6 +188,8 @@ const FileField = memo(({
     /* El recorte que propuso la lectura, si llegó a tiempo. Ver el efecto de
        más abajo: el editor NO espera por esto. */
     const [sugerido, setSugerido] = useState(null);
+    // Que la lectura esté en vuelo es un dato de pantalla: el editor lo dice.
+    const [buscandoRecorte, setBuscandoRecorte] = useState(false);
     // El código del QR vivo. Mientras exista, esta computadora está escuchando.
     const [captura, setCaptura] = useState(null);
     const [pidiendoQr, setPidiendoQr] = useState(false);
@@ -291,15 +293,17 @@ const FileField = memo(({
     useEffect(() => {
         if (!porEditar) return undefined;
         let vivo = true;
+        setBuscandoRecorte(true);
         (async () => {
             const { sugerirRecorte } = await sugerencia();
             const r = await sugerirRecorte(porEditar);
+            if (vivo) setBuscandoRecorte(false);
             // Se comprueba que siga siendo LA MISMA foto: alguien pudo cancelar
             // y elegir otra mientras la pregunta viajaba, y aplicar el recuadro
             // de la anterior sería recortar por donde no va.
             if (vivo && r) setSugerido(prev => (prev === null ? r : prev));
         })();
-        return () => { vivo = false; };
+        return () => { vivo = false; setBuscandoRecorte(false); };
     }, [porEditar]);
 
     // ── Tomar la foto con el teléfono ──────────────────────────────────────
@@ -487,11 +491,19 @@ const FileField = memo(({
             {porEditar && (
                 <Suspense fallback={null}>
                     <EditorDeDocumento
-                        // Remonta cuando llega la sugerencia: el canónico lee su
-                        // caja inicial UNA vez, al montarse.
-                        key={sugerido ? 'sugerido' : 'libre'}
+                        /* SIN `key` que dependa de la sugerencia.
+                           La tenía, y remontaba el editor cuando la respuesta
+                           llegaba — o sea que si alguien ya estaba ajustando el
+                           recorte, su trabajo se perdía y la forma cambiaba sola
+                           debajo de la mano. Lo reportó el usuario ajustando una
+                           foto que había mandado desde el teléfono.
+                           Ahora la sugerencia viaja como prop y el editor decide
+                           si aplicarla: sólo si nadie tocó nada. */
                         tipo={tipoDeDocumento}
                         file={porEditar}
+                        // Que la espera SE VEA: el editor abre antes de que la
+                        // lectura conteste, y sin decirlo parece terminado.
+                        analizando={!sugerido && buscandoRecorte}
                         recuadro={sugerido?.recuadro || null}
                         giroSugerido={sugerido?.giro || 0}
                         onCancel={() => { setPorEditar(null); setSugerido(null); }}

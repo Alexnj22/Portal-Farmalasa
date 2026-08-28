@@ -1,5 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared/security.ts";
+import { getCorsHeaders, requireInvokeSecret, getErpBranchMap, getErpCredsByBranch } from "../_shared/security.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Quién tiene la caja abierta en cada sala, a qué hora la abrió y cuánto
@@ -190,6 +190,40 @@ Deno.serve(async (req) => {
     const horaSV = new Date(Date.now() - 6 * 3600_000).getUTCHours();
     if (!body.forzar && (horaSV < HORA_DESDE || horaSV >= HORA_HASTA)) {
       return new Response(JSON.stringify({ ok: true, fuera_de_ventana: horaSV }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Modo catálogo: qué tipos de movimiento ofrece la pantalla ────────────
+    //
+    // Sólo LECTURA y a pedido (`{"catalogo": <branchId>}`). Existe porque el
+    // formulario de ingreso/salida sólo se puede ABRIR con un usuario que tenga
+    // una caja vigente, y la cuenta con la que corren estos syncs no tiene
+    // ninguna: pedirlo con ella devuelve «No se ha encontrado una apertura
+    // vigente». Con las credenciales de la sala sí, porque en tres salas esa
+    // cuenta ES la que abre la caja.
+    //
+    // Hace falta antes de que el portal escriba un vale: `id_tipo` es lo que
+    // separa un ingreso común de un cobro de crédito, y ésos NO comparten línea
+    // en el tiquete del corte.
+    if (body.catalogo) {
+      const creds = getErpCredsByBranch(Number(body.catalogo));
+      if (!creds) throw new Error(`la sala ${body.catalogo} no está en el mapa`);
+      const propia = await getSessionCookie(creds.username, creds.password);
+      const salidas: Record<string, unknown> = {};
+      for (const pantalla of ["agregar_salida_caja.php", "agregar_ingreso_caja.php"]) {
+        const html = await (await fetch(BASE + pantalla, {
+          headers: { Cookie: propia },
+          signal: AbortSignal.timeout(30_000),
+        })).text();
+        salidas[pantalla] = {
+          selects: [...html.matchAll(/<select[\s\S]{0,2000}?<\/select>/gi)].map((m) =>
+            m[0].replace(/\s+/g, " ").slice(0, 1200)),
+          aviso: /apertura vigente/i.test(html) ? texto(html).slice(0, 120) : null,
+          largo: html.length,
+        };
+      }
+      return new Response(JSON.stringify({ ok: true, catalogo: salidas }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

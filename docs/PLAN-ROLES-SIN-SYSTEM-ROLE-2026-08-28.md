@@ -5,9 +5,9 @@
 > por vistas y cosas. mejor hagamos más fuertes los roles y eliminemos system
 > role»*.
 
-Estado: **auditado. Las dos decisiones están cerradas** (§5). Nada del plan
-ejecutado todavía — lo único que ya pasó es el borrado de la cuenta técnica, que
-lo pidió el usuario y cerró la decisión D2 por su cuenta.
+Estado: **pasos 1 a 7 EJECUTADOS y verificados** (2026-08-28). Falta sólo el
+último: quitar la columna. Ver §11, que es lo que queda y lo que la ejecución
+enseñó de nuevo.
 
 ---
 
@@ -357,3 +357,58 @@ DDL no compite con los crons de cada minuto. Igual va con `SET lock_timeout =
 
 **5 migraciones y 19 archivos**, entregables de a uno, con marcha atrás en todos
 menos el último.
+
+---
+
+## 11. Lo que se ejecutó, y lo que apareció en el camino (2026-08-28)
+
+### Hecho
+
+| paso | verificación |
+|---|---|
+| `roles.rango` + `rango_de_empleado()` / `auth_rango()` | 13 fichas con rango > 0 |
+| Grupo C · 3 triggers | **huella md5 idéntica** — las mismas 9 personas |
+| Grupo A · 6 funciones, se retira la llave maestra | **huella del login idéntica** |
+| Grupos B y D · 4 funciones | las 2 diferencias decididas, ninguna más |
+| `auth_employee_system_role()` | borrada |
+| `employees_safe` publica `rango` | 98 columnas, 48 filas, `security_invoker` intacto |
+| `empleados_por_rango()` | los 4 tramos contestan lo esperado |
+| 19 archivos de código | 0 menciones vivas |
+| 17 edge functions desplegadas | **cada una conservó su candado**, comprobado con una llamada sin cabecera |
+
+### Tres cosas que el plan no tenía
+
+1. **El cierre transitivo era el doble de grande.** El plan decía 14 funciones y
+   0 triggers. Con los envoltorios contados —`auth_es_supervision`,
+   `puede_confirmar_traslado`, `session_idle_limit_minutes`…— son **22 funciones
+   y 7 triggers**, y uno de los envoltorios lo llama `custom_access_token_hook`,
+   o sea el camino del login. Las policies sí eran 0, verificado dos veces.
+2. **Una guarda con `ILIKE '%system_role%'` se acusa a sí misma.** En un patrón
+   `LIKE` el guion bajo es COMODÍN de un carácter, así que casa con el
+   `SYSTEM-ROLE` del nombre de este archivo, escrito dentro del comentario que
+   inserta el propio reemplazo. La migración abortó sobre una función que estaba
+   perfecta. Los chequeos de «no quedó ninguna mención» van con `strpos`.
+3. **Quitar la columna exige redesplegar 13 edge functions ANTES.** Cada una
+   lleva su copia compilada de `_shared/security.ts`, y la copia vieja nombra
+   `system_role` en un `select`. Ya están las 13 redesplegadas. Las otras 47 que
+   importan ese archivo NO la pedían: usan `requireActiveEmployeeUser`, que
+   selecciona `id, status, code, name`.
+
+### Lo que falta — y por qué no se hizo hoy
+
+Queda **un solo objeto en toda la base** nombrándola: la vista `employees_safe`.
+Y después, la columna.
+
+**La vista no se toca hasta que todo el mundo tenga el portal nuevo.** No por el
+`DROP`+`CREATE` —eso es una transacción de milisegundos y nada depende de la
+vista—, sino porque quien tenga la pantalla abierta sigue con el paquete viejo, y
+ése lee `emp.system_role`. Sin la columna no recibe un error: recibe `undefined`,
+y `undefined || 'EMPLEADO'` lo degrada a colaborador **en silencio**. No rompe
+permisos —los decide la base— pero le apaga botones a quien sí puede.
+
+Después, `ALTER TABLE employees DROP COLUMN system_role`, sola y en un rato
+tranquilo: es metadata, milisegundos, pero toma el lock exclusivo sobre una tabla
+que se lee en cada login. Con `lock_timeout = '5s'` el peor caso es que la
+migración se cancele y haya que reintentarla.
+
+Y al cerrar, la categoría en `gate:data` para que la columna no vuelva.

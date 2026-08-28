@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.843.0 — El portal le anota el vale a la caja, y sólo vos lo disparás
+
+Cuando una remesa se paga con dinero de una bolsa **del día que la caja tiene
+abierto**, la caja sigue esperando ese efectivo: no se enteró de que salió. El
+corte siguiente marca un faltante que no existe. Medido: de 29 salidas, seis
+tomaron de una bolsa del mismo día ($2,200) y sólo **una** estaba anotada —
+REM-1028 hizo que dos cortes seguidos de Salud 1 marcaran −$425.10 y −$400.10.
+
+Desde esta versión Bolsas avisa qué falta anotar y lo anota con un botón: un
+**solo asiento por sala y por tramo**, con el detalle —boleta, foto, quién
+recibió— quedándose en el portal.
+
+**La mitad de la regla es lo que NO escribe.** Lo que salió de una bolsa de un
+día ya cerrado no se toca: esa plata la caja no la cuenta, y anotarla inventaría
+un **sobrante** — pasó el 22-ago, +$454.00 que taparon con un ingreso falso. Y
+el «día» no es la fecha de hoy: es el que la caja tiene abierto
+(`cortes_caja_aperturas.abierta_el`), que a las once de la noche no es lo mismo.
+Sin apertura vigente no se anota nada, que es la falla segura.
+
+**Se cierra el vale en cada corte** en vez de seguir sumándole: editar un
+movimiento que un corte ya contó es exactamente lo que la auditoría de v2.838.0
+marca como hallazgo, y sería el portal generando la señal que el portal vigila.
+
+Tres frenos, porque esta capacidad corre el número que el portal después audita:
+no escribe dos veces (busca su propio concepto en el día, y **no poder mirar no
+es «no está»**); sólo toca lo que escribió, por id; y si el vale no entra, la
+salida ya está guardada y el pendiente sigue a la vista.
+
+**Y el permiso es de un solo cargo, por pedido del usuario**: módulo propio
+`caja_vales`, no una capacidad de Bolsas — escribir en la caja no puede viajar
+de arrastre con el permiso de guardar una bolsa. El botón escondido es
+comodidad; el candado lo vuelve a comprobar el servidor. Queda quién lo disparó
+en `caja_vales_portal.anotado_por`.
+
+Todavía **sin cron**: corre sólo cuando una persona lo pide, y trae un modo
+«ver qué haría» que no escribe una línea.
+
 ## v2.842.0 — El editor grande, las esquinas a mano y el ajuste en el teléfono
 
 Tres cosas del editor de documentos, las tres reportadas juntas.

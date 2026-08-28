@@ -764,3 +764,40 @@ export async function fetchPersonasDeBolsas(ids) {
     await signPhotosDeep(data || []);
     return data || [];
 }
+
+// ── El vale que el portal le anota a la caja ─────────────────────────────────
+//
+// Sólo lo que salió de una bolsa del día que la caja tiene ABIERTO: lo de días
+// anteriores la caja no lo cuenta, y anotarlo inventaría un sobrante. La regla
+// vive en `caja_vales_pendientes()`, no acá — el navegador no decide qué se
+// escribe en el sistema de la caja.
+
+/** Qué falta anotar. Lista vacía = no hay nada que hacer, y eso es lo normal. */
+export async function fetchValesPendientes() {
+    const { data, error } = await supabase.rpc('caja_vales_pendientes');
+    if (error) {
+        console.error('bolsas: no se pudieron leer los vales pendientes:', error.message);
+        return { filas: [], pude: false };
+    }
+    return { filas: data || [], pude: true };
+}
+
+/**
+ * Anotarlos. Con `simular: true` contesta qué haría sin escribir una línea.
+ *
+ * El permiso lo decide el servidor (`caja_vales`), no esta función: acá se
+ * esconde el botón, allá se rechaza la petición. Un botón escondido es
+ * comodidad; el candado es el de allá.
+ */
+export async function anotarValesEnCaja({ simular = false, sala = null } = {}) {
+    try {
+        const { data, error } = await supabase.functions.invoke('anotar-vales-caja', {
+            body: { simular, ...(sala ? { sala } : {}) },
+        });
+        if (error) return { error };
+        if (!data || data.ok !== true) return { error: new Error(data?.error || 'NO_SE_PUDO') };
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}

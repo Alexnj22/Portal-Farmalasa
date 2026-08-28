@@ -160,6 +160,12 @@ const GRUPOS_CRUDOS = [
             // es guardar la bolsa e imprimir su etiqueta; el alcance es el mismo
             // criterio que los cortes — la sala trabaja la suya, la supervisión
             // ve todas.
+            // Módulo aparte y NO una capacidad de `bolsas`: hace que el portal
+            // escriba un vale en el sistema de la caja, y eso corre lo que el corte
+            // espera. No puede viajar de arrastre con el permiso de guardar una
+            // bolsa. Hoy lo tiene un solo cargo, por pedido del usuario, para poder
+            // hacer la primera prueba cuando lo considere.
+            { key: 'caja_vales',    label: 'Anotarle vales a la caja', desc: 'Cuando una salida se paga con dinero de una bolsa del día, la caja sigue esperando ese efectivo: esto le anota el vale para que el corte no marque un faltante que no existe', icon: Landmark, hasApprove: false, hasScope: false },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icon: Package, hasApprove: false, hasScope: true, sub: [
                 // Módulo aparte y no una capacidad de `bolsas` porque son dos
                 // públicos: la sala entrega, administración recibe y cuenta. Con

@@ -1,5 +1,8 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
-import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared/security.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  getCorsHeaders, requireInvokeSecret, getErpBranchMap,
+  permisoDeModulo, requireActiveEmployeeUser,
+} from "../_shared/security.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El vale que el portal le anota a la caja por las salidas de bolsa.
@@ -149,11 +152,10 @@ async function yaEscrito(cookie: string, fecha: string, valeId: number): Promise
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (!requireInvokeSecret(req)) {
-    return new Response(JSON.stringify({ ok: false, error: "UNAUTHORIZED" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  const json = (cuerpo: unknown, status = 200) =>
+    new Response(JSON.stringify(cuerpo), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  }
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -164,6 +166,38 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // ── Quién puede pedir esto ──────────────────────────────────────────────
+    //
+    // DOS caminos, y el de la persona NO es el mismo que el del sistema. El
+    // secreto de invocación es para un cron (todavía no existe ninguno). Una
+    // persona entra con su sesión y necesita el módulo `caja_vales`, que hoy
+    // tiene un solo cargo: escribir en la caja corre lo que el corte espera, y
+    // eso no puede viajar de arrastre con el permiso de guardar una bolsa.
+    //
+    // `can_view` alcanza para SIMULAR —ver qué falta anotar no toca nada— y
+    // `can_edit` hace falta para escribir. Son dos permisos porque son dos
+    // actos.
+    let quienId: string | null = null;
+    if (!requireInvokeSecret(req)) {
+      const quien = await requireActiveEmployeeUser(req, supabase);
+      if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+      const permiso = await permisoDeModulo(
+        supabase, quien.id, "caja_vales", simular ? "can_view" : "can_edit",
+      );
+      // `roto` es «no se pudo averiguar», que no es lo mismo que «no puede»:
+      // contestar 403 a quien sí puede lo deja esperando un permiso que ya tiene.
+      if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+      if (!permiso.puede) {
+        return json({
+          ok: false,
+          error: simular
+            ? "No tienes permiso para ver los vales pendientes de la caja."
+            : "No tienes permiso para anotar vales en la caja.",
+        }, 403);
+      }
+      quienId = quien.id;
+    }
 
     const { data: pendientes, error: errPend } = await supabase.rpc("caja_vales_pendientes");
     if (errPend) throw new Error(`leyendo pendientes: ${errPend.message}`);
@@ -238,7 +272,7 @@ Deno.serve(async (req) => {
         // ── A partir de acá SÍ se escribe ───────────────────────────────────
         if (!vale) {
           const { data: creado, error } = await supabase.from("caja_vales_portal")
-            .insert({ branch_id: branchId, fecha: g.dia, monto: 0, corte_id_al_abrir: corteId })
+            .insert({ branch_id: branchId, fecha: g.dia, monto: 0, corte_id_al_abrir: corteId, anotado_por: quienId })
             .select("id, erp_movimiento_id, monto, intentos")
             .single();
           if (error) throw new Error(`abriendo el vale: ${error.message}`);
@@ -295,7 +329,7 @@ Deno.serve(async (req) => {
         const { error: errUp } = await supabase.from("caja_vales_portal")
           .update({
             erp_movimiento_id: idMov, monto: montoNuevo, estado: "ANOTADO",
-            anotado_at: ahora, updated_at: ahora, ultimo_error: null,
+            anotado_at: ahora, updated_at: ahora, ultimo_error: null, anotado_por: quienId,
           })
           .eq("id", vale.id);
         if (errUp) throw new Error(`guardando el vale: ${errUp.message}`);
@@ -327,9 +361,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, simulado: simular, resultados }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: true, simulado: simular, resultados });
   } catch (e) {
     console.error("anotar-vales-caja:", e);
     return new Response(JSON.stringify({ ok: false, error: (e as Error)?.message ?? String(e) }), {

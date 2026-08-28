@@ -7,6 +7,10 @@ que dependen de ellos. Son **dos materias distintas** y conviene no mezclarlas:
   Descargados el 2026-07-18 (el Código de Comercio el 2026-08-01).
 - **§2 Regulación sanitaria** — bitácoras, dispensación bajo receta,
   almacenamiento. Descargados el **2026-08-16**.
+- **§3 Laboral** — el Código de Trabajo y el Reglamento Interno, más
+  `oit_convenios_el_salvador.md`: qué convenios de la OIT obligan además del
+  Código. Ese último **no es la lista completa y lo dice**: NORMLEX bloquea el
+  acceso automático, así que la lista autoritativa se refresca a mano.
 
 Complementa (no reemplaza) las referencias puntuales ya usadas en el código —
 ver `docs/resumen-dte-el-salvador.md` para el resumen de negocio del DTE

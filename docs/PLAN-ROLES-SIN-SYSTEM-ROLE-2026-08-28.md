@@ -5,7 +5,9 @@
 > por vistas y cosas. mejor hagamos más fuertes los roles y eliminemos system
 > role»*.
 
-Estado: **auditado, sin ejecutar**. Dos decisiones abiertas al final de §5.
+Estado: **auditado. Las dos decisiones están cerradas** (§5). Nada del plan
+ejecutado todavía — lo único que ya pasó es el borrado de la cuenta técnica, que
+lo pidió el usuario y cerró la decisión D2 por su cuenta.
 
 ---
 
@@ -93,7 +95,7 @@ autorizar —hay un comentario en `set-employee-password` que recuerda que una
 sesión podía ponerse `systemRole: 'SUPERADMIN'` ahí— pero hay que limpiarlo o
 queda un valor viejo que alguien va a creerse.
 
-### 2.3 Los datos, hoy (46 fichas activas)
+### 2.3 Los datos (49 fichas activas al momento de auditar; 48 después del borrado)
 
 | valor | personas | cargos que lo llevan |
 |---|---:|---|
@@ -102,7 +104,7 @@ queda un valor viejo que alguien va a creerse.
 | `SUBJEFE` | 2 | **Regente de Enfermería** |
 | `SUPERVISOR` | 2 | **Gerente General** · Supervisor/a de Ventas |
 | `ADMIN` | 1 | **Jefe/a de Talento Humano** |
-| `SUPERADMIN` | 1 | Superusuario del Sistema (cuenta técnica) |
+| `SUPERADMIN` | 1 | Superusuario del Sistema (cuenta técnica) — **borrada el 2026-08-28, ver §5.3** |
 | *(sin valor)* | 1 | **Administrador** — Carlos Renderos |
 
 ---
@@ -140,13 +142,22 @@ es redundante porque el cargo *Superusuario del Sistema* ya tiene
 
 ---
 
-## 4. Lo que hay que agregar — dos columnas, y ninguna es `is_su`
+## 4. Lo que hay que agregar — una sola columna, y no es `is_su`
 
 ```sql
 ALTER TABLE public.roles
-  ADD COLUMN rango smallint NOT NULL DEFAULT 0,
-  ADD COLUMN llave_maestra boolean NOT NULL DEFAULT false;
+  ADD COLUMN rango smallint NOT NULL DEFAULT 0;
 ```
+
+> **Una sola columna, no dos.** El borrador de este plan agregaba también
+> `llave_maestra` para reemplazar a `SUPERADMIN`. Al borrarse la cuenta técnica
+> (§5.3) ese valor se quedó **sin un solo portador**, así que la columna nacería
+> en `false` para los 24 cargos y no la leería nadie — que es exactamente el
+> defecto que este proyecto ya se anotó una vez: *una decisión cerrada no es una
+> decisión cableada*. Las seis funciones del grupo A pierden su rama
+> `SUPERADMIN` como **código muerto**, sin sustituto. El día que haga falta una
+> puerta de emergencia se agrega `roles.llave_maestra` con quien la vaya a tener,
+> y se sabrá para qué.
 
 **`rango`** es una escala **ordenada**, para que «de este nivel para arriba» se
 escriba `>=` y no una lista de literales que hay que ir actualizando:
@@ -159,20 +170,16 @@ escriba `>=` y no una lista de literales que hay que ir actualizando:
 | 3 | supervisión |
 | 4 | dirección |
 
-**`llave_maestra`** reemplaza a `SUPERADMIN`: se salta el permiso por módulo.
-
-> **No se reusa `is_su`.** Hoy `is_su` es `true` en **dos** cargos —*Superusuario
-> del Sistema* y *Supervisor/a de Ventas*— y significa otra cosa (a qué fichas se
-> les esconde la cara en los listados; ver la memoria de `tipo_ficha`).
-> Reusarla le daría la llave maestra al Supervisor de Ventas: sería un cambio de
-> seguridad disfrazado de refactorización.
+> **Y no se reusa `is_su` para nada de esto.** Hoy `is_su` es `true` en **dos**
+> cargos —*Superusuario del Sistema* y *Supervisor/a de Ventas*— y significa otra
+> cosa (a qué fichas se les esconde la cara en los listados). Reusarla habría
+> sido un cambio de seguridad disfrazado de refactorización.
 
 Y helpers, `STABLE` y pensados para envolverse en `(SELECT …)` como manda
 CLAUDE.md:
 
 ```sql
-public.auth_rango()          -- el mayor entre el cargo y el cargo secundario
-public.auth_es_llave_maestra()
+public.auth_rango()            -- el mayor entre el cargo y el cargo secundario
 public.rango_de_empleado(uuid)
 ```
 
@@ -180,43 +187,68 @@ public.rango_de_empleado(uuid)
 
 ## 5. La tabla de mapeo
 
-| cargo | personas | `system_role` hoy | `rango` | `llave_maestra` |
-|---|---:|---|---:|---|
-| Gerente General | 1 | `SUPERVISOR` | **4** | no |
-| Administrador | 1 | *(sin valor)* | **4** | no |
-| Jefe/a de Talento Humano | 1 | `ADMIN` | **4** | no |
-| Supervisor/a de Ventas | 1 | `SUPERVISOR` | **3** | no |
-| Supervisor del Dpto. Médico y Enfermería | 0 | — | **3** | no |
-| Jefe/a de Compras y Logística | 1 | `JEFE` | **2** | no |
-| Jefe/a de Sala | 6 | `JEFE` | **2** | no |
-| Subjefe/a de Sala | 0 | — | **1** | no |
-| Superusuario del Sistema | 1 | `SUPERADMIN` | 0 | **sí** |
-| todos los demás (15 cargos) | 35 | `EMPLEADO` / — | **0** | no |
+| cargo | personas | `system_role` hoy | `rango` |
+|---|---:|---|---:|
+| Gerente General | 1 | `SUPERVISOR` | **4** |
+| Administrador | 1 | *(sin valor)* | **4** |
+| Jefe/a de Talento Humano | 1 | `ADMIN` | **4** |
+| Supervisor/a de Ventas | 1 | `SUPERVISOR` | **3** |
+| Supervisor del Dpto. Médico y Enfermería | 0 | — | **3** |
+| Jefe/a de Compras y Logística | 1 | `JEFE` | **2** |
+| Jefe/a de Sala | 6 | `JEFE` | **2** |
+| Subjefe/a de Sala | 0 | — | **1** |
+| Superusuario del Sistema | **0** | — | **0** |
+| todos los demás (15 cargos) | 35 | `EMPLEADO` / — | **0** |
 
 ### Qué reproduce igual y qué cambia
 
 | grupo | hoy | con el mapeo | ¿idéntico? |
 |---|---|---|---|
-| **A · llave maestra** | la cuenta técnica | la cuenta técnica | ✅ **igual** |
+| **A · llave maestra** | la cuenta técnica | **nadie** (la ficha se borró) | ✅ igual en la práctica: esa cuenta nunca inició sesión |
 | **C · jefatura de sala** | 9 personas (7 `JEFE` + 2 `SUBJEFE`) | 9 personas (6 Jefe/a de Sala + 1 Compras y Logística + los 2 con cargo secundario Subjefe/a) | ✅ **igual** |
-| **B · supervisión** | Rutilio · Edwin · Celina · cuenta técnica | rango ≥ 3 → Rutilio · Edwin · Celina · **Carlos** | ⚠️ 2 diferencias |
-| **D · aprobador de respaldo** | Celina · cuenta técnica | rango ≥ 4 → Rutilio · **Carlos** · Celina | ⚠️ 2 diferencias |
+| **B · supervisión** | Rutilio · Edwin · Celina | rango ≥ 3 → Rutilio · Edwin · Celina · **Carlos** | ⚠️ entra Carlos |
+| **D · aprobador de respaldo** | Celina | rango ≥ 4 → **Rutilio** · **Carlos** · Celina | ⚠️ entran dos |
 
-### 🔴 Las dos decisiones abiertas
+### ✅ Las dos decisiones, cerradas
 
-**D1 — ¿Carlos Renderos (cargo «Administrador») entra a supervisión y al
-respaldo de aprobaciones?** Hoy NO entra a nada, porque su `system_role` está en
-blanco, pese a tener el segundo cargo más poderoso del portal (157 módulos). Con
-el rango por cargo entra. *Recomendación: sí* — es lo que su cargo dice, y hoy
-el respaldo de aprobaciones es **una sola persona** (Celina): si está de
-vacaciones, una solicitud puede quedarse sin quién la firme.
+**D1 — Carlos Renderos entra.** Palabras del usuario: *«carlos renderos es
+administrador y debe tener los permisos según administrador»*. Con el rango por
+cargo eso pasa solo. Efecto lateral bueno: hoy el aprobador de respaldo es **una
+sola persona** (Celina), y pasa a ser tres.
 
-**D2 — ¿La cuenta técnica sigue contando como supervisión y como aprobadora de
-respaldo?** Hoy sí (por `SUPERADMIN`). Con el mapeo, su cargo queda en rango 0 y
-sólo tiene la llave maestra. *Recomendación: no* — que una cuenta que no es una
-persona aparezca como destinataria de avisos y como firmante de respaldo es
-justo lo que ya se corrigió en el módulo de personal con `tipo_ficha`. La llave
-maestra le alcanza para operar cuando haga falta.
+> Aparte, y anotado para que no se mezcle: el cargo *Administrador* hoy tiene
+> **157 módulos, o sea todo** —*«por ahora tiene todos»*—. Si alguna vez hay que
+> recortarlo, se hace en Permisos y no tiene nada que ver con este plan.
+
+**D2 — resuelta borrando la cuenta, no eligiendo.** Ver §5.3.
+
+### 5.3 La cuenta técnica se borró (2026-08-28)
+
+Al explicarle qué era, el usuario respondió *«lo puedes eliminar, no tiene
+uso»*. Se comprobó antes de tocarla, y estaba completamente aislada:
+
+| comprobación | resultado |
+|---|---|
+| inició sesión alguna vez | **nunca** (cuenta creada el 11-jul) |
+| solicitudes asignadas / firmadas | 0 / 0 |
+| dispositivos donde recibir un aviso | 0 |
+| filas que la referencian en toda la base | **1** — su propia fila de acceso |
+| menciones en cualquier campo `json`/`jsonb` del esquema | **0** |
+
+Se borraron **dos filas**: la ficha (`employees`, código 71015, usuario
+`sufarmasalud`) y su credencial (`auth.users`, `71015@staff.local`). La fila de
+`employee_auth_accounts` se fue en cascada. Verificado después: 0 accesos
+huérfanos, 0 fichas con `SUPERADMIN`, 48 fichas activas.
+
+**El cargo «Superusuario del Sistema» NO se borró.** Lo siembran dos migraciones
+y se recrea solo al rehacer el entorno de pruebas; borrarlo rompería ese
+sembrado. Queda sin nadie, que en efecto es lo mismo.
+
+⚠️ **La credencial no se iba sola.** La ficha y su fila de acceso caen juntas por
+la cascada, pero el usuario de autenticación vive en otro esquema y hay que
+borrarlo explícitamente. Sin ese segundo borrado quedaba una credencial viva sin
+ficha detrás — una cuenta que puede entrar y a la que el portal ya no le conoce
+la cara.
 
 ---
 
@@ -252,7 +284,7 @@ que decidir lo mismo.**
 | **1** | Agregar `rango` y `llave_maestra` + poblarlas con la tabla de §5. **Nadie las lee todavía.** | sí, sin efecto |
 | **2** | Crear los tres helpers (`auth_rango`, `auth_es_llave_maestra`, `rango_de_empleado`). | sí |
 | **3** | Congelar la tabla de equivalencia (§6). | — |
-| **4** | Reescribir las 6 funciones del **grupo A** (llave maestra). Enfrentar. | sí |
+| **4** | Borrar la rama `SUPERADMIN` de las 6 funciones del **grupo A**: hoy es código muerto, no tiene portador. Enfrentar. | sí |
 | **5** | Reescribir las 3 del **grupo C** (jefatura). Enfrentar. | sí |
 | **6** | Reescribir las 3 del **grupo B** (supervisión) y la del **D**. Enfrentar. **Acá aparecen las diferencias de §5, y tienen que ser exactamente ésas.** | sí |
 | **7** | Código: los 19 archivos. `CARGOS_DE_SUPERVISION` y `ADMIN_SYSTEM_ROLES` pasan a preguntar por rango. Los cuatro de pantalla muestran el **cargo**, que es lo que la gente reconoce. | sí |
@@ -318,7 +350,7 @@ DDL no compite con los crons de cada minuto. Igual va con `SET lock_timeout =
 
 | paso | tamaño |
 |---|---|
-| 1–3 (columnas, helpers, foto) | 1 migración + 1 script de medición |
+| 1–3 (columna, helpers, foto) | 1 migración + 1 script de medición |
 | 4–6 (13 funciones, 3 tandas) | 3 migraciones, cada una con su enfrentamiento |
 | 7 (19 archivos) | el más largo, pero mecánico |
 | 8–12 | 1 migración + 1 categoría de gate |

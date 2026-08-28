@@ -6,6 +6,7 @@ import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import SegmentedControl from './SegmentedControl';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
+import { rectificar, deformacion } from '../../utils/perspectiva';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -382,7 +383,7 @@ async function revisar(src, cropPx, rotacion, doc) {
  * @param {string} tipo      clave de `DOCS` — hoy `receta`, `boleta` o `dui`
  * @param {func}   onConfirm recibe el `File` ya recortado y normalizado
  */
-export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, onConfirm, onCancel }) {
+export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = null, giroSugerido = 0, esquinas = null, onConfirm, onCancel }) {
     const doc = DOCS[tipo] || DOCS.receta;
     /* Con el dedo se arrastra la foto y se pellizca para acercar —el canónico de
      * recorte lo trae y está medido: 60 cuadros por segundo con el procesador
@@ -442,14 +443,66 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
     const [medidas, setMedidas] = useState(null);
     const urlRef = useRef(null);
 
+    /* ── Enderezar la perspectiva, si hace falta y si se puede ──────────────
+     *
+     * Un papel apoyado en un mostrador sale como un TRAPECIO, y eso no lo
+     * arregla ningún giro: la letra de un extremo queda más chica que la del
+     * otro. Con las cuatro esquinas del papel se puede redibujar como si se
+     * hubiera fotografiado de frente (ver `utils/perspectiva.js`).
+     *
+     * Dos frenos, y los dos importan:
+     *
+     *  · Sólo si de verdad está torcido. Redibujar una foto que ya está de
+     *    frente le agrega una interpolación y le QUITA nitidez — o sea que
+     *    «mejorarla» la empeoraría. El umbral es un 6% de diferencia entre
+     *    lados opuestos, que es donde empieza a notarse.
+     *  · Se puede apagar. Es una sugerencia como el recorte: si el modelo puso
+     *    mal una esquina, el resultado se ve raro y tiene que haber vuelta
+     *    atrás. Por eso el conmutador está a la vista y no escondido.
+     */
+    const [enderezarPerspectiva, setEnderezarPerspectiva] = useState(true);
+    const seTorcio = useMemo(() => (esquinas ? deformacion(esquinas) : 0), [esquinas]);
+    const sePuedeEnderezar = seTorcio > 0.06;
+
     useEffect(() => {
         if (!file) return undefined;
-        const url = URL.createObjectURL(file);
-        urlRef.current = url;
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- la vista previa nace del archivo elegido
-        setSrc(url);
-        return () => URL.revokeObjectURL(url);
-    }, [file]);
+        let vivo = true;
+        let creada = null;
+        const soltar = () => { if (creada) URL.revokeObjectURL(creada); };
+
+        if (!sePuedeEnderezar || !enderezarPerspectiva) {
+            creada = URL.createObjectURL(file);
+            urlRef.current = creada;
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- la vista previa nace del archivo elegido
+            setSrc(creada);
+            return () => { vivo = false; soltar(); };
+        }
+
+        (async () => {
+            const original = URL.createObjectURL(file);
+            try {
+                const img = await new Promise((res, rej) => {
+                    const el = new Image();
+                    el.onload = () => res(el); el.onerror = rej; el.src = original;
+                });
+                // Las esquinas llegan en FRACCIONES; el redibujo trabaja en
+                // píxeles de esta imagen.
+                const enPx = esquinas.map(p => ({ x: p.x * img.width, y: p.y * img.height }));
+                const lienzo = rectificar(img, enPx, img.width, img.height);
+                if (!vivo) { URL.revokeObjectURL(original); return; }
+                if (!lienzo) { creada = original; setSrc(original); return; }
+                URL.revokeObjectURL(original);
+                creada = lienzo.toDataURL('image/jpeg', 0.95);
+                urlRef.current = creada;
+                setSrc(creada);
+            } catch {
+                // Si no se pudo enderezar se sigue con la foto como está: es una
+                // mejora, no un requisito para adjuntar un papel.
+                if (vivo) { creada = original; setSrc(original); }
+            }
+        })();
+        return () => { vivo = false; soltar(); };
+    }, [file, esquinas, sePuedeEnderezar, enderezarPerspectiva]);
 
     const alRecortar = useCallback((_a, px) => setCropPx(px), []);
 
@@ -548,8 +601,21 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * `key` sobre el `Cropper` para que un recuadro nuevo lo remonte: el
      * canónico lee su caja inicial UNA vez, al montarse.
      */
+    /* Sin sugerencia, la caja inicial es la IMAGEN ENTERA.
+     *
+     * Devolvía `undefined`, y ahí el canónico elige por su cuenta una caja que
+     * deja margen: medido, cubría el 93%. En una foto recién tomada eso no se
+     * nota; en una que YA se recortó, sí — porque abrir «Recortar y enderezar»
+     * volvía a comerle un 7% de cada borde, y dos pasadas se llevan un 14%. Lo
+     * reportó el usuario sobre un DUI ya recortado: «la recorta más, no me la
+     * muestra en el tamaño completo».
+     *
+     * Con la imagen entera como punto de partida, reeditar para enderezar o
+     * aclarar no cuesta nada de papel. El canónico igual la ajusta a la
+     * proporción del documento, así que el recuadro sigue teniendo la forma que
+     * corresponde. */
     const cajaInicial = useMemo(() => {
-        if (!recuadro) return undefined;
+        if (!recuadro) return { x: 0, y: 0, width: 100, height: 100 };
         const { x, y, w, h } = recuadro;
         if (![x, y, w, h].every((n) => Number.isFinite(n))) return undefined;
         if (w <= 0 || h <= 0) return undefined;
@@ -595,12 +661,29 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * porque el portal todavía no terminó de pensar se lee como roto. */
     const piso = sePuedeGuardar(medidas, doc);
 
+    /* Si NADIE tocó el encuadre, no se recorta nada.
+     *
+     * Poner la imagen entera como caja inicial mejoró el reencuadre pero no lo
+     * dejó exacto: medido, el canónico seguía dejando un 5% de margen, y sobre
+     * una foto ya recortada eso es un 5% de papel perdido cada vez que se abre
+     * el editor para enderezarla o aclararla.
+     *
+     * Así que no se depende de su cálculo. Cuando el recorte está INTACTO —sin
+     * sugerencia, sin arrastres, sin acercar, sin girar de más— lo que se guarda
+     * es la imagen completa, y el editor queda sirviendo sólo para lo que sí se
+     * pidió: enderezar y mejorar.
+     *
+     * Girar o inclinar SÍ cuentan como tocar: al rotar, la caja deja de
+     * corresponderse con la imagen y el recorte del canónico es el bueno. */
+    const recorteIntacto = !recuadro && !tocado && zoom === 1
+        && rotacion === (giroSugerido || 0) && inclinacion === 0;
+
     const confirmar = useCallback(async () => {
         setGuardando(true);
-        const listo = await componer(src, cropPx, giro, modo, file?.name, doc);
+        const listo = await componer(src, recorteIntacto ? null : cropPx, giro, modo, file?.name, doc);
         setGuardando(false);
         onConfirm(listo);
-    }, [src, cropPx, giro, modo, file, onConfirm, doc]);
+    }, [src, cropPx, giro, modo, file, onConfirm, doc, recorteIntacto]);
 
     return (
         /* El diálogo toma el alto entero y el recorte se queda con lo que sobra
@@ -641,7 +724,7 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             // después, el recuadro queda con la forma nueva
                             // pero encuadrado con la vieja — o sea, fuera del
                             // papel.
-                            key={`${cajaInicial ? 'sugerido' : 'libre'}-${intento}-${aspecto.toFixed(3)}`}
+                            key={`${recuadro ? 'sugerido' : 'entera'}-${intento}-${aspecto.toFixed(3)}`}
                             image={src}
                             crop={crop}
                             zoom={zoom}

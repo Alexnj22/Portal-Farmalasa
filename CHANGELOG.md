@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.836.0 — Endereza la perspectiva, y reeditar deja de comerse el borde
+
+### La perspectiva
+
+Un papel apoyado en un mostrador sale como un **trapecio**: el borde de arriba
+más corto que el de abajo, los lados convergiendo. Eso **no lo arregla ningún
+giro** — por eso el editor podía enderezar y recortar y la letra de un extremo
+seguía más chica que la del otro.
+
+Ahora, con las cuatro esquinas del papel, se redibuja como si se hubiera
+fotografiado de frente.
+
+**Por qué no bastaba `ctx.setTransform`:** el lienzo sólo sabe transformaciones
+**afines** —mueve, escala, rota y sesga, pero mantiene el paralelismo— y una
+perspectiva justamente lo rompe. Hace falta una **homografía**, que el lienzo no
+tiene. La salida es dibujar por pedazos: el destino se parte en una malla de
+24×24 y cada celda es tan chica que dentro de ella la perspectiva se confunde con
+una afín. Sin WebGL y sin librerías.
+
+**Dos frenos, y los dos importan:**
+
+- **Sólo si de verdad está torcido.** Redibujar una foto que ya está de frente le
+  agrega una interpolación y le **quita** nitidez: «mejorarla» la empeoraría. El
+  umbral es un 6% de diferencia entre lados opuestos.
+- **Se puede apagar.** Si el modelo puso mal una esquina el resultado se ve raro,
+  y tiene que haber vuelta atrás.
+
+La matemática está probada aparte —cada esquina cae exactamente donde se le pide,
+la ida y la vuelta devuelven el punto de partida, y cuatro puntos alineados
+devuelven `null` en vez de una transformación inventada—. El dibujo por malla se
+midió en el navegador.
+
+### Y reeditar ya no se come el borde
+
+*«Al darle en editar a una foto ya subida, la recorta más, no me la muestra en el
+tamaño completo.»*
+
+Medido: el recuadro inicial cubría el **93%**. En una foto recién tomada no se
+nota; en una **ya recortada**, cada vez que se abre «Recortar y enderezar» se
+pierde un 7% de cada borde — y dos pasadas, un 14%.
+
+Poner la imagen entera como punto de partida lo llevó al 95%, y ahí se dejó de
+depender del cálculo de la librería: cuando el encuadre está **intacto** —sin
+sugerencia, sin arrastres, sin acercar, sin girar— lo que se guarda es la imagen
+**completa**, y el editor queda sirviendo sólo para lo que se abrió: enderezar y
+mejorar.
+
+Comprobado con un original que lleva un borde rojo de 8 px: la salida vuelve
+idéntica —1600×1009— y el borde sobrevive en los **cuatro** lados.
+
 ## v2.835.0 — El editor abre con el documento ya encuadrado y derecho
 
 *«¿No hay forma de que al subir la foto la recorte y la deje como ésa

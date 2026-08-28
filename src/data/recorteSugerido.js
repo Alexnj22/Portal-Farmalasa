@@ -54,7 +54,7 @@ async function achicar(file) {
 
 /**
  * @param {File} file
- * @returns {Promise<{recuadro: {x,y,w,h}|null, giro: number}|null>}
+ * @returns {Promise<{recuadro: {x,y,w,h}|null, giro: number, esquinas: {x,y}[]|null}|null>}
  */
 export async function sugerirRecorte(file) {
     if (!file?.type?.startsWith('image/')) return null;
@@ -64,7 +64,7 @@ export async function sugerirRecorte(file) {
             body: { soloRecuadro: true, imagenBase64: chica.base64, tipo: chica.tipo },
         });
         if (error || !data?.ok || !data.recuadro) return null;
-        return { recuadro: data.recuadro, giro: data.giro || 0 };
+        return { recuadro: data.recuadro, giro: data.giro || 0, esquinas: data.esquinas || null };
     } catch {
         return null;
     }

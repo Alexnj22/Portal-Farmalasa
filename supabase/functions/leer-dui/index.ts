@@ -142,13 +142,16 @@ Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
   "w": cuánto del ANCHO ocupa, de 0 a 1.
   "h": cuánto del ALTO ocupa, de 0 a 1.
   "giro": cuántos grados hay que girar la FOTO para que el texto del documento quede derecho y legible. Sólo 0, 90, 180 o 270.
+  "esquinas": [{"x":..,"y":..}, ...] las CUATRO esquinas del documento, en fracciones de 0 a 1 del ancho y del alto. En el orden que sea.
 }
 
 REGLAS QUE NO PUEDES ROMPER:
 - El recuadro es el del DOCUMENTO, no el de la foto: si el documento ocupa un tercio de la imagen, w y h valen alrededor de 0.33.
 - Ajústate a los bordes del documento, incluyendo su borde impreso. No dejes fuera ninguna esquina.
 - Si en la foto no hay ningún documento reconocible, devuelve los cuatro números en null.
-- "giro" mira cómo está el TEXTO: si para leerlo hay que inclinar la cabeza a la derecha, son 90.`
+- "giro" mira cómo está el TEXTO: si para leerlo hay que inclinar la cabeza a la derecha, son 90.
+- "esquinas" son las esquinas REALES del papel en la foto, no las del recuadro: si el documento está apoyado de costado y se ve como un trapecio, los cuatro puntos forman ese trapecio. Es lo que permite enderezarlo.
+- Si no puedes ubicar las cuatro con seguridad, devuelve "esquinas": null. Cuatro puntos aproximados deforman la imagen más de lo que la arreglan.`
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "POST, OPTIONS" }
@@ -227,9 +230,22 @@ Deno.serve(async (req: Request) => {
       }
       const acotar = (v: number) => Math.min(1, Math.max(0, v))
       const gx = acotar(x), gy = acotar(y)
+
+      /* Las cuatro esquinas del papel, para poder ENDEREZAR la perspectiva.
+       *
+       * O están las cuatro y son números, o no hay ninguna: con tres puntos
+       * buenos y uno inventado la imagen sale más deformada de lo que estaba, y
+       * eso se ve como un defecto del portal y no como una foto de costado. */
+      const crudas = Array.isArray(r?.esquinas) ? r.esquinas : []
+      const esquinas = crudas.length === 4
+        ? crudas.map((p: any) => ({ x: num(p?.x), y: num(p?.y) }))
+        : []
+      const sirven = esquinas.length === 4 && esquinas.every(p => p.x !== null && p.y !== null)
+
       return json({
         ok: true,
         recuadro: { x: gx, y: gy, w: Math.min(1 - gx, w), h: Math.min(1 - gy, h) },
+        esquinas: sirven ? esquinas.map(p => ({ x: acotar(p.x!), y: acotar(p.y!) })) : null,
         // Cuartos de vuelta, y sólo los cuatro válidos: un valor cualquiera
         // giraría la foto a un ángulo que nadie pidió.
         giro: [0, 90, 180, 270].includes(Number(r?.giro)) ? Number(r?.giro) : 0,

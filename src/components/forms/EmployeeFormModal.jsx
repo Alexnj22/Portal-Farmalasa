@@ -34,6 +34,7 @@ import {
     codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
     fetchIdentidades, fetchSalarios,
 } from '../../data/employees';
+import { revisarNup } from '../../utils/nupAfp';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
@@ -1580,7 +1581,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const emergPhoneHasError   = emergPhoneIncomplete || emergPhoneBadPrefix;
     const emergPhoneErrorMsg  = emergPhoneIncomplete ? 'Incompleto' : emergPhoneBadPrefix ? 'Debe iniciar en 2, 6 o 7' : null;
     const isssIncomplete = !!formData?.isss_number && formData.isss_number.length !== 9;
-    const afpIncomplete = !!formData?.afp_number && formData.afp_number.length !== 12;
+    /* El NUP se ESCRIBE, y acepta las dos formas que existen: el DUI —desde
+     * enero de 2023 el NUP es el documento— o el número de 12 dígitos que daban
+     * las AFP antes. Ver `utils/nupAfp.js`.
+     *
+     * Antes era `length !== 12` a secas, o sea que el número de hoy —el DUI, de
+     * 9— se marcaba como incompleto. */
+    const nupRevisado = revisarNup(formData?.afp_number, formData?.dui);
+    const afpIncomplete = !nupRevisado.ok;
     const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
     const firstNamesInvalid = !!formData?.first_names && !isValidPersonName(formData.first_names);
     const lastNamesInvalid  = !!formData?.last_names && !isValidPersonName(formData.last_names);
@@ -1644,69 +1652,96 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      *
      * O sea: **vacío se guarda, mal escrito no.**
      */
-    const isFormFullyValid = useMemo(() => {
+    /* ── Qué impide guardar, y CÓMO SE LLAMA ────────────────────────────────
+     *
+     * Antes esto devolvía `true`/`false`, y el botón quedaba apagado con un
+     * texto genérico: «completa los campos marcados como Requerido». El usuario
+     * se topó con el caso en que ese texto no alcanza: al leer su DUI, el portal
+     * completó solo el departamento —Chalatenango—, y desde ese momento no se
+     * pudo guardar. El campo que faltaba era el MUNICIPIO, que nadie había
+     * tocado y que no está marcado como requerido en ninguna parte.
+     *
+     *   «Cuando quise guardar no me dejaba ni me decía el porqué.»
+     *
+     * Un botón apagado que no dice qué falta es indistinguible de uno roto, y
+     * peor todavía cuando la condición la creó el portal solo. Así que cada
+     * freno devuelve su MOTIVO, escrito para quien lo va a leer, y ese motivo
+     * viaja hasta el botón.
+     *
+     * `null` = se puede guardar. */
+    const motivoNoGuardable = useMemo(() => {
         // Lo único imprescindible: sin nombre no hay a quién nombrar la ficha.
-        if (!formData?.first_names?.trim() || firstNamesInvalid) return false;
-        if (!formData?.last_names?.trim() || lastNamesInvalid) return false;
+        if (!formData?.first_names?.trim()) return 'Falta el nombre.';
+        if (firstNamesInvalid) return 'El nombre sólo puede llevar letras.';
+        if (!formData?.last_names?.trim()) return 'Faltan los apellidos.';
+        if (lastNamesInvalid) return 'Los apellidos sólo pueden llevar letras.';
 
         // ── De acá abajo, TODO es «si está, que esté bien» ──────────────────
         // Ninguna condición exige presencia: cada una se dispara sólo cuando
         // el campo tiene contenido y el contenido no cuadra.
-        if (!isMinor && (isDuiInvalid || isDuiDuplicate || isDuiIncomplete)) return false;
-        if (birthDateInvalid) return false;
+        if (!isMinor && isDuiDuplicate) return 'Ese DUI ya está registrado en otra ficha.';
+        if (!isMinor && (isDuiInvalid || isDuiIncomplete)) return 'El DUI no está completo o su dígito verificador no cuadra.';
+        if (birthDateInvalid) return 'La fecha de nacimiento no es válida.';
 
         // Un departamento sin municipio es una dirección a medias que después
-        // no se puede resolver: o los dos, o ninguno.
-        if (formData?.department && !formData?.municipality) return false;
+        // no se puede resolver: o los dos, o ninguno. Y como el departamento lo
+        // puede haber puesto el portal al leer el DUI, el motivo tiene que
+        // nombrar el municipio — que es lo que falta y lo que nadie tocó.
+        if (formData?.department && !formData?.municipality) {
+            return `Elegiste el departamento de ${formData.department}: falta el municipio. Una dirección a medias no se puede resolver después.`;
+        }
         for (const addr of (formData?.extra_addresses || [])) {
-            if (addr.department && !addr.municipality) return false;
+            if (addr.department && !addr.municipality) return 'Una dirección alterna tiene departamento pero no municipio.';
         }
 
-        if (phoneHasError) return false;
+        if (phoneHasError) return 'El teléfono no tiene forma de número salvadoreño.';
         for (const ph of (formData?.extra_phones || [])) {
             const dLen = digitsLen(ph);
-            if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return false;
+            if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return 'Un teléfono adicional no tiene forma de número salvadoreño.';
         }
-        if (emailInvalid) return false;
+        if (emailInvalid) return 'El correo no tiene forma de correo.';
         for (const em of (formData?.extra_emails || [])) {
-            if (!!em && em.trim() !== '' && !isValidEmail(em.trim())) return false;
+            if (!!em && em.trim() !== '' && !isValidEmail(em.trim())) return 'Un correo adicional no tiene forma de correo.';
         }
 
         // «Otra…» sin especificar no es un dato: es el placeholder del catálogo
         // guardado como si fuera una respuesta.
-        if (formData?.education_specialty === OTRA_ESPECIALIDAD) return false;
-        if (formData?.profession === OTRA_ESPECIALIDAD) return false;
-        if (formData?.has_maestria && formData?.maestria_title === OTRA_ESPECIALIDAD) return false;
-        if (studyEndInPast || maestriaStudyEndInPast) return false;
+        if (formData?.education_specialty === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la especialidad: escribe cuál.';
+        if (formData?.profession === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la profesión: escribe cuál.';
+        if (formData?.has_maestria && formData?.maestria_title === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la maestría: escribe cuál.';
+        if (studyEndInPast || maestriaStudyEndInPast) return 'Los estudios en curso terminan en una fecha que ya pasó.';
 
         for (const dep of (formData?.economic_dependents || [])) {
-            if (isDependentAgeInvalid(dep)) return false;
+            if (isDependentAgeInvalid(dep)) return 'La edad de una persona a cargo está fuera de rango.';
         }
 
-        if (formData?.has_disability && formData?.disability_type === OTRA_ESPECIALIDAD) return false;
+        if (formData?.has_disability && formData?.disability_type === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la discapacidad: escribe cuál.';
 
-        if (salaryInvalid) return false;
-        if (hoursInvalid) return false;
-        if (contractDatesInvalid) return false;
+        if (salaryInvalid) return 'El salario no es un monto válido.';
+        if (hoursInvalid) return 'Las horas semanales no son válidas.';
+        if (contractDatesInvalid) return 'Las fechas del contrato no son coherentes.';
         // El plazo sin base legal ni motivo escrito SÍ bloquea, y es la única
         // ausencia que lo hace: el Art. 25 presume indefinido un contrato a
         // plazo sin justificar, así que guardarlo así no deja «un dato
         // pendiente» — deja un contrato que dice algo que la ley no reconoce.
-        if (temporalBasisMissing || temporalReasonMissing) return false;
+        if (temporalBasisMissing) return 'Un contrato a plazo necesita su base legal (Art. 25).';
+        if (temporalReasonMissing) return 'Un contrato a plazo necesita su motivo concreto escrito (Art. 25).';
 
-        if (isssIncomplete) return false;
-        if (afpIncomplete) return false;
+        if (isssIncomplete) return 'El número de ISSS debe tener 9 dígitos.';
+        if (afpIncomplete) return nupRevisado.motivo || 'El NUP de la AFP no es válido.';
 
-        return true;
+        return null;
     }, [formData, firstNamesInvalid, lastNamesInvalid, isMinor,
         isDuiInvalid, isDuiDuplicate, isDuiIncomplete, birthDateInvalid,
         phoneHasError, emailInvalid, studyEndInPast, maestriaStudyEndInPast,
         salaryInvalid, hoursInvalid, contractDatesInvalid,
-        temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete]);
+        temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete, nupRevisado.motivo]);
+
+    const isFormFullyValid = motivoNoGuardable === null;
 
     useEffect(() => {
-        onValidationChange?.(isFormFullyValid);
-    }, [isFormFullyValid, onValidationChange]);
+        onValidationChange?.(isFormFullyValid, motivoNoGuardable);
+    }, [isFormFullyValid, motivoNoGuardable, onValidationChange]);
 
     // Nombre a mostrar para el tipo de documento elegido en Personal — si el
     // valor no matchea ninguna opción del catálogo, es el texto libre de
@@ -3006,29 +3041,34 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
 
-                                        {/* El NUP quedó homologado al DUI en enero de 2023: es con el
-                                            número de DUI que uno se afilia y hace cualquier trámite de
-                                            pensiones. Así que dejó de ser un campo que se teclea — se
-                                            muestra el DUI, que se captura en Datos Personales y ahí sí
-                                            se le comprueba el dígito verificador.
+                                        {/* ── El NUP se escribe, no se muestra ───────────────
+                                            Estaba de sólo lectura, pintando el DUI. La idea
+                                            era buena —desde enero de 2023 el NUP ES el
+                                            documento— pero deja sin salida a los dos casos
+                                            reales: quien tiene un NUP de antes de 2023 (12
+                                            dígitos, y sigue siendo el suyo) y quien todavía no
+                                            tiene el DUI cargado en la ficha.
 
-                                            El valor viejo NO se borra ni se pisa: si una ficha trae un
-                                            NUP anterior distinto del DUI, se sigue viendo. Borrarlo
-                                            sería decidir por alguien que ese número ya no importa. */}
+                                            Ahora se escribe y el portal comprueba cuál de los
+                                            dos es. Y avisa cuando tiene forma de DUI pero NO
+                                            es el de esta ficha: ahí o hay un dedazo o se copió
+                                            el documento de otra persona, y las dos cosas se
+                                            ven como un dato perfectamente válido. */}
                                         {formData.afp_estado !== 'NO_TIENE' && (
-                                            <div>
-                                                <label className={rotuloCampo('text-content-3')}>NUP (AFP)</label>
-                                                <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-3 gap-2`}>
-                                                    <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
-                                                    <span className="text-body-xl font-bold text-content-2 truncate">
-                                                        {formData.dui || '—'}
-                                                    </span>
-                                                </div>
-                                                <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
-                                                    Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
-                                                    {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
-                                                </p>
-                                            </div>
+                                            <PortalInput
+                                                label="NUP (AFP)"
+                                                name="afp_number"
+                                                value={formData.afp_number || ''}
+                                                onChange={handleChange}
+                                                icon={Hash}
+                                                placeholder={formData.dui || 'El DUI, o 12 dígitos si es de antes de 2023'}
+                                                hasError={!nupRevisado.ok}
+                                                errorMessage={nupRevisado.motivo || ''}
+                                                // Corto: `helperText` se pinta al lado del
+                                                // rótulo, no debajo. La explicación larga vive
+                                                // en el marcador de posición.
+                                                helperText={nupRevisado.esElDui ? '· es el DUI' : '· DUI o 12 dígitos'}
+                                            />
                                         )}
 
                                         {/* Preguntarle la institución a quien declaró que NO tiene

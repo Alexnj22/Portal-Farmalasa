@@ -244,6 +244,18 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isFormValid, setIsFormValid] = useState(true);
+    /* Por qué NO se puede guardar, dicho por el formulario.
+     *
+     * Antes el botón se apagaba con un texto genérico —«completa los campos
+     * marcados como Requerido»— y eso falla justo cuando más hace falta: el
+     * usuario se topó con que, al leer su DUI, el portal completó solo el
+     * departamento y desde ahí no pudo guardar. Lo que faltaba era el MUNICIPIO,
+     * que nadie había tocado y que no está marcado como requerido en ninguna
+     * parte. «No me dejaba ni me decía el porqué.»
+     *
+     * Un botón apagado que no dice qué falta es indistinguible de uno roto, y
+     * peor todavía cuando la condición la creó el portal solo. */
+    const [motivoNoGuardable, setMotivoNoGuardable] = useState(null);
     const [empActiveTab, setEmpActiveTab] = useState('personal');
     const scrollRef = useRef(null);
 
@@ -251,6 +263,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         setValidationError(null);
         setIsSaving(false);
         setIsFormValid(true);
+        setMotivoNoGuardable(null);
         setEmpActiveTab('personal');
     }, [type, isOpen]);
 
@@ -1080,8 +1093,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
-                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={setIsFormValid} />}
-                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={setIsFormValid} />}
+                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
+                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
                                 
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}
@@ -1089,7 +1102,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "editBranchInmueble" && <FormSucursal formData={formData} setFormData={setFormData} section="inmueble" />}
                                 {type === "editBranchServicios" && <FormSucursal formData={formData} setFormData={setFormData} section="servicios" />}
 
-                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={setIsFormValid} />}
+                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
                                 
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
                                 {type === "viewRoleEmployees" && <FormRoleEmployees formData={formData} />}
@@ -1135,7 +1148,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     // el botón refleje de verdad si se puede guardar o no.
                     const empError = isEmpForm ? getEmployeeValidationError(formData, type) : null;
                     const empSaveDisabled = isSaving || !isFormValid || !!empError;
-                    const empSaveTitle = empError || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
+                    const empSaveTitle = empError
+                        || motivoNoGuardable
+                        || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
                     if (isEmpForm) {
                         return (
                             <LiquidModal.Footer>
@@ -1144,8 +1159,19 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     <Button variant="secondary" icon={ChevronLeft} disabled={isSaving} onClick={() => setEmpActiveTab(prevStep)}>{EMP_STEP_LABELS[prevStep]}</Button>
                                 ) : <div />}
 
-                                {/* CENTER: Cancelar */}
-                                <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
+                                {/* CENTER: Cancelar, y POR QUÉ no se puede guardar.
+                                    El `title` del botón no alcanza: con el dedo no hay
+                                    cursor que pasar por encima, y en un formulario de
+                                    cuatro pestañas el campo que falta puede estar en
+                                    otra. Se dice acá, al lado del botón apagado. */}
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
+                                    {empSaveDisabled && !isSaving && empSaveTitle && (
+                                        <p className="hidden sm:block min-w-0 max-w-[26rem] text-label font-medium text-warning-text leading-snug">
+                                            {empSaveTitle}
+                                        </p>
+                                    )}
+                                </div>
 
                                 {/* RIGHT: Siguiente y Guardar.
                                     ── Guardar SIEMPRE está en pantalla ────────────────────

@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.830.0 — El botón apagado ahora dice qué falta, y el NUP de AFP se escribe
+
+### «No me dejaba ni me decía el porqué»
+
+Al leer el DUI de Carlos Renderos, el portal **completó solo** el departamento
+—Chalatenango— y desde ese momento no se pudo guardar. Lo que faltaba era el
+**municipio**: un departamento sin municipio es una dirección a medias que
+después no se puede resolver, y la regla es correcta. Lo que estaba mal es que
+nadie podía saberlo — el municipio no está marcado como requerido en ninguna
+parte, y la condición **la creó el portal solo**.
+
+Un botón apagado que no dice qué falta es indistinguible de uno roto. Ahora cada
+freno lleva su motivo escrito, y el motivo se ve **al lado del botón**, no sólo
+al pasar el cursor: en un formulario de cuatro pestañas el campo que falta puede
+estar en otra, y con el dedo no hay cursor que pasar.
+
+Para este caso dice: *«Elegiste el departamento de Chalatenango: falta el
+municipio. Una dirección a medias no se puede resolver después.»*
+
+### El NUP de la AFP se escribe
+
+Estaba de sólo lectura, pintando el DUI. La idea era buena —desde **enero de
+2023** el NUP quedó homologado al documento— pero dejaba sin salida a los dos
+casos reales: quien tiene un NUP **de antes de 2023** (12 dígitos, y sigue siendo
+el suyo) y quien todavía no tiene el DUI cargado en la ficha.
+
+Peor: la comprobación que había era `length !== 12`, o sea que daba por
+**incompleto justamente el número de hoy**, que tiene 9.
+
+Ahora se escribe y el portal reconoce las dos formas. Y avisa en el caso que se
+ve perfectamente válido y no lo es: **un número con forma de DUI que no es el DUI
+de esta ficha** — ahí o hay un dedazo o se copió el documento de otra persona.
+
+Sin DUI en la ficha no se inventa un error: afirmar «no coincide» cuando no hay
+con qué comparar es acusar sin evidencia, y bloquearía a quien todavía no cargó
+el documento.
+
 ## v2.829.1 — Enlazar traía dos tercios de la ficha: faltaban el DUI, el sueldo y el código
 
 *«Guardé algunos datos de Carlos Renderos, pero al abrirlo de nuevo no me salen

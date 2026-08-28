@@ -384,3 +384,37 @@ describe('el aviso del menor de edad', () => {
         expect(form).toMatch(/le impida ir a la\s*\n?\s*escuela/i);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// «Cómo se paga»: primero DÓNDE, después CUÁNDO
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El período de pago vivía en «Dónde y cuándo se firmó», que es otro acto: la
+// firma pasa una vez y el período es una cláusula del pago. Y dentro de la
+// sección del pago se leía al revés — primero cada cuánto, después el lugar.
+// Corregido por el usuario el 2026-08-28.
+//
+// Se prueba por POSICIÓN en el fuente y no por presencia: los dos campos ya
+// estaban, lo que estaba mal era el orden, y una prueba de presencia da verde
+// sobre exactamente el defecto que se reportó.
+
+describe('los campos del pago', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+
+    const iFirma  = form.indexOf('Dónde y cuándo se firmó');
+    const iPago   = form.indexOf('Cómo se paga');
+    const iLugar  = form.indexOf('>Lugar de pago<');
+    const iCuando = form.indexOf('>Cada cuánto se le paga<');
+
+    it('el período está en «Cómo se paga», no en la sección de la firma', () => {
+        expect(iFirma).toBeGreaterThan(-1);
+        expect(iPago).toBeGreaterThan(iFirma);
+        expect(iCuando).toBeGreaterThan(iPago);
+    });
+
+    it('el lugar se lee ANTES que el período', () => {
+        expect(iLugar).toBeGreaterThan(-1);
+        expect(iCuando).toBeGreaterThan(iLugar);
+    });
+});

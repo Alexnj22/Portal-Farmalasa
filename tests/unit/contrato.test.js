@@ -96,14 +96,27 @@ describe('PLAZO_DE_PAGO', () => {
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO, MEDIO_PAGO_OPTIONS } from '../../src/utils/contrato';
 
 describe('el lugar de pago', () => {
-    it('son los dos que fijó el reglamento interno, y sólo esos', () => {
-        expect(LUGAR_PAGO_OPTIONS.map(o => o.value).sort())
-            .toEqual(['LUGAR_TRABAJO', 'OFICINAS']);
+    /* Eran dos —«oficinas de la empresa» y «lugar de trabajo»—, copiadas del
+     * Art. 40 del reglamento interno. Las corrigió el usuario el 2026-08-28, y
+     * tenía razón: ese mismo Art. 40 ya había elegido el MEDIO —transferencia o
+     * cheque, sin efectivo—, así que nadie va a cobrar a una oficina. El lugar
+     * real es el banco que se acuerda con cada persona, que además es el PRIMER
+     * supuesto del Art. 128 (el lugar convenido, antes que el del reglamento).
+     *
+     * Se prueba que sea UNA sola: dos opciones donde el pago sólo ocurre en un
+     * sitio es invitar a estipular en el contrato un lugar donde no se paga. */
+    it('es uno solo: el banco acordado con el trabajador', () => {
+        expect(LUGAR_PAGO_OPTIONS.map(o => o.value)).toEqual(['BANCO']);
+        expect(LUGAR_PAGO_OPTIONS[0].label).toMatch(/banco acordado con el trabajador/i);
     });
 
+    // Y NO puede seguir citando el Art. 40: decir «se paga en las oficinas o en
+    // su lugar de trabajo» al lado de una opción que dice «en el banco» es
+    // contradecirse en el mismo renglón.
     it('la pantalla dice de dónde sale, no lo hace adivinar', () => {
-        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/reglamento interno/i);
-        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/quince y último/i);
+        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/Art\. 128/);
+        expect(REGLAMENTO_LUGAR_PAGO).toMatch(/convenido/i);
+        expect(REGLAMENTO_LUGAR_PAGO).not.toMatch(/quince y último/i);
     });
 
     it('el medio de pago no incluye nada que la ley prohíba', () => {

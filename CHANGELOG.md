@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.839.1 — El lugar de pago es el banco, y va antes que el período
+
+Dos correcciones del usuario sobre el contrato de la ficha de personal.
+
+**El lugar de pago ahora es uno solo: «En el banco acordado con el trabajador».**
+Eran dos —«en las oficinas de la empresa» y «en su lugar de trabajo»—, copiadas
+del Art. 40 del reglamento interno. Pero ese mismo Art. 40 ya había elegido el
+medio de pago —transferencia bancaria o cheque, sin efectivo—, así que nadie va
+a cobrar a una oficina: estipular eso era escribir en el contrato un lugar donde
+el pago no ocurre. El banco convenido con cada persona es además el **primer**
+supuesto del Art. 128 («el lugar convenido»), que la ley pone antes que el del
+reglamento interno. El texto de ayuda se corrigió para citar el Art. 128 en vez
+del Art. 40, que decía lo contrario en el mismo renglón.
+
+Ninguna ficha tenía lugar de pago guardado (48 de 48 en blanco), así que el
+cambio de catálogo no deja ningún valor viejo huérfano.
+
+**«Cada cuánto se le paga» se mudó a «Cómo se paga», y detrás del lugar.** Vivía
+en «Dónde y cuándo se firmó», que es otro acto: la firma pasa una vez y el
+período es una cláusula del pago (Art. 23 nº 9, junto con la forma y el lugar).
+Dentro de la sección del pago los dos campos se leían al revés — primero cada
+cuánto, después dónde. Ahora se leen **lugar y después período**, y una prueba
+lo ancla por posición en el fuente: los dos campos ya estaban, lo que estaba mal
+era el orden, y una prueba de presencia daría verde sobre el defecto reportado.
+
+Sigue abierto y sin tocar: la lista de campos exigidos del Art. 23 sólo vigila
+el **período** del numeral 9 — la forma de estipulación, el medio y el lugar no
+cuentan como faltantes.
+
 ## v2.839.0 — El portal sabe quién tiene la caja abierta
 
 «¿Quién cortó la caja?» no tenía respuesta, y no por falta de acceso: **el dato

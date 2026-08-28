@@ -3927,14 +3927,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <p className="text-caption font-black uppercase tracking-widest text-content-3">Dónde y cuándo se firmó</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Art. 23 nº9 — «forma, PERÍODO y lugar de pago». Vivía en
-                                        Nómina, junto al banco y la cuenta, y no es un dato
-                                        bancario: es una cláusula del contrato, y además la que
-                                        decide cuándo el pago se vuelve exigible (Art. 130). */}
-                                    <div className="relative z-content">
-                                        <label className={rotuloCampo('text-content-3')}>Cada cuánto se le paga</label>
-                                        <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
-                                    </div>
                                     <PortalInput
                                         label="Lugar de la firma" name="contrato_lugar_celebracion"
                                         value={formData.contrato_lugar_celebracion} onChange={handleChange}
@@ -3978,18 +3970,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             El salario se paga en moneda de curso legal. No se puede pagar con vales, fichas ni cupones.
                                         </p>
                                     </div>
-                                    {/* El lugar va SIEMPRE, aunque se pague por transferencia:
+                                    {/* ── Primero DÓNDE, después CUÁNDO ──────────────────
+                                        El período de pago vivía arriba, en «Dónde y cuándo se
+                                        firmó», que es otra cosa: la firma es un acto que pasó
+                                        una vez y el período es una cláusula del pago. Y el
+                                        orden importa — el usuario lo corrigió el 2026-08-28:
+                                        se lee el lugar y después cada cuánto, no al revés.
+
+                                        El lugar va SIEMPRE, aunque se pague por transferencia:
                                         el Art. 23 nº 9 pide «forma, período y lugar de pago» en
                                         el contrato escrito y no hace excepción por el medio.
                                         Estuvo escondido cuando el medio no era efectivo, y eso
                                         dejaba el contrato sin un elemento exigido — el
                                         razonamiento de sentido común no le gana al texto.
 
-                                        Y no es texto libre: el Art. 128 dice que el lugar sale
-                                        del convenio o del REGLAMENTO INTERNO, y el de esta
-                                        empresa ya lo fijó en su Art. 40. Escribir un tercero
-                                        contradiría el documento que la empresa tiene aprobado. */}
-                                    <div className="relative z-content md:col-span-2">
+                                        Y no es texto libre: el Art. 128 lo saca del lugar
+                                        CONVENIDO con el trabajador, que acá es el banco donde
+                                        le cae el pago. Ver `LUGAR_PAGO_OPTIONS`. */}
+                                    <div className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Lugar de pago</label>
                                         <LiquidSelect
                                             value={formData.lugar_pago}
@@ -3999,6 +3997,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
                                             {REGLAMENTO_LUGAR_PAGO}
                                         </p>
+                                    </div>
+                                    {/* Art. 23 nº9 — «forma, PERÍODO y lugar de pago». No es un
+                                        dato bancario: es la cláusula que decide cuándo el pago
+                                        se vuelve exigible (Art. 130). */}
+                                    <div className="relative z-content">
+                                        <label className={rotuloCampo('text-content-3')}>Cada cuánto se le paga</label>
+                                        <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
                                     </div>
                                 </div>
                             </div>

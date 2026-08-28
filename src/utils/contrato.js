@@ -227,22 +227,28 @@ export const PLAZO_DE_PAGO = {
  *
  * El Art. 23 nº 9 exige que el contrato escrito diga «Forma, período y **lugar**
  * de pago» — las tres, y sin excepción por el medio: también cuando se paga por
- * transferencia. Y el Art. 128 dice de dónde sale ese lugar:
+ * transferencia. Y el Art. 128 dice de dónde sale ese lugar, en este orden:
  *
- *   «El salario debe pagarse en el lugar convenido o en el establecido por el
- *    REGLAMENTO INTERNO DE TRABAJO y, a falta de estipulación, en el
+ *   «El salario debe pagarse en el LUGAR CONVENIDO o en el establecido por el
+ *    reglamento interno de trabajo y, a falta de estipulación, en el
  *    acostumbrado o donde el trabajador preste sus servicios.»
  *
- * El reglamento interno de esta empresa ya lo estableció. Art. 40, aprobado por
- * la Dirección General de Trabajo (`docs/legal/REGLAMENTO INTERNO...`):
+ * ── Por qué es el banco, y no las oficinas ──────────────────────────────────
  *
- *   «…será cancelado los días quince y último de cada mes, en las OFICINAS DE LA
- *    EMPRESA o en su LUGAR DE TRABAJO.»
+ * Hasta hoy las opciones eran «en las oficinas de la empresa» o «en su lugar de
+ * trabajo», copiadas del Art. 40 del reglamento interno. Pero ese mismo Art. 40
+ * ya había elegido el MEDIO —«transferencia bancaria electrónica o cheque», sin
+ * efectivo— y con esa decisión nadie va a una oficina a cobrar: el dinero
+ * aparece en la cuenta que la persona indicó. Estipular «en las oficinas» era
+ * escribir en el contrato un lugar donde el pago no ocurre.
  *
- * O sea que el lugar no se inventa por persona: son esos dos. Un campo de texto
- * libre invita a escribir un tercero, y un contrato que estipule un lugar que el
- * reglamento no contempla se contradice con el documento que la empresa ya tiene
- * aprobado.
+ * El lugar real es el banco que se acuerda con cada trabajador, y ése es el
+ * primer supuesto del Art. 128 — el LUGAR CONVENIDO, que la ley pone antes que
+ * el reglamento. Corregido por el usuario el 2026-08-28.
+ *
+ * Sigue siendo un catálogo y no texto libre: el lugar de pago es una cláusula
+ * del contrato, no una nota, y un campo abierto invita a escribir un lugar que
+ * después hay que defender.
  *
  * ── Y el lugar equivocado no es un detalle ──────────────────────────────────
  *
@@ -251,16 +257,16 @@ export const PLAZO_DE_PAGO = {
  * ser que se trate de los trabajadores de esos establecimientos» — que es
  * justamente el caso de una sala. La sanción es dura: «El pago efectuado en
  * contravención a lo dispuesto en el inciso anterior, SE TENDRÁ POR NO HECHO.»
+ * Pagar a la cuenta del banco deja ese riesgo afuera por completo.
  */
 export const LUGAR_PAGO_OPTIONS = [
-    { value: 'LUGAR_TRABAJO', label: 'En su lugar de trabajo' },
-    { value: 'OFICINAS',      label: 'En las oficinas de la empresa' },
+    { value: 'BANCO', label: 'En el banco acordado con el trabajador' },
 ];
 
-/** Lo que el reglamento interno ya dejó dicho, para mostrarlo al elegir. */
+/** Lo que hay que saber al elegirlo, en términos del Código. */
 export const REGLAMENTO_LUGAR_PAGO =
-    'El reglamento interno ya lo fija: se paga los días quince y último de cada mes, '
-    + 'en las oficinas de la empresa o en su lugar de trabajo.';
+    'El Código admite el lugar convenido con el trabajador (Art. 128), y aquí el pago '
+    + 'va por transferencia o cheque: el lugar es el banco que se acuerda con la persona.';
 
 export const MEDIO_PAGO_OPTIONS = [
     // ── Sin «Efectivo», y no es una omisión ─────────────────────────────────

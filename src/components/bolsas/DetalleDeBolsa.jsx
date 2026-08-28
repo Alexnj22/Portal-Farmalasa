@@ -152,10 +152,10 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
         () => (bolsa ? { [bolsa.branch_id]: sala || '' } : {}),
         [bolsa, sala],
     );
-    const { imprimirVale, reimprimirEtiqueta } = useCerrarBolsa({ nombreSala, origen: 'detalle' });
+    const { imprimirValeDeOperacion, reimprimirEtiqueta } = useCerrarBolsa({ nombreSala, origen: 'detalle' });
 
     /**
-     * El vale que quedó (o tenía que quedar) dentro de la bolsa.
+     * El vale de la salida — el que se archiva con los comprobantes.
      *
      * Existe porque el papel se imprime desde el navegador después de escribir
      * la salida, y ahí hay mil formas de que no salga: la computadora sin
@@ -166,18 +166,22 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
      *
      * El saldo que sale impreso es el de DESPUÉS de ese vale, no el de hoy: es
      * lo que decía el papel original y lo que hace que dos vales de la misma
-     * bolsa se puedan leer en orden.
+     * bolsa se puedan leer en orden. Esa cuenta se hacía acá y desde el
+     * 2026-08-28 la hace el servidor (`get_operacion_de_bolsa`), que es donde
+     * tiene que estar: el vale es de la OPERACIÓN, y sus otras bolsas esta
+     * pantalla no las tiene — sólo ve las salidas de la suya.
+     *
+     * Por eso el papel que sale de acá es el mismo que salió al registrar, con
+     * sus cuatro renglones, y no un vale recortado a esta bolsa. Reimprimir
+     * desde cualquiera de las líneas de la operación da exactamente el mismo
+     * documento.
      */
     const reimprimirVale = useCallback(async (mov) => {
         setOcupado(`vale-${mov.movimiento_id}`);
-        const hasta = salidas.filter((s) => !s.anulado_at
-            && String(s.registrado_at) <= String(mov.registrado_at));
-        const saldo = Number(bolsa.monto_inicial || 0)
-            + hasta.reduce((a, s) => a + Number(s.monto || 0), 0);
-        await imprimirVale(mov, bolsa, saldo);
+        await imprimirValeDeOperacion(mov.operacion_id, bolsa.branch_id);
         setOcupado(null);
         cargar();
-    }, [salidas, bolsa, imprimirVale, cargar]);
+    }, [bolsa, imprimirValeDeOperacion, cargar]);
 
     const confirmarAnulacion = useCallback(async (motivo) => {
         if (!anulando || !motivo?.trim()) return;
@@ -435,7 +439,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                     : `Anular el vale ${anulando?.folio}`}
                 message={anulando?.tipo === 'bolsa'
                     ? 'La bolsa deja de contar y su etiqueta ya no vale. Queda en la bitácora quién la anuló y por qué.'
-                    : 'El dinero vuelve al saldo de la bolsa. Hay que sacar el vale de adentro y pegarle la etiqueta nueva, que sale sola.'}
+                    : 'El dinero vuelve al saldo de la bolsa y la etiqueta nueva sale sola. El vale anulado queda con los comprobantes, marcado.'}
                 placeholder="Por qué se anula…"
                 confirmText="Anular"
             />

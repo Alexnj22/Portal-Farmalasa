@@ -7,9 +7,11 @@
 //
 // Son tres y ninguno reemplaza a otro, porque van a tres lugares distintos:
 //
-//   · `construirEtiquetaDeBolsa`   — se pega AFUERA. Reemplaza la cinta.
-//   · `construirValeDeSalida`      — queda ADENTRO. Reemplaza el papel escrito
-//                                    a mano cuando se saca dinero.
+//   · `construirEtiquetaDeBolsa`   — se pega AFUERA. Reemplaza la cinta. UNA
+//                                    por bolsa: cada una dice SU saldo nuevo.
+//   · `construirValeDeSalida`      — el comprobante de la salida. Se archiva
+//                                    aparte, y es UNO por operacion aunque el
+//                                    dinero haya salido de cuatro bolsas.
 //
 // El diseño completo, en `docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
 //
@@ -209,43 +211,55 @@ export function construirEtiquetaDeBolsa({
 }
 
 /**
- * EL VALE — el papel que queda DENTRO de la bolsa cuando se saca dinero.
+ * EL VALE — el comprobante de una salida de efectivo. **Uno por OPERACION.**
  *
  * Reemplaza al papel escrito a mano, y agrega lo que ese papel nunca dijo:
- * **cuánto queda en la bolsa después**. El papel a mano dice cuánto se llevaron,
- * que es la mitad que no sirve para contar.
+ * **de que bolsa salio cada parte y cuanto le quedo a cada una**. El papel a
+ * mano decia cuanto se llevaron, que es la mitad que no sirve para contar.
  *
- * Dos renglones del pie no son decoración:
+ * ── Por que UNO y no uno por bolsa (2026-08-28) ────────────────────────────
  *
- *   · «Este vale queda dentro de la bolsa X» — un vale que cambia de bolsa deja
- *     un hueco de un lado y un sobrante del otro, y las dos bolsas quedan
- *     marcadas por algo que no pasó.
- *   · «Parte de la remesa R-… por $500.00» — cuando ninguna bolsa alcanzaba
- *     sola y la operación salió de dos, ninguno de los dos vales puede parecer
- *     la operación entera.
+ * Hasta hoy salia un vale por cada bolsa tocada, y el papel lo decia en su pie:
+ * «Este vale queda dentro de la bolsa X». Con esa premisa, cuatro bolsas exigian
+ * cuatro papeles — si no, tres bolsas viajaban sin nada adentro que explicara su
+ * faltante.
  *
- * @param {object} vale        { folio, monto, saldo_despues }
- * @param {object} operacion   { folio, motivo, entidad, entidadEtiqueta, numero_boleta, monto, nota }
- * @param {object} bolsa       { folio, fecha, hora }
+ * El usuario corrigio la premisa mirando los cuatro que salieron de CMB-1032:
+ * «los vales y demas se guardan aparte. asi que puede ser solo 1. eso si, debe
+ * especificar de donde y cuanto salio». Si el vale se archiva y no viaja dentro
+ * de la bolsa, cuatro papeles casi iguales son cuatro salidas APARENTES de una
+ * operacion sola — y el faltante de cada bolsa ya lo explica su etiqueta, que
+ * sigue siendo una por bolsa y lista la salida con el saldo nuevo.
+ *
+ * Y el papel no dice donde se guarda ni pide firma: lo primero se sabe, y lo
+ * segundo ya lo contesta «Recibe: X (carne escaneado)», que lo escribio el
+ * servidor despues de comprobar la identidad — no una raya en el rollo.
+ *
+ * Por eso la tabla de cuatro columnas: es el unico lugar del papel donde entra
+ * el detalle por bolsa. **Cuatro exactas, no tres ni cinco** — con cualquier
+ * otra cantidad el camino sin dialogo colapsa a «primera … ultima» (ver
+ * `filaDeItem`), o sea que se perderian justo las columnas del medio. Los anchos
+ * son 31/5/8/8, medidos contra un ticket real.
+ *
+ * @param {object} operacion  { folio, motivo, entidad, entidadEtiqueta,
+ *                              numero_boleta, monto, nota, leyenda }
+ * @param {Array}  lineas     [{ bolsa_folio, bolsa_fecha, bolsa_hora, monto,
+ *                              saldo_despues }] — el monto en positivo o
+ *                              negativo, da igual
  * @param {string} sala
  * @param {string} registradoPor
- * @param {object} recibidoPor { nombre, metodo } — quién se llevo el efectivo
+ * @param {object} recibidoPor { nombre, metodo } — quien se llevo el efectivo
  * @param {string} registradoAt ISO
  */
 export function construirValeDeSalida({
-    vale, operacion = {}, bolsa, sala, registradoPor, recibidoPor, registradoAt,
+    operacion = {}, lineas = [], sala, registradoPor, recibidoPor, registradoAt,
 }) {
-    const monto = Math.abs(Number(vale?.monto ?? 0));
-    const total = Math.abs(Number(operacion?.monto ?? monto));
-    // Parcial cuando el vale no cubre la operacion entera: la remesa salio de
-    // mas de una bolsa.
-    const parcial = Math.abs(total - monto) >= 0.01;
+    const vivas = (lineas || []).filter((l) => !l.anulado_at);
+    const total = Math.abs(Number(operacion?.monto ?? sumar(vivas)));
 
     const datos = [
-        ['Vale', recortar(vale?.folio || '', 24)],
-        ['Bolsa', recortar(bolsa?.folio || '', 24)],
+        ['Vale', recortar(operacion?.folio || '', 24)],
         ['Sala', recortar(sala || '', 34)],
-        ['Corte', `${fechaCorta(bolsa?.fecha)} ${hhmm(bolsa?.hora)}`],
         ['Motivo', recortar(operacion?.motivo || 'Sin motivo', 30)],
     ];
     // El rotulo lo dice el TIPO de salida, no este archivo: una remesa se le
@@ -281,27 +295,56 @@ export function construirValeDeSalida({
         encabezado: encabezadoDeLaEmpresa(),
         datos,
         bloques: bloques.length ? bloques : undefined,
+        /* «De donde y cuanto», que es lo que el usuario pidio que dijera.
+         *
+         * El folio de la bolsa NO alcanza para saber cual es sobre la mesa: las
+         * de una sala se distinguen por el corte del que nacieron, y eso —dia y
+         * hora— es lo que dice la etiqueta pegada afuera. Por eso la fecha y la
+         * hora gastan dos de las cuatro columnas.
+         *
+         * Y la ultima es lo que QUEDA, no lo que habia: es el numero contra el
+         * que administracion va a contar esa bolsa, y el unico que el papel a
+         * mano nunca dijo. */
+        items: {
+            columnas: [
+                { label: 'DE QUE BOLSA' },
+                { label: 'HORA', alinear: 'der' },
+                { label: 'SALIO', alinear: 'der' },
+                { label: 'QUEDA', alinear: 'der' },
+            ],
+            filas: vivas.map((l) => [
+                recortar(`${l.bolsa_folio || ''} ${fechaCorta(l.bolsa_fecha).slice(0, 5)}`.trim(), ANCHO_MOTIVO),
+                hhmm(l.bolsa_hora),
+                importeDeColumna(l.monto),
+                importeDeColumna(l.saldo_despues),
+            ]),
+        },
+        // El destacado es el TOTAL de la operacion: es lo que se llevaron y lo
+        // que se firma. El detalle por bolsa ya esta arriba, renglon por
+        // renglon, asi que repetirlo aca seria decir dos veces lo mismo.
         totales: [
-            ['SALE DE LA BOLSA', formatMoney(monto), true],
-            ['QUEDA EN LA BOLSA', formatMoney(Number(vale?.saldo_despues ?? 0))],
+            [vivas.length === 1 ? 'SALE DE LA BOLSA' : `SALE DE ${vivas.length} BOLSAS`,
+             formatMoney(total), true],
         ],
-        // Quién y cuándo son un solo hecho, y quién retira y cómo se comprobó
-        // también: cada par entra en un renglón mientras los nombres quepan, y
-        // `juntarSiEntra` los separa cuando no —un nombre de 40 caracteres
-        // desborda el rollo y la impresora lo parte a mitad de palabra—.
+        /* Quién y cuándo son un solo hecho, y quién retira y cómo se comprobó
+         * también: cada par entra en un renglón mientras los nombres quepan, y
+         * `juntarSiEntra` los separa cuando no —un nombre de 40 caracteres
+         * desborda el rollo y la impresora lo parte a mitad de palabra—.
+         *
+         * ── SIN renglón de firma (usuario, 2026-08-28) ─────────────────────
+         * «firma no es necesaria ya quien hace el proceso queda ahi». Y es más
+         * fuerte que una firma: el nombre de quien retira no lo escribió nadie
+         * en el papel, lo puso el SERVIDOR después de comprobar su carné o su
+         * contraseña contra la base. Una raya para firmar al lado de eso pide a
+         * mano una prueba que el portal ya tiene mejor. */
         pie: [
             ...juntarSiEntra(
                 `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
                 selloCorto(registradoAt),
             ),
             ...(recibidoPor?.nombre
-                ? [...juntarSiEntra(`Recibe: ${recortar(recibidoPor.nombre, 40)}`,
-                                    `(${identificacion})`, { union: ' ' }),
-                   'Firma ______________________']
-                : []),
-            `Este vale queda dentro de la bolsa ${recortar(bolsa?.folio || '', 24)}.`,
-            ...(parcial
-                ? [`Parte de ${recortar(operacion?.folio || '', 24)} por ${formatMoney(total)}.`]
+                ? juntarSiEntra(`Recibe: ${recortar(recibidoPor.nombre, 40)}`,
+                                `(${identificacion})`, { union: ' ' })
                 : []),
         ],
     };

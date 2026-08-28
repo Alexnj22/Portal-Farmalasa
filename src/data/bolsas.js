@@ -690,7 +690,7 @@ export async function identificarPorUsuario(usuario, secreto) {
     return { vale: data.vale, persona: data.employee };
 }
 
-/** Se anula, nunca se borra: el vale ya salió impreso y está dentro de la bolsa. */
+/** Se anula, nunca se borra: el vale ya salió impreso y está en el archivo. */
 export function anularSalida(operacionId, motivo) {
     return supabase.rpc('anular_salida_de_bolsa', {
         p_operacion_id: operacionId, p_motivo: motivo,
@@ -717,6 +717,22 @@ export async function fetchSalidasDeBolsa(bolsaId) {
     const { data, error } = await supabase.rpc('get_salidas_de_bolsa', { p_bolsa_id: bolsaId });
     if (error) { console.error('bolsas: fetchSalidasDeBolsa failed:', error.message); return []; }
     return data || [];
+}
+
+/**
+ * La operación ENTERA con sus líneas — de qué bolsa salió cada parte.
+ *
+ * Existe porque el vale es **uno por operación** desde el 2026-08-28 y
+ * `fetchSalidasDeBolsa` es por bolsa: para armar el papel de una salida que
+ * tomó cuatro bolsas devolvería una línea y no las cuatro.
+ *
+ * `saldo_despues` de cada línea es el de DESPUÉS de ese movimiento y no el de
+ * hoy, así que una reimpresión dice lo mismo que dijo el papel original.
+ */
+export async function fetchOperacionDeBolsa(operacionId) {
+    const { data, error } = await supabase.rpc('get_operacion_de_bolsa', { p_operacion_id: operacionId });
+    if (error) { console.error('bolsas: fetchOperacionDeBolsa failed:', error.message); return null; }
+    return data || null;
 }
 
 /** Constancia de que el vale se mandó a imprimir. No promete que salió papel. */

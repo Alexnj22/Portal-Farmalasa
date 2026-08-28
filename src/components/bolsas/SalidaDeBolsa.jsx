@@ -889,7 +889,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             por monedas de un retiro: el efectivo no sale de la
                             empresa, cambia de forma. Va arriba del reparto
                             porque explica qué se está registrando, y se imprime
-                            en el vale que queda dentro de la bolsa. */}
+                            en el vale que se archiva con los comprobantes. */}
                         {t?.leyenda && (
                             <Notice variant="info" compact icon={HandCoins}>
                                 {t.leyenda}
@@ -1079,7 +1079,9 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             <LiquidModal.Footer>
                 <div className="flex items-center justify-between gap-3 w-full flex-wrap">
                     <span className="text-caption text-content-3 min-w-0 truncate">
-                        {falta || 'Se imprime el vale para dejarlo dentro de la bolsa'}
+                        {falta || (eleccion.repartos.length > 1
+                            ? `Sale un vale para archivar y ${eleccion.repartos.length} etiquetas nuevas`
+                            : 'Sale un vale para archivar y la etiqueta nueva de la bolsa')}
                     </span>
                     <div className="flex items-center gap-2 ml-auto">
                         {enIdentidad ? (

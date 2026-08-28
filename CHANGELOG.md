@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.833.0 — un solo vale por salida, con el detalle de cada bolsa
+
+La primera corrida real de «Cambio por monedas» —**CMB-1032**, $2,000 de cuatro
+bolsas de La Popular— sacó cuatro vales casi iguales, y el reporte fue directo:
+**«salieron 4 vales, ¿no debería de haber salido solo 1 vale especificando
+cuánto de cada bolsa? ¿y sí 1 tiket de bolsa para cada una de donde salió?»**
+
+Eso corrige una **premisa** del módulo y no un detalle de impresión. Hasta hoy el
+vale «quedaba dentro de la bolsa» —lo decía su propio pie— y con esa premisa
+cuatro bolsas exigían cuatro papeles: si no, tres bolsas viajaban sin nada
+adentro que explicara su faltante. La premisa era otra: *«los vales y demás se
+guardan aparte»*. Y si el papel se archiva en vez de viajar, cuatro casi iguales
+son **cuatro salidas aparentes de una operación sola**.
+
+**Hoy sale un vale por operación**, con la tabla que el reporte pedía:
+
+```
+DE QUE BOLSA                    HORA   SALIO   QUEDA
+LP-1144 26/08                  13:06  370.00    3.85
+LP-1147 26/08                  16:01  560.00    3.07
+LP-1149 26/08                  19:01  210.00    1.91
+LP-1159 27/08                  14:22  860.00   81.40
+SALE DE 4 BOLSAS               $2,000.00
+```
+
+La última columna es lo que **queda**, que es el número contra el que
+administración cuenta esa bolsa y el único que el papel escrito a mano nunca
+dijo. Y la fecha del corte va con el folio porque el folio solo no distingue una
+bolsa de otra sobre la mesa.
+
+**Las etiquetas siguen siendo una por bolsa** y ahí no había nada que juntar:
+cada una dice el saldo de SU bolsa, que es un número distinto en cada papel. La
+cuenta pasó de ocho papeles a cinco.
+
+**Sin renglón de firma y sin decir dónde se guarda** (los dos, pedido del mismo
+repaso). La firma sobraba porque quien retira ya está nombrado: *«quien hace el
+proceso queda ahí»* — y ese nombre no lo escribió nadie en el papel, lo puso el
+servidor después de comprobar el carné o la contraseña contra la base, que es
+más fuerte que una raya.
+
+Vale para **los cinco motivos**, no sólo para el nuevo: dos reglas de impresión
+para el mismo hecho se separan sin que nadie lo note.
+
+Por dentro: `get_operacion_de_bolsa` (migración `20260828184412`) trae la
+operación entera con sus líneas —`get_salidas_de_bolsa` es por bolsa y habría
+devuelto una de cuatro— y calcula el `saldo_despues` de cada línea **hasta el
+sello de ese movimiento**, así que una reimpresión dice lo mismo que dijo el
+papel original. Reimprimir desde cualquiera de las líneas del detalle da el mismo
+documento. El vale de cuatro bolsas quedó anclado en las reglas del rollo
+(54 columnas, sólo ASCII) de `tests/unit/bolsaComprobante.test.js`.
+
+## v2.832.1 — La fecha de nacimiento salía en rojo siempre: la bandera de error iba suelta
+
+*«¿Por qué lo pone rojo?»* — sobre una fecha perfectamente válida, 39 años.
+
+El campo llevaba `hasError` **suelto**. En JSX un atributo sin valor vale
+`true`, así que la fecha se pintaba en rojo **siempre**, con cualquier valor.
+Sobre `required` o `compact` eso es justo lo que se quiere; sobre una bandera que
+dice «este dato está mal», es una acusación permanente.
+
+La pista de que no era la validación estaba en la misma pantalla: el rótulo decía
+**«· 39 años»**, y ese texto sólo se dibuja cuando la fecha **es** válida. Un
+campo que se acusa a sí mismo mientras el rótulo a su lado lo declara correcto.
+
+De paso, el tono ámbar tampoco era fijo: marca a una persona **menor de edad**,
+que es lo que el rótulo ya dice al lado.
+
+### Y una prueba que primero no servía
+
+Esto no lo caza ningún linter —es JSX válido y el componente lo recibe
+encantado— ni una prueba de comportamiento, porque el campo funciona: guarda,
+valida, avisa. Sólo miente con el color.
+
+Así que se ancló con un detector que barre `src/`. La **primera versión dio
+verde sobre el defecto real**: exigía que la bandera estuviera en el mismo
+renglón que la etiqueta, y al reformatear el componente en varias líneas el
+`hasError` suelto quedaba tres renglones más abajo.
+
+Se descubrió **fabricándole la regresión que tenía que cazar** — que es lo único
+que distingue un cero de un detector ciego. Ahora lee la etiqueta completa, y
+comprobado: con el defecto puesto falla y lo nombra con archivo y línea; sin él,
+pasa.
+
 ## v2.832.0 — Los documentos van por secciones, y reemplazar uno ya no borra el anterior
 
 ### Secciones, y el orden es el del expediente

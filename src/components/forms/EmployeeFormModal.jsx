@@ -2499,7 +2499,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1 leading-none">{birthDateErrorMsg}</span>}
                                     </label>
-                                    <LiquidDatePicker hasError tono="warning" value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} />
+                                    {/* `hasError` iba SUELTO, y en JSX un atributo sin valor
+                                        vale `true`: el campo salía en rojo siempre, con
+                                        cualquier fecha. Lo vio el usuario sobre una fecha
+                                        perfectamente válida —39 años— y la pista de que no era
+                                        la validación estaba en la misma pantalla: el rótulo
+                                        decía «· 39 años», y ese texto sólo se dibuja cuando la
+                                        fecha ES válida.
+
+                                        El tono ámbar tampoco es fijo: marca a una persona
+                                        MENOR de edad, que es lo que el rótulo ya dice al lado. */}
+                                    <LiquidDatePicker
+                                        hasError={birthDateInvalid}
+                                        tono={isMinor ? 'warning' : null}
+                                        value={formData.birth_date}
+                                        onChange={(date) => handleDateChange('birth_date', date)} />
                                 </div>
 
                                 {!isMinor && (

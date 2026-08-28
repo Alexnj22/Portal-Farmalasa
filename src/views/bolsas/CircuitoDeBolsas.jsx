@@ -1634,13 +1634,14 @@ export default function CircuitoDeBolsas({
     }, [correr, onIrAEtapa]);
 
     /**
-     * Después de sacar dinero salen DOS papeles por bolsa: el vale que queda
-     * adentro y la etiqueta nueva de afuera. La etiqueta se reimprime sola
-     * porque la anterior dejó de ser cierta en ese mismo momento — dejarla
-     * pendiente sería dejar una bolsa con un número equivocado pegado encima.
+     * Después de sacar dinero sale UN vale —el de la operación, con el detalle
+     * de cada bolsa— y una etiqueta nueva por bolsa. Las etiquetas se
+     * reimprimen solas porque la anterior dejó de ser cierta en ese mismo
+     * momento: dejarlas pendientes sería dejar una bolsa con un número
+     * equivocado pegado encima.
      */
-    const traslimSalida = useCallback(async (_oper, repartos) => {
-        await imprimirTrasLaSalida(repartos, bolsas, nombrePersona);
+    const traslimSalida = useCallback(async (oper, repartos) => {
+        await imprimirTrasLaSalida(oper, repartos, bolsas, nombrePersona);
         cargar({ silencioso: true });
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 

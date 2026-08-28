@@ -184,14 +184,14 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     }, [imprimir, nombrePersona, cargar]);
 
     /**
-     * Después de una remesa salen dos papeles por bolsa: el vale de adentro y la
-     * etiqueta nueva de afuera. La etiqueta se reimprime sola porque la anterior
-     * dejó de ser cierta en ese mismo momento. Los dos los arma
-     * `imprimirTrasLaSalida`, que es el mismo código que corre la pestaña de
-     * Cortes — acá estaba copiado.
+     * Después de una remesa sale UN vale —el de la operación, con el detalle de
+     * cada bolsa— y una etiqueta nueva por bolsa. Las etiquetas se reimprimen
+     * solas porque la anterior dejó de ser cierta en ese mismo momento. Todo lo
+     * arma `imprimirTrasLaSalida`, que es el mismo código que corre la pestaña
+     * de Cortes — acá estaba copiado.
      */
-    const trasLaSalida = useCallback(async (_oper, repartos) => {
-        await imprimirTrasLaSalida(repartos, bolsas, nombrePersona);
+    const trasLaSalida = useCallback(async (oper, repartos) => {
+        await imprimirTrasLaSalida(oper, repartos, bolsas, nombrePersona);
         cargar();
     }, [imprimirTrasLaSalida, bolsas, nombrePersona, cargar]);
 

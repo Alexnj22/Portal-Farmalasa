@@ -29,14 +29,21 @@ const etiqueta = (extra = {}) => construirEtiquetaDeBolsa({
     version: 1, impresaAt: '2026-08-15T01:12:00.000Z', ...extra,
 });
 
+// Una linea del vale: de que bolsa salio cuanto, y con cuanto quedo.
+const linea = (extra = {}) => ({
+    movimiento_id: 1, vale_folio: 'V-S3-260815-1',
+    bolsa_folio: bolsa.folio, bolsa_fecha: bolsa.fecha, bolsa_hora: bolsa.hora,
+    monto: -200, saldo_despues: 516.92, ...extra,
+});
+
 const vale = (extra = {}) => construirValeDeSalida({
-    vale: { folio: 'V-S3-260815-1', monto: 200, saldo_despues: 516.92 },
     operacion: {
-        folio: 'R-260815-3', motivo: 'Remesa entregada a un cliente',
+        folio: 'REM-1003', motivo: 'Remesa entregada a un cliente',
         entidad: 'MONEYGRAM', entidadEtiqueta: 'Remesadora',
         numero_boleta: '4477201', monto: 200,
     },
-    bolsa, sala: 'Salud 3', registradoPor: 'Ana Peña Núñez',
+    lineas: [linea()],
+    sala: 'Salud 3', registradoPor: 'Ana Peña Núñez',
     registradoAt: '2026-08-15T02:15:00.000Z', ...extra,
 });
 
@@ -54,10 +61,28 @@ const pie = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).pie;
 const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
 const renglones = (t) => cuerpo(t).split('\n').map(sinCodigos);
 
+// El vale de una salida que tomo cuatro bolsas. Va a las reglas del rollo
+// porque es el que mas apura la geometria: cuatro renglones de tabla con folio,
+// fecha, hora y dos importes en 54 columnas.
+const valeDeCuatro = () => vale({
+    operacion: {
+        folio: 'CMB-1032', motivo: 'Cambio por monedas', monto: 2000,
+        leyenda: 'El dinero queda en sala de ventas.', nota: 'REMESA DE SILVIA',
+    },
+    lineas: [
+        linea({ movimiento_id: 33, bolsa_folio: 'LP-1144', bolsa_fecha: '2026-08-26', bolsa_hora: '13:06', monto: -370, saldo_despues: 3.85 }),
+        linea({ movimiento_id: 34, bolsa_folio: 'LP-1147', bolsa_fecha: '2026-08-26', bolsa_hora: '16:01', monto: -560, saldo_despues: 3.07 }),
+        linea({ movimiento_id: 35, bolsa_folio: 'LP-1149', bolsa_fecha: '2026-08-26', bolsa_hora: '19:01', monto: -210, saldo_despues: 1.91 }),
+        linea({ movimiento_id: 36, bolsa_folio: 'LP-1159', bolsa_fecha: '2026-08-27', bolsa_hora: '14:22', monto: -860, saldo_despues: 81.40 }),
+    ],
+    recibidoPor: { nombre: 'Andy Mancia', metodo: 'CARNE' },
+});
+
 describe.each([
     ['la etiqueta de la bolsa', etiqueta],
     ['la etiqueta con salidas', () => etiqueta({ salidas })],
     ['el vale de salida', vale],
+    ['el vale de cuatro bolsas', valeDeCuatro],
 ])('reglas del rollo — %s', (_nombre, armar) => {
     it('no manda un solo caracter que el rollo no sepa imprimir', () => {
         // Fuera de 0x20–0x7E el papel imprime otra letra, y lo hace en silencio.
@@ -193,42 +218,82 @@ describe('la etiqueta de una bolsa', () => {
     });
 });
 
-describe('el vale que queda dentro de la bolsa', () => {
+describe('el vale de una salida', () => {
     it('dice cuanto sale y cuanto queda — el papel a mano solo decia lo primero', () => {
-        expect(vale().totales).toEqual([
-            ['SALE DE LA BOLSA', '$200.00', true],
-            ['QUEDA EN LA BOLSA', '$516.92'],
-        ]);
+        expect(vale().totales).toEqual([['SALE DE LA BOLSA', '$200.00', true]]);
+        // Lo que queda ya no es un total: es la ultima columna de la tabla, que
+        // es el unico lugar donde entra bolsa por bolsa.
+        expect(vale().items.filas).toEqual([['S3-260814-2 14/08', '19:01', '200.00', '516.92']]);
     });
 
-    it('nombra su bolsa: un vale que cambia de bolsa descuadra dos', () => {
-        expect(pie(vale())).toContain('Este vale queda dentro de la bolsa S3-260814-2.');
+    it('nombra sus bolsas con el corte: el folio solo no las distingue sobre la mesa', () => {
+        expect(cuerpo(vale())).toContain('S3-260814-2 14/08');
+        expect(cuerpo(vale())).toContain('19:01');
     });
 
-    it('en una remesa no hay quien firme: la recibe el cliente', () => {
+    it('no dice donde se guarda ni pide firma', () => {
+        // Hasta el 2026-08-28 el pie decia «Este vale queda dentro de la bolsa
+        // X» y llevaba una raya para firmar. Las dos se fueron: el vale se
+        // archiva —no hace falta que el papel lo repita— y quien retira ya esta
+        // nombrado por el servidor, que es mas fuerte que una firma a mano.
+        const t = vale({ recibidoPor: { nombre: 'Andy Mancia', metodo: 'CARNE' } });
+        expect(pie(t)).not.toContain('dentro de la bolsa');
+        expect(pie(t)).not.toContain('Firma');
+        expect(pie(t)).toContain('Recibe: Andy Mancia (carne escaneado)');
+    });
+
+    it('en una remesa no se nombra a nadie: la recibe el cliente', () => {
         const t = vale();
         expect(pie(t)).not.toContain('Recibe:');
-        expect(pie(t)).not.toContain('Firma');
         expect(cuerpo(t)).toContain('No. de boleta: 4477201');
     });
 
-    it('en otra causa firma quien retira, y dice como se comprobo que era el', () => {
+    it('en otra causa nombra a quien retira, y dice como se comprobo que era el', () => {
         const t = vale({ recibidoPor: { nombre: 'MARÍA JOSÉ PEÑA', metodo: 'CLAVE' } });
         expect(pie(t)).toContain('Recibe: MARIA JOSE PENA');
         expect(pie(t)).toContain('(usuario y contrasena)');
-        expect(pie(t)).toContain('Firma ______________________');
     });
 
-    it('cuando la operacion salio de dos bolsas, ningun vale parece ser toda la operacion', () => {
+    it('una salida de cuatro bolsas es UN papel con cuatro renglones', () => {
+        // El caso real que lo motivo: CMB-1032, $2,000 de La Popular. Antes
+        // salian cuatro vales casi iguales y parecian cuatro salidas.
         const t = vale({
-            vale: { folio: 'V-S3-260815-4', monto: 300, saldo_despues: 216.92 },
-            operacion: { folio: 'P-260815-7', motivo: 'Pago a proveedor', monto: 500 },
+            operacion: {
+                folio: 'CMB-1032', motivo: 'Cambio por monedas', monto: 2000,
+                leyenda: 'El dinero queda en sala de ventas.',
+            },
+            lineas: [
+                linea({ movimiento_id: 33, bolsa_folio: 'LP-1144', bolsa_fecha: '2026-08-26', bolsa_hora: '13:06', monto: -370, saldo_despues: 3.85 }),
+                linea({ movimiento_id: 34, bolsa_folio: 'LP-1147', bolsa_fecha: '2026-08-26', bolsa_hora: '16:01', monto: -560, saldo_despues: 3.07 }),
+                linea({ movimiento_id: 35, bolsa_folio: 'LP-1149', bolsa_fecha: '2026-08-26', bolsa_hora: '19:01', monto: -210, saldo_despues: 1.91 }),
+                linea({ movimiento_id: 36, bolsa_folio: 'LP-1159', bolsa_fecha: '2026-08-27', bolsa_hora: '14:22', monto: -860, saldo_despues: 81.40 }),
+            ],
         });
-        expect(pie(t)).toContain('Parte de P-260815-7 por $500.00.');
+        expect(t.items.filas).toHaveLength(4);
+        expect(t.items.filas.map((f) => [f[0], f[2], f[3]])).toEqual([
+            ['LP-1144 26/08', '370.00', '3.85'],
+            ['LP-1147 26/08', '560.00', '3.07'],
+            ['LP-1149 26/08', '210.00', '1.91'],
+            ['LP-1159 27/08', '860.00', '81.40'],
+        ]);
+        // El destacado es el total de la operacion, y dice de cuantas bolsas
+        // salio: un solo numero sin eso se lee como el saldo de una bolsa.
+        expect(t.totales).toEqual([['SALE DE 4 BOLSAS', '$2,000.00', true]]);
+        // Y sigue siendo UN papel: un solo folio arriba, el de la operacion.
+        expect(cuerpo(t)).toContain('Vale: CMB-1032');
     });
 
-    it('cuando la operacion cabe en una sola bolsa no dice nada de partes', () => {
-        expect(pie(vale())).not.toContain('Parte de');
+    it('una linea anulada no entra ni al detalle ni a la cuenta de bolsas', () => {
+        const t = vale({
+            operacion: { folio: 'PAG-1004', motivo: 'Pago a proveedor', monto: 200 },
+            lineas: [
+                linea(),
+                linea({ movimiento_id: 2, bolsa_folio: 'S3-1099', monto: -300, anulado_at: '2026-08-16T10:00:00Z' }),
+            ],
+        });
+        expect(t.items.filas).toHaveLength(1);
+        expect(cuerpo(t)).not.toContain('S3-1099');
+        expect(t.totales[0][0]).toBe('SALE DE LA BOLSA');
     });
 
     it('el rotulo de a quien se le entrego lo dice el TIPO, no este archivo', () => {
@@ -254,7 +319,6 @@ describe('el vale que queda dentro de la bolsa', () => {
         // unico que dice que no. Sale del catalogo, igual que el rotulo de
         // arriba: un motivo nuevo la declara ahi y este archivo no se toca.
         const cambio = vale({
-            vale: { folio: 'V-LP-260828-1', monto: 370, saldo_despues: 3.85 },
             operacion: {
                 folio: 'CMB-260828-1', motivo: 'Cambio por monedas', monto: 2000,
                 leyenda: 'El dinero queda en sala de ventas.',

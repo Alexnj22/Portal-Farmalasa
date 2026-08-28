@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
-    cerrarBolsa, fetchSaldos, fetchSalidasDeBolsa, marcarEtiquetaImpresa, marcarValeImpreso,
+    cerrarBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa,
+    marcarEtiquetaImpresa, marcarValeImpreso,
 } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
@@ -109,56 +110,84 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     }, [showToast, nombreSala, user, salidasDeLaEtiqueta]);
 
     /**
-     * El vale que queda DENTRO de la bolsa cuando sale dinero.
+     * EL VALE de una salida — **uno por operación**, aunque el dinero haya
+     * salido de cuatro bolsas.
      *
-     * Se imprime junto con la etiqueta nueva y no en lugar de ella: son dos
-     * papeles con dos trabajos. El vale respalda la salida y lo firma quien se
-     * llevó el efectivo; la etiqueta va pegada afuera y dice cuánto queda —y
-     * dejó de ser cierta en el momento en que salió la plata.
+     * Se imprime junto con las etiquetas y no en lugar de ellas: son papeles con
+     * trabajos distintos. El vale respalda la salida entera y lo firma quien se
+     * llevó el efectivo; cada etiqueta va pegada afuera de SU bolsa y dice
+     * cuánto le queda —y dejó de ser cierta en el momento en que salió la plata.
+     *
+     * ── Por qué UNO y no uno por bolsa (2026-08-28) ─────────────────────────
+     * Corregido por el usuario mirando los cuatro que salieron de CMB-1032:
+     * «los vales y demás se guardan aparte. así que puede ser solo 1. eso sí,
+     * debe especificar de dónde y cuánto salió». Cuando el papel se archiva en
+     * vez de viajar dentro de la bolsa, cuatro casi iguales son cuatro salidas
+     * aparentes de una operación sola — y el faltante de cada bolsa ya lo
+     * explica su etiqueta, que sigue siendo una por bolsa.
+     *
+     * Las líneas las trae el SERVIDOR (`get_operacion_de_bolsa`) y no la
+     * pantalla: quien llama acaba de mover el saldo, así que su copia en memoria
+     * es la de antes del cambio. Es el mismo motivo por el que
+     * `reimprimirEtiqueta` vuelve a pedir las salidas.
+     *
+     * `salaId` viaja aparte y no dentro de la operación porque es para elegir la
+     * TICKETERA, no para el papel: la caja a la que se manda el documento.
      */
-    const imprimirVale = useCallback(async (mov, bolsa, saldoDespues) => {
-        if (!mov || !bolsa) return false;
-        const [{ imprimirDocumento }, { construirValeDeSalida }] = await Promise.all([
+    const imprimirValeDeOperacion = useCallback(async (operacionId, salaId) => {
+        if (!operacionId) return false;
+        const [oper, { imprimirDocumento }, { construirValeDeSalida }] = await Promise.all([
+            fetchOperacionDeBolsa(operacionId),
             import('../utils/ticketPrint'),
             import('../utils/bolsaComprobante'),
         ]);
+        // Sin la operación no hay con qué armar el papel. Se AVISA en vez de
+        // seguir de largo: la salida ya está escrita, y callado nadie se entera
+        // hasta que falte el comprobante en el archivo.
+        if (!oper) {
+            showToast?.('Falta el vale',
+                'No se pudo traer esa salida. Reimprimilo desde el detalle de la bolsa.', 'error');
+            return false;
+        }
+
+        const vivas = (oper.lineas || []).filter((l) => !l.anulado_at);
 
         const r = await imprimirDocumento(construirValeDeSalida({
-            vale: { folio: mov.vale_folio, monto: mov.monto, saldo_despues: saldoDespues },
             operacion: {
-                folio: mov.operacion_folio,
-                motivo: mov.etiqueta,
-                entidad: mov.entidad,
-                entidadEtiqueta: mov.etiqueta_entidad,
-                numero_boleta: mov.numero_boleta,
-                monto: mov.monto_operacion,
-                nota: mov.nota,
-                // Lo que hay que saber de ESE motivo, dicho en el papel que
-                // queda adentro. Sin esto, un vale de $2,000 por cambio de
-                // monedas se lee como dinero que salió de la empresa — y el
-                // papel es contra lo que administración cuenta.
-                leyenda: mov.leyenda,
+                folio: oper.folio,
+                motivo: oper.etiqueta,
+                entidad: oper.entidad,
+                entidadEtiqueta: oper.etiqueta_entidad,
+                numero_boleta: oper.numero_boleta,
+                monto: oper.monto,
+                nota: oper.nota,
+                // Lo que hay que saber de ESE motivo. Sin esto, un vale de
+                // $2,000 por cambio de monedas se lee como dinero que salió de
+                // la empresa.
+                leyenda: oper.leyenda,
             },
-            bolsa,
-            sala: nombreSala[bolsa.branch_id] || '',
-            registradoPor: mov.registrado_nombre,
-            recibidoPor: mov.recibido_nombre
-                ? { nombre: mov.recibido_nombre, metodo: mov.recibido_metodo }
+            lineas: vivas,
+            sala: oper.sala || '',
+            registradoPor: oper.registrado_nombre,
+            recibidoPor: oper.recibido_nombre
+                ? { nombre: oper.recibido_nombre, metodo: oper.recibido_metodo }
                 : null,
-            registradoAt: mov.registrado_at,
-        }), { sala: bolsa.branch_id });
+            registradoAt: oper.registrado_at,
+        }), { sala: salaId });
 
         // Constancia de que se mandó a imprimir. Como con la etiqueta, `ok`
         // significa RECIBIDO y no «salió papel», así que se puede reimprimir.
-        if (r.ok) await marcarValeImpreso(mov.movimiento_id);
+        // Se marcan TODAS las líneas: el papel que salió las cubre a las cuatro,
+        // y dejar tres sin marcar diría que su vale nunca se imprimió.
+        if (r.ok) await Promise.all(vivas.map((l) => marcarValeImpreso(l.movimiento_id)));
 
         showToast?.(
             r.ok ? 'Vale enviado' : 'No se pudo imprimir el vale',
-            r.ok ? `${mov.vale_folio} · dejalo dentro de la bolsa` : r.detalle,
+            r.ok ? `${oper.folio} · archivalo con los comprobantes` : r.detalle,
             r.ok ? 'success' : 'error',
         );
         return r.ok;
-    }, [showToast, nombreSala]);
+    }, [showToast]);
 
     /**
      * La etiqueta al día, cuando el saldo de la bolsa cambió.
@@ -189,13 +218,21 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     }, [imprimir, salidasDeLaEtiqueta, showToast]);
 
     /**
-     * **Los DOS papeles de una salida**, por cada bolsa de la que salió dinero.
+     * **Los papeles de una salida: UN vale y una etiqueta por bolsa.**
      *
      * Vive acá y no en cada pantalla porque estaba escrito dos veces —la
      * baldosa del Inicio y la pestaña de Cortes— y las dos hacían lo mismo con
      * diferencias de una línea. Es la lección de `useResolverCorte` otra vez:
      * dos copias de una regla son dos reglas, y la que se rompa lo va a hacer
      * en la sala, sobre una bolsa con el número equivocado pegado encima.
+     *
+     * ── La cuenta de papeles cambió el 2026-08-28 ───────────────────────────
+     * Eran dos por bolsa: con cuatro bolsas salían ocho. Hoy es **uno más una
+     * por bolsa** —cinco— porque el vale pasó a ser de la operación entera:
+     * «los vales y demás se guardan aparte. así que puede ser solo 1. eso sí,
+     * debe especificar de dónde y cuánto salió» (usuario). Las etiquetas siguen
+     * siendo una por bolsa y ahí no había nada que juntar: cada una dice el
+     * saldo de SU bolsa, que es un número distinto en cada papel.
      *
      * **Cada papel va en su propio intento.** Encadenados —que es como estaban—
      * un fallo del vale se llevaba la etiqueta con él: `onHecho` corre dentro
@@ -205,50 +242,44 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
      * dice un monto que ya no tiene.
      *
      * El orden es el del mostrador: primero el vale —que alguien está
-     * esperando para firmar— y después la etiqueta que se pega afuera.
+     * esperando para firmar— y después las etiquetas que se pegan afuera.
      *
+     * @param operacion la fila que devolvió `registrarSalida` (trae `id`)
      * @param repartos  [{ bolsa_id, monto }] tal como los devuelve `registrarSalida`
      * @param bolsas    las filas que la pantalla ya tiene en memoria
      * @param nombrePersona  Map de empleado → nombre, para el «Guardo» de la etiqueta
      */
-    const imprimirTrasLaSalida = useCallback(async (repartos, bolsas = [], nombrePersona) => {
-        for (const r of repartos || []) {
-            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
-            // Sin la fila no hay con qué armar los papeles. Se AVISA en vez de
-            // seguir de largo: callado, la salida queda escrita, no sale nada y
-            // nadie se entera hasta que administración cuenta la bolsa.
-            if (!bolsa) {
-                showToast?.('Faltan los papeles',
-                    'El vale y la etiqueta se imprimen desde el detalle de la bolsa.', 'error');
-                continue;
-            }
+    const imprimirTrasLaSalida = useCallback(async (operacion, repartos, bolsas = [], nombrePersona) => {
+        const filas = (repartos || [])
+            .map((r) => ({ r, bolsa: bolsas.find((b) => b.id === r.bolsa_id) }));
 
-            // El saldo lo dice el SERVIDOR (`bolsa_saldo`), no una suma hecha
-            // acá: sumar `monto_inicial + Σ salidas` en el navegador era una
-            // segunda definición de cuánto dinero hay en una bolsa, y era la
-            // que salía impresa.
-            const vivas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
-            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
-            const ultima = vivas[vivas.length - 1];
+        // Sin la fila no hay con qué armar la etiqueta. Se AVISA en vez de
+        // seguir de largo: callado, la salida queda escrita, no sale nada y
+        // nadie se entera hasta que administración cuenta la bolsa.
+        if (filas.some(({ bolsa }) => !bolsa)) {
+            showToast?.('Faltan los papeles',
+                'El vale y la etiqueta se imprimen desde el detalle de la bolsa.', 'error');
+        }
 
-            if (ultima) {
-                // El fallo se DICE. Hasta el 21-ago-2026 esto era un
-                // `console.error` y nada más: el vale no salía, la salida
-                // quedaba escrita y quien la registró no tenía forma de
-                // enterarse hasta que administración abriera la bolsa y no
-                // encontrara el papel adentro. La etiqueta ya avisaba; el vale
-                // era el único de los dos que fallaba callado.
-                try { await imprimirVale(ultima, bolsa, saldo); }
-                catch (e) {
-                    console.error('bolsas: el vale no se pudo imprimir:', e?.message);
-                    showToast?.('Falta el vale',
-                        `${ultima.vale_folio} - imprimilo desde el detalle de la bolsa y dejalo adentro.`,
-                        'error');
-                }
+        // El fallo se DICE. Hasta el 21-ago-2026 esto era un `console.error` y
+        // nada más: el vale no salía, la salida quedaba escrita y quien la
+        // registró no tenía forma de enterarse hasta que faltara el comprobante.
+        if (operacion?.id) {
+            try {
+                await imprimirValeDeOperacion(operacion.id, filas[0]?.bolsa?.branch_id);
+            } catch (e) {
+                console.error('bolsas: el vale no se pudo imprimir:', e?.message);
+                showToast?.('Falta el vale',
+                    `${operacion.folio || 'La salida'} - imprimilo desde el detalle de la bolsa.`,
+                    'error');
             }
+        }
+
+        for (const { bolsa } of filas) {
+            if (!bolsa) continue;
             await reimprimirEtiqueta(bolsa, nombrePersona?.get?.(bolsa.cerrada_por));
         }
-    }, [imprimirVale, reimprimirEtiqueta, showToast]);
+    }, [imprimirValeDeOperacion, reimprimirEtiqueta, showToast]);
 
     /**
      * Cierra la bolsa del corte y manda la etiqueta a imprimir.
@@ -281,5 +312,5 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         return data;
     }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen, imprimir]);
 
-    return { cerrar, imprimir, imprimirVale, imprimirTrasLaSalida, reimprimirEtiqueta, ocupadoId };
+    return { cerrar, imprimir, imprimirValeDeOperacion, imprimirTrasLaSalida, reimprimirEtiqueta, ocupadoId };
 }

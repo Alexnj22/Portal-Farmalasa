@@ -89,6 +89,22 @@ const CRONS = [
           + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
   },
   {
+    job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',
+    corridasDia: 34, sistema: 19,
+    motivo: 'Quién tiene la caja abierta en cada sala, a qué hora la abrió y cuánto espera el '
+          + 'sistema. Existe porque ese dato hoy no está en ningún lado: tres de las seis salas '
+          + 'cortan bajo una cuenta compartida («MI CAJA LA POPULAR») —185 de 452 cortes desde el '
+          + '14-ago— y en los 452 `cortes_caja.employee_id` está en NULL. '
+          + 'Son 19 peticiones: un ingreso + tres por sala (cambiar de sala, la pantalla con las '
+          + 'cajas, y el panel de cada caja). No se cachea la caja de cada sala a propósito: una '
+          + 'caja nueva tiene que aparecer sola. '
+          + 'CADA 30 MINUTOS y no más seguido porque la hora de apertura que se guarda es EXACTA '
+          + '—la da el panel, no el reloj de la corrida—, así que mirar más veces no la mejora; lo '
+          + 'único que gana precisión es el cierre, y el turno se cierra una vez al día. La '
+          + 'ventana va en el cron Y en la función: acá acota el disparo, allá porque `forzar` la '
+          + 'saltea para un repaso a mano.',
+  },
+  {
     job: 'avisar-dui-por-vencer-diario', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: es SQL puro contra la propia base. Sin `slug` '

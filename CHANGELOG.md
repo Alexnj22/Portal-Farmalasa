@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.839.0 — El portal sabe quién tiene la caja abierta
+
+«¿Quién cortó la caja?» no tenía respuesta, y no por falta de acceso: **el dato
+no existía**. Tres de las seis salas cortan bajo una cuenta compartida —«MI CAJA
+LA POPULAR», «MI CAJA LA SALUD 2», «MI CAJA LA SALUD 5»—, o sea **185 de los 452
+cortes** desde el 14-ago, y en los 452, sin excepción, `cortes_caja.employee_id`
+estaba en NULL.
+
+Desde esta versión el portal lee cada media hora el turno vivo de cada sala:
+quién lo abrió, a qué hora exactamente, con qué monto y cuánto espera el sistema
+adentro en ese momento. Es **sólo lectura** — no escribe una línea del otro lado.
+
+**El nombre se resuelve a una ficha, y la regla no es comparar los nombres.** El
+sistema de la caja guarda el nombre legal completo y el portal el de uso diario:
+`NATHALY MICHELLE ESTRADA` ←→ Nathaly Estrada, y `AUDELIA ELIZABETH CALLEJAS`
+←→ Elizabeth Callejas, donde la ficha usa el **segundo** nombre. Con
+coincidencia exacta —aun sin tildes— las tres personas reales fallaban. Hoy se
+exige que cada palabra del nombre de la ficha esté en el de la caja **y que haya
+una sola ficha que cumpla**: con dos candidatas no se elige ninguna, porque
+quedar sin resolver es visible y atribuirle el turno a la persona equivocada no.
+Medido en las seis salas: las tres personas resueltas, las tres cuentas
+compartidas sin ficha — que es el hallazgo, no un fallo del cruce.
+
+Dos nombres dicen lo que se observó y no lo que pasó: `vista_at` es la última vez
+que se la encontró abierta y `cerrada_at`, **cuándo se la vio cerrada**. Con una
+corrida cada media hora, un turno cerrado a las 19:03 se ve cerrado a las 19:30,
+y un campo llamado a secas invitaría a restar horas con media hora inventada.
+
+Media hora es la cadencia más barata que sirve: la hora de apertura que se guarda
+es exacta porque la da el propio panel, así que mirar más seguido no mejora el
+dato. Son 646 peticiones al día, declaradas en el manifiesto de
+`gate:eficiencia` con su motivo — el presupuesto sube por decisión, no absorbido.
+
 ## v2.838.1 — La sugerencia de recorte espera su turno
 
 Al adjuntar una foto, el portal la manda a leer para proponer por dónde

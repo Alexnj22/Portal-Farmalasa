@@ -81,3 +81,36 @@ describe('leerProfesion', () => {
         expect(leerProfesion('ING.').profesion).toBe('Ingeniería');
     });
 });
+
+/* ── El «(A)» del femenino ───────────────────────────────────────────────────
+ *
+ * El RNPN imprime `LIC.(A)` cuando el título vale para los dos géneros, y esa
+ * forma no coincidía con nada: `LIC.` sí y `LICDA.` también. El resultado no era
+ * un error visible — la profesión se guardaba y el NIVEL quedaba vacío, o sea
+ * que la ficha decía «Lic.(a) en Ciencias de la Computación» y «nivel
+ * académico: —» a la vez. Lo reportó el usuario: «el nivel académico, ¿por qué
+ * no se agrega? el DUI sí lo tiene».
+ */
+describe('la forma femenina que imprime el DUI', () => {
+    it('«LIC.(A) EN …» es una licenciatura, y es universitaria', () => {
+        expect(leerProfesion('LIC.(A) EN CIENCIAS DE LA COMPUTACION')).toEqual({
+            profesion: 'Licenciatura en Ciencias de la Computacion', nivel: 'UNIVERSITARIO',
+        });
+    });
+
+    it('vale para las demás abreviaturas', () => {
+        expect(leerProfesion('ING.(A) EN SISTEMAS').nivel).toBe('UNIVERSITARIO');
+        expect(leerProfesion('TEC.(A) EN ENFERMERIA').nivel).toBe('TECNICO_SUPERIOR');
+    });
+
+    it('y sola, sin nada detrás', () => {
+        expect(leerProfesion('LIC.(A)')).toEqual({ profesion: 'Licenciatura', nivel: 'UNIVERSITARIO' });
+    });
+
+    it('lo que ya funcionaba sigue igual', () => {
+        expect(leerProfesion('LICDA. EN ENFERMERIA').nivel).toBe('UNIVERSITARIO');
+        expect(leerProfesion('ING. EN SISTEMAS Y COMPUTACION').nivel).toBe('UNIVERSITARIO');
+        // Y un oficio sigue sin nivel: no se inventa uno universitario.
+        expect(leerProfesion('COMERCIANTE').nivel).toBeNull();
+    });
+});

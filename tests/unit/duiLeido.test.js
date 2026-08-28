@@ -255,3 +255,57 @@ describe('diferencias', () => {
         expect(diferencias[0]).toMatchObject({ campo: 'dui', rotulo: 'DUI' });
     });
 });
+
+/* ── Tres datos que el DUI trae y el portal descartaba ───────────────────────
+ *
+ * Los tres salían con su aviso —«no coincide con ninguna opción del portal»— en
+ * casi todas las fichas, así que el aviso dejó de leerse como un hallazgo y pasó
+ * a ser parte del paisaje. Ninguno era culpa del documento.
+ */
+describe('el tipo de sangre como lo escribe el DUI', () => {
+    it('«O RH +» es «O+» — no se descarta', () => {
+        // El documento escribe la palabra RH en medio y separa el signo. Cruzarlo
+        // tal cual contra el catálogo no coincidía NUNCA.
+        expect(aplicarDuiLeido({ tipo_sangre: 'O RH +' }, {}).parche.blood_type).toBe('O+');
+        expect(aplicarDuiLeido({ tipo_sangre: 'O RH +' }, {}).descartados).toEqual([]);
+    });
+
+    it('aguanta las formas que aparecen de verdad', () => {
+        const leer = (t) => aplicarDuiLeido({ tipo_sangre: t }, {}).parche.blood_type;
+        expect(leer('A RH -')).toBe('A-');
+        expect(leer('AB RH+')).toBe('AB+');
+        expect(leer('B RH-')).toBe('B-');
+        expect(leer('O POSITIVO')).toBe('O+');   // documentos viejos, con letra
+        expect(leer('O+')).toBe('O+');
+    });
+
+    it('lo que no es un tipo de sangre se sigue descartando', () => {
+        const r = aplicarDuiLeido({ tipo_sangre: 'NO INDICA' }, {});
+        expect(r.parche.blood_type).toBeUndefined();
+        expect(r.descartados[0]).toMatch(/tipo de sangre/);
+    });
+});
+
+describe('el municipio anterior a la reforma de 2023', () => {
+    it('«CHALATENANGO» hoy es un DISTRITO de «Chalatenango Sur»', () => {
+        // Un DUI emitido en 2020 nombra el municipio de entonces. Cruzarlo contra
+        // la lista de hoy no coincide, y eso descartaba la dirección de casi toda
+        // ficha con documento anterior a la reforma.
+        const { parche, descartados } = aplicarDuiLeido(
+            { departamento: 'CHALATENANGO', municipio: 'CHALATENANGO' }, {});
+        expect(parche.municipality).toBe('Chalatenango Sur');
+        expect(parche.distrito).toBe('Chalatenango');
+        expect(descartados).toEqual([]);
+    });
+
+    it('un documento nuevo, con el nombre de hoy, sigue funcionando', () => {
+        expect(aplicarDuiLeido({ departamento: 'CHALATENANGO', municipio: 'CHALATENANGO SUR' }, {})
+            .parche.municipality).toBe('Chalatenango Sur');
+    });
+
+    it('lo que no existe se sigue descartando — no se adivina', () => {
+        const r = aplicarDuiLeido({ departamento: 'CHALATENANGO', municipio: 'NO EXISTE' }, {});
+        expect(r.parche.municipality).toBeUndefined();
+        expect(r.descartados[0]).toMatch(/municipio/);
+    });
+});

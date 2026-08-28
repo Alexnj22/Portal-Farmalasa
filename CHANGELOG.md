@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.837.1 — Tres datos que el DUI traía y el portal descartaba
+
+Los tres salían con el mismo aviso —*«no coincide con ninguna opción del
+portal»*— en casi todas las fichas. Y cuando un aviso aparece siempre deja de
+leerse como un hallazgo y pasa a ser parte del paisaje. **Ninguno era culpa del
+documento.**
+
+### El tipo de sangre
+
+El DUI no escribe «O+»: escribe **«O RH +»**, con la palabra RH en medio y el
+signo separado. Cruzarlo tal cual contra el catálogo no coincidía **nunca**.
+
+Ahora se le quita lo que sobra y queda el grupo con su signo. También entra
+«O POSITIVO» escrito con letra, que aparece en documentos viejos. Y lo que no es
+un tipo de sangre se sigue descartando.
+
+### El municipio
+
+La **reforma municipal de 2023** fusionó los municipios. Un DUI emitido en 2020
+dice «CHALATENANGO», y hoy eso no es un municipio: es un **distrito** dentro de
+«Chalatenango Sur». O sea que la dirección se descartaba en toda ficha cuyo
+documento sea anterior a la reforma — que son casi todas.
+
+No se adivina: se busca qué municipio del **mismo departamento** tiene un
+distrito con ese nombre, y sólo se usa **si hay uno**. Con dos, elegir sería
+inventar y el aviso de descartado dice la verdad. Verificado: exactamente un
+municipio de Chalatenango contiene el distrito «Chalatenango».
+
+De paso queda también el distrito, que es el mismo lugar con el nombre de hoy.
+
+### El nivel académico
+
+*«¿Por qué no se agrega? El DUI sí lo tiene.»*
+
+El RNPN imprime **`LIC.(A)`** cuando el título vale para los dos géneros, y esa
+forma no coincidía con nada — `LIC.` sí y `LICDA.` también. El resultado no era
+un error visible: la profesión **se guardaba** y el nivel quedaba vacío, así que
+la ficha decía «Lic.(a) en Ciencias de la Computación» y «nivel académico: —» a
+la vez.
+
+Ahora el `(A)` se acepta como parte de la abreviatura, en todas: `ING.(A)`,
+`TEC.(A)`, y sola sin nada detrás. Un oficio como «Comerciante» sigue **sin**
+nivel: no se le inventa uno universitario.
+
 ## v2.838.0 — La caja anota lo que se edita y lo que se borra
 
 Un movimiento de caja —un vale, un ingreso— **se puede editar y borrar en el

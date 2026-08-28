@@ -90,7 +90,19 @@ export function leerProfesion(crudo) {
     // 1 · Prefijo abreviado, con o sin punto.
     for (const p of PREFIJOS) {
         for (const a of p.abrev) {
-            const m = norm.match(new RegExp(`^${a}\\.?\\s+(.*)$`));
+            /* El `(A)` del femenino, que el DUI escribe pegado a la abreviatura.
+             *
+             * `LIC.(A) EN CIENCIAS DE LA COMPUTACION` no coincidía con nada:
+             * `LIC.` sí y `LICDA.` también, pero esta forma —que es la que el
+             * RNPN imprime cuando el título vale para los dos géneros— quedaba
+             * afuera. El resultado no era un error: la profesión se guardaba y
+             * el NIVEL quedaba vacío, o sea que la ficha decía «Lic.(a) en
+             * Ciencias de la Computación» y «nivel académico: —» a la vez.
+             *
+             * Se acepta como parte de la abreviatura: `\.?` para el punto,
+             * `(\([AO]\))?` para el paréntesis, y otra vez el punto porque
+             * aparece escrito de las dos formas. */
+            const m = norm.match(new RegExp(`^${a}\\.?\\s*(?:\\([AO]\\))?\\.?\\s+(.*)$`));
             if (m) {
                 const resto = limpio.slice(limpio.length - m[1].length);
                 // El resto se conserva ENTERO: «en Sistemas y Computación» no se
@@ -98,7 +110,9 @@ export function leerProfesion(crudo) {
                 return { profesion: `${p.titulo} ${capitalizar(resto, true)}`.trim(), nivel: p.nivel };
             }
             // El prefijo solo, sin nada detrás: «ING.» a secas.
-            if (norm === a || norm === `${a}.`) return { profesion: p.titulo, nivel: p.nivel };
+            if (new RegExp(`^${a}\\.?\\s*(?:\\([AO]\\))?\\.?$`).test(norm)) {
+                return { profesion: p.titulo, nivel: p.nivel };
+            }
         }
     }
 

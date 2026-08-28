@@ -33,6 +33,22 @@ const GENEROS = ['F', 'M'];
 const ESTADOS_FAMILIARES = ['SOLTERO', 'CASADO', 'DIVORCIADO', 'VIUDO', 'ACOMPAÑADO'];
 const TIPOS_SANGRE = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
+/* El DUI no escribe «O+»: escribe «O RH +», con la palabra RH en medio y
+ * espacios alrededor del signo. Cruzarlo tal cual contra el catálogo no
+ * coincidía nunca, y el dato se descartaba con su aviso —«no coincide con
+ * ninguna opción del portal»— en todas las fichas.
+ *
+ * Se le quita lo que sobra y se queda el grupo y el signo, que es lo que el
+ * catálogo guarda. Un `POSITIVO`/`NEGATIVO` escrito con letra también entra:
+ * aparece en documentos viejos. */
+const normalizarSangre = (v) => {
+    let t = sinTildes(v).replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    t = t.replace(/\bRH\b/g, ' ');
+    t = t.replace(/\bPOSITIVO\b|\bPOSITIVA\b/g, '+').replace(/\bNEGATIVO\b|\bNEGATIVA\b/g, '-');
+    return t.replace(/[^ABO+-]/g, '');
+};
+
 // El DUI dice «ACOMPAÑADO» y el prompt lo pide sin Ñ para que el modelo no
 // tenga que acertar un carácter que muchas fuentes de OCR confunden. Acá vuelve
 // a su forma canónica, que es la del catálogo del formulario.
@@ -161,7 +177,7 @@ export function aplicarDuiLeido(leido, actual = {}) {
     if (leido?.estado_familiar && !civil) descartados.push(`estado familiar «${leido.estado_familiar}»`);
     poner('marital_status', civil);
 
-    const sangre = deCatalogo(leido?.tipo_sangre, TIPOS_SANGRE);
+    const sangre = deCatalogo(normalizarSangre(leido?.tipo_sangre), TIPOS_SANGRE);
     if (leido?.tipo_sangre && !sangre) descartados.push(`tipo de sangre «${leido.tipo_sangre}»`);
     poner('blood_type', sangre);
 
@@ -178,13 +194,39 @@ export function aplicarDuiLeido(leido, actual = {}) {
     if (deptoOk) {
         poner('department', depto);
         const muni = canonMunicipio(leido?.municipio);
-        const muniOk = muni && municipiosDe(depto).includes(muni);
-        if (leido?.municipio && !muniOk) descartados.push(`municipio «${leido.municipio}»`);
-        if (muniOk) {
-            poner('municipality', muni);
-            const dist = canonDistrito(muni, leido?.distrito);
-            const distOk = dist && distritosDe(muni).includes(dist);
-            if (leido?.distrito && !distOk) descartados.push(`distrito «${leido.distrito}»`);
+        let elMunicipio = muni && municipiosDe(depto).includes(muni) ? muni : null;
+        /* El municipio del DUI puede ser un DISTRITO de hoy.
+         *
+         * La reforma municipal de 2023 fusionó los municipios: el que el
+         * documento nombra —«CHALATENANGO», emitido en 2020— hoy es un DISTRITO
+         * dentro de «Chalatenango Sur». Cruzarlo contra la lista de municipios
+         * no coincide con nada, y el dato se descartaba con su aviso en toda
+         * ficha cuyo DUI sea anterior a la reforma, que son casi todas.
+         *
+         * No es adivinar: se busca qué municipio del MISMO departamento tiene un
+         * distrito con ese nombre. Y sólo se usa si hay UNO — con dos, elegir
+         * sería inventar, y el aviso de descartado dice la verdad. */
+        let distritoHeredado = null;
+        if (!elMunicipio && leido?.municipio) {
+            const candidatos = municipiosDe(depto).filter(m => {
+                const d = canonDistrito(m, leido.municipio);
+                return d && distritosDe(m).includes(d);
+            });
+            if (candidatos.length === 1) {
+                elMunicipio = candidatos[0];
+                distritoHeredado = canonDistrito(elMunicipio, leido.municipio);
+            }
+        }
+        if (leido?.municipio && !elMunicipio) descartados.push(`municipio «${leido.municipio}»`);
+        if (elMunicipio) {
+            poner('municipality', elMunicipio);
+            // El distrito que trae el documento manda; si no trae, sirve el que
+            // se dedujo del municipio viejo — es el MISMO lugar con otro nombre.
+            const dist = canonDistrito(elMunicipio, leido?.distrito) || distritoHeredado;
+            const distOk = dist && distritosDe(elMunicipio).includes(dist);
+            if (leido?.distrito && !canonDistrito(elMunicipio, leido.distrito)) {
+                descartados.push(`distrito «${leido.distrito}»`);
+            }
             if (distOk) poner('distrito', dist);
         }
     }

@@ -39,8 +39,25 @@ import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 
 const EditorDeDocumento = lazy(() => import('./EditorDeDocumento'));
 
-const esImagen = (nombre = '', tipo = '') =>
-    /^image\//.test(tipo) || /\.(jpe?g|png|webp|gif|heic)$/i.test(nombre);
+/* ── Qué es el archivo NO se pregunta al nombre ────────────────────────────
+ *
+ * Se preguntaba, y falló en el primer documento real: el nombre llegó vacío
+ * —la fila no lo tenía guardado— así que cayó en «Documento», el visor lo dio
+ * por PDF y lo puso en un marco. Dos síntomas de una sola causa: la foto se
+ * veía AMPLIADA (un marco muestra la imagen a tamaño natural, no ajustada) y el
+ * botón de recortar no aparecía, porque un PDF no se edita.
+ *
+ * El tipo autoritativo es el del CONTENIDO, que llega en el `Content-Type` del
+ * propio archivo. El nombre y la extensión quedan de respaldo para cuando el
+ * servidor no dice nada útil (`application/octet-stream`), que pasa. */
+const porExtension = (texto = '') =>
+    /\.(jpe?g|png|webp|gif|heic|heif)(\?|$)/i.test(texto);
+
+export const esImagen = (tipoReal, nombre, url) => {
+    if (tipoReal && /^image\//i.test(tipoReal)) return true;
+    if (tipoReal && /^application\/pdf/i.test(tipoReal)) return false;
+    return porExtension(nombre) || porExtension(url);
+};
 
 /**
  * @param {string}   url        lo guardado (URL formato-público del bucket)
@@ -51,65 +68,70 @@ const esImagen = (nombre = '', tipo = '') =>
  * @param {Function} [onEditado] recibe el `File` corregido. Sin esto no se ofrece editar.
  */
 export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento', alCerrar, onEditado }) {
-    const [firmada, setFirmada] = useState(null);
+    /* El nombre real si lo hay; si no, el del archivo en el bucket. «Documento»
+     * a secas es lo que se vio en pantalla la primera vez, y no distingue un
+     * adjunto de otro cuando el expediente tiene seis. */
+    const titulo = nombre?.trim()
+        || (url ? decodeURIComponent(String(url).split('?')[0].split('/').pop() || '') : '')
+        || 'Documento';
+    const [verLo, setVerLo] = useState(null);      // la URL con la que se pinta
+    const [tipoReal, setTipoReal] = useState(null); // lo que dice el CONTENIDO
+    const [comoArchivo, setComoArchivo] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [fallo, setFallo] = useState(null);
     const [editando, setEditando] = useState(null);
-    const [trayendo, setTrayendo] = useState(false);
 
-    // Un archivo todavía sin subir se ve directo del disco; uno guardado necesita
-    // su URL firmada — el bucket es privado y la URL formato-público no abre.
+    /* Un archivo sin subir se ve del disco. Uno guardado se TRAE entero, no sólo
+     * se firma su URL: así el tipo sale del contenido y no de adivinarlo, y de
+     * paso el archivo ya está acá para editarlo sin una segunda descarga —el
+     * bucket es privado y cada firma es una llamada más. */
     useEffect(() => {
         let vivo = true;
+        let objeto = null;
+        const soltar = () => { if (objeto) URL.revokeObjectURL(objeto); };
+
         if (file) {
-            const u = URL.createObjectURL(file);
-            setFirmada(u); setCargando(false);
-            return () => { vivo = false; URL.revokeObjectURL(u); };
+            objeto = URL.createObjectURL(file);
+            setVerLo(objeto); setTipoReal(file.type || null);
+            setComoArchivo(file); setCargando(false);
+            return () => { vivo = false; soltar(); };
         }
+
         (async () => {
             try {
-                const u = await getSignedFileUrl(url);
+                const firmada = await getSignedFileUrl(url);
+                if (!firmada) throw new Error('sin firma');
+                const r = await fetch(firmada);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const blob = await r.blob();
                 if (!vivo) return;
-                if (!u) setFallo('No se pudo abrir el documento.');
-                setFirmada(u);
+                objeto = URL.createObjectURL(blob);
+                setVerLo(objeto);
+                setTipoReal(blob.type || null);
+                setComoArchivo(new File([blob], nombre || 'documento', { type: blob.type || '' }));
             } catch {
                 if (vivo) setFallo('No se pudo abrir el documento.');
             } finally {
                 if (vivo) setCargando(false);
             }
         })();
-        return () => { vivo = false; };
-    }, [url, file]);
+        return () => { vivo = false; soltar(); };
+    }, [url, file, nombre]);
 
-    const laImagen = esImagen(nombre, file?.type);
+    const laImagen = esImagen(tipoReal, nombre, url);
 
-    const editar = async () => {
-        if (file) { setEditando(file); return; }
-        setTrayendo(true);
-        try {
-            // Se trae de vuelta como `File` para que entre al MISMO editor que
-            // una subida nueva. Un editor aparte para «lo que ya está guardado»
-            // sería un segundo camino que se desincroniza del primero.
-            const r = await fetch(firmada);
-            if (!r.ok) throw new Error('no se pudo traer');
-            const blob = await r.blob();
-            setEditando(new File([blob], nombre || 'documento.jpg', { type: blob.type || 'image/jpeg' }));
-        } catch {
-            setFallo('No se pudo traer el documento para editarlo. Intenta de nuevo.');
-        } finally {
-            setTrayendo(false);
-        }
-    };
+    // Ya está en memoria: editar no vuelve a bajar nada.
+    const editar = () => { if (comoArchivo) setEditando(comoArchivo); };
 
     return (
         <>
             <ModalShell open onClose={alCerrar} maxWidthClass="max-w-3xl"
-                panelClassName="overflow-hidden" ariaLabel={nombre || 'Documento'}>
+                panelClassName="overflow-hidden" ariaLabel={titulo}>
                 <div className="flex flex-col max-h-[85dvh]">
                     <div className="flex items-center gap-2 p-4 pb-3 border-b border-divider shrink-0">
                         <FileText size={16} className="text-content-3 shrink-0" strokeWidth={2.5} />
                         <p className="min-w-0 flex-1 truncate text-body-sm font-bold text-content">
-                            {nombre || 'Documento'}
+                            {titulo}
                         </p>
                         <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar" onClick={alCerrar} />
                     </div>
@@ -123,14 +145,14 @@ export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento'
                             // `object-contain` y no `cover`: recortar un documento
                             // para que llene la caja esconde justo el borde que
                             // hay que mirar para saber si entró completo.
-                            <img src={firmada} alt={nombre || 'Documento'}
+                            <img src={verLo} alt={titulo}
                                 className="max-w-full max-h-[70dvh] object-contain rounded-card shadow-[var(--shadow-glass-2)]" />
                         ) : (
                             /* Sin fondo propio: el visor de PDF del navegador
                                pinta el suyo, y forzarle uno blanco a mano es un
                                color crudo que además no dice nada — el papel ya
                                viene dibujado adentro del documento. */
-                            <iframe src={firmada} title={nombre || 'Documento'}
+                            <iframe src={verLo} title={titulo}
                                 className="w-full h-[70dvh] rounded-card border-0 bg-surface-card" />
                         )}
                     </div>
@@ -140,22 +162,22 @@ export default function VisorDeDocumento({ url, file, nombre, tipo = 'documento'
                             sabe qué hacer con el resultado. Ver el encabezado. */}
                         {laImagen && onEditado && !fallo && (
                             <Button variant="secondary" size="sm" icon={Pencil}
-                                onClick={editar} loading={trayendo} disabled={cargando || trayendo}>
+                                onClick={editar} disabled={cargando || !comoArchivo}>
                                 Recortar y enderezar
                             </Button>
                         )}
                         {url && (
                             <Button variant="ghost" size="sm" icon={Download}
-                                onClick={() => downloadStoredFile(url, nombre)}>
+                                onClick={() => downloadStoredFile(url, titulo)}>
                                 Descargar
                             </Button>
                         )}
                         {/* La pestaña aparte deja de ser el camino y pasa a ser
                             una salida más: para imprimirlo, o para verlo grande
                             en otra ventana. */}
-                        {firmada && !fallo && (
+                        {verLo && !fallo && (
                             <Button variant="ghost" size="sm" icon={ExternalLink}
-                                onClick={() => window.open(firmada, '_blank', 'noopener,noreferrer')}>
+                                onClick={() => window.open(verLo, '_blank', 'noopener,noreferrer')}>
                                 Abrir aparte
                             </Button>
                         )}

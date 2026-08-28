@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.828.1 — El visor decidía por el nombre del archivo: una foto sin nombre se veía como PDF
+
+*«Al abrir la foto no me la muestra al 100% sino ampliada, ¿y si la quiero
+modificar? ¿O aplicar el filtro? ¿O recortar?»*
+
+**Dos síntomas, una sola causa.** El visor decidía si el adjunto era una imagen
+mirando el **nombre del archivo**, y en el primer documento real el nombre llegó
+vacío —la fila no lo tenía guardado—, así que cayó en «Documento» y lo dio por
+PDF. De ahí salieron los dos: la foto se veía **ampliada** en vez de entera —un
+marco muestra la imagen a tamaño natural, no ajustada— y el botón de **recortar
+no aparecía**, porque un PDF no se edita. Un solo dato mal deducido apagó media
+pantalla.
+
+Ahora el tipo sale del **contenido**: el archivo se trae entero y manda su
+`Content-Type`. El nombre y la extensión de la URL quedan de respaldo para cuando
+el servidor contesta `application/octet-stream`, que también pasa. Y traerlo
+entero tiene un segundo efecto: editar ya no vuelve a descargar nada, porque el
+archivo está en memoria.
+
+Sin tipo ni extensión no se adivina que es una imagen: se prefiere el marco, que
+muestra cualquier cosa. Un `<img>` con un PDF adentro es un icono roto.
+
+El título deja de decir «Documento» y muestra el nombre del archivo en el bucket
+cuando la fila no lo trae — con seis adjuntos en un expediente, «Documento» no
+distingue ninguno.
+
+**Sobre identificar los datos:** ya pasa. Lo que sale del editor entra por el
+mismo camino que una subida nueva, así que al guardar un DUI corregido el portal
+lo vuelve a leer y a completar los campos.
+
 ## v2.828.0 — Los documentos se ven y se arreglan sin salir de la pantalla, y no se guarda algo ilegible
 
 Traído por una foto real: un DUI acostado, ocupando un tercio de una foto

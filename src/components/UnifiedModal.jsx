@@ -1012,15 +1012,33 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                             )}
                                             <button
                                                 type="button"
+                                                data-foco="hijo"
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 // El acuse: son los pasos del expediente de
                                                 // empleado y en el teléfono se tocan para
                                                 // saltar de sección. El círculo ya reacciona
                                                 // al puntero (`group-hover:`), que ahí no
                                                 // existe. `min-h` de paso: el rótulo es micro.
+                                                /* ── El aro de foco va en el CÍRCULO, no en el botón ──
+                                                   El botón es una columna —círculo arriba, rótulo
+                                                   abajo—, así que el anillo global (`button:focus-visible`,
+                                                   `outline` rectangular) dibujaba un CUADRADO alrededor
+                                                   de los dos. Sobre un icono redondo eso se lee como un
+                                                   defecto de dibujo, no como «este control tiene el
+                                                   foco»: lo reportó el usuario con una captura —«no se ve
+                                                   bien ese recuadro, rompe que es redondo el icono»—.
+
+                                                   Es el mismo problema que ya se había resuelto en el
+                                                   sidebar por el otro lado: ahí el anillo se salía del
+                                                   panel y se recortaba. La lección repetida es que el
+                                                   anillo tiene que seguir la FORMA del control, y cuando
+                                                   el control no es la caja del botón hay que decírselo.
+
+                                                   No se quita el indicador: se muda al círculo, que es
+                                                   redondo, así que el aro también. */
                                                 className="flex flex-col items-center gap-1.5 group min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.97]"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-[var(--dur-slow)] border-2 shadow-sm ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-[var(--dur-slow)] border-2 shadow-sm group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--focus-ring-color)] ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
                                                 <span className={`text-micro font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>

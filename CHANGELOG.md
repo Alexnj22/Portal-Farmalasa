@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.827.1 — El aro de foco sigue la forma del control, no la caja del botón
+
+*«Visualmente no se ve bien ese recuadro con el efecto en esa sección. Rompe que
+es redondo el icono.»*
+
+En la barra de pasos del alta de personal —Personal · Contrato · Nómina ·
+Documentos— cada paso es un botón en COLUMNA: círculo arriba, rótulo abajo. El
+anillo de foco global es un `outline` rectangular sobre el botón, así que
+encerraba a los dos y dejaba un **cuadrado alrededor de un icono redondo**.
+
+Ahora el anillo lo dibuja el círculo, con `outline` desplazado: redondo, como el
+control que marca.
+
+**Dos cosas que costaron una medición cada una.**
+
+Primero se intentó con `focus-visible:outline-none` de Tailwind sobre el botón,
+y **no ganó**: medido en el navegador, el contorno seguía en
+`solid 2px rgb(0,82,204)`. El motivo no es especificidad —la clase tiene más—
+sino las **capas**: las utilidades de Tailwind viven en `@layer`, y una regla sin
+capa le gana a cualquiera dentro de una, por específica que sea. O sea que una
+excepción a una regla global sin capa **sólo se puede escribir al lado de esa
+regla**, y por eso `data-foco="hijo"` vive en `index.css` con su requisito
+escrito: quien lo use tiene que dibujar el anillo en un hijo, o el control se
+queda sin indicador de foco.
+
+Y el anillo del círculo empezó siendo un `ring` sin desplazamiento — que se pega
+al borde y, sobre el paso **activo** (que ya es azul), queda del mismo color que
+lo que rodea: invisible justo donde el foco está. El desplazamiento es lo que lo
+separa, igual que en la regla global.
+
+Es el mismo aprendizaje que ya había dejado el sidebar por el otro lado, donde el
+anillo se salía del panel y se recortaba: **el anillo tiene que seguir la forma
+del control, y cuando el control no es la caja del botón hay que decírselo.**
+
 ## v2.827.0 — Enlazar a quien vuelve trae su ficha, y cuatro correcciones de pantalla
 
 Seis cosas vistas en pantalla. La primera no era una molestia: **borraba

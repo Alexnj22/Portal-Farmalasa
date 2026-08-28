@@ -3675,6 +3675,43 @@ a:focus-visible,
 }
 
 
+/* ── Cuando el control NO es la caja del botón (2026-08-28) ───────────────
+   `data-foco="hijo"` dice: este botón no dibuja su propio anillo, lo dibuja
+   un hijo suyo (con `group-focus-visible:ring-*`).
+
+   Existe por la barra de pasos del alta de personal —Personal · Contrato ·
+   Nómina · Documentos—: el botón es una COLUMNA, círculo arriba y rótulo
+   abajo, así que el anillo rectangular de la regla de arriba encerraba a los
+   dos y quedaba un cuadrado alrededor de un icono redondo. Lo reportó el
+   usuario con una captura: «no se ve bien ese recuadro, rompe que es redondo
+   el icono».
+
+   ── Y por qué la excepción tiene que estar ACÁ y no en el componente ─────
+   Se intentó primero con `focus-visible:outline-none` de Tailwind sobre el
+   botón, y NO ganó: medido con el navegador, el contorno seguía en
+   `solid 2px rgb(0,82,204)`. El motivo no es especificidad —la clase tiene
+   más— sino las CAPAS: las utilidades de Tailwind viven en `@layer`, y una
+   regla sin capa como la de arriba le gana a cualquier regla dentro de una,
+   por específica que sea. Es el mismo tropiezo que ya estaba anotado en el
+   comentario del campo de PIN.
+
+   O sea: una excepción a una regla global sin capa sólo se puede escribir al
+   lado de esa regla. Por eso ésta vive acá, y por eso lleva escrito el
+   requisito que la hace legítima — quien la use TIENE que dibujar el anillo
+   en un hijo, o el control se queda sin indicador de foco.
+
+   Y ese hijo lo dibuja con `outline` + `outline-offset`, no con `ring`: un
+   `ring` sin desplazamiento se pega al borde del círculo, y sobre el paso
+   ACTIVO —que ya es azul— queda del mismo color que lo que rodea, o sea
+   invisible justo donde el foco está. Medido antes de cambiarlo. El
+   desplazamiento es lo que lo separa del relleno, igual que en la regla
+   global. */
+button[data-foco="hijo"]:focus-visible,
+[role="button"][data-foco="hijo"]:focus-visible {
+  outline: none;
+}
+
+
 /* ═══════════════════════════════════════════════════════════════
    ALERT GLOW — TabCatalogo product cards
    ═══════════════════════════════════════════════════════════════ */

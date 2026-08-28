@@ -100,6 +100,24 @@ if git diff --cached --name-only | grep -qE '^(src/|supabase/functions/)'; then
   node scripts/data-gate.mjs --hook || exit 1
 fi
 
+# undefinidos-gate: sólo si el commit toca `src/`. Corre la regla `no-undef` de
+# ESLint —y SÓLO esa— sobre lo que el índice conoce. Bloqueante en cero.
+#
+# El linter ya sabía denunciarlo; lo que faltaba era que alguien lo corriera.
+# `npm run lint` no está en el hook porque el resto del proyecto tiene errores
+# de otras reglas (memoización del compilador de React) y un `eslint .`
+# bloqueante fallaría desde el primer commit.
+#
+# Dos casos en dos días, y los dos con la misma firma: el ReferenceError cae en
+# un `catch` de más arriba, que escribe un mensaje que habla de OTRA COSA. Uno
+# decía «Error al subir documento» sobre un archivo que sí se había subido; el
+# otro, «No se pudo guardar la ficha» con el empleado ya creado —y de paso se
+# perdían la contraseña temporal, el carné de papel y el cierre del diálogo—.
+# Ninguno de los dos falla al compilar ni aparece en un log.
+if git diff --cached --name-only | grep -qE '^src/'; then
+  node scripts/undefinidos-gate.mjs --hook || exit 1
+fi
+
 # permissions-gate: solo si el commit toca el registro de permisos o código que
 # los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
 # gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard

@@ -424,6 +424,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         // el documento no la escribe nunca en texto y lo dice: este
                         // papel vale lo mismo que el carné, hasta que llegue el
                         // plástico y también después.
+                        // Por `await import()`, como sus dos vecinos de acá abajo:
+                        // el documento arma un PDF y un código de barras, y eso no
+                        // puede viajar en el chunk de un modal que casi siempre se
+                        // abre para otra cosa.
+                        const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
                         const doc = await descargarDocumentoDeBienvenida({
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
                             cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',

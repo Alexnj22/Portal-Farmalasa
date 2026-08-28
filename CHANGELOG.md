@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.823.1 — El documento de bienvenida nunca se pudo generar, y el aviso culpaba al alta
+
+Reportado como `Can't find variable: descargarDocumentoDeBienvenida`.
+
+`UnifiedModal` llamaba a esa función **sin importarla**. O sea que el documento
+de accesos —usuario, contraseña temporal, orientación de ISSS y AFP, y el
+carné— **no se generó nunca** desde que se agregó.
+
+**Lo caro no es que faltara el PDF: es a quién culpaba el aviso.** El
+`ReferenceError` caía en el `catch` del alta, que muestra **«No se pudo guardar
+la ficha. Verifica que no falten datos.»** — con el empleado **ya creado**. Quien
+lo viera volvería a intentar y crearía un duplicado, o daría por hecho que no
+pasó nada. Y de arrastre se perdían cuatro cosas más, porque el error corta el
+resto del bloque:
+
+- la **contraseña temporal**, que sólo existe en esa respuesta (queda en el
+  portapapeles, pero el aviso que lo dice nunca sale);
+- el **carné de papel** del alta, que se imprime después;
+- el cierre del diálogo;
+- la limpieza del borrador.
+
+Verificado en producción: **ninguna ficha creada en los últimos 4 días**, así
+que no quedó ningún empleado a medias.
+
+### Y ahora hay algo que lo mira
+
+`npm run gate:undefinidos` corre la regla `no-undef` de ESLint —y sólo ésa—
+sobre `src/`, **bloqueante en cero**, y entra al hook de pre-commit acotado al
+índice.
+
+El linter ya sabía denunciarlo. Lo que faltaba era que alguien lo corriera:
+`npm run lint` no está en el hook porque el resto del proyecto tiene errores de
+otras reglas (memoización del compilador de React) y un `eslint .` bloqueante
+fallaría desde el primer commit. Así que la regla estaba encendida y su hallazgo
+no llegaba a ninguna pantalla.
+
+**Son dos casos en dos días, y los dos con la misma firma:** el error nombra
+otra cosa, así que manda a mirar donde no está el problema. El de ayer era
+`aiResponse` declarada dentro de un `if` y leída fuera, en la rama del
+certificado médico anual: decía «Error al subir documento» sobre un archivo que
+sí se había subido. Ninguno de los dos falla al compilar —para el empaquetador
+un identificador suelto es una variable global que ya aparecerá—, ninguno
+aparece en una prueba y ninguno deja rastro en un log.
+
+Medido sobre las 568 fuentes de `src/`: **0 hallazgos** con el defecto ya
+corregido, y el gate reproduce el defecto exacto cuando se le quita el `import`
+de vuelta.
+
 ## v2.823.0 — El DUI se recorta antes de subirlo, y el portal dice qué cara le tocó
 
 Tres cosas pedidas sobre la misma pantalla: *«mientras está en el QR que haya

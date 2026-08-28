@@ -194,7 +194,6 @@ export interface PermisoModulo {
   emp: {
     role_id: number | null;
     secondary_role_id: number | null;
-    system_role: string | null;
     branch_id: number | null;
     first_names?: string | null;
     last_names?: string | null;
@@ -216,7 +215,7 @@ export async function permisoDeModulo(
 
   const { data: emp, error: empErr } = await admin
     .from("employees")
-    .select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
+    .select("role_id, secondary_role_id, branch_id, first_names, last_names")
     .eq("id", employeeId).maybeSingle();
   if (empErr) {
     console.error(`[permisoDeModulo] employees (${modulo}/${accion}): ${empErr.message}`);
@@ -255,10 +254,13 @@ export async function permisoDeModulo(
   }
 
   const filas = (permisos ?? []) as Record<string, unknown>[];
-  const su = emp?.system_role === "SUPERADMIN";
+  // La rama `system_role === "SUPERADMIN"` se retiró el 2026-08-28: era la llave
+  // maestra que se saltaba el permiso por módulo, y la única ficha que la portaba
+  // —la cuenta técnica del portal— se borró. Código muerto medido, no supuesto.
+  // Lo que queda es el permiso del cargo, que es como decide el resto del portal.
   return {
-    puede: su || filas.some((p) => p[accion] === true),
-    alcanceTodo: su || filas.some((p) => p[accion] === true && p.scope === "ALL"),
+    puede: filas.some((p) => p[accion] === true),
+    alcanceTodo: filas.some((p) => p[accion] === true && p.scope === "ALL"),
     emp: (emp ?? null) as PermisoModulo["emp"],
     roto: null,
   };

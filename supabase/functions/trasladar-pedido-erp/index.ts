@@ -394,8 +394,8 @@ Deno.serve(async (req) => {
       // interpreta como una decisión (pedir el permiso, avisar al jefe), no
       // como una falla que se reintenta, así que el mensaje equivocado manda a
       // la persona por el camino equivocado. Se distinguen.
-      const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; system_role: string | null; branch_id: number | null; first_names?: string; last_names?: string }>(
-        admin.from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
+      const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; branch_id: number | null; first_names?: string; last_names?: string }>(
+        admin.from("employees").select("role_id, secondary_role_id, branch_id, first_names, last_names")
           .eq("id", usuario.id).maybeSingle(),
         "tu ficha de empleado",
       );
@@ -409,11 +409,13 @@ Deno.serve(async (req) => {
         "tus permisos de Pedidos",
       );
       if (rotoPerm) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoPerm }, 503);
-      const puede = emp?.system_role === "SUPERADMIN" || (permisos ?? []).some((p) => p.can_edit);
+      // La rama `system_role === "SUPERADMIN"` se retiró el 2026-08-28: era la
+      // llave maestra que se saltaba el permiso por módulo, y la única ficha que
+      // la portaba —la cuenta técnica— se borró. Código muerto medido.
+      const puede = (permisos ?? []).some((p) => p.can_edit);
       if (!puede)
         return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
-      alcanceTodo = emp?.system_role === "SUPERADMIN"
-        || (permisos ?? []).some((p) => p.can_edit && p.scope === "ALL");
+      alcanceTodo = (permisos ?? []).some((p) => p.can_edit && p.scope === "ALL");
       empBranchId = emp?.branch_id == null ? null : Number(emp.branch_id);
     }
 

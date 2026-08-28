@@ -16,11 +16,18 @@
 // la que cubre a una sala que no está. Lo que NO puede —y eso lo garantiza la
 // base, no esta función— es aceptar lo que ella misma propuso.
 
-/** Los cargos que la base reconoce como supervisión (`auth_es_supervision`). */
-export const CARGOS_DE_SUPERVISION = ['SUPERVISOR', 'ADMIN', 'SUPERADMIN'];
+/**
+ * El escalón desde el que la base reconoce supervisión (`auth_es_supervision`).
+ *
+ * Era una lista de valores de `employees.system_role` —'SUPERVISOR', 'ADMIN',
+ * 'SUPERADMIN'—, o sea la misma regla escrita dos veces: acá y en la base. Y
+ * escrita mal, porque ese campo decía `SUPERVISOR` del Gerente General y `ADMIN`
+ * de la jefatura de Talento Humano. Ahora las dos leen el rango del cargo.
+ */
+export const RANGO_DE_SUPERVISION = 3;
 
-export const esCargoDeSupervision = (systemRole) =>
-    CARGOS_DE_SUPERVISION.includes(systemRole);
+export const esCargoDeSupervision = (rango) =>
+    Number(rango ?? 0) >= RANGO_DE_SUPERVISION;
 
 /**
  * @returns 'yo' | 'sala' | 'bodega' | 'supervision' | 'nadie'

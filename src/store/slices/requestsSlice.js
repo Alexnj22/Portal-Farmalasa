@@ -3,11 +3,11 @@ import { notifyEmployees } from '../../utils/notify';
 import {
     fetchEmployeeUnavailable, fetchAllRolesHierarchy, fetchRolesByNamePattern,
     fetchActiveEmployeesInRoleAndBranch, fetchBranchAdmins, fetchGlobalAdmins, fetchAnyActiveAdmin,
-    fetchApprovalRolePermissions, fetchActiveEmployeesInRoles, fetchActiveEmployeesBySystemRoleConditional,
+    fetchApprovalRolePermissions, fetchActiveEmployeesInRoles, fetchActiveEmployeesByRangoConditional, RANGO,
     fetchActiveEmployeesByRoleIdConditional, fetchActiveBranchEmployeesExcluding, fetchRostersForWeekByEmployees,
     fetchBranchActiveEmployeeIds, fetchApprovalRequestsList, fetchEmployeesByIds, fetchEmployeeApprovalInfo,
     fetchEmployeeName, insertApprovalRequest, resolverApprovalRequest, fetchApprovalRequestById,
-    fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
+    fetchEmployeeRango, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
     aplicarSolicitudEnErp,
     aplicarMovimientoInventarioEnErp,
     fetchPersonasDeSolicitudes,
@@ -253,7 +253,11 @@ const parseMeta = (raw) =>
  * Verificado en prod simulando una sesión (`request.jwt.claims`): con `code` la
  * consulta muere; sin `code` devuelve la fila completa.
  */
-const COLUMNAS_PERSONA = 'id, name, first_names, last_names, email, photo_url, role_id, branch_id, system_role';
+// `system_role` salió de esta lista el 2026-08-28: NADIE leía ese campo de estas
+// filas —el único uso vivo era el del peer de SHIFT_CHANGE, que consulta aparte—
+// y la columna se está retirando. Va contra `employees`, la tabla, así que
+// tampoco puede pedir `rango`: ése lo publica `employees_safe`.
+const COLUMNAS_PERSONA = 'id, name, first_names, last_names, email, photo_url, role_id, branch_id';
 
 /**
  * Le agrega a cada persona su foto firmada, el NOMBRE de su cargo y el de su
@@ -481,13 +485,15 @@ const resolveFallbackApprover = async (excludeId) => {
 
 const resolveNextApprover = async (level, branchId, excludeId = null) => {
     try {
-        const findBySystemRole = async (roles, sameBranch = false) => {
-            for (const role of roles) {
-                const { data, error } = await fetchActiveEmployeesBySystemRoleConditional(role, branchId, excludeId, sameBranch);
-                if (error) console.error('resolveNextApprover.findBySystemRole failed:', error.message);
-                for (const c of (data || [])) {
-                    if (!(await isUnavailable(c.id))) return c.id;
-                }
+        // Busca por TRAMO de la escala de cargos. Antes recorría una lista de
+        // valores de `system_role` —'JEFE', 'SUBJEFE', 'ADMIN'…— escrita a mano
+        // en cada llamada; con la escala ordenada, «la jefatura de esta sala» es
+        // un rango y no una enumeración que hay que mantener.
+        const findByRango = async (min, max, sameBranch = false) => {
+            const { data, error } = await fetchActiveEmployeesByRangoConditional(min, max, branchId, excludeId, sameBranch);
+            if (error) console.error('resolveNextApprover.findByRango failed:', error.message);
+            for (const c of (data || [])) {
+                if (!(await isUnavailable(c.id))) return c.id;
             }
             return null;
         };
@@ -509,23 +515,24 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
         };
 
         if (level === 'JEFE_SUCURSAL') {
-            return await findBySystemRole(['JEFE', 'SUBJEFE'], true)
-                || await findBySystemRole(['ADMIN'], false);
+            return await findByRango(RANGO.SUBJEFATURA, RANGO.JEFATURA, true)
+                || await findByRango(RANGO.DIRECCION, RANGO.DIRECCION, false);
         }
 
         if (level === 2) {
-            // Supervisor por system_role o por nombre de cargo
-            return await findBySystemRole(['SUPERVISOR'])
+            // Supervisión, y si no hay, dirección. El intermedio por nombre de
+            // cargo se queda: cubre un cargo que se llame «Supervisor …» y al que
+            // todavía no le hayan puesto rango.
+            return await findByRango(RANGO.SUPERVISION, RANGO.SUPERVISION)
                 || await findByRoleName('Supervisor')
-                || await findBySystemRole(['ADMIN', 'SUPERADMIN']);
+                || await findByRango(RANGO.DIRECCION, RANGO.DIRECCION);
         }
 
         if (level === 3) {
-            // Talento Humano por nombre de cargo, luego fallback a admins
+            // Talento Humano por nombre de cargo, luego fallback a dirección
             const byName = await findByRoleName('Talento Humano')
                 || await findByRoleName('RRHH')
-                || await findBySystemRole(['ADMIN'])
-                || await findBySystemRole(['SUPERADMIN']);
+                || await findByRango(RANGO.DIRECCION, RANGO.DIRECCION);
             if (byName) return byName;
 
             const { data: anyAdmin, error: anyAdminErr } = await fetchAnyActiveAdmin();
@@ -1346,9 +1353,12 @@ export const createRequestsSlice = (set, get) => ({
 
             // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ─────────────────
             if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
-                const { data: peerEmp, error: peerEmpErr } = await fetchEmployeeSystemRole(approverId);
+                const { data: peerEmp, error: peerEmpErr } = await fetchEmployeeRango(approverId);
                 if (peerEmpErr) console.error('approveRequest: fetch peer employee failed:', peerEmpErr.message);
-                const peerIsJefe = ['JEFE', 'SUBJEFE'].includes(peerEmp?.system_role);
+                // Jefatura o subjefatura de sala: los dos escalones que cierran
+                // un cambio de turno sin escalarlo.
+                const peerIsJefe = Number(peerEmp?.rango ?? 0) >= RANGO.SUBJEFATURA
+                                && Number(peerEmp?.rango ?? 0) <= RANGO.JEFATURA;
                 const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
 
                 if (!nextApprover) {

@@ -8,7 +8,10 @@ const BLOCKING_EVENT_TYPES = ['VACATION', 'DISABILITY', 'PERMIT'];
 //   1. Talento Humano (role_id = 11) — if any are available (not on vacation/disability/permit today)
 //   2. Fallback: ADMIN + SUPERADMIN system_role AND Supervisor system_role
 const TH_ROLE_ID = 11;
-const FALLBACK_SYSTEM_ROLES = ['ADMIN', 'SUPERVISOR'];
+// De supervisión para arriba. Era `['ADMIN','SUPERVISOR']` sobre
+// `employees.system_role`, un rango escrito por persona que podía contradecir al
+// organigrama; ahora sale del cargo y es un tramo de la escala.
+const RANGO_DE_RESPALDO = 3;
 
 /** Next Monday from a given Saturday (CST) */
 function nextMonday(saturdayDate: Date): Date {
@@ -253,14 +256,11 @@ Deno.serve(async (req) => {
         recipientIds  = availableTH;
         recipientLabel = 'Talento Humano';
       } else {
-        const { data: fallbackEmps, error: fallbackErr } = await supabase
-          .from('employees')
-          .select('id')
-          .in('system_role', FALLBACK_SYSTEM_ROLES)
-          .eq('status', 'ACTIVO');
-        if (fallbackErr) throw new Error(`employees de respaldo: ${fallbackErr.message}`);
+        const { data: fallbackIds, error: fallbackErr } = await supabase
+          .rpc('empleados_por_rango', { p_min: RANGO_DE_RESPALDO, p_max: 4 });
+        if (fallbackErr) throw new Error(`empleados de respaldo: ${fallbackErr.message}`);
 
-        recipientIds  = (fallbackEmps || []).map(e => String(e.id));
+        recipientIds  = (fallbackIds || []).map((id: string) => String(id));
         recipientLabel = 'Administración y Supervisión';
       }
 

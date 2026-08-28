@@ -28,8 +28,8 @@ const SELECT_COLS = `
     username,
     phone,
     status,
-    system_role,
-    role:roles!employees_role_id_fkey ( name )
+    role:roles!employees_role_id_fkey ( name, rango ),
+    sec_role:roles!employees_secondary_role_id_fkey ( rango )
   `;
 
 // El correo de un carné de papel es `carne-<uuid del empleado>@staff.local`.
@@ -139,25 +139,36 @@ Deno.serve(async (req: Request) => {
       // El metadata del JWT ya no decide permisos (lo hacen las funciones auth_*
       // contra la tabla), pero el frontend lo lee para pintar la UI: se mantiene
       // al día con el empleado real, no con lo que pidió el cliente.
-      const newRoleId     = employee.role_id ?? null;
-      const newSystemRole = (employee.system_role as string | null) || "EMPLEADO";
+      const newRoleId = employee.role_id ?? null;
+      // El escalón sale del CARGO —el propio y el secundario, el mayor de los
+      // dos—, que es la misma regla que `rango_de_empleado()` en la base.
+      // Reemplaza a `systemRole`, que era un rango escrito por persona.
+      const newRango = Math.max(
+        Number((employee.role as { rango?: number } | null)?.rango ?? 0),
+        Number((employee.sec_role as { rango?: number } | null)?.rango ?? 0),
+      );
       const newBranchId   = employee.branch_id ?? null;
       const curMeta       = authenticatedUser.user_metadata || {};
 
       const metaChanged =
-        curMeta.roleId               !== newRoleId     ||
-        curMeta.systemRole           !== newSystemRole ||
-        curMeta.branchId             !== newBranchId   ||
+        curMeta.roleId               !== newRoleId   ||
+        curMeta.rango                !== newRango    ||
+        curMeta.systemRole           !== undefined   ||
+        curMeta.branchId             !== newBranchId ||
         curMeta.code                 !== employee.code ||
         curMeta.must_change_password !== false;
 
       if (metaChanged) {
+        // `systemRole` se borra del metadata en vez de dejarse envejecer: un
+        // valor viejo que ya no significa nada es peor que uno ausente, porque
+        // el próximo que lo lea va a creerle.
+        const { systemRole: _viejo, ...metaSinSystemRole } = curMeta;
         await admin.auth.admin.updateUserById(authenticatedUser.id, {
           user_metadata: {
-            ...curMeta,
+            ...metaSinSystemRole,
             code:                 employee.code,
             roleId:               newRoleId,
-            systemRole:           newSystemRole,
+            rango:                newRango,
             branchId:             newBranchId,
             must_change_password: false,
           },
@@ -179,7 +190,7 @@ Deno.serve(async (req: Request) => {
           photo:           employee.photo_url,
           email:           authenticatedUser.email,
           phone:           employee.phone,
-          systemRole:      newSystemRole,
+          rango:           newRango,
         },
       });
     }

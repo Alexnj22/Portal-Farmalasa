@@ -268,8 +268,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const cargoLabel = (() => {
         if (isSU) return 'Super Admin';
         if (typeof user?.role === 'string' && isNaN(Number(user.role))) return user.role;
-        const sr = user?.systemRole;
-        return { ADMIN: 'Administrador', EMPLEADO: 'Empleado' }[sr] || sr || '';
+        // Antes caía a traducir un valor de `system_role` —'ADMIN' →
+        // 'Administrador'— con un diccionario de dos entradas: para 'JEFE' o
+        // 'SUPERVISOR' pintaba el valor crudo, en mayúsculas, que no es como se
+        // llama ningún cargo del portal. Sin ese valor, la respuesta honesta es
+        // no escribir nada: el nombre del cargo ya lo resuelve la rama de
+        // arriba cuando está disponible.
+        return '';
     })();
 
     // ── Un solo recálculo por cuadro, no uno por evento ───────────────────────

@@ -17,13 +17,15 @@ const AccessDeniedView = () => {
         if (roleId) {
             fetchRoleName(roleId)
                 .then(({ data }) => { if (data?.name) setRoleName(data.name); });
-        } else if (user?.systemRole) {
-            setRoleName(user.systemRole); // eslint-disable-line react-hooks/set-state-in-effect -- fallback síncrono cuando no hay roleId que resolver por fetch
         }
-    }, [user?.roleId, user?.role, user?.systemRole]);
+        // El respaldo era `user.systemRole` — un valor técnico ('JEFE',
+        // 'EMPLEADO') que no es el nombre de ningún cargo y que la persona no
+        // reconocería en su propio mensaje de ayuda. Sin cargo que resolver, el
+        // texto dice «desconocido», que es lo que de verdad se sabe.
+    }, [user?.roleId, user?.role]);
 
     const handleWhatsApp = () => {
-        const role = roleName || user?.systemRole || 'desconocido';
+        const role = roleName || 'desconocido';
         const msg = `Hola, estoy intentando acceder al portal, no tengo acceso, mi cargo es "${role}", muchas gracias.`;
         window.open(`https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
     };

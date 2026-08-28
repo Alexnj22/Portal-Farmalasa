@@ -151,7 +151,10 @@ function findTargetEmployee(employees) {
         return !ev || !['VACATION', 'DISABILITY'].includes(ev);
     });
     if (disponible) return disponible;
-    return employees.find(e => ['ADMIN', 'SUPERADMIN'].includes(String(e.system_role ?? '').toUpperCase()));
+    // El último recurso: alguien de dirección. Antes era `system_role IN
+  // ('ADMIN','SUPERADMIN')`, que resolvía a UNA sola persona; el rango del cargo
+  // da las tres, así que el aviso deja de depender de que esa una esté.
+  return employees.find(e => Number(e.rango ?? 0) >= 4);
 }
 
 const fmtFecha = (d) => {

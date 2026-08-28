@@ -59,27 +59,60 @@ export function fetchActiveEmployeesInRoleAndBranch(roleId, branchId, excludeId)
         .eq('role_id', roleId).eq('branch_id', branchId).eq('status', 'ACTIVO').neq('id', excludeId);
 }
 
-// Quién es "admin" para el enrutador de aprobadores. Estas tres consultaban
-// `employees.is_admin`, una columna que NO EXISTE en la base: un `.eq()` contra
-// una columna inexistente devuelve error, el llamador lo trata como "no hay
-// nadie" y la solicitud se queda SIN APROBADOR. Y son justamente los fallbacks
-// del enrutador, o sea el último recurso cuando no hay jefe ni supervisor.
-// El criterio correcto es `system_role`, que es el que ya usa el resto del
-// código (`WidgetAnnulmentRequest.jsx`): ADMIN y SUPERADMIN.
-const ADMIN_SYSTEM_ROLES = ['ADMIN', 'SUPERADMIN'];
+/**
+ * Los escalones de la escala de cargos (`roles.rango`).
+ *
+ * Antes esto era `ADMIN_SYSTEM_ROLES = ['ADMIN','SUPERADMIN']` y cada consulta
+ * enumeraba los valores a mano. Dos problemas: había que acordarse de TODOS en
+ * cada sitio, y el valor vivía por persona en `employees.system_role`, que podía
+ * contradecir al organigrama —decía `SUPERVISOR` del Gerente General y `ADMIN`
+ * de la jefatura de Talento Humano—.
+ *
+ * Ahora sale del cargo y es una escala ORDENADA, así que «de acá para arriba» se
+ * escribe con un tramo y no con una lista que envejece.
+ */
+export const RANGO = {
+    COLABORADOR: 0,
+    SUBJEFATURA: 1,
+    JEFATURA:    2,
+    SUPERVISION: 3,
+    DIRECCION:   4,
+};
 
+/**
+ * Quiénes están en un tramo de la escala. La regla vive en la base
+ * (`empleados_por_rango`), no acá.
+ *
+ * Devuelve `{ data: [{id}], error }` —la misma forma que traían las consultas
+ * que reemplaza— para que los llamadores no cambien. Es a propósito: el cambio
+ * de criterio ya es bastante, y mover además la forma del resultado obligaría a
+ * revisar cada uso por una razón distinta a la del cambio.
+ */
+async function porRango(min, max, { branchId = null, excluir = null } = {}) {
+    const { data, error } = await supabase.rpc('empleados_por_rango', {
+        p_min: min, p_max: max,
+        p_branch_id: branchId ?? null,
+        p_excluir: excluir ?? null,
+    });
+    if (error) return { data: null, error };
+    return { data: (data ?? []).map(id => ({ id })), error: null };
+}
+
+// Los tres de respaldo del enrutador: el último recurso cuando no hay jefatura
+// ni supervisión disponible. Hasta hoy salían de `system_role IN
+// ('ADMIN','SUPERADMIN')`, que era UNA sola persona; con el rango son las tres
+// de dirección, así que una solicitud deja de poder quedarse sin quién la firme
+// porque esa persona esté de vacaciones.
 export function fetchBranchAdmins(branchId, excludeId) {
-    return supabase.from('employees').select('id')
-        .eq('branch_id', branchId).in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').neq('id', excludeId);
+    return porRango(RANGO.DIRECCION, RANGO.DIRECCION, { branchId, excluir: excludeId });
 }
 
 export function fetchGlobalAdmins(excludeId) {
-    return supabase.from('employees').select('id')
-        .in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').neq('id', excludeId).limit(1);
+    return porRango(RANGO.DIRECCION, RANGO.DIRECCION, { excluir: excludeId });
 }
 
 export function fetchAnyActiveAdmin() {
-    return supabase.from('employees').select('id').in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').limit(1);
+    return porRango(RANGO.DIRECCION, RANGO.DIRECCION);
 }
 
 export function fetchApprovalRolePermissions() {
@@ -92,11 +125,16 @@ export function fetchActiveEmployeesInRoles(roleIds, excludeId) {
 
 // Filtros condicionales (branch_id/excludeId solo si aplican) — usado por
 // resolveNextApprover, donde sameBranch/excludeId varían según el nivel.
-export function fetchActiveEmployeesBySystemRoleConditional(systemRole, branchId, excludeId, sameBranch) {
-    let q = supabase.from('employees').select('id').eq('system_role', systemRole).eq('status', 'ACTIVO');
-    if (sameBranch && branchId) q = q.eq('branch_id', branchId);
-    if (excludeId) q = q.neq('id', excludeId);
-    return q;
+//
+// Recibe un TRAMO y no un mínimo porque el enrutador sube escalón por escalón:
+// primero la jefatura de la sala, después supervisión y recién al final
+// dirección. Con un «de acá para arriba» el primer intento se llevaría también a
+// la dirección y nadie escalaría nunca.
+export function fetchActiveEmployeesByRangoConditional(min, max, branchId, excludeId, sameBranch) {
+    return porRango(min, max, {
+        branchId: sameBranch && branchId ? branchId : null,
+        excluir: excludeId || null,
+    });
 }
 
 export function fetchActiveEmployeesByRoleIdConditional(roleId, branchId, excludeId, sameBranch) {
@@ -402,8 +440,10 @@ export function fetchApprovalRequestById(requestId) {
     return supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT).eq('id', requestId).single();
 }
 
-export function fetchEmployeeSystemRole(employeeId) {
-    return supabase.from('employees').select('system_role').eq('id', employeeId).maybeSingle();
+// El escalón de una persona concreta. Sale de `employees_safe`, que lo publica
+// derivado del cargo — el propio y el secundario.
+export function fetchEmployeeRango(employeeId) {
+    return supabase.from('employees_safe').select('rango').eq('id', employeeId).maybeSingle();
 }
 
 // ── SHIFT_CHANGE: patch de rosters publicados en la aprobación final ───────

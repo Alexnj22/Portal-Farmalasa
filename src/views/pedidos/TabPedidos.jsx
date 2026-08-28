@@ -198,7 +198,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     // salas» sobre Pedidos y NO es supervisión: confundirlos le daba el turno de
     // la sala (medido el 2026-08-17). La base decide igual con
     // `auth_es_supervision()`; acá sólo se elige qué botón se pinta.
-    const esSupervision = esCargoDeSupervision(user?.systemRole);
+    const esSupervision = esCargoDeSupervision(user?.rango);
 
     // ── Render ────────────────────────────────────────────────────────────────
 

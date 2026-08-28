@@ -361,7 +361,7 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(t);
   }, [moduleLocks]);
 
-  // Dispara refresh cuando cambia el usuario (id, rol o systemRole)
+  // Dispara refresh cuando cambia el usuario (id, cargo o rango)
   // user?.role excluido a propósito: loginWithUsername pone el número, la edge function el nombre
   // — ambos casos tienen roleId correcto, no queremos doble refresh.
   useEffect(() => {
@@ -1195,7 +1195,11 @@ export const AuthProvider = ({ children }) => {
         role:       emp.role_id,
         roleId:     emp.role_id ?? null,
         secondaryRoleId: emp.secondary_role_id ?? null,
-        systemRole: emp.system_role || 'EMPLEADO',
+        // El escalón sale del CARGO. `employees_safe` lo publica ya derivado
+        // —el propio y el secundario—, así que acá no hay ninguna regla que
+        // pueda desincronizarse de la base. Reemplaza a `systemRole`, que era un
+        // rango escrito por persona y podía contradecir al organigrama.
+        rango:      Number(emp.rango ?? 0),
       });
 
       const meta       = data.session.user?.user_metadata;

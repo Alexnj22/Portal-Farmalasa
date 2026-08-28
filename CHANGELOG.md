@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.840.0 — Aperturas: quién abrió la caja de cada sala
+
+Cortes de caja tiene una tercera pestaña con lo que v2.839.0 empezó a capturar:
+una fila por apertura, con quién la abrió, a qué hora exactamente, si sigue
+abierta y cuánto espera el sistema adentro.
+
+**Se llama «Aperturas» y no «Turnos» a propósito.** Esa palabra ya significa el
+turno de trabajo de Horarios, y el sistema de la caja la usa para un tercer
+sentido —el número 1, 2 ó 3 que sale en el tiquete dentro de una misma
+apertura—. Tres cosas con el mismo rótulo es lo que después nadie entiende.
+
+El aviso que la pestaña levanta sola: **una caja abierta con una cuenta que no
+es una persona**. Mientras se abra así, el corte no se le puede atribuir a nadie
+—y hoy son tres de las seis salas—.
+
+**El cruce con la marcación es un hallazgo, no un candado** (regla del usuario):
+por ahora cualquiera de la sala puede abrir la caja. Y la columna **no acusa a
+nadie sin poder**: una consulta vacía tiene tres causas que se ven idénticas
+—nadie marcó, esta sesión no tiene permiso de leer la asistencia, o el kiosco
+todavía no arrancó—, así que sólo dice «no marcó» cuando el período tiene alguna
+marcación; si no, dice «sin marcaciones» en gris y un aviso explica cuál de las
+tres es. Hoy es la tercera: la tabla de asistencia está vacía y el kiosco
+arranca después, así que la columna se llena sola cuando empiece a usarse.
+
+Las dos ranuras son dos preguntas independientes —«¿sigue abierta?» y «¿la abrió
+una persona?»— y por eso van separadas: una caja abierta **ahora** con una cuenta
+compartida es exactamente la fila que hay que mirar, y con una sola ranura no se
+podría pedir.
+
 ## v2.839.1 — El lugar de pago es el banco, y va antes que el período
 
 Dos correcciones del usuario sobre el contrato de la ficha de personal.

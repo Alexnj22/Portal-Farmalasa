@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, DoorOpen, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, UserX, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -13,6 +13,7 @@ import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
+import AperturasDeCaja from '../components/cortes/AperturasDeCaja';
 import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -20,8 +21,8 @@ import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
 import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
 import {
-    fetchCortes, fetchDiferencias, fetchHistorialDeMovimientos,
-    fetchMovimientosDeCaja, fetchPersonas,
+    fetchAperturas, fetchCortes, fetchDiferencias, fetchEntradasParaCruce,
+    fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas,
 } from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
@@ -60,6 +61,10 @@ import { tokenMatch } from '../utils/searchUtils';
 const PESTANAS = [
     { key: 'cortes',      label: 'Cortes',      icon: Wallet },
     { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft },
+    // «Aperturas» y NO «Turnos»: esa palabra ya es el turno de trabajo de
+    // Horarios, y el sistema de la caja la usa para un tercer sentido —el
+    // número 1, 2 ó 3 que sale en el tiquete dentro de una misma apertura—.
+    { key: 'aperturas',   label: 'Aperturas',   icon: DoorOpen },
 ];
 
 const VACIO = [];
@@ -127,6 +132,22 @@ const ESTADOS_MOV = [
     { value: 'VIGENTES',      label: 'Vigentes' },
     { value: 'EDITADOS',      label: 'Se modificaron' },
     { value: 'DESAPARECIDOS', label: 'Ya no están' },
+];
+
+// Las dos preguntas de «Aperturas», en dos ranuras y no en una: «¿sigue
+// abierta?» y «¿la abrió una persona?» son independientes, y juntas no se
+// podrían cruzar —una caja abierta AHORA con una cuenta compartida es
+// exactamente la fila que hay que mirar—.
+const ESTADOS_APER = [
+    { value: 'TODAS',    label: 'Abiertas y cerradas' },
+    { value: 'ABIERTAS', label: 'Abiertas ahora' },
+    { value: 'CERRADAS', label: 'Ya cerradas' },
+];
+
+const QUIEN_APER = [
+    { value: 'TODOS',   label: 'Cualquiera' },
+    { value: 'PERSONA', label: 'Abrió una persona' },
+    { value: 'CUENTA',  label: 'Cuenta compartida' },
 ];
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
@@ -199,12 +220,20 @@ const CortesView = () => {
     // se reporta como un defecto, se reporta como «la pantalla se movió sola».
     const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'cortes');
     const enMovimientos = pestana === 'movimientos';
+    const enAperturas   = pestana === 'aperturas';
 
     const [movs, setMovs] = useState(VACIO);
     const [historial, setHistorial] = useState(VACIO);
     const [cargandoMovs, setCargandoMovs] = useState(false);
     const [tipoMov, setTipoMov] = useState('TODOS');
     const [estadoMov, setEstadoMov] = useState('TODOS');
+
+    const [aperturas, setAperturas] = useState(VACIO);
+    const [entradas, setEntradas] = useState(VACIO);
+    const [pudeAsistencia, setPudeAsistencia] = useState(true);
+    const [cargandoAper, setCargandoAper] = useState(false);
+    const [estadoAper, setEstadoAper] = useState('TODAS');
+    const [quienAper, setQuienAper] = useState('TODOS');
 
     const cargar = useCallback(async () => {
         setCargando(true);
@@ -237,6 +266,25 @@ const CortesView = () => {
     }, [enMovimientos, desde, hasta, sala]);
 
     useEffect(() => { cargarMovs(); }, [cargarMovs]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
+
+    // Las aperturas y las marcaciones con las que se cruzan. La asistencia va
+    // aparte y sin `branchId`: se cruza por PERSONA, y una persona puede haber
+    // marcado en otra sala —cubrir un turno ajeno es normal— así que acotarla
+    // por sala haría aparecer un «no marcó» que no es cierto.
+    const cargarAper = useCallback(async () => {
+        if (!enAperturas) return;
+        setCargandoAper(true);
+        const [filas, asistencia] = await Promise.all([
+            fetchAperturas({ desde, hasta, branchId: sala || null }),
+            fetchEntradasParaCruce({ desde, hasta }),
+        ]);
+        setAperturas(filas || VACIO);
+        setEntradas(asistencia.filas || VACIO);
+        setPudeAsistencia(asistencia.pude);
+        setCargandoAper(false);
+    }, [enAperturas, desde, hasta, sala]);
+
+    useEffect(() => { cargarAper(); }, [cargarAper]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
 
     const nombreSala = useMemo(() => {
         const m = {};
@@ -302,6 +350,41 @@ const CortesView = () => {
         { clave: 'tocados',  filtro: 'estado', valor: 'EDITADOS',      icon: Pencil,        label: 'Se modificaron', valor_txt: resumenMovs.tocados,               iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
         { clave: 'idos',     filtro: 'estado', valor: 'DESAPARECIDOS', icon: Trash2,        label: 'Ya no están',    valor_txt: resumenMovs.idos,                  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: resumenMovs.idos ? 'text-danger-text' : undefined },
     ], [resumenMovs]);
+
+    // Las cuatro de «Aperturas». «Sin marcación» sólo cuenta cuando hay con qué
+    // cruzar: sin marcaciones en el período, un cero ahí diría «todos marcaron».
+    const resumenAper = useMemo(() => {
+        const marcaron = new Set(entradas.map((e) => e.employee_id));
+        const hayConQueCruzar = pudeAsistencia && entradas.length > 0;
+        return {
+            total:      aperturas.length,
+            abiertas:   aperturas.filter((a) => !a.cerrada_at).length,
+            sinPersona: aperturas.filter((a) => !a.employee_id).length,
+            sinMarcar:  hayConQueCruzar
+                ? aperturas.filter((a) => a.employee_id && !marcaron.has(a.employee_id)).length
+                : null,
+        };
+    }, [aperturas, entradas, pudeAsistencia]);
+
+    const METRICAS_APER = useMemo(() => [
+        { clave: 'total',      filtro: null,     valor: null,       icon: DoorOpen,   label: 'Aperturas',       valor_txt: resumenAper.total },
+        { clave: 'abiertas',   filtro: 'estado', valor: 'ABIERTAS', icon: Clock,      label: 'Abiertas ahora',  valor_txt: resumenAper.abiertas,   iconBg: 'bg-success/10', iconCls: 'text-success-text' },
+        { clave: 'sinPersona', filtro: 'quien',  valor: 'CUENTA',   icon: UserX,      label: 'Sin persona',     valor_txt: resumenAper.sinPersona, iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: resumenAper.sinPersona ? 'text-warning-text' : undefined },
+        { clave: 'sinMarcar',  filtro: null,     valor: null,       icon: AlertTriangle, label: 'Sin marcación', valor_txt: resumenAper.sinMarcar ?? '—', iconBg: 'bg-danger/10', iconCls: 'text-danger-text', valueCls: resumenAper.sinMarcar ? 'text-danger-text' : undefined },
+    ], [resumenAper]);
+
+    const aplicarMetricaAper = useCallback((m) => {
+        if (m.filtro === 'estado') setEstadoAper((v) => (v === m.valor ? 'TODAS' : m.valor));
+        else if (m.filtro === 'quien') setQuienAper((v) => (v === m.valor ? 'TODOS' : m.valor));
+    }, []);
+
+    const aperturasFiltradas = useMemo(() => aperturas.filter((a) => {
+        if (estadoAper === 'ABIERTAS' && a.cerrada_at) return false;
+        if (estadoAper === 'CERRADAS' && !a.cerrada_at) return false;
+        if (quienAper === 'PERSONA' && !a.employee_id) return false;
+        if (quienAper === 'CUENTA'  && a.employee_id) return false;
+        return true;
+    }), [aperturas, estadoAper, quienAper]);
 
     const aplicarMetricaMov = useCallback((m) => {
         if (m.filtro === 'tipo') setTipoMov((v) => (v === m.valor ? 'TODOS' : m.valor));
@@ -432,6 +515,7 @@ const CortesView = () => {
         setSala(''); setPeriodo(HOY);
         setEstado('TODOS'); setDiferencia('TODAS');
         setTipoMov('TODOS'); setEstadoMov('TODOS');
+        setEstadoAper('TODAS'); setQuienAper('TODOS');
         setBusqueda(''); setPagina(1);
     };
 
@@ -446,9 +530,11 @@ const CortesView = () => {
             onTabChange={setPestana}
             searchValue={busqueda}
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
-            placeholder={enMovimientos
-                ? 'Buscar por concepto, sala o monto…'
-                : 'Buscar por sala, persona, hora o monto…'}
+            placeholder={enAperturas
+                ? 'Buscar por sala, persona u hora…'
+                : enMovimientos
+                    ? 'Buscar por concepto, sala o monto…'
+                    : 'Buscar por sala, persona, hora o monto…'}
         />
     );
 
@@ -477,7 +563,16 @@ const CortesView = () => {
                         ariaLabel={enMovimientos
                             ? 'Resumen de los movimientos del período'
                             : 'Resumen de los cortes del período'}>
-                        {enMovimientos
+                        {enAperturas
+                            ? METRICAS_APER.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={m.valor_txt} valueCls={m.valueCls}
+                                    active={m.filtro === 'estado' ? estadoAper === m.valor
+                                        : m.filtro === 'quien' ? quienAper === m.valor : false}
+                                    onClick={m.filtro ? () => aplicarMetricaAper(m) : undefined}
+                                    loading={cargandoAper} />
+                            ))
+                            : enMovimientos
                             ? METRICAS_MOV.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} value={m.valor_txt} valueCls={m.valueCls}
@@ -501,8 +596,8 @@ const CortesView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             activeCount={[sala, !periodoIntacto,
-                                enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
-                                enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
+                                enAperturas ? estadoAper !== 'TODAS' : enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
+                                enAperturas ? quienAper !== 'TODOS' : enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
                             ].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
                                 BRANCH la policy de `cortes_caja` ya devuelve
@@ -538,7 +633,25 @@ const CortesView = () => {
                                 PESTAÑA. Sucursal y período se quedan porque
                                 significan lo mismo en las dos; el estado de un
                                 corte no significa nada sobre un vale. */}
-                            {enMovimientos ? (
+                            {enAperturas ? (
+                                <>
+                                    <FilterBar.Section active={estadoAper !== 'TODAS'} onClear={() => setEstadoAper('TODAS')} label="estado">
+                                        <FilterBar.Opciones
+                                            label="Estado" icon={Clock}
+                                            value={estadoAper} onChange={(v) => setEstadoAper(v || 'TODAS')}
+                                            options={ESTADOS_APER} ancho="185px"
+                                        />
+                                    </FilterBar.Section>
+
+                                    <FilterBar.Section active={quienAper !== 'TODOS'} onClear={() => setQuienAper('TODOS')} label="quién">
+                                        <FilterBar.Opciones
+                                            label="Quién" icon={UserX}
+                                            value={quienAper} onChange={(v) => setQuienAper(v || 'TODOS')}
+                                            options={QUIEN_APER} ancho="185px"
+                                        />
+                                    </FilterBar.Section>
+                                </>
+                            ) : enMovimientos ? (
                                 <>
                                     <FilterBar.Section active={tipoMov !== 'TODOS'} onClear={() => setTipoMov('TODOS')} label="tipo">
                                         <FilterBar.Opciones
@@ -584,6 +697,18 @@ const CortesView = () => {
                     porque no es otra sección de la pantalla —son los mismos
                     cortes— sino algo pendiente de hacer, y esconderlo detrás de
                     un recorte sería no anunciarlo. */}
+                {enAperturas && (
+                    <AperturasDeCaja
+                        aperturas={aperturasFiltradas}
+                        entradas={entradas}
+                        pudeLeerAsistencia={pudeAsistencia}
+                        salas={salasMap}
+                        cargando={cargandoAper}
+                        busqueda={busqueda}
+                        onLimpiarBusqueda={() => setBusqueda('')}
+                    />
+                )}
+
                 {enMovimientos && (
                     <MovimientosDeCaja
                         movimientos={movs}
@@ -597,7 +722,7 @@ const CortesView = () => {
                     />
                 )}
 
-                {!enMovimientos && !cargando && puedeResolver && sinAsentar.length > 0 && (
+                {!enMovimientos && !enAperturas && !cargando && puedeResolver && sinAsentar.length > 0 && (
                     <Notice variant="warning" icon={Landmark}>
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-0">
@@ -617,13 +742,13 @@ const CortesView = () => {
                     </Notice>
                 )}
 
-                {!enMovimientos && cargando && <LoadingState label="Buscando los cortes" />}
+                {!enMovimientos && !enAperturas && cargando && <LoadingState label="Buscando los cortes" />}
 
                 {/* Dos vacíos distintos (§26.2): el del filtro se arregla
                     borrándolo y el de verdad no. Y el de «Sin confirmar» vacío
                     es un vacío FELIZ (§26.3) — la sala quería que no hubiera
                     nada. Los tres llevan su salida (§18.1). */}
-                {!enMovimientos && !cargando && filtrados.length === 0 && (
+                {!enMovimientos && !enAperturas && !cargando && filtrados.length === 0 && (
                     busqueda ? (
                         <EmptyState
                             compact icon={Search} title="Sin resultados"
@@ -650,7 +775,7 @@ const CortesView = () => {
                     )
                 )}
 
-                {!enMovimientos && !cargando && porDia.map((g) => (
+                {!enMovimientos && !enAperturas && !cargando && porDia.map((g) => (
                     <section key={g.fecha} className="space-y-3">
                         <div className="flex items-baseline justify-between gap-3 px-1">
                             <h3 className="text-label font-bold text-content capitalize">{rotularDia(g.fecha)}</h3>
@@ -690,7 +815,7 @@ const CortesView = () => {
                     </section>
                 ))}
 
-                {!enMovimientos && !cargando && filtrados.length > porPagina && (
+                {!enMovimientos && !enAperturas && !cargando && filtrados.length > porPagina && (
                     <TablePagination
                         page={pagActual}
                         totalPages={totalPaginas}

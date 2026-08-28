@@ -168,6 +168,56 @@ export function fetchHistorialDeMovimientos({ desde, hasta, branchId = null }) {
 }
 
 /**
+ * Las aperturas de caja de un rango: quién abrió, a qué hora y con cuánto.
+ *
+ * `employee_id` viene resuelto por la captura y puede ser NULL — y eso NO es un
+ * fallo: tres de las seis salas abren con una cuenta compartida («MI CAJA LA
+ * POPULAR»), que no es una persona. La pantalla tiene que mostrar las dos cosas.
+ */
+export function fetchAperturas({ desde, hasta, branchId = null }) {
+    return fetchAllRows(() => {
+        let q = supabase.from('cortes_caja_aperturas')
+            .select(`id, branch_id, erp_apertura_id, caja_erp, turno, empleado_texto,
+                     employee_id, abierta_el, abierta_a, monto_apertura, monto_registrado,
+                     vista_at, cerrada_at`)
+            .gte('abierta_el', desde)
+            .lte('abierta_el', hasta)
+            .order('abierta_el', { ascending: false })
+            .order('abierta_a', { ascending: true });
+        if (branchId) q = q.eq('branch_id', branchId);
+        return q;
+    });
+}
+
+/**
+ * Las marcaciones de ENTRADA del rango, para cruzarlas contra las aperturas.
+ *
+ * ── Por qué devuelve `{ filas, pude }` y no una lista a secas ──────────────
+ * Una consulta que no devuelve nada tiene DOS causas que se ven idénticas:
+ * que nadie marcó, o que esta sesión no tiene permiso de leer la asistencia. La
+ * primera es un hallazgo grave —alguien abrió la caja sin marcar entrada— y la
+ * segunda no dice nada de nadie. Devolver una lista vacía en los dos casos hace
+ * que la pantalla acuse a gente por un permiso que le falta al que mira.
+ *
+ * Y hay un tercer caso, que hoy es el real: la tabla está VACÍA porque las
+ * marcaciones se borraron y el kiosco arranca después. Eso lo distingue la
+ * pantalla mirando si el día tiene alguna marcación de esa sala.
+ */
+export async function fetchEntradasParaCruce({ desde, hasta }) {
+    const { data, error } = await supabase.from('attendance')
+        .select('employee_id, timestamp')
+        .eq('type', 'IN')
+        .gte('timestamp', `${desde}T00:00:00-06:00`)
+        .lte('timestamp', `${hasta}T23:59:59-06:00`)
+        .order('timestamp', { ascending: true });
+    if (error) {
+        console.warn('cortes: no se pudo leer la asistencia:', error.message);
+        return { filas: [], pude: false };
+    }
+    return { filas: data || [], pude: true };
+}
+
+/**
  * Confirmar o descartar. El RPC valida permiso, alcance de sucursal, que sea un
  * corte de caja (el cierre del día no se confirma) y que siga pendiente; la
  * autoría la pone el servidor, no el navegador.

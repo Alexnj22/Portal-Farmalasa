@@ -28,18 +28,21 @@
  * fotografiarlo sería pedir un rodeo. Los dos caminos terminan en la misma
  * comprobación.
  */
-import React, { useState, lazy, Suspense } from 'react';
-import { QrCode, Camera, ExternalLink, Trash2, ShieldCheck, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { QrCode, Camera, ExternalLink, Trash2, ShieldCheck, X, Smartphone } from 'lucide-react';
 import Button from './Button';
 import Notice from './Notice';
 import ModalShell from './ModalShell';
 import PortalInput from './PortalInput';
 import QrDeCaptura from './QrDeCaptura';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { normalizarCarne, numeroDelCarne, porQueNoSirve } from '../../utils/carneDeDependiente';
 
 // Arrastra `@zxing` y prende la cámara: sólo hace falta al apretar el botón.
 const LectorDeCodigo = lazy(() => import('./LectorDeCodigo'));
+const DialogoDeCaptura = lazy(() => import('./DialogoDeCaptura'));
+const traspaso = () => import('../../data/capturaDeFoto');
 
 /**
  * @param {string|null} url      lo guardado hoy
@@ -52,16 +55,75 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
     const [pegando, setPegando] = useState(false);
     const [textoPegado, setTextoPegado] = useState('');
     const [error, setError] = useState(null);
+    const [captura, setCaptura] = useState(null);
+    const [leyendoFoto, setLeyendoFoto] = useState(false);
+    const esTactil = useCoarsePointer();
 
     const numero = numeroDelCarne(url);
 
-    const aceptar = (texto) => {
+    const aceptar = useCallback((texto) => {
         const bueno = normalizarCarne(texto);
         if (!bueno) { setError(porQueNoSirve(texto)); return false; }
         setError(null);
         onChange?.(bueno);
         return true;
-    };
+    }, [onChange]);
+
+    /* ── El carné, desde el teléfono ────────────────────────────────────────
+     *
+     * Pedido del usuario: «que permita hacerlo desde el teléfono también». En
+     * una computadora sin cámara —que son casi todas las de administración— el
+     * botón de escanear no sirve, y el carné está en el teléfono de la persona.
+     *
+     * No hace falta un circuito nuevo: el portal YA sabe traer una foto del
+     * teléfono a la computadora. Lo único que cambia es el último paso — acá el
+     * dato que hace falta no es la foto sino el TEXTO del QR que se fotografió,
+     * y eso lo decodifica la computadora sobre la imagen que recibió. Misma
+     * pantalla en el teléfono, mismo canal, mismo permiso. */
+    const pedirAlTelefono = useCallback(async () => {
+        setError(null);
+        try {
+            const { abrirCaptura } = await traspaso();
+            const r = await abrirCaptura(null);
+            if (!r.ok) { setError(r.motivo); return; }
+            setCaptura(r);
+        } catch {
+            setError('No se pudo abrir el código. Revisa tu conexión e intenta de nuevo.');
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!captura?.id) return undefined;
+        let vivo = true;
+        let dejarDeEscuchar = null;
+        (async () => {
+            const { esperarFoto } = await traspaso();
+            if (!vivo) return;
+            dejarDeEscuchar = esperarFoto(captura.id, async (urlFirmada) => {
+                setCaptura(null);
+                setLeyendoFoto(true);
+                try {
+                    const { leerQrDeImagen } = await import('../../utils/leerQrDeImagen');
+                    const texto = await leerQrDeImagen(urlFirmada);
+                    // `null` = la foto llegó pero no traía ningún QR legible. Es
+                    // el caso normal de una foto movida, y hay que decirlo
+                    // distinto de «esa dirección no es del Consejo»: uno se
+                    // arregla sacando mejor la foto y el otro buscando el
+                    // documento correcto.
+                    if (!texto) {
+                        setError('La foto llegó pero no se leyó ningún código. Acércate al QR y vuelve a intentar.');
+                    } else {
+                        aceptar(texto);
+                    }
+                } catch {
+                    setError('La foto llegó pero no se pudo abrir. Intenta de nuevo desde el teléfono.');
+                } finally {
+                    setLeyendoFoto(false);
+                }
+            });
+        })();
+        return () => { vivo = false; dejarDeEscuchar?.(); };
+    }, [captura?.id, aceptar]);
 
     return (
         <div className="flex flex-col gap-2">
@@ -100,11 +162,26 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
                     </p>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" size="sm" icon={Camera}
-                            onClick={() => { setError(null); setEscaneando(true); }}>
+                            onClick={() => { setError(null); setEscaneando(true); }}
+                            disabled={leyendoFoto}>
                             Escanear el QR
                         </Button>
+                        {/* Sólo en escritorio, igual que en los adjuntos: en el
+                            teléfono ya está la cámara ahí mismo y ofrecer un
+                            código para escanearse a sí mismo es un rodeo. */}
+                        {!esTactil && (
+                            <Button variant="secondary" size="sm" icon={Smartphone}
+                                onClick={pedirAlTelefono}
+                                disabled={!!captura || leyendoFoto}
+                                loading={leyendoFoto}>
+                                {captura ? 'Esperando el teléfono…'
+                                    : leyendoFoto ? 'Leyendo el código…'
+                                        : 'Con el teléfono'}
+                            </Button>
+                        )}
                         <Button variant="ghost" size="sm" icon={ExternalLink}
-                            onClick={() => { setError(null); setPegando(v => !v); }}>
+                            onClick={() => { setError(null); setPegando(v => !v); }}
+                            disabled={leyendoFoto}>
                             {pegando ? 'Cancelar' : 'Pegar el enlace'}
                         </Button>
                     </div>
@@ -134,6 +211,16 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
             )}
 
             {error && <Notice variant="warning" compact>{error}</Notice>}
+
+            {captura && (
+                <Suspense fallback={null}>
+                    <DialogoDeCaptura
+                        captura={captura}
+                        etiqueta="el carné de dependiente"
+                        alCerrar={() => setCaptura(null)}
+                        alRenovar={pedirAlTelefono} />
+                </Suspense>
+            )}
 
             {escaneando && (
                 <Suspense fallback={null}>

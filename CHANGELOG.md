@@ -21,6 +21,86 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.827.0 — Enlazar a quien vuelve trae su ficha, y cuatro correcciones de pantalla
+
+Seis cosas vistas en pantalla. La primera no era una molestia: **borraba
+expedientes**.
+
+### Enlazar con quien ya trabajaba aquí le borraba la ficha
+
+*«Si agrego a un empleado que ya está, ¿por qué no se ponen los datos que ya
+están guardados?»*
+
+Al elegir a la persona se copiaban **tres campos** —sala, cargo y foto— y nada
+más. Pero el aviso de esa misma tarjeta dice, con razón, que al guardar «lo que
+esa ficha tenía escrito antes se reemplaza». Con el formulario en blanco, eso
+significaba reemplazar **el DUI, la dirección, el salario y el banco de esa
+persona por vacío**.
+
+O sea que el camino natural —elegir a quien vuelve y apretar Guardar— le borraba
+el expediente, sin ningún error y sin que nada en la pantalla lo dijera.
+
+Ahora se trae la ficha entera. Se respetan la sala y el cargo si ya los
+elegiste, porque son justo los que uno cambia mientras reincorpora a alguien. No
+se heredan el `id` —con él puesto el modal deja de ser un alta—, el estado
+(quien vuelve entra activo, no como se fue), las horas debidas ni los bloqueos.
+
+### El «si no está, lo cubre» del contrato: fuera
+
+*«En contrato, eso no lo veo necesario, ya que debe ser según organigrama y línea
+de mando.»*
+
+Tenía razón hasta en lo que el campo decía de sí mismo: su ayuda empezaba con
+«No hace falta elegir». Un control cuyo mejor uso es no usarlo. Y medido contra
+la base, así se usaba: **0 de las 49 fichas** tenían suplente. La cobertura la
+resuelve la línea de mando, que es lo que ya pasaba en las 49.
+
+De paso se corrigió el aviso de Permisos que mandaba a «elegir un suplente en la
+ficha de cada quien» — un campo que ya no existe. Mandar a hacer algo imposible
+es peor que no avisar.
+
+### La institución de AFP estaba en la columna del ISSS
+
+*«Si lo de AFP está en la columna 2, ¿por qué la institución está en la 1?»*
+
+Los seis campos vivían en una sola rejilla, que acomoda por orden: celda 1, celda
+2, celda 3… así que «Institución AFP», al ser el tercero, caía debajo de «Número
+ISSS». No es un desalineado cosmético — pone un dato de AFP en la columna del
+ISSS, o sea que la pantalla dice que pertenece a otra institución.
+
+El arreglo no fue mover ese campo (volvería con el siguiente) sino que **cada
+institución sea su propia columna**. Medido: los tres campos de AFP quedan juntos.
+
+### «Tomar con el teléfono» en Identidad no decía qué foto tomaba
+
+Desde v2.824.0 ese botón aparece en cada adjunto, así que en esa tarjeta había
+tres con el mismo rótulo. Ahora dice **«La foto de perfil, con el teléfono»**, y
+el diálogo de cada adjunto nombra el documento que espera.
+
+### El lector abría un recuadro de código de barras sobre un QR
+
+Un código de barras es ancho y bajo; un QR es **cuadrado**. Con el recuadro
+ancho la guía miente: quien la sigue encuadra el QR dentro de una franja, lo deja
+chico y lejos, que es la forma de que no lo lea. Ahora la guía tiene la forma del
+código que se busca, y la pista lo acompaña. Medido: **1.00** en QR, **3.71** en
+barras.
+
+### El carné de dependiente, también desde el teléfono
+
+En una computadora sin cámara el botón de escanear no sirve, y el carné está en
+el teléfono de la persona. No hizo falta un circuito nuevo: el portal ya sabe
+traer una foto del teléfono. Lo único que cambia es el último paso — acá el dato
+no es la foto sino el **texto** del QR, y eso lo decodifica la computadora sobre
+la imagen que recibió. Misma pantalla en el teléfono, mismo canal, mismo permiso.
+
+Y distingue los dos fallos, que se arreglan distinto: «no se leyó ningún código»
+(saca mejor la foto) no es lo mismo que «esa dirección no es del Consejo» (busca
+el documento correcto).
+
+### De paso
+
+Dos atributos `size` duplicados en JSX que React resolvía en silencio.
+
 ## v2.826.0 — Cambiarle el apellido a alguien ya no le deja el usuario viejo
 
 Reporte del usuario: *«si le cambié el apellido, ¿por qué no se actualizó el

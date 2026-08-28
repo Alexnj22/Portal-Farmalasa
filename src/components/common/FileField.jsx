@@ -149,6 +149,12 @@ const FileField = memo(({
     // los sitios que saben qué están recibiendo pasan el suyo (`dui`, `boleta`,
     // `receta`) y el recuadro nace con esa forma.
     tipoDeDocumento = 'documento',
+    /* Cómo se llama este adjunto en el diálogo del QR. Cae en `label`, y existe
+       para los sitios que dibujan su propio rótulo afuera —el DUI pinta «Frente»
+       y «Reverso» por su cuenta— y por eso llegarían acá sin nombre: el diálogo
+       diría «la foto va a aparecer aquí sola» sin decir CUÁL, que es la misma
+       confusión que el usuario reportó con el botón de la foto de perfil. */
+    etiquetaParaTelefono,
 }) => {
     const inputRef = useRef(null);
     // La cámara va en un input APARTE del de archivos, no en el mismo con
@@ -417,7 +423,7 @@ const FileField = memo(({
                 <Suspense fallback={null}>
                     <DialogoDeCaptura
                         captura={captura}
-                        etiqueta={typeof label === 'string' ? label : ''}
+                        etiqueta={etiquetaParaTelefono || (typeof label === 'string' ? label : '')}
                         alCerrar={cerrarCaptura}
                         alRenovar={pedirFotoAlTelefono} />
                 </Suspense>

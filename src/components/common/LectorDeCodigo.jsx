@@ -157,12 +157,20 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
                                 playsInline
                                 aria-label="Vista de la cámara"
                             />
-                            {/* La guía: un rectángulo ancho y bajo, que es la forma
-                                de un código de barras. Sin ella la gente encuadra
-                                la caja entera y el código queda demasiado chico
-                                para decodificar. */}
+                            {/* La guía tiene la FORMA DEL CÓDIGO que se está
+                                buscando, y por eso no puede ser una sola.
+
+                                Un código de barras es ancho y bajo; un QR es
+                                CUADRADO. Con el recuadro ancho sobre un QR —que es
+                                lo que había, y lo que el usuario vio al escanear el
+                                carné de dependiente— la guía miente: quien la sigue
+                                encuadra el QR dentro de una franja, o sea que lo
+                                deja chico y lejos, que es justo la forma de que no
+                                lo lea. Sin guía tampoco sirve: la gente encuadra la
+                                tarjeta entera. */}
                             <div className="absolute inset-0 grid place-items-center pointer-events-none">
-                                <div className="w-[78%] h-[28%] rounded-lg border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                                <div className={`rounded-lg border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] ${
+                                    formatos === 'qr' ? 'w-[62%] aspect-square' : 'w-[78%] h-[28%]'}`} />
                             </div>
                             {preparando && (
                                 <div className="absolute inset-0 grid place-items-center bg-black/50">
@@ -171,7 +179,9 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
                             )}
                         </div>
                         <p className="text-caption text-content-3 text-center">
-                            Acerca el código de barras al recuadro.
+                            {formatos === 'qr'
+                                ? 'Encuadra el código QR dentro del recuadro.'
+                                : 'Acerca el código de barras al recuadro.'}
                         </p>
                     </>
                 )}

@@ -370,7 +370,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                     <Toggle value={encendidas === total} color="success" disabled={locked}
                         onChange={(v) => onChange('requests', 'can_approve', v)} />
                 </div>
-                <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve el suplente que haya elegido en su ficha; si no eligió a nadie —o el cargo entero está ausente— se hace cargo quien esté arriba en el organigrama. Se apaga solo al volver.">
+                <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve quien esté arriba en el organigrama. Se apaga solo al volver.">
                     <div className="flex items-center gap-2">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
                         <Toggle value={delegando} color="chart-4" disabled={locked}
@@ -400,8 +400,16 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                     ) : (
                         <p className="flex items-start gap-1 text-caption text-warning-text font-medium leading-snug">
                             <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" strokeWidth={3} />
+                            {/* El aviso decía «elige un suplente en la ficha de cada
+                                quien», y desde el 2026-08-28 ese campo no existe: la
+                                cobertura la resuelve la línea de mando. Mandar a hacer
+                                algo que ya no se puede hacer es peor que no avisar —
+                                quien lo lea va a buscar un control que no está y va a
+                                concluir que el portal se rompió. Lo que sí se puede
+                                hacer es lo que ahora dice. */}
                             <span>{conSuplente.length > 0 ? 'Del resto no se hace cargo nadie: ' : 'No se hace cargo nadie: '}
-                                arriba de este cargo no hay ninguna persona activa. Elige un suplente en la ficha de cada quien.</span>
+                                arriba de este cargo no hay ninguna persona activa. Revisa el organigrama:
+                                a este cargo le falta alguien encima, o quien está no figura como activo.</span>
                         </p>
                     )}
                 </div>

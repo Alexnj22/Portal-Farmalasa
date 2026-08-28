@@ -32,6 +32,32 @@ async function getSessionCookie(): Promise<string> {
 }
 
 /**
+ * Los que salieron del catálogo y NO se avisan, con el motivo de cada uno.
+ *
+ * Los tres son cobros que se facturan como si fueran artículos, así que su
+ * «existencia» no es mercadería que nadie tenga que ir a sacar de una sala.
+ * Sin esta lista el primer aviso del control —y el único que saldría hoy— sería
+ * por COMISIONES, y un aviso que estrena disparando por algo que no hay que
+ * atender enseña a ignorarlo desde el día uno.
+ *
+ * **Va por id y no por una regla porque la regla no existe**, medido el
+ * 2026-08-28: los cuatro que hoy están fuera del catálogo —los tres de acá y un
+ * medicamento de verdad— tienen laboratorio, código de barras y categoría en
+ * blanco, así que ninguno de esos campos los separa. Y la regla de «esto no es
+ * venta de productos» que ya vive en el portal (`ventas_sin_producto`) se define
+ * por FACTURA —código de vendedor administrativo cobrado a una ficha marcada—,
+ * no por producto: no hay de dónde leer «este artículo es un cobro».
+ *
+ * Si algún día ese marcador existe a nivel de producto, esta lista se borra y se
+ * lee de ahí. Mientras tanto son tres, están nombrados y cada uno dice por qué.
+ */
+const FUERA_DE_CATALOGO_CALLADOS = new Map<number, string>([
+  [4239, 'COMISIONES POR SERVICIO DE CORRESPONSAL: es un cobro, no un artículo. Sus 83 unidades entre Salud 3 y La Popular no son mercadería.'],
+  [4466, 'SERVICIO A DOMICILIO: un servicio que se factura como si fuera un artículo.'],
+  [4711, 'APOYO PROMOCIONAL MARCA VIRO-GRIP: un apoyo de laboratorio, no un producto de venta.'],
+]);
+
+/**
  * Avisa cuando un producto DEJA DE VENIR en el catálogo y una sala todavía lo
  * tiene en existencia.
  *
@@ -54,7 +80,7 @@ async function avisarFueraDeCatalogo(
   supabase: any,
   delCatalogo: any[],
   enElPortal: any[],
-): Promise<{ fuera: number; con_existencia: number; avisados: number; motivo?: string }> {
+): Promise<{ fuera: number; con_existencia: number; avisados: number; callados?: number; motivo?: string }> {
   const idsDelCatalogo = new Set(delCatalogo.map((p: any) => Number(p.id)));
   const fuera = enElPortal.filter((p: any) => !idsDelCatalogo.has(Number(p.id)));
   if (fuera.length === 0) return { fuera: 0, con_existencia: 0, avisados: 0 };
@@ -102,8 +128,14 @@ async function avisarFueraDeCatalogo(
     acc.salas.add(Number(r.erp_sucursal_id));
     porProducto.set(id, acc);
   }
-  const conExistencia = fuera.filter((p: any) => porProducto.has(Number(p.id)));
-  if (conExistencia.length === 0) return { fuera: fuera.length, con_existencia: 0, avisados: 0 };
+  // Los callados se descuentan del AVISO, no de la medición: `con_existencia`
+  // sigue contándolos, así que la respuesta del sync no esconde que están ahí.
+  const todosConExistencia = fuera.filter((p: any) => porProducto.has(Number(p.id)));
+  const conExistencia = todosConExistencia.filter((p: any) => !FUERA_DE_CATALOGO_CALLADOS.has(Number(p.id)));
+  const callados = todosConExistencia.length - conExistencia.length;
+  if (conExistencia.length === 0) {
+    return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados };
+  }
 
   // Se avisa UNA vez por producto. La corrida es cada 10 minutos y la condición
   // dura hasta que alguien la resuelve: sin esto serían 144 avisos por día del
@@ -119,21 +151,40 @@ async function avisarFueraDeCatalogo(
     .select('metadata')
     .eq('metadata->>type', 'PRODUCTO_FUERA_DE_CATALOGO')
     .in('metadata->>product_id', conExistencia.map((p: any) => String(p.id)));
-  if (avErr) { console.error('[fuera-de-catalogo] anuncios:', avErr.message); return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0, motivo: 'anuncios_ilegibles' }; }
+  if (avErr) { console.error('[fuera-de-catalogo] anuncios:', avErr.message); return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados, motivo: 'anuncios_ilegibles' }; }
   const yaVistos = new Set((yaAvisados ?? []).map((a: any) => Number(a.metadata?.product_id)));
   const nuevos = conExistencia.filter((p: any) => !yaVistos.has(Number(p.id)));
-  if (nuevos.length === 0) return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0 };
+  if (nuevos.length === 0) return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados };
 
   // Los destinatarios: la jefatura de Logística —con su suplencia por vacaciones
-  // ya resuelta adentro— y Supervisión. `tipo_ficha = 'empleado'` deja afuera la
-  // cuenta técnica: tiene los poderes de un supervisor y no es una persona, así
-  // que un aviso dirigido a ella no lo lee nadie.
+  // ya resuelta adentro— y Supervisión.
+  //
+  // ⚠️ Supervisión sale del CARGO, nunca de `system_role`. Esa columna es el
+  // NIVEL DE PERMISO, no el puesto, y confundirlos ya mandó este aviso a quien
+  // no era: corregido por el usuario el 2026-08-28 —«rutilio no es supervisor,
+  // celina no es supervisor»—. Medido, `system_role` decía SUPERVISOR del
+  // Gerente General y ADMIN de la jefatura de Talento Humano. Es la misma
+  // lección de «admin es un área, no un rol».
+  const { data: cargosSup, error: rolErr } = await supabase
+    .from('roles').select('id').ilike('name', '%supervis%');
+  if (rolErr) console.error('[fuera-de-catalogo] cargos de supervisión:', rolErr.message);
+  const idsCargoSup = (cargosSup ?? []).map((r: any) => r.id);
+  // Un cargo renombrado dejaría esta lista vacía y el aviso saldría sólo a
+  // Logística sin que nadie se entere. Se dice en el registro: un destinatario
+  // que falta en silencio es indistinguible de uno que no existe.
+  if (idsCargoSup.length === 0) console.warn('[fuera-de-catalogo] ningún cargo de supervisión: sólo se avisa a Logística.');
+
+  // `tipo_ficha = 'empleado'` deja afuera la cuenta técnica: tiene los poderes
+  // de un supervisor y no es una persona, así que un aviso dirigido a ella no lo
+  // lee nadie.
   const [{ data: jefatura }, { data: supervision }] = await Promise.all([
     supabase.rpc('get_logistics_chief_ids'),
-    supabase.from('employees').select('id')
-      .in('system_role', ['SUPERVISOR', 'ADMIN', 'SUPERADMIN'])
-      .eq('status', 'ACTIVO')
-      .eq('tipo_ficha', 'empleado'),
+    idsCargoSup.length > 0
+      ? supabase.from('employees').select('id')
+          .in('role_id', idsCargoSup)
+          .eq('status', 'ACTIVO')
+          .eq('tipo_ficha', 'empleado')
+      : Promise.resolve({ data: [] as any[] }),
   ]);
   const destinatarios = [...new Set([
     ...((jefatura ?? []) as string[]),
@@ -141,7 +192,7 @@ async function avisarFueraDeCatalogo(
   ])];
   if (destinatarios.length === 0) {
     console.warn('[fuera-de-catalogo] sin destinatarios activos.');
-    return { fuera: fuera.length, con_existencia: conExistencia.length, avisados: 0, motivo: 'sin_destinatarios' };
+    return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados, motivo: 'sin_destinatarios' };
   }
 
   const pushUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push-notification`;
@@ -196,7 +247,7 @@ async function avisarFueraDeCatalogo(
     else avisados++;
   }
 
-  return { fuera: fuera.length, con_existencia: conExistencia.length, avisados };
+  return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados, callados };
 }
 
 Deno.serve(async (req) => {

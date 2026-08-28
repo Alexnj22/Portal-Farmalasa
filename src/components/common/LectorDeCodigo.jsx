@@ -34,12 +34,23 @@ import Button from './Button';
  * otro lado — una vez que leyó, deja de leer, porque el callback sigue
  * llegando mientras la cámara se apaga.
  *
+ * ── Qué formatos, y por qué no todos ──────────────────────────────────────
+ * `formatos` elige la lista. Por defecto lee los códigos de barras que trae una
+ * caja de farmacia; con `'qr'` lee QR y NADA MÁS.
+ *
+ * No es purismo: con todos los decodificadores habilitados, zxing prueba cada
+ * uno en cada cuadro, y en un teléfono de gama media eso se siente como que «no
+ * lee». Y al revés, un lector de cajas que además intente QR es más lento para
+ * el trabajo que hace mil veces al día, a cambio de un formato que ahí no
+ * aparece nunca.
+ *
  * @param {boolean}  abierto
  * @param {Function} onCerrar
  * @param {Function} onLeer      recibe el texto del código y el diálogo se cierra
  * @param {string}   [titulo]
+ * @param {'barras'|'qr'} [formatos]
  */
-export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Escanear código' }) {
+export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Escanear código', formatos = 'barras' }) {
     const videoRef = useRef(null);
     const lectorRef = useRef(null);
     const streamRef = useRef(null);
@@ -84,16 +95,18 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
                     import('@zxing/library'),
                 ]);
                 if (cancelado) return;
-                // Sólo los formatos que trae una caja de farmacia. La lista
-                // acotada no es purismo: con todos habilitados, zxing prueba
-                // cada decodificador en cada cuadro y en un teléfono de gama
+                // Una lista por trabajo, nunca las dos juntas: ver `formatos`
+                // en el encabezado. Con todos los decodificadores habilitados,
+                // zxing prueba cada uno en cada cuadro y en un teléfono de gama
                 // media eso se siente como que «no lee».
                 const hints = new Map();
-                hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-                    BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
-                    BarcodeFormat.UPC_A, BarcodeFormat.UPC_E,
-                    BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
-                ]);
+                hints.set(DecodeHintType.POSSIBLE_FORMATS, formatos === 'qr'
+                    ? [BarcodeFormat.QR_CODE]
+                    : [
+                        BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
+                        BarcodeFormat.UPC_A, BarcodeFormat.UPC_E,
+                        BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
+                    ]);
                 hints.set(DecodeHintType.TRY_HARDER, true);
                 const lector = new BrowserMultiFormatReader(hints);
                 lectorRef.current = lector;
@@ -119,7 +132,7 @@ export default function LectorDeCodigo({ abierto, onCerrar, onLeer, titulo = 'Es
         })();
 
         return () => { cancelado = true; clearTimeout(finCalentamiento); apagar(); };
-    }, [abierto, apagar, onLeer, onCerrar]);
+    }, [abierto, apagar, onLeer, onCerrar, formatos]);
 
     return (
         <ModalShell open={abierto} onClose={onCerrar} ariaLabel={titulo} maxWidthClass="max-w-md">

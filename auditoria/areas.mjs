@@ -205,6 +205,9 @@ export const AREAS = [
             'src/components/forms/FormNovedad.jsx',
             'src/utils/documentExpiry.js', 'src/utils/fotoDocumento.js', 'src/utils/capturaDeFoto.js',
             'src/utils/expediente.js', 'src/utils/duiLeido.js',
+            // El carné de dependiente pasó a ser un QR del CSSP: se guarda su
+            // dirección, no una foto.
+            'src/utils/carneDeDependiente.js', 'src/components/common/CarneDeDependiente.jsx',
             'src/utils/contrato.js', 'src/utils/acreditaciones.js',
         ],
         tablas: ['employees', 'employee_branches', 'employee_documents', 'employee_events',

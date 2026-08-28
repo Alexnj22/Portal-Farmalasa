@@ -50,6 +50,7 @@ const CATEGORIAS_DE_DUI = new Set(['DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO'])
 import ModalShell from '../common/ModalShell';
 import { cadenaDeSuperiores } from '../../utils/roles';
 import FileField from '../common/FileField';
+import CarneDeDependiente from '../common/CarneDeDependiente';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { PROPS_CAMARA } from '../../utils/capturaDeFoto';
 import { formatMoney } from '../../utils/formatNumber';
@@ -436,6 +437,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 nursing_license_number: '', pharmacist_license_number: '',
                 medico_license_number: '', contador_license_number: '',
                 tiene_acreditacion_dependiente: false, acreditaciones: {},
+                carne_dependiente_url: '',
                 employee_documents: [],
                 department: '', municipality: '', distrito: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -2700,9 +2702,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 })}
 
                                 {/* La acreditación de dependiente de farmacia es del CSSP y
-                                    tiene trámite de REacreditación — o sea que vence, y por
-                                    eso el comprobante lleva fecha. No depende de la
-                                    profesión: la tiene quien atiende el mostrador. */}
+                                    tiene trámite de REacreditación — o sea que vence. No
+                                    depende de la profesión: la tiene quien atiende el
+                                    mostrador.
+
+                                    Desde el 2026-08-28 el carné es DIGITAL: un QR que lleva a
+                                    la ficha del Consejo. Por eso acá ya no se adjunta un
+                                    archivo sino que se escanea, y el vencimiento deja de
+                                    escribirse a mano — lo dice la ficha del Consejo, que se
+                                    actualiza sola. */}
                                 <div data-surface="card" className="p-3">
                                     <Checkbox
                                         checked={!!formData.tiene_acreditacion_dependiente}
@@ -2710,11 +2718,32 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         label={<><ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Acreditación de dependiente de farmacia</span></>}
                                     />
                                     {formData.tiene_acreditacion_dependiente && (
-                                        <div className="mt-3 animate-in fade-in zoom-in-95">
-                                            <p className="text-micro text-content-3 font-medium mb-2 leading-snug">
-                                                La otorga el Consejo Superior de Salud Pública y se renueva: el comprobante lleva su vencimiento.
-                                            </p>
-                                            {renderDocUploadArea('DEPENDIENTE_FARMACIA')}
+                                        <div className="mt-3 animate-in fade-in zoom-in-95 flex flex-col gap-4">
+                                            {/* ── Ya no es un papel ──────────────────────────
+                                                El Consejo digitalizó este carné: entrega un QR
+                                                que lleva a la ficha en línea. Lo que se guarda
+                                                es esa dirección — de la dirección sale el
+                                                dibujo del QR, del dibujo no sale la dirección,
+                                                y la ficha del Consejo se actualiza sola cuando
+                                                la persona reacredita. */}
+                                            <CarneDeDependiente
+                                                url={formData.carne_dependiente_url || null}
+                                                onChange={(u) => handleSelectChange('carne_dependiente_url', u)}
+                                            />
+
+                                            {/* El adjunto se queda, pero como lo que hoy es:
+                                                opcional y de respaldo. Hay fichas viejas con el
+                                                comprobante de papel escaneado, y esconderlo las
+                                                dejaría con un documento que ya nadie puede ver.
+                                                Sólo se ofrece si ya hay uno. */}
+                                            {!!getDocEntry('DEPENDIENTE_FARMACIA').url && (
+                                                <div>
+                                                    <label className={rotuloCampo('text-content-2', { denso: true })}>
+                                                        <span>Comprobante en papel (de antes de que fuera digital)</span>
+                                                    </label>
+                                                    {renderDocUploadArea('DEPENDIENTE_FARMACIA')}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -20,7 +20,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import Button from './Button';
 
-export default function QrDeCaptura({ enlace, venceEl, alVencer, alRenovar }) {
+/**
+ * @param {string} enlace
+ * @param {string} [venceEl]  si no hay, el código no caduca y no se cuenta nada
+ * @param {string} [leyenda]  el pie. Por defecto habla del traspaso de la foto,
+ *                            pero este mismo dibujante pinta también el carné de
+ *                            dependiente, donde «escanéalo con el teléfono» sería
+ *                            una instrucción para el trabajo equivocado.
+ */
+export default function QrDeCaptura({ enlace, venceEl, alVencer, alRenovar, leyenda = 'Escanéalo con el teléfono' }) {
     const caja = useRef(null);
     const [restan, setRestan] = useState(null);
     const [fallo, setFallo] = useState(false);
@@ -84,7 +92,7 @@ export default function QrDeCaptura({ enlace, venceEl, alVencer, alRenovar }) {
                 </Button>
             ) : (
                 <p className="text-caption font-bold text-content-3">
-                    {restan == null ? 'Escanéalo con el teléfono'
+                    {restan == null ? leyenda
                         : `Vence en ${Math.floor(restan / 60)}:${String(restan % 60).padStart(2, '0')}`}
                 </p>
             )}

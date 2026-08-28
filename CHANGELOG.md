@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.825.0 — El carné de dependiente ya no es un papel: es un QR del Consejo
+
+Aviso del usuario: *«en el documento de dependiente de farmacia ya no es un
+carné, es un QR, pasó a ser digital»*.
+
+El Consejo Superior de Salud Pública lo digitalizó. Donde antes se adjuntaba la
+foto de una tarjeta, ahora se **escanea el QR** y el portal guarda la dirección
+de la ficha en línea — del estilo
+`https://expedientes.srs.gob.sv/carnets/dependientes/1758306680151`.
+
+**Se guarda la dirección, no el dibujo.** De la dirección sale el QR; del QR no
+sale la dirección. Y la ficha del Consejo se actualiza sola cuando la persona
+reacredita, así que una foto envejece y un puntero no. Por eso también
+desaparece la fecha de vencimiento escrita a mano: la dice el Consejo.
+
+**Dos caminos para entrarlo.** Escanear con la cámara —el lector canónico
+aprendió a leer QR, y sólo cuando se lo piden: sumarle QR al lector de cajas lo
+haría más lento para el trabajo que hace mil veces al día— o pegar el enlace,
+porque el carné llega muchas veces por correo y ahí no hay nada que escanear.
+
+**Ver el carné** abre un modal con el QR redibujado —para mostrarlo en pantalla
+y que otro lo escanee, que es para lo que sirve un carné—, el número y la
+dirección, más un botón que abre la ficha del Consejo. No se mete su sitio en un
+`<iframe>`: un sitio de gobierno manda `X-Frame-Options` y el marco quedaría en
+blanco, que se lee como un error del portal y no se puede arreglar desde acá.
+
+**Lo que se comprueba, y por qué así.** La dirección tiene que ser `https` y del
+dominio `srs.gob.sv`. Del **dominio** y no de la ruta: atado a
+`/carnets/dependientes/…`, el día que el Consejo reacomode su sitio el portal
+empezaría a rechazar carnés válidos sin que nadie sepa por qué. Y la
+comprobación está anclada contra el final del host, que es lo que hace que
+`https://srs.gob.sv.otrositio.com/…` **no pase** — el truco del sufijo engaña a
+cualquier chequeo escrito con `includes()`, y dejaría el expediente apuntando al
+sitio de otro dueño. La misma regla vive en el CHECK de la base, y una prueba
+vigila que las dos digan lo mismo: si divergen, la pantalla acepta algo que
+Postgres rechaza y el guardado revienta con un error de base de datos.
+
+El adjunto de papel no se borra: sigue visible en las fichas que ya lo tienen,
+rotulado como lo que hoy es — el comprobante de antes de que fuera digital.
+
 ## v2.824.0 — El teléfono y el editor salen en TODO adjunto, no en tres sitios sueltos
 
 Pedido del usuario: *«que en cualquier lugar donde solicite documento a

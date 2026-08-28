@@ -725,8 +725,14 @@ export const createEmployeeSlice = (set, get) => ({
                 medico_license_number: formData.medico_license_number || null,
                 contador_license_number: formData.contador_license_number || null,
                 // Acreditación de dependiente de farmacia (CSSP). Tiene trámite
-                // de REacreditación: vence, y su comprobante lleva la fecha.
+                // de REacreditación: vence.
                 tiene_acreditacion_dependiente: !!formData.tiene_acreditacion_dependiente,
+                // Desde el 2026-08-28 el carné es DIGITAL: se guarda la dirección
+                // de la ficha del Consejo, leída de su QR. Cadena vacía a `null`
+                // —la columna tiene un CHECK de dominio y `''` no lo pasa—, y esa
+                // es exactamente la diferencia entre «no tiene» y un error de
+                // Postgres en la cara de quien guarda.
+                carne_dependiente_url: formData.carne_dependiente_url?.trim() || null,
                 pharmacist_license_number: formData.pharmacist_license_number || null,
                 // Cuál sello tiene hoy cada junta: el provisional del egresado
                 // o el definitivo del titulado. El NÚMERO vigente sigue en su
@@ -1033,6 +1039,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.medico_license_number !== undefined) dbPayload.medico_license_number = updatedData.medico_license_number || null;
             if (updatedData.contador_license_number !== undefined) dbPayload.contador_license_number = updatedData.contador_license_number || null;
             if (updatedData.tiene_acreditacion_dependiente !== undefined) dbPayload.tiene_acreditacion_dependiente = !!updatedData.tiene_acreditacion_dependiente;
+            if (updatedData.carne_dependiente_url !== undefined) dbPayload.carne_dependiente_url = updatedData.carne_dependiente_url?.trim() || null;
             if (updatedData.acreditaciones !== undefined) dbPayload.acreditaciones = updatedData.acreditaciones || {};
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;

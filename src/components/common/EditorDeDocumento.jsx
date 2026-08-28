@@ -5,7 +5,7 @@ import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import SegmentedControl from './SegmentedControl';
-import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento } from '../../utils/fotoDocumento';
+import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -402,6 +402,17 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
     }, [src, cropPx, giro, doc]);
 
     const avisos = avisosDeFoto(medidas, modo, doc);
+    /* El PISO. `avisos` recomienda; esto impide guardar.
+     *
+     * Nació de un DUI real: la tarjeta acostada ocupando un tercio de una foto
+     * vertical, el resto escritorio. La FOTO era grande, así que ningún aviso
+     * de tamaño saltaba; lo chico era el documento adentro. Y una vez guardado
+     * ilegible, nadie lo vuelve a mirar hasta que hace falta.
+     *
+     * Se mide el RECORTE, que es lo que se va a guardar. Y mientras la revisión
+     * todavía no midió —`medidas` en null— NO se bloquea: un botón apagado
+     * porque el portal todavía no terminó de pensar se lee como roto. */
+    const piso = sePuedeGuardar(medidas, doc);
 
     const confirmar = useCallback(async () => {
         setGuardando(true);
@@ -568,6 +579,16 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
 
                 {/* Los avisos reemplazan a la explicación fija cuando hay algo
                     que decir: dos carteles apilados no se leen ninguno. */}
+                {/* El motivo del bloqueo va PRIMERO y en rojo: los demás avisos
+                    son consejos y éste es la razón por la que el botón está
+                    apagado. Un `title` solo no alcanza — con el dedo no hay
+                    cursor que pasar por encima. */}
+                {!piso.sePuede && (
+                    <div className="shrink-0">
+                        <Notice variant="danger" compact icon={AlertTriangle}>{piso.motivo}</Notice>
+                    </div>
+                )}
+
                 {avisos.length > 0 ? (
                     <div className="space-y-2 shrink-0">
                         {avisos.map((a, i) => (
@@ -594,7 +615,8 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                 <Button variant="ghost" onClick={onCancel} disabled={guardando}>
                     Cancelar
                 </Button>
-                <Button variant="primary" icon={Check} onClick={confirmar} loading={guardando}>
+                <Button variant="primary" icon={Check} onClick={confirmar} loading={guardando}
+                    disabled={!piso.sePuede} title={piso.motivo || undefined}>
                     Usar esta foto
                 </Button>
             </LiquidModal.Footer>

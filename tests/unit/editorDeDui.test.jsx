@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import EditorDeDocumento from '../../src/components/common/EditorDeDocumento';
-import { DOCS, avisosDeFoto } from '../../src/utils/fotoDocumento';
+import { DOCS, avisosDeFoto, sePuedeGuardar } from '../../src/utils/fotoDocumento';
 
 /**
  * ── El DUI se recorta, pero NO se aclara ─────────────────────────────────────
@@ -86,5 +86,41 @@ describe('los avisos no mandan a apretar lo que no existe', () => {
         const texto = avisosDeFoto(pocaTinta, 'original', DOCS.dui)[0].texto;
         expect(texto).toMatch(/la tarjeta/i);
         expect(texto).not.toMatch(/la hoja/i);
+    });
+});
+
+/* ── El PISO: por debajo de esto no se guarda ────────────────────────────────
+ *
+ * `avisosDeFoto` recomienda; `sePuedeGuardar` impide. Son dos números distintos
+ * a propósito, y la distancia entre ellos es la zona donde el portal sugiere
+ * pero deja pasar.
+ *
+ * Nació de un DUI real: la tarjeta acostada ocupando un tercio de una foto
+ * vertical, el resto escritorio. Ningún aviso de tamaño saltaba porque la FOTO
+ * era grande — lo chico era el documento adentro. Por eso se mide el RECORTE.
+ */
+describe('sePuedeGuardar', () => {
+    it('deja pasar un recorte que se lee', () => {
+        expect(sePuedeGuardar({ ancho: 1600, alto: 1010 }, DOCS.dui).sePuede).toBe(true);
+    });
+
+    it('BLOQUEA un recorte diminuto, y dice cuánto falta', () => {
+        const r = sePuedeGuardar({ ancho: 900, alto: 380 }, DOCS.dui);
+        expect(r.sePuede).toBe(false);
+        expect(r.motivo).toMatch(/380 px/);
+        expect(r.motivo).toMatch(/600/);
+    });
+
+    it('mide el lado CORTO, no el largo', () => {
+        // Una tira larguísima y angosta no se salva por ser larga: lo que hace
+        // ilegible la letra es el lado chico.
+        expect(sePuedeGuardar({ ancho: 4000, alto: 300 }, DOCS.documento).sePuede).toBe(false);
+    });
+
+    it('mientras la revisión no midió, NO bloquea', () => {
+        // Un botón apagado porque el portal todavía no terminó de pensar se lee
+        // como roto.
+        expect(sePuedeGuardar(null, DOCS.dui).sePuede).toBe(true);
+        expect(sePuedeGuardar({ ancho: 0, alto: 0 }, DOCS.dui).sePuede).toBe(true);
     });
 });

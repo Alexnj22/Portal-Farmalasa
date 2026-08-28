@@ -4,7 +4,6 @@ import ListRow from './ListRow';
 import Button from './Button';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
-import { openStoredFile } from '../../utils/storageFiles';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
 /* Los dos por `lazy`, y por el mismo motivo: este componente está en los 21
    adjuntos del portal, así que TODO lo que importe viaja en el cierre estático
@@ -16,6 +15,11 @@ import { rotuloCampo } from '../../utils/rotuloDeCampo';
    alguien aprieta un botón. */
 const EditorDeDocumento = lazy(() => import('./EditorDeDocumento'));
 const DialogoDeCaptura = lazy(() => import('./DialogoDeCaptura'));
+/* El visor: mira el documento SIN salir de la pantalla, y desde ahí se puede
+   recortar y enderezar lo que ya estaba guardado. Antes «Ver» abría una pestaña
+   —que saca a la persona del formulario que estaba llenando— y arreglar un
+   documento torcido pasaba por quitarlo y subirlo de nuevo. */
+const VisorDeDocumento = lazy(() => import('./VisorDeDocumento'));
 /* Y el módulo del traspaso también, por `await import()`. Es la misma cuenta:
    `abrirCaptura` no se llama hasta que alguien aprieta el botón, y `esperarFoto`
    no escucha nada hasta que hay un código vivo. Estáticos costaban 1 kB en cada
@@ -260,11 +264,11 @@ const FileField = memo(({
         if (inputRef.current) inputRef.current.value = '';
     }, [onChange]);
 
+    const [viendo, setViendo] = useState(false);
     const ver = useCallback(e => {
         e.preventDefault(); e.stopPropagation();
-        if (file) window.open(URL.createObjectURL(file), '_blank', 'noopener');
-        else if (url) openStoredFile(url);
-    }, [file, url]);
+        setViendo(true);
+    }, []);
 
     // ── Tomar la foto con el teléfono ──────────────────────────────────────
     const cerrarCaptura = useCallback(() => setCaptura(null), []);
@@ -432,6 +436,22 @@ const FileField = memo(({
             {/* Recortar antes de entregar. `entregar` y no `aceptar`: lo que
                 sale del editor ya pasó por la validación, y volver a mandarlo
                 allí lo devolvería al editor en un bucle. */}
+            {viendo && (
+                <Suspense fallback={null}>
+                    <VisorDeDocumento
+                        url={url}
+                        file={file}
+                        nombre={file?.name || name || 'Documento'}
+                        tipo={tipoDeDocumento}
+                        alCerrar={() => setViendo(false)}
+                        // Lo corregido entra por el MISMO `onChange` que una
+                        // subida nueva: el formulario lo sube por su camino de
+                        // siempre y no hay una segunda forma de guardar.
+                        onEditado={conEditor ? entregar : undefined}
+                    />
+                </Suspense>
+            )}
+
             {porEditar && (
                 <Suspense fallback={null}>
                     <EditorDeDocumento

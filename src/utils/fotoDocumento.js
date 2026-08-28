@@ -116,6 +116,23 @@ const COLOR_VISIBLE = 0.001;
 // `salida` más abajo).
 const LADO_CORTO_MINIMO = 900;
 
+/* ── El PISO: por debajo de esto no se guarda ──────────────────────────────
+ *
+ * `ladoMinimo` avisa; esto BLOQUEA. Son dos números distintos a propósito y la
+ * distancia entre ellos es la zona donde el portal recomienda pero deja pasar
+ * —una foto justa que igual se lee—.
+ *
+ * Nació de un DUI real subido el 2026-08-28: la tarjeta acostada, ocupando un
+ * tercio de una foto vertical, con el resto siendo el escritorio. Entraba
+ * dentro de `ladoMinimo` porque la FOTO era grande; lo que era chico era el
+ * documento adentro. Y una vez guardado, ilegible, nadie lo vuelve a mirar
+ * hasta que hace falta.
+ *
+ * 600 px del lado corto del RECORTE es lo que separa «se lee la letra chica»
+ * de «se adivina». Por debajo, el aviso deja de ser aviso: no se puede guardar.
+ */
+const LADO_CORTO_INACEPTABLE = 600;
+
 /**
  * Lo único que cambia entre un documento y otro.
  *
@@ -332,6 +349,26 @@ export function escalaDeSalida(ancho, alto, doc = {}) {
  * Cada aviso dice QUÉ pasa y QUÉ hacer: uno que sólo describe el problema se
  * lee como un reproche y se ignora.
  */
+/**
+ * ¿Este recorte se puede guardar, o es tan chico que va a quedar ilegible?
+ *
+ * Se mide el RECORTE y no la foto: el defecto que esto evita es justamente una
+ * foto grande con el documento chiquito adentro.
+ *
+ * @returns {{sePuede: boolean, motivo: string|null}}
+ */
+export function sePuedeGuardar(d, doc = {}) {
+    if (!d || !d.ancho || !d.alto) return { sePuede: true, motivo: null };
+    const corto = Math.min(d.ancho, d.alto);
+    const piso = doc.ladoInaceptable ?? LADO_CORTO_INACEPTABLE;
+    if (corto >= piso) return { sePuede: true, motivo: null };
+    return {
+        sePuede: false,
+        motivo: `El recorte quedó en ${Math.round(corto)} px de lado y hacen falta al menos ${piso}: `
+              + `así la letra no se va a poder leer. Acércate al tomar la foto, o recorta menos.`,
+    };
+}
+
 export function avisosDeFoto(d, modo = 'aclarada', doc = {}) {
     if (!d) return [];
     const nombre = doc.nombre || 'la receta';

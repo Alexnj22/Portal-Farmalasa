@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.828.0 — Los documentos se ven y se arreglan sin salir de la pantalla, y no se guarda algo ilegible
+
+Traído por una foto real: un DUI acostado, ocupando un tercio de una foto
+vertical, el resto escritorio. Ya estaba guardado así.
+
+### Ver sin irse
+
+*«Que los documentos se puedan ver en la misma pantalla, no abrir otra
+pestaña.»* «Ver» abría una pestaña nueva, que saca a la persona del formulario
+que estaba llenando — y volver es acordarse de que había un formulario abierto.
+
+Ahora abre un visor **dentro** de la pantalla: la imagen entera (`object-contain`
+— recortarla para llenar la caja esconde justo el borde que dice si el documento
+entró completo), o el PDF en un marco. La pestaña aparte sigue estando, como una
+salida más para imprimir o ver en grande.
+
+### Arreglar lo que ya está guardado
+
+Hasta hoy el editor sólo existía **antes** de subir: una vez guardado, un
+documento torcido se quedaba torcido para siempre, y enderezarlo pasaba por
+quitarlo y subirlo de nuevo.
+
+Desde el visor, **«Recortar y enderezar»** trae el archivo de vuelta como un
+`File` y lo mete al **mismo** editor que una subida nueva — recortar, girar,
+enderezar, «Aclarada»—. Lo que sale se entrega por el mismo `onChange` de
+siempre: no hay una segunda forma de guardar un documento, que es como dos
+caminos se desincronizan.
+
+Un PDF se ve pero no se edita, y el botón **no aparece** en vez de aparecer y
+fallar: recortarlo exigiría rasterizarlo —perder el texto seleccionable— para
+arreglar algo que un PDF casi nunca tiene, porque viene de un escáner.
+
+### Y un piso: por debajo de esto no se guarda
+
+*«Los documentos deben tener un formato / tamaño estándar o mínimo, para no
+poder guardar algo en baja resolución, muy pequeño, que sea ilegible.»*
+
+El editor ya avisaba cuando el recorte quedaba chico. **Avisar no alcanzó**: se
+puede aceptar igual, y una vez guardado ilegible nadie lo vuelve a mirar hasta
+que hace falta.
+
+Ahora hay dos números y la distancia entre ellos es la zona donde el portal
+recomienda pero deja pasar. Por debajo de **600 px del lado corto del recorte**,
+el botón «Usar esta foto» queda **apagado** y arriba sale en rojo por qué —un
+`title` solo no alcanza: con el dedo no hay cursor que pasar por encima—.
+
+Se mide el **recorte**, no la foto: el defecto que esto evita es exactamente una
+foto grande con el documento chiquito adentro, que es la que lo trajo. Y mientras
+la revisión todavía no midió, **no** bloquea: un botón apagado porque el portal
+no terminó de pensar se lee como roto.
+
+Medido en el navegador con una foto igual a la reportada: con el recorte normal
+deja guardar; acercado a tope, bloquea y dice cuánto falta.
+
 ## v2.827.4 — Los 13 productos dados de baja dejan de ofrecerse para cargar
 
 La otra mitad de v2.827.2. El aviso ya explica por qué un producto dado de baja

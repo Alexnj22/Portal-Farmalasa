@@ -38,11 +38,21 @@ describe('el editor con tipo="dui"', () => {
         const { unmount } = render(
             <EditorDeDocumento tipo="dui" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
         expect(screen.queryByText('Aclarada')).toBeNull();
-        expect(screen.queryByText('Como está')).toBeNull();
         unmount();
 
         render(<EditorDeDocumento tipo="receta" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
         expect(screen.getByText('Aclarada')).toBeTruthy();
+    });
+
+    /* Que no se aclare NO significa que se quede sin tratamiento, y ésa era la
+     * versión anterior de esta prueba: exigía que el DUI no ofreciera NINGÚN
+     * modo. Con eso, la foto de un teléfono —lavada, amarillenta y blanda— se
+     * guardaba tal cual. «Nítida» es la que se hizo para él: equilibra el
+     * blanco, levanta el negro y enfoca, sin descartar color. */
+    it('pero SÍ ofrece «Nítida», y arranca en ella', () => {
+        render(<EditorDeDocumento tipo="dui" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
+        expect(screen.getByText('Nítida')).toBeTruthy();
+        expect(screen.getByText('Como está')).toBeTruthy();
     });
 
     it('se presenta como lo que es: una tarjeta, no una hoja', () => {

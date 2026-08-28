@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.834.0 — «Nítida»: la foto de un documento deja de guardarse lavada
+
+*«Que se vea más nítido y más claro.»*
+
+El DUI tenía **prohibida** «Aclarada» —lleva todo a gris y le quema la fotografía
+y los fondos de seguridad— y con eso se quedaba **sin ningún tratamiento**: la
+foto de un teléfono sobre un escritorio sale lavada, amarillenta y blanda, y así
+se guardaba.
+
+**«Nítida»** es la que le faltaba, y no descarta color. Hace tres cosas:
+
+1. **Equilibra el blanco** con una ganancia por canal, **acotada al 18%**: el
+   amarillo de una bombilla se va y el azul del fondo de seguridad se queda.
+2. **Levanta el negro** buscando el punto oscuro real de esa foto — una tomada a
+   contraluz no tiene ningún píxel negro, así que estirar contra cero no le sube
+   el contraste.
+3. **Enfoca** con una máscara de desenfoque, que es lo que le devuelve el filo a
+   la letra chica del pie del documento.
+
+Sale por defecto en el DUI y en cualquier documento; la receta y la boleta siguen
+con «Aclarada», que es lo que las hace legibles. Y la calidad de salida sube de
+**0.85 a 0.92**: lo que la compresión se lleva primero son los bordes de la letra
+chica, y un papel se guarda una vez y se mira durante años.
+
+**La vista previa ahora muestra el tratamiento.** Antes se aplicaba recién al
+guardar, así que el control no cambiaba nada en pantalla — se decidía a ciegas
+sobre lo único que hay que decidir ahí. Es una aproximación con filtros del
+navegador, y está escrito: el archivo guardado sale mejor que la vista previa,
+nunca distinto en intención.
+
+### Dos veces que la medición dijo lo contrario de lo que pasaba
+
+La primera versión estiraba **cada canal contra su propio blanco y su propio
+negro**. Corregía el tinte y de paso **borraba el color**: medido, la saturación
+caía de 31.6 a 7.6. Eso es exactamente lo que este tratamiento existe para
+evitar.
+
+Y al corregirlo, la medición **seguía diciendo que el color caía** — 4.9. Pero el
+instrumento estaba mal: promediar la saturación de toda la imagen no distingue el
+**tinte** (que hay que quitar) del **color de verdad** (que hay que conservar), y
+el papel domina por área. Medido por zonas, el resultado es el correcto y el
+contrario del que decía el promedio:
+
+| zona | entrada lavada | «Como está» | **«Nítida»** |
+|---|---:|---:|---:|
+| papel — el tinte a quitar | 34 | 35 | **0** |
+| azul — el color a conservar | 9 | 8 | **55** |
+
 ## v2.833.1 — El ISSS y la AFP tienen su propia sección, no la de ejercer la profesión
 
 *«No tiene sentido el ISSS y AFP ahí.»*

@@ -70,7 +70,14 @@ import useCoarsePointer from '../../hooks/useCoarsePointer';
 // Un solo tamaño para cada tipo de documento, y POR QUÉ LADO se mide lo dice
 // `DOCS` (`escalaDeSalida`): una hoja se normaliza por el lado largo, una boleta
 // térmica por el ancho de su tira. Acá sólo se aplica.
-const CALIDAD = 0.85;
+/* La calidad del JPEG de salida. Un documento se guarda para LEERLO, y lo que
+ * la compresión se lleva primero son justamente los bordes de la letra chica —
+ * que es donde vive el número del DUI. 0.92 pesa ~40% más que 0.85 sobre una
+ * imagen de 1600 px (de ~300 kB a ~430 kB) y es una diferencia que se ve al
+ * ampliar. Un papel se guarda una vez y se mira durante años.
+ *
+ * `calidad` en `DOCS` lo baja donde no haga falta. */
+const CALIDAD = 0.92;
 
 // La revisión mide sobre una copia chica. Las tres medidas que se usan —cuán
 // claro es el papel, cuánta tinta hay y cuánto color— son proporciones, así que
@@ -78,10 +85,33 @@ const CALIDAD = 0.85;
 // mientras alguien mueve el recorte.
 const LADO_ANALISIS = 800;
 
-const MODOS = [
-    { value: 'original', label: 'Como está' },
-    { value: 'aclarada', label: 'Aclarada' },
-];
+/* Los tres tratamientos, y cuál ofrece cada papel lo dice `DOCS.modos`.
+ *
+ * `nitida` no descarta color: equilibra el blanco, levanta el negro y enfoca.
+ * `aclarada` lleva todo a gris — perfecto para una receta, destructivo para un
+ * DUI, donde quema la fotografía y los fondos de seguridad. */
+const MODOS = {
+    original: { value: 'original', label: 'Como está' },
+    nitida:   { value: 'nitida',   label: 'Nítida' },
+    aclarada: { value: 'aclarada', label: 'Aclarada' },
+};
+
+/* Qué ofrece un papel que no lo diga. `aclarar: false` —lo que declara el DUI—
+ * significa «gris no», y ahora eso ya no lo deja sin ninguna mejora: le queda
+ * «Nítida», que es la que se hizo para él. */
+/* La aproximación de cada tratamiento para la vista previa. Ver el comentario
+ * del `mediaStyle`: acá no se puede correr el algoritmo real, así que se imita
+ * su INTENCIÓN — más contraste y color vivo para «Nítida», gris duro para
+ * «Aclarada». */
+const FILTRO_DE_VISTA = {
+    original: 'none',
+    nitida:   'contrast(1.3) saturate(1.15) brightness(1.04)',
+    aclarada: 'grayscale(1) contrast(1.8) brightness(1.12)',
+};
+
+const modosDe = (doc) => (doc.modos || (doc.aclarar === false
+    ? ['original', 'nitida']
+    : ['original', 'nitida', 'aclarada'])).map(k => MODOS[k]).filter(Boolean);
 
 
 /**
@@ -127,6 +157,129 @@ function aclarar(ctx, ancho, alto) {
         d[i] = d[i + 1] = d[i + 2] = v;
     }
     ctx.putImageData(img, 0, 0);
+}
+
+/**
+ * Deja la foto NÍTIDA sin volverla gris.
+ *
+ * ── Por qué no alcanzaba «Aclarada» ────────────────────────────────────────
+ *
+ * «Aclarada» lleva todo a gris para dejar papel blanco y tinta negra, y eso es
+ * lo correcto en una receta. Sobre un DUI quema la fotografía de la persona y
+ * los fondos de seguridad a color — o sea justo lo que hay que poder mirar. Por
+ * eso el DUI la tenía prohibida, y se quedaba sin ninguna mejora: la foto de un
+ * teléfono sobre un escritorio sale lavada, amarillenta y blanda, y así quedaba
+ * guardada. Lo dijo el usuario mirando la suya: «que se vea más nítido y más
+ * claro».
+ *
+ * Esto hace tres cosas y ninguna descarta color:
+ *
+ *  1. **Equilibra el blanco.** Se busca el percentil alto de CADA canal por
+ *     separado y se estira contra él. Una foto con luz amarilla tiene el azul
+ *     apagado; estirando cada canal a su propio blanco, el papel vuelve a ser
+ *     papel y la tinta azul del DUI sigue siendo azul.
+ *
+ *  2. **Levanta el negro.** El punto oscuro se busca en el percentil bajo, no
+ *     en un cero fijo: una foto a contraluz no tiene ningún píxel negro, y
+ *     estirar contra el cero no le sube el contraste.
+ *
+ *  3. **Enfoca (máscara de desenfoque).** Se resta una copia borrosa y se suma
+ *     la diferencia: es lo que devuelve el filo a la letra chica. Es el paso que
+ *     más se nota en la línea de caracteres del pie del DUI.
+ *
+ * Los percentiles son 1% y 99% a propósito, no el mínimo y el máximo: un solo
+ * píxel quemado por un reflejo movería el blanco y dejaría el resto oscuro.
+ */
+function realzar(ctx, ancho, alto) {
+    const original = ctx.getImageData(0, 0, ancho, alto);
+    const d = original.data;
+    const total = ancho * alto;
+
+    /* ── 1. El tinte: una GANANCIA por canal, y acotada ─────────────────────
+     *
+     * La primera versión estiraba cada canal contra su propio blanco y su propio
+     * negro. Corregía el tinte, sí — y de paso **borraba el color**: medido
+     * sobre una foto amarillenta de prueba, la saturación se derrumbaba de 31.6
+     * a 7.6. O sea que hacía exactamente lo que este tratamiento existe para
+     * evitar: dejar el DUI casi en gris.
+     *
+     * Estirar cada canal por separado iguala los tres, y en una imagen dominada
+     * por papel eso arrastra también el color de verdad. La corrección es una
+     * GANANCIA —sólo el punto blanco— y ACOTADA: un canal no puede alejarse más
+     * de un 18% de los otros. Con eso el amarillo de una bombilla se va y el
+     * azul del fondo de seguridad se queda. */
+    const blancoDe = (c) => {
+        const hist = new Uint32Array(256);
+        for (let i = c; i < d.length; i += 4) hist[d[i]]++;
+        let acum = 0;
+        for (let v = 255; v >= 0; v--) { acum += hist[v]; if (acum > total * 0.01) return v; }
+        return 255;
+    };
+    const blancos = [blancoDe(0), blancoDe(1), blancoDe(2)];
+    const refBlanco = Math.max(...blancos, 1);
+    const TOPE = 1.18;
+    const ganancias = blancos.map(b => Math.min(TOPE, Math.max(1 / TOPE, refBlanco / Math.max(1, b))));
+
+    /* ── 2. El contraste: por LUMINANCIA, igual para los tres ───────────────
+     * Aplicar el mismo estiramiento a los tres canales sube el contraste sin
+     * mover el tono: es la diferencia entre «más contraste» y «menos color». */
+    const histL = new Uint32Array(256);
+    for (let i = 0; i < d.length; i += 4) {
+        const g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 | 0;
+        histL[g]++;
+    }
+    let acum = 0, negro = 0, blanco = 255;
+    for (let v = 0; v < 256; v++) { acum += histL[v]; if (acum > total * 0.02) { negro = v; break; } }
+    acum = 0;
+    for (let v = 255; v >= 0; v--) { acum += histL[v]; if (acum > total * 0.02) { blanco = v; break; } }
+    /* El estirón va CON TOPE y sin llegar a los extremos, y las dos cosas se
+     * midieron.
+     *
+     * Sin tope, una foto de poco contraste —que es la que más lo necesita— se
+     * estira tanto que casi todo llega a 255 en los tres canales; y donde los
+     * tres se topan, `max - min` es cero: o sea que el color desaparece
+     * justamente por subir el contraste. Medido: la saturación caía de 31.6 a
+     * 12.4 sobre una foto lavada.
+     *
+     * Por eso el rango de salida es 10–245 y no 0–255 —deja aire para que un
+     * píxel claro siga teniendo tono— y la ganancia no pasa de 2.2×. Un
+     * documento no necesita negros puros: necesita que la letra se despegue del
+     * papel. */
+    const SALIDA_BAJA = 10, SALIDA_ALTA = 245, GANANCIA_MAXIMA = 2.2;
+    const rangoCrudo = Math.max(8, blanco - negro);
+    const rango = Math.max(rangoCrudo, (SALIDA_ALTA - SALIDA_BAJA) / GANANCIA_MAXIMA);
+    const amplitud = SALIDA_ALTA - SALIDA_BAJA;
+
+    for (let i = 0; i < d.length; i += 4) {
+        for (let c = 0; c < 3; c++) {
+            const conGanancia = d[i + c] * ganancias[c];
+            const v = SALIDA_BAJA + ((conGanancia - negro) / rango) * amplitud;
+            d[i + c] = v < 0 ? 0 : v > 255 ? 255 : v;
+        }
+    }
+    ctx.putImageData(original, 0, 0);
+
+    // ── 3: la máscara de desenfoque ────────────────────────────────────────
+    // La copia borrosa se hace con el filtro del navegador, que corre en la GPU:
+    // desenfocar a mano en JavaScript sobre 1600 px sería medio segundo de hilo
+    // principal, y esto se ejecuta mientras alguien mira la pantalla.
+    const aux = document.createElement('canvas');
+    aux.width = ancho; aux.height = alto;
+    const auxCtx = aux.getContext('2d');
+    auxCtx.filter = 'blur(1.2px)';
+    auxCtx.drawImage(ctx.canvas, 0, 0);
+
+    const nitida = ctx.getImageData(0, 0, ancho, alto);
+    const borrosa = auxCtx.getImageData(0, 0, ancho, alto);
+    const n = nitida.data, b = borrosa.data;
+    const FUERZA = 0.9;
+    for (let i = 0; i < n.length; i += 4) {
+        for (let c = 0; c < 3; c++) {
+            const v = n[i + c] + (n[i + c] - b[i + c]) * FUERZA;
+            n[i + c] = v < 0 ? 0 : v > 255 ? 255 : v;
+        }
+    }
+    ctx.putImageData(nitida, 0, 0);
 }
 
 /**
@@ -195,6 +348,7 @@ async function componer(src, cropPx, rotacion, modo, nombre, doc) {
     const { canvas, ctx } = await dibujar(src, cropPx, rotacion,
         (a, b) => escalaDeSalida(a, b, doc));
     if (modo === 'aclarada') aclarar(ctx, canvas.width, canvas.height);
+    else if (modo === 'nitida') realzar(ctx, canvas.width, canvas.height);
 
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', CALIDAD));
     const base = String(nombre || doc?.archivo || 'documento').replace(/\.[^.]+$/, '');
@@ -275,7 +429,11 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
      * arruina justo lo que el lector necesita ver. Los documentos que no se
      * aclaran lo declaran con `aclarar: false` y ni siquiera ven el control:
      * ofrecerlo y confiar en que nadie lo apriete es dejar el defecto puesto. */
-    const [modo, setModo] = useState(doc.aclarar === false ? 'original' : 'aclarada');
+    /* El modo por defecto lo dice el papel. Para el DUI es «Nítida» —color, con
+     * el blanco equilibrado y la letra enfocada—; para una receta sigue siendo
+     * «Aclarada», que es lo que la hace legible. Ninguno arranca en «Como está»:
+     * una foto de teléfono sin tratar es exactamente lo que se vino a evitar. */
+    const [modo, setModo] = useState(doc.modoPorDefecto || (doc.aclarar === false ? 'nitida' : 'aclarada'));
     const [guardando, setGuardando] = useState(false);
     const [medidas, setMedidas] = useState(null);
     const urlRef = useRef(null);
@@ -501,6 +659,20 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             // trababa.
                             maxZoom={6}
                             objectFit="contain"
+                            /* ── La vista previa MUESTRA el tratamiento ──────────
+                               Sin esto, elegir «Nítida» o «Aclarada» no cambiaba
+                               nada en pantalla: el tratamiento se aplicaba recién
+                               al guardar. Un control que no acusa recibo se lee
+                               como roto, y encima deja decidir a ciegas sobre lo
+                               único que hay que decidir acá.
+
+                               Es una APROXIMACIÓN con filtros del navegador, no el
+                               algoritmo: el de verdad busca el blanco y el negro
+                               de ESTA foto y enfoca con una máscara de desenfoque,
+                               y eso no se puede escribir como un `filter`. El
+                               archivo guardado sale MEJOR que esta vista previa,
+                               nunca distinto en intención. */
+                            style={{ mediaStyle: { filter: FILTRO_DE_VISTA[modo] || 'none' } }}
                             restrictPosition={false}
                         />
                     )}
@@ -589,11 +761,9 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                             label="Forma del papel"
                         />
                     )}
-                    {doc.aclarar !== false && (
-                        <div className="ml-auto">
-                            <SegmentedControl size="sm" value={modo} onChange={setModo} options={MODOS} />
-                        </div>
-                    )}
+                    <div className="ml-auto">
+                        <SegmentedControl size="sm" value={modo} onChange={setModo} options={modosDe(doc)} />
+                    </div>
                 </div>
 
                 {/* ── ESTA ZONA TIENE ALTO FIJO, y ese es todo el punto ──────

@@ -28,6 +28,7 @@ import { rotuloCampo } from '../../utils/rotuloDeCampo';
 import { EL_SALVADOR_GEO, distritosDe } from '../../data/elSalvadorGeo';
 import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import {
@@ -35,7 +36,7 @@ import {
     fetchIdentidades, fetchSalarios,
 } from '../../data/employees';
 import { revisarNup } from '../../utils/nupAfp';
-import { getStoragePathFromUrl } from '../../utils/storageFiles';
+import { getStoragePathFromUrl, openStoredFile } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
@@ -316,6 +317,99 @@ const PROBATION_EXEMPTION_DAYS = 365;
 // regula el establecimiento, no al profesional) y la corrección 2026-07-06
 // sobre carné≠anualidad. El resto de documentos usa la lista abierta
 // "+ Agregar Documento" (categoría EXTRA_<ts>).
+/* ── En qué SECCIÓN va cada documento del expediente ────────────────────────
+ *
+ * Estaban los dieciocho en una sola rejilla, en el orden en que se fueron
+ * agregando: el contrato al lado de una licencia de moto, la solvencia de una
+ * junta al lado del acuse del Ministerio. Con esa lista nadie puede contestar
+ * «¿qué me falta?» sin leerla entera, que es lo que el usuario dijo con
+ * «desorganizada».
+ *
+ * El orden no es alfabético ni por cuándo se agregó: es por CUÁNDO SE PIDE cada
+ * papel, que es como se llena un expediente.
+ *
+ *   1. Al entrar        — lo del Art. 8 del reglamento y el Art. 23 del Código.
+ *   2. Cada año         — lo que caduca y hay que volver a traer.
+ *   3. Para ejercer     — carnés y solvencias de las juntas de vigilancia.
+ *   4. Sólo si aplica   — licencias, discapacidad: dependen de la persona.
+ *
+ * Un documento que no esté en ninguna lista cae en «Otros» en vez de
+ * desaparecer: una lista de secciones incompleta no puede esconder un papel.
+ */
+/**
+ * Las versiones anteriores de un documento.
+ *
+ * Se dibuja sólo si hay: un renglón que dice «sin versiones anteriores» debajo
+ * de cada uno de los dieciocho documentos sería ruido en la pantalla que el
+ * usuario acaba de pedir ordenar.
+ */
+function HistorialDeDocumento({ entrada }) {
+    const previas = entrada?.historial || [];
+    if (!previas.length) return null;
+    return (
+        <div className="mt-2 pt-2 border-t border-divider">
+            <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1">
+                {previas.some(v => v.url) ? `Anteriores (${previas.length})` : `Se actualizó ${previas.length} ${previas.length === 1 ? 'vez' : 'veces'}`}
+            </p>
+            <ul className="flex flex-col gap-1">
+                {previas.map((v, i) => (
+                    /* Con archivo se ofrece abrirlo; sin archivo queda la traza
+                       —cuándo y quién—, que es lo que se guarda para todo lo que
+                       no es el certificado médico. La `key` lleva el índice
+                       porque dos reemplazos del mismo día son posibles y la
+                       fecha sola no los distingue. */
+                    <li key={`${v.reemplazado_el}-${i}`} className="flex items-center gap-2 min-w-0">
+                        <span className="text-micro text-content-3 font-medium shrink-0">
+                            {v.reemplazado_el || '—'}
+                        </span>
+                        {v.url ? (
+                            <button type="button"
+                                onClick={() => openStoredFile(v.url)}
+                                className="min-w-0 truncate text-micro font-bold text-brand-text hover:underline text-left">
+                                {v.file_name || 'Ver el archivo'}
+                            </button>
+                        ) : (
+                            <span className="min-w-0 truncate text-micro text-content-3 font-medium">
+                                se reemplazó{v.por ? ` · ${v.por}` : ''}
+                            </span>
+                        )}
+                        {v.url && v.por && (
+                            <span className="text-micro text-content-3 font-medium shrink-0">· {v.por}</span>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+const SECCIONES_DE_DOCUMENTOS = [
+    {
+        id: 'ingreso',
+        titulo: 'Al entrar',
+        bajada: 'Lo que la empresa pide para admitir a alguien y lo que exige el contrato.',
+        claves: ['SOLICITUD_EMPLEO', 'CV', 'CONTRATO', 'ACUSE_MTPS', 'COPIA_NIT'],
+    },
+    {
+        id: 'anual',
+        titulo: 'Cada año',
+        bajada: 'Caducan: hay que volver a traerlos, y el portal avisa antes de que venzan.',
+        claves: ['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO', 'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE'],
+    },
+    {
+        id: 'ejercer',
+        titulo: 'Para ejercer su profesión',
+        bajada: 'Lo que habilita a la persona ante su junta de vigilancia o ante el ISSS y la AFP.',
+        claves: ['CONTRATO_REGENCIA', 'CERTIFICACION_DISCAPACIDAD', 'TARJETA_ISSS', 'TARJETA_AFP'],
+    },
+    {
+        id: 'siaplica',
+        titulo: 'Sólo si aplica',
+        bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
+        claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO'],
+    },
+];
+
 const FIXED_DOCUMENT_CATEGORIES = [
     // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
     // certificados de estudio y las referencias van adentro, y por eso no se
@@ -1242,14 +1336,99 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         });
     }, [captura?.id, setFormData]);
 
+    /* Los documentos repartidos en sus secciones, y NADA se pierde por el
+     * camino: lo que no esté en ninguna lista cae en «Otros del expediente».
+     * Una lista de secciones incompleta no puede esconder un papel — sería un
+     * documento que existe, se puede subir y no se ve en ninguna parte. */
+    const seccionesConDocumentos = useMemo(() => {
+        const visibles = documentCategories.filter(cat => !EN_ACREDITACIONES.includes(cat.key));
+        const ubicadas = new Set(SECCIONES_DE_DOCUMENTOS.flatMap(s => s.claves));
+        const secciones = SECCIONES_DE_DOCUMENTOS.map(sec => ({
+            ...sec,
+            // El orden DENTRO de la sección es el de la lista, no el del
+            // catálogo: la lista dice en qué orden se piden.
+            docs: sec.claves.map(k => visibles.find(c => c.key === k)).filter(Boolean),
+        }));
+        const sueltas = visibles.filter(c => !ubicadas.has(c.key));
+        if (sueltas.length) {
+            secciones.push({ id: 'resto', titulo: 'Otros del expediente',
+                bajada: 'Documentos que todavía no tienen sección propia.', docs: sueltas });
+        }
+        return secciones.filter(sec => sec.docs.length > 0);
+    }, [documentCategories]);
+
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
         || { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
+
+    /* ── Reemplazar un documento ya no borra el anterior ────────────────────
+     *
+     * Pregunta del usuario sobre el certificado médico anual: «¿queda un
+     * historial de los anteriores?». No quedaba. Cada categoría era UN renglón
+     * y subir el de este año pisaba el del año pasado: el archivo seguía en el
+     * bucket pero sin nada que lo apuntara, o sea perdido.
+     *
+     * Para un papel que se renueva cada año eso es justo lo que no puede pasar:
+     * el certificado del año pasado es la prueba de que ese año se cumplió, y
+     * quien la pide es una inspección, no el portal.
+     *
+     * Ahora el anterior baja a `historial` con la fecha en que se reemplazó. No
+     * es sólo para los anuales: **cualquier** documento que se reemplace deja su
+     * rastro, porque no hay uno solo del que se pueda afirmar que perderlo no
+     * importa.
+     *
+     * ── El tope de diez, y por qué existe ──────────────────────────────────
+     *
+     * Esto vive en un `jsonb` de la fila del empleado, o sea que crece con cada
+     * reemplazo y viaja entero en cada lectura de la ficha. Diez versiones son
+     * diez años de un documento anual — más allá de eso, lo que hace falta es
+     * un archivo histórico de verdad, no una columna que engorda sin techo. */
+    // Quién está cargando: va en la traza de cada reemplazo.
+    const { user: quienCarga } = useAuth();
+
+    const HISTORIAL_MAXIMO = 10;
+
+    /* ── Sólo el médico guarda el ARCHIVO anterior ──────────────────────────
+     *
+     * Decisión del usuario: «esto sólo es necesario para el médico, y nada más
+     * como historial de texto —cuándo se actualizó y quién— para los otros».
+     *
+     * Y tiene sentido en las dos direcciones. El certificado médico del año
+     * pasado ES la prueba de que ese año se cumplió, y quien la pide es una
+     * inspección: sin el archivo no hay nada que enseñar. En cambio el contrato
+     * o una licencia sólo importan en su versión vigente — guardar diez copias
+     * viejas de cada uno engorda la ficha para responder una pregunta que nadie
+     * hace.
+     *
+     * Lo que sí importa en todos es la TRAZA: cuándo se cambió y quién lo
+     * cambió. Eso pesa dos campos y contesta «¿esto quién lo tocó?», que es la
+     * pregunta que sí aparece. */
+    const CON_ARCHIVO_ANTERIOR = new Set(['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO']);
 
     const updateDoc = (category, patch) => setFormData(prev => {
         const list = [...(prev.employee_documents || [])];
         const idx = list.findIndex(d => d.category === category);
         const base = idx >= 0 ? list[idx] : { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
-        const updated = { ...base, ...patch };
+
+        /* Se archiva sólo cuando de verdad se REEMPLAZA: había un archivo, llega
+         * otro, y no son el mismo. Quitar un documento (`url: null`) no archiva
+         * nada — quien lo quita está corrigiendo una subida, no renovando un
+         * papel, y guardar esa copia llenaría el historial de errores. */
+        const llegaOtro = Object.prototype.hasOwnProperty.call(patch, 'url')
+            && !!patch.url && !!base.url && patch.url !== base.url;
+
+        const traza = {
+            reemplazado_el: new Date().toISOString().split('T')[0],
+            por: quienCarga?.name || '',
+            // El archivo anterior sólo donde hace falta enseñarlo. Ver arriba.
+            ...(CON_ARCHIVO_ANTERIOR.has(category)
+                ? { url: base.url, file_name: base.file_name || '', expiry_date: base.expiry_date || '' }
+                : {}),
+        };
+        const historial = llegaOtro
+            ? [traza, ...(base.historial || [])].slice(0, HISTORIAL_MAXIMO)
+            : (base.historial || []);
+
+        const updated = { ...base, ...patch, historial };
         if (idx >= 0) list[idx] = updated; else list.push(updated);
         return { ...prev, employee_documents: list };
     });
@@ -4191,23 +4370,36 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {documentCategories.filter(cat => !EN_ACREDITACIONES.includes(cat.key)).map(cat => (
-                                    <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
-                                        <label className={rotuloCampo('text-content-3')}>{cat.label}</label>
-                                        {cat.key === 'SRS' && (
-                                            <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />
-                                        )}
-                                        {cat.key === 'ENFERMERIA' && (
-                                            <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
-                                        )}
-                                        {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
-                                            <p className="text-micro text-content-3 font-bold mb-2">Comprobante de pago del año en curso (recibo/mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite CSSP: 31 de marzo (igual para todos los profesionales de salud inscritos) — se autocompleta al subir el recibo si no escribes otra fecha.</p>
-                                        )}
-                                        {renderDocUploadArea(cat.key)}
+                            {/* Una sección por MOMENTO en que se pide el papel — ver
+                                `SECCIONES_DE_DOCUMENTOS`. Una sección vacía no se
+                                dibuja: un encabezado sobre la nada es ruido, y en un
+                                expediente sin regente serían tres. */}
+                            {seccionesConDocumentos.map(sec => (
+                                <div key={sec.id} className="mb-5 last:mb-0">
+                                    <div className="mb-2">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-2">{sec.titulo}</p>
+                                        <p className="text-micro text-content-3 font-medium leading-snug">{sec.bajada}</p>
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {sec.docs.map(cat => (
+                                            <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
+                                                <label className={rotuloCampo('text-content-3')}>{cat.label}</label>
+                                                {cat.key === 'SRS' && (
+                                                    <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />
+                                                )}
+                                                {cat.key === 'ENFERMERIA' && (
+                                                    <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
+                                                )}
+                                                {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
+                                                    <p className="text-micro text-content-3 font-bold mb-2">Comprobante de pago del año en curso (recibo o mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite: 31 de marzo, igual para todos los profesionales de salud inscritos. Se completa sola al subir el recibo si no escribes otra fecha.</p>
+                                                )}
+                                                {renderDocUploadArea(cat.key)}
+                                                <HistorialDeDocumento entrada={getDocEntry(cat.key)} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>

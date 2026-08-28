@@ -501,6 +501,20 @@ export const createEmployeeSlice = (set, get) => ({
     // vencimiento directo de la imagen/PDF vía IA — solo rellena expiry_date si
     // el usuario no la tecleó a mano (misma regla: !docData.expDate). Best-effort:
     // si la IA falla, el documento se guarda igual, solo sin fecha detectada.
+    /* ── Lo que este método CONSERVA de cada documento ──────────────────────
+     *
+     * Reconstruye cada entrada con una lista fija de claves, y eso significa que
+     * cualquier campo que no esté nombrado acá **se pierde al guardar**, sin
+     * error y sin rastro. Ya había pasado dos veces:
+     *
+     *   · `file_name` — se subía, se veía en el formulario, y al guardar
+     *     desaparecía. Por eso un adjunto ya guardado abría con el título
+     *     «Documento» y sin nombre que lo distinguiera de los otros cinco.
+     *   · `historial` — las versiones anteriores de un documento que se
+     *     reemplaza. Se armaban en el formulario y morían acá.
+     *
+     * Al agregar un campo a una entrada de documento hay que nombrarlo en LAS
+     * DOS ramas de abajo (archivo nuevo y archivo ya subido). */
     uploadEmployeeDocuments: async (employeeId, docs) => {
         if (!Array.isArray(docs) || docs.length === 0) return [];
         const results = [];
@@ -527,9 +541,15 @@ export const createEmployeeSlice = (set, get) => ({
                     console.warn(`analyze-document falló para "${doc.category}":`, aiErr);
                 }
 
-                results.push({ category: doc.category, title: doc.title || doc.category, url: publicUrlData.publicUrl, expiry_date: expiryDate, issue_date: issueDate, uploaded_at: new Date().toISOString() });
+                results.push({ category: doc.category, title: doc.title || doc.category, url: publicUrlData.publicUrl,
+                    file_name: doc.file_name || doc.file.name || '',
+                    historial: Array.isArray(doc.historial) ? doc.historial : [],
+                    expiry_date: expiryDate, issue_date: issueDate, uploaded_at: new Date().toISOString() });
             } else if (doc.url) {
-                results.push({ category: doc.category, title: doc.title || doc.category, url: doc.url, expiry_date: doc.expiry_date || null, issue_date: doc.issue_date || null, uploaded_at: doc.uploaded_at || new Date().toISOString() });
+                results.push({ category: doc.category, title: doc.title || doc.category, url: doc.url,
+                    file_name: doc.file_name || '',
+                    historial: Array.isArray(doc.historial) ? doc.historial : [],
+                    expiry_date: doc.expiry_date || null, issue_date: doc.issue_date || null, uploaded_at: doc.uploaded_at || new Date().toISOString() });
             }
         }
         return results;

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.832.0 — Los documentos van por secciones, y reemplazar uno ya no borra el anterior
+
+### Secciones, y el orden es el del expediente
+
+Estaban los dieciocho en una sola rejilla, en el orden en que se fueron
+agregando: el contrato al lado de una licencia de moto, la solvencia de una junta
+al lado del acuse del Ministerio. Con esa lista nadie puede contestar «¿qué me
+falta?» sin leerla entera.
+
+Ahora van por **cuándo se pide cada papel**, que es como se llena un expediente:
+
+1. **Al entrar** — lo del Art. 8 del reglamento y el Art. 23 del Código.
+2. **Cada año** — lo que caduca y hay que volver a traer.
+3. **Para ejercer su profesión** — carnés, solvencias, ISSS y AFP.
+4. **Sólo si aplica** — licencias, discapacidad.
+
+Una sección vacía no se dibuja —en un expediente sin regente serían tres— y un
+documento que no esté en ninguna lista cae en «Otros» en vez de desaparecer: una
+lista de secciones incompleta no puede esconder un papel.
+
+### «¿Queda un historial de los anteriores?»
+
+**No quedaba.** Cada categoría era un renglón y subir el certificado de este año
+pisaba el del año pasado: el archivo seguía en el bucket pero sin nada que lo
+apuntara, o sea perdido.
+
+Ahora se archiva, y con la distinción que pidió el usuario:
+
+- **El certificado médico y el examen del Art. 117 guardan el ARCHIVO anterior**,
+  y se puede abrir. Es la prueba de que ese año se cumplió, y quien la pide es
+  una inspección.
+- **Todos los demás guardan sólo la traza**: cuándo se reemplazó y quién. El
+  contrato o una licencia sólo importan en su versión vigente; diez copias
+  viejas de cada uno engordan la ficha para responder algo que nadie pregunta.
+  Pero «¿esto quién lo tocó?» sí se pregunta.
+
+Tope de diez versiones: esto vive en un `jsonb` de la fila del empleado y viaja
+entero en cada lectura. Diez son diez años de un documento anual; más allá lo que
+hace falta es un archivo histórico de verdad, no una columna que engorda sin
+techo.
+
+### Y un campo que se perdía al guardar desde siempre
+
+`uploadEmployeeDocuments` reconstruye cada entrada con una lista fija de claves,
+así que **cualquier campo que no esté nombrado ahí se pierde al guardar**, sin
+error y sin rastro. El historial habría muerto ahí — y al mirarlo apareció que
+`file_name` ya se perdía así desde antes.
+
+Ése era el origen de algo que se había parcheado en la pantalla dos días atrás:
+un adjunto ya guardado abría con el título «Documento» y sin nombre que lo
+distinguiera de los otros cinco. Se arreglaba el síntoma; la causa estaba acá.
+
 ## v2.831.0 — el dinero que sale a cambiarse por monedas ya no rompe las monedas de la bolsa
 
 Preguntado mirando las cinco bolsas de La Popular: **«sacarán $2,000 para cambio

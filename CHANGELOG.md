@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.829.1 — Enlazar traía dos tercios de la ficha: faltaban el DUI, el sueldo y el código
+
+*«Guardé algunos datos de Carlos Renderos, pero al abrirlo de nuevo no me salen
+los datos.»*
+
+**Los datos sí se habían guardado.** Verificado contra la base: el DUI, la
+dirección, la fecha de nacimiento, el género, el estado familiar, la profesión y
+el territorio estaban todos ahí. Lo que fallaba era **leerlos de vuelta**.
+
+`employees_safe` —de donde el portal saca la lista de personal— deja **doce
+columnas afuera a propósito**: el DUI y sus datos de expedición, el documento
+alterno, los números de ISSS y AFP, el salario, el banco, la cuenta, el código de
+carné y el PIN del kiosco. Salieron el 2026-08-24 porque viajaban a cualquier
+sesión y porque esa lista se guarda en el `localStorage` de computadoras
+compartidas.
+
+O sea que «traer la ficha entera» al enlazar traía dos tercios — y el tercio que
+faltaba es justamente el que más cuesta volver a teclear. Ahora esos doce se
+piden al servidor, por las mismas tres funciones que ya usa el resto del portal;
+cada una decide por su cuenta qué devolver según quién pregunta.
+
+### Y uno de los doce hacía daño de verdad
+
+El formulario en blanco **se autogenera un código de carné** de cuatro dígitos al
+azar. Al enlazar no llegaba el de la persona, así que ese aleatorio se quedaba —
+y guardar **le cambiaba el código con el que entra al portal y marca en el
+kiosco**. Sin error, sin aviso, y sin nada en pantalla que lo insinuara.
+
+Por eso el código es la única excepción a la regla de «sólo llenar lo vacío»: se
+toma **siempre** el de la persona. Un código autogenerado no es la elección de
+nadie, es un relleno; el de quien ya trabajaba acá sí lo es.
+
 ## v2.829.0 — Lo que el DUI dice distinto ya no se tira: se muestra y se puede aplicar
 
 *«¿No actualizó el nombre, ni los demás datos?»*

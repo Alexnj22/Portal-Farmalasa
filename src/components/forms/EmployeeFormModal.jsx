@@ -32,6 +32,7 @@ import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import {
     codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
+    fetchIdentidades, fetchSalarios,
 } from '../../data/employees';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
@@ -127,6 +128,73 @@ export function hayHomonimo(formData, employees) {
         if (formData.enlazar_con_id && String(emp.id) === String(formData.enlazar_con_id)) return false;
         return norm(emp.name) === nombreActual;
     });
+}
+
+/**
+ * Los doce campos que el padrón del navegador NO puede traer.
+ *
+ * ── Por qué hace falta pedirlos aparte ─────────────────────────────────────
+ *
+ * `employees_safe` —de donde sale la lista de personal— deja DOCE columnas
+ * afuera a propósito: el DUI y sus datos de expedición, el documento alterno,
+ * los números de ISSS y AFP, el salario, el banco, la cuenta, el código de
+ * carné y el PIN del kiosco. Salieron el 2026-08-24 porque viajaban a cualquier
+ * sesión y porque esa lista se guarda en `localStorage` de computadoras
+ * compartidas.
+ *
+ * O sea que «traer la ficha entera» al enlazar traía **dos tercios** de la
+ * ficha, y el tercio que falta es el que más cuesta volver a teclear. Lo
+ * reportó el usuario: «guardé algunos datos de Carlos Renderos, pero al abrirlo
+ * de nuevo no me salen». Verificado contra la base: los datos SÍ estaban
+ * guardados — lo que fallaba era leerlos de vuelta.
+ *
+ * ── Y el que hacía daño de verdad: el CÓDIGO ───────────────────────────────
+ *
+ * El formulario en blanco se autogenera un código de carné de cuatro dígitos.
+ * Si al enlazar no llega el de la persona, ese aleatorio se queda — y guardar
+ * **le cambia el código con el que entra al portal y marca en el kiosco**. Sin
+ * error, sin aviso, y sin que nada en la pantalla lo insinúe.
+ *
+ * Cada RPC decide por su cuenta qué devuelve según quien pregunta: sin la llave
+ * del expediente vuelven vacías, y el formulario simplemente no completa esos
+ * campos — que es lo mismo que pasaba antes, no una regresión.
+ */
+const vacioParaEnlazar = (v) => v === null || v === undefined || String(v).trim() === '';
+
+/* El código de carné es la EXCEPCIÓN: se toma siempre el de la persona.
+ *
+ * El resto sólo llena lo que quedó vacío, para no pisar lo que alguien haya
+ * escrito mientras la consulta viajaba. Pero el código nunca está vacío —el
+ * formulario en blanco se autogenera uno de cuatro dígitos al azar— así que con
+ * esa regla el aleatorio se quedaría, y guardar le cambiaría a la persona el
+ * código con el que entra al portal y marca en el kiosco.
+ *
+ * Un código autogenerado no es la elección de nadie: es un relleno. El de quien
+ * ya trabajaba acá sí. */
+const SIEMPRE_DE_LA_FICHA = new Set(['code', 'kiosk_pin']);
+
+export async function traerLoQueFaltaDeLaFicha(id) {
+    if (!id) return {};
+    const [ident, sal, cred] = await Promise.all([
+        fetchIdentidades([id]).catch(() => new Map()),
+        fetchSalarios([id]).catch(() => new Map()),
+        fetchCredenciales([id]).catch(() => new Map()),
+    ]);
+    const i = ident.get(id) || {};
+    const s = sal.get(id) || {};
+    const c = cred.get(id) || {};
+    const fuera = {
+        dui: i.dui, alt_identity_document: i.alt_identity_document,
+        isss_number: i.isss_number, afp_number: i.afp_number,
+        dui_lugar_expedicion: i.dui_lugar_expedicion,
+        dui_fecha_expedicion: i.dui_fecha_expedicion,
+        dui_fecha_vencimiento: i.dui_fecha_vencimiento,
+        base_salary: s.base_salary, bank_name: s.bank_name, account_number: s.account_number,
+        code: c.code, kiosk_pin: c.kiosk_pin,
+    };
+    // Un `null` no se propone: dejaría el campo vacío igual y además pisaría lo
+    // que alguien acabe de escribir mientras esto viajaba por la red.
+    return Object.fromEntries(Object.entries(fuera).filter(([, v]) => v !== null && v !== undefined && v !== ''));
 }
 
 export function aplicarFichaEnlazada(prev, val, ficha) {
@@ -1855,7 +1923,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     value={formData.enlazar_con_id || ''}
                                     onChange={(val) => {
                                         const ficha = (employees || []).find(e => String(e.id) === String(val));
+                                        // Lo que ya está en memoria entra YA: la pantalla
+                                        // responde al instante y no hay un momento en que
+                                        // parezca que no pasó nada.
                                         setFormData(prev => aplicarFichaEnlazada(prev, val, ficha));
+                                        if (!val) return;
+                                        // Y lo que el padrón no puede tener, se pide. Sólo
+                                        // llena lo que quedó vacío, para no pisar lo que
+                                        // alguien haya escrito mientras esto viajaba.
+                                        traerLoQueFaltaDeLaFicha(val).then((fuera) => {
+                                            if (!Object.keys(fuera).length) return;
+                                            setFormData(prev => {
+                                                if (String(prev.enlazar_con_id) !== String(val)) return prev;
+                                                const next = { ...prev };
+                                                for (const [k, v] of Object.entries(fuera)) {
+                                                    if (SIEMPRE_DE_LA_FICHA.has(k) || vacioParaEnlazar(prev[k])) next[k] = v;
+                                                }
+                                                return next;
+                                            });
+                                        });
                                     }}
                                     options={fichasParaEnlazar}
                                     placeholder="Buscar a la persona por su nombre..."

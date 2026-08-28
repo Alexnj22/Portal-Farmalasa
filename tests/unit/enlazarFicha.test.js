@@ -196,3 +196,28 @@ describe('cambiar de persona enlazada', () => {
         expect(dos.photoPreview).toBeNull();
     });
 });
+
+/* ── Los doce campos que el padrón del navegador NO puede traer ──────────────
+ *
+ * `employees_safe` deja fuera a propósito el DUI y sus datos de expedición, el
+ * documento alterno, ISSS, AFP, salario, banco, cuenta, el código de carné y el
+ * PIN del kiosco: viajaban a cualquier sesión y esa lista se guarda en el
+ * `localStorage` de computadoras compartidas.
+ *
+ * O sea que «traer la ficha entera» traía DOS TERCIOS. Lo reportó el usuario:
+ * «guardé algunos datos de Carlos Renderos, pero al abrirlo de nuevo no me
+ * salen». Verificado contra la base: los datos SÍ estaban guardados — lo que
+ * fallaba era leerlos de vuelta.
+ */
+describe('lo que no está en el padrón', () => {
+    it('el DUI no puede venir de la ficha del padrón, y por eso se pide aparte', () => {
+        // La ficha del store NO trae `dui`: si el formulario se quedara con esto,
+        // el campo volvería vacío por más que la base lo tenga.
+        const delPadron = { id: 'x', name: 'Carlos', first_names: 'CARLOS MIGUEL',
+                            last_names: 'RENDEROS HERNANDEZ', address: 'Chalatenango' };
+        const r = aplicarFichaEnlazada({}, 'x', delPadron);
+        expect(r.first_names).toBe('CARLOS MIGUEL');
+        expect(r.dui).toBeUndefined();
+        expect(r.base_salary).toBeUndefined();
+    });
+});

@@ -470,3 +470,55 @@ describe('el vencimiento del documento de identidad', () => {
         expect(form).toMatch(/Documento de identidad: vencido/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El reverso y las hojas que siguen
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Una licencia y un carné de junta tienen dos lados; un currículum, varias
+// páginas. Cada documento era UN archivo, así que el reverso o se perdía o se
+// subía encima del frente — y eso además archiva el frente como si fuera una
+// versión vieja, porque el portal lee un reemplazo donde hubo un agregado.
+//
+// Lo que se ancla acá es lo que ya falló dos veces en este mismo archivo:
+// `uploadEmployeeDocuments` reconstruye cada entrada con una lista FIJA de
+// claves, y lo que no esté nombrado se pierde al guardar, sin error. Le pasó a
+// `file_name` y a `historial`.
+
+describe('las hojas de un documento', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+    const slice = fs.readFileSync(
+        path.join(process.cwd(), 'src/store/slices/employeeSlice.js'), 'utf8');
+
+    it('sobreviven al guardado, en las DOS ramas', () => {
+        const fn = slice.slice(slice.indexOf('uploadEmployeeDocuments: async'));
+        const cuerpo = fn.slice(0, fn.indexOf('uploadFileToStorage:'));
+        expect(cuerpo.match(/hojas: hojasDe\(doc\)/g) || []).toHaveLength(2);
+    });
+
+    // Un reverso cargado sin frente tiene que guardarse igual: la rama vieja
+    // pedía `doc.url` y habría descartado la entrada entera en silencio.
+    it('un documento con hojas y sin frente no se descarta', () => {
+        expect(slice).toMatch(/else if \(doc\.url \|\| hojasDe\(doc\)\.length\)/);
+    });
+
+    // Una hoja vacía es un hueco que alguien abrió y no llenó.
+    it('las hojas sin archivo no se guardan', () => {
+        expect(slice).toMatch(/\.filter\(h => h\?\.url\)/);
+    });
+
+    it('agregar una hoja NO archiva la anterior como reemplazo', () => {
+        // `updateDoc` es el que archiva en `historial`; las hojas usan el suyo.
+        expect(form).toMatch(/const updateDocHoja = \(category, idx, patch\)/);
+        const fn = form.slice(form.indexOf('const updateDocHoja'));
+        expect(fn.slice(0, fn.indexOf('const removeDocHoja'))).not.toMatch(/historial/);
+    });
+
+    it('el reverso y las hojas usan el canónico de adjuntos', () => {
+        // Ahí viven la cámara del teléfono por QR, el editor y el visor: una
+        // segunda forma de adjuntar sería una que se queda sin esas tres.
+        const i = form.indexOf('{DOS_CARAS.has(category) && (');
+        expect(form.slice(i, i + 2000)).toMatch(/<FileField/);
+    });
+});

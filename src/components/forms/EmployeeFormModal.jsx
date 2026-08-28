@@ -427,6 +427,34 @@ const SECCIONES_DE_DOCUMENTOS = [
     },
 ];
 
+/* ── Documentos que no caben en un solo archivo ─────────────────────────────
+ *
+ * Pedido del usuario: «las licencias, carnés de las juntas tienen 2 lados… y el
+ * currículum tiene múltiples hojas». Hasta hoy cada documento era UN archivo, y
+ * el reverso de una licencia no tenía dónde ir: o se perdía, o alguien lo subía
+ * encima del frente —que además archiva el frente como si fuera una versión
+ * vieja, porque el portal lee un reemplazo donde hubo un agregado—.
+ *
+ * Son dos listas y no una porque son dos cosas distintas:
+ *
+ *  · DOS CARAS es un número FIJO y con nombre. Una licencia tiene frente y
+ *    reverso, no «hojas»: nombrarlos es lo que hace que alguien note que le
+ *    falta el reverso. Un botón «agregar hoja» sobre una licencia no dice nada.
+ *  · VARIAS HOJAS es abierto y sin nombre. Un currículum tiene las que tenga.
+ *
+ * El DUI no está acá: sus dos caras son categorías propias desde antes
+ * (`DUI_FRENTE`/`DUI_REVERSO`) porque además se leen juntas con un modelo, y
+ * mudarlo sería tocar ese circuito para no ganar nada. */
+const DOS_CARAS = new Set([
+    'LICENCIA_MOTO', 'LICENCIA_CARRO',
+    'SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA',
+    'TARJETA_ISSS', 'TARJETA_AFP',
+]);
+const VARIAS_HOJAS = new Set([
+    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS', 'CONTRATO_REGENCIA',
+    'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
+]);
+
 const FIXED_DOCUMENT_CATEGORIES = [
     // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
     // certificados de estudio y las referencias van adentro, y por eso no se
@@ -1514,6 +1542,33 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         });
     };
 
+    /* La hoja que no es la primera se sube y punto: NO se manda a leer.
+     *
+     * Lo que la lectura saca —el vencimiento, el número de la acreditación—
+     * está en el frente, y correrla sobre un reverso o sobre la página 4 de un
+     * currículum es pagar una llamada por documento para, en el mejor caso, no
+     * cambiar nada. En el peor, un modelo que ve una fecha cualquiera en una
+     * página suelta la escribe como vencimiento. La regla «sólo llena lo vacío»
+     * no protege de eso: si el frente todavía no se subió, está vacío. */
+    const handleDocHoja = async (category, idx, file) => {
+        if (!file) return;
+        const clave = `${category}#${idx}`;
+        updateDocHoja(category, idx, { file_name: file.name, url: null });
+        setAnalyzingDocs(prev => ({ ...prev, [clave]: true }));
+        try {
+            const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
+            const url = await uploadFileToStorage(file, 'documents', folder);
+            if (!url) throw new Error('La subida no devolvió una URL.');
+            updateDocHoja(category, idx, { url, file_name: file.name });
+        } catch (err) {
+            console.error('handleDocHoja:', err);
+            updateDocHoja(category, idx, { url: null });
+            useToastStore.getState().showToast('No se pudo subir', 'Intenta de nuevo con esa hoja.', 'error');
+        } finally {
+            setAnalyzingDocs(prev => ({ ...prev, [clave]: false }));
+        }
+    };
+
     const handleDocFile = async (category, file) => {
         if (!file) return;
         updateDoc(category, { file_name: file.name, url: null });
@@ -1652,6 +1707,46 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const removeDocFile = (category) => updateDoc(category, { url: null, file_name: '' });
 
+    /* ── Las hojas que siguen a la primera ──────────────────────────────────
+     *
+     * La primera hoja vive en `url` y las demás en `hojas`. No es una segunda
+     * forma de guardar lo mismo: es la primera y el resto, que es como llega el
+     * papel — y así todo lo que ya lee un documento (el aviso de vencimiento, el
+     * listado de personal, las exportaciones) sigue funcionando sin enterarse.
+     *
+     * `updateDoc` no sirve para esto: archiva en `historial` cuando ve llegar
+     * una `url` distinta, y agregar el reverso NO es reemplazar el frente. Con
+     * `updateDoc` cada hoja nueva habría archivado la anterior como si fuera una
+     * versión vieja del mismo papel. */
+    const updateDocHoja = (category, idx, patch) => setFormData(prev => {
+        const list = [...(prev.employee_documents || [])];
+        const i = list.findIndex(d => d.category === category);
+        const base = i >= 0 ? list[i]
+            : { category, title: documentCategories.find(c => c.key === category)?.label || category,
+                file_name: '', url: null, expiry_date: '' };
+        const hojas = [...(base.hojas || [])];
+        while (hojas.length <= idx) hojas.push({ url: null, file_name: '' });
+        hojas[idx] = { ...hojas[idx], ...patch };
+        const updated = { ...base, hojas };
+        if (i >= 0) list[i] = updated; else list.push(updated);
+        return { ...prev, employee_documents: list };
+    });
+
+    /* Quitar una hoja la SACA de la lista, no la deja vacía: un hueco en el
+     * medio se dibujaría como «Hoja 2» sin archivo, que se lee como que falta
+     * algo. La excepción es el reverso de un documento de dos caras, donde la
+     * casilla es fija y tiene nombre — ahí se vacía en su sitio. */
+    const removeDocHoja = (category, idx, fija = false) => setFormData(prev => {
+        const list = [...(prev.employee_documents || [])];
+        const i = list.findIndex(d => d.category === category);
+        if (i < 0) return prev;
+        const hojas = [...(list[i].hojas || [])];
+        if (fija) hojas[idx] = { url: null, file_name: '' };
+        else hojas.splice(idx, 1);
+        list[i] = { ...list[i], hojas };
+        return { ...prev, employee_documents: list };
+    });
+
     const extraDocs = (formData.employee_documents || []).filter(d => d.category?.startsWith('EXTRA_'));
     const addExtraDoc = () => setFormData(prev => ({ ...prev, employee_documents: [...(prev.employee_documents || []), { category: `EXTRA_${Date.now()}`, title: '', file_name: '', url: null, expiry_date: '' }] }));
     const removeExtraDoc = (category) => setFormData(prev => ({ ...prev, employee_documents: (prev.employee_documents || []).filter(d => d.category !== category) }));
@@ -1692,17 +1787,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Bloque de subida reutilizado por los slots fijos, el documento de
     // identidad (DUI/alterno) y "Otros Documentos" — mismo estado
     // analizando/cargado/vacío y mismo campo de vencimiento opcional.
+    const rotuloDelDoc = (category) =>
+        documentCategories.find(c => c.key === category)?.label || category;
+
     const renderDocUploadArea = (category, { showExpiry = true } = {}) => {
         const doc = getDocEntry(category);
         const isAnalyzing = !!analyzingDocs[category];
         const hasFile = !!doc.url;
         const expiryBadge = getExpiryBadge(doc.expiry_date);
+        const hojas = Array.isArray(doc.hojas) ? doc.hojas : [];
         return (
             <>
                 {/* Canónico `FileField` (2c, 2026-07-27). `busy` conserva el
                     "Subiendo y analizando con IA…" que este modal ya mostraba:
                     la subida dispara `analyze-document` y puede tardar varios
                     segundos, así que la fila tiene que decirlo. */}
+                {DOS_CARAS.has(category) && (
+                    <label className={rotuloCampo('text-content-2', { denso: true })}>
+                        <span>Frente</span>
+                    </label>
+                )}
                 <FileField
                     accept=".pdf,.jpg,.jpeg,.png"
                     density="sm"
@@ -1716,9 +1820,83 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     tipoDeDocumento={CATEGORIAS_DE_DUI.has(category) ? 'dui' : 'documento'}
                     // Este bloque dibuja su propio rótulo, así que `FileField` no
                     // recibe `label` y el diálogo del QR no sabría de qué foto habla.
-                    etiquetaParaTelefono={documentCategories.find(c => c.key === category)?.label || doc.title || ''}
+                    etiquetaParaTelefono={DOS_CARAS.has(category)
+                        ? `el frente de ${rotuloDelDoc(category).toLowerCase()}`
+                        : (rotuloDelDoc(category) || doc.title || '')}
                     onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
                 />
+                {/* ── El reverso, o las hojas que siguen ──────────────────
+                    Cada hoja es su propio `FileField`, así que hereda todo lo
+                    del canónico sin una línea de más: la cámara del teléfono
+                    por QR, el editor con las esquinas, el visor. Ésa es la
+                    respuesta a «ve cómo hacerlo por el QR» — no hacía falta
+                    nada nuevo, hacía falta que hubiera una casilla donde
+                    ponerlo. */}
+                {DOS_CARAS.has(category) && (
+                    <div className="mt-2">
+                        <label className={rotuloCampo('text-content-2', { denso: true })}>
+                            <span>Reverso</span>
+                            {/* «Pendiente» y no un rojo: el reverso de un carné
+                                falta muy seguido y no impide guardar nada. */}
+                            {!hojas[0]?.url && <span className="text-warning font-black">Pendiente</span>}
+                        </label>
+                        <FileField
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            density="sm"
+                            busy={!!analyzingDocs[`${category}#0`]}
+                            busyLabel="Subiendo…"
+                            url={hojas[0]?.url}
+                            name={hojas[0]?.file_name}
+                            tipoDeDocumento="documento"
+                            etiquetaParaTelefono={`el reverso de ${rotuloDelDoc(category).toLowerCase()}`}
+                            onChange={f => f ? handleDocHoja(category, 0, f)
+                                : removeDocHoja(category, 0, true)}
+                        />
+                    </div>
+                )}
+
+                {VARIAS_HOJAS.has(category) && (
+                    <div className="mt-2 flex flex-col gap-2">
+                        {hojas.map((h, i) => (
+                            <div key={`${category}-hoja-${i}`}>
+                                <label className={rotuloCampo('text-content-2', { denso: true })}>
+                                    {/* «Hoja 2» y no «Hoja 1»: la primera es la
+                                        de arriba, y numerar desde 1 acá haría
+                                        que hubiera dos hojas 1. */}
+                                    <span>Hoja {i + 2}</span>
+                                    <button type="button"
+                                        onClick={() => removeDocHoja(category, i)}
+                                        className="text-micro font-black text-danger-text underline
+                                                   min-h-[var(--tap-min)] px-2">
+                                        Quitar
+                                    </button>
+                                </label>
+                                <FileField
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    density="sm"
+                                    busy={!!analyzingDocs[`${category}#${i}`]}
+                                    busyLabel="Subiendo…"
+                                    url={h?.url}
+                                    name={h?.file_name}
+                                    tipoDeDocumento="documento"
+                                    etiquetaParaTelefono={`la hoja ${i + 2} de ${rotuloDelDoc(category).toLowerCase()}`}
+                                    onChange={f => f ? handleDocHoja(category, i, f)
+                                        : removeDocHoja(category, i)}
+                                />
+                            </div>
+                        ))}
+                        {/* Sólo con la primera hoja puesta: ofrecer «agregar
+                            hoja» sobre un documento vacío invita a empezar por
+                            la dos. */}
+                        {hasFile && (
+                            <Button variant="ghost" size="sm" icon={Plus}
+                                onClick={() => updateDocHoja(category, hojas.length, { url: null, file_name: '' })}>
+                                Agregar otra hoja
+                            </Button>
+                        )}
+                    </div>
+                )}
+
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>

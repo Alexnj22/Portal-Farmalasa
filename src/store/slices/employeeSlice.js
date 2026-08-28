@@ -514,9 +514,24 @@ export const createEmployeeSlice = (set, get) => ({
      *     reemplaza. Se armaban en el formulario y morían acá.
      *
      * Al agregar un campo a una entrada de documento hay que nombrarlo en LAS
-     * DOS ramas de abajo (archivo nuevo y archivo ya subido). */
+     * DOS ramas de abajo (archivo nuevo y archivo ya subido).
+     *
+     * ── `hojas`: el reverso y las páginas que siguen ───────────────────────
+     *
+     * Una licencia y un carné de junta tienen DOS lados, y un currículum varias
+     * páginas. La primera hoja sigue viviendo en `url` —así todo lo que ya lee
+     * un documento (el aviso de vencimiento, el listado de personal, las
+     * exportaciones) sigue funcionando sin enterarse— y las demás van en
+     * `hojas`. No es una segunda representación del mismo dato: es la primera
+     * hoja y el resto, que es como llega el papel. */
     uploadEmployeeDocuments: async (employeeId, docs) => {
         if (!Array.isArray(docs) || docs.length === 0) return [];
+        // Las hojas que ya están subidas. Una hoja sin `url` es un hueco que
+        // alguien abrió y no llenó: no se guarda, para que el documento no
+        // aparezca con una página en blanco.
+        const hojasDe = (doc) => (Array.isArray(doc.hojas) ? doc.hojas : [])
+            .filter(h => h?.url)
+            .map(h => ({ url: h.url, file_name: h.file_name || '' }));
         const results = [];
         for (const doc of docs) {
             if (!doc?.category) continue;
@@ -544,11 +559,16 @@ export const createEmployeeSlice = (set, get) => ({
                 results.push({ category: doc.category, title: doc.title || doc.category, url: publicUrlData.publicUrl,
                     file_name: doc.file_name || doc.file.name || '',
                     historial: Array.isArray(doc.historial) ? doc.historial : [],
+                    hojas: hojasDe(doc),
                     expiry_date: expiryDate, issue_date: issueDate, uploaded_at: new Date().toISOString() });
-            } else if (doc.url) {
-                results.push({ category: doc.category, title: doc.title || doc.category, url: doc.url,
+            } else if (doc.url || hojasDe(doc).length) {
+                /* `|| hojas.length`: un documento puede tener el reverso cargado
+                 * y el frente todavía no. Sin esta rama se descartaba entero al
+                 * guardar —sin error— y quien había subido el reverso lo perdía. */
+                results.push({ category: doc.category, title: doc.title || doc.category, url: doc.url || null,
                     file_name: doc.file_name || '',
                     historial: Array.isArray(doc.historial) ? doc.historial : [],
+                    hojas: hojasDe(doc),
                     expiry_date: doc.expiry_date || null, issue_date: doc.issue_date || null, uploaded_at: doc.uploaded_at || new Date().toISOString() });
             }
         }

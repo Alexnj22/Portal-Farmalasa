@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.844.0 — Los documentos de dos caras y de varias hojas
+
+Cada documento del expediente era **un** archivo. Una licencia y un carné de
+junta tienen dos lados, y un currículum varias páginas: el reverso o se perdía,
+o alguien lo subía encima del frente — que además **archiva el frente como si
+fuera una versión vieja**, porque el portal lee un reemplazo donde en realidad
+hubo un agregado.
+
+Ahora:
+
+- **Dos caras, con nombre: «Frente» y «Reverso».** Licencias de moto y carro,
+  carnés de JVPQF, JVPE, JVPM y contaduría, tarjetas del ISSS y de la AFP. Son
+  casillas fijas y nombradas a propósito: un botón genérico de «agregar hoja»
+  sobre una licencia no le dice a nadie que le falta el reverso.
+- **Varias hojas, abiertas.** Currículum, contrato, solicitud de empleo, acuse
+  del Ministerio, contrato de regencia, certificados médicos y de discapacidad:
+  «Agregar otra hoja», las que hagan falta.
+
+Cada hoja es el **mismo** control de adjuntos de siempre, así que hereda sin una
+línea de más la cámara del teléfono por QR, el editor con las esquinas y el
+visor. Ésa es la respuesta a «ve cómo hacerlo por el QR»: no hacía falta nada
+nuevo, hacía falta que hubiera una casilla donde ponerlo.
+
+Detalles que no se ven pero deciden si esto funciona:
+
+- La primera hoja sigue viviendo donde vivía, y las demás aparte. No son dos
+  formas de guardar lo mismo: son la primera hoja y el resto, que es como llega
+  el papel — y así el aviso de vencimiento, el listado de personal y las
+  exportaciones siguen funcionando sin enterarse.
+- **Agregar una hoja no archiva la anterior.** Usa su propio camino y no el de
+  reemplazar un documento, que es el que mueve el archivo viejo al historial.
+- El reverso subido **sin** el frente ya no se descarta al guardar, y una hoja
+  que se abrió y quedó vacía no se guarda.
+- Las hojas que no son la primera **no** se mandan a leer: lo que la lectura
+  saca —vencimiento y número— está en el frente, y un modelo que ve una fecha
+  cualquiera en la página 4 la escribiría como vencimiento.
+
 ## v2.843.0 — El portal le anota el vale a la caja, y sólo vos lo disparás
 
 Cuando una remesa se paga con dinero de una bolsa **del día que la caja tiene

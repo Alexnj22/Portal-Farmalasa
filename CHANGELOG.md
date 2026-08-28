@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.840.1 — La bitácora ya no impide guardar el sueldo, el cargo ni el estado de un empleado
+
+Talento Humano no podía guardarle el sueldo a nadie: el portal contestaba «No
+tienes permiso para hacer esto». Tampoco cambiarle el cargo, ni activarlo o
+desactivarlo. El permiso estaba bien; lo que rebotaba era la **bitácora**.
+
+Cada vez que un empleado cambia de sueldo, de cargo o de estado, un vigilante de
+la base levanta una alerta crítica en la bitácora. Ese vigilante escribía la
+alerta **con los permisos de quien hacía el cambio** y sin decir quién era. El
+6 de agosto la bitácora empezó a exigir que toda fila diga su autor, así que la
+alerta pasó a ser rechazada — y al rechazarse **se caía el cambio entero**, no
+sólo el asiento. Del 6 al 28 de agosto, ningún sueldo, cargo ni estado se pudo
+guardar desde el portal.
+
+Se corrigieron las dos mitades:
+
+- **La alerta la levanta el sistema, no la persona.** Un aviso que el propio
+  interesado puede hacer fallar no es un aviso: es un permiso de veto. Las otras
+  siete alertas de la bitácora ya funcionaban así.
+- **Y ahora dice quién.** Las ocho alertas de «modificación crítica» que existen
+  en la historia del portal no nombran a nadie: autor en blanco. Desde hoy queda
+  escrito el nombre de quien tocó el sueldo, el cargo o el estado, junto al valor
+  anterior y el nuevo.
+
 ## v2.840.0 — Aperturas: quién abrió la caja de cada sala
 
 Cortes de caja tiene una tercera pestaña con lo que v2.839.0 empezó a capturar:

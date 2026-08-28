@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.828.4 — El aviso del editor movía el marco y la vista se movía sola en bucle
+
+*«Estando aquí ajustando me dio un problema: la vista algo hace zoom solo en
+bucle y causa que se mueva, y que hasta este texto pase a 2 filas.»*
+
+No era el recortador: era el cartel de abajo. La zona de avisos crecía y encogía
+con lo que dijera, y eso arma un **bucle de reflujo**:
+
+> el aviso pasa de una línea a dos → el marco de recorte (`flex-1`) pierde alto →
+> el recorte mide distinto → la revisión vuelve a correr → el aviso cambia → y
+> otra vez.
+
+Desde afuera se ve como que la vista hace zoom sola. Y el cartel que lo
+disparaba era justamente el que se agregó ayer —el del recorte demasiado
+chico—, que ocupa tres líneas.
+
+Ahora esa zona tiene **alto fijo** y lo que no entra scrollea adentro. Con el
+alto fijo, el marco de recorte no cambia de tamaño, así que la medida no cambia y
+no hay realimentación. Mover el resto de la pantalla para hacerle lugar a un
+aviso es justo lo que no puede pasar en un editor donde lo que se mide es el
+tamaño de lo que se ve.
+
+Medido en Chromium: acercando a tope —que dispara el aviso de tres líneas— el
+alto del marco se queda en **436 px** en 24 mediciones seguidas.
+
+## v2.828.5 — Los tres cobros que salieron del catálogo no disparan el aviso
+
+El aviso de v2.828.3, con los datos de hoy, disparaba **uno solo y era el
+equivocado**: COMISIONES POR SERVICIO DE CORRESPONSAL, con 83 «unidades» entre
+Salud 3 y La Popular. Es un cobro que se factura como si fuera un artículo, así
+que esa existencia no es mercadería que nadie tenga que ir a sacar de una sala —
+y el medicamento real que sí salió del catálogo se quedaba callado, porque no le
+queda ni una unidad.
+
+Un aviso que estrena disparando por algo que no hay que atender enseña a
+ignorarlo desde el día uno. Los tres cobros —comisiones de corresponsal, servicio
+a domicilio y apoyo promocional— quedan en una lista con el motivo escrito de
+cada uno.
+
+**Van por id porque la regla no existe**, y eso se midió antes de escribir la
+lista: los cuatro que hoy están fuera del catálogo —los tres cobros y el
+medicamento— tienen laboratorio, código de barras y categoría en blanco, así que
+ningún campo los separa; y la regla de «esto no es venta de productos» que ya
+vive en el portal se define por FACTURA, no por producto. El día que ese
+marcador exista a nivel de producto, la lista se borra y se lee de ahí.
+
+Los callados se descuentan del aviso, **no de la medición**: la corrida sigue
+informando cuántos productos están fuera del catálogo con existencia, así que la
+lista no los esconde.
+
+
 ## v2.828.3 — El producto que sale del catálogo con existencia avisa a Logística y Supervisión
 
 Dos preguntas del usuario destaparon dos huecos distintos, y éste es el segundo.

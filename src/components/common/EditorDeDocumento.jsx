@@ -596,38 +596,48 @@ export default function EditorDeDocumento({ file, tipo = 'receta', recuadro = nu
                     )}
                 </div>
 
-                {/* Los avisos reemplazan a la explicación fija cuando hay algo
-                    que decir: dos carteles apilados no se leen ninguno. */}
-                {/* El motivo del bloqueo va PRIMERO y en rojo: los demás avisos
-                    son consejos y éste es la razón por la que el botón está
-                    apagado. Un `title` solo no alcanza — con el dedo no hay
-                    cursor que pasar por encima. */}
-                {!piso.sePuede && (
-                    <div className="shrink-0">
-                        <Notice variant="danger" compact icon={AlertTriangle}>{piso.motivo}</Notice>
-                    </div>
-                )}
+                {/* ── ESTA ZONA TIENE ALTO FIJO, y ese es todo el punto ──────
+                    Lo que había crecía y encogía con lo que dijera el aviso, y
+                    eso arma un BUCLE de reflujo:
 
-                {avisos.length > 0 ? (
-                    <div className="space-y-2 shrink-0">
-                        {avisos.map((a, i) => (
+                      el aviso pasa de una línea a dos  →  el marco de recorte
+                      (`flex-1`) pierde alto  →  el recorte mide distinto  →  la
+                      revisión vuelve a correr  →  el aviso cambia  →  y otra vez.
+
+                    Desde afuera se ve como que la vista «hace zoom sola en
+                    bucle», que es exactamente como lo describió el usuario
+                    mientras ajustaba un DUI. No era el recortador: era el
+                    cartel de abajo moviéndole el alto.
+
+                    Con alto fijo, el marco de recorte no cambia nunca de
+                    tamaño, así que la medida no cambia, así que no hay
+                    realimentación. Si hay más avisos de los que entran,
+                    scrollean adentro — mover el resto de la pantalla para
+                    hacerles lugar es justo lo que no puede pasar. */}
+                <div className="shrink-0 h-[76px] md:h-[68px] overflow-y-auto overscroll-contain space-y-2 pr-0.5">
+                    {/* El motivo del bloqueo va PRIMERO y en rojo: los demás
+                        avisos son consejos y éste es la razón por la que el
+                        botón está apagado. Un `title` solo no alcanza — con el
+                        dedo no hay cursor que pasar por encima. */}
+                    {!piso.sePuede && (
+                        <Notice variant="danger" compact icon={AlertTriangle}>{piso.motivo}</Notice>
+                    )}
+
+                    {/* Los avisos reemplazan a la explicación fija cuando hay algo
+                        que decir: dos carteles apilados no se leen ninguno. */}
+                    {avisos.length > 0 ? (
+                        avisos.map((a, i) => (
                             <Notice key={a.texto} variant={a.tono} compact
                                 icon={i === 0 && a.tono === 'warning' ? AlertTriangle : Sparkles}>
                                 {a.texto}
                             </Notice>
-                        ))}
-                    </div>
-                ) : conElDedo ? (
-                    // Con el dedo el consejo del gesto ya está dentro del marco y
-                    // el resto de la pista es de escritorio: un cartel más acá
-                    // abajo empujaría los controles fuera de la vista, que fue
-                    // exactamente el defecto que se vino a arreglar.
-                    null
-                ) : (
-                    <div className="shrink-0">
+                        ))
+                    ) : piso.sePuede && !conElDedo ? (
+                        // Con el dedo el consejo del gesto ya está dentro del marco
+                        // y el resto de la pista es de escritorio.
                         <Notice variant="info" compact icon={Sparkles}>{doc.pista}</Notice>
-                    </div>
-                )}
+                    ) : null}
+                </div>
             </LiquidModal.Body>
 
             <LiquidModal.Footer>

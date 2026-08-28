@@ -38,6 +38,7 @@ import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOp
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
+import { usuarioDesdeNombre } from '../../utils/nameUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import { abrirCaptura, esperarFoto, fotoComoArchivo, enlaceDeCaptura } from '../../data/capturaDeFoto';
 import QrDeCaptura from '../common/QrDeCaptura';
@@ -47,8 +48,74 @@ import QrDeCaptura from '../common/QrDeCaptura';
    partida— y no tiene forma fija, así que recortarlo a proporción de tarjeta le
    cortaría los bordes. */
 const CATEGORIAS_DE_DUI = new Set(['DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO']);
+
+/* ── Lo que NO se copia al enlazar con una ficha que ya existe ─────────────
+ *
+ * `id` es el más importante y el menos obvio: con `id` puesto, el modal deja de
+ * ser un alta y se va por el camino de EDITAR, que es otro guardado. El enlace
+ * viaja aparte, en `enlazar_con_id`.
+ *
+ * `name` se arma solo de nombres + apellidos. `photo` es una URL firmada que
+ * caduca —la foto entra como vista previa, más abajo—. Y `status` no se hereda:
+ * quien vuelve entra ACTIVO, no con el estado que tenía el día que se fue. El
+ * resto —horas debidas, bloqueos, horario— es historia de la ficha vieja y la
+ * conserva ella; no es algo que se esté dando de alta hoy. */
+const NO_SE_HEREDA = new Set([
+    'id', 'created_at', 'name', 'photo', 'status',
+    'hours_owed', 'weekly_schedule', 'exceptions',
+    'blocked_until', 'blocked_reason', 'blocked_at', 'blocked_by',
+]);
+
+/* Los tres que se respetan si ya estaban elegidos: son justamente los que uno
+ * cambia MIENTRAS enlaza —se puede estar reincorporando a alguien en otra sala
+ * o con otro cargo—, así que lo tecleado gana. Todo lo demás viene de la ficha,
+ * porque todo lo demás es la misma persona. */
+const ELEGIBLES_AL_ENLAZAR = ['branch_id', 'role_id', 'secondary_role_id'];
+
+/**
+ * Trae la ficha de quien ya trabajaba acá.
+ *
+ * ── Por qué copia TODO y no sólo tres campos ───────────────────────────────
+ *
+ * Copiaba sala, cargo y foto, y nada más. El usuario lo vio en pantalla: «si
+ * agrego a un empleado que ya está, ¿por qué no se ponen los datos que ya están
+ * guardados?».
+ *
+ * Y lo que había no era sólo incómodo: era PELIGROSO. El aviso de esa misma
+ * tarjeta dice —con razón— que al guardar «lo que esa ficha tenía escrito antes
+ * se reemplaza». Con el formulario en blanco, eso significa reemplazar el DUI,
+ * la dirección, el salario y el banco de esa persona **por vacío**. O sea que el
+ * camino natural —elegir a quien vuelve y guardar— le borraba el expediente, sin
+ * ningún error y sin que nada en la pantalla lo dijera.
+ *
+ * Traer la ficha entera arregla las dos cosas de una vez: se ve lo que ya está,
+ * y lo que se guarda encima es lo mismo que había salvo lo que alguien cambie a
+ * propósito.
+ *
+ * @param {object} prev   el formulario de ahora
+ * @param {string} val    id elegido (cadena vacía = se quitó el enlace)
+ * @param {object|null} ficha  la ficha de esa persona, si se encontró
+ */
+export function aplicarFichaEnlazada(prev, val, ficha) {
+    const next = { ...prev, enlazar_con_id: val };
+    if (!ficha) return next;
+
+    for (const [campo, valor] of Object.entries(ficha)) {
+        if (NO_SE_HEREDA.has(campo)) continue;
+        if (ELEGIBLES_AL_ENLAZAR.includes(campo) && prev[campo]) continue;
+        if (valor === null || valor === undefined) continue;
+        next[campo] = valor;
+    }
+
+    // La foto entra como vista previa y no como archivo: no hay `File` que
+    // subir, la imagen ya está guardada. Y no se pisa la que alguien acabe de
+    // tomar con el teléfono.
+    if (!prev.photoPreview && !prev.file) {
+        next.photoPreview = ficha.photo || ficha.photo_url || null;
+    }
+    return next;
+}
 import ModalShell from '../common/ModalShell';
-import { cadenaDeSuperiores } from '../../utils/roles';
 import FileField from '../common/FileField';
 import CarneDeDependiente from '../common/CarneDeDependiente';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
@@ -621,11 +688,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const value = UPPERCASE_FIELDS.has(name) ? e.target.value.toUpperCase() : e.target.value;
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
+            // Al DAR DE ALTA el usuario se escribe solo. Al EDITAR no: ya es la
+            // credencial con la que esa persona entra, así que reescribirlo en
+            // silencio le cambia con qué entra sin que nadie lo haya decidido.
+            // Ahí se PROPONE abajo del campo — ver `usuarioQuedoViejo`.
             if ((name === 'first_names' || name === 'last_names') && (!prev.id)) {
-                const f = (name === 'first_names' ? value : prev.first_names || '').trim().toLowerCase().split(/\s+/)[0] || '';
-                const l = (name === 'last_names' ? value : prev.last_names || '').trim().toLowerCase().split(/\s+/)[0] || '';
-                let un = f && l ? `${f}.${l}` : f || l;
-                newData.username = un.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9.]/g, '');
+                newData.username = usuarioDesdeNombre(
+                    name === 'first_names' ? value : prev.first_names,
+                    name === 'last_names' ? value : prev.last_names,
+                );
             }
             return newData;
         });
@@ -1309,13 +1380,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     // lo elegido es una imagen; lo único que necesita saber es
                     // qué forma tiene, y para el DUI la forma se sabe: ID-1.
                     tipoDeDocumento={CATEGORIAS_DE_DUI.has(category) ? 'dui' : 'documento'}
+                    // Este bloque dibuja su propio rótulo, así que `FileField` no
+                    // recibe `label` y el diálogo del QR no sabría de qué foto habla.
+                    etiquetaParaTelefono={documentCategories.find(c => c.key === category)?.label || doc.title || ''}
                     onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
                 />
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>
                             <span>Fecha de Vencimiento (opcional) — la lee el portal si el documento la trae</span>
-                            {expiryBadge && <Badge size="sm" variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
+                            {expiryBadge && <Badge variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
                         </label>
                         <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} />
                     </div>
@@ -1614,46 +1688,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const cubreVariasAreas = !!selectedBranch && (selectedBranch.type || 'FARMACIA') !== 'FARMACIA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
-    // Quién lo cubre mientras no está. Sale de la tabla —nunca de una lista
-    // escrita a mano— y excluye a la propia persona (la BD también lo prohíbe).
-    // Quién cubre si no se elige a nadie. NO se preselecciona: la cobertura por
-    // organigrama ya funciona sola y escribirla como si fuera una elección
-    // convertiría un default vivo —si mañana cambia el jefe, cambia solo— en un
-    // dato fijo que envejece. Lo que faltaba era DECIR quién es, que es lo que
-    // preguntó el usuario: «¿no debería ser su jefe inmediato?». Sí, y ya lo es.
-    const cubrePorOrganigrama = useMemo(() => {
-        const cargo = formData?.role_id;
-        if (!cargo || !roles?.length) return null;
-        const cadena = cadenaDeSuperiores(roles, cargo);
-        for (const cargoSuperior of cadena) {
-            // El más cercano que EXISTE como persona activa. Un cargo vacante no
-            // cubre a nadie, así que se sigue subiendo — que es la misma regla
-            // que usa el organigrama de /personal.
-            const gente = (employees || []).filter(e =>
-                e.status === 'ACTIVO' && String(e.role_id) === String(cargoSuperior) &&
-                String(e.id) !== String(formData?.id));
-            if (!gente.length) continue;
-            // Si hay varios con ese cargo, gana el de la misma sala.
-            const mismaSala = gente.find(e => String(e.branch_id) === String(formData?.branch_id));
-            const elegido = mismaSala || gente[0];
-            return {
-                nombre: elegido.name || `${elegido.first_names || ''} ${elegido.last_names || ''}`.trim(),
-                cargo: elegido.role || roles.find(r => String(r.id) === String(cargoSuperior))?.name || '',
-            };
-        }
-        return null;
-    }, [formData?.role_id, formData?.branch_id, formData?.id, roles, employees]);
 
-    const suplenteOpts = useMemo(() => (employees || [])
-        .filter(e => e.status === 'ACTIVO' && String(e.id) !== String(formData?.id))
-        .map(e => ({
-            value: String(e.id),
-            label: e.name || `${e.first_names || ''} ${e.last_names || ''}`.trim(),
-            sublabel: e.role || undefined,
-            avatar: e.photo || undefined,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es')),
-        [employees, formData?.id]);
+
+    // ── El usuario y el nombre, cuando dejan de corresponderse ──────────────
+    // El usuario sale del nombre, pero sólo se escribe solo en el alta. Editarle
+    // el apellido a alguien dejaba la credencial con el apellido viejo y nada lo
+    // decía: ni error, ni campo en rojo — el campo es readOnly, así que tampoco
+    // se podía corregir a mano. Acá se compara y se ofrece.
+    const usuarioSugerido = usuarioDesdeNombre(formData?.first_names, formData?.last_names);
+    // El usuario GUARDADO de esta persona: el que hoy la deja entrar. Sale del
+    // store y no de una foto tomada en el primer render, porque es contra el
+    // valor persistido que hay que decir «va a cambiar» — en cuanto se acepta la
+    // propuesta, `formData.username` ya es el nuevo y no queda con qué comparar.
+    const usuarioAlAbrir = ((formData?.id
+        ? (employees || []).find(e => String(e.id) === String(formData.id))?.username
+        : null) || '').toLowerCase() || null;
+    const usuarioActual = (formData?.username || '').toLowerCase();
+    const usuarioQuedoViejo = !!formData?.id && !!usuarioSugerido && usuarioActual !== usuarioSugerido;
+    const usuarioVaACambiar = !!usuarioAlAbrir && usuarioActual !== usuarioAlAbrir;
 
     const islandClass ="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
     const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
@@ -1763,22 +1815,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <LiquidSelect
                                     value={formData.enlazar_con_id || ''}
                                     onChange={(val) => {
-                                        // Su foto, su sala y su cargo vienen con él: son datos
-                                        // que el portal YA tiene, y volver a pedirlos es pedir
-                                        // que alguien acierte lo que está a un clic. Sólo llena
-                                        // lo VACÍO, igual que el DUI — si quien carga ya eligió
-                                        // otra sala manda ésa, porque puede estar trasladando a
-                                        // la persona en el mismo movimiento.
                                         const ficha = (employees || []).find(e => String(e.id) === String(val));
-                                        setFormData(prev => {
-                                            const next = { ...prev, enlazar_con_id: val };
-                                            if (!ficha) return next;
-                                            if (!prev.branch_id) next.branch_id = ficha.branch_id ?? ficha.branchId ?? '';
-                                            if (!prev.role_id) next.role_id = ficha.role_id ?? '';
-                                            if (!prev.secondary_role_id) next.secondary_role_id = ficha.secondary_role_id ?? '';
-                                            if (!prev.photoPreview && !prev.file) next.photoPreview = ficha.photo || ficha.photo_url || null;
-                                            return next;
-                                        });
+                                        setFormData(prev => aplicarFichaEnlazada(prev, val, ficha));
                                     }}
                                     options={fichasParaEnlazar}
                                     placeholder="Buscar a la persona por su nombre..."
@@ -1790,10 +1828,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="mt-3 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
                                         <CheckCircle2 size={16} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <p className="text-label text-content font-medium leading-snug">
-                                            Al guardar, la ficha de <span className="font-black">{fichaAEnlazar.name}</span> queda con
-                                            todo lo que escribiste aquí —nombre, documento, cargo, sala, contrato, sueldo, banco— y
-                                            conserva su historial. <span className="font-black">No se crea un registro nuevo</span>, y
-                                            lo que esa ficha tenía escrito antes se reemplaza.
+                                            El formulario quedó lleno con lo que la ficha de{' '}
+                                            <span className="font-black">{fichaAEnlazar.name}</span> ya tenía guardado:
+                                            revísalo y cambia lo que haya cambiado. Al guardar,{' '}
+                                            <span className="font-black">no se crea un registro nuevo</span> — se
+                                            actualiza el suyo, y conserva su historial de solicitudes y traslados.
                                         </p>
                                     </div>
                                 )}
@@ -1994,7 +2033,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <Button
                                             type="button" variant="secondary" size="sm" icon={Smartphone}
                                             className="mt-2" onClick={pedirFotoAlTelefono} disabled={!!captura}>
-                                            {captura ? 'Esperando el teléfono…' : 'Tomar con el teléfono'}
+                                            {/* «La foto de perfil», no «Tomar con el teléfono» a
+                                                secas. Desde v2.824.0 ese mismo botón aparece en
+                                                cada adjunto de la pantalla —el frente del DUI, el
+                                                reverso—, así que en esta tarjeta quedaban tres
+                                                botones con el mismo rótulo y ninguno decía qué
+                                                foto tomaba. El usuario preguntó exactamente eso:
+                                                «el tomar desde el teléfono en identidad, ¿qué
+                                                es?». Un rótulo que era claro cuando era único
+                                                deja de serlo cuando se repite. */}
+                                            {captura ? 'Esperando el teléfono…' : 'La foto de perfil, con el teléfono'}
                                         </Button>
                                     )}
                                     {esTactil && (
@@ -2037,8 +2085,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     title="Cerrar" onClick={cerrarCaptura} />
                                             </div>
                                             <p className="text-label text-content-2 font-medium text-center leading-snug max-w-[260px]">
-                                                Escanea este código con la cámara del teléfono. La foto va a aparecer
-                                                aquí sola.
+                                                Escanea este código con la cámara del teléfono. La foto de perfil va a
+                                                aparecer aquí sola.
                                             </p>
                                             <QrDeCaptura
                                                 enlace={enlaceDeCaptura(captura.secreto)}
@@ -2757,64 +2805,77 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 pendiente. */}
                             <div className="mt-4 pt-4 border-t border-divider">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3">ISSS y AFP</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="relative z-content">
-                                        <label className={rotuloCampo('text-content-3')}>¿Ya tiene ISSS?</label>
-                                        <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
-                                    </div>
-                                    <div className="relative z-content">
-                                        <label className={rotuloCampo('text-content-3')}>¿Ya tiene AFP?</label>
-                                        <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
-                                    </div>
-                                </div>
-                                {/* Los NÚMEROS viven junto a su ESTADO y no en Nómina.
-                                    Estaban partidos entre dos pestañas: acá se preguntaba si
-                                    tiene ISSS y allá se escribía su número, así que había que
-                                    cruzar el formulario para completar una sola cosa. Fue el
-                                    pedido textual: «agregar si tiene AFP e ISSS, para agregar
-                                    los datos». Nómina se queda con el banco y la cuenta, que
-                                    sí son datos de pago. */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                    {formData.isss_estado !== 'NO_TIENE' && (
-                                    <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
-                                    )}
-                                    {/* El NUP quedó homologado al DUI en enero de 2023: es con el
-                                        número de DUI que uno se afilia y hace cualquier trámite de
-                                        pensiones. Así que dejó de ser un campo que se teclea — se
-                                        muestra el DUI, que se captura en Datos Personales y ahí sí
-                                        se le comprueba el dígito verificador.
+                {/* ── UNA COLUMNA POR INSTITUCIÓN, no una rejilla de celdas ─────
+                                    Estaban los seis campos en una sola rejilla, y el resultado
+                                    lo reportó el usuario mirando la pantalla: «si lo de AFP
+                                    está en la columna 2, ¿por qué la institución está en la
+                                    1?». La rejilla acomoda por ORDEN —celda 1, celda 2, celda
+                                    3…— así que «Institución AFP», al ser el tercer campo,
+                                    caía debajo de «Número ISSS».
 
-                                        El valor viejo NO se borra ni se pisa: si una ficha trae un
-                                        NUP anterior distinto del DUI, se sigue viendo. Borrarlo
-                                        sería decidir por alguien que ese número ya no importa. */}
-                                    {formData.afp_estado !== 'NO_TIENE' && (
-                                    <div className="relative z-content">
-                                        <label className={rotuloCampo('text-content-3')}>NUP (AFP)</label>
-                                        <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-3 gap-2`}>
-                                            <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
-                                            <span className="text-body-xl font-bold text-content-2 truncate">
-                                                {formData.dui || '—'}
-                                            </span>
-                                        </div>
-                                        <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
-                                            Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
-                                            {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
-                                        </p>
-                                    </div>
-                                    )}
-
-                                    {/* Preguntarle la institución a quien declaró que NO tiene
-                                        AFP es pedir un dato que por definición no existe — y
-                                        peor: invita a elegir una, y esa elección queda escrita
-                                        como si la persona estuviera afiliada. Lo mismo con el
-                                        NUP. Los dos aparecen sólo cuando hay a qué referirse. */}
-                                    {formData.afp_estado !== 'NO_TIENE' && (
+                                    Y no es un desalineado cosmético: pone un dato de AFP en la
+                                    columna del ISSS, o sea que la pantalla dice que pertenece a
+                                    otra institución. El arreglo no es mover ese campo —el
+                                    problema volvería en cuanto se agregue otro— sino que cada
+                                    institución sea su propia columna, con sus campos apilados
+                                    adentro. Así ninguno puede cruzarse, se escondan los que se
+                                    escondan. */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                    {/* ── ISSS ─────────────────────────────────────────── */}
+                                    <div className="flex flex-col gap-4">
                                         <div className="relative z-content">
-                                            <label className={rotuloCampo('text-content-3')}>Institución AFP</label>
-                                            <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
+                                            <label className={rotuloCampo('text-content-3')}>¿Ya tiene ISSS?</label>
+                                            <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
-                                    )}
+                                        {formData.isss_estado !== 'NO_TIENE' && (
+                                            <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
+                                        )}
+                                    </div>
 
+                                    {/* ── AFP ──────────────────────────────────────────── */}
+                                    <div className="flex flex-col gap-4">
+                                        <div className="relative z-tabs">
+                                            <label className={rotuloCampo('text-content-3')}>¿Ya tiene AFP?</label>
+                                            <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
+                                        </div>
+
+                                        {/* El NUP quedó homologado al DUI en enero de 2023: es con el
+                                            número de DUI que uno se afilia y hace cualquier trámite de
+                                            pensiones. Así que dejó de ser un campo que se teclea — se
+                                            muestra el DUI, que se captura en Datos Personales y ahí sí
+                                            se le comprueba el dígito verificador.
+
+                                            El valor viejo NO se borra ni se pisa: si una ficha trae un
+                                            NUP anterior distinto del DUI, se sigue viendo. Borrarlo
+                                            sería decidir por alguien que ese número ya no importa. */}
+                                        {formData.afp_estado !== 'NO_TIENE' && (
+                                            <div>
+                                                <label className={rotuloCampo('text-content-3')}>NUP (AFP)</label>
+                                                <div className={`bg-surface-card-hover rounded-2xl border border-divider shadow-sm flex items-center h-[max(40px,var(--tap-min))] px-3 gap-2`}>
+                                                    <Hash size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
+                                                    <span className="text-body-xl font-bold text-content-2 truncate">
+                                                        {formData.dui || '—'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-micro text-content-3 font-medium mt-1 ml-1 leading-snug">
+                                                    Es el DUI: desde enero de 2023 el NUP quedó homologado al documento de identidad.
+                                                    {formData.afp_number ? ` NUP anterior registrado: ${formData.afp_number}.` : ''}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Preguntarle la institución a quien declaró que NO tiene
+                                            AFP es pedir un dato que por definición no existe — y
+                                            peor: invita a elegir una, y esa elección queda escrita
+                                            como si la persona estuviera afiliada. Lo mismo con el
+                                            NUP. Los dos aparecen sólo cuando hay a qué referirse. */}
+                                        {formData.afp_estado !== 'NO_TIENE' && (
+                                            <div className="relative z-content">
+                                                <label className={rotuloCampo('text-content-3')}>Institución AFP</label>
+                                                <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {pendientesDePrevision.length > 0 && (
@@ -3140,7 +3201,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className="md:col-span-2 flex flex-col gap-2">
                                                         <label className={rotuloCampo('text-content-3')}>
                                                             <span>Teléfono{tels.length > 1 ? 's' : ''}</span>
-                                                            <Button size="rotulo" variant="ghost" size="rotulo" icon={Plus}
+                                                            <Button variant="ghost" size="rotulo" icon={Plus}
                                                                 onClick={() => updateContactoExtra(idx, { telefonos: [...tels, ''], telefono: undefined })}>Agregar</Button>
                                                         </label>
                                                         {tels.map((t, i) => (
@@ -3272,28 +3333,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         </div>
 
-                        {/* Quién se hace cargo mientras no está. A diferencia del cargo,
-                            esto SÍ se edita en cualquier momento: no es un cambio de puesto,
-                            es una instrucción de cobertura. */}
-                        <div className={`${islandClass} ${islandHoverClass}`}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                                <div className="relative z-content">
-                                    <label className={rotuloCampo('text-content-3')}>Si no está, lo cubre</label>
-                                    <LiquidSelect value={formData.suplente_id || ''} onChange={(val) => handleSelectChange('suplente_id', val || null)} options={suplenteOpts} placeholder="Nadie en particular..." icon={Users} {...portalSelectProps} />
-                                </div>
-                                <p className="text-caption text-content-3 font-medium leading-snug md:pt-6">
-                                    <span className="font-black text-content-2">No hace falta elegir.</span>{' '}
-                                    {cubrePorOrganigrama
-                                        ? <>Si se deja vacío, cubre <span className="font-black text-content-2">{cubrePorOrganigrama.nombre}</span>
-                                            {cubrePorOrganigrama.cargo ? <> ({cubrePorOrganigrama.cargo})</> : null}, que es quien está arriba en el organigrama.
-                                            Se elige a alguien sólo para que cubra otra persona.</>
-                                        : <>Si se deja vacío, cubre quien esté arriba en el organigrama. Se elige a alguien
-                                            sólo para que cubra otra persona.</>}
-                                    {' '}Mientras esté de vacaciones o incapacidad resuelve lo que le corresponde —solo lo que
-                                    su cargo tenga marcado para delegar—, y al volver la cobertura se apaga sola.
-                                </p>
-                            </div>
-                        </div>
+                        {/* ── Acá vivía «Si no está, lo cubre» ─────────────────────
+                            Se quitó el 2026-08-28, a pedido del usuario mirando la
+                            pantalla: «en contrato, eso no lo veo necesario, ya que debe
+                            ser según organigrama y línea de mando».
+
+                            Y tenía razón hasta en lo que el propio campo decía de sí
+                            mismo: su texto de ayuda empezaba con «No hace falta elegir»
+                            y explicaba que, vacío, cubre quien está arriba en el
+                            organigrama. O sea que era un control cuyo mejor uso era no
+                            usarlo — y medido contra la base, así se usaba: **0 de las 49
+                            fichas** tenían suplente elegido. Un campo que nadie llenó
+                            nunca y que la propia pantalla desaconseja llenar no es una
+                            opción, es ruido en un formulario que ya es largo.
+
+                            La cobertura no se pierde: la resuelve la línea de mando, que
+                            es lo que ya pasaba en las 49. La columna `suplente_id` se
+                            queda en la base —sigue leída por Permisos— pero deja de
+                            tener quien la escriba desde acá. */}
 
                         {/* El aviso de «servicios profesionales» vivía DOS veces: acá
                             en rojo y otra vez adentro de la tarjeta del contrato, las
@@ -3805,7 +3862,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[var(--shadow-shine)]"><AtSign size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Login de App Móvil</h4>
                                 </div>
-                                <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
+                                <PortalInput label={formData?.id ? 'Usuario' : 'Usuario (Auto-generado)'} name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
+                                {usuarioQuedoViejo && (
+                                    <Notice variant="warning" bloque className="mt-3"
+                                        action={<Button size="sm" tone="warning" soft
+                                            onClick={() => setFormData(prev => ({ ...prev, username: usuarioSugerido }))}>
+                                            Usar {usuarioSugerido}
+                                        </Button>}>
+                                        El usuario ya no corresponde al nombre. Con él entra al portal:
+                                        si lo cambias a <strong>{usuarioSugerido}</strong>, desde la próxima
+                                        vez tendrá que entrar con ese. La contraseña no cambia.
+                                    </Notice>
+                                )}
+                                {!usuarioQuedoViejo && usuarioVaACambiar && (
+                                    <Notice variant="warning" bloque className="mt-3"
+                                        action={<Button size="sm" variant="ghost"
+                                            onClick={() => setFormData(prev => ({ ...prev, username: usuarioAlAbrir }))}>
+                                            Dejar {usuarioAlAbrir}
+                                        </Button>}>
+                                        Al guardar, entrará con <strong>{usuarioActual}</strong> en vez
+                                        de <strong>{usuarioAlAbrir}</strong>. La contraseña no cambia.
+                                    </Notice>
+                                )}
                             </div>
 
                             <div className={`bg-brand/5 rounded-3xl p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:translate-y-[var(--lift-card)] hover:shadow-md`}>

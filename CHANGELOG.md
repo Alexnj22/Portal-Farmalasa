@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.826.0 — Cambiarle el apellido a alguien ya no le deja el usuario viejo
+
+Reporte del usuario: *«si le cambié el apellido, ¿por qué no se actualizó el
+usuario?»*, sobre la ficha de MAYERLI QUIJADA — que en pantalla decía QUIJADA y
+abajo `mayerli.gutierrez`.
+
+**El usuario sólo se derivaba del nombre al DAR DE ALTA.** La cuenta lo hacía
+con un `!prev.id` en `handleChange`: ficha nueva, se escribe; ficha existente,
+no. Y el campo es `readOnly`, así que tampoco se podía corregir a mano. El modo
+de falla es el de siempre acá: no hay error, no falta ninguna fila, el apellido
+nuevo se guarda bien — sólo que la credencial se quedó con el viejo y nada lo
+dice.
+
+Lo que la tarjeta mostraba como **CORREO** era en realidad el usuario:
+`EmployeeDetailView` pinta `emp.email || emp.username`, y ella no tiene correo.
+
+**Y el usuario no es un rótulo: es la credencial.** La cuenta vive en Auth con
+el correo `<usuario>@farmalasa.app` —así la crea `set-employee-password`, así
+entra `loginWithUsername`—, o sea que escribir sólo `employees.username` deja la
+ficha diciendo una cosa y la puerta pidiendo otra. Por eso el arreglo no podía
+ser «que se actualice solo».
+
+**Qué cambió**
+
+- **`usuarioDesdeNombre` en `src/utils/nameUtils.js`** — la cuenta vive en un
+  solo sitio. Antes estaba escrita adentro del formulario y hacía falta en dos
+  momentos distintos (al escribirlo y al comparar), que es cómo nacen dos
+  usuarios distintos para la misma persona.
+- **Al editar, el formulario PROPONE, no reescribe.** Si el usuario dejó de
+  corresponder al nombre, sale un aviso debajo del campo con el que
+  correspondería y un botón para adoptarlo; una vez adoptado, un segundo aviso
+  dice con qué va a entrar desde la próxima vez y permite volver atrás. En el
+  alta se sigue escribiendo solo, como antes.
+- **`renombrar-usuario-empleado`** (edge function nueva, `verify_jwt` — la llama
+  el navegador con la sesión de quien edita, y pide `staff_list can_edit`
+  resuelto contra la base, no contra el token). Mueve la columna y la cuenta
+  juntas: si la columna falla, devuelve el correo a como estaba, y **mira el
+  resultado de deshacer** — el único desenlace del que nadie sospecharía es la
+  cuenta renombrada con la ficha intacta, así que si tampoco se pudo deshacer lo
+  dice en la misma respuesta.
+- **`updateEmployee` ya no manda `username` en el payload.** Si cambió, pasa por
+  la función, y sólo entonces se guarda el resto — un renombre rechazado (el
+  usuario ya es de otra persona) no puede dejar media ficha escrita. Queda su
+  propio asiento en la bitácora, con los dos valores: cambiarle a alguien con
+  qué entra no es «expediente modificado».
+
+**Corregido en producción**: `mayerli.gutierrez` → `mayerli.quijada`, en los
+cuatro sitios donde vive (la ficha, `auth.users.email`, la identidad de correo y
+el metadata). Nunca había entrado, así que no perdió nada.
+
+**Lo que un renombre sí se lleva**: Min·Máx guarda «quién decidió» como el
+correo con el que esa persona entró, y `buscadorDePersonas` lo resuelve por
+usuario. Las decisiones anteriores al cambio quedan mostrando el usuario viejo
+en vez del nombre. Es otro motivo para que renombrar sea deliberado y no
+automático.
+
 ## v2.825.0 — El carné de dependiente ya no es un papel: es un QR del Consejo
 
 Aviso del usuario: *«en el documento de dependiente de farmacia ya no es un

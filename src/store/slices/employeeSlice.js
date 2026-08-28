@@ -953,7 +953,22 @@ export const createEmployeeSlice = (set, get) => ({
             // rompería el insert, así que se guarda NULL («sin nadie elegido»).
             if (updatedData.suplente_id !== undefined) dbPayload.suplente_id = updatedData.suplente_id || null;
             
-            if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
+            // ── El usuario NO se guarda como una columna más ────────────────
+            // Es la CREDENCIAL: la cuenta de Auth se llama
+            // `<usuario>@farmalasa.app` (`set-employee-password` la crea así y
+            // `loginWithUsername` entra por ahí). Escribir sólo la columna deja
+            // la ficha diciendo una cosa y la puerta pidiendo otra, sin ningún
+            // error a la vista — la persona simplemente no entra.
+            //
+            // Por eso sale del payload y lo hace `renombrar-usuario-empleado`,
+            // que mueve la columna y la cuenta juntas o no mueve ninguna.
+            let renombreDeUsuario = null;
+            delete dbPayload.username;
+            if (updatedData.username) {
+                const nuevo = updatedData.username.trim().toLowerCase();
+                const anterior = (get().employees.find(e => String(e.id) === String(id))?.username || '').toLowerCase();
+                if (nuevo && nuevo !== anterior) renombreDeUsuario = { nuevo, anterior };
+            }
             if (updatedData.first_names) dbPayload.first_names = updatedData.first_names.trim().toUpperCase();
             if (updatedData.last_names) dbPayload.last_names = updatedData.last_names.trim().toUpperCase();
             if (updatedData.address !== undefined) dbPayload.address = updatedData.address ? updatedData.address.trim().toUpperCase() : null;
@@ -1112,6 +1127,19 @@ export const createEmployeeSlice = (set, get) => ({
                 assertHeadcountAvailable(get(), dbPayload.role_id, targetBranch, id);
             }
 
+            // Va ANTES del resto del guardado: un renombre rechazado —el usuario
+            // ya es de otra persona— no puede dejar media ficha escrita.
+            if (renombreDeUsuario) {
+                const { data: res, error: errRenombre } = await supabase.functions.invoke(
+                    'renombrar-usuario-empleado',
+                    { body: { employee_id: id, username: renombreDeUsuario.nuevo } },
+                );
+                if (errRenombre || !res?.ok) {
+                    throw new Error(res?.details || res?.error || errRenombre?.message
+                        || 'No se pudo cambiar el usuario de acceso. La ficha no se guardó.');
+                }
+            }
+
             const { data: updated, error } = await updateEmployeeReturning(id, dbPayload);
             if (error) throw error;
             if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined || dbPayload.maestria_title !== undefined) {
@@ -1138,6 +1166,19 @@ export const createEmployeeSlice = (set, get) => ({
                 branch_id: updated.branch_id,
                 new_value: 'Expediente modificado'
             });
+
+            // Cambiarle a alguien CON QUÉ ENTRA no es «expediente modificado»:
+            // es la única línea que explica por qué mañana no puede entrar con
+            // lo que sabía. Asiento propio, con los dos valores.
+            if (renombreDeUsuario) {
+                await get().appendAuditLog('EDITAR_EMPLEADO', id, {
+                    timeline_title: `Usuario de acceso: ${updated.name} ahora entra como ${renombreDeUsuario.nuevo}`,
+                    dimension: 'HR',
+                    branch_id: updated.branch_id,
+                    old_value: renombreDeUsuario.anterior || 'Sin usuario',
+                    new_value: renombreDeUsuario.nuevo,
+                });
+            }
 
             // Nombrar a quien te cubre reparte permisos mientras no estás, así que
             // deja su propio asiento en la bitácora en vez de quedar enterrado en
@@ -1180,6 +1221,10 @@ export const createEmployeeSlice = (set, get) => ({
                     return {
                         ...emp,
                         ...updated,
+                        // `DEVUELVE` enumera columnas y no trae `username` (ver
+                        // src/data/employees.js), así que el renombre se refleja
+                        // acá con el valor que la función ya confirmó.
+                        username: renombreDeUsuario ? renombreDeUsuario.nuevo : emp.username,
                         // `updated` es la fila completa post-UPDATE: branch_id null es real
                         // (desasignación), no un dato faltante — sin fallback al valor previo.
                         branchId: updated.branch_id,

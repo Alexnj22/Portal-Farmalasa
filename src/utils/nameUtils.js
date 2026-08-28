@@ -51,3 +51,31 @@ export function employeeInitials(emp) {
     if (short === 'Personal') return '?';
     return short.split(/\s+/).slice(0, 2).map(t => t.charAt(0).toUpperCase()).join('');
 }
+
+/**
+ * El usuario con el que la persona entra al portal: primer nombre, punto,
+ * primer apellido — sin tildes y sin nada que no sea letra, dígito o punto.
+ *
+ * Vive acá, y no adentro del formulario, porque la misma cuenta hace falta en
+ * dos momentos distintos: al dar de alta (donde se ESCRIBE) y al editar el
+ * nombre (donde hay que saber si el que ya está guardado dejó de
+ * corresponder). Escrita dos veces, daría dos usuarios distintos para la misma
+ * persona el día que una de las dos copias cambie.
+ *
+ * ⚠️ Y este texto NO es un rótulo: es la CREDENCIAL. La cuenta de Auth se llama
+ * `<usuario>@farmalasa.app` —así la crea `set-employee-password` y así entra
+ * `loginWithUsername`—, así que cambiarlo es cambiar con qué entra la persona.
+ * Por eso al editar una ficha el formulario lo PROPONE y avisa, en vez de
+ * reescribirlo solo, y el renombre pasa por `renombrar-usuario-empleado`, que
+ * mueve la columna y la cuenta juntas.
+ *
+ * @param {string} firstNames Nombres tal como están en la ficha.
+ * @param {string} lastNames  Apellidos tal como están en la ficha.
+ * @returns {string} El usuario derivado, o '' si no hay ni nombre ni apellido.
+ */
+export function usuarioDesdeNombre(firstNames, lastNames) {
+    const f = primerToken(firstNames).toLowerCase();
+    const l = primerToken(lastNames).toLowerCase();
+    const bruto = f && l ? `${f}.${l}` : f || l;
+    return bruto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9.]/g, '');
+}

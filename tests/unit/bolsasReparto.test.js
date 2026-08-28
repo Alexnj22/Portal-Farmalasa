@@ -96,3 +96,74 @@ describe('qué bolsas están disponibles', () => {
         expect(totalDisponible([b])).toBe(100);
     });
 });
+
+// ── El paso del motivo: las monedas se quedan en la bolsa ───────────────────
+//
+// Las cinco bolsas reales de La Popular del 28-ago-2026, que son las que el
+// usuario tenía en pantalla cuando dictó la regla. Anclarlas con sus impares
+// verdaderos importa: con saldos redondos inventados la regla no se distingue
+// de no tenerla.
+const laPopular = [
+    B(145, 'LP-1144', '2026-08-26', '13:06', 373.85),
+    B(148, 'LP-1147', '2026-08-26', '16:01', 563.07),
+    B(150, 'LP-1149', '2026-08-26', '19:01', 211.91),
+    B(160, 'LP-1159', '2026-08-27', '14:22', 941.40),
+    B(162, 'LP-1161', '2026-08-27', '19:00', 376.02),
+];
+
+describe('cuando el motivo paga en billetes', () => {
+    it('un monto redondo toma múltiplos del paso y deja el impar adentro', () => {
+        const r = elegirBolsas(laPopular, 2000, 10);
+        expect(r.redondo).toBe(true);
+        expect(r.repartos).toEqual([
+            { bolsa_id: 145, folio: 'LP-1144', monto: 370 },
+            { bolsa_id: 148, folio: 'LP-1147', monto: 560 },
+            { bolsa_id: 150, folio: 'LP-1149', monto: 210 },
+            { bolsa_id: 160, folio: 'LP-1159', monto: 860 },
+        ]);
+        // Ninguna bolsa queda en cero: cada una conserva sus monedas. Sin la
+        // regla, tres viajaban vacías a administración.
+        expect(r.repartos.every((x) => x.monto % 10 === 0)).toBe(true);
+        expect(r.repartos.reduce((a, x) => a + x.monto, 0)).toBe(2000);
+    });
+
+    it('el techo baja: lo que hay en monedas no se puede pedir', () => {
+        // $2,466.25 en la sala, pero sólo $2,450 en billetes de $10.
+        expect(totalDisponible(laPopular)).toBeCloseTo(2466.25, 10);
+        expect(elegirBolsas(laPopular, 2000, 10).disponible).toBeCloseTo(2450, 10);
+        const r = elegirBolsas(laPopular, 2460, 10);
+        expect(r.alcanza).toBe(false);
+        expect(r.falta).toBeCloseTo(10, 10);
+    });
+
+    it('un monto con impar sale EXACTO y de una sola bolsa', () => {
+        // «solo si la salida de dinero es 125.75 ahi si debe permitirlo y decir
+        // de que bolsa sacarlo» (usuario, 2026-08-28). La regla la dispara el
+        // monto, no el motivo: si la disparara el motivo, esto se rechazaría.
+        const r = elegirBolsas(laPopular, 125.75, 10);
+        expect(r.redondo).toBe(false);
+        expect(r.repartos).toEqual([{ bolsa_id: 145, folio: 'LP-1144', monto: 125.75 }]);
+        expect(r.disponible).toBeCloseTo(2466.25, 10);
+    });
+
+    it('sin paso el reparto es el de siempre, monedas incluidas', () => {
+        // La garantía de que agregar la regla no tocó a los otros cinco motivos.
+        const r = elegirBolsas(laPopular, 2000);
+        expect(r.redondo).toBe(false);
+        expect(r.repartos).toEqual([
+            { bolsa_id: 145, folio: 'LP-1144', monto: 373.85 },
+            { bolsa_id: 148, folio: 'LP-1147', monto: 563.07 },
+            { bolsa_id: 150, folio: 'LP-1149', monto: 211.91 },
+            { bolsa_id: 160, folio: 'LP-1159', monto: 851.17 },
+        ]);
+    });
+
+    it('la más vieja que alcance sola, medida en billetes y no en saldo', () => {
+        // LP-1159 tiene $941.40 y LP-1147 $563.07. Para $560 la más vieja que
+        // alcanza sola es LP-1147: $560 <= $560 redondeado. Para $570 ya no.
+        expect(elegirBolsas(laPopular, 560, 10).repartos)
+            .toEqual([{ bolsa_id: 148, folio: 'LP-1147', monto: 560 }]);
+        expect(elegirBolsas(laPopular, 570, 10).repartos)
+            .toEqual([{ bolsa_id: 160, folio: 'LP-1159', monto: 570 }]);
+    });
+});

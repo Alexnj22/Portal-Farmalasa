@@ -263,13 +263,24 @@ export function construirValeDeSalida({
         ? COMO_SE_IDENTIFICO[recibidoPor.metodo] || 'identificado en el portal'
         : null;
 
+    /* El motivo puede traer algo que hay que saber al LEER este papel — hoy,
+     * que el dinero de un cambio por monedas no salio de la sala. Va antes del
+     * detalle escrito a mano y no despues: dice QUE ES esta salida, mientras
+     * que el detalle cuenta el caso.
+     *
+     * Sale del catalogo (`bolsas_tipos_salida.leyenda`) y no de un `if` sobre
+     * el codigo del motivo: el dia que otro motivo necesite advertir algo, lo
+     * declara ahi y este archivo no se toca. */
+    const bloques = [
+        ...(operacion?.leyenda ? [{ titulo: 'NOTA', texto: recortar(operacion.leyenda, 160) }] : []),
+        ...(operacion?.nota ? [{ titulo: 'DETALLE', texto: recortar(operacion.nota, 160) }] : []),
+    ];
+
     return {
         titulo: 'VALE DE EFECTIVO',
         encabezado: encabezadoDeLaEmpresa(),
         datos,
-        bloques: operacion?.nota
-            ? [{ titulo: 'DETALLE', texto: recortar(operacion.nota, 160) }]
-            : undefined,
+        bloques: bloques.length ? bloques : undefined,
         totales: [
             ['SALE DE LA BOLSA', formatMoney(monto), true],
             ['QUEDA EN LA BOLSA', formatMoney(Number(vale?.saldo_despues ?? 0))],

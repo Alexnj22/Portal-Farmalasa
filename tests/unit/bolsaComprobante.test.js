@@ -247,6 +247,37 @@ describe('el vale que queda dentro de la bolsa', () => {
             operacion: { folio: 'A-1', motivo: 'Anticipo a un empleado', monto: 200 },
         }))).not.toContain('Entidad');
     });
+
+    it('la leyenda del motivo se imprime: sin ella el papel dice otra cosa', () => {
+        // Un vale de $2,000 por cambio de monedas se lee, sobre la mesa de
+        // administracion, como dinero que salio de la empresa. La leyenda es lo
+        // unico que dice que no. Sale del catalogo, igual que el rotulo de
+        // arriba: un motivo nuevo la declara ahi y este archivo no se toca.
+        const cambio = vale({
+            vale: { folio: 'V-LP-260828-1', monto: 370, saldo_despues: 3.85 },
+            operacion: {
+                folio: 'CMB-260828-1', motivo: 'Cambio por monedas', monto: 2000,
+                leyenda: 'El dinero queda en sala de ventas.',
+            },
+        });
+        expect(cuerpo(cambio)).toContain('El dinero queda en sala de ventas.');
+        // Y sin leyenda no aparece el rotulo vacio, como con la entidad.
+        expect(cuerpo(vale())).not.toContain('NOTA');
+    });
+
+    it('la leyenda va ANTES del detalle escrito a mano', () => {
+        // Una dice QUE ES esta salida y la otra cuenta el caso. Al reves, el
+        // detalle de quien registro tapa la unica linea que explica el papel.
+        const texto = cuerpo(vale({
+            operacion: {
+                folio: 'CMB-260828-2', motivo: 'Cambio por monedas', monto: 500,
+                leyenda: 'El dinero queda en sala de ventas.',
+                nota: 'Para las cajas del fin de semana',
+            },
+        }));
+        expect(texto.indexOf('El dinero queda en sala de ventas.'))
+            .toBeLessThan(texto.indexOf('Para las cajas del fin de semana'));
+    });
 });
 
 describe('la hora que va en la etiqueta', () => {

@@ -467,7 +467,7 @@ const BUCKET_COMPROBANTES = 'payment-proofs';
  */
 export async function fetchTiposDeSalida() {
     const { data, error } = await supabase.from('bolsas_tipos_salida')
-        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor')
+        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, pide_receptor, multiplo, leyenda')
         .eq('activo', true)
         .order('orden');
     if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }

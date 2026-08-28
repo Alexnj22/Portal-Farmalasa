@@ -133,6 +133,11 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
                 numero_boleta: mov.numero_boleta,
                 monto: mov.monto_operacion,
                 nota: mov.nota,
+                // Lo que hay que saber de ESE motivo, dicho en el papel que
+                // queda adentro. Sin esto, un vale de $2,000 por cambio de
+                // monedas se lee como dinero que salió de la empresa — y el
+                // papel es contra lo que administración cuenta.
+                leyenda: mov.leyenda,
             },
             bolsa,
             sala: nombreSala[bolsa.branch_id] || '',

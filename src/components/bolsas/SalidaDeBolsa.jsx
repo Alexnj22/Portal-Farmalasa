@@ -310,9 +310,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * es «hay un monto y vale cero». `falta` ya exige `n > 0` y `elegirBolsas`
      * recibe 0 cuando no es finito, así que el resto no cambia. */
     const n = String(monto).trim() === '' ? NaN : Number(String(monto).trim().replace(',', '.'));
+    /* El PASO sale del motivo, no de un `if` acá: `bolsas_tipos_salida.multiplo`
+     * dice en cuánto paga cada uno. Hoy sólo «Cambio por monedas» lo tiene, en
+     * $10 — y aun así la regla la dispara el MONTO, no el motivo: $2,000 sale
+     * en billetes redondos y las monedas se quedan en las bolsas, $125.75 sale
+     * exacto. Ver la cabecera de `utils/bolsasReparto`. */
     const eleccion = useMemo(
-        () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
-        [lista, n],
+        () => elegirBolsas(lista, Number.isFinite(n) ? n : 0, t?.multiplo),
+        [lista, n, t],
     );
 
     /**
@@ -548,6 +553,17 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         }
         if (!Number.isFinite(n) || n <= 0) return 'Falta cuánto.';
         if (!eleccion.alcanza) {
+            /* Con la regla del paso activa el techo BAJA, y decir el total a
+             * secas dejaría un botón trabado sobre un número que sí alcanza:
+             * cinco bolsas con $2,466.25 sólo entregan $2,450 en billetes de
+             * $10. `eleccion.disponible` ya viene medido bajo la regla que rige
+             * este monto, así que la frase no puede contradecir al reparto. */
+            if (eleccion.redondo) {
+                return `En billetes de ${formatMoney(t.multiplo)} la sala tiene `
+                     + `${formatMoney(eleccion.disponible)}: no alcanza. `
+                     + `Los ${formatMoney(totalDisponible(lista) - eleccion.disponible)} `
+                     + 'que faltan son monedas y se quedan en las bolsas.';
+            }
             return `En la sala hay ${formatMoney(totalDisponible(lista))} en bolsas: no alcanza.`;
         }
         if (t.etiqueta_entidad && !entidad.trim()) return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
@@ -774,6 +790,15 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                     uno para cada bolsa.
                 </p>
             )}
+            {/* Por qué a una bolsa le quedan $3.85 y no cero. Sin decirlo, el
+                reparto se lee como una cuenta que no cerró — y es al revés: es
+                la regla haciendo su trabajo. */}
+            {eleccion.redondo && (
+                <p className="text-caption text-content-3 pt-1">
+                    Salen billetes de {formatMoney(t.multiplo)}: las monedas se quedan
+                    en cada bolsa.
+                </p>
+            )}
         </div>
     );
 
@@ -856,6 +881,20 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             </div>
                             {t && (laFotoManda ? campoEntidad : campoMonto)}
                         </div>
+
+                        {/* Lo que hay que saber de ESTE motivo, dicho por el
+                            catálogo (`bolsas_tipos_salida.leyenda`) y no por un
+                            `if` sobre el código. Hoy es «El dinero queda en sala
+                            de ventas», que es lo único que distingue un cambio
+                            por monedas de un retiro: el efectivo no sale de la
+                            empresa, cambia de forma. Va arriba del reparto
+                            porque explica qué se está registrando, y se imprime
+                            en el vale que queda dentro de la bolsa. */}
+                        {t?.leyenda && (
+                            <Notice variant="info" compact icon={HandCoins}>
+                                {t.leyenda}
+                            </Notice>
+                        )}
 
                         {/* `t &&` no es de más: sin motivo `laFotoManda` es
                             false, así que sin esto el bloque quedaba dependiendo

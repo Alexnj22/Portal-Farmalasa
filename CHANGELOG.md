@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.831.0 — el dinero que sale a cambiarse por monedas ya no rompe las monedas de la bolsa
+
+Preguntado mirando las cinco bolsas de La Popular: **«sacarán $2,000 para cambio
+de monedas, ¿cómo lo tomaría, de qué bolsas? ¿cómo saldría el vale? ¿se
+reimprimirían todos los tickets?»** — y el portal no tenía motivo para eso. El
+más cercano era «Otro», y el reparto tomaba el saldo entero de cada bolsa: de
+una con $373.85 salían los $373.85, monedas incluidas.
+
+**Motivo nuevo: «Cambio por monedas».** Lleva su leyenda —*el dinero queda en
+sala de ventas*— y esa frase se imprime en el vale que queda ADENTRO de la
+bolsa: sobre la mesa de administración, un vale de $2,000 sin ella se lee como
+dinero que salió de la empresa. Sale del catálogo (`bolsas_tipos_salida.leyenda`)
+y no de un `if` sobre el código, así que el día que otro motivo necesite advertir
+algo, lo declara ahí.
+
+**Y la regla que lo hace usable: las monedas se quedan en la bolsa.** *«No se
+debe tomar en cuenta los impares de 10, porque no se entregan monedas.»* De
+$373.85 salen $370 y los $3.85 se quedan. Con eso, el retiro de $2,000 toca
+cuatro bolsas —$370 + $560 + $210 + $860— y **ninguna queda en cero**: sin la
+regla, tres viajaban vacías a administración.
+
+**La dispara el MONTO, no el motivo**, y ésa es la mitad que evita que estorbe:
+*«sólo si la salida de dinero es 125.75, ahí sí debe permitirlo y decir de qué
+bolsa sacarlo»*. Si el monto es múltiplo de $10 el reparto sale redondo; si trae
+impar, sale exacto de una sola bolsa como siempre. Escrito al revés —el motivo
+prohíbe el impar— «Cambio por monedas» habría rechazado justamente ese caso.
+
+Consecuencia que la pantalla ahora dice en vez de dejar adivinar: **el techo
+baja**. Cinco bolsas con $2,466.25 sólo entregan $2,450 en billetes de $10, y
+pedir $2,460 avisa que los $16.25 que faltan son monedas. Antes un botón trabado
+sobre un número que sí alcanzaba no tenía explicación.
+
+El paso vive en `bolsas_tipos_salida.multiplo` (NULL en los otros cinco motivos,
+que no cambian en nada) y **el servidor revalida cada aporte**: que la pantalla
+reparta bien no impide mandar otra cosa por la RPC. Migración
+`20260828182545`; la cuenta, en `utils/bolsasReparto` con las cinco bolsas
+reales ancladas en `tests/unit/bolsasReparto.test.js`.
+
+Lo que no cambió y conviene saber: siguen siendo **un vale por bolsa** —cuatro
+papeles en cuatro bolsas, no uno de $2,000— y se **reimprime la etiqueta de cada
+bolsa tocada**, marcada «ANULA LA ANTERIOR» con el saldo nuevo.
+
 ## v2.830.0 — El botón apagado ahora dice qué falta, y el NUP de AFP se escribe
 
 ### «No me dejaba ni me decía el porqué»

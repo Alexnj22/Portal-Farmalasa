@@ -89,6 +89,22 @@ const CRONS = [
           + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre.',
   },
   {
+    job: 'sync-puntos-1min', slug: 'sync-puntos', cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'Las ventas que ganan puntos, al sistema de puntos. `sistema: 0` porque NO le pega al '
+          + 'sistema de origen: lee del portal y escribe por MySQL en la base de puntos, así que '
+          + 'no gasta ninguna petición de las que este gate cuida. '
+          + 'CADA MINUTO, decisión del usuario, y la cadencia importa por una razón del mostrador: '
+          + 'el cliente puede presentar el ticket poco después de comprar, y si la venta todavía no '
+          + 'llegó, no se le pueden dar sus puntos. Cada cinco minutos deja una ventana de hasta '
+          + 'cinco en la que un ticket recién emitido «no existe». '
+          + 'Se puede porque se MIDIÓ: en régimen `ventas_para_puntos` sobre la ventana de siete '
+          + 'días tarda 34 ms —la bitácora `puntos_enviados` descarta lo ya enviado, así que la '
+          + 'ventana ancha no cuesta lo que parece—, o sea 49 segundos de base por día. Si ese '
+          + 'número crece, ACÁ hay que mirar antes de dejar la cadencia: una lectura lenta cada '
+          + 'minuto llena el pool de PostgREST y tira el portal entero.',
+  },
+  {
     job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',
     corridasDia: 34, sistema: 19,
     motivo: 'Quién tiene la caja abierta en cada sala, a qué hora la abrió y cuánto espera el '

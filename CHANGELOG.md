@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.845.1 — El portal manda las ventas a puntos por su cuenta: se apaga la hoja de cálculo
+
+**El circuito está vivo y corre solo cada minuto.** La hoja de cálculo de Drive
+se puede apagar: desde ahora el portal escribe directo en la base de puntos.
+
+**Era la IP, no el dominio.** `farmalasa.com:3306` da `timeout` —resuelve a un
+intermediario que no expone MySQL—, y por eso la primera versión de esto se
+construyó alrededor de un puente PHP que ya no hace falta. Contra la IP del
+servidor el puerto abre en **107 ms**. Lo separó una sonda que prueba el 443 del
+mismo host como control: si los dos fallaran, el problema sería del portal; con
+el 443 abierto y el 3306 cerrado, el bloqueo estaba del otro lado — y con la IP,
+ninguno de los dos.
+
+**`admin_factura` no es una cola: es el registro contra el que se verifica un
+ticket.** Su columna `aplicado` tiene default 1 y el circuito viejo insertaba 0:
+`0` = todavía canjeable, `1` = sus puntos ya se entregaron. De 359,271 filas sólo
+el 6% está en 1, parejo en las seis salas — la mayoría de los tickets no se
+presenta nunca. Cuando alguien lo presenta, la aplicación crea la venta de
+puntos (un punto por dólar) y lo pasa a 1.
+
+Eso vuelve **peor** el defecto que ya se había corregido: el
+`aplicado = VALUES(aplicado)` con un 0 fijo del script de Drive devolvía a 0 una
+fila que ya estaba en 1, o sea **habilitaba cobrar los puntos del mismo ticket
+dos veces**. Medido en la ventana de 7 días: de las 4,562 ventas que el portal
+manda, **178 ya tenían sus puntos cobrados**. Durante la primera corrida real el
+total de cobradas pasó de 22,959 a 22,960 — subió, no bajó: la prueba de que ya
+no se resetea.
+
+**Se limpiaron 795 tickets canjeables sobre ventas que no existen** ($17,501.37).
+Eran facturas anuladas que seguían en el registro con sus puntos sin cobrar;
+borrarlas no cambió el saldo de nadie. Otras 212 nunca habían llegado.
+
+**Y las anulaciones ahora se devuelven solas.** Cuando una venta ya enviada queda
+anulada y sus puntos YA se entregaron, el portal quita la venta de puntos, baja
+el saldo del cliente y borra el registro — las tres cosas en una transacción,
+porque `Clientes.Puntos` es una caché mantenida y no un derivado: tocar una sola
+desincroniza el saldo.
+
+**Sólo resta cuando el vínculo se puede probar**, y ésa es la parte que hubo que
+descubrir: `TicketFactura` no es una clave, se escribe en el mostrador. De los 26
+casos históricos, **dos no cierran** — una factura de Salud 4 tiene dos cobros a
+nombre de dos personas distintas con un año de diferencia (8 puntos sobre $8.60 y
+82 sobre el mismo documento), y otra figura cobrada sin ninguna venta detrás.
+Restarle a la persona equivocada es peor que no restar: esos casos se avisan a la
+sala y no se tocan.
+
+Los 26 históricos quedaron anotados sin restarse, por decisión del usuario
+(«restemos de ahora en adelante»). El corte no es una fecha sino la bitácora: la
+corrida que los marcó los sacó de la cola, así que la resta automática nace sin
+arrastre.
+
+**Cada minuto, y se puede porque se midió:** `ventas_para_puntos` tarda 34 ms en
+régimen —la bitácora descarta lo ya enviado, así que la ventana de siete días no
+cuesta lo que parece—, o sea 49 segundos de base por día. La cadencia importa en
+el mostrador: el cliente puede presentar el ticket poco después de comprar, y
+cada cinco minutos dejaba una ventana en la que un ticket recién emitido «no
+existe».
+
 ## v2.845.0 — Un documento del Ministerio para varias personas
 
 El acuse sellado del Ministerio de Trabajo por una recontratación **no es un

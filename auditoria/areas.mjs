@@ -382,10 +382,6 @@ export const AREAS = [
             'src/views/VentasView.jsx',
             'src/data/ventas.js',
             'src/components/common/AvisoSinProducto.jsx',
-            // El puente al sistema de puntos NO es código del portal: se sube al
-            // servidor donde vive esa base. Va acá igual porque es la única
-            // copia versionada que existe de él.
-            'scripts/puntos/puntos-portal.php',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, CheckCircle2, Clock, Landmark, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock, Landmark, Pencil, Scale, Search, ShieldCheck, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -13,13 +13,19 @@ import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
+import MovimientosDeCaja from '../components/cortes/MovimientosDeCaja';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
-import { fetchCortes, fetchDiferencias, fetchPersonas } from '../data/cortes';
+import { usePestanaEnUrl } from '../hooks/usePestanaEnUrl';
+import {
+    fetchCortes, fetchDiferencias, fetchHistorialDeMovimientos,
+    fetchMovimientosDeCaja, fetchPersonas,
+} from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
+import { formatMoney } from '../utils/formatNumber';
 import { tokenMatch } from '../utils/searchUtils';
 
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
@@ -36,9 +42,25 @@ import { tokenMatch } from '../utils/searchUtils';
 // desaparecían. Hoy Bolsas es `/bolsas` (`BolsasView`), con las cuatro etapas
 // como pestañas propias y su contador en cada una.
 //
-// Esta vista se queda SIN pestañas: los estados de un corte ya viven en la
-// píldora del cuerpo (ver la nota de `ESTADOS`), así que en el header queda
-// sólo el buscador — que es exactamente lo que dice §16.9.
+// Esta vista se quedó SIN pestañas hasta v2.838.0: los estados de un corte ya
+// viven en la píldora del cuerpo (ver la nota de `ESTADOS`), y cinco recortes de
+// la misma lista no son cinco secciones.
+//
+// ── Y entonces por qué SÍ hay dos pestañas ahora ────────────────────────────
+// Porque «Movimientos» no es un recorte de los cortes: es otra lista, con otras
+// filas. La píldora del header contesta «¿qué sección estoy viendo?» (§16.9) y
+// acá hay dos respuestas honestas — los cortes, y las entradas y salidas de
+// efectivo que los explican.
+//
+// La lección de Bolsas se respeta y por eso NO son dos rutas: lo que hizo
+// insostenible aquella convivencia era que la píldora del período CAMBIABA de
+// significado según la pestaña —un corte pasa en un instante, una bolsa vive
+// días—. Acá sucursal y período significan exactamente lo mismo en las dos, así
+// que se comparten; lo que cambia son las dos ranuras de la derecha.
+const PESTANAS = [
+    { key: 'cortes',      label: 'Cortes',      icon: Wallet },
+    { key: 'movimientos', label: 'Movimientos', icon: ArrowDownLeft },
+];
 
 const VACIO = [];
 
@@ -87,6 +109,24 @@ const DIFERENCIAS = [
     { value: 'ok',    label: 'Cuadraron' },
     { value: 'sobra', label: 'Con exceso' },
     { value: 'falta', label: 'Con faltante' },
+];
+
+// Los dos recortes propios de «Movimientos». Van acá y no dentro del componente
+// porque el lugar único donde se mira qué se filtra es la píldora del cuerpo
+// (§17), y ésa la arma esta vista.
+const TIPOS_MOV = [
+    { value: 'TODOS',   label: 'Entradas y salidas' },
+    { value: 'ENTRADA', label: 'Sólo entradas' },
+    { value: 'SALIDA',  label: 'Sólo salidas' },
+];
+
+// «Ya no está» es un estado y no una fila borrada: cuando un movimiento
+// desaparece del sistema de la caja, esta lista es lo único que queda de él.
+const ESTADOS_MOV = [
+    { value: 'TODOS',         label: 'Cualquier estado' },
+    { value: 'VIGENTES',      label: 'Vigentes' },
+    { value: 'EDITADOS',      label: 'Se modificaron' },
+    { value: 'DESAPARECIDOS', label: 'Ya no están' },
 ];
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
@@ -153,6 +193,19 @@ const CortesView = () => {
     const [pagina, setPagina] = useState(1);
     const [porPagina, setPorPagina] = useState(50);
 
+    // La pestaña vive en la DIRECCIÓN y no en `useState`: la sesión de sala se
+    // cierra sola a los 5 minutos y el service worker recarga al publicar, así
+    // que una pestaña en memoria devuelve a «Cortes» sin decir nada — y eso no
+    // se reporta como un defecto, se reporta como «la pantalla se movió sola».
+    const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'cortes');
+    const enMovimientos = pestana === 'movimientos';
+
+    const [movs, setMovs] = useState(VACIO);
+    const [historial, setHistorial] = useState(VACIO);
+    const [cargandoMovs, setCargandoMovs] = useState(false);
+    const [tipoMov, setTipoMov] = useState('TODOS');
+    const [estadoMov, setEstadoMov] = useState('TODOS');
+
     const cargar = useCallback(async () => {
         setCargando(true);
         const filas = await fetchCortes({ desde, hasta });
@@ -167,6 +220,23 @@ const CortesView = () => {
     }, [desde, hasta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
+
+    // Los movimientos se piden SÓLO con la pestaña abierta: son ~130 por día
+    // entre las seis salas y no aportan nada a la lista de cortes, así que
+    // traerlos siempre sería pagar un mes de filas para no mirarlas.
+    const cargarMovs = useCallback(async () => {
+        if (!enMovimientos) return;
+        setCargandoMovs(true);
+        const [filas, cambios] = await Promise.all([
+            fetchMovimientosDeCaja({ desde, hasta, branchId: sala || null }),
+            fetchHistorialDeMovimientos({ desde, hasta, branchId: sala || null }),
+        ]);
+        setMovs(filas || VACIO);
+        setHistorial(cambios || VACIO);
+        setCargandoMovs(false);
+    }, [enMovimientos, desde, hasta, sala]);
+
+    useEffect(() => { cargarMovs(); }, [cargarMovs]); // eslint-disable-line react-hooks/set-state-in-effect -- al abrir la pestaña y al cambiar sala o rango
 
     const nombreSala = useMemo(() => {
         const m = {};
@@ -198,6 +268,45 @@ const CortesView = () => {
             : conTramoTodos),
         [conTramoTodos, sala],
     );
+
+    // `MovimientosDeCaja` pide un Map y no el objeto de arriba: adentro se
+    // consulta por fila y por token de búsqueda, y un `Map` no confunde un
+    // `branch_id` con una propiedad heredada del prototipo.
+    const salasMap = useMemo(() => new Map(branches.map((b) => [b.id, b.name])), [branches]);
+
+    // Las cuatro cifras de «Movimientos», con la misma regla que las de arriba:
+    // describen el PERÍODO y la sala elegida, no lo que las otras ranuras
+    // recortan. Dos son dinero y dos son hallazgos.
+    //
+    // Los desaparecidos NO suman a las dos primeras: un movimiento que ya no
+    // está tampoco está en la caja, y meterlo en el total daría una suma que no
+    // coincide con ningún tiquete. Se cuentan en su propia tarjeta, que es
+    // exactamente lo que hay que mirar.
+    const resumenMovs = useMemo(() => {
+        const editados = new Set(historial
+            .filter((h) => h.cambio === 'EDITADO')
+            .map((h) => `${h.branch_id}:${h.erp_movimiento_id}`));
+        let entradas = 0, salidas = 0, tocados = 0, idos = 0;
+        for (const m of movs) {
+            if (m.desaparecido_at) { idos++; continue; }
+            if (editados.has(`${m.branch_id}:${m.erp_movimiento_id}`)) tocados++;
+            if (m.tipo === 'ENTRADA') entradas += Number(m.monto) || 0;
+            else salidas += Number(m.monto) || 0;
+        }
+        return { entradas, salidas, tocados, idos };
+    }, [movs, historial]);
+
+    const METRICAS_MOV = useMemo(() => [
+        { clave: 'entradas', filtro: 'tipo',   valor: 'ENTRADA',       icon: ArrowDownLeft, label: 'Entró',          valor_txt: formatMoney(resumenMovs.entradas), iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+        { clave: 'salidas',  filtro: 'tipo',   valor: 'SALIDA',        icon: ArrowUpRight,  label: 'Salió',          valor_txt: formatMoney(resumenMovs.salidas),  iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+        { clave: 'tocados',  filtro: 'estado', valor: 'EDITADOS',      icon: Pencil,        label: 'Se modificaron', valor_txt: resumenMovs.tocados,               iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+        { clave: 'idos',     filtro: 'estado', valor: 'DESAPARECIDOS', icon: Trash2,        label: 'Ya no están',    valor_txt: resumenMovs.idos,                  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: resumenMovs.idos ? 'text-danger-text' : undefined },
+    ], [resumenMovs]);
+
+    const aplicarMetricaMov = useCallback((m) => {
+        if (m.filtro === 'tipo') setTipoMov((v) => (v === m.valor ? 'TODOS' : m.valor));
+        else setEstadoMov((v) => (v === m.valor ? 'TODOS' : m.valor));
+    }, []);
 
     // Lo que falta anotar en el sistema. Sigue a la ranura de sala porque el
     // movimiento se hace POR sala: al mirar una sola, el aviso tiene que hablar
@@ -322,18 +431,24 @@ const CortesView = () => {
     const limpiar = () => {
         setSala(''); setPeriodo(HOY);
         setEstado('TODOS'); setDiferencia('TODAS');
+        setTipoMov('TODOS'); setEstadoMov('TODOS');
         setBusqueda(''); setPagina(1);
     };
 
 
-    // Sin pestañas: en el header queda sólo el buscador (§16.9). `ViewTabBar`
-    // con la lista vacía dibuja la píldora del buscador y nada más — 16 vistas
-    // del portal la montan así.
+    // El buscador dice QUÉ se puede buscar, y eso cambia con la pestaña: en
+    // movimientos no hay personas ni horas, y ofrecerlas sería prometer una
+    // búsqueda que devuelve vacío sin explicar por qué.
     const filtersContent = (
         <ViewTabBar
+            tabs={PESTANAS}
+            activeTab={pestana}
+            onTabChange={setPestana}
             searchValue={busqueda}
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
-            placeholder="Buscar por sala, persona, hora o monto…"
+            placeholder={enMovimientos
+                ? 'Buscar por concepto, sala o monto…'
+                : 'Buscar por sala, persona, hora o monto…'}
         />
     );
 
@@ -352,13 +467,30 @@ const CortesView = () => {
                         Bolsas a `/bolsas`: describía otro circuito y compartir
                         fila obligaba a que la misma tira de tarjetas cambiara de
                         tema según la pestaña. */}
-                    <CarrilCards className="flex-1" ariaLabel="Resumen de los cortes del período">
-                        {METRICAS.map((m) => (
-                            <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
-                                active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
-                                loading={cargando} />
-                        ))}
+                    {/* Cuatro tarjetas en las dos pestañas, y en las dos cada
+                        una es el atajo de su ranura. Las de movimientos no son
+                        las mismas cuatro con otro número: son otras preguntas
+                        —cuánto entró, cuánto salió, a cuántos los tocaron—, que
+                        es justamente por qué esto es una sección y no un
+                        recorte. */}
+                    <CarrilCards className="flex-1"
+                        ariaLabel={enMovimientos
+                            ? 'Resumen de los movimientos del período'
+                            : 'Resumen de los cortes del período'}>
+                        {enMovimientos
+                            ? METRICAS_MOV.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={m.valor_txt} valueCls={m.valueCls}
+                                    active={(m.filtro === 'tipo' ? tipoMov : estadoMov) === m.valor}
+                                    onClick={() => aplicarMetricaMov(m)}
+                                    loading={cargandoMovs} />
+                            ))
+                            : METRICAS.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
+                                    active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
+                                    loading={cargando} />
+                            ))}
                     </CarrilCards>
 
                     {/* El orden de las ranuras es el de §17: ámbito → entidad →
@@ -369,8 +501,9 @@ const CortesView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             activeCount={[sala, !periodoIntacto,
-                                estado !== 'TODOS',
-                                diferencia !== 'TODAS'].filter(Boolean).length}>
+                                enMovimientos ? tipoMov !== 'TODOS' : estado !== 'TODOS',
+                                enMovimientos ? estadoMov !== 'TODOS' : diferencia !== 'TODAS',
+                            ].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
                                 BRANCH la policy de `cortes_caja` ya devuelve
                                 únicamente la sala propia, así que el selector
@@ -401,21 +534,47 @@ const CortesView = () => {
                                 </PeriodStepper>
                             </FilterBar.Section>
 
-                            <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">
-                                <FilterBar.Opciones
-                                    label="Estado" icon={CheckCircle2}
-                                    value={estado} onChange={(v) => { setEstado(v || 'TODOS'); setPagina(1); }}
-                                    options={ESTADOS} ancho="165px"
-                                />
-                            </FilterBar.Section>
+                            {/* Las dos ranuras de la derecha son las de la
+                                PESTAÑA. Sucursal y período se quedan porque
+                                significan lo mismo en las dos; el estado de un
+                                corte no significa nada sobre un vale. */}
+                            {enMovimientos ? (
+                                <>
+                                    <FilterBar.Section active={tipoMov !== 'TODOS'} onClear={() => setTipoMov('TODOS')} label="tipo">
+                                        <FilterBar.Opciones
+                                            label="Tipo" icon={ArrowDownLeft}
+                                            value={tipoMov} onChange={(v) => setTipoMov(v || 'TODOS')}
+                                            options={TIPOS_MOV} ancho="185px"
+                                        />
+                                    </FilterBar.Section>
 
-                            <FilterBar.Section active={diferencia !== 'TODAS'} onClear={() => setDiferencia('TODAS')} label="diferencia">
-                                <FilterBar.Opciones
-                                    label="Diferencia" icon={Scale}
-                                    value={diferencia} onChange={(v) => { setDiferencia(v || 'TODAS'); setPagina(1); }}
-                                    options={DIFERENCIAS} ancho="165px"
-                                />
-                            </FilterBar.Section>
+                                    <FilterBar.Section active={estadoMov !== 'TODOS'} onClear={() => setEstadoMov('TODOS')} label="estado">
+                                        <FilterBar.Opciones
+                                            label="Estado" icon={CheckCircle2}
+                                            value={estadoMov} onChange={(v) => setEstadoMov(v || 'TODOS')}
+                                            options={ESTADOS_MOV} ancho="175px"
+                                        />
+                                    </FilterBar.Section>
+                                </>
+                            ) : (
+                                <>
+                                    <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">
+                                        <FilterBar.Opciones
+                                            label="Estado" icon={CheckCircle2}
+                                            value={estado} onChange={(v) => { setEstado(v || 'TODOS'); setPagina(1); }}
+                                            options={ESTADOS} ancho="165px"
+                                        />
+                                    </FilterBar.Section>
+
+                                    <FilterBar.Section active={diferencia !== 'TODAS'} onClear={() => setDiferencia('TODAS')} label="diferencia">
+                                        <FilterBar.Opciones
+                                            label="Diferencia" icon={Scale}
+                                            value={diferencia} onChange={(v) => { setDiferencia(v || 'TODAS'); setPagina(1); }}
+                                            options={DIFERENCIAS} ancho="165px"
+                                        />
+                                    </FilterBar.Section>
+                                </>
+                            )}
                         </FilterBar>
                     </div>
                 </div>
@@ -425,7 +584,20 @@ const CortesView = () => {
                     porque no es otra sección de la pantalla —son los mismos
                     cortes— sino algo pendiente de hacer, y esconderlo detrás de
                     un recorte sería no anunciarlo. */}
-                {!cargando && puedeResolver && sinAsentar.length > 0 && (
+                {enMovimientos && (
+                    <MovimientosDeCaja
+                        movimientos={movs}
+                        historial={historial}
+                        salas={salasMap}
+                        cargando={cargandoMovs}
+                        busqueda={busqueda}
+                        tipo={tipoMov}
+                        estado={estadoMov}
+                        onLimpiarBusqueda={() => setBusqueda('')}
+                    />
+                )}
+
+                {!enMovimientos && !cargando && puedeResolver && sinAsentar.length > 0 && (
                     <Notice variant="warning" icon={Landmark}>
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-0">
@@ -445,13 +617,13 @@ const CortesView = () => {
                     </Notice>
                 )}
 
-                {cargando && <LoadingState label="Buscando los cortes" />}
+                {!enMovimientos && cargando && <LoadingState label="Buscando los cortes" />}
 
                 {/* Dos vacíos distintos (§26.2): el del filtro se arregla
                     borrándolo y el de verdad no. Y el de «Sin confirmar» vacío
                     es un vacío FELIZ (§26.3) — la sala quería que no hubiera
                     nada. Los tres llevan su salida (§18.1). */}
-                {!cargando && filtrados.length === 0 && (
+                {!enMovimientos && !cargando && filtrados.length === 0 && (
                     busqueda ? (
                         <EmptyState
                             compact icon={Search} title="Sin resultados"
@@ -478,7 +650,7 @@ const CortesView = () => {
                     )
                 )}
 
-                {!cargando && porDia.map((g) => (
+                {!enMovimientos && !cargando && porDia.map((g) => (
                     <section key={g.fecha} className="space-y-3">
                         <div className="flex items-baseline justify-between gap-3 px-1">
                             <h3 className="text-label font-bold text-content capitalize">{rotularDia(g.fecha)}</h3>
@@ -518,7 +690,7 @@ const CortesView = () => {
                     </section>
                 ))}
 
-                {!cargando && filtrados.length > porPagina && (
+                {!enMovimientos && !cargando && filtrados.length > porPagina && (
                     <TablePagination
                         page={pagActual}
                         totalPages={totalPaginas}

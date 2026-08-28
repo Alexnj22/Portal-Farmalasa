@@ -114,6 +114,59 @@ export function fetchMovimientos({ branchId, fecha }) {
         .order('monto', { ascending: false }));
 }
 
+// Las columnas de la LISTA de movimientos. `visto_at` y `desaparecido_at`
+// existen desde v2.838.0: sin ellas, un movimiento borrado en el origen se veía
+// igual que uno vigente, que es justo lo que la lista tiene que distinguir.
+const CAMPOS_MOV = `
+    id, branch_id, erp_movimiento_id, fecha, concepto, monto, tipo,
+    origen, visto_at, desaparecido_at, capturado_at
+`;
+
+/**
+ * Los movimientos de caja de un RANGO — para verlos y buscarlos todos.
+ *
+ * Aparte de `fetchMovimientos`, que trae los de un día para explicar UN corte:
+ * son dos preguntas distintas y traen columnas distintas. Ésta necesita saber
+ * si el movimiento sigue vivo; aquélla, sólo cuánto y de qué.
+ *
+ * Por `fetchAllRows` y no a secas: son ~130 movimientos por día entre las seis
+ * salas, así que un mes ya cruza las 1000 filas del tope de PostgREST. Truncado
+ * en silencio, el síntoma sería un día sin movimientos — que se lee como una
+ * sala que no movió efectivo, no como una lista cortada.
+ */
+export function fetchMovimientosDeCaja({ desde, hasta, branchId = null }) {
+    return fetchAllRows(() => {
+        let q = supabase.from('cortes_caja_movimientos')
+            .select(CAMPOS_MOV)
+            .gte('fecha', desde)
+            .lte('fecha', hasta)
+            .order('fecha', { ascending: false })
+            .order('erp_movimiento_id', { ascending: false });
+        if (branchId) q = q.eq('branch_id', branchId);
+        return q;
+    });
+}
+
+/**
+ * Lo que se observó cambiar en esos movimientos: editados, borrados, resucitados.
+ *
+ * Se pide para el MISMO rango que la lista y en una sola consulta, no una por
+ * fila: sirve para marcar en la tabla cuáles tienen historia, y esa marca tiene
+ * que estar en la primera pintada — si apareciera al abrir el detalle, nadie
+ * abriría justamente el que hay que mirar.
+ */
+export function fetchHistorialDeMovimientos({ desde, hasta, branchId = null }) {
+    return fetchAllRows(() => {
+        let q = supabase.from('cortes_caja_movimientos_historial')
+            .select('id, branch_id, erp_movimiento_id, fecha, cambio, concepto_antes, concepto_despues, monto_antes, monto_despues, tipo_antes, tipo_despues, corte_id, observado_at')
+            .gte('fecha', desde)
+            .lte('fecha', hasta)
+            .order('observado_at', { ascending: false });
+        if (branchId) q = q.eq('branch_id', branchId);
+        return q;
+    });
+}
+
 /**
  * Confirmar o descartar. El RPC valida permiso, alcance de sucursal, que sea un
  * corte de caja (el cierre del día no se confirma) y que siga pendiente; la

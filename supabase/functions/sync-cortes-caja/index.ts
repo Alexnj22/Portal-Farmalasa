@@ -429,6 +429,7 @@ Deno.serve(async (req) => {
         // justo cuando hacen falta, y el último corte del día se lleva el
         // estado final. `movimientos: true` los fuerza para un repaso.
         let movsGuardados = 0;
+        let movsDesaparecidos = 0;
         let movs: {
           branch_id: number; erp_movimiento_id: number;
           concepto: string | null; fecha: string | null;
@@ -442,8 +443,17 @@ Deno.serve(async (req) => {
               signal: AbortSignal.timeout(60_000),
             },
           );
+          // ⚠️ Una respuesta que no se pudo leer NO es "cero movimientos".
+          //
+          // Antes daba lo mismo: `?? []` hacía que un fallo se viera igual que
+          // un día sin movimientos, y como sólo se insertaba, no pasaba nada.
+          // Desde que además se marca lo que DESAPARECIÓ, confundir las dos
+          // cosas borraría el día entero de una sala por un timeout. Y el modo
+          // de falla que hay que atrapar no da error: con la sesión vencida
+          // esta pantalla devuelve HTML en vez de JSON.
           const jsonMov = await resMov.json().catch(() => null);
-          const dataMov: string[][] = jsonMov?.data ?? [];
+          const listaValida = resMov.ok && Array.isArray(jsonMov?.data);
+          const dataMov: string[][] = listaValida ? jsonMov.data : [];
 
           movs = dataMov.map((r) => ({
             branch_id: branchId,
@@ -457,33 +467,126 @@ Deno.serve(async (req) => {
             m.monto !== null && (m.tipo === "ENTRADA" || m.tipo === "SALIDA")
           );
 
-          if (movs.length) {
+          if (listaValida) {
             // Los movimientos SÍ se pueden editar y borrar en el origen, así
             // que acá sí corresponde actualizar. Pero sólo lo que cambió:
             // reescribir las filas del día en cada corte es el churn de WAL
             // que ya costó caro en `inventory`.
+            //
+            // Y como el origen NO guarda historia, lo que se observa se anota:
+            // un movimiento borrado allá no deja ni el número, y por ese hueco
+            // pasó el ingreso de $454.00 del 22-ago que tapó un sobrante falso.
             const { data: previos, error: errPrev } = await supabase
               .from("cortes_caja_movimientos")
-              .select("erp_movimiento_id, concepto, monto, tipo")
+              .select("erp_movimiento_id, concepto, monto, tipo, fecha, desaparecido_at")
               .eq("branch_id", branchId)
               .gte("fecha", fecha1).lte("fecha", fecha2);
             if (errPrev) throw new Error(`leyendo movimientos: ${errPrev.message}`);
 
+            // El corte vigente al momento de observar el cambio. Lo que importa
+            // no es que un movimiento cambie: es que cambie DESPUÉS de un corte.
+            // Reconstruirlo a posteriori es adivinar.
+            const { data: ultimoCorte, error: errCorte } = await supabase
+              .from("cortes_caja")
+              .select("id")
+              .eq("branch_id", branchId)
+              .order("fecha", { ascending: false })
+              .order("hora", { ascending: false })
+              .limit(1);
+            if (errCorte) throw new Error(`leyendo el último corte: ${errCorte.message}`);
+            const corteId = ultimoCorte?.[0]?.id ?? null;
+
+            const ahora = new Date().toISOString();
             const antes = new Map((previos ?? []).map((p) => [p.erp_movimiento_id, p]));
-            const cambiados = movs.filter((m) => {
+            const vistos = new Set(movs.map((m) => m.erp_movimiento_id));
+            const historial: Record<string, unknown>[] = [];
+            const cambiados: typeof movs = [];
+
+            for (const m of movs) {
               const p = antes.get(m.erp_movimiento_id);
-              if (!p) return true;
-              return p.concepto !== m.concepto || Number(p.monto) !== m.monto || p.tipo !== m.tipo;
-            });
+              const base = {
+                branch_id: branchId, erp_movimiento_id: m.erp_movimiento_id,
+                fecha: m.fecha, corte_id: corteId, observado_at: ahora,
+              };
+              if (!p) {
+                cambiados.push(m);
+                historial.push({
+                  ...base, cambio: "APARECIO",
+                  concepto_despues: m.concepto, monto_despues: m.monto, tipo_despues: m.tipo,
+                });
+                continue;
+              }
+              const editado = p.concepto !== m.concepto ||
+                Number(p.monto) !== m.monto || p.tipo !== m.tipo;
+              const volvio = Boolean(p.desaparecido_at);
+              if (!editado && !volvio) continue;
+              cambiados.push(m);
+              historial.push({
+                ...base, cambio: editado ? "EDITADO" : "REAPARECIO",
+                concepto_antes: p.concepto, monto_antes: p.monto, tipo_antes: p.tipo,
+                concepto_despues: m.concepto, monto_despues: m.monto, tipo_despues: m.tipo,
+              });
+            }
+
+            // ⚠️ Sólo se puede afirmar que algo falta si la lista vino ENTERA.
+            // El listado se pide con `length=1000`: si volviera lleno, lo que
+            // no salió está cortado, no borrado — y marcarlo como desaparecido
+            // sería inventar un hallazgo. Es la misma regla del techo de las
+            // 1000 filas de PostgREST, del otro lado.
+            const desaparecidos = dataMov.length < 1000
+              ? (previos ?? []).filter((p) => !vistos.has(p.erp_movimiento_id) && !p.desaparecido_at)
+              : [];
+
+            for (const p of desaparecidos) {
+              historial.push({
+                branch_id: branchId, erp_movimiento_id: p.erp_movimiento_id,
+                fecha: p.fecha, corte_id: corteId, observado_at: ahora,
+                cambio: "DESAPARECIO",
+                concepto_antes: p.concepto, monto_antes: p.monto, tipo_antes: p.tipo,
+              });
+            }
 
             if (cambiados.length) {
               const { error } = await supabase.from("cortes_caja_movimientos")
                 .upsert(
-                  cambiados.map((m) => ({ ...m, updated_at: new Date().toISOString() })),
+                  cambiados.map((m) => ({
+                    ...m, updated_at: ahora, visto_at: ahora, desaparecido_at: null,
+                  })),
                   { onConflict: "branch_id,erp_movimiento_id" },
                 );
               if (error) throw new Error(`guardando movimientos: ${error.message}`);
               movsGuardados = cambiados.length;
+            }
+
+            if (desaparecidos.length) {
+              const { error } = await supabase.from("cortes_caja_movimientos")
+                .update({ desaparecido_at: ahora, updated_at: ahora })
+                .eq("branch_id", branchId)
+                .in("erp_movimiento_id", desaparecidos.map((p) => p.erp_movimiento_id));
+              if (error) throw new Error(`marcando desaparecidos: ${error.message}`);
+              movsDesaparecidos = desaparecidos.length;
+            }
+
+            // `visto_at` de los que siguen igual. Sin esto la columna diría la
+            // fecha en que se guardaron y no la última vez que se los confirmó,
+            // que es justo lo que hace falta para creerle a un `desaparecido_at`.
+            // Va por tandas porque los ids viajan en la URL del `.in()`.
+            const sinCambio = movs
+              .filter((m) => antes.has(m.erp_movimiento_id) &&
+                !cambiados.some((c) => c.erp_movimiento_id === m.erp_movimiento_id))
+              .map((m) => m.erp_movimiento_id);
+            for (let i = 0; i < sinCambio.length; i += 200) {
+              const { error } = await supabase.from("cortes_caja_movimientos")
+                .update({ visto_at: ahora })
+                .eq("branch_id", branchId)
+                .in("erp_movimiento_id", sinCambio.slice(i, i + 200));
+              if (error) throw new Error(`marcando vistos: ${error.message}`);
+            }
+
+            if (historial.length) {
+              const { error } = await supabase
+                .from("cortes_caja_movimientos_historial").insert(historial);
+              if (error) throw new Error(`guardando el historial: ${error.message}`);
             }
           }
         }
@@ -494,6 +597,7 @@ Deno.serve(async (req) => {
           cortesNuevos: aInsertar.length,
           movimientosVistos: movs.length,
           movimientosEscritos: movsGuardados,
+          movimientosDesaparecidos: movsDesaparecidos,
         });
       } catch (e) {
         resultados.push({ branchId, error: (e as Error)?.message ?? String(e) });

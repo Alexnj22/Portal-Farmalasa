@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.838.0 — La caja anota lo que se edita y lo que se borra
+
+Un movimiento de caja —un vale, un ingreso— **se puede editar y borrar en el
+sistema de origen sin dejar rastro**, y hasta hoy el portal no se enteraba de
+ninguna de las dos cosas: la captura hacía `upsert` de lo que veía, así que uno
+borrado allá **seguía apareciendo acá para siempre** y uno editado se pisaba sin
+guardar el valor viejo.
+
+No es teórico. El **22-ago en Salud 1** apareció un ingreso de **$454.00** —el
+monto exacto del sobrante del corte anterior— que dejó la diferencia en cero.
+Nada lo señaló, y no quedó historia de nada.
+
+Desde esta versión cada movimiento lleva `visto_at` (la última vez que se lo
+confirmó en el origen), `desaparecido_at` (cuándo dejó de estar) y `origen`
+—hoy todos `CAJA`, o sea tecleados allá—, y cada cambio observado queda en
+`cortes_caja_movimientos_historial` con el antes, el después y **el corte
+vigente en ese instante**: lo que importa no es que un movimiento cambie, es que
+cambie *después* de un corte.
+
+Dos frenos para no inventar hallazgos: una respuesta que no se pudo leer **no
+es «cero movimientos»** —con la sesión vencida esa pantalla devuelve HTML en vez
+de JSON—, y si el listado viniera lleno (1000 filas) no se marca nada como
+desaparecido, porque lo que no salió está cortado, no borrado.
+
+**Y ahora se pueden ver y buscar todos.** Cortes de caja tiene una pestaña
+«Movimientos» —en la dirección, así que una recarga no devuelve a la primera—
+con las entradas y salidas del período: se buscan por concepto, sala o monto, se
+recortan por tipo y por estado, y el toque abre **qué se le vio cambiar a ese
+movimiento**, con el antes y el después de cada vez. Una fila que ya no está en
+el sistema **no se borra de la lista**: es lo único que queda de ella. Las cuatro
+cifras de arriba son otras preguntas y no las mismas con otro número —cuánto
+entró, cuánto salió, a cuántos los tocaron, cuántos ya no están—, que es
+justamente por qué es una sección y no un recorte.
+
+Es la primera pieza de `docs/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`, que nació de
+un faltante que no existía: una remesa pagada con plata de la bolsa del día deja
+la caja esperando dinero que ya salió. Medido, **5 de 6 salidas** de bolsas del
+mismo día quedaron como faltantes falsos.
+
 ## v2.837.1 — Tres datos que el DUI traía y el portal descartaba
 
 Los tres salían con el mismo aviso —*«no coincide con ninguna opción del
@@ -64,35 +103,6 @@ la vez.
 Ahora el `(A)` se acepta como parte de la abreviatura, en todas: `ING.(A)`,
 `TEC.(A)`, y sola sin nada detrás. Un oficio como «Comerciante» sigue **sin**
 nivel: no se le inventa uno universitario.
-
-## v2.838.0 — La caja anota lo que se edita y lo que se borra
-
-Un movimiento de caja —un vale, un ingreso— **se puede editar y borrar en el
-sistema de origen sin dejar rastro**, y hasta hoy el portal no se enteraba de
-ninguna de las dos cosas: la captura hacía `upsert` de lo que veía, así que uno
-borrado allá **seguía apareciendo acá para siempre** y uno editado se pisaba sin
-guardar el valor viejo.
-
-No es teórico. El **22-ago en Salud 1** apareció un ingreso de **$454.00** —el
-monto exacto del sobrante del corte anterior— que dejó la diferencia en cero.
-Nada lo señaló, y no quedó historia de nada.
-
-Desde esta versión cada movimiento lleva `visto_at` (la última vez que se lo
-confirmó en el origen), `desaparecido_at` (cuándo dejó de estar) y `origen`
-—hoy todos `CAJA`, o sea tecleados allá—, y cada cambio observado queda en
-`cortes_caja_movimientos_historial` con el antes, el después y **el corte
-vigente en ese instante**: lo que importa no es que un movimiento cambie, es que
-cambie *después* de un corte.
-
-Dos frenos para no inventar hallazgos: una respuesta que no se pudo leer **no
-es «cero movimientos»** —con la sesión vencida esa pantalla devuelve HTML en vez
-de JSON—, y si el listado viniera lleno (1000 filas) no se marca nada como
-desaparecido, porque lo que no salió está cortado, no borrado.
-
-Es la primera pieza de `docs/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`, que nació de
-un faltante que no existía: una remesa pagada con plata de la bolsa del día deja
-la caja esperando dinero que ya salió. Medido, **5 de 6 salidas** de bolsas del
-mismo día quedaron como faltantes falsos.
 
 ## v2.836.1 — Reeditar ya no recorta: el recuadro cubre la foto entera
 

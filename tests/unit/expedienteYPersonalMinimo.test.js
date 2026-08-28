@@ -418,3 +418,55 @@ describe('los campos del pago', () => {
         expect(iCuando).toBeGreaterThan(iLugar);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El vencimiento del DUI: leído, guardado y avisado
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// La columna existía, el lector del DUI la llenaba (`duiLeido`) y la ficha la
+// LEÍA de la base — pero el formulario no la dibujaba y el alta no la mandaba.
+// O sea que el dato se sacaba del documento y se tiraba en el mismo paso, sin
+// error y sin fila de menos. Pedido del usuario el 2026-08-28.
+//
+// Se prueba el circuito entero y no sólo el campo: los tres puntos tenían que
+// fallar juntos para que el dato se perdiera, y arreglar uno solo no se nota.
+
+describe('el vencimiento del documento de identidad', () => {
+    const form = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/forms/EmployeeFormModal.jsx'), 'utf8');
+    const slice = fs.readFileSync(
+        path.join(process.cwd(), 'src/store/slices/employeeSlice.js'), 'utf8');
+    const utils = fs.readFileSync(
+        path.join(process.cwd(), 'src/store/utils.js'), 'utf8');
+
+    it('se ve en el formulario, al lado de la expedición', () => {
+        expect(form).toMatch(/>Fecha de vencimiento</);
+        const iExp = form.indexOf('>Fecha de expedición<');
+        const iVen = form.indexOf('>Fecha de vencimiento<');
+        expect(iExp).toBeGreaterThan(-1);
+        expect(iVen).toBeGreaterThan(iExp);
+        // En la misma rejilla: si quedaran en filas distintas dejarían de estar
+        // «a la par», que es como se pidió.
+        expect(form.slice(iExp, iVen)).not.toMatch(/md:col-span-2 grid/);
+    });
+
+    it('el alta lo manda a la base', () => {
+        expect(slice).toMatch(/dui_fecha_vencimiento: formData\.dui_fecha_vencimiento \|\| null/);
+    });
+
+    it('la edición también', () => {
+        expect(slice).toMatch(/updatedData\.dui_fecha_vencimiento !== undefined/);
+    });
+
+    // Es parte del documento de identidad: dejarlo fuera pondría media identidad
+    // en el borrador de una computadora compartida, que es la media medida que
+    // este archivo ya corrigió una vez con el lugar y la fecha de expedición.
+    it('no se guarda en el borrador del navegador', () => {
+        expect(utils).toMatch(/SENSITIVE_FIELDS = \[[^\]]*'dui_fecha_vencimiento'/);
+    });
+
+    it('avisa cuando está por vencer o vencido, con la escala de siempre', () => {
+        expect(form).toMatch(/getExpiryBadge\(formData\?\.dui_fecha_vencimiento\)/);
+        expect(form).toMatch(/Documento de identidad: vencido/);
+    });
+});

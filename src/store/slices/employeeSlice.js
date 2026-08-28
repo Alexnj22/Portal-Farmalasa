@@ -654,6 +654,11 @@ export const createEmployeeSlice = (set, get) => ({
                 // EXPEDICIÓN», no sólo el número.
                 dui_lugar_expedicion: formData.dui_lugar_expedicion ? formData.dui_lugar_expedicion.trim().toUpperCase() : null,
                 dui_fecha_expedicion: formData.dui_fecha_expedicion || null,
+                // El lector del DUI ya sacaba el vencimiento y no había dónde
+                // guardarlo: la columna existía, la ficha lo LEÍA, y el alta lo
+                // dejaba caer. O sea que el dato se sacaba del documento y se
+                // tiraba en el mismo paso, sin error y sin fila de menos.
+                dui_fecha_vencimiento: formData.dui_fecha_vencimiento || null,
                 nationality: formData.nationality || null,
                 phone: formData.phone || null,
                 address: formData.address ? formData.address.trim().toUpperCase() : null,
@@ -1078,6 +1083,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.acreditaciones !== undefined) dbPayload.acreditaciones = updatedData.acreditaciones || {};
             if (updatedData.dui_lugar_expedicion !== undefined) dbPayload.dui_lugar_expedicion = updatedData.dui_lugar_expedicion ? updatedData.dui_lugar_expedicion.trim().toUpperCase() : null;
             if (updatedData.dui_fecha_expedicion !== undefined) dbPayload.dui_fecha_expedicion = updatedData.dui_fecha_expedicion || null;
+            if (updatedData.dui_fecha_vencimiento !== undefined) dbPayload.dui_fecha_vencimiento = updatedData.dui_fecha_vencimiento || null;
             if (updatedData.contrato_lugar_celebracion !== undefined) dbPayload.contrato_lugar_celebracion = updatedData.contrato_lugar_celebracion ? updatedData.contrato_lugar_celebracion.trim().toUpperCase() : null;
             if (updatedData.contrato_fecha_celebracion !== undefined) dbPayload.contrato_fecha_celebracion = updatedData.contrato_fecha_celebracion || null;
             if (updatedData.herramientas_entregadas !== undefined) dbPayload.herramientas_entregadas = normalizeHerramientas(updatedData.herramientas_entregadas);

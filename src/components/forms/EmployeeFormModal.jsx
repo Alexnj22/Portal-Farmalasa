@@ -752,7 +752,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 // `weekly_contracted_hours` ya enseñaron que un default se
                 // confunde con un dato (figuran en las 49 fichas y nadie los
                 // escribió). Vacío se ve; 'QUINCENAL' preseleccionado, no.
-                dui_lugar_expedicion: '', dui_fecha_expedicion: '',
+                dui_lugar_expedicion: '', dui_fecha_expedicion: '', dui_fecha_vencimiento: '',
                 periodo_pago: '', contrato_lugar_celebracion: '', contrato_fecha_celebracion: '',
                 herramientas_entregadas: [],
                 // Enlazar con una ficha existente: sólo vive en el formulario,
@@ -846,6 +846,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      */
     const pendientes = useMemo(() => faltantesDelExpediente(formData), [formData]);
 
+    /* El DUI vencido se avisa con la MISMA escala que los documentos del
+     * expediente (`getExpiryBadge`): 60 días avisa, 30 alarma, y vencido es
+     * vencido. Reusar el canónico y no escribir umbrales propios es lo que
+     * evita que la misma urgencia se vea de dos maneras en la misma ficha. */
+    const avisoDuiVence = useMemo(
+        () => getExpiryBadge(formData?.dui_fecha_vencimiento),
+        [formData?.dui_fecha_vencimiento]);
+
     const vencimientos = useMemo(
         () => getExpiringDocuments(formData?.employee_documents || []).map(doc => ({
             campo: `venc_${doc.category}`,
@@ -854,6 +862,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`,
         })),
         [formData?.employee_documents]);
+
+    /* Y también arriba, en la lista que se lee de un vistazo. La insignia del
+     * campo sólo se ve si alguien está en esa pestaña; el resumen se ve
+     * siempre, y un documento de identidad vencido no es un detalle de la
+     * pestaña Personal. */
+    const vencimientoDelDui = useMemo(() => (
+        avisoDuiVence
+            ? [{ campo: 'venc_dui',
+                 label: avisoDuiVence.daysLeft < 0
+                     ? 'Documento de identidad: vencido'
+                     : `Documento de identidad: ${avisoDuiVence.label.toLowerCase()}` }]
+            : []
+    ), [avisoDuiVence]);
 
     // Antes del nombre no hay ficha que esté «incompleta»: hay una ficha que no
     // empezó.
@@ -2081,12 +2102,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             )}
 
             {/* Contado y plegado, no enumerado. Ver el comentario de `pendientes`. */}
-            {fichaEmpezada && (pendientes.length + vencimientos.length) > 0 && (
+            {fichaEmpezada && (pendientes.length + vencimientos.length + vencimientoDelDui.length) > 0 && (
                 <div className="mb-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl shadow-sm animate-in slide-in-from-top-2">
                     <div className="flex items-center gap-3">
                         <AlertCircle size={16} className="text-warning shrink-0" strokeWidth={2.5} />
                         <p className="text-label text-warning-text font-medium leading-tight flex-1 min-w-0">
-                            <span className="font-black">{pendientes.length + vencimientos.length} pendiente{(pendientes.length + vencimientos.length) === 1 ? '' : 's'}</span>
+                            <span className="font-black">{pendientes.length + vencimientos.length} pendiente{(pendientes.length + vencimientos.length + vencimientoDelDui.length) === 1 ? '' : 's'}</span>
                             {' '}en el expediente. Se puede guardar así y completarlo después.
                         </p>
                         <Button variant="ghost" size="sm" onClick={() => setVerPendientes(v => !v)}>
@@ -2095,7 +2116,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </div>
                     {verPendientes && (
                         <ul className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in">
-                            {[...pendientes, ...vencimientos].map(f => (
+                            {[...pendientes, ...vencimientos, ...vencimientoDelDui].map(f => (
                                 <li key={f.campo}
                                     className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
                                     {f.label}
@@ -2572,14 +2593,57 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     documento —da igual si es DUI o el alterno del menor—
                                     porque es el mismo dato del contrato. No bloquean Guardar:
                                     salen en «Información Pendiente», como el ISSS y el AFP. */}
-                                <PortalInput
-                                    label="Lugar de expedición del documento" name="dui_lugar_expedicion"
-                                    value={formData.dui_lugar_expedicion} onChange={handleChange}
-                                    icon={MapPin} placeholder="Ej. Chalatenango" />
+                                {/* ── Y el VENCIMIENTO al lado de la expedición ──────────
+                                    El DUI lo trae impreso y el lector ya lo sacaba
+                                    (`dui_fecha_vencimiento` en `duiLeido`), pero no había
+                                    dónde ponerlo: la ficha lo leía de la base y el
+                                    formulario no lo dibujaba ni lo guardaba. O sea que el
+                                    dato se leía del documento y se tiraba en el mismo paso.
 
-                                <div className="relative z-content">
-                                    <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
-                                    <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
+                                    Importa porque un DUI vencido no sirve para nada de lo
+                                    que el expediente necesita —ni para el contrato, ni ante
+                                    el ISSS, ni en una inspección— y nadie mira una fecha
+                                    guardada hace tres años si el portal no la saca a la
+                                    superficie. Por eso lleva su aviso, con los mismos
+                                    umbrales que los demás documentos (60 días avisa, 30
+                                    alarma): dos escalas distintas para «esto vence» serían
+                                    dos ideas de urgencia en la misma pantalla.
+
+                                    Los tres van en su propia rejilla de tres porque son UN
+                                    dato —número, lugar y fecha del Art. 23 nº2, más hasta
+                                    cuándo vale— y separarlos en filas distintas los hace
+                                    parecer campos sueltos. */}
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <PortalInput
+                                        label="Lugar de expedición del documento" name="dui_lugar_expedicion"
+                                        value={formData.dui_lugar_expedicion} onChange={handleChange}
+                                        icon={MapPin} placeholder="Ej. Chalatenango" />
+
+                                    <div className="relative z-content">
+                                        <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
+                                        <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
+                                    </div>
+
+                                    <div className="relative z-content">
+                                        <label className={rotuloCampo('text-content-3')}>
+                                            <span>Fecha de vencimiento</span>
+                                            {avisoDuiVence && (
+                                                <Badge variant={avisoDuiVence.variant} size="sm">{avisoDuiVence.label}</Badge>
+                                            )}
+                                        </label>
+                                        <LiquidDatePicker value={formData.dui_fecha_vencimiento} onChange={(date) => handleDateChange('dui_fecha_vencimiento', date)} />
+                                        {/* El aviso repetido abajo y no sólo en el rótulo: la
+                                            insignia dice CUÁNTO falta, esto dice QUÉ HACER.
+                                            Un «Vencido» sin la consecuencia se lee como una
+                                            etiqueta de color. */}
+                                        {avisoDuiVence && (
+                                            <p className={`text-micro font-bold mt-1 ml-1 leading-snug ${avisoDuiVence.daysLeft < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
+                                                {avisoDuiVence.daysLeft < 0
+                                                    ? 'El documento está vencido: hay que renovarlo antes de usarlo para el contrato o cualquier trámite.'
+                                                    : 'Conviene pedirle el documento renovado antes de que venza.'}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {isMinor && (

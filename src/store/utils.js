@@ -13,7 +13,7 @@ export const makeId = () => {
 // compartida la mitad del documento — que es la misma media medida que el
 // 2026-08-24 dejó el DUI completo en el borrador mientras `persistEmployees` sí
 // lo filtraba.
-export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'dui_lugar_expedicion', 'dui_fecha_expedicion', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
+export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'dui_lugar_expedicion', 'dui_fecha_expedicion', 'dui_fecha_vencimiento', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
 
 export const CACHE_KEYS = {
     BRANCHES: "sb_cache_branches_v1",

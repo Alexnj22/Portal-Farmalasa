@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.840.2 — El DUI dice hasta cuándo vale
+
+**La ficha ya no tira el vencimiento del documento de identidad.** La columna
+existía en la base, el lector del DUI la llenaba y la ficha la leía de vuelta —
+pero el formulario no la dibujaba y el alta no la mandaba. O sea que el dato se
+sacaba del documento y se tiraba en el mismo paso, sin error y sin fila de menos.
+
+Ahora **«Fecha de vencimiento» va al lado de «Fecha de expedición»**, los dos
+junto al lugar en una sola fila, porque son un mismo dato: número, lugar y fecha
+del Art. 23 nº 2, más hasta cuándo vale.
+
+Y **avisa**: insignia en el campo, con la misma escala que el resto de los
+documentos del expediente —60 días avisa, 30 alarma, vencido es vencido— y una
+línea que dice qué hacer, no sólo cuánto falta. También entra al resumen de
+pendientes de arriba, que es el que se ve sin estar en esa pestaña.
+
+Los tres puntos —campo, guardado y aviso— tenían que fallar juntos para que el
+dato se perdiera, así que la prueba cubre el circuito entero, no el campo.
+
+El vencimiento entra además a la lista de campos que **no** se guardan en el
+borrador del navegador: es parte del documento de identidad, y dejarlo fuera
+pondría media identidad en el disco de una computadora compartida.
+
 ## v2.840.1 — La bitácora ya no impide guardar el sueldo, el cargo ni el estado de un empleado
 
 Talento Humano no podía guardarle el sueldo a nadie: el portal contestaba «No

@@ -803,6 +803,11 @@ function Resolver({ bolsa, ocupado, onResolver, onCancelar, salaId, userId }) {
                 lee como un error que no lo es. */}
             <div className="w-full">
                 <FileField
+                    /* Sin el editor de `FileField`: esta pantalla abre el suyo, con el
+                    tipo de papel que sabe que va a recibir. Que lo abriera también
+                    el canónico serían DOS editores encadenados sobre la misma
+                    foto. El QR del teléfono sí queda. */
+                    conEditor={false}
                     label="Foto de respaldo (opcional)"
                     accept="image/*"
                     maxSizeMB={10}

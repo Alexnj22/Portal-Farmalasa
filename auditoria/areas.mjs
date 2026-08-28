@@ -197,6 +197,9 @@ export const AREAS = [
             // La foto que se toma con el teléfono y llega a la computadora: es
             // parte del alta de personal, aunque su pantalla viva fuera del menú.
             'src/data/capturaDeFoto.js', 'src/views/CapturaDeFotoView.jsx',
+            // El lado del teléfono vive aparte del de la computadora por peso:
+            // `FileField` importa el segundo desde los 21 adjuntos del portal.
+            'src/data/capturaDesdeElTelefono.js', 'src/components/common/DialogoDeCaptura.jsx',
             'src/components/forms/FormAddCustomDocument.jsx', 'src/components/forms/FormDocumentViewer.jsx',
             'src/components/forms/FormEditContact.jsx', 'src/components/forms/FormUploadOnly.jsx',
             'src/components/forms/FormNovedad.jsx',

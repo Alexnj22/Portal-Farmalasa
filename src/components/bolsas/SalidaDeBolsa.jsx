@@ -903,6 +903,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             medias lo que se pidió preparar. */}
                         {t?.foto !== 'NO' && !!t && (
                             <FileField
+                                /* Sin el editor de `FileField`: esta pantalla abre el suyo, con el
+                                tipo de papel que sabe que va a recibir. Que lo abriera también
+                                el canónico serían DOS editores encadenados sobre la misma
+                                foto. El QR del teléfono sí queda. */
+                                conEditor={false}
                                 label={t.foto === 'OPCIONAL'
                                     ? 'Foto del comprobante (opcional)'
                                     : 'Foto del comprobante'}

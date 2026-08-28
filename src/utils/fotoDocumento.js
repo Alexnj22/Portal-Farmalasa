@@ -220,6 +220,54 @@ export const DOCS = {
         pistaTactil: 'Arrastra el papel y pellizca para acercar. «Aclarada» lo deja '
                    + 'blanco con la letra negra.',
     },
+    /* ── El documento SIN tipo: el que sale en cualquier adjunto ─────────
+     *
+     * Es el que usa `FileField`, o sea el de los 21 sitios donde el portal pide
+     * adjuntar algo. Por eso no puede suponer nada del papel: acá cae una
+     * boleta de banco, un permiso del CSSP, una constancia, una factura, la
+     * foto de un recibo.
+     *
+     * ── Por qué se ELIGE la forma en vez de arrastrar las esquinas ──────────
+     *
+     * El pedido fue «ajustar las esquinas del documento o algo para subirlo».
+     * Arrastrar las cuatro esquinas libremente NO lo puede hacer el recortador
+     * que usa el portal: `react-easy-crop` dibuja un marco de forma fija y lo
+     * que se mueve es la foto debajo — no tiene manijas de redimensionar, y
+     * ponérselas es escribir otro recortador, no configurar éste.
+     *
+     * Lo que sí resuelve el mismo problema con lo que hay: cuatro formas de
+     * papel reales. Con la forma correcta elegida, encuadrar es arrastrar y
+     * pellizcar, y no queda escritorio alrededor — que es el resultado que se
+     * buscaba.
+     *
+     * ── Se ACLARA por defecto, al revés que el DUI ──────────────────────────
+     *
+     * Acá casi todo lo que entra es papel con tinta, y «Aclarada» es
+     * exactamente el «filtro como copia» que se pidió: deja el papel blanco y
+     * la letra negra. El control queda a la vista para el caso contrario —un
+     * documento a color, un sello— y el aviso lo dice cuando detecta color. */
+    documento: {
+        nombre: 'el documento',
+        titulo: 'Preparar el documento',
+        bajada: 'Deja sólo el papel y enderézalo. Elige la forma que más se le parezca.',
+        archivo: 'documento',
+        salida: { por: 'largo', lado: 1600 },
+        ladoMinimo: 800,
+        medirLado: 'corto',
+        marco: 'ancho',
+        // Carta de pie (8.5 × 11). Es la forma más común de lo que se adjunta.
+        aspecto: 8.5 / 11,
+        formas: [
+            { value: 'vertical',  label: 'Hoja de pie',    aspecto: 8.5 / 11 },
+            { value: 'acostada',  label: 'Hoja acostada',  aspecto: 11 / 8.5 },
+            { value: 'tarjeta',   label: 'Tarjeta',        aspecto: 85.6 / 53.98 },
+            { value: 'tira',      label: 'Tira',           aspecto: 1 / 3 },
+        ],
+        pista: 'Elige la forma del papel, recorta hasta su borde y enderézalo. «Aclarada» sube el '
+             + 'contraste hasta dejar el papel blanco y la letra negra.',
+        pistaTactil: 'Arrastra el documento y pellizca para acercar. «Aclarada» lo deja blanco '
+                   + 'con la letra negra.',
+    },
     /* ── El DUI: una TARJETA, no una hoja ────────────────────────────────
      *
      * Entra acá porque el pedido fue el mismo que trajo la boleta —«al subirla

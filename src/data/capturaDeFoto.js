@@ -1,6 +1,16 @@
 /**
  * Tomar la foto con el teléfono y verla aparecer en la computadora.
  *
+ * ── ESTE ARCHIVO ES EL LADO DE LA COMPUTADORA ───────────────────────────────
+ *
+ * La mitad del teléfono —comprobar el código, reducir la foto y mandarla— vive
+ * en `capturaDesdeElTelefono.js`. No es orden por gusto: `FileField` está en
+ * los 21 adjuntos del portal, así que lo que importe viaja en el cierre
+ * estático de CADA vista que adjunte algo. Con las dos mitades juntas, una
+ * pantalla de escritorio bajaba el redimensionador de imágenes que sólo usa el
+ * teléfono — medido con `gate:bundle`: **+2 kB en Bitácoras y +1 en Bolsas**,
+ * para código que en esa pantalla no se ejecuta nunca.
+ *
  * ── Las cuatro piezas ───────────────────────────────────────────────────────
  *
  *  1. La computadora ABRE una captura → recibe un secreto que vive 5 minutos.
@@ -30,72 +40,6 @@ export async function abrirCaptura(employeeId = null) {
     if (error) return { ok: false, motivo: 'No se pudo abrir. Revisa tu conexión.' };
     if (!data?.ok) return { ok: false, motivo: 'No se pudo abrir la captura.' };
     return data;
-}
-
-/** ¿Ese código todavía sirve? La llama el TELÉFONO, sin sesión. */
-export async function capturaVigente(secreto) {
-    const { data, error } = await supabase.rpc('captura_de_foto_vigente', { p_secreto: secreto });
-    if (error) return { ok: false };
-    return data || { ok: false };
-}
-
-/**
- * Reduce la foto antes de mandarla.
- *
- * Una cámara de teléfono da 4000 px y varios megas; lo que se necesita es un
- * avatar. Mandarla entera cuesta la subida por datos móviles —donde esto se va
- * a usar— y es exactamente lo que tumbó `leer-dui` por memoria.
- *
- * 1024 px del lado mayor y JPEG al 82% deja una foto de cara nítida en ~150 kB.
- */
-export async function reducirParaAvatar(file, ladoMaximo = 1024) {
-    const dataUrl = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.onerror = () => rej(new Error('No se pudo leer la foto.'));
-        fr.readAsDataURL(file);
-    });
-
-    const img = await new Promise((res, rej) => {
-        const el = new Image();
-        el.onload = () => res(el);
-        el.onerror = () => rej(new Error('No se pudo abrir la foto.'));
-        el.src = dataUrl;
-    });
-
-    const escala = Math.min(1, ladoMaximo / Math.max(img.width, img.height));
-    // Una foto que ya es chica NO se agranda: reescalar hacia arriba sólo
-    // agrega peso y le quita nitidez.
-    const w = Math.round(img.width * escala);
-    const h = Math.round(img.height * escala);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    return { base64: canvas.toDataURL('image/jpeg', 0.82), tipo: 'image/jpeg' };
-}
-
-/** El teléfono manda la foto. */
-export async function mandarFoto(secreto, file) {
-    let reducida;
-    try {
-        reducida = await reducirParaAvatar(file);
-    } catch (e) {
-        return { ok: false, motivo: e?.message || 'No se pudo preparar la foto.' };
-    }
-
-    const { data, error } = await supabase.functions.invoke('subir-foto-de-captura', {
-        body: { secreto, imagenBase64: reducida.base64, tipo: reducida.tipo },
-    });
-    if (error) return { ok: false, motivo: 'No se pudo enviar. Revisa tu señal.' };
-    if (!data?.ok) {
-        const porQue = {
-            CODIGO_INVALIDO: 'Ese código ya se usó o venció. Pide uno nuevo en la computadora.',
-            MUY_GRANDE: 'La foto pesa demasiado.',
-        };
-        return { ok: false, motivo: porQue[data?.error] || 'No se pudo guardar la foto.' };
-    }
-    return { ok: true };
 }
 
 /**

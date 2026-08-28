@@ -1,11 +1,26 @@
-import React, { useRef, useState, useCallback, memo } from 'react';
-import { UploadCloud, FileCheck2, Eye, X, Loader2, Camera } from 'lucide-react';
+import React, { useRef, useState, useCallback, useEffect, memo, lazy, Suspense } from 'react';
+import { UploadCloud, FileCheck2, Eye, X, Loader2, Camera, Smartphone } from 'lucide-react';
 import ListRow from './ListRow';
 import Button from './Button';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { PROPS_CAMARA, aceptaImagenes } from '../../utils/capturaDeFoto';
 import { openStoredFile } from '../../utils/storageFiles';
 import { rotuloCampo } from '../../utils/rotuloDeCampo';
+/* Los dos por `lazy`, y por el mismo motivo: este componente está en los 21
+   adjuntos del portal, así que TODO lo que importe viaja en el cierre estático
+   de cada vista que adjunte algo, la use o no.
+
+   El editor arrastra `react-easy-crop`. El diálogo del QR arrastra `ModalShell`
+   y el dibujante del código — medido con `gate:bundle`: incrustados costaban
+   +2 kB en Bitácoras y +3 kB en Bolsas para algo que no se puede ver hasta que
+   alguien aprieta un botón. */
+const EditorDeDocumento = lazy(() => import('./EditorDeDocumento'));
+const DialogoDeCaptura = lazy(() => import('./DialogoDeCaptura'));
+/* Y el módulo del traspaso también, por `await import()`. Es la misma cuenta:
+   `abrirCaptura` no se llama hasta que alguien aprieta el botón, y `esperarFoto`
+   no escucha nada hasta que hay un código vivo. Estáticos costaban 1 kB en cada
+   vista que adjunta algo — medido con `gate:bundle`. */
+const traspaso = () => import('../../data/capturaDeFoto');
 
 /**
  * FileField — adjuntar un archivo a un formulario.
@@ -106,6 +121,34 @@ const FileField = memo(({
     disabled = false,
     density = 'md',
     className = '',
+    /* ── Las dos ayudas para adjuntar, y por qué vienen ENCENDIDAS ──────────
+     *
+     * `conTelefono` — el QR para tomar la foto con el teléfono.
+     * `conEditor`   — recortar, enderezar y aclarar la imagen antes de subirla.
+     *
+     * Las dos nacieron el 27/28-ago pegadas a un sitio: el QR sólo estaba en la
+     * foto del empleado y el editor sólo en el DUI, en la receta y en la
+     * boleta. El pedido del usuario fue que salgan «en cualquier lugar donde
+     * solicite documento a adjuntar», y de paso señaló el defecto exacto que
+     * produce pegarlas a un sitio: *«en dui no está en su área, está por la
+     * foto»* — el botón vivía junto al avatar, así que para adjuntar el DUI
+     * había que ir a buscarlo a otra parte de la pantalla.
+     *
+     * Por eso viven ACÁ y por eso el default es `true`: son 21 adjuntos, y una
+     * prop opt-in es una prop olvidada — ya pasó con `usarAccionDeFila`, que
+     * quedó sin declarar en 16 de 59 tablas. Encendidas, cada adjunto las tiene
+     * en SU área por construcción, y quien no las quiera lo dice y escribe por
+     * qué.
+     *
+     * Ninguna de las dos se ofrece cuando no aplica: el QR sólo si el campo
+     * acepta imágenes, y el editor sólo cuando lo elegido ES una imagen — un
+     * PDF pasa derecho, ya viene encuadrado. */
+    conTelefono = true,
+    conEditor = true,
+    // Qué forma tiene el papel, para el editor. `documento` sirve para todo;
+    // los sitios que saben qué están recibiendo pasan el suyo (`dui`, `boleta`,
+    // `receta`) y el recuadro nace con esa forma.
+    tipoDeDocumento = 'documento',
 }) => {
     const inputRef = useRef(null);
     // La cámara va en un input APARTE del de archivos, no en el mismo con
@@ -125,6 +168,13 @@ const FileField = memo(({
     const profundidad = useRef(0);
     const [encima, setEncima] = useState(false);
     const [rechazo, setRechazo] = useState(null);
+    // La imagen elegida, esperando que alguien la recorte. Vive entre «elegí un
+    // archivo» y «se lo entrego al formulario»: cancelar acá deja el campo como
+    // estaba, sin nada a medio guardar.
+    const [porEditar, setPorEditar] = useState(null);
+    // El código del QR vivo. Mientras exista, esta computadora está escuchando.
+    const [captura, setCaptura] = useState(null);
+    const [pidiendoQr, setPidiendoQr] = useState(false);
 
     const hayArchivo = !!file || !!url;
 
@@ -139,6 +189,13 @@ const FileField = memo(({
         if (!inactivo) camaraRef.current?.click();
     }, [inactivo]);
 
+    // Lo que sale del editor ya pasó por acá una vez, así que entrega directo:
+    // volver a mandarlo a `aceptar` lo devolvería al editor en un bucle.
+    const entregar = useCallback(archivo => {
+        setRechazo(null);
+        onChange?.(archivo);
+    }, [onChange]);
+
     const aceptar = useCallback(archivo => {
         if (!archivo) return;
         if (!aceptaArchivo(archivo, accept)) {
@@ -150,8 +207,14 @@ const FileField = memo(({
             return;
         }
         setRechazo(null);
+        // Una IMAGEN pasa primero por el editor; un PDF va derecho. Recortar un
+        // PDF exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
+        if (conEditor && archivo.type?.startsWith('image/')) {
+            setPorEditar(archivo);
+            return;
+        }
         onChange?.(archivo);
-    }, [accept, maxSizeMB, onChange]);
+    }, [accept, maxSizeMB, onChange, conEditor]);
 
     const alEntrar = useCallback(e => {
         if (inactivo || !traeArchivos(e)) return;
@@ -197,12 +260,66 @@ const FileField = memo(({
         else if (url) openStoredFile(url);
     }, [file, url]);
 
+    // ── Tomar la foto con el teléfono ──────────────────────────────────────
+    const cerrarCaptura = useCallback(() => setCaptura(null), []);
+
+    const pedirFotoAlTelefono = useCallback(async () => {
+        setPidiendoQr(true);
+        try {
+            const { abrirCaptura } = await traspaso();
+            const r = await abrirCaptura(null);
+            if (!r.ok) { setRechazo(r.motivo); return; }
+            setRechazo(null);
+            setCaptura(r);
+        } catch {
+            // Si el trozo no baja —una red que se cortó justo, un despliegue en
+            // curso— hay que DECIRLO. Un botón que se aprieta y no hace nada es
+            // indistinguible de uno roto.
+            setRechazo('No se pudo abrir el código. Revisa tu conexión e intenta de nuevo.');
+        } finally {
+            setPidiendoQr(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!captura?.id) return undefined;
+        let vivo = true;
+        let dejarDeEscuchar = null;
+        (async () => {
+            const { esperarFoto, fotoComoArchivo } = await traspaso();
+            // Se pudo cerrar el diálogo mientras bajaba el trozo. Sin esta
+            // guarda quedaría un canal escuchando a una captura que ya no
+            // existe, y su limpieza nunca correría.
+            if (!vivo) return;
+            dejarDeEscuchar = esperarFoto(captura.id, async (urlFirmada) => {
+                setCaptura(null);
+                try {
+                    // Entra como un `File` normal y sigue el camino de siempre —
+                    // editor incluido: la foto de un teléfono es justamente la
+                    // que más necesita recortarse.
+                    aceptar(await fotoComoArchivo(urlFirmada, 'foto.jpg'));
+                } catch {
+                    // La foto SÍ se subió; lo que falló es traerla. Se dice, en
+                    // vez de cerrar el diálogo como si nada hubiera pasado.
+                    setRechazo('La foto llegó pero no se pudo abrir. Intenta de nuevo desde el teléfono.');
+                }
+            });
+        })();
+        return () => { vivo = false; dejarDeEscuchar?.(); };
+    }, [captura?.id, aceptar]);
+
     const peso = file ? formatearPeso(file.size) : null;
 
     // Con archivo puesto no se ofrece: para cambiarlo está "Quitar", igual que
     // pasa con "Elegir". Un segundo camino de reemplazo escondido detrás de un
     // botón que sigue ahí sería un clic que pisa evidencia ya adjuntada.
     const ofreceCamara = esTactil && !hayArchivo && !inactivo && aceptaImagenes(accept);
+
+    // El QR es el gemelo de escritorio de «Tomar foto»: en el teléfono ya está
+    // la cámara ahí mismo y ofrecer un código para escanearse a sí mismo sería
+    // ofrecer un rodeo. Mismo criterio que la cámara para lo demás — sólo si el
+    // campo acepta imágenes y no hay nada adjunto todavía.
+    const ofreceTelefono = conTelefono && !esTactil && !hayArchivo && !inactivo && aceptaImagenes(accept);
 
     // El texto de ayuda se DERIVA del límite en vez de escribirse aparte.
     // `FormPharmacovigilance` decía "Máx 5MB" mientras el código rechazaba a
@@ -278,6 +395,46 @@ const FileField = memo(({
                 >
                     Tomar foto
                 </Button>
+            )}
+
+            {/* El gemelo de escritorio. Va DEBAJO de este adjunto y no en otra
+                parte de la pantalla: el usuario lo señaló mirando el DUI —«en
+                dui no está en su área, está por la foto»—. Un botón que sirve
+                para este campo tiene que estar en este campo. */}
+            {ofreceTelefono && (
+                <Button
+                    variant="secondary" size="md" icon={Smartphone}
+                    onClick={pedirFotoAlTelefono}
+                    disabled={pidiendoQr || !!captura}
+                    loading={pidiendoQr}
+                    className="w-full mt-2"
+                >
+                    {captura ? 'Esperando el teléfono…' : 'Tomar con el teléfono'}
+                </Button>
+            )}
+
+            {captura && (
+                <Suspense fallback={null}>
+                    <DialogoDeCaptura
+                        captura={captura}
+                        etiqueta={typeof label === 'string' ? label : ''}
+                        alCerrar={cerrarCaptura}
+                        alRenovar={pedirFotoAlTelefono} />
+                </Suspense>
+            )}
+
+            {/* Recortar antes de entregar. `entregar` y no `aceptar`: lo que
+                sale del editor ya pasó por la validación, y volver a mandarlo
+                allí lo devolvería al editor en un bucle. */}
+            {porEditar && (
+                <Suspense fallback={null}>
+                    <EditorDeDocumento
+                        tipo={tipoDeDocumento}
+                        file={porEditar}
+                        onCancel={() => setPorEditar(null)}
+                        onConfirm={(listo) => { setPorEditar(null); entregar(listo); }}
+                    />
+                </Suspense>
             )}
 
             <input

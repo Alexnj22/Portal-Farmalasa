@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import useBorrador from '../../hooks/useBorrador';
 import { loadDraft, clearDraft } from '../../utils/draftUtils';
 import { SENSITIVE_FIELDS } from '../../store/utils';
@@ -41,11 +41,6 @@ import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import { abrirCaptura, esperarFoto, fotoComoArchivo, enlaceDeCaptura } from '../../data/capturaDeFoto';
 import QrDeCaptura from '../common/QrDeCaptura';
-/* El editor de la foto de un documento, por `lazy`: arrastra `react-easy-crop`
-   y sólo hace falta cuando alguien elige una imagen del DUI. Es la regla de
-   «librerías pesadas sólo por await import()» de CLAUDE.md, y el mismo camino
-   que ya usan bitácoras y bolsas. */
-const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
 
 /* Las tres casillas donde entra un DUI. `DOCUMENTO_IDENTIDAD` NO está: es el
    documento alterno de una persona menor de edad —un carné de minoridad, una
@@ -1026,18 +1021,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
        salieron bien), y esa diferencia se pinta distinta. */
     const [duiCaras, setDuiCaras] = useState(null);
 
-    /* ── Recortar el DUI antes de subirlo ────────────────────────────────────
-       Pedido del usuario: «al subirla desde la computadora puedo ajustarla, para
-       que se suba sólo el dui». La foto de un DUI casi nunca es sólo el DUI: es
-       la tarjeta sobre un escritorio, y todo lo que sobra es lo que el lector
-       tiene que descartar antes de leer. `EditorDeDocumento` ya es el canónico
-       para esto —lo usan la receta de bitácoras y la boleta de bolsas—; lo único
-       que faltaba era su ficha `dui` en `DOCS`.
-
-       Sólo IMÁGENES: un DUI también llega como PDF con las dos caras adentro, y
-       ese camino sigue derecho a subirse. Recortar un PDF exigiría rasterizarlo
-       primero, que es trabajo para no ganar nada — el PDF ya viene encuadrado. */
-    const [duiPorRecortar, setDuiPorRecortar] = useState(null);
 
     // ── La foto que se toma con el teléfono ──────────────────────────────────
     //
@@ -1320,15 +1303,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     busyLabel="Subiendo y leyendo el documento…"
                     url={doc.url}
                     name={doc.file_name}
-                    onChange={f => {
-                        if (!f) return removeDocFile(category);
-                        // Sólo el DUI, y sólo si es una imagen: ver el comentario
-                        // de `duiPorRecortar`.
-                        if (CATEGORIAS_DE_DUI.has(category) && f.type?.startsWith('image/')) {
-                            return setDuiPorRecortar({ category, file: f });
-                        }
-                        return handleDocFile(category, f);
-                    }}
+                    // La forma del papel. `FileField` abre el editor solo cuando
+                    // lo elegido es una imagen; lo único que necesita saber es
+                    // qué forma tiene, y para el DUI la forma se sabe: ID-1.
+                    tipoDeDocumento={CATEGORIAS_DE_DUI.has(category) ? 'dui' : 'documento'}
+                    onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
                 />
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
@@ -1972,26 +1951,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             )}
 
-                            {/* Recortar antes de subir.
-                                Se abre entre elegir el archivo y subirlo: cancelar acá deja
-                                la casilla como estaba, sin nada a medio guardar. Lo que
-                                sale del editor es un `File` normal y sigue el camino de
-                                siempre — el lector recibe la tarjeta sola, sin el
-                                escritorio alrededor. */}
-                            {duiPorRecortar && (
-                                <Suspense fallback={null}>
-                                    <EditorDeDocumento
-                                        tipo="dui"
-                                        file={duiPorRecortar.file}
-                                        onCancel={() => setDuiPorRecortar(null)}
-                                        onConfirm={(recortado) => {
-                                            const { category } = duiPorRecortar;
-                                            setDuiPorRecortar(null);
-                                            handleDocFile(category, recortado);
-                                        }}
-                                    />
-                                </Suspense>
-                            )}
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>

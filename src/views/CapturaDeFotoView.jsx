@@ -19,7 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
-import { capturaVigente, mandarFoto } from '../data/capturaDeFoto';
+import { capturaVigente, mandarFoto } from '../data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '../utils/capturaDeFoto';
 import Button from '../components/common/Button';
 

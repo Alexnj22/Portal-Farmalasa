@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.824.0 — El teléfono y el editor salen en TODO adjunto, no en tres sitios sueltos
+
+Pedido del usuario: *«que en cualquier lugar donde solicite documento a
+adjuntar, salga lo de tomar desde el teléfono y salga el QR, y que en la
+computadora pueda ajustar las esquinas del documento, girar, poner filtro como
+copia, o algo que mejore la imagen»*. Y el defecto exacto que produce tenerlo
+pegado a un sitio, dicho por él mirando el DUI: *«en dui no está en su área,
+está por la foto»*.
+
+Las dos ayudas nacieron pegadas a un lugar — el QR sólo en la foto del empleado,
+el editor sólo en el DUI, la receta y la boleta. Ahora viven en **`FileField`**,
+que es el canónico de los **21 adjuntos** del portal, y vienen **encendidas por
+defecto**: una prop opt-in es una prop olvidada, y eso ya costó 16 tablas de 59.
+Cada adjunto tiene su botón en **su propia área**.
+
+**Lo que se puede hacer con la imagen antes de subirla:** recortar, girar un
+cuarto de vuelta, enderezar en un carril de ±10°, y «Aclarada», que sube el
+contraste hasta dejar el papel blanco y la letra negra — es el «filtro como
+copia». Y cuatro formas de papel para encuadrar: hoja de pie, hoja acostada,
+tarjeta y tira.
+
+**Lo que NO se puede, y conviene saberlo:** arrastrar las cuatro esquinas
+libremente. El recortador del portal dibuja un marco de forma fija y lo que se
+mueve es la foto debajo; no tiene manijas de redimensionar, y ponérselas es
+escribir otro recortador, no configurar éste. Las cuatro formas resuelven el
+mismo problema con lo que hay: con la forma correcta elegida, encuadrar es
+arrastrar y pellizcar y no queda escritorio alrededor.
+
+**El QR dejó de ser de Talento Humano.** `abrir_captura_de_foto` exigía el
+permiso de editar personal, porque nació para la foto de un empleado. Con esa
+guarda el QR habría fallado en bitácoras, bolsas, facturación y sucursales —
+para casi todo el mundo. Ahora basta tener ficha y sesión: abrir una captura no
+escribe en ninguna tabla de negocio, sólo mete una imagen —cinco minutos, un
+solo uso— en un formulario que la persona ya tiene abierto; **guardar** ese
+formulario sigue pidiendo el permiso del módulo.
+
+**La foto del teléfono pasó de 1024 a 1600 px.** A 1024 la letra chica de un
+documento deja de leerse, y el lector de IA que corre después lee lo que le
+llegue. Un solo tamaño para los dos casos, porque el teléfono no sabe para qué
+es la foto: el QR no lo dice y metérselo sería meter un dato en la llave.
+
+Y la sala de espera de esas fotos se mudó del bucket de personal al general:
+dejar el comprobante de un banco entre las fotos de empleados es guardarlo donde
+nadie lo va a buscar.
+
+### Lo que costó, medido cuatro veces
+
+Meter esto en un canónico que importan 21 vistas significa que todo lo que
+importe viaja con ellas. La primera versión costaba **+3 kB en Bolsas y +2 en
+Bitácoras**; quedó en **+1 y +1**, difiriendo el diálogo del QR a su propio
+archivo y partiendo el módulo del traspaso en dos — el lado del teléfono, con el
+redimensionador de imágenes, dejó de viajar en pantallas de escritorio que no lo
+ejecutan nunca. Ese kilobyte que queda es el código de la función misma, y está
+declarado con su medición en el baseline.
+
+Bitácoras y las dos pantallas de bolsas quedan con `conEditor={false}` y motivo
+escrito: abren el suyo, con el recuadro que les sugiere la lectura de la boleta.
+El QR sí lo tienen.
+
 ## v2.823.3 — Sucursal y cargo dejan de bloquear el alta: quedan como pendientes
 
 Continuación de lo que se hizo el 26-ago. Aquel día la regla del formulario pasó

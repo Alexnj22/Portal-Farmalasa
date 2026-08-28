@@ -16,11 +16,24 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/security.ts";
 
-const TOPE_BYTES = 3 * 1024 * 1024;   // 3 MB ya reducida: de sobra para un avatar
-// `empleados` es el bucket de las fotos de personal y es PRIVADO. No se usa uno
-// público: la foto de una persona no tiene por qué quedar en una URL que
-// adivine cualquiera, y el portal ya firma estas URLs para mostrarlas.
-const BUCKET = 'empleados';
+const TOPE_BYTES = 6 * 1024 * 1024;   // 6 MB ya reducida: de sobra para un documento
+// ── Por qué `documents` y no `empleados` ───────────────────────────────────
+//
+// Esto nació para la foto de un empleado y vivía en el bucket de personal.
+// Desde el 28-ago el mismo camino sirve para CUALQUIER adjunto —la boleta de
+// una salida de dinero, el permiso de una sucursal, el comprobante de un
+// depósito—, y dejar el comprobante de un banco dentro del bucket de fotos de
+// personal es guardar un dato donde nadie lo va a buscar y donde no le
+// corresponde estar.
+//
+// `documents` es el bucket general privado del portal y acepta las tres formas
+// que puede llegar una foto de teléfono. Sigue siendo PRIVADO: el portal firma
+// la URL para mostrarla.
+//
+// Ojo con lo que ESTO no es: un destino final. La computadora agarra la imagen
+// por su URL firmada, la convierte en un archivo normal y la sube adonde
+// corresponda por el camino de siempre. `capturas/` es una sala de espera.
+const BUCKET = 'documents';
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);

@@ -21,74 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.856.0 — La devolución de puntos es un canje con su motivo
+## v2.856.3 — La ruta de Mi caja existe de verdad
 
-**Cuando una venta anulada ya tenía sus puntos entregados, ahora se devuelven
-como un CANJE con su motivo** — «Anul 0000066182_COF» — en vez de borrar la
-venta del sistema de puntos.
+`/caja` estaba en el menú y **no existía como ruta**: las rutas se declaran a
+mano en `App.jsx` y yo sólo había registrado el módulo y su importador. El
+enlace habría dado 404 — lo encontró la pregunta «¿a dónde entro?», no una
+prueba.
 
-**Se investigó esa base buscando cómo se había hecho antes**, y el resultado
-cambió el diseño dos veces. Lo medido, sobre tres años:
+Y el mapa de importadores se indexa por el **nombre de la ruta**, no por el del
+módulo: la entrada decía `caja_vales` donde tenía que decir `caja`, así que
+tampoco precargaba al pasar el mouse.
 
-- **cero** ventas con puntos negativos,
-- **cero** saldos negativos,
-- **cero** asientos que mencionen resta, anulación, corrección o devolución.
-
-O sea que restar **nunca se hizo**. Pero la convención para un asiento manual sí
-existe: `TicketFactura` y `TKT` guardan el motivo en texto cuando la línea se
-carga a mano — así se registraron 4,772 «Cortesía cumpleaños» (238,600 puntos),
-las promos de Navidad y varias «Autorizado. Carlos R.».
-
-El canje encaja mejor que el negativo que se había pensado primero: el saldo
-sale de *registrados − redimidos*, así que un canje lo baja por el camino
-previsto; `PuntosCanjeados` es sin signo, o sea que un negativo ni cabría; y la
-venta original queda intacta, con la baja visible como una línea propia en el
-estado de cuenta del cliente. **Borrar la venta —lo que hacía la primera
-versión— le dejaba menos puntos y ninguna línea que lo explicara.**
-
-**Nadie queda debiendo puntos.** Si el cliente ya gastó esos puntos, se resta
-hasta cero y se anota cuántos no se pudieron recuperar, avisando a la sala. Un
-saldo negativo le cobraría un error que no cometió.
-
-**Y se comprobó que la tabla lo acepta, sin escribir nada.** La resta no había
-corrido ni una vez, y una función nueva no prueba que la tabla la acepte —puede
-haber un CHECK o un trigger que no se ve—. Se hizo el canje de verdad dentro de
-una transacción y se deshizo: el saldo bajó de 1,195 a 1,194 y volvió a 1,195,
-con los 1,697 canjes intactos y ninguna fila suelta.
-
-## v2.855.1 — El carné de pie, con el ícono, marcas de corte e inducción
-
-El usuario eligió la **variante F** de los seis bocetos y pidió tres cosas más.
-Las tres están.
-
-**El carné pasó a ir DE PIE** (53.98 × 85.6 mm), blanco, con el canto verde y el
-**ícono de la farmacia** — el arco verde y la cruz morada, dibujados en un lienzo
-y no incrustando el archivo del logo, que pesa 3096 × 3186 px y costaría más que
-todo el resto del documento junto.
-
-Parada y no acostada no es una preferencia: con la tarjeta de pie el retrato entra
-a **casi el doble de tamaño**, que es lo que hace reconocible a alguien desde el
-otro lado del mostrador. La foto ahora se recorta con la forma del hueco
-(26 × 32 mm) y no cuadrada — un recorte cuadrado dejaría franjas arriba y abajo.
-
-**Marcas de corte en las cuatro esquinas.** Sin ellas hay que adivinar dónde
-termina la tarjeta —el borde impreso es del mismo color que el papel de
-alrededor— y una recortada torcida no entra en la funda. Van separadas del cartón
-y hacia afuera, para que la tijera pase por donde se cruzan.
-
-**La segunda hoja se partió por la mitad.** Arriba el carné; abajo, **«El portal,
-en cinco minutos»**: la dirección, que en el teléfono se puede dejar instalada
-como una aplicación, y cinco cosas —marcar entrada y salida, Mis avisos, Mi
-perfil, Mis documentos, Solicitudes personales—. Con un aviso al pie: lo que cada
-quien ve depende de su cargo, así que la primera ausencia no se lee como una
-falla del portal.
-
-**Un defecto que sólo se vio al imprimirlo:** el nombre de la empresa **no
-aparecía**. Su color era blanco —heredado de cuando vivía sobre una banda morada—
-y sobre la tarjeta blanca de la variante F quedaba invisible. Ahora va en morado.
-De paso, la fecha dejó de escribirse «01 de septiembre» y dice «1 de septiembre».
-
-## v2.855.0 — El bloqueo cierra también el kiosco, y las conexiones son una tarjeta por persona
+Ahora la ruta existe, con `PermissionGuard moduleKey="caja_vales"` — operar la
+caja es otro permiso que mirarla — y su título en el mapa de encabezados.
+## v2.856.2 — El bloqueo cierra también el kiosco, y las conexiones son una tarjeta por persona
 
 Sale de dos preguntas sobre la pantalla de conexiones, y las dos tenían razón.
 
@@ -130,6 +76,73 @@ Tres cosas que se arreglaron solas al juntar las tarjetas:
   acceso donde esperaba la persona.
 - **Bloquear y quitar el bloqueo** ya no dependen de por cuál de las dos
   tarjetas se entró.
+
+## v2.856.1 — El carné de pie, con el ícono, marcas de corte e inducción
+
+El usuario eligió la **variante F** de los seis bocetos y pidió tres cosas más.
+Las tres están.
+
+**El carné pasó a ir DE PIE** (53.98 × 85.6 mm), blanco, con el canto verde y el
+**ícono de la farmacia** — el arco verde y la cruz morada, dibujados en un lienzo
+y no incrustando el archivo del logo, que pesa 3096 × 3186 px y costaría más que
+todo el resto del documento junto.
+
+Parada y no acostada no es una preferencia: con la tarjeta de pie el retrato entra
+a **casi el doble de tamaño**, que es lo que hace reconocible a alguien desde el
+otro lado del mostrador. La foto ahora se recorta con la forma del hueco
+(26 × 32 mm) y no cuadrada — un recorte cuadrado dejaría franjas arriba y abajo.
+
+**Marcas de corte en las cuatro esquinas.** Sin ellas hay que adivinar dónde
+termina la tarjeta —el borde impreso es del mismo color que el papel de
+alrededor— y una recortada torcida no entra en la funda. Van separadas del cartón
+y hacia afuera, para que la tijera pase por donde se cruzan.
+
+**La segunda hoja se partió por la mitad.** Arriba el carné; abajo, **«El portal,
+en cinco minutos»**: la dirección, que en el teléfono se puede dejar instalada
+como una aplicación, y cinco cosas —marcar entrada y salida, Mis avisos, Mi
+perfil, Mis documentos, Solicitudes personales—. Con un aviso al pie: lo que cada
+quien ve depende de su cargo, así que la primera ausencia no se lee como una
+falla del portal.
+
+**Un defecto que sólo se vio al imprimirlo:** el nombre de la empresa **no
+aparecía**. Su color era blanco —heredado de cuando vivía sobre una banda morada—
+y sobre la tarjeta blanca de la variante F quedaba invisible. Ahora va en morado.
+De paso, la fecha dejó de escribirse «01 de septiembre» y dice «1 de septiembre».
+
+## v2.856.0 — La devolución de puntos es un canje con su motivo
+
+**Cuando una venta anulada ya tenía sus puntos entregados, ahora se devuelven
+como un CANJE con su motivo** — «Anul 0000066182_COF» — en vez de borrar la
+venta del sistema de puntos.
+
+**Se investigó esa base buscando cómo se había hecho antes**, y el resultado
+cambió el diseño dos veces. Lo medido, sobre tres años:
+
+- **cero** ventas con puntos negativos,
+- **cero** saldos negativos,
+- **cero** asientos que mencionen resta, anulación, corrección o devolución.
+
+O sea que restar **nunca se hizo**. Pero la convención para un asiento manual sí
+existe: `TicketFactura` y `TKT` guardan el motivo en texto cuando la línea se
+carga a mano — así se registraron 4,772 «Cortesía cumpleaños» (238,600 puntos),
+las promos de Navidad y varias «Autorizado. Carlos R.».
+
+El canje encaja mejor que el negativo que se había pensado primero: el saldo
+sale de *registrados − redimidos*, así que un canje lo baja por el camino
+previsto; `PuntosCanjeados` es sin signo, o sea que un negativo ni cabría; y la
+venta original queda intacta, con la baja visible como una línea propia en el
+estado de cuenta del cliente. **Borrar la venta —lo que hacía la primera
+versión— le dejaba menos puntos y ninguna línea que lo explicara.**
+
+**Nadie queda debiendo puntos.** Si el cliente ya gastó esos puntos, se resta
+hasta cero y se anota cuántos no se pudieron recuperar, avisando a la sala. Un
+saldo negativo le cobraría un error que no cometió.
+
+**Y se comprobó que la tabla lo acepta, sin escribir nada.** La resta no había
+corrido ni una vez, y una función nueva no prueba que la tabla la acepte —puede
+haber un CHECK o un trigger que no se ve—. Se hizo el canje de verdad dentro de
+una transacción y se deshizo: el saldo bajó de 1,195 a 1,194 y volvió a 1,195,
+con los 1,697 canjes intactos y ninguna fila suelta.
 
 ## v2.854.4 — La contraseña de quien ya trabajaba acá no se reinicia al enlazar
 

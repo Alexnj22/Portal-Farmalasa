@@ -151,7 +151,7 @@ export const IMPORTADOR_POR_RUTA = {
     'ventas': IMPORTADORES.VentasView,
     'cortes': IMPORTADORES.CortesView,
     'bolsas': IMPORTADORES.BolsasView,
-    'caja_vales': IMPORTADORES.MiCajaView,
+    'caja': IMPORTADORES.MiCajaView,
     'ventas-perdidas': IMPORTADORES.VentasPperdidasView,
 };
 

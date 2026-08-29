@@ -66,6 +66,7 @@ const PayrollView = lazy(IMPORTADORES.PayrollView);
 const VentasView = lazy(IMPORTADORES.VentasView);
 const CortesView = lazy(IMPORTADORES.CortesView);
 const BolsasView = lazy(IMPORTADORES.BolsasView);
+const MiCajaView = lazy(IMPORTADORES.MiCajaView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
@@ -768,6 +769,9 @@ function MainApp() {
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="cortes" element={<PermissionGuard moduleKey="cortes_caja"><CortesView /></PermissionGuard>} />
                                     <Route path="bolsas" element={<PermissionGuard moduleKey="bolsas"><BolsasView /></PermissionGuard>} />
+                                    {/* `caja_vales` y no `cortes_caja`: operar la caja es otro
+                                        permiso que mirarla, y hoy lo tiene un solo cargo. */}
+                                    <Route path="caja" element={<PermissionGuard moduleKey="caja_vales"><MiCajaView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
@@ -948,6 +952,7 @@ const ROUTE_TITLES = {
     '/ventas':            'Ventas',
     '/cortes':            'Cortes de caja',
     '/bolsas':            'Bolsas de efectivo',
+    '/caja':              'Mi caja',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/clientes':          'Clientes',

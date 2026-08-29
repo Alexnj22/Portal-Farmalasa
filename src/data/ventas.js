@@ -142,9 +142,20 @@ export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, sea
 // desde el `.from(` para decidir si la consulta pagina — con la lista adentro,
 // el `.range()` de más abajo quedaba fuera de esa ventana y la consulta se
 // reportaba como sin paginar. Pagina; lo que faltaba era que se pudiera ver.
+/*
+ * `puntos_enviados(estado_puntos)` viaja en la MISMA consulta y no en una
+ * llamada aparte. La primera versión le preguntaba el estado a la base de puntos
+ * por cada página; desde que esa copia vive en Postgres —lo que hizo falta para
+ * poder FILTRAR— pedirla dos veces sería trabajo de más y una latencia extra
+ * por página.
+ *
+ * Toda venta de una sala con puntos tiene su fila (verificado: cero huecos), así
+ * que el embed nunca viene vacío por accidente. Si llegara a venir, el estado se
+ * lee como «sin enviar», que es lo mismo que diría la fila que falta.
+ */
 const COLUMNAS_LISTA = 'id, branch_id, erp_invoice_id, correlativo, tipo_documento, ' +
     'fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, retencion, total, ' +
-    'estado, recibido_mh, has_puntos';
+    'estado, recibido_mh, has_puntos, puntos_enviados(estado_puntos)';
 
 /*
  * El rótulo de la columna NO es el nombre de la columna.
@@ -171,15 +182,33 @@ const COLUMNA_DE_ORDEN = {
     total:    'total',
 };
 
-export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, isSearching, searchTerm, page, pageSize }) {
+export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, filterPuntosEstado, cancelledEstados, isSearching, searchTerm, page, pageSize }) {
     const col = COLUMNA_DE_ORDEN[sortCol] || 'fecha';
+    /* Con el filtro de puntos activo el embed pasa a `!inner`: así el join
+     * RECORTA la lista en vez de sólo adornarla. Sin el `!inner` el filtro sobre
+     * la tabla embebida no descarta la venta — la devuelve con el embed vacío, y
+     * la página se vería llena de filas en blanco en vez de mostrar sólo las que
+     * cumplen. Es un modo de fallar silencioso y clásico de PostgREST. */
     let q = supabase
         .from('sales_invoices')
-        .select(COLUMNAS_LISTA)
+        .select(
+            filterPuntosEstado
+                ? COLUMNAS_LISTA.replace('puntos_enviados(', 'puntos_enviados!inner(')
+                : COLUMNAS_LISTA,
+            /* El conteo viaja en la MISMA consulta que la página, y sólo cuando
+             * el filtro está puesto. El total del paginador sale de
+             * `get_ventas_stats`, que no sabe nada de puntos: con el filtro
+             * activo diría cuántas ventas hay en el período y no cuántas
+             * cumplen, o sea páginas vacías al final y un número que no cuadra
+             * con lo que se ve. Pedirlo acá lo hace imposible de desincronizar —
+             * es el mismo `WHERE`. */
+            filterPuntosEstado ? { count: 'exact' } : undefined,
+        )
         .gte('fecha', fini).lte('fecha', ffin)
         .order(col, { ascending: asc });
     if (col === 'fecha') q = q.order('hora', { ascending: asc });
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+    if (filterPuntosEstado) q = q.eq('puntos_enviados.estado_puntos', filterPuntosEstado);
     if (filterAnuladas) q = q.in('estado', cancelledEstados);
     if (isSearching) {
         const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });

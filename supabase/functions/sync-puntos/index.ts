@@ -109,9 +109,43 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+    const fallidasSiembra: string[] = [];
 
     const mysql = await import('npm:mysql2@3.11.0/promise');
     conn = await mysql.createConnection(cfg);
+
+    // ── Sembrar: traer lo que la hoja de cálculo ya había mandado ───────────
+    // Se corre a mano y por tandas (`{"sembrar": {"desde": 0, "hasta": 50000}}`),
+    // no en cada corrida: son 358,961 filas y no cambian de golpe. El corte es
+    // por `id` numérico y no por OFFSET, porque un OFFSET grande obliga a MySQL
+    // a contar todas las filas anteriores en cada tanda.
+    if (body?.sembrar) {
+      const desde = Number(body.sembrar.desde ?? 0);
+      const hasta = Number(body.sembrar.hasta ?? desde + 50_000);
+      const [rows] = await conn.query(
+        'SELECT sucursal, id, aplicado FROM admin_factura ' +
+        'WHERE CAST(id AS UNSIGNED) >= ? AND CAST(id AS UNSIGNED) < ?',
+        [desde, hasta],
+      ) as any;
+      const filas = (rows ?? []).map((r: any) => ({
+        sucursal: r.sucursal, id: String(r.id), aplicado: Number(r.aplicado),
+      }));
+      let escritas = 0;
+      // En trozos: un json de 50,000 elementos en un solo RPC es un payload
+      // grande y un fallo costaría la tanda entera.
+      for (let i = 0; i < filas.length; i += 5000) {
+        const { data, error } = await supabase.rpc('puntos_sembrar_desde_destino', {
+          p_filas: filas.slice(i, i + 5000),
+        });
+        if (error) { fallidasSiembra.push(`${i}: ${error.message}`); continue; }
+        escritas += Number(data ?? 0);
+      }
+      return json({
+        ok: fallidasSiembra.length === 0,
+        rango: { desde, hasta }, leidas: filas.length, escritas,
+        fallidas: fallidasSiembra,
+      }, fallidasSiembra.length ? 500 : 200);
+    }
 
     // ── 1. Lo que hay que mandar ────────────────────────────────────────────
     const { data: pendientes, error: e1 } = await supabase.rpc('ventas_para_puntos', {
@@ -156,6 +190,20 @@ Deno.serve(async (req) => {
       // la bitácora dice que ya se hicieron.
       const ids = tanda.map((f) => f.invoice_id);
       const { error: e2 } = await supabase.rpc('puntos_marcar_enviadas', { p_invoice_ids: ids });
+      // La fila acaba de nacer del otro lado con `aplicado = 0`, y acá se
+      // anota en el mismo paso. Sin esto nace sin estado y la lista la
+      // mostraría como «Sin enviar» justo después de enviarla.
+      if (!e2) {
+        const { error: e2b } = await supabase.rpc('puntos_anotar_aplicado', {
+          p_filas: tanda.map((f) => ({ sucursal: f.sucursal, id: String(f.erp_invoice_id), aplicado: 0 })),
+        });
+        // Se anota y NO se corta la corrida: la venta ya llegó a la base de
+        // puntos, que es lo que importa. Lo que quedaría mal es el estado
+        // copiado —se vería «Sin enviar» sobre algo recién enviado— y eso lo
+        // corrige el barrido de los 10 minutos. Pero tiene que quedar dicho:
+        // un `await` sin recoger el error es cómo esto viviría roto en silencio.
+        if (e2b) fallidas.push(`anotar aplicado de ${tanda.length}: ${e2b.message}`);
+      }
       if (e2) {
         // Este orden sí se recupera solo: el INSERT es idempotente por la clave
         // (sucursal, id) y no pisa `aplicado`, así que la próxima corrida las
@@ -164,6 +212,49 @@ Deno.serve(async (req) => {
         continue;
       }
       enviadas += tanda.length;
+    }
+
+    // ── 1a. Las que el portal decidió NO mandar ─────────────────────────────
+    // Cada día hay ~100 ventas que no ganan puntos (de $1 o menos, o con un
+    // renglón bajo el precio 3). Sin una fila que lo diga serían un hueco: el
+    // filtro «Sin enviar» no las encontraría, porque una ausencia no se puede
+    // filtrar con un join. La invariante es «una fila por venta», y se sostiene
+    // acá o no se sostiene.
+    let sinEnviar = 0;
+    if (!simular) {
+      const { data, error: eSE } = await supabase.rpc('puntos_marcar_sin_enviar', {
+        p_desde: desde, p_hasta: hasta,
+      });
+      if (eSE) fallidas.push(`marcar sin enviar: ${eSE.message}`);
+      else sinEnviar = Number(data ?? 0);
+    }
+
+    // ── 1b. Refrescar el estado copiado ─────────────────────────────────────
+    // Sin esto la copia nace vieja: un ticket pasa a «acumulado» cuando el
+    // cliente lo presenta, y eso puede ser meses después de la venta. Por eso NO
+    // alcanza con mirar la ventana reciente — se traen TODAS las que están en 1
+    // (22,960 hoy, ~300 kB) y se anotan las que cambiaron.
+    //
+    // Cada 10 minutos y no cada minuto: el barrido completo cuesta lo mismo
+    // traiga 1 cambio o 100, y un ticket que se presenta en el mostrador no
+    // necesita verse en el portal en menos de eso. Los otros nueve minutos la
+    // corrida sólo manda ventas nuevas, que es lo que sí urge.
+    let refrescadas = 0;
+    const tocaBarrido = simular ? false : (new Date().getMinutes() % 10 === 0 || body?.refrescar === true);
+    if (tocaBarrido) {
+      const [cobradas] = await conn.query(
+        'SELECT sucursal, id, aplicado FROM admin_factura WHERE aplicado = 1',
+      ) as any;
+      const lote = (cobradas ?? []).map((r: any) => ({
+        sucursal: r.sucursal, id: String(r.id), aplicado: 1,
+      }));
+      for (let i = 0; i < lote.length; i += 5000) {
+        const { data, error } = await supabase.rpc('puntos_anotar_aplicado', {
+          p_filas: lote.slice(i, i + 5000),
+        });
+        if (error) { fallidas.push(`refrescar ${i}: ${error.message}`); continue; }
+        refrescadas += Number(data ?? 0);
+      }
     }
 
     // ── 2. Lo que se mandó y después se anuló ───────────────────────────────
@@ -377,6 +468,8 @@ Deno.serve(async (req) => {
       ventana: { desde, hasta },
       candidatas: filas.length,
       enviadas,
+      sin_enviar_marcadas: sinEnviar,
+      refrescadas,
       anuladas_revisadas: cola.length,
       anuladas_borradas: borradas.length,
       anuladas_con_puntos_ya_dados: yaCobradas.length,

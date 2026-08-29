@@ -1,23 +1,27 @@
 import { supabase } from '../supabaseClient';
 
 /**
- * El estado de puntos de una venta y los movimientos de un cliente.
+ * Los puntos, del lado del portal.
  *
- * Los dos salen de `puntos-consulta`, que es la ÚNICA puerta: ese dato no vive
- * en el portal sino en la base del programa de puntos, y el navegador no puede
- * hablar MySQL.
+ * ── Dónde vive cada cosa, y por qué no en el mismo lugar ────────────────────
+ * El ESTADO de puntos de cada venta (acumulado, pendiente, devuelto, por
+ * revisar, sin enviar) vive en Postgres, en `puntos_enviados.estado_puntos`, y
+ * viaja en la misma consulta que la lista de ventas. Se copió el 2026-08-29
+ * porque el usuario pidió poder FILTRAR por él: la lista se pagina en el
+ * servidor, así que un filtro que vive en otra base no se puede aplicar.
  *
- * ── Por qué se pregunta cada vez y no se guarda ──────────────────────────────
- * El estado cambia en el MOSTRADOR, no acá: un ticket pasa de «pendiente» a
- * «acumulado» cuando el cliente lo presenta, y eso puede ser hoy o dentro de
- * seis meses. Una copia en el portal habría que refrescarla entera para no
- * mentir, y mentir sobre puntos es peor que no mostrarlos — la sala le diría a
- * alguien que los tiene pendientes cuando ya los cobró.
+ * El SALDO y los MOVIMIENTOS de un cliente NO se copian: se piden de a un
+ * cliente cuando alguien abre su panel. Copiar 124,000 movimientos para
+ * mostrarlos de a uno sería trabajo por nada.
  *
- * ── Ninguna de las dos LANZA ────────────────────────────────────────────────
- * Son datos de apoyo: la lista de ventas y la ficha del cliente tienen que
- * seguir funcionando aunque el otro sistema no conteste. Devuelven vacío y
- * dejan el motivo en consola. Es la misma decisión que `registrarEgreso`.
+ * La copia del estado se mantiene en la corrida del cron que ya se conecta cada
+ * minuto, y cada fila lleva `visto_at` — sin esa fecha, «pendiente» y «todavía
+ * no lo miré» se leen igual.
+ *
+ * ── No LANZA ────────────────────────────────────────────────────────────────
+ * Son datos de apoyo: la ficha del cliente tiene que seguir funcionando aunque
+ * el otro sistema no conteste. Devuelve vacío con el motivo y lo deja en
+ * consola. Es la misma decisión que `registrarEgreso`.
  *
  * ── ESTE ARCHIVO ES LA COSTURA, y es a propósito ────────────────────────────
  * Los puntos van a pasar a ser parte del portal (decisión del usuario,
@@ -27,30 +31,19 @@ import { supabase } from '../supabaseClient';
  * Para que esa mudanza sea barata, NADA de la forma del otro sistema cruza esta
  * línea: las pantallas reciben `acumulado`/`pendiente`/`devuelto`, que son
  * palabras del negocio, y nunca `aplicado = 1`, ni `TicketFactura`, ni un
- * `idCliente` de allá. El día que los puntos vivan acá se reescriben estas dos
- * funciones —y sólo estas dos— y ni la lista de ventas ni la ficha del cliente
- * se enteran.
+ * `idCliente` de allá. El día que los puntos vivan acá se reescribe la función
+ * de abajo y la columna generada de la base — y ni la lista de ventas ni la
+ * ficha del cliente se enteran.
  *
  * Si alguna vez hace falta un campo nuevo, se traduce ACÁ. Meterlo crudo en una
  * pantalla es lo que convertiría una mudanza de un archivo en una de veinte.
  */
 
-/** Estado de puntos de un puñado de ventas. `{ [invoice_id]: { estado, anulada } }` */
-export async function fetchEstadoDePuntos(invoiceIds) {
-    const ids = (invoiceIds || []).filter(Boolean);
-    if (!ids.length) return {};
-    try {
-        const { data, error } = await supabase.functions.invoke('puntos-consulta', {
-            body: { accion: 'ventas', invoice_ids: ids },
-        });
-        if (error) throw error;
-        if (!data?.ok) throw new Error(data?.error || 'respuesta sin ok');
-        return data.estados || {};
-    } catch (e) {
-        console.error('puntos.js: fetchEstadoDePuntos', e);
-        return {};
-    }
-}
+/* Acá vivía `fetchEstadoDePuntos`, que pedía el estado de las ventas de la
+ * página. Se quitó el 2026-08-29: ese estado se espejó en Postgres para poder
+ * FILTRAR la lista, y desde entonces viaja en la MISMA consulta que las ventas
+ * (`puntos_enviados(estado_puntos)` en `COLUMNAS_LISTA`). Mantener las dos era
+ * una llamada de más por página y la misma regla escrita dos veces. */
 
 /** Saldo y movimientos de un cliente. `motivo` dice por qué vino vacío. */
 export async function fetchPuntosDeCliente(customerId) {
@@ -86,3 +79,18 @@ export const ROTULO_PUNTOS = {
     por_revisar: { label: 'Por revisar', variante: 'danger', ayuda: 'La venta se anuló con los puntos ya entregados y no se pudieron quitar solos.' },
     sin_enviar:  { label: 'Sin enviar', variante: 'neutral', ayuda: 'Esta venta no acumula puntos.' },
 };
+
+/**
+ * Las opciones del filtro, DERIVADAS de los mismos rótulos.
+ *
+ * No se escriben a mano: una lista paralela a la que pinta las insignias se
+ * desincroniza el día que se agrega un estado, y el filtro ofrecería algo que la
+ * columna nombra distinto. Es la regla de CLAUDE.md sobre catálogos escritos a
+ * mano, en su versión chica — y el orden es el de la vida de una venta: primero
+ * lo resuelto, después lo que espera, al final lo que hay que mirar.
+ */
+export const OPCIONES_FILTRO_PUNTOS = [
+    { value: '', label: 'Todos los puntos' },
+    ...['acumulado', 'pendiente', 'devuelto', 'por_revisar', 'sin_enviar']
+        .map(k => ({ value: k, label: ROTULO_PUNTOS[k].label })),
+];

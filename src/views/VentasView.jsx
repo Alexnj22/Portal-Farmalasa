@@ -14,7 +14,7 @@ import {
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { fetchEstadoDePuntos, ROTULO_PUNTOS } from '../data/puntos';
+import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '../data/puntos';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
@@ -141,6 +141,7 @@ function FilterControls({
     filterBranch, setFilterBranch,
     branchOptions,
     filterAnuladas, setFilterAnuladas,
+    filterPuntosEstado, setFilterPuntosEstado,
     filterAntibiotico, setFilterAntibiotico,
     showAntibiotico,
     filterLab, setFilterLab,
@@ -156,6 +157,7 @@ function FilterControls({
         setFilterBranch('');
         setMonthRange(defaultRange);
         setFilterAnuladas(false);
+        setFilterPuntosEstado('');
         setFilterAntibiotico(false);
         setFilterLab?.('');
     };
@@ -173,7 +175,7 @@ function FilterControls({
         <FilterBar
             onClear={resetAll}
             activeCount={[!branchLocked && filterBranch, showLab && filterLab, dateDirty,
-                filterAnuladas, showAntibiotico && filterAntibiotico].filter(Boolean).length}
+                filterAnuladas, filterPuntosEstado, showAntibiotico && filterAntibiotico].filter(Boolean).length}
             // El toggle de privacidad era un `<button>` escrito a mano en el
             // header, con sus 11 clases y su propio lenguaje de forma. Como
             // descriptor lo dibuja el canónico, y `activo` le da el `aria-pressed`
@@ -217,6 +219,18 @@ function FilterControls({
             </FilterBar.Section>
 
             {/* 4 · estado */}
+            {/* Un desplegable y no cinco píldoras: son cinco valores EXCLUYENTES
+                —una venta está en uno solo— y cinco chips en una barra que ya
+                tiene sucursal, fecha y dos chips más no entran sin envolverse.
+                `LiquidSelect` y nunca un `<select>` nativo (canon del portal). */}
+            <FilterBar.Section active={!!filterPuntosEstado}
+                onClear={() => setFilterPuntosEstado('')} label="puntos">
+                <LiquidSelect
+                    value={filterPuntosEstado} onChange={setFilterPuntosEstado}
+                    options={OPCIONES_FILTRO_PUNTOS}
+                    placeholder="Puntos" icon={Star} compact bare />
+            </FilterBar.Section>
+
             <FilterBar.Section>
                 <FilterBar.Chip active={filterAnuladas} onToggle={() => setFilterAnuladas(v => !v)}>
                     Anuladas
@@ -391,7 +405,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [changelogCache, setChangelogCache] = useState({});
     // El estado de puntos de la página visible. No es una caché: se reemplaza
     // entero en cada carga porque el dato vive en otro sistema y cambia solo.
-    const [puntosEstado, setPuntosEstado] = useState({});
+    // El estado de puntos elegido en el filtro. Vacío = sin filtrar.
+    const [filterPuntosEstado, setFilterPuntosEstado] = useState('');
     const fetchRowsRef = useRef(0);
 
     // Refs "siempre frescos" para leer el estado actual de los caches dentro de
@@ -573,11 +588,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             // barato que la función y no tiene el problema del tope: `range()` ES
             // la paginación, no una respuesta que se recorta.
             const asc = sortDir === 'asc';
-            const { data } = await fetchInvoicesList({
-                fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
+            const { data, count } = await fetchInvoicesList({
+                fini, ffin, sortCol, asc, filterBranch, filterAnuladas, filterPuntosEstado,
+                cancelledEstados: CANCELLED_ESTADOS,
                 isSearching, searchTerm, page, pageSize,
             });
             fetched = data || [];
+            // Con el filtro puesto, el total del paginador es el de ESTA
+            // consulta. `get_ventas_stats` no sabe de puntos y contaría todas.
+            if (filterPuntosEstado) setTotalCount(count ?? 0);
         }
 
         if (rid !== fetchRowsRef.current) return;
@@ -619,22 +638,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 });
         }
 
-        /* El estado de puntos de las filas que se están viendo.
-         *
-         * Se pide POR PÁGINA y no se guarda: ese estado cambia en el mostrador
-         * —un ticket pasa a «acumulados» cuando el cliente lo presenta, hoy o
-         * dentro de seis meses—, así que una copia en el portal mentiría sin
-         * avisar. Va sin `await` y no bloquea la lista: si el otro sistema no
-         * contesta, se ven las ventas sin su estado de puntos, que es
-         * exactamente lo que pasaba antes de esta columna.
-         *
-         * Se pide SIEMPRE para la página visible, aunque ya se haya pedido
-         * antes: cachearlo sería el mismo error que copiarlo. */
-        fetchEstadoDePuntos(fetchedIds).then((estados) => {
-            if (fetchRowsRef.current !== currentRid) return;
-            setPuntosEstado(estados);
-        });
-
         // Prefetch changelog for visible rows in background
         const uncachedChg = fetchedIds.filter(id => !(id in changelogCacheRef.current));
         if (uncachedChg.length > 0) {
@@ -648,7 +651,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     setChangelogCache(prev => ({ ...prev, ...grouped }));
                 });
         }
-    }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
+    }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, filterPuntosEstado, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
 
@@ -666,7 +669,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         return () => { vivo = false; };
     }, [fini, ffin, filterBranch]);
     useEffect(() => { fetchRows(); }, [fetchRows]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, filterPuntosEstado, isSearching, pageSize]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
     const fetchPricesForIds = useCallback((erpIds) => {
         const uncachedIds = erpIds.filter(id => !(id in pricesCache));
@@ -912,6 +915,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     branchOptions={branchOptions}
                     filterAnuladas={filterAnuladas} setFilterAnuladas={setFilterAnuladas}
+                    filterPuntosEstado={filterPuntosEstado} setFilterPuntosEstado={setFilterPuntosEstado}
                     filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
                     showAntibiotico={antibioticIds.size > 0}
                     branchLocked={getScope('ventas') !== 'ALL'}
@@ -928,38 +932,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             {verCards && <AvisoSinProducto datos={sinProducto} contexto="El período que se muestra" />}
 
             <DataTable
-                columns={[
-                    { key: 'fecha',      label: 'Fecha',        sortable: true },
-                    { key: 'id',         label: 'ID',           sortable: true, hideBelow: 'md' },
-                    { key: 'tipo',       label: 'Tipo',         sortable: true, hideBelow: 'sm' },
-                    /* `1440` y no `lg` en estas dos: a 1024+ se dibujaban las
-                       ocho columnas y no entran en los ~1080px que quedan al
-                       lado del menú, así que **Total quedaba fuera del marco** —
-                       cortado a media cifra en un portátil de 1440, que es el
-                       ancho más común. El número por el que se abre la lista era
-                       el único que no se podía leer, y en el teléfono sí se lee,
-                       porque ahí es el ancla de la ficha.
-                       Se demotan éstas dos y no `cliente` ni `total`: sucursal y
-                       método de pago son contexto (y sucursal ya viaja en los
-                       chips de la ficha); el cliente y el monto son la fila.
-                       `2xl` y no `1440`: el peldaño de 1440 se CUMPLE a 1440
-                       —`min-[1440px]`— así que a ese ancho no ocultaba nada y el
-                       total seguía cortado. Se midió y la primera versión no
-                       servía. */
-                    { key: 'sucursal',   label: 'Sucursal',     sortable: true, hideBelow: '2xl' },
-                    { key: 'vendedor',   label: 'Vendedor',     sortable: true, hideBelow: 'md' },
-                    { key: 'cliente',    label: 'Cliente',      sortable: true },
-                    { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: '2xl' },
-                    /* `2xl` como sus dos vecinas, y por el mismo motivo medido:
-                       a 1024+ las ocho columnas ya no entraban en los ~1080px
-                       que quedan al lado del menú y el Total salía del marco.
-                       Una novena a `lg` recrearía ese defecto exacto. Debajo de
-                       2xl el estado no se pierde: los tres que piden atención
-                       —acumulados, devueltos, por revisar— salen como insignia
-                       en la celda del cliente, que no cuesta ancho. */
-                    { key: 'puntos',     label: 'Puntos',       hideBelow: '2xl' },
-                    { key: 'total',      label: 'Total',        sortable: true, align: 'right' },
-                ]}
+                columns={COLS_VENTAS}
                 /* La inferencia toma la PRIMERA columna como identidad, y acá esa
                    es la fecha: la ficha decía «2026-08-06 · 16:56 · $1.75», que
                    identifica el momento y no la venta. A una lista de ventas se
@@ -986,13 +959,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const noData      = cachedItems && cachedItems.length === 0;
                     const emp         = empMap.get(r.cod_vendedor);
                     const changes     = changelogCache[r.id] ?? [];
-                    const puntosRotulo = ROTULO_PUNTOS[puntosEstado[String(r.id)]?.estado] ?? null;
+                    // Del embed de la propia consulta. PostgREST devuelve el
+                    // uno-a-uno como objeto o como lista de uno según la
+                    // versión, así que se aceptan las dos formas.
+                    const estadoPuntos = r.puntos_enviados?.estado_puntos
+                                      ?? r.puntos_enviados?.[0]?.estado_puntos ?? null;
+                    const puntosRotulo = ROTULO_PUNTOS[estadoPuntos] ?? null;
                     // Los tres que piden atención viajan también a la celda del
                     // cliente, que se ve en todo ancho. «Pendientes» y «Sin
                     // enviar» se quedan en la columna: no hay nada que hacer con
                     // ellos y repetirlos sería ruido.
                     const puntosDestacado = ['acumulado', 'devuelto', 'por_revisar']
-                        .includes(puntosEstado[String(r.id)]?.estado) ? puntosRotulo : null;
+                        .includes(estadoPuntos) ? puntosRotulo : null;
                     const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
                     // El tipo de documento se pinta en DOS tablas de esta vista con la
                     // misma cascada. `VARIANTE_DOC` está arriba, junto al resto.
@@ -1051,12 +1029,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             {abInvoicesSet.has(r.id) && (
                                                 <Badge variant="danger" size="sm">Receta Médica</Badge>
                                             )}
-                                            {/* Sólo los que piden atención. «Pendientes» es el estado
-                                                normal del 94% de las ventas: repetirlo en cada fila
-                                                sería una pared de insignias iguales que se aprende a
-                                                no mirar. Ese caso se lee en la columna, arriba. */}
+                                            {/* `2xl:hidden` y no un condicional: esta insignia existe
+                                                SÓLO para los anchos donde la columna «Puntos» está
+                                                oculta. Sin eso el mismo estado se lee dos veces en la
+                                                misma fila —lo reportó el usuario— y dos rótulos
+                                                iguales no informan el doble: hacen dudar de si dicen
+                                                lo mismo. El peldaño es el MISMO que el de la columna,
+                                                así que uno aparece justo cuando el otro se va. */}
                                             {puntosDestacado && (
-                                                <Badge variant={puntosDestacado.variante} size="sm">
+                                                <Badge variant={puntosDestacado.variante} size="sm"
+                                                    className="2xl:hidden">
                                                     {puntosDestacado.label}
                                                 </Badge>
                                             )}
@@ -1118,7 +1100,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 detalle va al expediente, después de la tabla. */}
                             {isExpanded && !enTelefono && (
                                 <tr className="border-t border-chart-1/30">
-                                    <td colSpan={8}
+                                    {/* Del largo de la lista y NUNCA un número a
+                                        mano: un `colSpan` corto no da error, sólo
+                                        deja el panel cortado a media tabla. */}
+                                    <td colSpan={COLS_VENTAS.length}
                                         className="px-5 py-4 bg-gradient-to-br from-chart-1/10 via-surface-card to-surface-card-hover">
                                         {detalleDeVenta(r)}
                                     </td>
@@ -1508,6 +1493,39 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         </div>
     );
 }
+
+/**
+ * Las columnas de la lista de ventas, en UN solo lugar.
+ *
+ * Estaban escritas dentro del JSX y el `colSpan` de la fila expandida era un `8`
+ * a mano. Al agregar «Puntos» quedaron nueve columnas y ese 8 no se movió: el
+ * panel del detalle dejó de cubrir la tabla y se cortó a media fila —lo reportó
+ * el usuario con una captura—. No dio ningún error: un `colSpan` corto no falla,
+ * sólo se ve mal.
+ *
+ * Ahora el `colSpan` sale de `COLS_VENTAS.length`, así que agregar o quitar una
+ * columna no puede volver a romperlo. Es la misma familia que la lista de
+ * opciones escrita a mano de CLAUDE.md: dos copias de la misma verdad divergen,
+ * y la que se rompe es la que nadie mira.
+ *
+ * ── Por qué tantas a `2xl` ────────────────────────────────────────────────
+ * Medido: a 1024+ las ocho columnas no entraban en los ~1080px que quedan al
+ * lado del menú y **el Total salía del marco**, cortado a media cifra en un
+ * portátil de 1440 — el ancho más común. Se demotan sucursal, método de pago y
+ * puntos porque son contexto; el cliente y el monto SON la fila. Y `2xl` y no
+ * `1440`, porque ese peldaño se cumple A 1440 y ahí no ocultaba nada.
+ */
+const COLS_VENTAS = [
+    { key: 'fecha',    label: 'Fecha',       sortable: true },
+    { key: 'id',       label: 'ID',          sortable: true, hideBelow: 'md' },
+    { key: 'tipo',     label: 'Tipo',        sortable: true, hideBelow: 'sm' },
+    { key: 'sucursal', label: 'Sucursal',    sortable: true, hideBelow: '2xl' },
+    { key: 'vendedor', label: 'Vendedor',    sortable: true, hideBelow: 'md' },
+    { key: 'cliente',  label: 'Cliente',     sortable: true },
+    { key: 'metodo',   label: 'Método pago', sortable: true, hideBelow: '2xl' },
+    { key: 'puntos',   label: 'Puntos',      hideBelow: '2xl' },
+    { key: 'total',    label: 'Total',       sortable: true, align: 'right' },
+];
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
 // `color` pasa a ser el NOMBRE de la variante de `Badge` (2026-07-28, D3.5).

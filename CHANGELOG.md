@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.853.0 — Filtrar las ventas por el estado de sus puntos
+
+**Ventas tiene un filtro «Puntos»** con los cinco estados: acumulados,
+pendientes, devueltos, por revisar y sin enviar. Y se corrigen dos defectos que
+había dejado la versión anterior.
+
+**El estado salía DOS veces en la misma fila.** La insignia estaba pensada para
+los anchos donde la columna «Puntos» no se ve, pero no se ocultaba cuando sí se
+veía. Dos rótulos iguales no informan el doble: hacen dudar de si dicen lo
+mismo. Ahora la insignia lleva `2xl:hidden`, el mismo peldaño de la columna, así
+que uno aparece justo cuando el otro se va.
+
+**Y el detalle de la venta se cortaba a media tabla.** El `colSpan` de la fila
+expandida era un `8` escrito a mano; al agregar «Puntos» quedaron nueve columnas
+y ese 8 no se movió. No dio ningún error —un `colSpan` corto no falla, sólo se
+ve mal—. Las columnas pasaron a declararse en un solo lugar y el `colSpan` sale
+de su largo, así que agregar otra no puede volver a romperlo.
+
+**Para poder filtrar hubo que revertir una decisión de ayer, y conviene que
+quede dicho.** La v2.846.0 preguntaba el estado a la base de puntos en vez de
+copiarlo, y el motivo era bueno: ese estado cambia en el mostrador y una copia
+vieja miente. Pero la lista se pagina **en el servidor**, así que un filtro cuyo
+dato vive en otra base no se puede aplicar — habría que traer las 358,961 claves
+para saber qué página mostrar. O el estado está en Postgres, o no hay filtro.
+
+Se copió con tres frenos contra el problema que la decisión original evitaba:
+la copia se refresca en la corrida del cron que ya se conecta cada minuto; un
+barrido completo cada diez minutos trae **todas** las que ya cobraron sus puntos
+—no sólo las recientes, porque un ticket se puede presentar meses después—; y
+cada fila lleva `visto_at`, sin la cual «pendiente» y «todavía no lo miré» se
+leerían igual.
+
+**Se sembraron 358,683 filas**, una por cada venta de una sala con puntos, cero
+huecos. Incluso las que NO ganan puntos llevan fila: «Sin enviar» sería la
+ausencia de fila, y una ausencia no se puede filtrar con un join. Invertir el
+modelo —la tabla dice *lo que el portal sabe de los puntos de esta venta*, y eso
+incluye saber que no gana— hace que los cinco estados se filtren igual, sin una
+excepción que después se olvida.
+
+**El barrido se probó fabricándole la regresión que debe cazar:** se desafinó a
+mano una fila de «acumulados» a «pendientes» y la siguiente corrida la devolvió
+a su lugar. Un cero de un detector que nunca vio un caso no prueba nada.
+
+De paso, el estado dejó de costar una llamada por página: viaja en la misma
+consulta de la lista, y la regla de los cinco estados quedó escrita **una sola
+vez**, en una columna generada de la base.
+
 ## v2.852.1 — Bloquear a una persona vuelve a funcionar: la ficha se resuelve desde su identidad
 
 Reportado desde la pantalla: quitarle el acceso a alguien contestaba **«No se

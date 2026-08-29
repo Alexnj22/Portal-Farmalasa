@@ -4,32 +4,25 @@
 // del programa de puntos, y el navegador no puede hablar MySQL. Ésta es la única
 // puerta.
 //
-// ── Por qué se pregunta y no se copia ───────────────────────────────────────
-// La alternativa era espejar `admin_factura` en el portal y leer de ahí. Se
-// descartó por una razón concreta: **el estado cambia en el mostrador**, no acá.
-// Un ticket pasa de «pendiente» a «acumulado» cuando el cliente lo presenta, y
-// eso puede ser hoy o dentro de seis meses. Un espejo tendría que refrescar las
-// 359,271 filas para no mentir, y una copia que miente sobre puntos es peor que
-// no tenerla — la sala le diría a alguien que sus puntos están pendientes
-// cuando ya los cobró. Preguntando, la respuesta es siempre la de este segundo.
+// ── Qué quedó acá, y qué se fue ─────────────────────────────────────────────
+// Sólo los MOVIMIENTOS de un cliente: su saldo y su historial de compras y
+// canjes. Eso vive únicamente del otro lado y se pide de a un cliente, cuando
+// alguien abre el panel — no tiene sentido copiarlo.
 //
-// El costo es una llamada por página de la lista de ventas. Se acota pidiendo
-// sólo las facturas que se están viendo (TOPE_VENTAS), no un rango de fechas.
+// El ESTADO de puntos de cada venta sí se copió a Postgres el 2026-08-29,
+// porque el usuario pidió poder FILTRAR la lista por él y la lista se pagina en
+// el servidor: un filtro que vive en otra base no se puede aplicar. Ese estado
+// ya no pasa por acá.
 //
 // ── Quién puede preguntar ───────────────────────────────────────────────────
 // La llama el NAVEGADOR con la sesión de quien mira, así que va con `verify_jwt`
 // y además comprueba el permiso del módulo — el JWT dice quién sos, no qué
-// podés ver. `ventas` para la lista, `clientes` para la ficha: el mismo permiso
-// que ya hace falta para llegar a esas pantallas, sin inventar uno nuevo
-// (decisión del usuario).
+// podés ver. `clientes`: el mismo permiso que ya hace falta para abrir la ficha,
+// sin inventar uno nuevo (decisión del usuario).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   getCorsHeaders, requireActiveEmployeeUser, permisoDeModulo,
 } from "../_shared/security.ts";
-
-// Tope de facturas por consulta. Una página de la lista de ventas son 50; el
-// tope deja aire para una página grande y frena una llamada armada a mano.
-const TOPE_VENTAS = 300;
 
 function conf() {
   const host = Deno.env.get("PUNTOS_MYSQL_HOST");
@@ -64,64 +57,13 @@ Deno.serve(async (req) => {
 
     const mysql = await import("npm:mysql2@3.11.0/promise");
 
-    // ── El estado de puntos de unas ventas ────────────────────────────────
-    if (accion === "ventas") {
-      const permiso = await permisoDeModulo(admin, empleado.id, "ventas", "can_view");
-      if (!permiso.puede) return json({ error: "No tienes permiso para ver ventas." }, 403);
-
-      const ids = Array.isArray(body?.invoice_ids) ? body.invoice_ids.slice(0, TOPE_VENTAS) : [];
-      if (!ids.length) return json({ ok: true, estados: {} });
-
-      // La clave del otro sistema es (sucursal, id del documento), no el id del
-      // portal — así que primero hay que traducir. De paso viene `reversion`,
-      // que es lo ÚNICO que el portal sabe por su cuenta: si una anulada se
-      // devolvió sola o quedó para que alguien la mire.
-      const { data: filas, error } = await admin
-        .from("sales_invoices")
-        .select("id, erp_invoice_id, estado, branches!inner(codigo_puntos), puntos_enviados(reversion)")
-        .in("id", ids)
-        .not("branches.codigo_puntos", "is", null);
-      if (error) throw new Error(`sales_invoices: ${error.message}`);
-
-      const claves: any[] = [];
-      const porFactura = new Map<string, any>();
-      for (const f of filas ?? []) {
-        const suc = (f as any).branches?.codigo_puntos;
-        if (!suc || !f.erp_invoice_id) continue;
-        claves.push([suc, String(f.erp_invoice_id)]);
-        porFactura.set(`${suc}|${f.erp_invoice_id}`, f);
-      }
-
-      const estados: Record<string, unknown> = {};
-      let aplicadoPorClave = new Map<string, number>();
-      if (claves.length) {
-        conn = await mysql.createConnection(cfg);
-        const [rows] = await conn.query(
-          "SELECT sucursal, id, aplicado FROM admin_factura WHERE (sucursal, id) IN (?)",
-          [claves],
-        ) as any;
-        aplicadoPorClave = new Map((rows ?? []).map((r: any) => [`${r.sucursal}|${r.id}`, Number(r.aplicado)]));
-      }
-
-      for (const [clave, f] of porFactura) {
-        const ap = aplicadoPorClave.get(clave);
-        // `reversion` gana sobre `aplicado` a propósito: si el portal devolvió
-        // los puntos, la fila ya no está en el otro sistema y `aplicado` sería
-        // `undefined` — que se lee igual que «nunca se mandó». Son cosas
-        // distintas y la pantalla tiene que poder distinguirlas.
-        const rev = (f as any).puntos_enviados?.[0]?.reversion
-                 ?? (f as any).puntos_enviados?.reversion ?? null;
-        let estado: string;
-        if (rev === "RESTADA" || rev === "BORRADA") estado = "devuelto";
-        else if (rev === "PUNTOS_YA_DADOS")          estado = "por_revisar";
-        else if (ap === 1)                            estado = "acumulado";
-        else if (ap === 0)                            estado = "pendiente";
-        else                                          estado = "sin_enviar";
-        estados[String(f.id)] = { estado, anulada: f.estado !== "FINALIZADA" };
-      }
-
-      return json({ ok: true, estados });
-    }
+    // ⚠️ Acá vivía una acción `ventas` que le preguntaba el estado a la base de
+    // puntos por cada página de la lista. Se quitó el 2026-08-29 al espejar ese
+    // estado en Postgres —hizo falta para poder FILTRAR—: ahora viaja en la
+    // misma consulta de la lista. Dejarla habría dejado la regla de los cinco
+    // estados escrita en DOS lugares, y dos copias de una regla de cinco ramas
+    // divergen; la que se rompe es la que nadie mira. La regla vive hoy en la
+    // columna generada `puntos_enviados.estado_puntos`, en la base.
 
     // ── Los movimientos de puntos de un cliente ───────────────────────────
     if (accion === "cliente") {

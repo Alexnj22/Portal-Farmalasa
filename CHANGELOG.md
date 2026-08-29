@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.854.3 — Cada papel de la caja se llama por su nombre
+
+Lo destapó una pregunta sobre el flujograma: *«no veo la parte de hacer un vale
+y sacar dinero de una bolsa»*. No faltaba sólo un paso — **la misma palabra
+nombraba tres cosas**, y por eso el circuito no se entendía:
+
+| se llama | cuántos | dónde va | ¿mueve lo que la caja espera? |
+|---|---|---|---|
+| **Vale de papel** | uno por operación, aunque toque cuatro bolsas | se archiva | no |
+| **Etiqueta** | una por bolsa | pegada a la bolsa, con la resta | no |
+| **Vale de caja** | uno por corte | al sistema de la caja | **sí** |
+
+Las pantallas ahora dicen «vale de caja» sólo cuando es el tercero, y el concepto
+que se escribe del otro lado también: antes decía `VALES DEL PORTAL`, que a quien
+lo lee allá no le distinguía nada.
+
+Y explica lo que parecía una contradicción: **una salida de una bolsa de un día
+ya cerrado igual imprime su vale de papel y rehace su etiqueta, y aun así no se
+anota en la caja.** Los dos primeros son respaldo; el tercero es contabilidad.
+## v2.854.2 — La contraseña de quien ya trabajaba acá no se reinicia al enlazar
+
+**Lo levantó el usuario con nombre y apellido**: «al crear un nuevo usuario y
+seleccionar de la lista a uno ya creado, si ese empleado ya asignó su
+contraseña, mantén la misma, no la reinicies. A Carlos Miguel Renderos se le
+restableció.»
+
+Verificado en producción: entró a las **14:32** del 28-ago y a las **22:34** su
+cuenta volvió a una contraseña temporal, con `must_change_password` en `true`.
+No hubo error en ningún lado — el alta hizo exactamente lo que decía su código.
+
+**Por qué pasaba.** Dar de alta enlazando con una ficha existente no crea una
+segunda fila: escribe sobre la que ya está. Pero el paso final del alta seguía
+tratando a esa persona como si no tuviera credenciales, y le mandaba a
+`set-employee-password` el sentinel `'1234'`, que significa *reseteala a una
+temporal*. La temporal la ve **sólo quien da de alta**, así que la persona
+queda afuera sin enterarse de por qué.
+
+**Qué cambia.** El alta ahora manda `conservarLaSuya` cuando enlaza. Quién
+decide lo resuelve la función y no la pantalla —el navegador no sabe si esa
+cuenta existe ni quién eligió esa contraseña—: si `must_change_password` es
+`false`, o sea que la persona la eligió ella en su primer acceso, **no se toca**
+(sólo se refrescan usuario y código en la metadata). Si nunca la eligió y sigue
+con una temporal que ya nadie recuerda, devuelve una nueva — que es justo lo
+que quien da de alta necesita para entregarla. El aviso lo dice: «Entra igual
+que siempre, con el usuario … y la contraseña que ya tenía».
+
+**Y el mismo defecto tenía una segunda cara, silenciosa.** El usuario también
+es una credencial: la cuenta se llama `<usuario>@farmalasa.app`. El alta lo
+escribía como una columna más, y en el alta el usuario **se reescribe solo con
+el nombre** (`handleChange` lo regenera mientras no haya `id`), así que
+corregirle el apellido a la ficha que se está absorbiendo alcanzaba para dejar
+la ficha diciendo una cosa y la puerta pidiendo otra. Sin error, sin fila de
+menos: la persona simplemente no entra. Ahora, cuando cambia, lo mueve
+`renombrar-usuario-empleado` —que cambia la columna y el correo juntos o no
+cambia ninguno—, y si no se puede, la ficha se guarda igual, queda el usuario
+de antes (el que sigue dejando entrar) y el aviso dice cuál es.
+
+**A Carlos hay que darle una contraseña nueva**: la anterior se sobrescribió el
+28-ago y no se puede recuperar. Sale de «Restablecer contraseña» en su ficha.
+
 ## v2.854.1 — Retirados y Devueltos no son lo mismo
 
 **Lo levantó el usuario mirando la lista**: vio «DEVUELTOS» en una pantalla llena

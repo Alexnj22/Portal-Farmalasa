@@ -130,7 +130,7 @@ async function aperturaViva(cookie: string): Promise<{ aper: string; emp: string
 
 /** El concepto del vale. Corto a propósito: el campo trunca a 50 caracteres. */
 const conceptoDe = (valeId: number, cuantas: number) =>
-  `VALES DEL PORTAL ${valeId} (${cuantas} salida${cuantas === 1 ? "" : "s"})`;
+  `VALE DE CAJA ${valeId} (${cuantas} salida${cuantas === 1 ? "" : "s"})`;
 
 /** ¿Ya existe en el día un movimiento con este concepto? Devuelve su id. */
 async function yaEscrito(cookie: string, fecha: string, valeId: number): Promise<number | null> {
@@ -144,7 +144,7 @@ async function yaEscrito(cookie: string, fecha: string, valeId: number): Promise
     // duplicaría el vale, así que se aborta esta sala y se reintenta después.
     throw new Error("no se pudo revisar si el vale ya estaba escrito");
   }
-  const marca = `VALES DEL PORTAL ${valeId} `;
+  const marca = `VALE DE CAJA ${valeId} `;
   const fila = (json.data as string[][]).find((f) => String(f[1] ?? "").startsWith(marca));
   return fila ? Number(fila[0]) : null;
 }

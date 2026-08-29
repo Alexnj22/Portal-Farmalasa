@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
       valeId = creado.id;
 
       // Freno: ¿ya está escrito? Un reintento no puede duplicar un vale.
-      const marca = `VALES DEL PORTAL ${valeId} `;
+      const marca = `VALE DE CAJA ${valeId} `;
       const dt = await (await fetch(
         `${MOV_URL}?fechai=${mias[0].dia_abierto}&fechaf=${mias[0].dia_abierto}&draw=1&start=0&length=1000`,
         { headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" }, signal: AbortSignal.timeout(60_000) },
@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
           body: new URLSearchParams({
             process: "salida", id_apertura: viva.aper, id_empleado: viva.emp, turno: viva.turno,
             monto: dosDecimales(montoVale),
-            concepto: `VALES DEL PORTAL ${valeId} (${mias.length} salida${mias.length === 1 ? "" : "s"})`,
+            concepto: `VALE DE CAJA ${valeId} (${mias.length} salida${mias.length === 1 ? "" : "s"})`,
             proveedor: "", tipo_doc: "", n_doc: "", recibe: "PORTAL", id_tipo: ID_TIPO_SALIDA,
           }).toString(),
           signal: AbortSignal.timeout(45_000),

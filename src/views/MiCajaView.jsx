@@ -163,7 +163,7 @@ export default function MiCajaView() {
 
                         {pendientes.length > 0 && (
                             <Notice variant="warning" icon={Landmark}>
-                                Al hacer el corte se anota <b>un solo vale</b> con estas {pendientes.length} salidas.
+                                Al hacer el corte se anota <b>un solo vale de caja</b> con estas {pendientes.length} salidas.
                                 Salieron de una bolsa del día que la caja tiene abierto, así que sigue
                                 esperando ese dinero.
                             </Notice>
@@ -421,7 +421,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
                     </p>
                     {resultado.vale && (
                         <p className="text-caption text-content-3">
-                            Se anotó un vale de {formatMoney(resultado.vale.monto)} antes del corte.
+                            Se anotó un vale de caja de {formatMoney(resultado.vale.monto)} antes del corte.
                         </p>
                     )}
                     {!resultado.ok && (
@@ -442,7 +442,7 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
             bajada="Cuenta el efectivo de la caja y escribe cuánto hay. No se muestra cuánto debería haber: eso aparece después.">
             {pendientes > 0 && (
                 <Notice variant="info" icon={Landmark}>
-                    Antes del corte se anota un vale con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
+                    Antes del corte se anota un <b>vale de caja</b> con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
                 </Notice>
             )}
             <PortalInput label="Efectivo contado" inputMode="decimal" value={efectivo}

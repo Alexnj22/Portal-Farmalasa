@@ -116,8 +116,9 @@ export default function ValesDeCaja() {
                     <div>
                         <h3 className="text-h3 font-bold text-content">Falta anotarle a la caja</h3>
                         <p className="text-body-sm text-content-2 mt-1">
-                            Un solo asiento por sala. El detalle —boleta, foto, quién recibió— se
-                            queda en el portal.
+                            Un solo <b>vale de caja</b> por sala. El vale de papel y la etiqueta de
+                            cada bolsa ya salieron al sacar el dinero: esto es el movimiento que
+                            le falta al sistema.
                         </p>
                     </div>
 
@@ -142,7 +143,7 @@ export default function ValesDeCaja() {
                                 <p key={i} className="text-body-sm text-content-2">
                                     {s.error
                                         ? `Sala ${s.branchId}: ${s.error}`
-                                        : `Sala ${s.branchId} · ${s.accion === 'crear' ? 'un vale nuevo' : 'sumar al vale abierto'} · ${formatMoney(s.monto_del_vale)}`}
+                                        : `Sala ${s.branchId} · ${s.accion === 'crear' ? 'un vale de caja nuevo' : 'sumar al vale de caja abierto'} · ${formatMoney(s.monto_del_vale)}`}
                                 </p>
                             ))}
                         </div>

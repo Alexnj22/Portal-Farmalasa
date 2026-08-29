@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.849.1 — El cheque de la etiqueta se rotula, no se advierte
+
+Corregido por el usuario sobre la v2.847.0: *«OJO: TAMBIEN VA UN CHEQUE no me
+gusta, mejor que diga Cheques: / No entra en el EFECTIVO de abajo, que son
+billetes. eso está demás»*.
+
+```
+Cheques:
+15:09 IGLESIA TABERNACULO BIBLICO BAUTISTA .   $352.50
+```
+
+**La etiqueta es una lista de lo que hay adentro, no un aviso** — igual que el
+resto del papel, que rotula «Bolsa», «Sala», «Caja». El bloque ya está aparte de
+los totales y con su propio rótulo, así que el renglón que explicaba que el
+cheque no entra en el efectivo repetía en prosa lo que la maqueta ya dice, y en
+un rollo de veinte renglones eso son **dos gastados en nada**.
+
+De paso desaparece el plural: `Cheques:` sirve para uno y para tres, así que ya
+no hay dos textos que conjugar.
+
 ## v2.849.0 — El ticket del envío y lo que no llegó en la bolsa
 
 Reporte del usuario: *«en los traslados entre sala, al enviarlo no imprime

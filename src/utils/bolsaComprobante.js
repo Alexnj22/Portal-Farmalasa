@@ -173,16 +173,19 @@ export function construirEtiquetaDeBolsa({
          * dice lo que es —algo más que tiene que estar adentro— antes de que se
          * llegue al número que se compara.
          *
-         * Son cuatro en quince meses. Esa rareza es justo por qué la etiqueta
-         * vivió un año sin nombrarlos y por qué el aviso tiene que ser explícito:
-         * nadie va a acordarse de buscar un papel que casi nunca hay. */
+         * ── Se ROTULA, no se advierte (usuario, 2026-08-29) ─────────────────
+         * Salió como «OJO: TAMBIEN VA UN CHEQUE» con un renglón que explicaba
+         * que no entraba en el efectivo, y el usuario sacó las dos cosas:
+         * *«mejor que diga Cheques: […] eso está demás»*. Y es la misma regla
+         * que el resto del papel: la etiqueta es una LISTA de lo que hay
+         * adentro, no un aviso. El bloque está aparte de los totales y con su
+         * propio rótulo, así que el renglón que decía «no entra en el EFECTIVO»
+         * repetía en prosa lo que la maqueta ya dice — y en un rollo de veinte
+         * renglones eso son dos gastados en nada.
+         *
+         * Sin plural que conjugar: `Cheques:` sirve para uno y para tres. */
         bloques: conCheque ? [{
-            titulo: cheques.length === 1
-                ? 'OJO: TAMBIEN VA UN CHEQUE'
-                : `OJO: TAMBIEN VAN ${cheques.length} CHEQUES`,
-            texto: cheques.length === 1
-                ? 'No entra en el EFECTIVO de abajo, que son billetes.'
-                : 'No entran en el EFECTIVO de abajo, que son billetes.',
+            titulo: 'Cheques:',
             filas: cheques.map((c) => [
                 recortar(`${hhmm(c.hora)} ${c.cliente || 'Sin cliente'}`, 44),
                 formatMoney(Math.abs(Number(c.total ?? 0))),

@@ -200,7 +200,7 @@ describe('la etiqueta de una bolsa', () => {
     it('nombra el cheque que va adentro, con su hora, su cliente y su monto', () => {
         const t = etiqueta({ cheques });
         const texto = cuerpo(t);
-        expect(texto).toContain('OJO: TAMBIEN VA UN CHEQUE');
+        expect(texto).toContain('Cheques:');
         expect(texto).toContain('15:09');
         expect(texto).toContain('IGLESIA TABERNACULO');
         expect(texto).toContain('$352.50');
@@ -221,11 +221,23 @@ describe('la etiqueta de una bolsa', () => {
         expect(texto.indexOf('CHEQUE')).toBeLessThan(texto.indexOf('EFECTIVO'));
     });
 
-    it('conjuga el aviso: dos cheques no dicen «va un cheque»', () => {
+    it('es un rotulo y no un aviso: ni advierte ni explica en prosa', () => {
+        // Salió como «OJO: TAMBIEN VA UN CHEQUE» más un renglón que explicaba
+        // que no entraba en el efectivo, y el usuario sacó las dos cosas: la
+        // etiqueta es una lista de lo que hay adentro. En un rollo de veinte
+        // renglones, la prosa que repite lo que la maqueta ya dice son dos
+        // gastados en nada.
+        const texto = cuerpo(etiqueta({ cheques }));
+        expect(texto).not.toContain('OJO');
+        expect(texto).not.toContain('No entra');
+    });
+
+    it('el mismo rotulo sirve para uno y para dos: no hay plural que conjugar', () => {
         const dos = [...cheques, { hora: '18:40:00', cliente: 'ALCALDIA', total: 40 }];
         const texto = cuerpo(etiqueta({ cheques: dos }));
-        expect(texto).toContain('OJO: TAMBIEN VAN 2 CHEQUES');
-        expect(texto).toContain('No entran en el EFECTIVO');
+        expect(texto).toContain('Cheques:');
+        expect(texto).toContain('18:40 ALCALDIA');
+        expect(texto).toContain('$40.00');
     });
 
     it('avisa que anula a la anterior solo cuando no es la primera', () => {

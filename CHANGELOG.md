@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.854.0 — El documento de bienvenida: a elección, en dos páginas, con carné
+
+**Ahora se elige.** Al crear un empleado hay una casilla —«Descargar el documento
+de bienvenida»— y si no está marcada, no se descarga nada. Arranca **marcada** y
+no es un descuido: la contraseña temporal sólo existe en esa respuesta del
+servidor, así que el lado seguro para equivocarse es entregarla. Y cuando se
+desmarca, el aviso pasa a mostrar la contraseña en pantalla — callarla sería
+perderla por haber desmarcado una casilla.
+
+**El documento pasó de una página a dos**, y son dos por una razón física: la
+primera lleva las claves —se guarda o se destruye— y la segunda **se recorta**.
+En la misma hoja, recortar el carné mutila las claves.
+
+### Página 1 — la bienvenida y los accesos
+
+Lo de siempre (cómo entrar al portal, usuario, contraseña temporal, ISSS y AFP)
+más **seis puntos del reglamento interno**, cada uno con su artículo:
+
+- la jornada y el descanso semanal (Arts. 16, 19 y 21);
+- marcar entrada y salida (Art. 51 nº 1);
+- los **diez minutos de tolerancia por semana** y qué se pierde al pasarlos
+  (Art. 26);
+- avisar si no se va a poder llegar (Art. 25);
+- salir antes de la hora, con autorización (Art. 27);
+- la reserva sobre lo confidencial (Art. 51 nº 5).
+
+Van con el artículo a propósito: un papel que dice «no se puede» sin decir dónde
+lo dice es una orden; con el artículo es una regla que la persona puede ir a
+leer, y el reglamento completo está aprobado por la Dirección General de Trabajo
+y a la vista en la empresa.
+
+### Página 2 — el carné, para recortar
+
+A **tamaño de tarjeta exacto** (85.6 × 54 mm), con línea de corte, en los colores
+institucionales —el magenta `#981D97` y el verde `#8EC30F`, muestreados del logo
+píxel por píxel, no elegidos a ojo—. Lleva **foto, nombre completo, cargo, sala,
+fecha de inicio y el código de barras**.
+
+Cuando todavía no hay foto, el hueco no queda vacío: van las **iniciales sobre el
+magenta**, con el arco verde del logo insinuado. Un hueco gris se lee como un
+carné a medio hacer, y el día que llegue la foto ocupa exactamente el mismo
+lugar. La foto se recorta **cuadrada desde el centro** — dejar que se estire
+deforma la cara.
+
+El número del carné **no se escribe en texto**, sólo como código de barras. Es la
+credencial que abre el portal y marca asistencia: en claro basta una foto desde
+el otro lado del mostrador. Y el papel lo dice, ahora debajo del carné, que es
+donde lo lee quien lo recorta.
+
+### Dos defectos corregidos de paso
+
+- **La fecha de inicio salía un día antes.** `2026-09-01` se leía como medianoche
+  UTC y en El Salvador eso es el 31 de agosto: el carné imprimía a la persona
+  empezando un día antes. Es la familia de defectos que la memoria llama «una
+  fecha sin hora leída como UTC retrocede», esta vez sobre un papel que se
+  entrega.
+- **El nombre se salía del cartón.** Un `width` sobre un texto con posición
+  absoluta pdfmake lo ignora; ahora va en un bloque con ancho fijo y envuelve.
+
+Medido generando el PDF de verdad: **2 páginas**, el carné a 242.6 × 153 pt, con
+foto y sin foto.
+
 ## v2.853.0 — Filtrar las ventas por el estado de sus puntos
 
 **Ventas tiene un filtro «Puntos»** con los cinco estados: acumulados,

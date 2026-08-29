@@ -4586,6 +4586,38 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         vez tendrá que entrar con ese. La contraseña no cambia.
                                     </Notice>
                                 )}
+                                {/* ── El documento de bienvenida, a elección ─────────
+                                    Pedido del usuario (2026-08-29): «que se seleccione
+                                    al crear el empleado lo de descargar el PDF de
+                                    bienvenida. Si no se selecciona, no se descarga».
+
+                                    Arranca MARCADO y no vacío, y no es un descuido: la
+                                    contraseña temporal sólo existe en esa respuesta del
+                                    servidor —recuperarla es reiniciarla—, así que el
+                                    lado seguro para equivocarse es descargarla. Quien no
+                                    la quiera, la desmarca; quien no mire la casilla, se
+                                    queda con el papel.
+
+                                    Sólo al CREAR: en una ficha que ya existe no hay
+                                    contraseña temporal que entregar, y el carné se
+                                    imprime desde su propia pantalla. */}
+                                {!formData?.id && (
+                                    <div className="mt-3 rounded-2xl border border-divider p-3">
+                                        <Checkbox
+                                            checked={formData.descargar_bienvenida !== false}
+                                            onChange={(v) => handleSelectChange('descargar_bienvenida', v)}
+                                            label={<span className="text-label font-black text-content">
+                                                Descargar el documento de bienvenida
+                                            </span>}
+                                        />
+                                        <p className="text-micro text-content-3 font-medium leading-snug mt-1.5 ml-7">
+                                            Dos páginas: sus accesos al portal con lo básico del reglamento,
+                                            y su carné para recortar. Trae la contraseña temporal, que después
+                                            no se puede volver a ver.
+                                        </p>
+                                    </div>
+                                )}
+
                                 {!usuarioQuedoViejo && usuarioVaACambiar && (
                                     <Notice variant="warning" bloque className="mt-3"
                                         action={<Button size="sm" variant="ghost"

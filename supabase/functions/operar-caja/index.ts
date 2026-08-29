@@ -214,10 +214,17 @@ Deno.serve(async (req) => {
       // El empleado con el que la CAJA identifica a quien abre. Se reusa el que
       // esa sala ya venía usando; si nunca se vio, el de la sesión — y en los
       // dos casos la persona de verdad queda en `abierta_por`.
-      const { data: ultima } = await supabase.from("cortes_caja_aperturas")
+      const { data: ultima, error: errUltima } = await supabase.from("cortes_caja_aperturas")
         .select("erp_empleado_id")
         .eq("branch_id", sala).not("erp_empleado_id", "is", null)
         .order("abierta_el", { ascending: false }).limit(1);
+      // Descartar este error hacía que una consulta FALLADA se leyera como «esta
+      // sala nunca abrió», y la caja quedaba abierta a nombre del empleado de la
+      // sesión en vez del que esa sala usa siempre. Un dato equivocado en la
+      // caja, sin error a la vista.
+      if (errUltima) {
+        return json({ ok: false, error: "No se pudo averiguar con qué empleado abre esta sala." }, 503);
+      }
       const empErp = ultima?.[0]?.erp_empleado_id ?? estado.idEmple;
 
       const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
@@ -241,10 +248,18 @@ Deno.serve(async (req) => {
 
       // Quién la abrió DE VERDAD. La captura de cada media hora va a traer el
       // resto (hora, monto, id de apertura); esto es lo que ella no puede saber.
-      await supabase.from("caja_aperturas_del_portal").insert({
+      const { error: errApertura } = await supabase.from("caja_aperturas_del_portal").insert({
         branch_id: sala, abierta_por: quien.id, erp_empleado_id: empErp,
         caja_erp: Number(estado.idCaja), monto_apertura: monto,
       });
+      // La caja YA está abierta cuando llegamos acá. Si la anotación falla, la
+      // apertura existe y el portal no sabe quién la hizo — que es justo el dato
+      // que esta función existe para guardar. Se contesta que abrió (es verdad)
+      // y se dice que no quedó anotada, en vez de callarlo.
+      if (errApertura) {
+        return json({ ok: true, abierta: true, caja: estado.idCaja,
+          aviso: "La caja abrió, pero no se pudo anotar quién la abrió. Avísale a Sistemas." });
+      }
       return json({ ok: true, abierta: true, caja: estado.idCaja });
     }
 
@@ -318,9 +333,16 @@ Deno.serve(async (req) => {
       }
       let idMov: number | null = null;
       try { idMov = Number(JSON.parse(resp)?.id_mov) || null; } catch { idMov = null; }
-      await supabase.from("caja_movimientos_portal")
+      const { error: errLigar } = await supabase.from("caja_movimientos_portal")
         .update({ erp_movimiento_id: idMov, updated_at: new Date().toISOString() })
         .eq("id", fila.id);
+      // El movimiento ya ocurrió en la caja. Si no se pudo ligar, el portal
+      // tiene la fila sin el número del sistema: se puede reintentar, pero
+      // alguien tiene que enterarse.
+      if (errLigar) {
+        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov,
+          aviso: "El movimiento se hizo, pero no se pudo enlazar con el del sistema." });
+      }
 
       return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov });
     }

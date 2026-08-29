@@ -404,6 +404,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const { addEmployee, updateEmployee } = useStaff.getState();
                 const finalData = { ...formData, username: formData.username?.trim().toLowerCase() };
                 
+                // Se guarda ANTES de borrarlo: es la foto que va al carné del
+                // documento de bienvenida, y `finalData` no la lleva a la base.
+                const fotoParaElCarne = formData.photoPreview || null;
                 delete finalData.photoPreview; 
                 delete finalData.effectiveStatus; 
                 delete finalData.history; 
@@ -467,8 +470,18 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         // el documento arma un PDF y un código de barras, y eso no
                         // puede viajar en el chunk de un modal que casi siempre se
                         // abre para otra cosa.
+                        /* ── Se descarga sólo si lo pidieron ─────────────────
+                         * La casilla del formulario decide. Arranca marcada —la
+                         * contraseña temporal sólo existe en esta respuesta— así
+                         * que `false` es una decisión explícita de quien crea.
+                         *
+                         * Cuando NO se descarga, el aviso pasa a mostrar la
+                         * contraseña en pantalla: es la única copia que queda, y
+                         * callarla sería perderla por haber desmarcado una
+                         * casilla. */
+                        const quiereDocumento = formData.descargar_bienvenida !== false;
                         const { descargarDocumentoDeBienvenida } = await import('../utils/documentoDeBienvenida');
-                        const doc = await descargarDocumentoDeBienvenida({
+                        const doc = quiereDocumento ? await descargarDocumentoDeBienvenida({
                             nombre: `${finalData.first_names || ''} ${finalData.last_names || ''}`.trim(),
                             cargo: roles?.find(r => String(r.id) === String(finalData.role_id))?.name || '',
                             sala: branches?.find(b => String(b.id) === String(finalData.branch_id))?.name || '',
@@ -476,9 +489,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             usuario: created.username,
                             contrasenaTemporal: created.tempPassword,
                             valorDelCarne: finalData.kiosk_pin || null,
+                            // La foto para el carné. Sale del `photoPreview` del
+                            // formulario —que ya es un data URL— y no de la que
+                            // se acaba de subir: la subida es asíncrona y su URL
+                            // firmada puede no existir todavía cuando se arma el
+                            // PDF. Si no hay, el carné sale con las iniciales.
+                            foto: fotoParaElCarne,
                             isss_estado: finalData.isss_estado || null,
                             afp_estado: finalData.afp_estado || null,
-                        });
+                        }) : { ok: false, omitido: true };
                         // Un documento con credenciales es una salida de datos del
                         // portal, y las salidas se anotan (`export_log`).
                         if (doc.ok) {
@@ -487,10 +506,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         }
 
                         if (showToast) showToast(
-                            enlazado ? "Expediente Enlazado — Documento de Accesos" : "Empleado Creado — Documento de Accesos",
+                            doc.omitido
+                                ? (enlazado ? "Expediente Enlazado" : "Empleado Creado")
+                                : (enlazado ? "Expediente Enlazado — Documento de Bienvenida" : "Empleado Creado — Documento de Bienvenida"),
                             doc.ok
-                                ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento con su usuario, su contraseña temporal y su carné. Entrégaselo o imprímelo.`
-                                : `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). No se pudo generar el documento — anótala antes de cerrar.`,
+                                ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento: sus accesos y su carné para recortar. Entrégaselo o imprímelo.`
+                                : `${enlazado ? enlazado + ' ' : ''}Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). `
+                                  + (doc.omitido
+                                      ? 'No se pidió el documento — anótala antes de cerrar, no se puede volver a ver.'
+                                      : 'No se pudo generar el documento — anótala antes de cerrar.'),
                             doc.ok ? "success" : "warning",
                             20000
                         );

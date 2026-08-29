@@ -14,7 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
-import { definicionDelDocumento, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
+import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);
 
@@ -41,6 +41,8 @@ describe('el documento de accesos', () => {
         // caduque es lo que lo vuelve útil hasta que llega la tarjeta — y lo que
         // obliga a decir en voz alta lo que vale.
         const t = textoDe(definicionDelDocumento({ ...base, barrasPng: 'data:image/png;base64,AAAA' }));
+        // Desde el 2026-08-29 esto vive en la PÁGINA 2, debajo del carné —que
+        // es donde lo va a leer quien lo recorta— y no arriba con las claves.
         expect(t).toMatch(/mismo código que va a llevar tu carné de plástico/);
         expect(t).toMatch(/no caduca/);
         expect(t).toMatch(/puede marcar por ti/);
@@ -101,5 +103,60 @@ describe('nombreDelArchivo', () => {
     it('sin nombre no produce un archivo sin nombre', () => {
         expect(nombreDelArchivo('')).toBe('accesos-empleado.pdf');
         expect(nombreDelArchivo(null)).toBe('accesos-empleado.pdf');
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOS páginas: una que se guarda y otra que se recorta
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Pedido del usuario (2026-08-29): «que sea de 2 páginas, 1 página con
+// información relevante, portal, bienvenida (puedes tomar algunas reglas… del
+// RIT que sean básicas y necesarias) y en la 2, genera un carné».
+//
+// Son dos páginas por una razón física: la primera lleva la contraseña temporal
+// —se guarda o se destruye— y la segunda se RECORTA. En la misma hoja, recortar
+// el carné mutila las claves.
+
+describe('las dos páginas', () => {
+    const con = (extra = {}) => definicionDelDocumento({
+        nombre: 'Carlos Antonio Renderos Mejía', cargo: 'Dependiente de Farmacia',
+        sala: 'Salud 3', usuario: 'crenderos', contrasenaTemporal: 'Xk29-mQ4',
+        fechaDeInicio: '2026-09-01', barrasPng: 'data:image/png;base64,AAAA', ...extra,
+    });
+
+    it('el carné empieza en una página nueva', () => {
+        const saltos = JSON.stringify(con().content).match(/"pageBreak":"before"/g) || [];
+        expect(saltos).toHaveLength(1);
+    });
+
+    it('la primera trae lo básico del reglamento, con su artículo', () => {
+        const t = textoDe(con());
+        expect(t).toMatch(/Lo básico, para empezar/);
+        expect(t).toMatch(/diez minutos de tolerancia POR SEMANA/i);
+        // Con el artículo: un papel que dice «no se puede» sin decir dónde lo
+        // dice es una orden; con el artículo es una regla que se puede ir a leer.
+        expect(t).toMatch(/Art\. 26/);
+        expect(BASICO_DEL_REGLAMENTO.every(r => r.art && r.titulo && r.texto)).toBe(true);
+    });
+
+    /* ── La fecha del carné NO puede retroceder un día ───────────────────────
+     * `new Date('2026-09-01')` es medianoche UTC, y en El Salvador (UTC-6) eso
+     * es el 31 de agosto: el carné salía impreso con la persona empezando un
+     * día antes. Es el defecto que la memoria llama «una fecha sin hora leída
+     * como UTC retrocede», y acá se ve en un papel que se entrega. */
+    it('la fecha de inicio no se corre un día', () => {
+        const t = textoDe(con({ fechaDeInicio: '2026-09-01' }));
+        expect(t).toMatch(/1 de septiembre de 2026|01 de septiembre de 2026/);
+        expect(t).not.toMatch(/de agosto de 2026/);
+    });
+
+    it('el carné dice qué vale, y eso vive con el carné', () => {
+        // Se mudó de la página 1 a la 2 al separarlas. Es lo que no puede
+        // faltar: el código no caduca y quien le tome una foto puede marcar por
+        // esta persona.
+        const t = textoDe(con());
+        expect(t).toMatch(/no caduca/);
+        expect(t).toMatch(/puede marcar por ti/);
     });
 });

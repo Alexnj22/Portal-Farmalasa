@@ -21,9 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.849.3 — Corrección: el código de barra no tumbaba la tanda, MySQL lo recortaba
+
+**Corrige lo que dijo v2.841.0 y v2.845.1.** Ahí se afirmó que los 21 códigos de
+barra escaneados en el campo del vendedor (13 a 17 dígitos) hacían fallar la
+tanda entera, y que eran «candidato serio» a por qué la hoja de cálculo venía
+fallando. **Se comprobó mirando esas 21 filas del otro lado y es falso.**
+
+MySQL no rechaza un entero que no cabe: lo **recorta**. Las 21 están allá con
+`cod_vendedor = 2147483647` —el tope del entero— o sea **acreditadas a un
+vendedor que no existe**. Una de ellas ya tiene sus puntos cobrados.
+
+El defecto es real y se lee peor que el que se había descrito: no falla nada, no
+hay error en ningún log, y los puntos quedan a nombre de nadie. El filtro que se
+puso sigue haciendo falta, pero por un motivo distinto — en Postgres el `::int`
+**sí** lanza, y ahí sí se cae la consulta entera. Dos bases, dos
+comportamientos, y el silencioso es el de destino.
+
+**Cómo se descubrió:** buscando un ejemplo de «Sin enviar» para verificar la
+columna nueva. Ninguna de las cuatro facturas con código de barra estaba sin
+enviar — las cuatro estaban allá. Es la lección de siempre: la afirmación que
+nadie va a verificar es la que se queda escrita mal.
+
+**Y de paso, un dato que conviene tener:** hay **50,025 facturas de $1 o menos**
+en la base de puntos, puestas por la hoja de cálculo. La regla del «más de $1» es
+nueva y sólo aplica de aquí en adelante, así que ésas siguen siendo canjeables.
+Valen a lo sumo un punto cada una, pero contradicen la regla. Queda a decisión
+de quién corresponda si se limpian.
+
 ## v2.849.2 — Reimprimir donde está la bolsa, y la salida del faltante a la vista
 
-_(pendiente de redactar)_
+Dos costuras del envío que aparecieron recorriendo los cuatro momentos de la
+tarjeta, no leyendo el pedido.
+
+**Reimprimir estaba sólo en «Enviaste».** Es la misma sala que en «Sin salir de
+tu sala» —la que despachó— pero el otro momento: cuando algo no pudo salir y la
+caja sigue en su mostrador. O sea que un despacho parcial se quedaba sin forma
+de reimprimir **justo mientras la bolsa todavía estaba ahí**, que es la única
+ventana en la que el papel sirve de algo.
+
+**Y el botón que recibe una composición entera no tiene dónde decir que faltó
+algo.** Eso está bien: recibe las tres cajas de una y el hueco es de UNA. El
+problema era otro — **una vez recibida, esa solicitud sale de la lista y ya no
+hay dónde declararlo**. Una salida que existe pero se descubre después de
+haberla necesitado es una salida que no existe.
+
+Hoy el botón dice «Ya llegaron las N **completas**» y debajo, a la vista antes
+de apretarlo, está la otra puerta: si a una le faltó algo, se recibe desde su
+propia tarjeta.
 
 ## v2.849.1 — El cheque de la etiqueta se rotula, no se advierte
 

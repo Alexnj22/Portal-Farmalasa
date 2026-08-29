@@ -104,7 +104,10 @@ const MENU_GROUPS = [
     // propio —con alcance y tres capacidades— sin ruta ni entrada de menú: se
     // llegaba sólo por `/cortes`, detrás del guardia de `cortes_caja`. Quien
     // tuviera `bolsas` y no `cortes_caja` no podía entrar, y no daba error.
-    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['cortes_caja', 'bolsas'] },
+    // `caja_vales` va PRIMERO del grupo: es la pantalla con la que se trabaja
+    // —abrir, anotar, cortar, cerrar— y las otras dos son de mirar lo que ya
+    // pasó. Y va acá y no en un grupo propio porque es el mismo dinero.
+    { key: 'cortes',       label: 'Efectivo',      icon: Wallet,       modules: ['caja_vales', 'cortes_caja', 'bolsas'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

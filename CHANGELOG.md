@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.5 — Mi caja aparece en el menú
+
+La pantalla existía, la ruta existía, el permiso estaba dado — y **nadie la
+ofrecía**. El menú se arma por grupos, cada uno con la lista de módulos que
+muestra, y `caja_vales` no estaba en ninguno.
+
+Va primero del grupo «Efectivo», antes de Cortes y Bolsas: es la pantalla con la
+que se trabaja, y las otras dos son de mirar lo que ya pasó.
+
+**Es el cuarto sitio donde hay que registrar un módulo nuevo** —el mapa de
+módulos, el importador de la ruta, la ruta en `App.jsx` y el grupo del menú— y
+en dos días me faltaron dos. Ninguno da error: el módulo simplemente no aparece,
+o aparece y lleva a un 404. Lo encontró la misma pregunta las dos veces: «¿a
+dónde entro?».
+
+También se agregó a la búsqueda del menú: «abrir turno», «hacer corte», «cerrar
+el día» y «vale de caja» ahora llevan ahí.
+## v2.857.4 — Fuera la jornada del reglamento, y los traslados en la inducción
+
+_(pendiente de redactar)_
+
 ## v2.857.3 — La boleta manda sobre lo escrito, y lo dice
 
 El monto y el número de boleta **se cierran en cuanto la foto los detecta** —

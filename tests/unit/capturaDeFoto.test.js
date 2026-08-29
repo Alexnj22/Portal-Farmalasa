@@ -162,6 +162,8 @@ describe('las cuatro esquinas del papel', () => {
         path.join(process.cwd(), 'src/components/common/FileField.jsx'), 'utf8');
     const editor = fs.readFileSync(
         path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+    const lienzo = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/LienzoDeEncuadre.jsx'), 'utf8');
     const telefono = fs.readFileSync(
         path.join(process.cwd(), 'src/views/CapturaDeFotoView.jsx'), 'utf8');
 
@@ -169,28 +171,48 @@ describe('las cuatro esquinas del papel', () => {
         expect(field).toMatch(/esquinas=\{sugerido\?\.esquinas \|\| null\}/);
     });
 
-    // Marcarlas a mano tiene que estar SIEMPRE, no sólo cuando la lectura
-    // encontró algo: el caso que hay que cubrir es el que no encontró nada.
-    it('se pueden marcar a mano aunque la lectura no haya encontrado nada', () => {
-        const iBoton = editor.indexOf("onClick={() => setMarcandoEsquinas(true)}");
-        expect(iBoton).toBeGreaterThan(-1);
-        // El botón NO está dentro del `{sePuedeEnderezar && (…)}`.
-        const iGuarda = editor.indexOf('{sePuedeEnderezar && (');
-        expect(iBoton).toBeLessThan(iGuarda);
+    /* Desde la reestructuración del 2026-08-29 las esquinas NO son un desvío:
+     * son el recorte. Antes había que apretar un botón para llegar a ellas y el
+     * recorte normal era una caja de proporción fija — que es de donde venía
+     * casi toda la torpeza. */
+    it('son el recorte, no un modo aparte al que haya que entrar', () => {
+        expect(editor).toMatch(/<LienzoDeEncuadre/);
+        expect(editor).not.toMatch(/setMarcandoEsquinas/);
     });
 
-    // Se marcan sobre la foto COMO LLEGÓ. Si se marcaran sobre la ya enderezada,
-    // corregir un enderezado equivocado sería corregir encima del error.
-    it('se marcan sobre la foto original, no sobre la ya enderezada', () => {
-        expect(editor).toMatch(/<AjusteDeEsquinas[\s\S]{0,120}src=\{urlOriginal\}/);
+    it('se marcan sobre la foto tal como llegó', () => {
+        // El enderezado ocurre al CONFIRMAR, no antes: mientras se marcan, lo
+        // que se ve es la foto original. Marcar sobre una ya enderezada sería
+        // corregir encima del error que se viene a corregir.
+        expect(editor).toMatch(/rectificar\(imagen, enPx/);
     });
 
-    it('un ajuste a mano enciende el enderezado aunque la deformación sea chica', () => {
-        expect(editor).toMatch(/const sePuedeEnderezar = !!esquinasAMano \|\| seTorcio > 0\.06/);
+    it('el resultado sale de la medida del papel, no de una lista de formas', () => {
+        expect(editor).toMatch(/medidaDelPapel\(enPx\)/);
+        expect(editor).not.toMatch(/doc\.formas/);
     });
 
-    // El teléfono ajusta antes de mandar, con el MISMO editor: un segundo
-    // recortador para el teléfono se desincroniza del primero.
+    /* Los tres gestos. Sin pellizco, poner una esquina con precisión en un
+     * teléfono es imposible — y un teléfono sin pellizco no se siente lento, se
+     * siente roto. */
+    it('se pellizca y se gira con los dedos', () => {
+        expect(lienzo).toMatch(/useGestos\(marcoRef/);
+        expect(lienzo).toMatch(/useRueda\(marcoRef/);
+    });
+
+    // Sin `touch-action: none` el navegador se queda con el gesto para
+    // desplazar la página: el arrastre se corta solo a mitad de camino, y en
+    // escritorio funciona perfecto — la peor combinación para darse cuenta.
+    it('el lienzo no le cede el gesto al navegador', () => {
+        expect(lienzo).toMatch(/touch-none/);
+    });
+
+    // El dedo tapa la esquina que está colocando.
+    it('hay lupa mientras se arrastra una esquina', () => {
+        expect(lienzo).toMatch(/lupaRef/);
+        expect(lienzo).toMatch(/drawImage\(imagen/);
+    });
+
     it('el teléfono abre el editor en vez de mandar la foto tal cual', () => {
         expect(telefono).toMatch(/lazy\(\(\) => import\('\.\.\/components\/common\/EditorDeDocumento'\)\)/);
         expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);

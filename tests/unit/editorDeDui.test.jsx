@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import EditorDeDocumento from '../../src/components/common/EditorDeDocumento';
 import { DOCS, avisosDeFoto, sePuedeGuardar } from '../../src/utils/fotoDocumento';
+import { acabadoPorDefecto, acabadosDe } from '../../src/utils/tratamientoDeFoto';
 
 /**
  * ── El DUI se recorta, pero NO se aclara ─────────────────────────────────────
@@ -33,15 +34,21 @@ beforeEach(() => {
 
 const unArchivo = () => new File([new Uint8Array([1, 2, 3])], 'dui.jpg', { type: 'image/jpeg' });
 
+/* ⚠️ Desde la reestructuración del 2026-08-29 los acabados viven en el PASO 2,
+ * después de confirmar el encuadre: la tira de miniaturas no existe mientras se
+ * marcan las esquinas. Así que lo que se prueba acá es el CATÁLOGO —quién ofrece
+ * qué— y no lo que hay pintado al abrir. La regla es la misma; lo que cambió es
+ * dónde se ve.
+ *
+ * Probarlo sobre la pantalla del paso 1 daría verde por el motivo equivocado:
+ * ahí no hay ningún acabado, ni el prohibido ni los otros. */
 describe('el editor con tipo="dui"', () => {
     it('NO ofrece «Aclarada» — y la receta sí, que es cómo se sabe que la prueba mira', () => {
-        const { unmount } = render(
-            <EditorDeDocumento tipo="dui" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
-        expect(screen.queryByText('Aclarada')).toBeNull();
-        unmount();
+        const delDui = acabadosDe(DOCS.dui).map(a => a.label);
+        expect(delDui).not.toContain('Aclarada');
 
-        render(<EditorDeDocumento tipo="receta" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
-        expect(screen.getByText('Aclarada')).toBeTruthy();
+        const deLaReceta = acabadosDe(DOCS.receta).map(a => a.label);
+        expect(deLaReceta).toContain('Aclarada');
     });
 
     /* Que no se aclare NO significa que se quede sin tratamiento, y ésa era la
@@ -50,9 +57,23 @@ describe('el editor con tipo="dui"', () => {
      * guardaba tal cual. «Nítida» es la que se hizo para él: equilibra el
      * blanco, levanta el negro y enfoca, sin descartar color. */
     it('pero SÍ ofrece «Nítida», y arranca en ella', () => {
-        render(<EditorDeDocumento tipo="dui" file={unArchivo()} onConfirm={vi.fn()} onCancel={vi.fn()} />);
-        expect(screen.getByText('Nítida')).toBeTruthy();
-        expect(screen.getByText('Como está')).toBeTruthy();
+        const delDui = acabadosDe(DOCS.dui).map(a => a.label);
+        expect(delDui).toContain('Nítida');
+        expect(delDui).toContain('Como está');
+        expect(acabadoPorDefecto(DOCS.dui)).toBe('nitida');
+    });
+
+    /* ── El COLOR es el defecto, y para TODOS ────────────────────────────────
+     *
+     * Hasta el 2026-08-29 el acabado inicial de cualquier documento que no fuera
+     * un DUI era «Aclarada», que lleva todo a gris: el portal decidía por su
+     * cuenta tirar el color de cada foto adjunta. «No hay color en las fotos»
+     * (usuario). Medido en Chromium sobre una foto con un sello azul: con
+     * «Nítida» la cromaticidad media es 23.97 y con «Aclarada» es 0. */
+    it('y NINGÚN documento arranca en gris — el color es el defecto', () => {
+        for (const clave of Object.keys(DOCS)) {
+            expect(acabadoPorDefecto(DOCS[clave])).not.toBe('aclarada');
+        }
     });
 
     it('se presenta como lo que es: una tarjeta, no una hoja', () => {
@@ -63,10 +84,22 @@ describe('el editor con tipo="dui"', () => {
 });
 
 describe('la ficha del DUI en DOCS', () => {
-    it('su recuadro es ID-1 — la norma de toda tarjeta de identidad', () => {
-        // 85.60 × 53.98 mm. Es la única de las tres que NO tiene que adivinar su
-        // proporción: por eso el recuadro cae casi encima de la tarjeta sola.
-        expect(DOCS.dui.aspecto).toBeCloseTo(85.6 / 53.98, 4);
+    /* Ya no declara proporción, y eso es la corrección y no una pérdida.
+     *
+     * Un DUI es ID-1 (85.60 × 53.98 mm) y esa constante servía para que el
+     * recuadro de proporción fija cayera casi encima de la tarjeta. Desde que el
+     * recorte son las cuatro esquinas, la proporción se MIDE sobre la tarjeta de
+     * esta foto: darle la nominal la obligaría a una forma que la foto puede no
+     * tener —una tarjeta gastada, un escaneo con un milímetro de más— y estirar
+     * el resultado para que calce es deformar el documento. */
+    it('ya no fija una proporción: se mide sobre la tarjeta de esta foto', () => {
+        expect(DOCS.dui.aspecto).toBeUndefined();
+        // Y ninguno la declara: si quedara una sola, sería la excepción que
+        // vuelve a meter una forma fija por la puerta de atrás.
+        for (const clave of Object.keys(DOCS)) {
+            expect(DOCS[clave].aspecto).toBeUndefined();
+            expect(DOCS[clave].formas).toBeUndefined();
+        }
     });
 
     it('declara que no se aclara', () => {
@@ -150,19 +183,34 @@ describe('sePuedeGuardar', () => {
  * fotografiada de lado —como sale al apoyarla en un escritorio— no había forma
  * de encuadrarla, ni antes ni después de girar.
  */
-describe('el recuadro no gira con la imagen', () => {
+/* ── Girar el resultado NO gira la foto ──────────────────────────────────────
+ *
+ * El recuadro de proporción fija ya no existe: el recorte son las cuatro
+ * esquinas del papel. Con eso, «girar» dejó de ser rotar la imagen —que cuesta
+ * una interpolación y ablanda la letra— y pasó a ser rotar el ORDEN de las
+ * esquinas, o sea decir cuál es la de arriba a la izquierda.
+ *
+ * Lo que hay que vigilar es la consecuencia: `rectificar` reordena las esquinas
+ * por su cuenta, así que si el editor no le dice que YA vienen ordenadas, el
+ * giro se deshace en silencio y el botón deja de hacer nada.
+ */
+describe('el giro sale del orden de las esquinas', () => {
     const fuente = fs.readFileSync(
         path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
-    // Sin comentarios: el archivo EXPLICA en prosa la expresión que se quitó, y
-    // buscarla sobre el texto crudo la encuentra ahí. Mismo error que ya costó
-    // una prueba en `capturaDeFoto`.
+    // Sin comentarios: el archivo EXPLICA en prosa lo que se quitó, y buscarlo
+    // sobre el texto crudo lo encuentra ahí. Mismo error que ya costó una prueba
+    // en `capturaDeFoto`.
     const codigo = fuente.split('\n').filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('/*')).join('\n');
 
-    it('el aspecto del recuadro no depende de la rotación', () => {
-        expect(codigo).not.toMatch(/rotacion\s*%\s*180[\s\S]{0,40}aspectoBase/);
+    it('el botón de girar rota el orden, no la imagen', () => {
+        expect(codigo).toMatch(/setPuntos\(girarEsquinas\)/);
     });
 
-    it('y sigue saliendo de la forma del papel', () => {
-        expect(codigo).toMatch(/const aspecto = aspectoBase;/);
+    it('y el enderezado respeta ese orden', () => {
+        expect(codigo).toMatch(/yaOrdenadas:\s*true/);
+    });
+
+    it('ya no queda ningún recuadro de proporción fija', () => {
+        expect(codigo).not.toMatch(/aspectoBase/);
     });
 });

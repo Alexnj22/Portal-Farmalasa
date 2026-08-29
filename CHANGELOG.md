@@ -21,6 +21,83 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.848.0 — El editor de documentos, reestructurado
+
+Reporte del usuario, en una línea: *«no hay color en las fotos, se siente torpe
+el editor, en teléfono igual, se ve súper pequeño, no hay posibilidad de hacer
+zoom con los dedos, o rotar con los dedos… haz una reestructuración»*.
+
+Eran cinco síntomas de **tres** decisiones equivocadas, y por eso no alcanzaba
+con retocar.
+
+### 1 · El recorte era una caja, y un papel no es una caja
+
+El recorte tenía una proporción fija —4:3, «hoja de pie», «tarjeta», «tira»— y lo
+que se movía era la foto debajo. Como un papel fotografiado está **en
+perspectiva**, ninguna de esas formas calzaba nunca: siempre sobraba escritorio o
+faltaba una esquina. Ahí estaba la torpeza — no era lentitud, era que la
+herramienta no podía describir lo que había que recortar.
+
+Ahora se marcan las **cuatro esquinas del papel**. Eso describe exactamente lo
+que hay que recortar, perspectiva incluida, y el resultado sale rectangular de
+verdad. La lista de formas desapareció: era el remiendo de no poder marcarlas.
+
+### 2 · El portal tiraba el color sin que nadie lo eligiera
+
+El acabado por defecto de cualquier documento era **«Aclarada»**, que lleva todo
+a gris. Un permiso con sello azul, un carné, una constancia a color: todos se
+guardaban en blanco y negro. Hoy el defecto es **«Nítida»**, que corrige la luz
+y enfoca **sin descartar color**.
+
+Medido en Chromium sobre una foto con un sello azul — cromaticidad media:
+
+| acabado | croma |
+|---|---:|
+| Como está | 22.6 |
+| **Nítida** (nuevo defecto) | **24.0** |
+| Aclarada (el defecto viejo) | **0** |
+
+Y ahora cada acabado se **ve** aplicado sobre esta foto en una miniatura antes de
+elegirlo, en vez de ser un nombre que hay que probar.
+
+### 3 · No había gestos
+
+Un teléfono sin pellizco no se siente lento, se siente **roto**: es el primer
+gesto que todo el mundo prueba. Ahora:
+
+- **pellizcar** para acercar (y la rueda del ratón en la computadora),
+- **girar con dos dedos** para trabajar cómodo sobre un papel acostado,
+- **arrastrar** para mover la vista,
+- y **lupa** mientras se coloca una esquina, porque el dedo tapa justo la esquina
+  que está colocando.
+
+Girar con los dedos gira **cómo se ve**, no el resultado: la orientación del
+documento la deciden las esquinas y el botón de un cuarto de vuelta. Si el gesto
+girara el archivo, dos personas con el mismo papel guardarían documentos
+distintos según cómo hayan sostenido el teléfono.
+
+### 4 · Y el tamaño, que en el teléfono era el peor
+
+«Se ve súper pequeño» era literal y medible. En un iPhone 13, la cabecera se
+llevaba 94 px y el pie **237** —los botones se apilaban en cuatro renglones—, así
+que al documento le quedaba el **27 %** de la pantalla. Con el pie en una sola
+fila, las herramientas sin rótulo, «Cancelar» mudado a una X arriba y la
+instrucción sobre la propia foto:
+
+| | antes | ahora |
+|---|---:|---:|
+| teléfono | 27 % de la pantalla | **63 %** |
+| escritorio | 308×398 px | **1348×688 px** |
+
+### Lo que NO cambió, a propósito
+
+Todo lo que estaba medido: los dos tratamientos de píxeles, la revisión que avisa
+antes de guardar, el piso por debajo del cual no se guarda y los tamaños de
+salida por tipo de papel. Nada de eso era el problema.
+
+Y sigue en pie lo de ayer: la sugerencia automática no pisa a quien ya está
+trabajando —queda a un toque, en «Usar el recorte sugerido»— y la espera se ve.
+
 ## v2.847.0 — La etiqueta de la bolsa avisa que ahí va un cheque
 
 Reportado por el usuario: *«en el ticket de bolsa de efectivo, no avisa cuando

@@ -119,8 +119,12 @@ const DIVISIONES = 24;
  * @param {number} alto        de la salida
  * @returns {HTMLCanvasElement|null}
  */
-export function rectificar(imagen, esquinas, ancho, alto) {
-    const o = ordenarEsquinas(esquinas);
+export function rectificar(imagen, esquinas, ancho, alto, { yaOrdenadas = false } = {}) {
+    /* `yaOrdenadas` existe desde que la persona puede GIRAR el resultado: el
+     * cuarto de vuelta se aplica rotando el orden de las esquinas —cuál es la
+     * de arriba a la izquierda— y volver a ordenarlas acá lo desharía en
+     * silencio, dejando el botón de girar sin efecto. */
+    const o = yaOrdenadas ? esquinas : ordenarEsquinas(esquinas);
     if (!o || !(ancho > 0) || !(alto > 0)) return null;
     // Del DESTINO al ORIGEN: para pintar cada pedazo del resultado hay que saber
     // de dónde sacarlo, no al revés.
@@ -193,3 +197,38 @@ function dibujarTriangulo(ctx, imagen, orig, dest) {
 export const ESQUINAS_ENTERAS = [
     { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 },
 ];
+
+/**
+ * Cuánto mide el papel, en píxeles de la foto original.
+ *
+ * Los cuatro lados de un papel en perspectiva miden distinto —el que está más
+ * lejos sale más corto—, así que se toma el MAYOR de cada par: recortar contra
+ * el lado corto perdería parte del documento del lado largo, y agrandar después
+ * no devuelve lo que se cortó.
+ *
+ * De acá sale la proporción del resultado, y por eso ya no hace falta elegir la
+ * forma del papel de una lista: la forma se mide sobre el papel de esta foto.
+ */
+export function medidaDelPapel(esquinas) {
+    if (!Array.isArray(esquinas) || esquinas.length !== 4) return null;
+    const [tl, tr, br, bl] = esquinas;
+    const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    const ancho = Math.max(d(tl, tr), d(bl, br));
+    const alto  = Math.max(d(tl, bl), d(tr, br));
+    if (!(ancho > 0) || !(alto > 0)) return null;
+    return { ancho: Math.round(ancho), alto: Math.round(alto) };
+}
+
+/**
+ * Un cuarto de vuelta, aplicado al ORDEN de las esquinas.
+ *
+ * Girar el resultado no es girar la foto: es decir cuál de las cuatro esquinas
+ * del papel es la de arriba a la izquierda. Así el giro no cuesta una
+ * interpolación —la foto no se vuelve a dibujar— y el resultado sale igual de
+ * nítido en cualquier orientación.
+ */
+export function girarEsquinas(esquinas) {
+    if (!Array.isArray(esquinas) || esquinas.length !== 4) return esquinas;
+    const [tl, tr, br, bl] = esquinas;
+    return [bl, tl, tr, br];
+}

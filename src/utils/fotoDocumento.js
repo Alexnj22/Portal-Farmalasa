@@ -162,6 +162,21 @@ const LADO_CORTO_INACEPTABLE = 600;
  * diferencia que el aviso tiene que contar.
  */
 export const DOCS = {
+    /* ── Qué queda de esta ficha después de la reestructuración (2026-08-29) ──
+     *
+     * Se fueron `aspecto`, `formas` y `marco`: describían el recuadro de
+     * proporción fija, que ya no existe. El recorte son ahora las CUATRO
+     * esquinas del papel y la proporción del resultado se mide sobre el papel
+     * de esta foto — así que no hay ninguna forma que elegir de una lista.
+     *
+     * También se fueron `pista` y `pistaTactil`: el cómo (los gestos) se dice
+     * sobre la propia foto y es el mismo para todos los papeles; lo que cambia
+     * por documento es qué hay que LOGRAR, y eso lo dice `bajada`.
+     *
+     * Lo que queda es lo que sigue decidiendo algo: el nombre con el que se le
+     * habla a quien mira, el tamaño de salida, el piso por debajo del cual no
+     * se guarda, y si este papel admite el acabado gris.
+     */
     receta: {
         nombre: 'la receta',
         titulo: 'Preparar la foto',
@@ -170,17 +185,6 @@ export const DOCS = {
         salida: { por: 'largo', lado: 1600 },
         ladoMinimo: 900,
         medirLado: 'corto',
-        // Una hoja se fotografía como se agarra: el marco ancho de siempre.
-        marco: 'ancho',
-        // La proporción del recuadro de recorte. 4:3 es lo que el canónico traía
-        // de fábrica y con lo que vivió la receta desde el primer día.
-        aspecto: 4 / 3,
-        pista: '«Aclarada» sube el contraste hasta dejar el papel blanco y la tinta negra. '
-             + 'Si la receta trae sello a color y se pierde, guárdala «como está».',
-        // Con el dedo, la instrucción va primero y el resto se acorta: el aviso
-        // ocupa el mismo lugar que el recorte (ver `pistaTactil` de la boleta).
-        pistaTactil: 'Arrastra la receta y pellizca para acercar. «Aclarada» sube el '
-                   + 'contraste; si tiene sello a color y se pierde, usa «Como está».',
     },
     boleta: {
         nombre: 'la boleta',
@@ -195,112 +199,35 @@ export const DOCS = {
         salida: { por: 'corto', lado: 1200, tope: 6000 },
         ladoMinimo: 850,
         medirLado: 'corto',
-        /* La proporción del recuadro de recorte, y el motivo por el que el
-         * editor «estaba horrible» (usuario, 2026-08-21).
-         *
-         * El canónico de recorte NO tiene modo libre: si nadie le dice la
-         * proporción usa **4:3 acostado**, y eso es lo que había. O sea que
-         * sobre la foto de una tira de 58 mm el recuadro era un rectángulo
-         * ancho: encuadrar la boleta obligaba a meter medio mostrador arriba y
-         * abajo, y no existía forma de recortar sólo el papel. El comentario del
-         * editor decía «libre y no un formato fijo» — nunca lo fue.
-         *
-         * Cuando la lectura devuelve el recuadro del papel, la proporción sale
-         * de AHÍ: es la de esta boleta, medida, y no una estimación. `formas` es
-         * el respaldo para cuando no hubo lectura o cuando el papel salió más
-         * corto o más largo de lo que el recuadro dice — un rollo de 58 mm mide
-         * lo que haya impreso el POS, de dos a cinco anchos de largo.
-         */
-        aspecto: 1 / 3,
-        formas: [
-            { value: 'corta', label: 'Corta', aspecto: 1 / 2 },
-            { value: 'normal', label: 'Normal', aspecto: 1 / 3 },
-            { value: 'larga', label: 'Larga', aspecto: 1 / 5 },
-        ],
-        // La boleta es una TIRA VERTICAL y se fotografía con el teléfono
-        // parado: en un marco ancho y bajo se dibuja como una astilla en el
-        // medio de la pantalla, con el mostrador ocupando todo lo demás — que
-        // es justo lo que hay que recortar. El marco alto le da a la tira casi
-        // toda la altura disponible.
-        marco: 'alto',
-        // Corta a propósito: en un teléfono, cada renglón del aviso se lo saca
-        // al recorte, que es donde se hace el trabajo.
-        pista: 'Recorta hasta el borde del papel. «Aclarada» deja el papel blanco y la '
-             + 'impresión negra, que es lo que hace legible una boleta térmica.',
-        /* La misma pista, con el dedo.
-         *
-         * Va primero el GESTO porque en un teléfono el recuadro es un marco fijo
-         * y lo que se mueve es la foto: quien no lo sabe intenta arrastrar el
-         * recuadro, no pasa nada, y da por sentado que la vista previa no se
-         * toca. Y es MÁS CORTA que la de escritorio a propósito: cada renglón
-         * del aviso se lo saca al recorte. */
-        pistaTactil: 'Arrastra el papel y pellizca para acercar. «Aclarada» lo deja '
-                   + 'blanco con la letra negra.',
     },
-    /* ── El documento SIN tipo: el que sale en cualquier adjunto ─────────
+    /* ── El documento SIN tipo: el que sale en cualquier adjunto ─────────────
      *
      * Es el que usa `FileField`, o sea el de los 21 sitios donde el portal pide
      * adjuntar algo. Por eso no puede suponer nada del papel: acá cae una
      * boleta de banco, un permiso del CSSP, una constancia, una factura, la
      * foto de un recibo.
      *
-     * ── Por qué se ELIGE la forma en vez de arrastrar las esquinas ──────────
-     *
-     * El pedido fue «ajustar las esquinas del documento o algo para subirlo».
-     * Arrastrar las cuatro esquinas libremente NO lo puede hacer el recortador
-     * que usa el portal: `react-easy-crop` dibuja un marco de forma fija y lo
-     * que se mueve es la foto debajo — no tiene manijas de redimensionar, y
-     * ponérselas es escribir otro recortador, no configurar éste.
-     *
-     * Lo que sí resuelve el mismo problema con lo que hay: cuatro formas de
-     * papel reales. Con la forma correcta elegida, encuadrar es arrastrar y
-     * pellizcar, y no queda escritorio alrededor — que es el resultado que se
-     * buscaba.
-     *
-     * ── Se ACLARA por defecto, al revés que el DUI ──────────────────────────
-     *
-     * Acá casi todo lo que entra es papel con tinta, y «Aclarada» es
-     * exactamente el «filtro como copia» que se pidió: deja el papel blanco y
-     * la letra negra. El control queda a la vista para el caso contrario —un
-     * documento a color, un sello— y el aviso lo dice cuando detecta color. */
+     * Y por eso mismo **no se aclara por defecto**. Hasta el 2026-08-29 sí, y
+     * eso significaba que el portal decidía tirar el color de cada foto adjunta
+     * sin que nadie lo eligiera — un permiso con sello azul se guardaba en
+     * blanco y negro—. «No hay color en las fotos» (usuario). El gris sigue
+     * ofreciéndose y ahora se ve en la miniatura antes de elegirlo. */
     documento: {
         nombre: 'el documento',
         titulo: 'Preparar el documento',
-        bajada: 'Deja sólo el papel y enderézalo. Elige la forma que más se le parezca.',
+        bajada: 'Marca las cuatro esquinas del papel: eso es lo que se guarda.',
         archivo: 'documento',
         salida: { por: 'largo', lado: 1600 },
         ladoMinimo: 800,
         medirLado: 'corto',
-        marco: 'ancho',
-        // Carta de pie (8.5 × 11). Es la forma más común de lo que se adjunta.
-        aspecto: 8.5 / 11,
-        formas: [
-            { value: 'vertical',  label: 'Hoja de pie',    aspecto: 8.5 / 11 },
-            { value: 'acostada',  label: 'Hoja acostada',  aspecto: 11 / 8.5 },
-            { value: 'tarjeta',   label: 'Tarjeta',        aspecto: 85.6 / 53.98 },
-            { value: 'tira',      label: 'Tira',           aspecto: 1 / 3 },
-        ],
-        pista: 'Elige la forma del papel, recorta hasta su borde y enderézalo. «Aclarada» sube el '
-             + 'contraste hasta dejar el papel blanco y la letra negra.',
-        pistaTactil: 'Arrastra el documento y pellizca para acercar. «Aclarada» lo deja blanco '
-                   + 'con la letra negra.',
     },
-    /* ── El DUI: una TARJETA, no una hoja ────────────────────────────────
+    /* ── El DUI: una TARJETA, no una hoja ────────────────────────────────────
      *
-     * Entra acá porque el pedido fue el mismo que trajo la boleta —«al subirla
-     * desde la computadora puedo ajustarla, para que se suba sólo el DUI»— y la
-     * respuesta ya estaba construida. Lo que cambia son dos cosas, y las dos
-     * importan:
-     *
-     *  1. **No se aclara nunca.** «Aclarada» existe para dejar papel blanco y
-     *     tinta negra; sobre un DUI eso quema la fotografía de la persona y los
-     *     fondos de seguridad a color, que es exactamente lo que el lector
-     *     necesita ver. Por eso `aclarar: false` — el control ni se ofrece, en
-     *     vez de ofrecerlo y confiar en que nadie lo toque.
-     *  2. **Su forma es fija y conocida.** Un DUI es ID-1: 85.6 × 54 mm. La
-     *     receta y la boleta tienen que adivinar su proporción; ésta se sabe, y
-     *     ponerla de entrada hace que el recuadro caiga casi encima de la
-     *     tarjeta sin que nadie lo arrastre.
+     * **No se aclara nunca.** «Aclarada» existe para dejar papel blanco y tinta
+     * negra; sobre un DUI eso quema la fotografía de la persona y los fondos de
+     * seguridad a color, que es exactamente lo que el lector necesita ver. Por
+     * eso `aclarar: false` — el acabado ni se ofrece, en vez de ofrecerlo y
+     * confiar en que nadie lo toque.
      *
      * El lado largo sale siempre en 1600 px: sobre una tarjeta de 85.6 mm eso
      * son ~475 ppp, muy por encima de lo que necesita el lector para la letra
@@ -309,20 +236,13 @@ export const DOCS = {
     dui: {
         nombre: 'el documento',
         titulo: 'Recortar el documento',
-        bajada: 'Deja sólo la tarjeta: lo que quede dentro del recuadro es lo que se lee.',
+        bajada: 'Deja sólo la tarjeta: lo que quede adentro es lo que se lee.',
         archivo: 'dui',
         superficie: 'la tarjeta',
         salida: { por: 'largo', lado: 1600 },
         ladoMinimo: 800,
         medirLado: 'corto',
-        marco: 'ancho',
-        // ID-1, la norma de toda tarjeta de identidad: 85.60 × 53.98 mm.
-        aspecto: 85.6 / 53.98,
-        // Un DUI no se aclara: ver arriba.
         aclarar: false,
-        pista: 'Recorta hasta el borde de la tarjeta y enderézala. Si la foto trae el frente '
-             + 'y el reverso juntos, súbela en «Un solo archivo».',
-        pistaTactil: 'Arrastra la tarjeta y pellizca para acercar. Recorta hasta su borde.',
     },
 };
 

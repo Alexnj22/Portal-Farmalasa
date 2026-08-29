@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.847.0 — La etiqueta de la bolsa avisa que ahí va un cheque
+
+Reportado por el usuario: *«en el ticket de bolsa de efectivo, no avisa cuando
+hay 1 cheque»*.
+
+**Un cheque es un papel que viaja con el dinero y que no está en ningún número
+del corte.** Medido en el único del mes —el del 27-ago en Salud 1, $352.50 de
+una iglesia—: `tk_venta` vale $1,141.30, que son los billetes del día y nada
+más. O sea que la etiqueta de la bolsa S1-1165 decía **EFECTIVO $565.21** sobre
+una bolsa que además llevaba un papel de $352.50 del que no hablaba una palabra,
+y quien la cuenta cuenta billetes.
+
+Ahora la etiqueta lo nombra, con su hora, su cliente y su monto:
+
+```
+OJO: TAMBIEN VA UN CHEQUE
+No entra en el EFECTIVO de abajo, que son billetes.
+15:09 IGLESIA TABERNACULO BIBLICO BAUTISTA .   $352.50
+```
+
+**Va arriba de la resta y en un bloque aparte, no entre los totales.** El
+EFECTIVO es la única cifra que alguien cuenta con las manos; meter el cheque en
+esa columna invitaría a sumarlo, y pediría contar $917.71 en una bolsa que tiene
+$565.21 en billetes — un faltante inventado del tamaño del cheque.
+
+**A qué bolsa pertenece cada cheque lo decide el servidor**
+(`get_cheques_de_bolsa`): a la primera bolsa viva de esa sala y ese día cuya hora
+sea igual o posterior a la de la venta, y si el cheque entró después de la
+última —el corte ya estaba hecho— a esa última. Es la misma ventana con la que
+`bolsa_sugerida` reparte el efectivo del día, pero escrita para que **no deje
+huecos**: con un rango abierto por arriba, un cheque cobrado después del último
+corte no saldría en ninguna etiqueta, y desaparecer en silencio es el modo de
+falla que esto viene a cerrar.
+
+**Los cheques se preguntan siempre, no se reciben como parámetro.** No hay
+ningún dato en la fila de la bolsa que permita descartarlos —al revés que las
+salidas, que traen su cuenta—, y es la lección del 17-ago repetida: un dato que
+la etiqueta NECESITA no puede depender de que el llamador se acuerde. Los dos
+caminos que imprimen etiqueta lo traen: el de Bolsas y el de confirmar el corte.
+
+Son **cuatro en quince meses** (mayo/25, octubre/25, junio/26 y agosto/26). Esa
+rareza es justamente por qué la etiqueta vivió un año sin nombrarlos y por qué el
+aviso tiene que ser explícito: nadie va a acordarse de buscar un papel que casi
+nunca hay.
+
 ## v2.846.0 — Los puntos se ven en la venta y en la ficha del cliente
 
 **La lista de Ventas dice en qué anda cada venta con sus puntos** y la ficha del

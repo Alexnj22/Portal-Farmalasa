@@ -114,7 +114,8 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                 if (errorBolsa) {
                     avisar('No se pudo leer la bolsa de este corte.');
                 } else if (bolsa) {
-                    const [{ imprimirDocumento }, { construirEtiquetaDeBolsa }, { marcarEtiquetaImpresa }] =
+                    const [{ imprimirDocumento }, { construirEtiquetaDeBolsa },
+                           { marcarEtiquetaImpresa, fetchChequesDeBolsa }] =
                         await Promise.all([
                             import('../utils/ticketPrint'),
                             import('../utils/bolsaComprobante'),
@@ -124,6 +125,13 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                         bolsa,
                         sala,
                         salidas: [],
+                        // Las salidas van en `[]` porque la bolsa acaba de nacer
+                        // y todavía no tuvo ninguna. Los cheques NO se pueden
+                        // dar por vacíos con el mismo argumento: el cheque ya
+                        // estaba cobrado cuando el corte se confirmó, así que
+                        // ésta es justamente la primera etiqueta que tiene que
+                        // nombrarlo. Se pregunta.
+                        cheques: await fetchChequesDeBolsa(bolsa.id),
                         cerradaPor: user?.name || '',
                         // El número que va impreso se calcula acá y la constancia
                         // se escribe DESPUÉS de mandarlo, no antes. Al revés

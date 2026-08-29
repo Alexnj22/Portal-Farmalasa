@@ -131,6 +131,30 @@ export async function fetchBolsaDeCorte(corteId) {
 }
 
 /**
+ * Los cheques que viajan con una bolsa — para que su etiqueta los nombre.
+ *
+ * Un cheque no está en ningún número del corte: `tk_venta` son los billetes del
+ * día y nada más. Medido en el del 27-ago en Salud 1, la etiqueta decía
+ * «EFECTIVO $565.21» sobre una bolsa que además llevaba un papel de $352.50 del
+ * que no hablaba, y quien la cuenta cuenta billetes.
+ *
+ * A qué bolsa pertenece cada uno lo decide el SERVIDOR y no esta capa: es la
+ * misma ventana con la que `bolsa_sugerida` reparte el efectivo del día, y
+ * escribirla también acá sería tener dos definiciones de qué hay adentro de una
+ * bolsa.
+ *
+ * **Nunca lanza.** Que no se pueda leer la lista no puede impedir que salga la
+ * etiqueta —sin ella la bolsa llega a administración sin nada escrito encima,
+ * que es el problema entero que el papel vino a resolver—, pero se avisa en la
+ * consola: un `[]` por error se lee igual que un `[]` por no haber cheques.
+ */
+export async function fetchChequesDeBolsa(bolsaId) {
+    const { data, error } = await supabase.rpc('get_cheques_de_bolsa', { p_bolsa_id: bolsaId });
+    if (error) { console.error('bolsas: fetchChequesDeBolsa failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
  * Cerrar la bolsa de un corte.
  *
  * `montoVisto` es lo que decía la pantalla y NO es lo que se guarda: el servidor

@@ -1,6 +1,6 @@
 {
   "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
-  "actualizado": "2026-08-26",
+  "actualizado": "2026-08-29",
   "medidas": 43,
   "sin_medir": 25,
   "funciones": {
@@ -87,6 +87,12 @@
       "casos": null,
       "divergencia": null,
       "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+    },
+    "get_cheques_de_bolsa": {
+      "ms": "3.1",
+      "casos": "las 20 bolsas mas nuevas de produccion, 61 ms / 20 llamadas",
+      "divergencia": "imposible",
+      "nota": "sana — el plan no depende del argumento: entra siempre por bolsas_pkey y por idx_si_branch_fecha_no_anulada, o sea que el generico es el mismo que el personalizado. Medida contra su cuerpo con literales: 0.7 ms de ejecucion (EXPLAIN ANALYZE TIMING OFF, bolsa 158)"
     },
     "get_conteo_items_count": {
       "ms": null,

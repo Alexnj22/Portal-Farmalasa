@@ -78,9 +78,20 @@ const valeDeCuatro = () => vale({
     recibidoPor: { nombre: 'Andy Mancia', metodo: 'CARNE' },
 });
 
+// El unico cheque del mes, tal como esta en produccion: Salud 1, 27-ago,
+// $352.50 de una iglesia con nombre de cuarenta y ocho caracteres. Es el caso
+// que apura la geometria del bloque — el nombre mas largo que se ha cobrado.
+const cheques = [{
+    hora: '15:09:29', total: 352.50,
+    cliente: 'IGLESIA TABERNACULO BIBLICO BAUTISTA CHALATENANGO',
+    documento: '0000083532_COF',
+}];
+
 describe.each([
     ['la etiqueta de la bolsa', etiqueta],
     ['la etiqueta con salidas', () => etiqueta({ salidas })],
+    ['la etiqueta con un cheque', () => etiqueta({ cheques })],
+    ['la etiqueta con salidas y cheque', () => etiqueta({ salidas, cheques })],
     ['el vale de salida', vale],
     ['el vale de cuatro bolsas', valeDeCuatro],
 ])('reglas del rollo — %s', (_nombre, armar) => {
@@ -173,6 +184,48 @@ describe('la etiqueta de una bolsa', () => {
             ['VALES (1)', '-$716.92'],
             ['EFECTIVO', '$0.00', true],
         ]);
+    });
+
+    // ── El cheque, que no es un billete ─────────────────────────────────────
+    // Reportado por el usuario el 2026-08-29: «no avisa cuando hay 1 cheque».
+    // El papel decia «EFECTIVO $565.21» sobre una bolsa que ademas llevaba uno
+    // de $352.50, y quien la cuenta cuenta billetes.
+
+    it('sin cheques no gasta un renglon en el aviso', () => {
+        const t = etiqueta();
+        expect(t.bloques).toBeUndefined();
+        expect(cuerpo(t)).not.toContain('CHEQUE');
+    });
+
+    it('nombra el cheque que va adentro, con su hora, su cliente y su monto', () => {
+        const t = etiqueta({ cheques });
+        const texto = cuerpo(t);
+        expect(texto).toContain('OJO: TAMBIEN VA UN CHEQUE');
+        expect(texto).toContain('15:09');
+        expect(texto).toContain('IGLESIA TABERNACULO');
+        expect(texto).toContain('$352.50');
+    });
+
+    it('NO lo suma al efectivo: el numero que se cuenta sigue siendo el de los billetes', () => {
+        // La trampa entera esta aca. Si el cheque entrara en la resta, la
+        // etiqueta pediria contar $1,069.42 en una bolsa que tiene $716.92 en
+        // billetes y un papel — o sea, un faltante inventado de $352.50.
+        const t = etiqueta({ cheques });
+        expect(t.totales).toEqual([['EFECTIVO', '$716.92', true]]);
+    });
+
+    it('el aviso va ARRIBA del efectivo, no despues', () => {
+        // Se lee de arriba abajo y el ultimo numero es el que se compara: un
+        // aviso posterior llega cuando ya se conto.
+        const texto = cuerpo(etiqueta({ cheques }));
+        expect(texto.indexOf('CHEQUE')).toBeLessThan(texto.indexOf('EFECTIVO'));
+    });
+
+    it('conjuga el aviso: dos cheques no dicen «va un cheque»', () => {
+        const dos = [...cheques, { hora: '18:40:00', cliente: 'ALCALDIA', total: 40 }];
+        const texto = cuerpo(etiqueta({ cheques: dos }));
+        expect(texto).toContain('OJO: TAMBIEN VAN 2 CHEQUES');
+        expect(texto).toContain('No entran en el EFECTIVO');
     });
 
     it('avisa que anula a la anterior solo cuando no es la primera', () => {

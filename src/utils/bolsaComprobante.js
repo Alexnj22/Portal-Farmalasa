@@ -131,14 +131,16 @@ const COMO_SE_IDENTIFICO = {
  * @param {string} cerradaPor quién guardó el dinero
  * @param {number} version    cuántas veces se imprimió esta etiqueta, contando ésta
  * @param {string} impresaAt  ISO del momento de imprimir
+ * @param {Array}  cheques    [{ hora, cliente, documento, total }] — los que viajan con la bolsa
  */
 export function construirEtiquetaDeBolsa({
-    bolsa, sala, salidas = [], cerradaPor, version = 1, impresaAt,
+    bolsa, sala, salidas = [], cerradaPor, version = 1, impresaAt, cheques = [],
 }) {
     const inicial = Number(bolsa?.monto_inicial ?? 0);
     const sacado = sumar(salidas);
     const efectivo = Math.round((inicial - sacado) * 100) / 100;
     const hubo = salidas.length > 0;
+    const conCheque = (cheques || []).length > 0;
 
     return {
         titulo: 'BOLSA DE EFECTIVO',
@@ -157,6 +159,35 @@ export function construirEtiquetaDeBolsa({
             ['Guardo', recortar(cerradaPor || 'Sin registrar', 34)],
             ['Cerrada', selloCorto(bolsa?.cerrada_at)],
         ],
+        /* EL CHEQUE — lo único que va con la bolsa y no es un billete.
+         *
+         * Un cheque no está en NINGÚN número del corte: medido en el del 27-ago
+         * en Salud 1, `tk_venta` son los $1,141.30 de efectivo del día y el
+         * cheque de $352.50 no aparece por ningún lado. O sea que la etiqueta
+         * decía «EFECTIVO $565.21» sobre una bolsa que además llevaba un papel
+         * de $352.50 del que no hablaba.
+         *
+         * Va ARRIBA de la resta y no abajo, y en un bloque y no en los totales,
+         * porque no es un sumando: quien cuenta la bolsa cuenta billetes contra
+         * el EFECTIVO, y meter el cheque en esa columna invita a sumarlo. Acá
+         * dice lo que es —algo más que tiene que estar adentro— antes de que se
+         * llegue al número que se compara.
+         *
+         * Son cuatro en quince meses. Esa rareza es justo por qué la etiqueta
+         * vivió un año sin nombrarlos y por qué el aviso tiene que ser explícito:
+         * nadie va a acordarse de buscar un papel que casi nunca hay. */
+        bloques: conCheque ? [{
+            titulo: cheques.length === 1
+                ? 'OJO: TAMBIEN VA UN CHEQUE'
+                : `OJO: TAMBIEN VAN ${cheques.length} CHEQUES`,
+            texto: cheques.length === 1
+                ? 'No entra en el EFECTIVO de abajo, que son billetes.'
+                : 'No entran en el EFECTIVO de abajo, que son billetes.',
+            filas: cheques.map((c) => [
+                recortar(`${hhmm(c.hora)} ${c.cliente || 'Sin cliente'}`, 44),
+                formatMoney(Math.abs(Number(c.total ?? 0))),
+            ]),
+        }] : undefined,
         // Las CUATRO columnas son la geometría medida contra un ticket real del
         // sistema de facturación. La de dos colapsa a «primero … ultimo» y acá
         // perdería justo la fecha y la hora de cada salida, que es lo que

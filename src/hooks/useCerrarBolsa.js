@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-    cerrarBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa,
+    cerrarBolsa, fetchChequesDeBolsa, fetchOperacionDeBolsa, fetchSalidasDeBolsa,
     marcarEtiquetaImpresa, marcarValeImpreso,
 } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -78,6 +78,13 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
                 : await salidasDeLaEtiqueta(bolsa.id);
         }
 
+        // Los cheques se preguntan SIEMPRE y no se reciben como parámetro. No
+        // hay ningún dato en la fila que permita descartarlos —al revés que las
+        // salidas, que traen su cuenta— y una etiqueta que no nombra el cheque
+        // que va adentro es exactamente el papel mudo que esto vino a arreglar.
+        // Es un viaje de ~1 ms contra una bolsa que se imprime una vez.
+        const cheques = await fetchChequesDeBolsa(bolsa.id);
+
         const { data: version, error } = await marcarEtiquetaImpresa(bolsa.id);
         if (error) {
             showToast?.('No se pudo imprimir', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
@@ -96,6 +103,7 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             cerradaPor: cerradaPor || user?.name || user?.nombre || '',
             version: version ?? (bolsa.etiqueta_version || 0) + 1,
             impresaAt: new Date().toISOString(),
+            cheques,
         }), { sala: bolsa.branch_id });
 
         // `ok` significa RECIBIDO, nunca «salió papel»: la respuesta del programa

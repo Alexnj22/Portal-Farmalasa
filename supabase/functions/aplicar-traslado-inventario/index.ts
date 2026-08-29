@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // decide sale del JWT y no se recibe nunca por parámetro.
-    const { request_id, approver_note, accion, lineas_aceptadas } = await req.json().catch(() => ({}));
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes } = await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
 
@@ -300,6 +300,54 @@ Deno.serve(async (req) => {
           }, 403);
       }
 
+      /* ── Lo que la sala dice que NO venía en la bolsa ───────────────────
+       *
+       * Es una DECLARACIÓN, no una recepción parcial. El sistema recibe el
+       * movimiento entero —eso no cambia y no puede cambiarse desde acá sin
+       * probarlo contra el sistema real—, así que lo que esto agrega es el
+       * único dato que faltaba: que alguien abrió la caja, vio de menos, y lo
+       * dijo el mismo día con nombre y cantidad.
+       *
+       * El techo es lo que VIAJÓ, no lo que se pidió: un despacho puede salir
+       * recortado, y dejar declarar más de lo que salió convertiría el faltante
+       * en un número que no se puede cotejar contra nada.
+       */
+      const pedidosFaltantes = Array.isArray(faltantes) ? faltantes : [];
+      const loQueViajo = (pos: number): number => {
+        const item = lineas[pos] as Linea | undefined;
+        if (!item) return 0;
+        const det = Array.isArray((meta.erp_traslado ?? {}).detalle)
+          ? (meta.erp_traslado.detalle as { erp_product_id?: number; cantidad?: number }[])
+          : [];
+        const suyas = det.filter((d) => Number(d?.erp_product_id) === Number(item.erp_product_id));
+        // Con UNA sola coincidencia el detalle dice exactamente cuánto salió.
+        // Repetido —el mismo producto en dos presentaciones— no distingue cuál
+        // renglón es cuál, así que el techo vuelve a ser lo pedido: preferible
+        // un techo flojo a rechazar un faltante verdadero.
+        return suyas.length === 1 ? Number(suyas[0]?.cantidad ?? 0) : Number(item.cantidad ?? 0);
+      };
+      const faltantesPedidos: { posicion: number; cantidad: number; nota: string | null }[] = [];
+      for (const f of pedidosFaltantes) {
+        const pos = Number(f?.posicion);
+        const cant = Number(f?.cantidad);
+        if (!Number.isInteger(pos) || pos < 0 || pos >= lineas.length)
+          return json({ ok: false, error: `No hay un producto en la posición ${f?.posicion}.` }, 422);
+        // Cero no es un faltante: es el renglón que llegó completo. Se saltea,
+        // para que la pantalla pueda mandar la lista entera.
+        if (!Number.isFinite(cant) || cant <= 0) continue;
+        const techo = loQueViajo(pos);
+        if (techo > 0 && cant > techo)
+          return json({
+            ok: false, codigo: "FALTANTE_IMPOSIBLE",
+            error: `De ${lineas[pos]?.descripcion ?? "ese producto"} salieron ${techo}: `
+                 + `no pueden faltar ${cant}.`,
+          }, 422);
+        faltantesPedidos.push({
+          posicion: pos, cantidad: cant,
+          nota: String(f?.nota ?? "").trim() || null,
+        });
+      }
+
       /* Anotar que entró, y sacarlo de la lista.
        *
        * Es UNA función y no dos escrituras sueltas porque hay DOS caminos que
@@ -317,7 +365,41 @@ Deno.serve(async (req) => {
           .eq("id", sol.id)
           .is("metadata->erp_recibido", null);
         if (updErr) throw updErr;
-        return json({ ok: true, recibido });
+
+        /* ── Y lo que NO venía en la bolsa ───────────────────────────────
+         * La recepción entra COMPLETA —el sistema recibe el movimiento entero y
+         * no una parte, y ese comentario está unas líneas más abajo desde el
+         * primer día—, así que declarar un faltante NO es recibir de menos: es
+         * decir qué se vio al abrir la caja, sobre producto que el sistema ya
+         * puso en esta sala.
+         *
+         * Hasta hoy no había dónde decirlo y el hueco quedaba invisible hasta
+         * que alguien lo tropezara en un conteo, semanas después y sin forma de
+         * saber en qué viaje se perdió.
+         *
+         * **No puede tumbar la recepción**: para acá el producto ya entró al
+         * inventario. Un fallo al anotar se dice aparte —`faltante_error`— y no
+         * como si la caja no hubiera llegado, que es lo que haría que alguien
+         * apretara «ya llegó» por segunda vez. */
+        let faltanteError: string | null = null;
+        if (faltantesPedidos.length > 0) {
+          const { error: fErr } = await admin.rpc("declarar_faltantes", {
+            p_request_id: sol.id,
+            p_faltantes: faltantesPedidos,
+            p_actor: quien.id,
+          });
+          if (fErr) {
+            console.error("[aplicar-traslado-inventario] declarar_faltantes:", fErr.message);
+            faltanteError = "El traslado entró, pero no se pudo anotar lo que faltó: " + fErr.message;
+          }
+        }
+
+        return json({
+          ok: true,
+          recibido,
+          faltantes: faltantesPedidos.length,
+          ...(faltanteError ? { faltante_error: faltanteError } : {}),
+        });
       };
 
       const cookie = await sesionEn(erpDestino);

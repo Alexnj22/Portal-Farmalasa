@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Ban, Check, CornerUpLeft, Loader2, PackageCheck, Send } from 'lucide-react';
+import { Ban, Check, CornerUpLeft, Loader2, PackageCheck, PackageX, Printer, Send } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
-    MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio, recibirDevolucion,
+    DECISIONES_ENVIO, MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio,
+    recibirDevolucion,
 } from '../../data/envios';
+import { imprimirTicketDeEnvio } from '../../utils/imprimirTraslado';
+import { useAuth } from '../../context/AuthContext';
 import { fmtCuando, fmtFechaLarga } from './trasladoTexto';
 import { desdeHace } from '../solicitudes/movimientoTexto';
 
@@ -33,7 +36,52 @@ const ESTADO_ROTULO = {
     aceptada: 'se la quedaron',
     devuelta: 'te la devuelven',
     devuelta_recibida: 'de vuelta en tu sala',
+    // Salió del estante y nunca apareció en la caja. No es «se la quedaron» ni
+    // «te la devuelven»: es el hueco que hasta hoy no tenía dónde decirse.
+    no_llego: 'no llegó',
 };
+
+/**
+ * Reimprimir el ticket de la bolsa, y nada más.
+ *
+ * Misma condición que en la solicitud (pedido del usuario, 2026-08-24): **sólo
+ * imprimir**. No anula el papel anterior, no marca nada y no pide un motivo —
+ * lo que se está arreglando es una impresora, no un hecho del negocio.
+ *
+ * Vive acá y no en cada tarjeta porque lo necesitan las tres que le hablan a la
+ * sala que despachó, y una copia por tarjeta son tres papeles que se corrigen
+ * por separado.
+ */
+function BotonReimprimir({ envio }) {
+    const { user } = useAuth();
+    const [imprimiendo, setImprimiendo] = useState(false);
+    const [dijo, setDijo] = useState('');
+
+    // La caja es la de QUIEN REIMPRIME, no la del despacho: quien aprieta el
+    // botón es quien va a levantar el papel.
+    const sala = user?.branchId ?? user?.branch_id ?? null;
+
+    const imprimir = async () => {
+        setImprimiendo(true); setDijo('');
+        const r = await imprimirTicketDeEnvio({
+            envio, sala, quien: user?.name ?? user?.nombre ?? null,
+        });
+        setImprimiendo(false);
+        setDijo(r?.ok ? 'El ticket se mandó a la impresora.'
+                      : `No se pudo imprimir: ${r?.detalle ?? 'sin detalle'}`);
+    };
+
+    if (!envio?.codigo_bolsa) return null;
+    return (
+        <div className="flex flex-col gap-1">
+            <Button size="xs" variant="ghost" icon={Printer} className="min-h-[var(--tap-min)] self-start"
+                onClick={imprimir} disabled={imprimiendo}>
+                {imprimiendo ? 'Imprimiendo…' : 'Imprimir el ticket'}
+            </Button>
+            {dijo && <p className="text-micro text-content-3 font-medium leading-snug">{dijo}</p>}
+        </div>
+    );
+}
 
 /** El recorrido, siempre en el mismo sentido.
  *
@@ -173,21 +221,29 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         () => (envio.lineas ?? []).filter(l => l.estado === 'enviada'),
         [envio.lineas],
     );
-    const [decision, setDecision] = useState({});   // posicion → { aceptar, motivo, nota }
+    const [decision, setDecision] = useState({});   // posicion → { que, motivo, nota }
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
 
     const marcar = (posicion, cambios) =>
         setDecision(d => ({ ...d, [posicion]: { ...(d[posicion] ?? {}), ...cambios } }));
 
-    const aceptarTodo = () =>
-        setDecision(Object.fromEntries(pendientes.map(l => [l.posicion, { aceptar: true }])));
+    const aceptarTodo = () => setDecision(Object.fromEntries(
+        pendientes.map(l => [l.posicion, { que: DECISIONES_ENVIO.aceptar }]),
+    ));
 
     const completa = pendientes.every(l => {
         const d = decision[l.posicion];
-        if (!d || d.aceptar === undefined) return false;
-        if (d.aceptar) return true;
-        return Boolean(d.motivo) && !(d.motivo === 'Otro' && !String(d.nota ?? '').trim());
+        if (!d?.que) return false;
+        // Devolver exige motivo de la lista; «Otro» exige además que se escriba
+        // cuál. Lo mismo que valida la base — repetido acá para no mandar un
+        // viaje que ya se sabe que rebota.
+        if (d.que === DECISIONES_ENVIO.devolver) {
+            return Boolean(d.motivo) && !(d.motivo === 'Otro' && !String(d.nota ?? '').trim());
+        }
+        // «No llegó» no pide motivo de la lista: los seis hablan de un producto
+        // que SÍ llegó. La nota es opcional y es para decir qué se vio.
+        return true;
     });
 
     const confirmar = async () => {
@@ -198,7 +254,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
             envio.id,
             pendientes.map(l => ({
                 i: l.posicion,
-                aceptar: decision[l.posicion].aceptar,
+                decision: decision[l.posicion].que,
                 motivo: decision[l.posicion].motivo ?? '',
                 nota: decision[l.posicion].nota ?? '',
             })),
@@ -235,21 +291,40 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Button size="xs"
-                                    variant={d.aceptar === true ? 'primary' : 'secondary'}
+                                    variant={d.que === DECISIONES_ENVIO.aceptar ? 'primary' : 'secondary'}
                                     icon={Check}
                                     className="min-h-[var(--tap-min)] flex-1"
-                                    onClick={() => marcar(l.posicion, { aceptar: true })}>
+                                    onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.aceptar })}>
                                     Me la quedo
                                 </Button>
                                 <Button size="xs"
-                                    variant={d.aceptar === false ? 'danger' : 'secondary'}
+                                    variant={d.que === DECISIONES_ENVIO.devolver ? 'danger' : 'secondary'}
                                     icon={CornerUpLeft}
                                     className="min-h-[var(--tap-min)] flex-1"
-                                    onClick={() => marcar(l.posicion, { aceptar: false })}>
+                                    onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.devolver })}>
                                     Devolver
                                 </Button>
                             </div>
-                            {d.aceptar === false && (
+                            {/* ── El tercero, y va SOLO en su renglón ────────
+                                No es una variante de los otros dos: los dos de
+                                arriba hablan de un producto que llegó, y éste
+                                dice que la caja venía sin él. Aceptarlo metería
+                                al inventario algo que no está en el estante, y
+                                devolverlo mandaría de vuelta algo que nunca
+                                salió de la otra sala.
+
+                                Abajo y a lo ancho, no como tercera columna: con
+                                390 px de pantalla tres botones dejan cada
+                                rótulo en 100 px, y «Me la quedo» se parte. Y de
+                                paso queda claro que es el camino excepcional. */}
+                            <Button size="xs"
+                                variant={d.que === DECISIONES_ENVIO.noLlego ? 'warning' : 'secondary'}
+                                icon={PackageX}
+                                className="min-h-[var(--tap-min)] w-full"
+                                onClick={() => marcar(l.posicion, { que: DECISIONES_ENVIO.noLlego })}>
+                                No llegó en la caja
+                            </Button>
+                            {d.que === DECISIONES_ENVIO.devolver && (
                                 <div className="flex flex-col gap-1.5">
                                     <LiquidSelect
                                         nano clearable={false}
@@ -270,6 +345,15 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                                     )}
                                 </div>
                             )}
+                            {d.que === DECISIONES_ENVIO.noLlego && (
+                                <PortalTextarea
+                                    rows={2}
+                                    value={d.nota ?? ''}
+                                    onChange={e => marcar(l.posicion, { nota: e.target.value })}
+                                    placeholder="Qué viste al abrir la caja (opcional)"
+                                    aria-label={`Qué pasó con ${l.descripcion ?? 'el producto'}`}
+                                />
+                            )}
                         </div>
                     );
                 })}
@@ -279,7 +363,9 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
 
             <p className="text-micro text-content-3 font-medium leading-snug">
                 Lo que te quedas entra a tu inventario. Lo que devuelves sale de vuelta en el momento y
-                {' '}{envio.origen_branch_name ?? 'la otra sala'} lo confirma cuando le llegue.
+                {' '}{envio.origen_branch_name ?? 'la otra sala'} lo confirma cuando le llegue. Lo que no
+                llegó no entra ni sale: queda anotado y {envio.origen_branch_name ?? 'la otra sala'} lo
+                busca.
             </p>
 
             <div className="flex items-center gap-1.5">
@@ -308,6 +394,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
 
 /* ─── Lo que armaste y todavía no salió ───────────────────────────────────── */
 export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
+    const { user } = useAuth();
     const faltan = (envio.lineas ?? []).filter(l => l.estado === 'por_enviar' || l.estado === 'error');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
@@ -325,6 +412,33 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
         setError('');
         const r = await despacharEnvio(envio.id);
         if (!r?.ok) setError(r?.error ?? (r?.fallos ?? []).map(f => `${f.producto}: ${f.error}`).join(' · '));
+        /* Lo que acaba de salir necesita su papel, igual que en el primer
+         * despacho: es una caja nueva que alguien va a levantar. No se espera y
+         * no puede fallar el envío —el producto YA se movió—, así que un
+         * problema de papel se dice aparte.
+         *
+         * `envio` es la fila de ANTES de este despacho, y el ticket se arma con
+         * lo que ella dice. Por eso se rearma con los renglones que acaban de
+         * salir: `r.hechas` es lo único que sabe cuáles fueron. */
+        if ((r?.enviadas ?? 0) > 0) {
+            imprimirTicketDeEnvio({
+                envio: {
+                    ...envio,
+                    lineas: (envio.lineas ?? []).map(l => (
+                        (r.hechas ?? []).some(h => h?.producto === l.descripcion)
+                            ? { ...l, enviado_at: l.enviado_at ?? new Date().toISOString() }
+                            : l
+                    )),
+                },
+                sala: user?.branchId ?? user?.branch_id ?? null,
+                quien: user?.name ?? user?.nombre ?? null,
+            }).then((res) => {
+                if (!res?.ok) setError(`Salió, pero el ticket no se imprimió: ${res?.detalle ?? 'sin detalle'}`);
+            }).catch((e) => {
+                console.error('ticket de envío:', e);
+                setError('Salió, pero el ticket no se imprimió.');
+            });
+        }
         setEnviando(false);
         onHecho?.();
     };
@@ -404,6 +518,7 @@ export function FilaEnvioEnCamino({ envio, ahora = null }) {
             <p className="text-micro text-content-3 font-medium leading-snug">
                 {envio.branch_name ?? 'La otra sala'} decide qué se queda cuando abra la caja.
             </p>
+            <BotonReimprimir envio={envio} />
         </div>
     );
 }

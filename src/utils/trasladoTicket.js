@@ -137,11 +137,33 @@ export function salaQueDespacha({ aplicado, origen, respaldo }) {
  * @param {string} pide      quién la pidió — vacío en un envío, que nadie pidió
  * @param {Array}  items     `[{ nombre, cantidad, presentacion }]`
  * @param {string} [motivo]  por qué se manda (sólo los envíos tienen uno)
+ * @param {string} [codigo]  el número de las barras, cuando NO es el del
+ *                           traslado. Es el caso del envío: ver abajo.
  */
 export function construirTicketDeTraslado({
-    familia, aplicado, origen, destino, pide, items = [], motivo,
+    familia, aplicado, origen, destino, pide, items = [], motivo, codigo,
 }) {
-    const numero = aplicado?.id_traslado == null ? '' : String(aplicado.id_traslado);
+    /* ── Qué número va en las barras, y por qué el envío trae el suyo ───────
+     *
+     * En una SOLICITUD la bolsa es un traslado y su número la nombra entera:
+     * seis productos pedidos viajan en un solo movimiento, con un solo
+     * `id_traslado`. Medido el 2026-08-29 sobre 567 solicitudes despachadas en
+     * 30 días —19 de ellas con varios productos—: siempre uno.
+     *
+     * En un ENVÍO no. Cada renglón crea su propio traslado (decisión del
+     * 2026-08-22: la pantalla de recepción del sistema recibe el movimiento
+     * completo, así que con N líneas en uno solo un producto dañado obligaría a
+     * devolver la caja entera), y la bolsa que alguien carga tiene hasta OCHO
+     * números. Ninguno la nombra: por eso el envío lleva un código propio,
+     * `E00042`, que el portal le pone al crearlo.
+     *
+     * La letra no es decorativa. `traslado_por_codigo` busca lo escaneado
+     * contra los traslados Y contra las bolsas, y un número de traslado es
+     * siempre dígitos: la `E` hace imposible que un escaneo abra la bolsa
+     * equivocada.
+     */
+    const propio = String(codigo ?? '').trim();
+    const numero = propio || (aplicado?.id_traslado == null ? '' : String(aplicado.id_traslado));
 
     // Los rótulos van cortos porque el ancho manda: en dos columnas media línea
     // son 27 caracteres, y lo que se recorta es el rótulo, nunca el dato.

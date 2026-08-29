@@ -7,6 +7,8 @@ import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '../../data/traslados';
+import DeclararFaltantes from './DeclararFaltantes';
+import { FilaEnvioPorDecidir } from './FilasEnvio';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fmtCuando } from './trasladoTexto';
 import LecturaQueNoEntro from './LecturaQueNoEntro';
@@ -53,9 +55,11 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [hallado,  setHallado]  = useState(null);
     const [conCamara, setConCamara] = useState(false);
     const [listo,    setListo]    = useState(null);   // el que se acaba de recibir
+    // Lo que la sala dice que NO venía en la bolsa. Vacío es el camino normal.
+    const [faltaron, setFaltaron] = useState([]);
 
     const buscar = useCallback(async (codigo) => {
-        setBuscando(true); setError(''); setHallado(null); setListo(null);
+        setBuscando(true); setError(''); setHallado(null); setListo(null); setFaltaron([]);
         const { traslado, error: e } = await fetchTrasladoPorCodigo(codigo);
         setBuscando(false);
         if (e) { setError(mensajeAmigable(e, 'No se pudo leer ese código.')); return; }
@@ -88,13 +92,13 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [estabaAbierto, setEstabaAbierto] = useState(abierto);
     if (abierto !== estabaAbierto) {
         setEstabaAbierto(abierto);
-        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); }
+        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); setFaltaron([]); }
     }
 
     const confirmar = async () => {
         if (!hallado?.id) return;
         setOcupado(true); setError('');
-        const r = await recibirTraslado(hallado.id);
+        const r = await recibirTraslado(hallado.id, faltaron);
         setOcupado(false);
         if (!r?.ok) {
             // El servidor tiene la última palabra y sabe decir que ya se recibió
@@ -108,8 +112,13 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
             setError(r?.error ?? 'No se pudo confirmar la llegada.');
             return;
         }
-        setListo(hallado);
+        // El faltante NO puede tumbar la recepción: el producto ya entró. Se dice
+        // aparte, que es lo único honesto — la caja llegó y lo que faltó quedó
+        // sin anotar, y esas dos cosas hay que poder verlas juntas.
+        if (r?.faltante_error) setError(r.faltante_error);
+        setListo({ ...hallado, faltaron: faltaron.length });
         setHallado(null);
+        setFaltaron([]);
         onHecho?.();
     };
 
@@ -124,13 +133,18 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                 icono={ScanLine}
                 anchoEscritorio="max-w-lg"
                 pie={<>
-                    {hallado?.id && !hallado.ya_recibido && (
+                    {hallado?.id && !hallado.ya_recibido && !hallado.es_un_envio && (
+                        /* El rótulo cambia con lo que se declaró, y no es
+                           cosmético: apretar «Sí, llegó completa» habiendo
+                           escrito que faltaron dos es el botón contradiciendo
+                           al formulario de arriba. */
                         <Button icon={PackageCheck} loading={ocupado} disabled={ocupado} onClick={confirmar}>
-                            {ocupado ? 'Confirmando…' : 'Sí, llegó completa'}
+                            {ocupado ? 'Confirmando…'
+                                : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Sí, llegó completa')}
                         </Button>
                     )}
                     {(hallado || listo) && !ocupado && (
-                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); }}>
+                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); setFaltaron([]); }}>
                             Escanear otro
                         </Button>
                     )}
@@ -140,9 +154,12 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                     {error && <Notice variant="danger">{error}</Notice>}
 
                     {listo && (
-                        <Notice variant="success">
-                            Confirmada la llegada de {listo.origen ?? 'la otra sala'}. Escanea la
-                            siguiente bolsa cuando quieras.
+                        <Notice variant={listo.faltaron ? 'warning' : 'success'}>
+                            Confirmada la llegada de {listo.origen ?? 'la otra sala'}.
+                            {listo.faltaron
+                                ? ` Quedó anotado que faltaron ${listo.faltaron} ${listo.faltaron === 1 ? 'producto' : 'productos'};`
+                                  + ` ya le avisamos a ${listo.origen ?? 'la otra sala'}.`
+                                : ' Escanea la siguiente bolsa cuando quieras.'}
                         </Notice>
                     )}
 
@@ -171,7 +188,25 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                         </div>
                     )}
 
-                    {hallado && !hallado.id && (
+                    {/* ── La bolsa de un ENVÍO ─────────────────────────────
+                        No se recibe de un botón: nadie la pidió, así que se
+                        decide producto por producto —me la quedo, la devuelvo,
+                        o no llegó—. La pantalla que hace eso ya existe y es la
+                        misma de la lista: reusarla es lo que evita dos
+                        decisiones que se parecen y se comportan distinto. */}
+                    {hallado?.es_un_envio && hallado.envio_bolsa && (
+                        <FilaEnvioPorDecidir
+                            envio={hallado.envio_bolsa}
+                            onHecho={() => { setListo({ origen: hallado.envio_bolsa.origen_branch_name }); setHallado(null); onHecho?.(); }}
+                        />
+                    )}
+                    {hallado?.es_un_envio && !hallado.envio_bolsa && (
+                        <Notice variant="danger">
+                            Ese ticket es de una bolsa que no puedes ver: es de otras salas.
+                        </Notice>
+                    )}
+
+                    {hallado && !hallado.id && !hallado.es_un_envio && (
                         <Notice variant={hallado.es_de_un_pedido ? 'warning' : 'danger'}>
                             {hallado.es_de_un_pedido
                                 ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas. Se recibe desde Pedidos.'
@@ -179,7 +214,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                         </Notice>
                     )}
 
-                    {hallado?.id && (
+                    {hallado?.id && !hallado.es_un_envio && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
                             <p className="text-body-sm font-bold text-content-1">
                                 {hallado.origen ?? 'La otra sala'} → {hallado.destino ?? 'esta sala'}
@@ -201,6 +236,15 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                                     {hallado.recibio ? `, la recibió ${hallado.recibio}` : ''}
                                     {hallado.recibido_at ? ` ${fmtCuando(hallado.recibido_at)}` : ''}.
                                 </Notice>
+                            )}
+                            {!hallado.ya_recibido && (
+                                <DeclararFaltantes
+                                    items={hallado.items ?? []}
+                                    valor={faltaron}
+                                    onCambio={setFaltaron}
+                                    deshabilitado={ocupado}
+                                    origen={hallado.origen}
+                                />
                             )}
                         </div>
                     )}

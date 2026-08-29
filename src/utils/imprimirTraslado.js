@@ -41,7 +41,9 @@ export async function imprimirTicketDeTraslado({ sala, ...datos }) {
         // trabajos llamados «Documento» no dejan ver cuál no salió.
         const tituloDeCola = [
             datos?.familia === 'envio' ? 'ENVIO' : 'SOLICITUD',
-            datos?.aplicado?.id_traslado,
+            // El mismo número que va en las barras: el propio de la bolsa
+            // cuando lo hay (el envío), y si no el del traslado.
+            datos?.codigo || datos?.aplicado?.id_traslado,
             datos?.destino,
         ].filter(Boolean).join(' ');
         return await imprimirDocumento(
@@ -132,6 +134,74 @@ export function datosDelTicketGuardado(metadata, { pide = null, familia = 'solic
         items: deDetalle.length ? deDetalle : loQueVaEnLaBolsa(metadata?.items ?? []),
         motivo: metadata?.motivo,
     };
+}
+
+/**
+ * Y el ticket de un ENVÍO, que no se arma con las mismas piezas.
+ *
+ * `datosDelTicketGuardado` lee `metadata.erp_traslado` — el movimiento del
+ * traslado, con su número, quién despachó y cuándo. **Un envío no tiene ese
+ * objeto**: cada renglón hizo su propio movimiento y los datos del despacho
+ * viven en `envio_linea`. Lo que nombra a la bolsa entera es su código propio
+ * (`codigo_bolsa`), y lo que lleva sale de sus renglones.
+ *
+ * Se imprime lo que SALIÓ, no lo que se compuso: un renglón que no pudo
+ * despacharse no está en la caja, y un papel que lo liste manda a alguien a
+ * buscar lo que no existe. Es la misma regla que `loQueVaEnLaBolsa` en la
+ * solicitud.
+ *
+ * @param envio  la fila como la devuelve `envio_json` (lista, historial o
+ *               escaneo — es la misma forma, escrita una sola vez)
+ * @param quien  nombre de quien despacha, para el renglón «Envia». El envío no
+ *               guarda un `by_name` a nivel bolsa: lo pone quien imprime.
+ */
+export function datosDelTicketDeEnvio(envio, { quien = null } = {}) {
+    const lineas = Array.isArray(envio?.lineas) ? envio.lineas : [];
+    // Salieron las que tienen fecha de salida. `estado` no sirve acá: para
+    // cuando alguien reimprime, un renglón ya puede estar aceptado o devuelto y
+    // sigue siendo lo que viajó en esa bolsa.
+    const salidas = lineas.filter(l => l?.enviado_at);
+    const cuales = salidas.length ? salidas : lineas;
+    return {
+        familia: 'envio',
+        codigo: envio?.codigo_bolsa ?? '',
+        aplicado: {
+            by_name: quien ?? null,
+            // La hora de la bolsa es la del primer renglón que salió: es cuando
+            // la caja se armó, que es lo que el papel tiene que decir.
+            at: cuales.map(l => l?.enviado_at).filter(Boolean).sort()[0] ?? envio?.created_at ?? null,
+            por_respaldo: false,
+        },
+        origen: envio?.origen_branch_name,
+        destino: envio?.branch_name,
+        // Un envío no lo pidió nadie — ése es su significado — así que el
+        // renglón «Pide» no se imprime.
+        pide: '',
+        items: cuales.map(l => ({
+            nombre: l?.descripcion,
+            cantidad: l?.cantidad,
+        })),
+        motivo: envio?.motivo_tipo
+            ? [envio.motivo_tipo, envio.reason && envio.reason !== envio.motivo_tipo ? envio.reason : null]
+                .filter(Boolean).join(' — ')
+            : (envio?.reason ?? null),
+    };
+}
+
+/**
+ * Imprime —o reimprime— el ticket de una bolsa de envío.
+ *
+ * Sin código no hay barras, y un ticket de bolsa sin barras no se puede
+ * escanear al recibir: se devuelve el fallo para que la pantalla lo DIGA en vez
+ * de sacar un papel mudo. En la práctica no debería pasar — el número lo pone
+ * un trigger al crear el envío — pero una fila anterior a ese trigger existe.
+ */
+export async function imprimirTicketDeEnvio({ envio, sala, quien = null }) {
+    const datos = datosDelTicketDeEnvio(envio, { quien });
+    if (!datos.codigo) {
+        return { ok: false, detalle: 'Esta bolsa no tiene número: se recibe buscándola en la lista.' };
+    }
+    return imprimirTicketDeTraslado({ sala, ...datos });
 }
 
 export async function reimprimirTicketDeTraslado({ metadata, pide, sala, familia = 'solicitud' }) {

@@ -81,6 +81,19 @@ interface Linea {
   motivo_rechazo: string | null;
 }
 
+/**
+ * Qué puede contestar la sala que abre la caja, y por qué son TRES.
+ *
+ * `aceptar` y `devolver` mueven inventario en el sistema de origen —el producto
+ * entra a esta sala, y si se devuelve sale otra vez—. `no_llego` **no llama a
+ * nadie**, y ésa es su definición: el traslado de ese renglón salió del estante
+ * y nunca apareció en la caja, así que dejarlo despachado-sin-recibir es
+ * exactamente la verdad. Recibirlo pondría existencia que no está; devolverlo
+ * pondría existencia en la sala de origen, que tampoco la tiene.
+ */
+const DECISIONES = ["aceptar", "devolver", "no_llego"] as const;
+type Decision = typeof DECISIONES[number];
+
 /** La marca que deja este envío en el concepto del sistema. */
 const claveDe = (requestId: string, posicion: number) =>
   `EV${String(requestId).replace(/-/g, "").slice(0, 8).toUpperCase()}-L${posicion}`;
@@ -674,15 +687,36 @@ Deno.serve(async (req) => {
       );
       const motivos = (motivosOk ?? []) as string[];
 
-      const trabajo: { l: Linea; aceptar: boolean; motivo: string; nota: string }[] = [];
+      /* ── Tres desenlaces, no dos ────────────────────────────────────────
+       * `aceptar` era un booleano y alcanzaba mientras las salidas fueran «me
+       * la quedo» y «te la devuelvo». Falta la tercera, que es la que no tenía
+       * dónde decirse: **el producto no venía en la caja**.
+       *
+       * No es un caso raro de las otras dos: aceptar mete al inventario una
+       * existencia que no está en el estante, y devolver dispara el traslado de
+       * vuelta de algo que nunca salió de esta sala — o sea que le devuelve al
+       * origen una existencia que tampoco tiene. Las dos MIENTEN, y ninguna
+       * deja rastro de que faltó.
+       *
+       * El booleano se conserva como respaldo (`aceptar`) para que una pantalla
+       * vieja siga funcionando: quien no mande `decision` sigue diciendo lo
+       * mismo que decía. */
+      const trabajo: { l: Linea; decision: Decision; motivo: string; nota: string }[] = [];
       for (const d of pedidas) {
         const l = lineas.find((x) => x.posicion === Number(d?.i));
         if (!l) return json({ ok: false, error: `No hay un producto en la posición ${d?.i}.` }, 422);
         if (l.estado !== "enviada") continue;   // ya decidido, o nunca salió
-        const aceptar = d?.aceptar !== false;
+        const pedida = String(d?.decision ?? "").trim();
+        if (pedida && !DECISIONES.includes(pedida as Decision))
+          return json({
+            ok: false,
+            error: `«${pedida}» no es una decisión: son ${DECISIONES.join(", ")}.`,
+          }, 422);
+        const decision: Decision = (pedida as Decision)
+          || (d?.aceptar === false ? "devolver" : "aceptar");
         const motivo = String(d?.motivo ?? "").trim();
         const notaL  = String(d?.nota ?? "").trim();
-        if (!aceptar) {
+        if (decision === "devolver") {
           // Quien devuelve tiene que decir por qué, y de la lista: un motivo
           // libre no se puede contar ni comparar, y «Otro» sin texto es el
           // motivo vacío con otro nombre.
@@ -695,7 +729,7 @@ Deno.serve(async (req) => {
           if (motivo === "Otro" && !notaL)
             return json({ ok: false, codigo: "FALTA_MOTIVO", error: "El motivo «Otro» necesita que se escriba cuál." }, 422);
         }
-        trabajo.push({ l, aceptar, motivo, nota: notaL });
+        trabajo.push({ l, decision, motivo, nota: notaL });
       }
       if (trabajo.length === 0)
         return json({ ok: false, codigo: "NADA_QUE_DECIDIR", error: "Esos productos ya estaban decididos." }, 409);
@@ -730,6 +764,9 @@ Deno.serve(async (req) => {
 
       const hechas: Record<string, unknown>[] = [];
       const fallos: { producto: string; error: string }[] = [];
+      // Lo que la sala dice que no venía en la caja. Se junta y se anota de una
+      // sola vez al final: un aviso por bolsa, no uno por producto.
+      const faltantes: { posicion: number; cantidad: number; nota: string | null }[] = [];
       let cortadoEn = -1;
       // Para el traslado de vuelta hace falta saber qué había antes en la
       // ubicación de destino; se toma una vez y se va actualizando.
@@ -737,12 +774,42 @@ Deno.serve(async (req) => {
 
       for (let i = 0; i < trabajo.length; i++) {
         if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
-        const { l, aceptar, motivo, nota: notaL } = trabajo[i];
+        const { l, decision, motivo, nota: notaL } = trabajo[i];
+        const aceptar = decision === "aceptar";
         const nombre = l.descripcion ?? String(l.erp_product_id);
         const clave = claveDe(sol.id, l.posicion);
         const idIda = String(l.id_traslado ?? "");
 
         const fallar = (msg: string) => { fallos.push({ producto: nombre, error: msg }); };
+
+        /* ── No llegó ──────────────────────────────────────────────────────
+         * Va ANTES de todo lo demás —antes incluso de mirar si el renglón tiene
+         * número de movimiento— porque es el único desenlace que no necesita
+         * hablar con el sistema de origen. El producto no está en la caja: no
+         * hay nada que recibir ni nada que devolver, y cualquier llamada que se
+         * hiciera acá escribiría una existencia que nadie tiene.
+         *
+         * El faltante se anota DESPUÉS del bucle, en una sola llamada: así la
+         * sala de origen recibe UN aviso por bolsa y no uno por producto. */
+        if (decision === "no_llego") {
+          await anotar(
+            admin.from("envio_linea").update({
+              estado: "no_llego",
+              // El motivo es el hecho, y no se pide de la lista: los seis
+              // motivos de devolución hablan de un producto que SÍ llegó.
+              motivo_rechazo: "No llegó",
+              nota_rechazo: notaL || null,
+              decidido_por: actor.id, decidido_at: new Date().toISOString(),
+              error: null,
+              updated_at: new Date().toISOString(),
+            }).eq("id", l.id),
+            `el faltante de ${nombre}`,
+            (m) => fallos.push({ producto: nombre, error: m }),
+          );
+          faltantes.push({ posicion: l.posicion, cantidad: Number(l.cantidad), nota: notaL || null });
+          hechas.push({ producto: nombre, decision: "no_llego" });
+          continue;
+        }
 
         if (!idIda) {
           /* Salió del estante y no se pudo distinguir cuál movimiento es. No hay
@@ -950,6 +1017,28 @@ Deno.serve(async (req) => {
         hechas.push({ producto: nombre, decision: "devuelta", motivo, id_traslado: idVuelta });
       }
 
+      /* ── Lo que no llegó queda anotado, con nombre y con aviso ────────────
+       * UNA llamada para toda la bolsa: la función escribe las filas y avisa a
+       * la sala de origen y a supervisión de una sola vez. Uno por producto
+       * mandaría tres avisos por la misma caja, y una campana que repite es una
+       * campana que se deja de mirar.
+       *
+       * Va DESPUÉS de mover lo que sí se movió y **no puede tumbar la
+       * decisión**: para acá el inventario ya cambió, así que un fallo al
+       * anotar se dice como un fallo más y no como si nada hubiera pasado. Es
+       * la misma regla que el ticket del despacho. */
+      if (faltantes.length > 0) {
+        await anotar(
+          admin.rpc("declarar_faltantes", {
+            p_request_id: sol.id,
+            p_faltantes: faltantes,
+            p_actor: actor.id,
+          }),
+          "el faltante de la bolsa",
+          (m) => fallos.push({ producto: "lo que no llegó", error: m }),
+        );
+      }
+
       /* ── Y recién cuando no queda nada por decidir, se cierra la cabecera ──
        * `APPROVED` con que se haya aceptado UNO: el envío llegó a destino y se
        * resolvió. `REJECTED` sólo si volvió todo. Mientras quede un renglón
@@ -968,7 +1057,15 @@ Deno.serve(async (req) => {
         const filas = (finales ?? []) as { estado: string; motivo_rechazo: string | null }[];
         const aceptadas = filas.filter((x) => x.estado === "aceptada").length;
         const devueltas = filas.filter((x) => x.estado === "devuelta" || x.estado === "devuelta_recibida");
-        cerrado = aceptadas > 0 ? "APPROVED" : (devueltas.length > 0 ? "REJECTED" : null);
+        /* Los que no llegaron CUENTAN para cerrar, y ese detalle no es
+         * cosmético: sin ellos, una bolsa entera que no apareció no tenía cómo
+         * salir de `PENDING` —ningún renglón queda en `enviada`, así que nadie
+         * la vuelve a decidir— y se quedaba pidiendo una respuesta que ya se
+         * dio, para siempre. Es un desenlace, no un limbo. */
+        const noLlegaron = filas.filter((x) => x.estado === "no_llego").length;
+        cerrado = aceptadas > 0
+          ? "APPROVED"
+          : ((devueltas.length + noLlegaron) > 0 ? "REJECTED" : null);
         if (cerrado) {
           /* El cierre entero es UNA escritura de la base y no cuatro campos
            * desde acá: toca el mismo `metadata` donde el aviso al destino
@@ -979,7 +1076,14 @@ Deno.serve(async (req) => {
            * `validar_rechazo_con_motivo` exige para un REJECTED—; el
            * `approver_id` pasa a ser quien DECIDIÓ y no quien recibió el aviso,
            * que es lo que hace que ese aviso diga el nombre correcto. */
-          const motivosDados = [...new Set(devueltas.map((x) => x.motivo_rechazo).filter(Boolean))];
+          /* `validar_rechazo_con_motivo` exige un motivo para todo REJECTED, así
+           * que una bolsa que sólo tuvo faltantes necesita el suyo: sin esto el
+           * cierre reventaría con «una solicitud se rechaza con motivo» sobre
+           * una decisión que sí se tomó. */
+          const motivosDados = [
+            ...new Set(devueltas.map((x) => x.motivo_rechazo).filter(Boolean)),
+            ...(noLlegaron > 0 ? ["No llegó"] : []),
+          ];
           await anotar(
             admin.rpc("cerrar_envio", {
               p_request_id: sol.id,

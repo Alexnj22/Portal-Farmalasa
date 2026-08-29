@@ -18,6 +18,7 @@ import { lotesEnUnidades, repartirPedido, sumaUnidades } from '../../utils/unida
 import { opcionesDePresentacion } from '../../utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import { clickable } from '../../utils/clickable';
+import { imprimirTicketDeTraslado } from '../../utils/imprimirTraslado';
 
 // Mandarle producto a otra sala sin que te lo pidan.
 //
@@ -651,8 +652,57 @@ export default function EnviarProductoModal({ onClose, onListo }) {
              * a la vez podrían escribir con la sucursal de la otra. */
             const creados = Array.isArray(data) ? data : [data];
             const salidas = [];
-            for (const fila of creados) {
-                salidas.push(await despacharEnvio(fila.id));
+            const conCodigo = [...porOrigen.values()];
+            for (let i = 0; i < creados.length; i++) {
+                const fila = creados[i];
+                const r = await despacharEnvio(fila.id);
+                salidas.push(r);
+
+                /* ── El ticket que va pegado a la bolsa ────────────────────
+                 * Sale DESPUÉS del despacho y sólo si salió algo: lleva lo que
+                 * de verdad viaja (`r.hechas`), y un papel impreso sobre un
+                 * despacho que falló manda una caja que nadie va a recibir.
+                 *
+                 * No se espera y no puede fallar el envío —`imprimirTicketDe
+                 * Traslado` no lanza—: para acá el producto YA salió de la
+                 * sala, así que un problema de papel no puede mostrarse como si
+                 * la operación no hubiera salido. Si el papel no sale, se
+                 * reimprime desde la tarjeta.
+                 *
+                 * Un envío por bolsa y un ticket por envío: la composición se
+                 * parte por estante de origen, y cada parte es una caja
+                 * distinta con su propio número. */
+                if ((r?.enviadas ?? 0) > 0) {
+                    const o = conCodigo[i];
+                    imprimirTicketDeTraslado({
+                        sala: miBranch,
+                        familia: 'envio',
+                        // El número de la BOLSA (`E00042`), no el del traslado:
+                        // un envío crea uno por renglón y ninguno la nombra
+                        // entera. Lo pone un trigger al crearla.
+                        codigo: fila?.metadata?.codigo_bolsa ?? '',
+                        aplicado: {
+                            by_name: user?.name ?? user?.nombre ?? null,
+                            at: new Date().toISOString(),
+                            por_respaldo: false,
+                        },
+                        origen: o ? nombreEstante(o.erp, o.vencidos) : (NOMBRE_SALA[miErp] ?? ''),
+                        destino: NOMBRE_SALA[erpDestino] ?? '',
+                        // Un envío no lo pidió nadie: ése es su significado.
+                        pide: '',
+                        items: (r.hechas ?? []).map(h => ({ nombre: h?.producto, cantidad: h?.cantidad })),
+                        // El motivo ES lo que explica la caja, y el usuario lo
+                        // pidió en el papel: sin él, quien la abre no sabe por
+                        // qué le llegó.
+                        motivo: [motivo, nota.trim() && nota.trim() !== motivo ? nota.trim() : null]
+                            .filter(Boolean).join(' — '),
+                    }).then((res) => {
+                        if (!res?.ok) setError(`Salió, pero el ticket no se imprimió: ${res?.detalle ?? 'sin detalle'}`);
+                    }).catch((e) => {
+                        console.error('ticket de envío:', e);
+                        setError('Salió, pero el ticket no se imprimió.');
+                    });
+                }
             }
 
             const enviadas = salidas.reduce((n, x) => n + (x?.enviadas ?? 0), 0);

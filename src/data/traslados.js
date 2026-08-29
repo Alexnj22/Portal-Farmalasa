@@ -289,8 +289,25 @@ export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null) 
         ...(lineasAceptadas ? { lineas_aceptadas: lineasAceptadas } : {}),
     });
 
-export const recibirTraslado = (requestId) =>
-    invocar({ request_id: requestId, accion: 'recibir' });
+/**
+ * Confirmar que la bolsa llegó — y decir qué NO venía en ella.
+ *
+ * `faltantes` es opcional y viaja como POSICIONES, `[{ posicion, cantidad,
+ * nota }]`, por lo mismo que `lineas_aceptadas`: el navegador señala cuál de
+ * los renglones ya guardados faltó, nunca nombra el producto.
+ *
+ * **La recepción sigue entrando COMPLETA.** El sistema recibe el movimiento
+ * entero y no una parte, así que declarar un faltante no es recibir de menos:
+ * es decir qué se vio al abrir la caja, sobre producto que el sistema ya puso
+ * en esta sala. Antes no había dónde decirlo y el hueco quedaba invisible hasta
+ * que alguien lo tropezara en un conteo.
+ */
+export const recibirTraslado = (requestId, faltantes = []) =>
+    invocar({
+        request_id: requestId,
+        accion: 'recibir',
+        ...(faltantes.length ? { faltantes } : {}),
+    });
 
 /**
  * Del número de las barras del ticket a la bolsa que alguien tiene en la mano.
@@ -312,12 +329,18 @@ export const recibirTraslado = (requestId) =>
  * |---|---|
  * | es una bolsa mía, sin recibir | `id` con valor, `ya_recibido: false` |
  * | ya la recibieron | `ya_recibido: true` + `recibio` y `recibido_at` |
+ * | **es la bolsa de un envío** | `es_un_envio: true` + `envio_bolsa` completo |
  * | el código es de un pedido de Bodega | `id: null`, `es_de_un_pedido: true` |
  * | no existe, o no es de esta sala | todo en `null` |
  *
  * Los dos últimos NO se pueden separar y es a propósito: el RLS oculta lo
  * ajeno, así que afirmar «no existe» sobre algo que sí existe en otra sala
  * sería mentir. El mensaje dice las dos cosas.
+ *
+ * **El envío se devuelve ENTERO** porque lo que sigue al escaneo es distinto:
+ * una solicitud se recibe de una —la sala la pidió— y un envío se decide
+ * producto por producto. Esa pantalla necesita los renglones, y traerlos en un
+ * segundo viaje daría dos formas del mismo envío en la misma sesión.
  */
 export async function fetchTrasladoPorCodigo(codigo) {
     const { data, error } = await supabase.rpc('traslado_por_codigo', {

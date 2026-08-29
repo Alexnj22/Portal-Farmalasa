@@ -136,3 +136,34 @@ export function renglonesDe(meta) {
         lotes: (Array.isArray(i.lotes) ? i.lotes : []).filter(l => l && (l.lote || l.vence)),
     }));
 }
+
+/**
+ * Lo que de verdad VIAJÓ en la bolsa, renglón por renglón.
+ *
+ * `renglonesDe` lista lo que se PIDIÓ, que es lo correcto para «¿esto es lo que
+ * mandé a pedir?». Para declarar un faltante no sirve: un despacho puede salir
+ * recortado —«enviar lo que hay»— y ofrecer decir que faltaron 5 de un renglón
+ * del que salieron 2 es ofrecer declarar un hueco que no existe.
+ *
+ * `metadata.erp_traslado.detalle` es lo que salió; guarda `erp_product_id` pero
+ * **no la posición**, así que se cruza por producto. Cuando el mismo producto
+ * aparece en dos renglones —dos presentaciones distintas— el detalle no
+ * distingue cuál es cuál y el techo vuelve a ser lo pedido: preferible un techo
+ * flojo a rechazar un faltante verdadero. Es la misma regla, escrita igual, que
+ * usa la función que recibe.
+ *
+ * `posicion` es el índice dentro de `metadata.items`, que es el nombre del
+ * renglón para todo el circuito.
+ */
+export function loQueLlego(meta) {
+    const detalle = Array.isArray(meta?.erp_traslado?.detalle) ? meta.erp_traslado.detalle : [];
+    return renglonesDe(meta).map((r, idx) => {
+        const item = (Array.isArray(meta?.items) ? meta.items : [])[idx] ?? {};
+        const suyas = detalle.filter(d => Number(d?.erp_product_id) === Number(item.erp_product_id));
+        return {
+            posicion: r.idx,
+            descripcion: r.nombre,
+            cantidad: suyas.length === 1 ? Number(suyas[0]?.cantidad ?? 0) : r.cantidad,
+        };
+    });
+}

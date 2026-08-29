@@ -215,7 +215,11 @@ export const TOPE_RENGLONES_ENVIO = 20;
  * que ninguna.
  */
 export function crearEnvio(payload) {
-    return supabase.from('approval_requests').insert(payload).select('id');
+    /* `metadata` además del `id`: el número de la bolsa (`codigo_bolsa`) lo
+     * pone un trigger al INSERTAR, así que la única forma de conocerlo sin un
+     * segundo viaje es pedirlo de vuelta acá. Es lo que va en las barras del
+     * ticket que se imprime enseguida. */
+    return supabase.from('approval_requests').insert(payload).select('id, metadata');
 }
 
 /**
@@ -263,9 +267,30 @@ export const despacharEnvio = (requestId) =>
     invocar({ request_id: requestId, accion: 'despachar' });
 
 /**
+ * Las tres cosas que la sala que abre la caja puede decir de un producto.
+ *
+ * Espejo de `DECISIONES` en la Edge Function, que es la que manda. Eran dos
+ * —quedárselo o devolverlo— y faltaba la que no tenía dónde decirse: **que el
+ * producto no venía en la bolsa**.
+ *
+ * No es un caso raro de las otras dos. Aceptar mete al inventario de la sala
+ * una existencia que no está en el estante; devolver dispara el traslado de
+ * vuelta de algo que nunca salió de acá, y le devuelve al origen una existencia
+ * que tampoco tiene. Las dos MIENTEN, y ninguna deja rastro de que faltó.
+ *
+ * `no_llego` no habla con el sistema de origen: el movimiento de ese renglón
+ * salió y nunca se recibió, y dejarlo así es exactamente la verdad.
+ */
+export const DECISIONES_ENVIO = {
+    aceptar:  'aceptar',
+    devolver: 'devolver',
+    noLlego:  'no_llego',
+};
+
+/**
  * Lo que la sala de destino decide, renglón por renglón.
  *
- * `decisiones` viaja como POSICIONES —`[{ i, aceptar, motivo, nota }]`— y nunca
+ * `decisiones` viaja como POSICIONES —`[{ i, decision, motivo, nota }]`— y nunca
  * como los renglones: con los renglones, el navegador elegiría qué producto se
  * mueve, y del otro lado hay credenciales para mover inventario de cualquier
  * sala. Mismo contrato que `lineas_aceptadas` del traslado.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeftRight, History, PackageCheck, ScanLine, Send, Truck } from 'lucide-react';
+import { ArrowLeftRight, History, PackageCheck, PackageX, ScanLine, Send, Truck } from 'lucide-react';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -28,10 +28,14 @@ const FilaPorRecibir = lazy(() =>
    pantalla. */
 const ConfirmarPorCodigo = lazy(() => import('./traslados/ConfirmarPorCodigo'));
 const RetiroModal        = lazy(() => import('./traslados/RetiroModal'));
+/* Mismo motivo que las tarjetas de arriba: la lista de faltantes se dibuja sólo
+   cuando su consulta volvió con algo, y lo normal es que no haya ninguno. */
+const FilasFaltante      = lazy(() => import('./traslados/FilasFaltante'));
 import { buscadorDePersonas } from './solicitudes/movimientoTexto';
 import { textoBuscable } from './traslados/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '../data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '../data/envios';
+import { fetchFaltantes } from '../data/faltantes';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
 // El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
 const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));
@@ -114,6 +118,12 @@ const TABS = [
     // ellos es distinto, y en una lista sola habría que leer cada tarjeta para
     // saber si te toca contestar o sólo mirar.
     { key: 'envios',    label: 'Envíos' },
+    /* Lo que NO llegó en la bolsa. Pestaña propia y no un aviso adentro de «En
+     * camino»: un faltante ya no es un traslado esperando —el movimiento pasó,
+     * el sistema ya cambió las existencias— y lo que hay que hacer con él es
+     * buscar la caja, no recibirla. Mezclados, el que va a recibir tendría que
+     * leer cada tarjeta para saber cuál de las dos cosas es. */
+    { key: 'faltantes', label: 'Faltantes' },
     { key: 'historial', label: 'Historial' },
 ];
 
@@ -170,6 +180,7 @@ export default function TrasladosView() {
     const [historial,    setHistorial]    = useState(null);
     const [envios,       setEnvios]       = useState(null);
     const [enviosCerrados, setEnviosCerrados] = useState(null);
+    const [faltantes,    setFaltantes]    = useState(null);
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     /* El diálogo que confirma una llegada escaneando el ticket de la bolsa. */
     const [abrirEscaneo, setAbrirEscaneo] = useState(false);
@@ -212,7 +223,7 @@ export default function TrasladosView() {
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
     // se resuelve cuando llega la respuesta, que es cuando se sabe.
     const cargar = useCallback(async () => {
-        const [b, c, d, e] = await Promise.all([
+        const [b, c, d, e, g2] = await Promise.all([
             fetchTrasladosPorRecibir({ branchId: salaQueRecorta }),
             fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
             // Su alcance lo decide el RLS, no `salaQueRecorta`: un envío le toca
@@ -225,13 +236,20 @@ export default function TrasladosView() {
              * con lo que la otra sala devolvió y por qué. Es el mismo hueco que
              * esta vista vino a tapar para el traslado el 2026-08-07. */
             fetchEnviosHistorial(200),
+            /* Los faltantes de las DOS familias en una sola lista. Su alcance
+             * lo decide el RLS —el mismo que decide qué traslados se ven—, así
+             * que no lleva `salaQueRecorta`: un faltante le toca a las dos
+             * salas y cuál de las dos sos cambia lo que hay que hacer, no si se
+             * puede ver. */
+            fetchFaltantes(),
         ]);
-        const fallo = b.error ?? c.error ?? d.error ?? e.error;
+        const fallo = b.error ?? c.error ?? d.error ?? e.error ?? g2.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
         setPorRecibir(b.filas);
         setHistorial(c.filas);
         setEnvios(d.envios);
         setEnviosCerrados(e.envios);
+        setFaltantes(g2.faltantes);
 
         /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
          * es un dato de adorno para las que no tienen hermanas, y pedirlo
@@ -375,6 +393,10 @@ export default function TrasladosView() {
         // está en camino —con eso no hay nada que hacer—.
         const total = t.key === 'recibir' ? (porRecibir ?? []).length
             : t.key === 'envios' ? porMomento.por_decidir.length
+            // Sólo los SIN RESOLVER: los cerrados siguen a la vista un mes y
+            // contarlos haría que el número no bajara nunca al resolverlos, que
+            // es exactamente lo que un contador de cola tiene que hacer.
+            : t.key === 'faltantes' ? (faltantes ?? []).filter(f => f.estado === 'abierto').length
             : 0;
         return { ...t, label: total > 0 ? `${t.label} · ${total}` : t.label };
     });
@@ -403,6 +425,7 @@ export default function TrasladosView() {
     const enHistorial = activeTab === 'historial';
     const enEnvios    = activeTab === 'envios';
     const enRecibir   = activeTab === 'recibir';
+    const enFaltantes = activeTab === 'faltantes';
     const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0)
         + (enHistorial && !enSemanaActual ? 1 : 0);
     const limpiarTodo = () => { setSala(''); setTipo(''); setSemana(semanaActual); };
@@ -424,7 +447,7 @@ export default function TrasladosView() {
                 con alcance de una sola sala no tiene filtro de sucursal — o sea
                 que justo el usuario de sala, que es el que recibe, se quedaba
                 sin la barra y sin la acción. */}
-            {(alcanceTodas || enHistorial || enRecibir) && !enEnvios && (
+            {(alcanceTodas || enHistorial || enRecibir) && !enEnvios && !enFaltantes && (
               <div className="flex justify-end px-4 md:px-5 pt-4">
                 <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}
                     acciones={enRecibir ? [
@@ -489,7 +512,31 @@ export default function TrasladosView() {
                 final lo que sólo hay que mirar. Las tarjetas son las MISMAS del
                 widget — dos copias de la misma tarjeta terminan comportándose
                 distinto. */}
-            {enEnvios ? (
+            {enFaltantes ? (
+                /* ── Lo que no llegó ───────────────────────────────────────
+                   La lista NO se filtra por sucursal desde acá: la función es
+                   INVOKER y el RLS ya recortó a las salas de cada quien. Un
+                   filtro de más acá encima de eso escondería un faltante propio
+                   sin que nadie lo pidiera. */
+                <Suspense fallback={<div className="p-4 md:p-5"><SkeletonText lines={4} /></div>}>
+                <div className="p-4 md:p-5 flex flex-col gap-3">
+                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {cargando ? <SkeletonText lines={4} /> : (
+                        <FilasFaltante
+                            faltantes={faltantes ?? []}
+                            onHecho={cargar}
+                            vacio={(
+                                <EmptyState
+                                    icon={PackageX}
+                                    title="Sin faltantes"
+                                    subtitle="Aquí aparece el producto que alguien no encontró al abrir la caja, y qué se hizo con él."
+                                />
+                            )}
+                        />
+                    )}
+                </div>
+                </Suspense>
+            ) : enEnvios ? (
                 /* Un solo `Suspense` para toda la pestaña: las cuatro tarjetas
                    salen del MISMO chunk, así que envolverlas por separado pediría
                    cuatro veces lo mismo y mostraría cuatro huecos en vez de uno. */

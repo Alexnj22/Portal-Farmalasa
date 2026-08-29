@@ -21,6 +21,86 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.849.0 — El ticket del envío y lo que no llegó en la bolsa
+
+Reporte del usuario: *«en los traslados entre sala, al enviarlo no imprime
+ningún comprobante la ticketera como en las solicitudes, que se imprima, diga el
+motivo de traslados y enliste los productos, siempre con código de barras»* — y
+después, mirando el circuito: *«así puedo decir si no llegó un producto, ¿cómo
+queda en el portal? ¿en qué estado?»*.
+
+La segunda pregunta destapó un agujero más grande que la primera.
+
+### Por qué el envío no tenía ticket
+
+El papel ya estaba escrito y probado desde el 24-ago para la **solicitud**. El
+envío quedó afuera a propósito y por una razón real: **un envío crea un traslado
+por renglón**. Medido sobre los 25 envíos de 30 días — 46 renglones, 1.84 de
+promedio, máximo 8 — o sea que la bolsa que alguien carga tiene hasta ocho
+números y **ninguno la nombra entera**. Una solicitud no tiene ese problema: 567
+despachadas en el mismo período, 19 de ellas con varios productos, y siempre un
+solo `id_traslado`.
+
+Ahora la bolsa lleva **su propio número**, `E00042`, que le pone un trigger al
+crearla. La letra no es decorativa: el escaneo busca contra los traslados y
+contra las bolsas, y un número de traslado es siempre dígitos — la `E` hace
+imposible que un papel abra la bolsa equivocada. Entra en el rollo y sigue
+entrando cuando el contador cruce el 99999 (7 caracteres = 560 de los 576
+puntos, al filo; con 8 no entraría, y hay una prueba que lo vigila).
+
+El ticket sale al despachar, dice **ENVIO**, lleva el **motivo** —que es lo
+único que explica una caja que nadie pidió— y lista **lo que salió**, no lo que
+se compuso: un renglón que no pudo despacharse no está en la caja, y un papel
+que lo liste manda a alguien a buscar lo que no existe.
+
+### Y las tres cosas que se podían decir eran dos
+
+Al abrir una bolsa había dos salidas, y con un producto faltante **las dos
+mienten**:
+
+- «Me la quedo» mete al inventario de la sala una existencia que no está en el
+  estante.
+- «Devolver» dispara el traslado de vuelta de algo que nunca salió de acá, y le
+  devuelve al origen una existencia que tampoco tiene.
+
+En la solicitud era peor: un solo botón, «Sí, llegó completa». La función que
+recibe lo decía en un comentario desde el primer día — *«se recibe COMPLETO lo
+que se despachó: recibir de menos es declarar un faltante, y eso necesita a
+alguien mirando la caja, no una función»* — y nunca hubo dónde declararlo. El
+hueco quedaba invisible hasta que alguien lo tropezara en un conteo, semanas
+después y sin forma de saber en qué viaje se perdió.
+
+Hoy hay un tercer desenlace, **«No llegó»**, en las dos familias. No llama al
+sistema de origen, y eso es lo correcto por construcción: el movimiento salió y
+nunca se recibió, así que dejarlo despachado-sin-recibir es exactamente la
+verdad. Queda una fila en `bolsa_faltante` con producto, cantidad, quién lo vio
+y cuándo, y **se avisa el mismo día** a la sala que despachó y a supervisión —
+que es la única que todavía puede ir a mirar si la bolsa quedó en su mostrador.
+
+Se cierra con dos finales y no hay un tercero: **apareció** o **no apareció**, y
+el segundo exige escribir qué se hizo. Ninguno mueve existencias: cerrar el
+hecho y corregir el papel son dos actos distintos, y mezclarlos haría que «ya lo
+revisé» descontara inventario sin que nadie lo haya decidido.
+
+### Lo que se ordenó de paso
+
+- La forma de un envío estaba escrita **dos veces** —`get_envios_vivos` y
+  `get_envios_historial`, con claves distintas— y el escaneo habría sido la
+  tercera. Hoy es `envio_json` y las tres la usan.
+- El aviso de resolución de un envío contaba dos desenlaces de tres: con la
+  cuenta vieja, una bolsa a la que le faltó un producto avisaba «✅ Recibieron
+  tu envío» omitiendo justo lo que hay que ir a buscar.
+- Una bolsa que sólo tuvo faltantes no tenía cómo salir de `PENDING`: ningún
+  renglón quedaba en `enviada`, así que nadie la volvía a decidir y pedía una
+  respuesta que ya se había dado, para siempre.
+
+Migraciones `20260829145753`, `150040`, `150354`, `150711`, `150839`. Edge
+functions `enviar-producto-erp` (con `--no-verify-jwt`, verificado con un 400 en
+vivo) y `aplicar-traslado-inventario` (con JWT, 401 en vivo).
+
+**Falta probarlo en sala**: ni un ticket de envío impreso, ni un escaneo de bolsa
+recibido, ni un faltante declarado con la caja en la mano.
+
 ## v2.848.0 — El editor de documentos, reestructurado
 
 Reporte del usuario, en una línea: *«no hay color en las fotos, se siente torpe

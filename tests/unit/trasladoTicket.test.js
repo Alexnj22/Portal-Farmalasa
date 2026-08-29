@@ -4,6 +4,7 @@ import {
     construirTicketDeTraslado, salaQueDespacha, SIMBOLOGIA_DEL_TRASLADO, FAMILIAS,
     BARRAS_DEL_TRASLADO,
 } from '../../src/utils/trasladoTicket';
+import { datosDelTicketDeEnvio } from '../../src/utils/imprimirTraslado';
 
 // El ancla es un traslado REAL: el 32274 del 2026-08-23, Salud 2 -> Salud 1,
 // «PIDE HELEN HUEZO (S1) ENV KAREN FIGUEROA (S2)», un renglón de FOSFOCIL. Se
@@ -177,6 +178,99 @@ describe('el ticket de traslado', () => {
     });
 
 
+});
+
+/* ── La bolsa del ENVÍO ────────────────────────────────────────────────────
+ *
+ * Un envío crea UN TRASLADO POR RENGLÓN —medido el 2026-08-29: 25 envíos, 46
+ * renglones, máximo 8— así que la bolsa que alguien carga tiene hasta ocho
+ * números y ninguno la nombra entera. Por eso lleva un código propio, `E00042`,
+ * y por eso el prefijo es una letra: `traslado_por_codigo` busca lo escaneado
+ * contra los traslados Y contra las bolsas, y un número de traslado es siempre
+ * dígitos. Sin la letra, un escaneo podría abrir la bolsa equivocada.
+ */
+describe('el ticket del envío', () => {
+    const ENVIO = {
+        id: 'b0b0b0b0-0000-4000-8000-000000000000',
+        codigo_bolsa: 'E00042',
+        motivo_tipo: 'Próximo a vencer',
+        reason: 'vence en noviembre',
+        origen_branch_name: 'Bodega',
+        branch_name: 'Salud 1',
+        created_at: '2026-08-29T14:00:00.000Z',
+        lineas: [
+            { posicion: 0, descripcion: 'ACEITE GOMENOLADO MORAZAN X 15 ML', cantidad: 2, enviado_at: '2026-08-29T15:10:00.000Z' },
+            { posicion: 1, descripcion: 'BRONCODINE FLUX JARABE X 120 ML',   cantidad: 1, enviado_at: '2026-08-29T15:11:00.000Z' },
+            // No salió: no está en la caja, así que NO puede estar en el papel.
+            { posicion: 2, descripcion: 'AMOXICILINA 500MG X 12 CAPS',       cantidad: 5, enviado_at: null },
+        ],
+    };
+
+    it('pone el código de la BOLSA en las barras, no el de un renglón', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO, { quien: 'Josue Guevara' }));
+        expect(t.codigos).toHaveLength(1);
+        expect(t.codigos[0].valor).toBe('E00042');
+        expect(t.codigos[0]).not.toHaveProperty('leyenda');
+    });
+
+    it('el código entra en el rollo, y sigue entrando con un dígito más', () => {
+        // `E` + 6 dígitos = 7 caracteres = 11*7+35 = 112 módulos. A módulo 5 son
+        // 560 puntos sobre los 576 del rollo: entra al filo. Con 8 no entraría,
+        // así que este es el techo y la prueba es la que lo va a avisar.
+        const anchoDe = (n) => (11 * n + 35) * BARRAS_DEL_TRASLADO.modulo;
+        expect(anchoDe('E00042'.length)).toBeLessThanOrEqual(576);
+        expect(anchoDe('E000042'.length)).toBeLessThanOrEqual(576);
+        expect(anchoDe('E0000042'.length)).toBeGreaterThan(576);
+    });
+
+    it('dice ENVIO y no SOLICITUD', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO));
+        expect(t.encabezado.titulo).toBe(FAMILIAS.envio);
+    });
+
+    /* El motivo es lo que EXPLICA la caja, y el usuario lo pidió en el papel:
+     * un envío no lo pidió nadie, así que sin él quien la abre no sabe por qué
+     * le llegó. Es la diferencia de fondo con la solicitud. */
+    it('imprime el motivo del envío', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO));
+        const texto = renglones(t).join('\n');
+        expect(texto).toContain('Proximo a vencer');
+        expect(texto).toContain('vence en noviembre');
+    });
+
+    /* Lo que NO salió no está en la caja. Un papel que lo liste manda a alguien
+     * a buscar lo que no existe, y como quien abre la bolsa le cree al papel,
+     * la diferencia se reporta como faltante. Misma regla que
+     * `loQueVaEnLaBolsa` en la solicitud. */
+    it('lista lo que SALIÓ, no lo que se compuso', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO));
+        const nombres = t.items.filas.map(f => f[0]);
+        expect(nombres).toHaveLength(2);
+        expect(nombres.join(' ')).toContain('ACEITE GOMENOLADO');
+        expect(nombres.join(' ')).not.toContain('AMOXICILINA');
+    });
+
+    // Un envío no lo pidió nadie: ése es su significado, y un rótulo con la nada
+    // al lado se lee como un dato que se perdió.
+    it('no imprime «Pide»', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO));
+        expect(t.datos.some(([r]) => r === 'Pide')).toBe(false);
+    });
+
+    // La hora de la bolsa es la del PRIMER renglón que salió: es cuando la caja
+    // se armó, que es lo que el papel tiene que decir.
+    it('fecha la bolsa con la primera salida', () => {
+        const d = datosDelTicketDeEnvio(ENVIO);
+        expect(d.aplicado.at).toBe('2026-08-29T15:10:00.000Z');
+    });
+
+    // Sin código no hay barras, y un ticket de bolsa sin barras no se puede
+    // escanear al recibir. Una fila anterior al trigger que numera existe.
+    it('sin código de bolsa no arma barras', () => {
+        const t = construirTicketDeTraslado(datosDelTicketDeEnvio({ ...ENVIO, codigo_bolsa: null }));
+        expect(t.codigos).toEqual([]);
+        expect(renglones(t).join('\n')).toContain('SIN NUMERO');
+    });
 });
 
 describe('de qué sala sale la bolsa', () => {

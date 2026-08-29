@@ -9,7 +9,8 @@ import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, piezasDe, renglonesDe } from './trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from './trasladoTexto';
+import DeclararFaltantes from './DeclararFaltantes';
 import { desdeHace, cuantoTardo } from '../solicitudes/movimientoTexto';
 import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
 import ModalShell from '../../components/common/ModalShell';
@@ -630,6 +631,10 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
     const [abierto, setAbierto] = useState(false);
+    /* Lo que la sala dice que NO venía en la bolsa. Vive acá y no en el modal
+     * porque quien lo manda es `recibir`, que también vive acá: con el estado
+     * adentro del modal, cerrarlo perdería lo escrito sin decir nada. */
+    const [faltaron, setFaltaron] = useState([]);
     const meta   = fila.metadata ?? {};
     const piezas = piezasDe(meta);
     const lotes  = lotesPedidos(meta);
@@ -652,9 +657,14 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
 
     const recibir = async () => {
         setError(''); setOcupado(true);
-        const r = await recibirTraslado(fila.id);
+        const r = await recibirTraslado(fila.id, faltaron);
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo recibir.'); return; }
+        /* El faltante NO puede tumbar la recepción: el producto ya entró al
+         * inventario. Que no se haya podido anotar se dice, y no se calla — es
+         * lo único que manda a alguien a buscar la caja hoy. */
+        if (r?.faltante_error) { setError(r.faltante_error); return; }
+        setFaltaron([]);
         onHecho();
     };
 
@@ -819,7 +829,8 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                     columna un botón chico a la derecha se pierde. */}
                 <Button size="sm" icon={PackageCheck} loading={ocupado} disabled={ocupado}
                     onClick={recibir} className="w-full">
-                    {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
+                    {ocupado ? 'Recibiendo…'
+                        : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir')}
                 </Button>
             </div>
         </div>
@@ -827,6 +838,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
         {abierto && (
             <ModalTraslado fila={fila} piezas={piezas} lotes={lotes} salio={salio}
                 quienPidio={quienPidio} quienEnvio={quienEnvio} ahora={ahora}
+                faltaron={faltaron} onFaltaron={setFaltaron}
                 ocupado={ocupado} error={error} onRecibir={recibir}
                 onCerrar={() => setAbierto(false)} />
         )}
@@ -851,6 +863,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
  * caminos que se separan en cuanto alguien toque uno.
  */
 function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, ahora,
+                         faltaron = [], onFaltaron = null,
                          ocupado, error, onRecibir, onCerrar }) {
     const meta = fila.metadata ?? {};
     const renglones = renglonesDe(meta);
@@ -892,8 +905,12 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                 tono="warning"
                 anchoEscritorio="max-w-lg"
                 pie={<>
+                    {/* El rótulo cambia con lo que se declaró: apretar «Ya
+                        llegó, recibir» habiendo escrito que faltaron dos es el
+                        botón contradiciendo al formulario de arriba. */}
                     <Button icon={PackageCheck} loading={ocupado} disabled={ocupado} onClick={onRecibir}>
-                        {ocupado ? 'Recibiendo…' : 'Ya llegó, recibir'}
+                        {ocupado ? 'Recibiendo…'
+                            : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir')}
                     </Button>
                     {/* Sólo con número: sin él no hay código de barras, así que
                         el papel no sería el mismo — y ese traslado se confirma a
@@ -946,6 +963,23 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                                 ))}
                             </div>
                         </div>
+                    )}
+
+                    {/* ── Y si al abrir la caja falta algo ──────────────────
+                        Va acá, junto a la lista contra la que se cotejó, y no
+                        en la tarjeta: la tarjeta es el camino rápido —la bolsa
+                        llegó completa, que es el caso normal— y un formulario
+                        sobre el camino normal es un formulario que se aprende a
+                        saltear. Se abre a propósito, que es exactamente lo que
+                        quiere decir «vi de menos». */}
+                    {onFaltaron && (
+                        <DeclararFaltantes
+                            items={loQueLlego(meta)}
+                            valor={faltaron}
+                            onCambio={onFaltaron}
+                            deshabilitado={ocupado}
+                            origen={meta?.origen_branch_name}
+                        />
                     )}
 
                     {fila.note && (

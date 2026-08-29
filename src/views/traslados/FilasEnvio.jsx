@@ -466,6 +466,13 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
             ))}
             {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
 
+            {/* Reimprimir también acá: ésta es la tarjeta de la sala que TIENE la
+                bolsa en el mostrador, o sea la única que puede volver a pegarle
+                el papel. Estaba sólo en «Enviaste», que es la misma sala pero
+                cuando ya salió todo — así que un despacho parcial se quedaba sin
+                forma de reimprimir justo mientras la caja seguía ahí. */}
+            {!cancelando && <BotonReimprimir envio={envio} />}
+
             {cancelando ? (
                 <div className="flex flex-col gap-2">
                     <PortalTextarea

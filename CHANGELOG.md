@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.849.2 — Reimprimir donde está la bolsa, y la salida del faltante a la vista
+
+_(pendiente de redactar)_
+
 ## v2.849.1 — El cheque de la etiqueta se rotula, no se advierte
 
 Corregido por el usuario sobre la v2.847.0: *«OJO: TAMBIEN VA UN CHEQUE no me

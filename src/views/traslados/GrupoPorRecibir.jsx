@@ -97,8 +97,17 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
                         {ocupado && <Loader2 size={13} className="animate-spin" />}
                         {avance
                             ? `Recibiendo ${avance.sala}… (${avance.hechas} de ${avance.total})`
-                            : `Ya llegaron las ${filas.length}`}
+                            : `Ya llegaron las ${filas.length} completas`}
                     </Button>
+                    {/* El botón de arriba dice COMPLETAS y no tiene dónde
+                        declarar un faltante — a propósito: son tres cajas y el
+                        hueco es de una sola. Pero después de recibir, esa
+                        solicitud sale de la lista y ya no hay dónde decirlo, así
+                        que la salida tiene que estar A LA VISTA antes de
+                        apretar, no descubrirse después. */}
+                    <p className="text-micro text-content-3 font-medium leading-snug mt-1.5">
+                        Si a una le faltó algo, recibila desde su propia tarjeta: ahí se dice qué no venía.
+                    </p>
                 </div>
             )}
 

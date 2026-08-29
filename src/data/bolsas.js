@@ -840,8 +840,8 @@ export async function abrirCaja({ sala, montoApertura = 0, turno = 1 }) {
     return operar({ accion: 'abrir', sala, monto_apertura: montoApertura, turno });
 }
 
-export async function anotarIngreso({ sala, monto, concepto, boleta = null, fotoUrl = null }) {
-    return operar({ accion: 'ingreso', sala, monto, concepto, boleta, foto_url: fotoUrl });
+export async function anotarIngreso({ sala, monto, concepto, boleta = null, fotoUrl = null, vendedor = '' }) {
+    return operar({ accion: 'ingreso', sala, monto, concepto, boleta, foto_url: fotoUrl, vendedor });
 }
 
 /**
@@ -851,8 +851,8 @@ export async function anotarIngreso({ sala, monto, concepto, boleta = null, foto
  * entra al vale consolidado—. Ésta es la otra: un gasto pagado con la plata del
  * cajón, que hasta hoy se tecleaba en la otra pantalla.
  */
-export async function anotarSalida({ sala, monto, concepto, boleta = null, fotoUrl = null }) {
-    return operar({ accion: 'salida', sala, monto, concepto, boleta, foto_url: fotoUrl });
+export async function anotarSalida({ sala, monto, concepto, boleta = null, fotoUrl = null, recibe = '' }) {
+    return operar({ accion: 'salida', sala, monto, concepto, boleta, foto_url: fotoUrl, recibe });
 }
 
 export async function cerrarElDia(sala) {

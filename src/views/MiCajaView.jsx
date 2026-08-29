@@ -338,6 +338,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
     const [monto, setMonto] = useState('');
     const [concepto, setConcepto] = useState('');
     const [boleta, setBoleta] = useState('');
+    // El tercer campo cambia con el sentido, porque así son los dos formularios
+    // del sistema: el ingreso pide «código de vendedor» y el vale pide «recibe».
+    // Es el mismo cuadro y por eso comparte estado.
+    const [extra, setExtra] = useState('');
     const [foto, setFoto] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
     const [aviso, setAviso] = useState(null);
@@ -373,7 +377,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
         if (foto) {
             try { fotoUrl = await subirComprobante(foto, { salaId: sala, userId }); } catch { fotoUrl = null; }
         }
-        onAnotar({ monto: Number(monto), concepto: concepto.trim(), boleta: boleta.trim() || null, fotoUrl });
+        onAnotar({
+            monto: Number(monto), concepto: concepto.trim(),
+            boleta: boleta.trim() || null, fotoUrl,
+            ...(entra ? { vendedor: extra.trim() } : { recibe: extra.trim() }),
+        });
     };
 
     return (
@@ -392,6 +400,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onA
             <PortalInput label="Concepto" value={concepto} maxLength={50}
                 onChange={(e) => setConcepto(e.target.value)}
                 placeholder={entra ? 'Pago de CAESS' : 'Compra de agua fría'} />
+            <PortalInput label={entra ? 'Código de vendedor' : 'Quién recibe'}
+                value={extra} maxLength={60}
+                onChange={(e) => setExtra(e.target.value)}
+                placeholder={entra ? 'opcional' : 'nombre de quien se lleva el efectivo'} />
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado || leyendo || !valido} onClick={guardar}>

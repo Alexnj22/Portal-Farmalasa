@@ -31,15 +31,21 @@ import {
 // bolsa —el pago de un recibo, la compra de agua fría—, que hasta hoy se
 // tecleaba en la otra pantalla y desde el lunes no se puede.
 //
-// ── Por qué el ingreso no ofrece «abono a crédito» ─────────────────────────
-// El tiquete del corte tiene DOS líneas para lo que entra: INGRESOS y COBROS
-// CRÉDITO, y lo que las separa es el `id_tipo` del movimiento. Ese catálogo no
-// se pudo leer —la pantalla que lo lista sólo se abre para el usuario que tiene
-// la caja vigente, y la cuenta del portal no lo es en ninguna sala—, así que
-// acá se escriben SÓLO los ingresos comunes con el único tipo ejercido de
-// verdad. Un cobro de crédito mal clasificado movería plata de una línea a la
-// otra sin que nada falle, y por eso no se ofrece: se sigue haciendo allá hasta
-// conocer su número.
+// ── El «catálogo de tipos» no existe, y eso lo cierra (29-ago) ─────────────
+// Estuve esperando la lista del desplegable «Tipo» para no clasificar mal un
+// ingreso. El usuario mandó las dos pantallas y no hay tal desplegable: el
+// ingreso pide monto, concepto y código de vendedor; el vale pide monto,
+// concepto y recibe. El `id_tipo` no lo elige una persona — lo fija el
+// formulario según qué botón se apretó.
+//
+// Y en qué línea del tiquete cae, medido en vez de supuesto: se escribió un
+// ingreso de $0.01 y `total_entrada` del formulario del corte pasó de 100.92 a
+// 100.93 y lo esperado de 387.12 a 387.13, con `total_credito` quieto en 0.
+// Después se borró y los tres volvieron. O sea: **un ingreso del portal cuenta
+// como INGRESO**, no como cobro de crédito.
+//
+// Lo único que sigue afuera es registrar un COBRO de una venta al crédito, que
+// es otro acto —la línea propia del tiquete— y no se hace desde acá.
 //
 // ── CERRAR: el Z sale de cerrar el turno, no del formulario del corte ──────
 // Medido el 29-ago: `cierre_turno.php` devuelve `tipo_corte=C` con cualquier
@@ -315,12 +321,19 @@ Deno.serve(async (req) => {
             process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
             turno: estado.turno!, monto: dosDecimales(monto),
             concepto: conceptoCaja, id_tipo: ID_TIPO,
+            // El otro campo de su formulario. Va vacío cuando no aplica: el
+            // sistema lo acepta así, y no todos los ingresos tienen vendedor.
+            codigo_vendedor: String(body.vendedor ?? ""),
           }
           : {
             process: "salida", id_apertura: estado.aper!, id_empleado: estado.emp!,
             turno: estado.turno!, monto: dosDecimales(monto), concepto: conceptoCaja,
             proveedor: "", tipo_doc: "", n_doc: String(body.boleta ?? ""),
-            recibe: "PORTAL", id_tipo: ID_TIPO,
+            // «Recibe» es un campo de SU formulario y lo escribe una persona: es
+            // quien se llevó el efectivo. Antes iba «PORTAL», que dice quién lo
+            // tecleó y no quién lo recibió — justo el dato que el papel existe
+            // para conservar.
+            recibe: String(body.recibe ?? "").slice(0, 60), id_tipo: ID_TIPO,
           }).toString(),
         signal: AbortSignal.timeout(45_000),
       })).text();

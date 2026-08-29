@@ -233,3 +233,38 @@ el tercero es contabilidad.
 Desde v2.853.0 las pantallas y el concepto que se escribe del otro lado dicen
 **«vale de caja»** cuando es el tercero. Antes decía «VALES DEL PORTAL», que no
 distinguía nada para quien lo lee allá.
+
+---
+
+## 9. El «catálogo de tipos» no existía (2026-08-29)
+
+Estuve tres veces diciendo que los ingresos estaban bloqueados esperando la
+lista del desplegable «Tipo» del formulario de caja. **No hay tal desplegable.**
+El usuario mandó las dos pantallas:
+
+| formulario | campos |
+|---|---|
+| **Agregar Ingreso** | Monto · Concepto · Código de vendedor |
+| **Vales** (salida) | Monto · Concepto · Recibe |
+
+El `id_tipo` que viaja en el POST no lo elige una persona: lo fija el formulario
+según qué botón se apretó. Lo que yo llamaba «catálogo» era una lista que sólo
+existía en mi cabeza, y por esperarla dejé los ingresos afuera dos días.
+
+**Y en qué línea cae, medido en vez de supuesto.** Se escribió un ingreso de
+$0.01 y se leyó el formulario del corte antes y después:
+
+```
+antes:   total_entrada 100.92 · total_credito 0 · total_corte 387.12
+después: total_entrada 100.93 · total_credito 0 · total_corte 387.13
+borrado: total_entrada 100.92 · total_credito 0 · total_corte 387.12
+```
+
+Un ingreso del portal **cuenta como INGRESO** y mueve lo esperado por su monto
+exacto. La otra línea, COBROS CRÉDITO, no se toca desde acá: registrar el cobro
+de una venta al crédito es otro acto y sigue viviendo allá.
+
+**La lección, que es de método:** «no puedo leer el catálogo» era cierto y aun
+así la conclusión estaba mal, porque la pregunta estaba mal. Bastó una captura
+de pantalla para disolver un bloqueo que yo había declarado tres veces — y la
+captura la tenía cualquiera que estuviera parado frente a la caja.

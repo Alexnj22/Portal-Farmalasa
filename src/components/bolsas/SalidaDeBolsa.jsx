@@ -339,6 +339,10 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             entidad: entidad.trim() || null,
             numeroBoleta: boleta.trim() || null,
             monto: Number.isFinite(n) ? n : null,
+            // El motivo elegido, para que la boleta lo CONFIRME. No puede
+            // autollenarlo —la foto se pide después de elegirlo— pero sí decir
+            // que el papel habla de otra cosa. Pedido del usuario (29-ago).
+            tipo: tipo === 'REMESA' ? 'REMESA' : null,
         });
         setLeyendo(false);
         setLectura(r);
@@ -377,7 +381,9 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
              * los nombres que el lector encontró en el papel, y si ninguno
              * está en la lista, el campo se queda vacío. */
             if (!entidad.trim() && opciones.length) {
-                const impresos = [l.entidad, ...(Array.isArray(l.nombres) ? l.nombres : [])];
+                // `red_remesas` primero: es la que ENTREGA el dinero. `entidad` es
+                // la cabecera —el banco del POS— y va al final justamente por eso.
+                const impresos = [l.red_remesas, ...(Array.isArray(l.nombres) ? l.nombres : []), l.entidad];
                 const acierto = opciones.find((o) =>
                     impresos.some((nom) => normalizarNombre(nom) && (
                         normalizarNombre(nom) === normalizarNombre(o.value)
@@ -393,7 +399,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         setDeLaFoto(puestos);
 
         setPorEditar(f);
-    }, [entidad, boleta, monto, n, opciones, t]);
+    }, [entidad, boleta, monto, n, opciones, t, tipo]);
 
     /**
      * Qué pasa con lo que dijo el lector, dicho en una frase.
@@ -475,6 +481,27 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * pierde esa diferencia la próxima vez que alguien toque este bloque. */
     const avisoDeLaFoto = useMemo(() => {
         if (!foto || !lectura || lectura.error || problemaDeLaFoto) return null;
+
+        /* El papel habla de otra cosa que el motivo elegido.
+         *
+         * Va PRIMERO porque es el más grave de los dos que no frenan: la
+         * entidad mal es un rótulo; el motivo mal manda la operación al
+         * circuito equivocado —una remesa registrada como pago a proveedor
+         * pide datos que no son y se busca después en el lugar donde no está—.
+         *
+         * Y no frena, por lo mismo que la entidad: el papel no siempre dice la
+         * palabra, y frenar por lo que el papel no obliga a decir trabaría una
+         * operación buena con el cliente enfrente. */
+        if (lectura.coincide?.tipo === false) {
+            const dice = (lectura.leido || {}).tipo_operacion;
+            return {
+                tono: 'warning', bloquea: false,
+                texto: dice === 'PAGO_SERVICIO'
+                    ? 'La boleta parece de un pago de servicio, no de una remesa. Si el motivo es el correcto, puedes guardar.'
+                    : 'La boleta no dice que sea una remesa. Si el motivo es el correcto, puedes guardar.',
+            };
+        }
+
         const hay = (lectura.avisos || []).some((a) => a.campo === 'entidad');
         return hay ? avisoDeEntidad(lectura.leido || {}, entidad) : null;
     }, [foto, lectura, problemaDeLaFoto, entidad]);

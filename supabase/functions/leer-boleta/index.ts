@@ -59,6 +59,27 @@ const LECTOR: 'gemini' | 'claude' = 'gemini'
 /** Deja sólo dígitos: los números de boleta se escriben `000292`, `292`, `# 292`. */
 const soloDigitos = (v: unknown) => String(v ?? '').replace(/\D+/g, '')
 
+/**
+ * ¿El número que escribió la persona está EN EL PAPEL, en cualquier renglón?
+ *
+ * Existe por una remesa trabada de verdad (Salud 4, 29-ago-2026). La boleta de
+ * Promerica trae dos números —`REFERENCIA : 082915195407` y `BOLETA : 018433`—
+ * en dos columnas desalineadas, y el lector emparejó mal: dijo que la boleta era
+ * la referencia y frenó a quien había escrito el número correcto.
+ *
+ * El freno existe para atajar la foto de OTRA operación, y para eso alcanza con
+ * que el número esté impreso: una boleta ajena no lo tendría en ningún renglón.
+ * Exigir además que el rótulo se haya leído bien es pedirle al lector una
+ * precisión que el papel no siempre permite, y el costo de equivocarse lo paga
+ * la sala con el cliente enfrente.
+ */
+const estaEnElPapel = (numeros: unknown, esperado: unknown) => {
+  const y = soloDigitos(esperado).replace(/^0+/, '')
+  if (!y) return false
+  return (Array.isArray(numeros) ? numeros : [])
+    .some((n) => soloDigitos(n).replace(/^0+/, '') === y)
+}
+
 /** `000292` y `292` son la MISMA boleta: se comparan sin los ceros de adelante. */
 const mismaBoleta = (a: unknown, b: unknown) => {
   const x = soloDigitos(a).replace(/^0+/, '')
@@ -123,6 +144,9 @@ Devuelve ÚNICAMENTE un JSON válido con esta forma exacta:
   "entidad": "el nombre del comercio, banco o red de remesas impreso arriba, o null",
   "nombres": ["TODOS los nombres de empresa, banco, marca o red impresos en el papel"],
   "numero_boleta": "el número rotulado BOLETA / VOUCHER / RECIBO / No., sólo dígitos, o null",
+  "numeros_del_papel": ["TODOS los números de 4 dígitos o más impresos en el papel"],
+  "tipo_operacion": "REMESA | PAGO_SERVICIO | DEPOSITO | COMPRA | OTRO — lo que DICE el papel",
+  "red_remesas": "la red de remesas del detalle (MoneyGram, Ria, Western Union...), o null",
   "monto": 0.00,
   "moneda": "USD" | null,
   "fecha": "YYYY-MM-DD o null",
@@ -143,6 +167,25 @@ Reglas:
   sólo hay uno, la lista tiene uno. Sin ninguno, [].
 - "numero_boleta" es el correlativo del comprobante. NO uses la referencia, la
   autorización, el terminal ni el DUI.
+- OJO con las boletas a DOS COLUMNAS: los rótulos van a la izquierda y los
+  valores alineados a la derecha, y no siempre en el mismo renglón. Una boleta
+  real de Banco Promerica (29-ago-2026) tiene «REFERENCIA :» con 082915195407
+  al lado y «BOLETA :» con 018433 en la línea de abajo — leerlo por renglón da
+  la referencia donde va la boleta. Emparejá cada rótulo con SU valor, no con
+  el número que le quede más cerca.
+- "numeros_del_papel" lista todos los números largos que aparezcan, sin
+  interpretarlos: referencia, autorización, terminal, boleta, clave. Sirve para
+  comprobar que un número escrito a mano está en el papel aunque el rótulo se
+  haya leído mal.
+- "tipo_operacion" sale de lo que el papel DICE, no de lo que parezca: "REMESA"
+  si aparece esa palabra o el nombre de una red de remesas; "PAGO_SERVICIO" si
+  nombra un servicio (CAESS, CLARO, TIGO, agua, luz); "DEPOSITO" si dice
+  depósito o abono a cuenta; "COMPRA" si es la compra de un producto. Si no se
+  puede afirmar, "OTRO".
+- "red_remesas" es la red que ENTREGA el dinero —MoneyGram, Ria, Western Union,
+  Transnetwork—, que NO es el banco de la cabecera. En una boleta de Promerica
+  que dice "REMESA / MONEY GRAM WS", la red es MoneyGram y Promerica es sólo
+  quien procesa el cobro. Si el papel no nombra ninguna red, null.
 - "recuadro" es la caja que encierra SÓLO el papel dentro de la foto, en fracciones
   de 0 a 1 sobre el ancho y el alto de la imagen (x,y = esquina superior izquierda).
   Si el papel ocupa toda la foto, devuelve {"x":0,"y":0,"w":1,"h":1}.
@@ -197,8 +240,19 @@ Deno.serve(async (req) => {
     const esperaBoleta = !!(esperado?.numeroBoleta)
     const coincide = {
       entidad: esperado?.entidad ? mismaEntidad(leido, esperado.entidad) : null,
-      numeroBoleta: esperaBoleta ? mismaBoleta(leido.numero_boleta, esperado.numeroBoleta) : null,
+      numeroBoleta: esperaBoleta
+        ? (mismaBoleta(leido.numero_boleta, esperado.numeroBoleta)
+           || estaEnElPapel(leido.numeros_del_papel, esperado.numeroBoleta))
+        : null,
       monto: esperado?.monto != null ? mismoMonto(leido.monto, esperado.monto) : null,
+      // El TIPO no se autollena —la foto sólo se pide DESPUÉS de elegir el
+      // motivo, así que llegaría tarde— pero sí confirma: si el papel dice
+      // «REMESA» y el motivo elegido es otro, alguien se equivocó de casilla.
+      // Es aviso y no freno, como la entidad: el papel no siempre lo dice con
+      // esa palabra y frenar por eso trabaría una operación buena.
+      tipo: esperado?.tipo && leido.tipo_operacion && leido.tipo_operacion !== 'OTRO'
+        ? String(leido.tipo_operacion).toUpperCase() === String(esperado.tipo).toUpperCase()
+        : null,
     }
 
     // El VEREDICTO es lo que frena. Son los cuatro que prueban que esta foto es

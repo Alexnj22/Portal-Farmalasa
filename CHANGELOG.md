@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.0 — Los ingresos ya no esperan un catálogo que no existe
+
+Tres días diciendo que los ingresos estaban bloqueados esperando la lista del
+desplegable «Tipo» del formulario de caja. **No hay tal desplegable.** Las dos
+pantallas del sistema piden esto y nada más:
+
+| formulario | campos |
+|---|---|
+| **Agregar Ingreso** | Monto · Concepto · Código de vendedor |
+| **Vales** (salida) | Monto · Concepto · Recibe |
+
+El número de tipo no lo elige una persona: lo fija el formulario según qué botón
+se apretó. Lo que yo llamaba «catálogo» era una lista que sólo existía en mi
+cabeza. Bastó una captura de pantalla para disolverlo.
+
+**Y en qué línea del tiquete cae un ingreso del portal, medido en vez de
+supuesto:** se escribió uno de $0.01 y `total_entrada` del formulario del corte
+pasó de 100.92 a 100.93 y lo esperado de 387.12 a 387.13, con `total_credito`
+quieto en cero; después se borró y los tres volvieron. Cuenta como **ingreso**,
+no como cobro de crédito.
+
+Los dos diálogos del portal ahora piden **los mismos campos que el sistema**: el
+ingreso agrega «código de vendedor» y la salida, «quién recibe» — que antes iba
+como «PORTAL», o sea el nombre de quien lo tecleó en el lugar de quien se llevó
+el efectivo, que es justo el dato que el papel existe para conservar.
+
+### La boleta que trabó una remesa real
+
+Salud 4, con el cliente enfrente: el portal rechazó el número correcto. La
+boleta de Promerica trae **dos números en dos columnas desalineadas** —
+`REFERENCIA : 082915195407` y `BOLETA : 018433`— y el lector emparejó cada
+rótulo con el número del renglón, quedándose con la referencia.
+
+Ahora **un número escrito vale si está impreso en el papel, en cualquier
+renglón**: el freno existe para atajar la foto de otra operación, y para eso
+alcanza con que el número esté ahí — una boleta ajena no lo tendría. Exigir
+además que el rótulo se haya leído bien es pedirle al lector una precisión que
+el papel no permite, y ese costo lo paga la sala.
+
+### La boleta también confirma el motivo
+
+Además del monto, el número y la remesadora, el lector ahora dice **qué tipo de
+operación es** y cuál es la **red de remesas** —MoneyGram, Ria— que no es el
+banco de la cabecera. El tipo no se autollena porque la foto se pide DESPUÉS de
+elegir el motivo; se usa para avisar cuando el papel habla de otra cosa. Avisa y
+no frena, por lo mismo de siempre: el papel no está obligado a decir la palabra.
 ## v2.856.5 — El retrato del carné va recortado sobre los colores de la empresa
 
 Pedido del usuario: *«un efecto o algo que quede detrás de la foto (la haces

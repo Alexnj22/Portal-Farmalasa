@@ -17,7 +17,7 @@ import { useToastStore } from '../store/toastStore';
 import {
     fetchSesiones, cerrarSesion, cerrarTodasDe, agruparPorPersona,
     describirDispositivo, haceCuanto, describirLimite, diasDesde,
-    bloquearPersona, desbloquearPersona, describirBloqueo,
+    bloquearPersona, desbloquearPersona, describirBloqueo, describirAcceso,
 } from '../data/sesiones';
 import BloqueoModal from '../components/sesiones/BloqueoModal';
 import useSobreviveAlCierre from '../hooks/useSobreviveAlCierre';
@@ -82,7 +82,7 @@ const SesionesView = () => {
     // La persona abierta se relee de `personas` en cada refresco: si se guardara
     // el objeto, el detalle seguiría mostrando conexiones ya cerradas.
     const detalle = useMemo(
-        () => (abierta ? personas.find(p => p.persona_id === abierta) || null : null),
+        () => (abierta ? personas.find(p => p.ficha_id === abierta) || null : null),
         [abierta, personas],
     );
     // ── Lo que se sigue dibujando MIENTRAS el diálogo sale ─────────────────
@@ -96,7 +96,7 @@ const SesionesView = () => {
     // así que guardar el objeto contaría un valor nuevo cada pocos segundos.
     const ultimaAbierta = useSobreviveAlCierre(abierta);
     const detalleVisible = useMemo(
-        () => (ultimaAbierta ? personas.find(p => p.persona_id === ultimaAbierta) || null : null),
+        () => (ultimaAbierta ? personas.find(p => p.ficha_id === ultimaAbierta) || null : null),
         [ultimaAbierta, personas],
     );
     const porCerrarVisible = useSobreviveAlCierre(porCerrar);
@@ -106,7 +106,7 @@ const SesionesView = () => {
         setCerrando(true);
         const esTodas = porCerrar.tipo === 'todas';
         const { data, error } = esTodas
-            ? await cerrarTodasDe(porCerrar.persona.persona_id)
+            ? await cerrarTodasDe(porCerrar.persona.ficha_id)
             : await cerrarSesion(porCerrar.conexion.session_id);
         setCerrando(false);
 
@@ -147,7 +147,7 @@ const SesionesView = () => {
     const confirmarBloqueo = useCallback(async (hasta, motivo) => {
         if (!porBloquear) return;
         setBloqueando(true);
-        const { data, error } = await bloquearPersona(porBloquear.persona_id, hasta, motivo);
+        const { data, error } = await bloquearPersona(porBloquear.ficha_id, hasta, motivo);
         setBloqueando(false);
         if (error) {
             showToast?.('No se pudo bloquear', error.message || 'Vuelve a intentar.', 'error');
@@ -166,7 +166,7 @@ const SesionesView = () => {
     }, [porBloquear, appendAuditLog, user, showToast, cargar]);
 
     const quitarBloqueo = useCallback(async (persona) => {
-        const { error } = await desbloquearPersona(persona.persona_id);
+        const { error } = await desbloquearPersona(persona.ficha_id);
         if (error) {
             showToast?.('No se pudo desbloquear', error.message || 'Vuelve a intentar.', 'error');
         } else {
@@ -255,10 +255,10 @@ const SesionesView = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {visibles.map(p => (
                             <button
-                                key={p.persona_id || p.cuenta}
+                                key={p.ficha_id || p.cuenta}
                                 type="button"
                                 data-surface="card"
-                                onClick={() => setAbierta(p.persona_id)}
+                                onClick={() => setAbierta(p.ficha_id)}
                                 className="group p-4 text-left w-full flex items-center gap-3 active:scale-[0.99] transition-transform duration-[var(--dur-base)]"
                             >
                                 {/* Esta pantalla habla de quién está conectado AHORA, así
@@ -266,9 +266,12 @@ const SesionesView = () => {
                                     que está de vacaciones o incapacitado es justo lo que
                                     vale la pena mirar dos veces. El objeto viene de un RPC
                                     con otra forma —`persona_id`, `empleado`, `foto`— y el
-                                    componente resuelve el estado por id contra el store. */}
+                                    componente resuelve el estado por id contra el store.
+                                    Ese id es la FICHA: el store indexa por
+                                    `employees.id`, así que con la identidad de
+                                    acceso el aro no resolvía nunca. */}
                                 <AvatarConEstado
-                                    emp={{ id: p.persona_id, name: p.empleado, photo: p.foto }}
+                                    emp={{ id: p.ficha_id, name: p.empleado, photo: p.foto }}
                                     px={48} radio="rounded-2xl" marco=""
                                 />
                                 <div className="min-w-0 flex-1">
@@ -319,7 +322,7 @@ const SesionesView = () => {
                 <LiquidModal.Header>
                     <div className="flex items-center gap-3">
                         <AvatarConEstado
-                            emp={{ id: detalleVisible?.persona_id, name: detalleVisible?.empleado, photo: detalleVisible?.foto }}
+                            emp={{ id: detalleVisible?.ficha_id, name: detalleVisible?.empleado, photo: detalleVisible?.foto }}
                             px={44} radio="rounded-2xl" marco=""
                         />
                         <div className="min-w-0">
@@ -347,7 +350,28 @@ const SesionesView = () => {
                         unos minutos. El dispositivo y el lugar son los que declaró el equipo al
                         conectarse: sirven para reconocer algo raro, no como comprobante.
                     </p>
-                    {detalleVisible?.conexiones.map(c => {
+                    {/* Repartido por PUERTA, no una lista sola. Antes esto eran
+                        dos tarjetas idénticas en la pantalla anterior, y la
+                        diferencia entre ellas —por dónde entró— no se decía en
+                        ningún lado. Una puerta sin conexiones vivas se muestra
+                        igual: que exista un segundo acceso es parte de cómo
+                        entra esa persona, y es lo que hay que ver antes de
+                        decidir cerrarle algo. */}
+                    {detalleVisible?.accesos?.map(puerta => (
+                        <div key={puerta.acceso} className="space-y-2">
+                            <div className="flex items-baseline gap-2 px-0.5 pt-1">
+                                <span className="text-caption font-bold text-content-2">
+                                    {describirAcceso(puerta.acceso)}
+                                </span>
+                                <span className="text-micro text-content-3">
+                                    {puerta.conexiones.length === 0
+                                        ? `sin conexiones abiertas · ${haceCuanto(puerta.ultimo_movimiento) || 'nunca entró'}`
+                                        : puerta.conexiones.length === 1
+                                            ? '1 conexión'
+                                            : `${puerta.conexiones.length} conexiones`}
+                                </span>
+                            </div>
+                            {puerta.conexiones.map(c => {
                         const esApp = c.clase === 'app';
                         const Icono = esApp ? Smartphone : Monitor;
                         return (
@@ -383,7 +407,9 @@ const SesionesView = () => {
                                 />
                             </div>
                         );
-                    })}
+                            })}
+                        </div>
+                    ))}
                 </LiquidModal.Body>
 
                 <LiquidModal.Footer>

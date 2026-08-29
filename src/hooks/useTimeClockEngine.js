@@ -331,13 +331,20 @@ export function useTimeClockEngine(props = {}) {
         }
 
         if (rechazo) {
+            // `SIN_ACCESO` no es una falla del marcaje: es que a esa persona se
+            // le quitó la entrada. «Avisa a tu jefatura para que lo registre»
+            // sería una promesa falsa — nadie va a registrarlo.
+            const sinAcceso = rechazo === 'SIN_ACCESO';
             setFeedback({
                 status: 'error',
                 employee,
-                message: rechazo === 'DUPLICADO' ? 'MARCAJE YA REGISTRADO' : 'NO SE PUDO REGISTRAR',
-                subtext: rechazo === 'DUPLICADO'
-                    ? 'Ese mismo marcaje acaba de quedar guardado.'
-                    : 'Avisa a tu jefatura para que lo registre.',
+                message: sinAcceso ? 'SIN ACCESO'
+                       : rechazo === 'DUPLICADO' ? 'MARCAJE YA REGISTRADO'
+                       : 'NO SE PUDO REGISTRAR',
+                subtext: sinAcceso ? 'Tu acceso está suspendido. Habla con tu jefatura.'
+                    : rechazo === 'DUPLICADO'
+                        ? 'Ese mismo marcaje acaba de quedar guardado.'
+                        : 'Avisa a tu jefatura para que lo registre.',
                 color: 'orange',
                 icon: ShieldAlert,
             });
@@ -960,27 +967,36 @@ const submitEarlyExit = useCallback((e) => {
 
         if (!identidad.ok) {
             const sinRed = identidad.networkError;
+            // Reconocida pero sin acceso: el carné está bien y la persona
+            // existe, lo que se le quitó es la entrada. Decirle «CARNÉ NO
+            // RECONOCIDO» la mandaría a pedir uno nuevo por un problema que no
+            // es del carné, así que se le habla con su nombre.
+            const sinAcceso = identidad.motivo === 'SIN_ACCESO';
             if (!sinRed) {
-                anotarEnBitacora('CARNE_NO_RECONOCIDO', null, {
-                    largo_ingresado: codeToFind.length,
-                    inputMethod,
-                    motivo: identidad.motivo,
-                });
+                anotarEnBitacora(sinAcceso ? 'MARCAJE_BLOQUEADO_SIN_ACCESO' : 'CARNE_NO_RECONOCIDO',
+                    identidad.employeeId || null, {
+                        largo_ingresado: codeToFind.length,
+                        inputMethod,
+                        motivo: identidad.motivo,
+                        empleado: identidad.nombre || undefined,
+                    });
             }
             setFeedback({
                 status: 'error',
                 message: identidad.rateLimited ? 'DEMASIADOS INTENTOS'
                        : sinRed                ? 'SIN CONEXIÓN'
+                       : sinAcceso             ? (identidad.nombre || 'SIN ACCESO')
                        : 'CARNÉ NO RECONOCIDO',
                 subtext: identidad.rateLimited ? 'Espera unos minutos antes de volver a intentar.'
                        : sinRed                ? 'No se pudo confirmar tu carné. Intenta de nuevo en un momento.'
+                       : sinAcceso             ? 'Tu acceso está suspendido. Habla con tu jefatura.'
                        : 'Vuelve a pasar tu carné. Si sigue igual, avisa a tu jefatura.',
-                color: 'red',
-                icon: XCircle,
+                color: sinAcceso ? 'orange' : 'red',
+                icon: sinAcceso ? ShieldAlert : XCircle,
             });
             setScanCode('');
             setIsProcessing(false);
-            scheduleFeedbackClose(3000);
+            scheduleFeedbackClose(sinAcceso ? 4000 : 3000);
             return;
         }
 

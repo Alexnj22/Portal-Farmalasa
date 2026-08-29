@@ -63,6 +63,11 @@ export async function kioscoIdentificar(carne) {
         employeeId: data?.employee_id || null,
         metodo: data?.metodo || null,
         motivo: data?.motivo || null,
+        // Viene sólo cuando se reconoció a la persona y aun así se le niega el
+        // paso (`SIN_ACCESO`): el kiosco necesita su nombre para decir qué pasa
+        // de verdad en vez de «carné no reconocido», que la mandaría a pedir un
+        // carné nuevo por un problema que no es del carné.
+        nombre: data?.nombre || null,
         networkError: false,
         rateLimited: false,
     };

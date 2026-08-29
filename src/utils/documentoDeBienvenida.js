@@ -139,40 +139,69 @@ export async function iconoDeLaFarmaciaPng(lado = 240) {
  * sobre el color de la empresa se leen como una decisión — y el día que llegue
  * la foto, ocupa exactamente el mismo lugar.
  */
-export async function avatarComoPng(nombre, lado = 260, alto = null) {
+export async function avatarComoPng(nombre, lado = 320) {
     if (typeof document === 'undefined') return null;
     try {
-        const H = alto || lado;
-        const c = document.createElement('canvas');
-        c.width = lado; c.height = H;
-        const x = c.getContext('2d');
-        x.fillStyle = MARCA.magenta;
-        x.fillRect(0, 0, lado, H);
-        // El arco del logo, insinuado: la misma curva verde, abajo a la
-        // derecha, para que el hueco pertenezca a la marca y no sea un cuadro
-        // de color cualquiera.
-        x.fillStyle = MARCA.verde;
-        x.beginPath();
-        x.arc(lado * 0.92, H * 1.02, lado * 0.42, 0, Math.PI * 2);
-        x.fill();
-        /* La primera y la ÚLTIMA palabra: «Carlos Antonio Renderos Mejía» da
-         * CM y no CA. Con las dos primeras salían dos nombres de pila, que es
-         * justo lo que no distingue a nadie en una familia. */
         const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+        /* La primera y la ÚLTIMA palabra: «Carlos Antonio Renderos Mejía» da CM
+         * y no CA. Con las dos primeras salían dos nombres de pila, que es justo
+         * lo que no distingue a nadie en una familia. */
         const iniciales = partes.length
             ? (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase()
             : '';
-        if (iniciales) {
+        return comoDisco((x, L) => {
+            fondoDeMarca(x, L, L);
+            if (!iniciales) return;
             x.fillStyle = '#FFFFFF';
-            x.font = `bold ${Math.round(lado * 0.38)}px Helvetica, Arial, sans-serif`;
+            x.font = `bold ${Math.round(L * 0.36)}px Helvetica, Arial, sans-serif`;
             x.textAlign = 'center';
             x.textBaseline = 'middle';
-            x.fillText(iniciales, lado / 2, H * 0.52);
-        }
-        return c.toDataURL('image/png');
+            x.fillText(iniciales, L / 2, L * 0.52);
+        }, lado);
     } catch {
         return null;
     }
+}
+
+/**
+ * El retrato SIEMPRE es un disco, y eso lo decide un solo sitio.
+ *
+ * ── Por qué un círculo ──────────────────────────────────────────────────────
+ *
+ * Lo eligió el usuario sobre ocho bocetos (2026-08-29). Y de paso resuelve el
+ * problema que tienen todos los recortes automáticos: el borde. Un rectángulo
+ * deja el filo del recorte a la vista contra una línea recta —cualquier resto
+ * del fondo se nota—; un disco lo esconde en la curva y además recorta hombros
+ * y aire sobrante sin que haya que decidir nada.
+ *
+ * Sale en PNG y no en JPEG: fuera del disco hay TRANSPARENCIA, para que se vea
+ * el cartón blanco de la tarjeta. Un JPEG lo pintaría de negro.
+ *
+ * @param {(ctx: CanvasRenderingContext2D, lado: number) => void} pintar
+ *   lo que va DENTRO del disco. Se llama con el recorte circular ya aplicado.
+ */
+function comoDisco(pintar, lado = 320) {
+    const c = document.createElement('canvas');
+    c.width = lado; c.height = lado;
+    const x = c.getContext('2d');
+    const r = lado / 2;
+
+    x.save();
+    x.beginPath();
+    x.arc(r, r, r - lado * 0.035, 0, Math.PI * 2);
+    x.clip();
+    pintar(x, lado);
+    x.restore();
+
+    // El aro verde, por fuera de lo pintado: es el borde del disco, no una
+    // línea encima de la cara.
+    x.strokeStyle = MARCA.verde;
+    x.lineWidth = lado * 0.055;
+    x.beginPath();
+    x.arc(r, r, r - lado * 0.035, 0, Math.PI * 2);
+    x.stroke();
+
+    return c.toDataURL('image/png');
 }
 
 /**
@@ -190,23 +219,14 @@ function fondoDeMarca(x, ancho, alto) {
     x.fillStyle = g;
     x.fillRect(0, 0, ancho, alto);
 
-    // El arco del logo, asomando por abajo a la derecha — el mismo gesto que
-    // el avatar de iniciales, para que con foto y sin foto se vean hermanos.
-    x.save();
-    x.globalAlpha = 0.92;
-    x.fillStyle = MARCA.verde;
-    x.beginPath();
-    x.arc(ancho * 0.94, alto * 1.01, ancho * 0.46, 0, Math.PI * 2);
-    x.fill();
-    x.restore();
-
     // La cruz al agua, arriba a la izquierda. Muy tenue: es una marca de agua,
-    // no un segundo logo compitiendo con la cara.
+    // no un segundo logo compitiendo con la cara. El arco del logo NO va acá:
+    // dentro de un disco, un arco es otra curva peleando con el borde.
     x.save();
-    x.globalAlpha = 0.13;
+    x.globalAlpha = 0.12;
     x.fillStyle = '#FFFFFF';
-    const cx = ancho * 0.24, cy = alto * 0.20;
-    const brazo = ancho * 0.30, grosor = ancho * 0.11;
+    const cx = ancho * 0.26, cy = alto * 0.22;
+    const brazo = ancho * 0.26, grosor = ancho * 0.095;
     x.fillRect(cx - brazo / 2, cy - grosor / 2, brazo, grosor);
     x.fillRect(cx - grosor / 2, cy - brazo / 2, grosor, brazo);
     x.restore();
@@ -234,7 +254,7 @@ function fondoDeMarca(x, ancho, alto) {
  * reconoce a nadie, se devuelve `null` y el carné sale con la foto tal cual:
  * una mejora que se cae no puede dejar a alguien sin carné.
  */
-export async function retratoDeMarcaPng(src, ancho = 260, alto = 320) {
+export async function retratoDeMarcaPng(src, lado = 320) {
     if (!src || typeof document === 'undefined') return null;
     try {
         const { removeBackground } = await import('@imgly/background-removal');
@@ -284,19 +304,20 @@ export async function retratoDeMarcaPng(src, ancho = 260, alto = 320) {
             const bh = hay ? y1 - y0 : img.naturalHeight;
             if (!hay) { x0 = 0; y0 = 0; }
 
-            const c = document.createElement('canvas');
-            c.width = ancho; c.height = alto;
-            const x = c.getContext('2d');
-            fondoDeMarca(x, ancho, alto);
-
-            /* Un poco de aire arriba y a los lados, y apoyada ABAJO: sin fondo,
-             * centrar verticalmente deja una cabeza flotando. Apoyada al pie se
-             * lee como un retrato. */
-            const AIRE = 0.90;
-            const escala = Math.min((ancho * AIRE) / bw, (alto * AIRE) / bh);
-            const w = bw * escala, h = bh * escala;
-            x.drawImage(img, x0, y0, bw, bh, (ancho - w) / 2, alto - h, w, h);
-            const salida = c.toDataURL('image/jpeg', 0.92);
+            const salida = comoDisco((x, L) => {
+                fondoDeMarca(x, L, L);
+                /* LLENA el disco en vez de entrar dentro de él: se escala por
+                 * el lado que sobra (`max`, no `min`) y lo que se pase lo corta
+                 * el recorte circular. Con `min` la persona entraba entera y
+                 * quedaba chiquita en medio de un disco de color — medido con
+                 * un retrato de prueba: la cara ocupaba un tercio.
+                 *
+                 * Y apoyada ABAJO: sin fondo, centrar verticalmente deja una
+                 * cabeza flotando; apoyada al pie se lee como un retrato. */
+                const escala = Math.max((L * 0.98) / bw, (L * 0.98) / bh);
+                const w = bw * escala, h = bh * escala;
+                x.drawImage(img, x0, y0, bw, bh, (L - w) / 2, L - h, w, h);
+            }, lado);
             URL.revokeObjectURL(url);
             return salida;
         }
@@ -314,7 +335,7 @@ export async function retratoDeMarcaPng(src, ancho = 260, alto = 320) {
  * lados. Se recorta del centro, que es donde está la cara en toda foto de
  * carné.
  */
-export async function fotoCuadradaComoPng(src, lado = 220, alto = null) {
+export async function fotoComoDiscoPng(src, lado = 320) {
     if (!src || typeof document === 'undefined') return null;
     try {
         const img = await new Promise((res, rej) => {
@@ -324,20 +345,15 @@ export async function fotoCuadradaComoPng(src, lado = 220, alto = null) {
             el.crossOrigin = 'anonymous';
             el.src = src;
         });
-        const H = alto || lado;
-        const c = document.createElement('canvas');
-        c.width = lado; c.height = H;
-        const x = c.getContext('2d');
-        /* Se recorta la mayor porción que quepa con la proporción del hueco, y
-         * desde el CENTRO. Con la tarjeta de pie el hueco ya no es cuadrado
-         * (26 × 32 mm), así que un recorte cuadrado dejaría franjas arriba y
-         * abajo — que es exactamente lo que se venía a evitar. */
-        const escala = Math.min(img.naturalWidth / lado, img.naturalHeight / H);
-        const rw = lado * escala, rh = H * escala;
-        x.drawImage(img,
-            (img.naturalWidth - rw) / 2, (img.naturalHeight - rh) / 2, rw, rh,
-            0, 0, lado, H);
-        return c.toDataURL('image/jpeg', 0.9);
+        /* Se recorta el CUADRADO más grande que quepa, desde el centro, y se
+         * mete en el disco. Es el respaldo de cuando el recorte de fondo no se
+         * pudo hacer: la foto entera, sin inventar nada. */
+        return comoDisco((x, L) => {
+            const corto = Math.min(img.naturalWidth, img.naturalHeight);
+            x.drawImage(img,
+                (img.naturalWidth - corto) / 2, (img.naturalHeight - corto) / 2, corto, corto,
+                0, 0, L, L);
+        }, lado);
     } catch {
         // Una foto que no se pudo leer no puede tumbar el carné: sale con el
         // avatar de iniciales, que es exactamente para esto.
@@ -438,13 +454,11 @@ export function orientacionPrevisional({ isss_estado, afp_estado } = {}) {
  * corresponde a la empresa. Este papel es de bienvenida.
  */
 export const BASICO_DEL_REGLAMENTO = [
-    {
-        titulo: 'Tu jornada y tu descanso',
-        texto: 'La jornada diurna es de 8 horas y la semana de 44; la nocturna, de 7 y 39. '
-             + 'Tienes derecho a un día de descanso remunerado por cada semana laboral, y entre '
-             + 'una jornada y la siguiente deben pasar al menos 8 horas.',
-        art: 'Arts. 16, 19 y 21',
-    },
+    /* Se quitó «Tu jornada y tu descanso» —las 44 horas, el día de descanso y
+     * las 8 horas entre jornadas— por decisión del usuario el 2026-08-29. No es
+     * un olvido: las horas de cada quien salen de su contrato y de su horario
+     * publicado, no de un papel de bienvenida, y repetirlas acá invita a
+     * discutir contra el resumen en vez de contra el documento que manda. */
     {
         titulo: 'Marcar tu entrada y tu salida',
         texto: 'Registrar tu entrada y tu salida es una obligación, no un trámite: es lo que '
@@ -504,7 +518,7 @@ export function paginaDelCarne({
     const P = 10;                     // el margen interno de la tarjeta
     const canto = 6.2;                // el canto verde: 2.2 mm
     const RADIO = 9;                  // el redondeo de la tarjeta, 3.2 mm
-    const fotoW = 74, fotoH = 91;     // 26 × 32 mm
+    const disco = 68;                 // 24 mm de diámetro
 
     const abs = (x, y) => ({ absolutePosition: { x: x0 + x, y: y0 + y } });
     /* ── Las marcas de corte ────────────────────────────────────────────────
@@ -578,16 +592,14 @@ export function paginaDelCarne({
             }],
         },
 
-        // ── El retrato ─────────────────────────────────────────────────────
+        /* ── El retrato, un disco ───────────────────────────────────────────
+         * Sin marco dibujado: el aro verde viene DENTRO de la imagen, y fuera
+         * del disco la imagen es transparente, así que se ve el cartón. Un
+         * rectángulo alrededor sería un borde que el disco no tiene. */
         ...(retratoPng ? [{
-            image: retratoPng, width: fotoW, height: fotoH,
-            ...abs(canto + (CARNE.ancho - canto - fotoW) / 2, 40),
+            image: retratoPng, width: disco, height: disco,
+            ...abs(canto + (CARNE.ancho - canto - disco) / 2, 42),
         }] : []),
-        {
-            ...abs(canto + (CARNE.ancho - canto - fotoW) / 2, 40),
-            canvas: [{ type: 'rect', x: 0, y: 0, w: fotoW, h: fotoH, r: 4,
-                       lineWidth: 0.8, lineColor: '#DDDDDD' }],
-        },
 
         /* ── Quién es ───────────────────────────────────────────────────────
          * Los cuatro renglones en UN bloque apilado y no en cuatro posiciones
@@ -595,7 +607,7 @@ export function paginaDelCarne({
          * nombre, y «Edwin Núñez» —que entra en una— dejaba un hueco delante
          * del cargo mientras que un nombre de cuatro palabras se le encimaba. */
         {
-            ...abs(canto, 140),
+            ...abs(canto, 118),
             columns: [{
                 width: CARNE.ancho - canto,
                 alignment: 'center',
@@ -688,6 +700,11 @@ export const INDUCCION = [
       texto: 'Los papeles de tu expediente, para consultarlos cuando los necesites.' },
     { titulo: 'Solicitudes personales',
       texto: 'Vacaciones y permisos se piden desde aquí, y desde aquí ves en qué van.' },
+    /* Lo que pasa ENTRE salas, que es media jornada de quien atiende un
+     * mostrador y no estaba dicho en ningún lado. Pedido del usuario. */
+    { titulo: 'Traslados entre salas',
+      texto: 'Pide a otra sala el producto que te falta, manda el que te sobra, y confirma '
+           + 'lo que llega escaneando el ticket de la bolsa.' },
 ];
 
 const bloqueDeInduccion = (b) => ({
@@ -851,9 +868,9 @@ export async function descargarDocumentoDeBienvenida(datos) {
          *   3. las iniciales sobre el morado (si no hay foto).
          * Nunca un hueco: un carné con un cuadro vacío se lee como uno a medio
          * hacer. 26 × 32 mm es el hueco del carné de pie. */
-        const retratoPng = (datos?.foto && await retratoDeMarcaPng(datos.foto, 260, 320))
-            || (datos?.foto && await fotoCuadradaComoPng(datos.foto, 260, 320))
-            || await avatarComoPng(datos?.nombre, 260, 320);
+        const retratoPng = (datos?.foto && await retratoDeMarcaPng(datos.foto))
+            || (datos?.foto && await fotoComoDiscoPng(datos.foto))
+            || await avatarComoPng(datos?.nombre);
         const def = definicionDelDocumento({
             ...datos, barrasPng, retratoPng, iconoPng,
             previsional: orientacionPrevisional(datos),

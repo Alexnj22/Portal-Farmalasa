@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.6 — El retrato del carné es un disco
+
+El usuario eligió la opción **E** de ocho bocetos: el retrato en un **disco** con
+aro verde, sobre el degradado de la empresa.
+
+Y de paso resuelve el problema que tienen todos los recortes automáticos: **el
+borde**. Un rectángulo deja el filo del recorte contra una línea recta y
+cualquier resto del fondo se nota; un disco lo esconde en la curva, y además
+recorta hombros y aire sobrante sin que haya que decidir nada.
+
+Las **tres** versiones del retrato pasan por el mismo compositor —la persona
+recortada, la foto tal cual cuando el recorte no se pudo, y las iniciales cuando
+no hay foto—, así que con foto y sin foto los carnés se ven hermanos. Sale en PNG
+y no en JPEG: fuera del disco hay transparencia, para que se vea el cartón; un
+JPEG lo pintaría de negro.
+
+**La persona LLENA el disco.** Se escala por el lado que sobra y lo que se pasa
+lo corta el recorte circular. Antes entraba entera y quedaba chiquita en medio de
+un disco de color — medido con un retrato de prueba: la cara ocupaba un tercio.
+
 ## v2.857.5 — Mi caja aparece en el menú
 
 La pantalla existía, la ruta existía, el permiso estaba dado — y **nadie la

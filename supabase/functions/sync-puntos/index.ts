@@ -147,6 +147,36 @@ Deno.serve(async (req) => {
       }, fallidasSiembra.length ? 500 : 200);
     }
 
+    // ── Traer las fechas de nacimiento (carga única) ────────────────────────
+    // Vive acá porque ésta es la función que ya tiene las credenciales de la
+    // otra base, y es de una sola vez: la ficha del cliente no tenía fecha de
+    // nacimiento y allá hay 11,302.
+    //
+    // El filtro NO es decoración. Ese campo es `varchar(10)` y guarda basura que
+    // sólo se ve mirándola: fechas del año 1 y del 7957, y 21 truncadas por el
+    // largo («11974-12-1»). Se piden únicamente las que tienen forma de fecha,
+    // son una fecha real y caen en un año creíble.
+    if (body?.traer_nacimientos) {
+      const [rows] = await conn.query(
+        'SELECT DUI, FechaNacimiento FROM Clientes ' +
+        'WHERE FechaNacimiento REGEXP "^(19[0-9]{2}|20[0-1][0-9])-[0-9]{2}-[0-9]{2}$" ' +
+        '  AND STR_TO_DATE(FechaNacimiento, "%Y-%m-%d") IS NOT NULL ' +
+        '  AND REPLACE(DUI, "-", "") REGEXP "^[0-9]{9}$"',
+      ) as any;
+      const filas = (rows ?? []).map((r: any) => ({ dui: r.DUI, fecha: r.FechaNacimiento }));
+      let escritas = 0;
+      const fallos: string[] = [];
+      for (let i = 0; i < filas.length; i += 3000) {
+        const { data, error } = await supabase.rpc('clientes_anotar_nacimiento', {
+          p_filas: filas.slice(i, i + 3000),
+        });
+        if (error) { fallos.push(`${i}: ${error.message}`); continue; }
+        escritas += Number(data ?? 0);
+      }
+      return json({ ok: fallos.length === 0, leidas: filas.length, escritas, fallos },
+                  fallos.length ? 500 : 200);
+    }
+
     // ── Probar que la devolución SE PUEDE escribir, sin escribirla ──────────
     // Existe porque la resta todavía no corrió ni una vez, y una función nueva
     // no prueba que la tabla la acepte: puede haber un CHECK, un trigger o un

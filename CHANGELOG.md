@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.1 — Mi caja deja elegir la sala
+
+_(pendiente de redactar)_
+
+## v2.858.0 — La ficha del cliente ya tiene fecha de nacimiento
+
+**5,895 clientes tienen su fecha de nacimiento**, traída del sistema de puntos —
+donde vive porque alimenta las cortesías de cumpleaños. La ficha no tenía ese
+campo; ahora lo muestra con la edad al lado.
+
+**No se copiaron las 11,302 que había, y ahí estuvo el trabajo.** Ese campo es
+texto de 10 caracteres y guarda basura que sólo se ve mirándola: el rango va de
+**«0001-01-02» a «7957-09-07»**, y 21 filas están **truncadas** por el largo
+(`11974-12-1`, `101972-02-`). Se aceptaron sólo las que tienen forma de fecha,
+son una fecha real y caen en un año creíble: 11,203 candidatas, de las que 5,895
+encontraron a su persona en el portal.
+
+Copiar el resto no habría dado ningún error — sólo habría puesto cumpleaños del
+año 1 y del año 7957, y eso aparece meses después en un listado que nadie
+entiende.
+
+**Se verificó contra el origen, no sólo contra el formato.** Cinco fichas al azar
+coinciden fecha por fecha **y nombre por nombre**, lo que prueba que el cruce por
+DUI encontró a la persona correcta y no a otra. Varias caen en día 28 y 29, que
+no se pueden confundir con un mes: descarta el día/mes invertido, que es el error
+silencioso típico de una fecha en texto.
+
+**Se escribe sólo cuando el documento identifica a UNA persona.** Si el mismo DUI
+viene con dos fechas distintas, no se escribe ninguna: elegir una sería inventar
+el cumpleaños de alguien. Y no pisa una fecha ya puesta.
+
+**El campo se muestra de sólo lectura, y es deliberado.** El guardado de esa
+ficha va por la vía FISCAL —pide confirmación para tocar a un contribuyente, lo
+anota como cambio fiscal y lo empuja al sistema de origen—. Un cumpleaños no es
+nada de eso. Editarlo necesita su propio camino.
+
 ## v2.857.6 — El retrato del carné es un disco
 
 El usuario eligió la opción **E** de ocho bocetos: el retrato en un **disco** con

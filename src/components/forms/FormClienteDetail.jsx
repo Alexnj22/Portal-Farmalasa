@@ -50,6 +50,23 @@ const fmtDate = (d) => {
     const [y, m, day] = String(d).slice(0, 10).split('-');
     return y && m && day ? `${day}/${m}/${y}` : '—';
 };
+/**
+ * Los años cumplidos.
+ *
+ * Se parte la cadena a mano en vez de `new Date('1958-02-28')`: esa forma la lee
+ * el navegador como UTC, y en El Salvador (UTC−6) eso resta un día — un
+ * cumpleaños del 1 de marzo se mostraría el 28 de febrero. Es
+ * [[feedback_una_fecha_sin_hora_leida_como_utc_retrocede]] aplicado acá.
+ */
+const edadDe = (iso) => {
+    if (!iso) return null;
+    const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - a;
+    if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) edad--;
+    return edad;
+};
+
 const fmtDateTime = (d) => {
     if (!d) return '—';
     const dt = new Date(d);
@@ -510,6 +527,18 @@ const FormClienteDetail = ({ formData }) => {
                                 hasError={!!errorDe('dui')} errorMessage={errorDe('dui')}
                                 onChange={e => setForm(p => ({ ...p, dui: e.target.value }))}
                             />
+                            {/* De SÓLO LECTURA a propósito. El guardado de esta
+                                ficha va por `update_customer_fiscal`, que es la
+                                vía FISCAL: pide confirmación para tocar a un
+                                contribuyente, lo anota como cambio fiscal y lo
+                                empuja al sistema de origen. Un cumpleaños no es
+                                nada de eso, así que meterlo por ahí lo trataría
+                                como lo que no es. Editarlo necesita su propio
+                                camino, y todavía no existe. */}
+                            {cliente.fecha_nacimiento && (
+                                <Dato label="Fecha de nacimiento"
+                                    value={`${fmtDate(cliente.fecha_nacimiento)} · ${edadDe(cliente.fecha_nacimiento)} años`} />
+                            )}
                             <PortalInput
                                 name="nit" label="NIT" maskType="NIT"
                                 placeholder="14 dígitos"

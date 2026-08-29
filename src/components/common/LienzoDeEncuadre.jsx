@@ -81,10 +81,29 @@ export default function LienzoDeEncuadre({ imagen, esquinas, alCambiarEsquinas, 
     useLayoutEffect(() => {
         const el = marcoRef.current;
         if (!el) return undefined;
-        const medir = () => {
-            const r = el.getBoundingClientRect();
-            setMarco({ w: r.width, h: r.height });
-        };
+        /* ── `clientWidth`, NO `getBoundingClientRect` ───────────────────────
+         *
+         * Y ésta era la causa de que el recuadro no cayera sobre el documento.
+         *
+         * El diálogo entra con una animación de ESCALA. `getBoundingClientRect`
+         * devuelve la caja YA TRANSFORMADA, así que medir durante esos
+         * milisegundos daba un marco un 7 % más chico — medido: 1255×640 cuando
+         * el marco real era 1348×688—. Y lo peor: `ResizeObserver` informa la
+         * caja SIN transformar, o sea que al terminar la animación no cambia
+         * nada y nunca vuelve a disparar. El marco se quedaba con el número
+         * equivocado para siempre.
+         *
+         * Con eso, la foto se dibujaba a una escala y las esquinas se
+         * calculaban con otra: el polígono salía corrido 47 px a la izquierda y
+         * 23 hacia arriba, y encima más chico. Lo reportó el usuario con la foto
+         * de un DUI: «el recorte no me sale bien».
+         *
+         * `clientWidth`/`clientHeight` son la caja de CONTENIDO sin transformar
+         * — la misma que mira el `ResizeObserver`—, así que las dos fuentes
+         * dicen lo mismo y la animación deja de existir para esta cuenta. */
+        const medir = () => setMarco(prev => (
+            prev.w === el.clientWidth && prev.h === el.clientHeight
+                ? prev : { w: el.clientWidth, h: el.clientHeight }));
         medir();
         const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null;
         ro?.observe(el);

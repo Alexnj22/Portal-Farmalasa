@@ -281,3 +281,46 @@ describe('preparar el documento solo', () => {
         expect(field).toMatch(/if \(!porEditar \|\| ajustando\) return undefined;/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El marco se mide SIN la transformación del diálogo
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El usuario mandó la foto de un DUI: el recuadro no caía sobre el documento.
+// No era el modelo — era la medición.
+//
+// El diálogo entra con una animación de ESCALA. `getBoundingClientRect` devuelve
+// la caja YA TRANSFORMADA, así que medir durante esos milisegundos daba un marco
+// un 7 % más chico: medido, 1255×640 cuando el marco real era 1348×688. Y lo
+// peor es lo que viene después: `ResizeObserver` informa la caja SIN
+// transformar, o sea que al terminar la animación no cambia nada y NUNCA vuelve
+// a disparar. El marco se quedaba con el número equivocado para siempre.
+//
+// Con eso, la foto se dibujaba a una escala y las esquinas se calculaban con
+// otra: el polígono salía corrido 47 px a la izquierda y 23 hacia arriba.
+// Medido después del arreglo: desvío 0.
+//
+// `clientWidth`/`clientHeight` son la caja de contenido sin transformar — la
+// misma que mira el `ResizeObserver`—, así que las dos fuentes dicen lo mismo.
+
+describe('el marco del encuadre', () => {
+    const lienzo = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/LienzoDeEncuadre.jsx'), 'utf8');
+
+    it('mide con `clientWidth`, no con la caja transformada', () => {
+        expect(lienzo).toMatch(/el\.clientWidth/);
+        expect(lienzo).toMatch(/el\.clientHeight/);
+    });
+
+    /* La regresión que hay que impedir: volver a `getBoundingClientRect` para
+     * MEDIR EL MARCO. Se sigue usando —y está bien— para convertir la posición
+     * del puntero, que llega en coordenadas de la ventana; eso ocurre con el
+     * diálogo ya quieto. Por eso la prueba mira la función que mide, no el
+     * archivo entero. */
+    it('y la función que mide no lo usa', () => {
+        const i = lienzo.indexOf('const medir = ');
+        const j = lienzo.indexOf('medir();', i);
+        expect(i).toBeGreaterThan(-1);
+        expect(lienzo.slice(i, j)).not.toMatch(/getBoundingClientRect/);
+    });
+});

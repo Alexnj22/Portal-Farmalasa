@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.2 — El recuadro cae sobre el documento
+
+El usuario mandó la foto de la pantalla con un DUI: *«el recorte no me sale
+bien»*. El recuadro no caía sobre el documento — y **no era el modelo, era la
+medición**.
+
+El diálogo entra con una animación de **escala**. `getBoundingClientRect`
+devuelve la caja **ya transformada**, así que medir el marco durante esos
+milisegundos daba un tamaño un 7 % más chico: medido, **1255×640 cuando el marco
+real era 1348×688**.
+
+Y lo peor viene después: `ResizeObserver` informa la caja **sin** transformar, o
+sea que cuando la animación termina no cambia nada y **nunca vuelve a disparar**.
+El marco se quedaba con el número equivocado para siempre.
+
+Con eso, la foto se dibujaba a una escala y las esquinas se calculaban con otra.
+Resultado medido: el polígono salía corrido **47 px a la izquierda y 23 hacia
+arriba**, y además más chico — o sea que aunque la lectura acertara, el recuadro
+caía fuera del papel y había que arrastrar las cuatro esquinas a mano.
+
+Se mide con `clientWidth`/`clientHeight`, que son la caja de contenido sin
+transformar — la misma que mira el `ResizeObserver`—, así que las dos fuentes
+dicen lo mismo y la animación deja de existir para esta cuenta.
+
+Medido después: **desvío 0 px** en las cuatro esquinas, y una esquina arrastrada
+queda exactamente donde se soltó el cursor.
+
 ## v2.858.1 — Mi caja deja elegir la sala
 
 «Mi caja» abría en **«Sin sala»** para quien supervisa, y sin ninguna forma de

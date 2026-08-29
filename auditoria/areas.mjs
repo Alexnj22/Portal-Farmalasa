@@ -382,6 +382,10 @@ export const AREAS = [
             'src/views/VentasView.jsx',
             'src/data/ventas.js',
             'src/components/common/AvisoSinProducto.jsx',
+            // La costura con el sistema de puntos. Vive acá y no en Clientes
+            // porque la sirve la misma función y el estado es de una VENTA;
+            // la ficha del cliente es su segundo consumidor.
+            'src/data/puntos.js',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
@@ -390,7 +394,8 @@ export const AREAS = [
                  'product_last_sale', 'product_sales_rollup', 'product_sales_monthly_agg',
                  'puntos_enviados'],
         edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
-               'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe'],
+               'backfill-dte-sales', 'heal-dte-sync', 'sync-puntos', 'puntos-probe',
+               'puntos-consulta'],
         crons: ['sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',

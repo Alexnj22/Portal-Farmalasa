@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.846.0 — Los puntos se ven en la venta y en la ficha del cliente
+
+**La lista de Ventas dice en qué anda cada venta con sus puntos** y la ficha del
+cliente tiene un panel con su saldo y sus movimientos.
+
+Cinco estados, y cada uno se verificó contra un caso real:
+
+| | qué significa |
+|---|---|
+| **Acumulados** | el cliente presentó el ticket y ya se le dieron |
+| **Pendientes** | la venta está registrada y sus puntos se pueden reclamar |
+| **Devueltos** | la venta se anuló y sus puntos se quitaron |
+| **Por revisar** | se anuló con los puntos ya entregados y no se pudieron quitar solos |
+| **Sin enviar** | esta venta no acumula puntos |
+
+**No se copia el dato: se pregunta.** El estado cambia en el MOSTRADOR —un
+ticket pasa a «acumulados» cuando alguien lo presenta, hoy o dentro de seis
+meses—, así que una copia en el portal habría que refrescarla entera para no
+mentir. Y mentir sobre puntos es peor que no mostrarlos: la sala le diría a
+alguien que los tiene pendientes cuando ya los cobró. Se piden sólo las facturas
+de la página que se está viendo.
+
+**La insignia «Puntos» que ya existía ahora dice «Canjeó puntos».** Significaba
+que la venta se PAGÓ con puntos; desde que la fila muestra también si los GENERÓ,
+la palabra sola era ambigua.
+
+**La columna nueva se esconde debajo de 2xl, y no es pereza:** a 1024+ las ocho
+columnas ya no entraban en los ~1080px que quedan al lado del menú y el Total
+salía del marco — un defecto medido y corregido en su momento. Una novena
+columna a `lg` lo recreaba. Debajo de ese ancho el estado no se pierde: los tres
+que piden atención salen como insignia en la celda del cliente, que no cuesta
+ancho.
+
+**En la ficha del cliente, el panel dice POR QUÉ está vacío.** Son cuatro
+motivos y sólo uno significa «no tiene puntos»: sin DUI en la ficha, DUI
+incompleto, sin cuenta todavía, o dos cuentas con el mismo documento. Los otros
+tres son problemas de datos que alguien puede arreglar — y que nadie arreglaría
+si la pantalla los escondiera. El puente entre los dos sistemas es el DUI
+normalizado a dígitos, porque el portal guarda `########-#` y el otro mezcla
+formatos de 1 a 10 caracteres.
+
+**`src/data/puntos.js` es la costura, a propósito.** Los puntos van a pasar a
+ser parte del portal; cuando eso pase se reescribe ese archivo y ni la lista de
+ventas ni la ficha del cliente se enteran. Por eso nada de la forma del otro
+sistema cruza esa línea: las pantallas reciben `acumulado`/`pendiente`, palabras
+del negocio, y nunca un `aplicado = 1`.
+
 ## v2.845.1 — El portal manda las ventas a puntos por su cuenta: se apaga la hoja de cálculo
 
 **El circuito está vivo y corre solo cada minuto.** La hoja de cálculo de Drive

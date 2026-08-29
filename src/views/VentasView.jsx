@@ -14,6 +14,7 @@ import {
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { fetchEstadoDePuntos, ROTULO_PUNTOS } from '../data/puntos';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
@@ -388,6 +389,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [filterAntibiotico, setFilterAntibiotico] = useState(false);
     const [filterAnuladas, setFilterAnuladas] = useState(false);
     const [changelogCache, setChangelogCache] = useState({});
+    // El estado de puntos de la página visible. No es una caché: se reemplaza
+    // entero en cada carga porque el dato vive en otro sistema y cambia solo.
+    const [puntosEstado, setPuntosEstado] = useState({});
     const fetchRowsRef = useRef(0);
 
     // Refs "siempre frescos" para leer el estado actual de los caches dentro de
@@ -614,6 +618,22 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     }
                 });
         }
+
+        /* El estado de puntos de las filas que se están viendo.
+         *
+         * Se pide POR PÁGINA y no se guarda: ese estado cambia en el mostrador
+         * —un ticket pasa a «acumulados» cuando el cliente lo presenta, hoy o
+         * dentro de seis meses—, así que una copia en el portal mentiría sin
+         * avisar. Va sin `await` y no bloquea la lista: si el otro sistema no
+         * contesta, se ven las ventas sin su estado de puntos, que es
+         * exactamente lo que pasaba antes de esta columna.
+         *
+         * Se pide SIEMPRE para la página visible, aunque ya se haya pedido
+         * antes: cachearlo sería el mismo error que copiarlo. */
+        fetchEstadoDePuntos(fetchedIds).then((estados) => {
+            if (fetchRowsRef.current !== currentRid) return;
+            setPuntosEstado(estados);
+        });
 
         // Prefetch changelog for visible rows in background
         const uncachedChg = fetchedIds.filter(id => !(id in changelogCacheRef.current));
@@ -930,6 +950,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     { key: 'vendedor',   label: 'Vendedor',     sortable: true, hideBelow: 'md' },
                     { key: 'cliente',    label: 'Cliente',      sortable: true },
                     { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: '2xl' },
+                    /* `2xl` como sus dos vecinas, y por el mismo motivo medido:
+                       a 1024+ las ocho columnas ya no entraban en los ~1080px
+                       que quedan al lado del menú y el Total salía del marco.
+                       Una novena a `lg` recrearía ese defecto exacto. Debajo de
+                       2xl el estado no se pierde: los tres que piden atención
+                       —acumulados, devueltos, por revisar— salen como insignia
+                       en la celda del cliente, que no cuesta ancho. */
+                    { key: 'puntos',     label: 'Puntos',       hideBelow: '2xl' },
                     { key: 'total',      label: 'Total',        sortable: true, align: 'right' },
                 ]}
                 /* La inferencia toma la PRIMERA columna como identidad, y acá esa
@@ -958,6 +986,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const noData      = cachedItems && cachedItems.length === 0;
                     const emp         = empMap.get(r.cod_vendedor);
                     const changes     = changelogCache[r.id] ?? [];
+                    const puntosRotulo = ROTULO_PUNTOS[puntosEstado[String(r.id)]?.estado] ?? null;
+                    // Los tres que piden atención viajan también a la celda del
+                    // cliente, que se ve en todo ancho. «Pendientes» y «Sin
+                    // enviar» se quedan en la columna: no hay nada que hacer con
+                    // ellos y repetirlos sería ruido.
+                    const puntosDestacado = ['acumulado', 'devuelto', 'por_revisar']
+                        .includes(puntosEstado[String(r.id)]?.estado) ? puntosRotulo : null;
                     const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
                     // El tipo de documento se pinta en DOS tablas de esta vista con la
                     // misma cascada. `VARIANTE_DOC` está arriba, junto al resto.
@@ -1004,13 +1039,26 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                                 <DataCell>
                                     <p className="text-body-sm text-content-2 truncate max-w-[160px]">{r.cliente || '—'}</p>
-                                    {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
+                                    {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id) || puntosDestacado) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
+                                            {/* «Canjeó puntos» y no «Puntos» a secas: desde que la
+                                                fila muestra TAMBIÉN si sus puntos se acumularon, la
+                                                palabra sola era ambigua. Ésta dice que la venta se
+                                                PAGÓ con puntos; la otra, que la venta los GENERÓ. */}
                                             {(r.has_puntos || filterPuntos) && (
-                                                <Badge variant="warning" size="sm">Puntos</Badge>
+                                                <Badge variant="warning" size="sm">Canjeó puntos</Badge>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
                                                 <Badge variant="danger" size="sm">Receta Médica</Badge>
+                                            )}
+                                            {/* Sólo los que piden atención. «Pendientes» es el estado
+                                                normal del 94% de las ventas: repetirlo en cada fila
+                                                sería una pared de insignias iguales que se aprende a
+                                                no mirar. Ese caso se lee en la columna, arriba. */}
+                                            {puntosDestacado && (
+                                                <Badge variant={puntosDestacado.variante} size="sm">
+                                                    {puntosDestacado.label}
+                                                </Badge>
                                             )}
                                         </div>
                                     )}
@@ -1019,6 +1067,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {r.tipo_pago
                                         ? <span className="text-label text-content-2 font-medium">{r.tipo_pago}</span>
                                         : <span className="text-content-3">—</span>}
+                                </DataCell>
+                                <DataCell hideBelow="2xl">
+                                    {puntosRotulo ? (
+                                        <LiquidTooltip content={puntosRotulo.ayuda}>
+                                            <Badge variant={puntosRotulo.variante} size="sm">{puntosRotulo.label}</Badge>
+                                        </LiquidTooltip>
+                                    ) : (
+                                        /* Vacío mientras el otro sistema contesta, y vacío si no
+                                           contestó. No se pinta «Pendientes» por defecto: sería
+                                           afirmar algo que todavía no se sabe. */
+                                        <span className="text-content-3">—</span>
+                                    )}
                                 </DataCell>
                                 <DataCell align="right">
                                     <div className="flex items-center justify-end gap-2">

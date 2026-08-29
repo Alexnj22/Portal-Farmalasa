@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Loader2, Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
-    History, AlertTriangle, Store, Building2,
+    History, AlertTriangle, Store, Building2, Star,
 } from 'lucide-react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
@@ -18,6 +18,7 @@ import {
     fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
     codigoDeError, mensajeDeError,
 } from '../../data/customers';
+import { fetchPuntosDeCliente } from '../../data/puntos';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
 } from '../../data/elSalvadorGeo';
@@ -148,6 +149,94 @@ function PanelActividad({ actividad, facturas, bitacora }) {
                                 {' → '}
                                 <span className="text-content-2 font-bold">{h.valor_nuevo || '(vacío)'}</span>
                             </p>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Los puntos del cliente: su saldo y sus movimientos.
+ *
+ * Carga sola al abrirse el panel y no antes: el dato viene de otro sistema, así
+ * que pedirlo al abrir la ficha le sumaría una espera a todo el mundo por algo
+ * que la mayoría no va a mirar.
+ *
+ * ── Los cuatro motivos por los que puede venir vacío, y por qué se DICEN ────
+ * Un panel vacío se lee como «este cliente no tiene puntos», y sólo uno de los
+ * cuatro casos significa eso. Los otros tres son problemas de datos que alguien
+ * puede arreglar — y que nadie va a arreglar si la pantalla los esconde.
+ */
+function PanelPuntos({ customerId }) {
+    // Arranca en `true` en vez de encenderse dentro del efecto: el panel se monta
+    // cuando se lo abre y ya nace cargando, así que un `setCargando(true)` ahí
+    // adentro sería un render de más por nada.
+    const [cargando, setCargando] = useState(true);
+    const [datos, setDatos] = useState(null);
+
+    useEffect(() => {
+        let vivo = true;
+        fetchPuntosDeCliente(customerId)
+            .then(d => { if (vivo) setDatos(d); })
+            .finally(() => { if (vivo) setCargando(false); });
+        return () => { vivo = false; };
+    }, [customerId]);
+
+    if (cargando) return <LoadingState label="Buscando los puntos del cliente…" />;
+
+    const MOTIVOS = {
+        sin_dui:    'La ficha no tiene DUI, y el documento es lo único que liga a esta persona con su cuenta de puntos. Agregándolo, sus puntos aparecen aquí.',
+        dui_corto:  'El DUI de la ficha no tiene los ocho dígitos, así que no se puede buscar su cuenta de puntos.',
+        sin_cuenta: 'Esta persona todavía no tiene cuenta de puntos. Se le crea en la sala la primera vez que acumula.',
+        duplicado:  'Hay más de una cuenta de puntos con este mismo DUI. Hasta que se unifiquen no se puede decir cuál es la suya.',
+        error:      'No se pudieron consultar los puntos en este momento. Vuelve a abrir la ficha en un rato.',
+    };
+
+    if (!datos?.cliente) {
+        return (
+            <Notice variant={datos?.motivo === 'sin_cuenta' ? 'info' : 'warning'} icon={AlertTriangle}>
+                {MOTIVOS[datos?.motivo] ?? MOTIVOS.error}
+            </Notice>
+        );
+    }
+
+    const { cliente, movimientos } = datos;
+    const acumulados = movimientos.filter(m => m.tipo === 'acumulacion').reduce((s, m) => s + Number(m.puntos || 0), 0);
+    const canjeados  = movimientos.filter(m => m.tipo === 'canje').reduce((s, m) => s + Math.abs(Number(m.puntos || 0)), 0);
+
+    return (
+        <div className="space-y-5">
+            <div className="grid grid-cols-3 gap-3">
+                <Dato label="Saldo" value={cliente.saldo.toLocaleString()}
+                    valueCls={cliente.saldo > 0 ? 'text-success-text' : 'text-content-2'} />
+                {/* «En pantalla» y no «Total»: son los últimos 200 movimientos,
+                    no la historia entera. Rotularlos «Total» diría un número que
+                    no cuadra con el saldo y nadie sabría por qué. */}
+                <Dato label="Acumulados en pantalla" value={acumulados.toLocaleString()} />
+                <Dato label="Canjeados en pantalla" value={canjeados.toLocaleString()} />
+            </div>
+
+            <SectionHeader icon={Star}>Movimientos</SectionHeader>
+            {movimientos.length === 0 ? (
+                <p className="text-body-sm text-content-3">La cuenta existe pero todavía no tiene movimientos.</p>
+            ) : (
+                <div className="space-y-1.5">
+                    {movimientos.map((m, i) => (
+                        <div key={i}
+                            className="flex items-center gap-3 px-3 py-2 rounded-btn bg-surface-card-hover/60 border border-divider">
+                            <span className="text-caption tabular-nums text-content-3 w-[74px] shrink-0">{fmtDate(m.fecha)}</span>
+                            <Badge size="sm" variant={m.tipo === 'canje' ? 'warning' : 'success'}>
+                                {m.tipo === 'canje' ? 'Canje' : 'Compra'}
+                            </Badge>
+                            <span className="text-caption text-content-3 truncate min-w-0 flex-1">
+                                {m.sala || '—'}{m.documento ? ` · ${m.documento}` : ''}
+                            </span>
+                            <span className={`text-body-sm font-bold tabular-nums shrink-0 ${
+                                Number(m.puntos) < 0 ? 'text-warning-text' : 'text-success-text'}`}>
+                                {Number(m.puntos) > 0 ? '+' : ''}{Number(m.puntos || 0).toLocaleString()}
+                            </span>
                         </div>
                     ))}
                 </div>
@@ -359,6 +448,7 @@ const FormClienteDetail = ({ formData }) => {
                 options={[
                     { value: 'ficha', label: 'Ficha fiscal' },
                     { value: 'actividad', label: 'Actividad' },
+                    { value: 'puntos', label: 'Puntos' },
                 ]}
                 value={panel}
                 onChange={setPanel}
@@ -380,7 +470,9 @@ const FormClienteDetail = ({ formData }) => {
                 </Notice>
             )}
 
-            {panel === 'actividad' ? (
+            {panel === 'puntos' ? (
+                <PanelPuntos customerId={id} />
+            ) : panel === 'actividad' ? (
                 <PanelActividad actividad={actividad} facturas={facturas} bitacora={bitacora} />
             ) : (
                 <div className="space-y-5">

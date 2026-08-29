@@ -825,3 +825,58 @@ export async function anotarValesEnCaja({ simular = false, sala = null } = {}) {
         return { error: err };
     }
 }
+
+// ── Operar la caja desde el portal ───────────────────────────────────────────
+//
+// Abrir, anotar un ingreso y cerrar el día. El corte va aparte (`hacerCorte`)
+// porque tiene su propia regla: el conteo a ciegas.
+
+/** ¿La caja de esta sala está abierta ahora? Lo contesta el sistema, no el portal. */
+export async function estadoDeCaja(sala) {
+    return operar({ accion: 'estado', sala });
+}
+
+export async function abrirCaja({ sala, montoApertura = 0, turno = 1 }) {
+    return operar({ accion: 'abrir', sala, monto_apertura: montoApertura, turno });
+}
+
+export async function anotarIngreso({ sala, monto, concepto }) {
+    return operar({ accion: 'ingreso', sala, monto, concepto });
+}
+
+export async function cerrarElDia(sala) {
+    return operar({ accion: 'cerrar', sala });
+}
+
+async function operar(body) {
+    try {
+        const { data, error } = await supabase.functions.invoke('operar-caja', { body });
+        if (error) return { error };
+        if (!data || data.ok !== true) return { error: new Error(data?.error || 'NO_SE_PUDO') };
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}
+
+/**
+ * El corte, con el conteo a ciegas.
+ *
+ * Manda el efectivo contado y NO recibe lo esperado hasta que contesta: ésa es
+ * toda la idea. Si el portal lo mostrara antes, sería la misma pantalla que hoy
+ * deja teclear hasta que la diferencia dé cero.
+ */
+export async function hacerCorte({ sala, efectivo, observaciones = null, simular = false }) {
+    try {
+        const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
+            body: { sala, efectivo, observaciones, simular },
+        });
+        if (error) return { error };
+        if (!data) return { error: new Error('NO_SE_PUDO') };
+        // `ok:false` con `esperado` adentro NO es un error de red: es un corte
+        // que el sistema rechazó, y la pantalla tiene que poder decirlo distinto.
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}

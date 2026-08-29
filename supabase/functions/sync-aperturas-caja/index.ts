@@ -140,6 +140,7 @@ function resolverFicha(
 
 type Panel = {
   erp_apertura_id: number;
+  erp_empleado_id: number | null;
   empleado_texto: string | null;
   abierta_el: string | null;
   abierta_a: string | null;
@@ -164,6 +165,10 @@ function leerPanel(html: string): Panel | null {
   const hora = campo("Hora Apertura");
   return {
     erp_apertura_id: Number(id),
+    // El número con el que la CAJA identifica a quien abrió; viene en el enlace
+    // del cierre. No es la ficha del portal, y hace falta para que el portal
+    // pueda abrir después con el mismo empleado que esa sala ya usa.
+    erp_empleado_id: Number(html.match(/emp=(\d+)/)?.[1]) || null,
     empleado_texto: campo("Nombre"),
     abierta_el: fechaISO(campo("Fecha Apertura") ?? ""),
     abierta_a: hora && /^\d{2}:\d{2}/.test(hora) ? hora : null,
@@ -211,7 +216,7 @@ Deno.serve(async (req) => {
       if (!creds) throw new Error(`la sala ${body.catalogo} no está en el mapa`);
       const propia = await getSessionCookie(creds.username, creds.password);
       const salidas: Record<string, unknown> = {};
-      for (const pantalla of ["agregar_salida_caja.php", "agregar_ingreso_caja.php"]) {
+      for (const pantalla of ["agregar_salida_caja.php", "agregar_ingreso_caja.php", "apertura_caja.php"]) {
         const html = await (await fetch(BASE + pantalla, {
           headers: { Cookie: propia },
           signal: AbortSignal.timeout(30_000),
@@ -297,6 +302,7 @@ Deno.serve(async (req) => {
             erp_apertura_id: panel.erp_apertura_id,
             caja_erp: idCaja,
             turno: panel.turno,
+            erp_empleado_id: panel.erp_empleado_id,
             empleado_texto: panel.empleado_texto,
             employee_id: resolverFicha(panel.empleado_texto, fichas),
             abierta_el: panel.abierta_el,

@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.851.0 — Mi caja: abrir, anotar, cortar a ciegas y cerrar el día
+
+Hasta hoy el portal **miraba** la caja; operarla se hacía en la otra pantalla.
+Desde el lunes 31 las salas pierden ese acceso, así que los cuatro actos del día
+viven acá: `/caja`.
+
+**Abrir la caja.** Con dos identidades, y las dos importan: a la caja se le manda
+el mismo número de empleado que esa sala ya venía usando —la pantalla de
+apertura sólo ofrece el usuario de la sesión, así que ese número no se puede
+pedir por nombre—, y **quién pasó el carné** queda en el portal, en
+`caja_aperturas_del_portal`. Hoy tres de las seis salas abren con una cuenta
+compartida, así que esto no empeora el papel: agrega el nombre verificado que
+antes no existía en ningún lado.
+
+**El corte, con el conteo a ciegas.** Se pide UN número —el efectivo contado— y
+la pantalla **no dice cuánto debería haber**. No es un olvido: la pantalla de la
+caja lo muestra antes de teclear y su total sale de tres casillas que escribe la
+misma persona, así que inflando la de tarjeta la diferencia queda en cero y nadie
+se entera. Acá lo esperado llega recién en la respuesta, junto con la diferencia,
+y tarjeta y cheque van forzados a cero — ni una ni otra pasan por la caja.
+
+Y el orden no es un detalle: **primero se anota un solo vale con todas las
+salidas del día abierto, después se corta.** Al revés, el corte cuenta un dinero
+que ya no está.
+
+**Anotar un ingreso** (el pago de un recibo, un depósito a cuenta) y **cerrar el
+día**. El cierre emite el Z, que sale de cerrar el turno y no del formulario del
+corte — medido: `cierre_turno.php` devuelve `tipo_corte=C` con cualquier
+parámetro, y en los datos el Z entra segundos después del último C.
+
+**Lo que NO ofrece, a propósito:** el cobro de crédito. El tiquete tiene dos
+líneas para lo que entra —INGRESOS y COBROS CRÉDITO— y lo que las separa es el
+tipo del movimiento; ese catálogo no se pudo leer, porque la pantalla que lo
+lista sólo se abre para el usuario que tiene la caja vigente y la cuenta del
+portal no lo es en ninguna sala. Un cobro mal clasificado movería plata de una
+línea a la otra sin que nada falle.
+
+⚠️ **El conteo a ciegas sólo es un control si el corte se hace únicamente desde
+acá.** Mientras la sala pueda cortar en la otra pantalla, ahí ve lo esperado.
+Está escrito en la vista y en la función, porque es la condición y no un detalle.
+
 ## v2.850.0 — El documento se prepara solo, y con los tamaños que se escanean
 
 Pedido del usuario: *«normalmente se escanea: tamaño carta, y tamaño de cédula

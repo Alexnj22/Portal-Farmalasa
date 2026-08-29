@@ -503,6 +503,7 @@ export function paginaDelCarne({
     const y0 = 112;
     const P = 10;                     // el margen interno de la tarjeta
     const canto = 6.2;                // el canto verde: 2.2 mm
+    const RADIO = 9;                  // el redondeo de la tarjeta, 3.2 mm
     const fotoW = 74, fotoH = 91;     // 26 × 32 mm
 
     const abs = (x, y) => ({ absolutePosition: { x: x0 + x, y: y0 + y } });
@@ -541,12 +542,25 @@ export function paginaDelCarne({
         {
             ...abs(0, 0),
             canvas: [
-                { type: 'rect', x: 0, y: 0, w: CARNE.ancho, h: CARNE.alto, r: 9,
+                { type: 'rect', x: 0, y: 0, w: CARNE.ancho, h: CARNE.alto, r: RADIO,
                   color: '#FFFFFF', lineWidth: 0.6, lineColor: '#DDDDDD' },
-                // El canto verde. El rectángulo de la derecha le tapa el radio
-                // de ese lado: pdfmake no sabe redondear sólo dos esquinas.
-                { type: 'rect', x: 0, y: 0, w: canto, h: CARNE.alto, r: 9, color: MARCA.verde },
-                { type: 'rect', x: canto - 9, y: 0, w: 9, h: CARNE.alto, color: MARCA.verde },
+                /* ── El canto verde, redondeado como la tarjeta ──────────────
+                 *
+                 * Antes quedaban DOS esquinas redondas y dos cuadradas —lo vio
+                 * el usuario—: el canto se dibujaba con su propio radio y
+                 * enseguida se le pasaba un rectángulo recto por encima que,
+                 * como el canto (6.2 pt) es MÁS ANGOSTO que el radio (9), le
+                 * tapaba también las esquinas de la izquierda y se las
+                 * cuadraba. Las de la derecha, que son de la tarjeta blanca,
+                 * seguían redondas.
+                 *
+                 * Ahora el canto se dibuja MÁS ANCHO que el radio —así sus
+                 * esquinas de la izquierda son las de la tarjeta— y lo que
+                 * sobra se tapa con blanco, que es el color del cartón: el
+                 * parche cae sobre el interior y no se ve. */
+                { type: 'rect', x: 0, y: 0, w: canto + RADIO, h: CARNE.alto, r: RADIO,
+                  color: MARCA.verde },
+                { type: 'rect', x: canto, y: 0, w: RADIO + 1, h: CARNE.alto, color: '#FFFFFF' },
                 ...marcas.map(m => ({ ...m, lineWidth: 0.6, lineColor: '#9A9A9A' })),
             ],
         },

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.1 — Las cuatro esquinas del carné
+
+El carné salía con **dos esquinas redondas y dos cuadradas** — lo vio el usuario
+mirando el PDF. Las de la derecha eran de la tarjeta blanca; las de la izquierda
+las cuadraba el canto verde.
+
+La causa: el canto se dibujaba con su propio redondeo y enseguida se le pasaba un
+rectángulo recto por encima para quitarle el de la derecha. Pero el canto mide
+2.2 mm y el redondeo 3.2 mm, o sea que **el parche era más ancho que el canto** y
+le tapaba también las esquinas de la izquierda.
+
+Ahora el canto se dibuja más ancho que el radio —así sus esquinas izquierdas son
+las de la tarjeta— y lo que sobra se cubre con blanco, que es el color del
+cartón: el parche cae sobre el interior y no se ve.
+
 ## v2.857.0 — Los ingresos ya no esperan un catálogo que no existe
 
 Tres días diciendo que los ingresos estaban bloqueados esperando la lista del

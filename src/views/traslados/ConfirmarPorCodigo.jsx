@@ -1,5 +1,5 @@
 import React, { useCallback, useState, lazy, Suspense } from 'react';
-import { Camera, PackageCheck, ScanLine } from 'lucide-react';
+import { Camera, PackageCheck, PackageX, ScanLine } from 'lucide-react';
 import ModalShell from '../../components/common/ModalShell';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import Button from '../../components/common/Button';
@@ -8,6 +8,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '../../data/traslados';
 import DeclararFaltantes from './DeclararFaltantes';
+import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE } from '../../data/faltantes';
 import { FilaEnvioPorDecidir } from './FilasEnvio';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fmtCuando } from './trasladoTexto';
@@ -48,6 +49,32 @@ const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo
  * escrito en ninguna parte del papel —va sólo adentro de las barras— así que
  * nadie puede teclearlo de memoria, y no hay presencia que probar.
  */
+/**
+ * ¿Queda plazo para anotar un faltante sobre una bolsa YA recibida?
+ *
+ * El corte se calcula acá ADEMÁS de en el servidor, que es la autoridad:
+ * ofrecer un botón que el servidor va a rechazar es peor que no ofrecerlo —
+ * quien lo aprieta ya contó la caja y se lleva un «no» sobre algo que hizo bien.
+ *
+ * Cuándo se cerró la recepción no es lo mismo en las dos familias: la solicitud
+ * lo guarda en un solo momento; el envío se decide renglón por renglón, así que
+ * es el ÚLTIMO — cuando se terminó de mirar la caja.
+ */
+function dentroDelPlazo(t) {
+    const horasDesde = (cuando) => {
+        const ms = cuando ? new Date(cuando).getTime() : NaN;
+        return Number.isFinite(ms) ? (Date.now() - ms) / 3_600_000 : Infinity;
+    };
+    if (t?.es_un_envio) {
+        const lineas = t.envio_bolsa?.lineas ?? [];
+        if (lineas.some(l => l?.estado === 'enviada')) return false;   // todavía se decide
+        const ultima = lineas.map(l => l?.decidido_at).filter(Boolean).sort().at(-1);
+        return horasDesde(ultima) <= HORAS_PARA_DECLARAR_TARDE;
+    }
+    if (!t?.id || !t.ya_recibido) return false;
+    return horasDesde(t.recibido_at) <= HORAS_PARA_DECLARAR_TARDE;
+}
+
 export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [buscando, setBuscando] = useState(false);
     const [ocupado,  setOcupado]  = useState(false);
@@ -57,13 +84,23 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [listo,    setListo]    = useState(null);   // el que se acaba de recibir
     // Lo que la sala dice que NO venía en la bolsa. Vacío es el camino normal.
     const [faltaron, setFaltaron] = useState([]);
+    // Y lo mismo, pero sobre una bolsa que YA se recibió. Va aparte porque no
+    // viaja con la recepción: es su propia escritura, con su propio plazo.
+    const [tarde,    setTarde]    = useState([]);
+    /* Si la bolsa ya se recibió, ¿queda plazo para anotar lo que faltó?
+     *
+     * Se resuelve AL LEER el código y no en cada render: `Date.now()` durante el
+     * render es una llamada impura —el linter la corta— y además el valor no
+     * tiene por qué cambiar mientras alguien mira la misma pantalla. */
+    const [puedeTarde, setPuedeTarde] = useState(false);
 
     const buscar = useCallback(async (codigo) => {
-        setBuscando(true); setError(''); setHallado(null); setListo(null); setFaltaron([]);
+        setBuscando(true); setError(''); setHallado(null); setListo(null); setFaltaron([]); setTarde([]); setPuedeTarde(false);
         const { traslado, error: e } = await fetchTrasladoPorCodigo(codigo);
         setBuscando(false);
         if (e) { setError(mensajeAmigable(e, 'No se pudo leer ese código.')); return; }
         setHallado(traslado);
+        setPuedeTarde(dentroDelPlazo(traslado));
     }, []);
 
     // La captura global de teclas sólo existe mientras el diálogo está abierto y
@@ -92,7 +129,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [estabaAbierto, setEstabaAbierto] = useState(abierto);
     if (abierto !== estabaAbierto) {
         setEstabaAbierto(abierto);
-        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); setFaltaron([]); }
+        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); setFaltaron([]); setTarde([]); setPuedeTarde(false); }
     }
 
     const confirmar = async () => {
@@ -122,6 +159,34 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
         onHecho?.();
     };
 
+    /* ── Anotarlo cuando la bolsa ya se recibió ────────────────────────────
+     *
+     * Es el caso real: se aprieta «ya llegó» y se cuenta después. El papel está
+     * en la mano —por eso vive acá, en el escaneo— y el plazo lo decide el
+     * servidor: la pantalla no repite el número de horas, sólo muestra lo que
+     * conteste si se pasó. */
+    const anotarTarde = async () => {
+        const id = hallado?.id ?? hallado?.envio_bolsa?.id;
+        if (!id || !tarde.length) return;
+        setOcupado(true); setError('');
+        const r = await declararFaltanteTardio(id, tarde);
+        setOcupado(false);
+        if (!r.ok) { setError(r.error ?? 'No se pudo anotar lo que faltó.'); return; }
+        setListo({ origen: hallado?.origen ?? hallado?.envio_bolsa?.origen_branch_name, faltaron: r.declarados });
+        setHallado(null); setTarde([]);
+        onHecho?.();
+    };
+
+    // Los renglones sobre los que se declara, en la forma que espera
+    // `DeclararFaltantes`: la POSICIÓN es la clave, no el lugar en la lista.
+    const renglonesDeLaBolsa = hallado?.es_un_envio
+        ? (hallado.envio_bolsa?.lineas ?? []).map(l => ({
+            posicion: l?.posicion, descripcion: l?.descripcion, cantidad: l?.cantidad,
+        }))
+        : (hallado?.items ?? []).map((it, i) => ({
+            posicion: i, descripcion: it?.descripcion, cantidad: it?.cantidad,
+        }));
+
     if (!abierto) return null;
 
     return (
@@ -143,8 +208,13 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                                 : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Sí, llegó completa')}
                         </Button>
                     )}
+                    {puedeTarde && tarde.length > 0 && (
+                        <Button icon={PackageX} loading={ocupado} disabled={ocupado} onClick={anotarTarde}>
+                            {ocupado ? 'Anotando…' : 'Anotar lo que faltó'}
+                        </Button>
+                    )}
                     {(hallado || listo) && !ocupado && (
-                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); setFaltaron([]); }}>
+                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); setFaltaron([]); setTarde([]); setPuedeTarde(false); }}>
                             Escanear otro
                         </Button>
                     )}
@@ -194,11 +264,44 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                         o no llegó—. La pantalla que hace eso ya existe y es la
                         misma de la lista: reusarla es lo que evita dos
                         decisiones que se parecen y se comportan distinto. */}
-                    {hallado?.es_un_envio && hallado.envio_bolsa && (
+                    {hallado?.es_un_envio && hallado.envio_bolsa
+                        && (hallado.envio_bolsa.lineas ?? []).some(l => l?.estado === 'enviada') && (
                         <FilaEnvioPorDecidir
                             envio={hallado.envio_bolsa}
                             onHecho={() => { setListo({ origen: hallado.envio_bolsa.origen_branch_name }); setHallado(null); onHecho?.(); }}
                         />
+                    )}
+                    {/* La bolsa de un envío que YA se contestó. Sin esta rama la
+                        tarjeta de decidir se pintaba vacía y con el botón
+                        apagado: un callejón sin salida sobre un papel que sí
+                        existe. Dice en qué terminó y, si queda plazo, deja
+                        anotar lo que faltó. */}
+                    {hallado?.es_un_envio && hallado.envio_bolsa
+                        && !(hallado.envio_bolsa.lineas ?? []).some(l => l?.estado === 'enviada') && (
+                        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+                            <p className="text-body-sm font-bold text-content-1">
+                                {hallado.envio_bolsa.origen_branch_name ?? 'La otra sala'}
+                                {' → '}{hallado.envio_bolsa.branch_name ?? 'esta sala'}
+                            </p>
+                            <Notice variant="success">Esta bolsa ya se contestó.</Notice>
+                            <ul className="flex flex-col gap-1">
+                                {(hallado.envio_bolsa.lineas ?? []).map(l => (
+                                    <li key={l.posicion} className="flex justify-between gap-3 text-body-sm">
+                                        <span className="text-content-2">{l?.descripcion ?? 'Sin nombre'}</span>
+                                        <span className="font-bold text-content-1">{l?.cantidad}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {puedeTarde && (
+                                <DeclararFaltantes
+                                    items={renglonesDeLaBolsa}
+                                    valor={tarde}
+                                    onCambio={setTarde}
+                                    deshabilitado={ocupado}
+                                    origen={hallado.envio_bolsa.origen_branch_name}
+                                />
+                            )}
+                        </div>
                     )}
                     {hallado?.es_un_envio && !hallado.envio_bolsa && (
                         <Notice variant="danger">
@@ -239,9 +342,23 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                             )}
                             {!hallado.ya_recibido && (
                                 <DeclararFaltantes
-                                    items={hallado.items ?? []}
+                                    items={renglonesDeLaBolsa}
                                     valor={faltaron}
                                     onCambio={setFaltaron}
+                                    deshabilitado={ocupado}
+                                    origen={hallado.origen}
+                                />
+                            )}
+                            {/* Ya recibida, pero todavía en plazo: el caso real
+                                es contar después de apretar «ya llegó». Sin
+                                esto, quien lo descubre diez minutos más tarde no
+                                tiene dónde decirlo y el hueco vuelve a ser
+                                invisible. */}
+                            {hallado.ya_recibido && puedeTarde && (
+                                <DeclararFaltantes
+                                    items={renglonesDeLaBolsa}
+                                    valor={tarde}
+                                    onCambio={setTarde}
                                     deshabilitado={ocupado}
                                     origen={hallado.origen}
                                 />

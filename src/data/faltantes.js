@@ -32,6 +32,36 @@ export async function fetchFaltantes() {
 }
 
 /**
+ * Declararlo DESPUÉS de haber recibido la bolsa, dentro del plazo.
+ *
+ * El camino normal es al recibir: ahí se cuenta la caja. Pero el caso real es
+ * el otro —se aprieta «ya llegó» y se cuenta diez minutos después— y sin esta
+ * puerta el hueco volvía a ser invisible, que es justo lo que el circuito vino
+ * a cerrar.
+ *
+ * **Con plazo (48 h), y lo decide la base.** Un faltante se declara para que
+ * alguien vaya a BUSCAR la caja: la sala de origen mira su mostrador, quien
+ * hizo el recorrido revisa lo que lleva. Pasados unos días eso ya no se puede
+ * hacer y lo que queda es un reclamo sin caja. La pantalla no repite el número:
+ * si se pasó, el servidor contesta `FUERA_DE_PLAZO` con cuánto hace.
+ *
+ * Quién firma sale de `auth_employee_id()` adentro de la función, nunca de un
+ * parámetro — igual que el resto de las escrituras del portal.
+ */
+export async function declararFaltanteTardio(requestId, faltantes) {
+    const { data, error } = await supabase.rpc('declarar_faltante_tardio', {
+        p_request_id: requestId,
+        p_faltantes: faltantes,
+    });
+    if (error) return { ok: false, error: error.message };
+    if (data?.ok === false) return { ok: false, error: data.error, codigo: data.codigo };
+    return { ok: true, declarados: data?.declarados ?? 0 };
+}
+
+/** Cuántas horas hay para declararlo después. Espejo de `declarar_faltante_tardio`. */
+export const HORAS_PARA_DECLARAR_TARDE = 48;
+
+/**
  * Los dos finales de un faltante, y no hay un tercero.
  *
  * `aparecio` es la bolsa que estaba en el mostrador de al lado. `no_aparecio`

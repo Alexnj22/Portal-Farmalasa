@@ -21,6 +21,133 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.850.0 — El documento se prepara solo, y con los tamaños que se escanean
+
+Pedido del usuario: *«normalmente se escanea: tamaño carta, y tamaño de cédula
+(carné) —estos pueden ser vertical u horizontal—, tamaño oficio… el portal
+debería ser capaz de, al subir la foto, automáticamente detectar las esquinas,
+cuadrar y mejorar perspectiva, aplicar filtro»*.
+
+**Ahora al elegir la foto no se abre ningún diálogo.** El portal detecta las
+cuatro esquinas, endereza la perspectiva, ajusta el papel a su tamaño real,
+aplica el acabado y deja el documento adjunto. La fila lo dice —«Recortado y
+enderezado · tamaño carta de pie»— y **«Ajustar» reabre el editor** sobre la
+foto original, con las esquinas ya puestas donde se detectaron.
+
+Antes esas cuatro cosas existían, pero como un **trabajo**: abrir el editor,
+esperar la propuesta, confirmar. Quien adjunta seis documentos de un expediente
+decía que sí seis veces, y un paso que siempre se confirma sin mirar no protege
+nada.
+
+### Los tres tamaños, usados como corrección
+
+Saber que casi todo lo que entra es **carta**, **oficio** o **cédula** —de pie o
+acostado— no es un dato de catálogo: es información con la que el portal se
+corrige. Marcar cuatro esquinas siempre queda con un par de milímetros de error,
+así que la proporción medida sale «casi carta». Ahora la que está a un 3 % de
+carta **es** carta, y el documento queda con la forma del papel real en vez de
+la del pulso de quien lo marcó.
+
+Medido sobre una hoja fotografiada en trapecio: el papel salió en 780×1000 px y
+se ajustó a **773×1000**, que es exactamente la proporción de una carta (0.7730
+contra 0.7727).
+
+**Lo que el portal NO hace es nombrar cuando hay duda.** Un oficio de pie y una
+cédula parada se llevan un 3.6 %, y con una foto no hay forma de saber el tamaño
+físico. La proporción se ajusta igual —el error es de milímetros— pero el nombre
+sólo aparece cuando el segundo candidato está lejos: «Cédula» escrito sobre un
+oficio se lee como que el portal entendió el documento, y a partir de ahí nadie
+lo revisa.
+
+### Cuando no se reconoce, no se inventa
+
+Si la lectura no encuentra las cuatro esquinas, **se abre el editor como antes**.
+Recortar por donde no va y adjuntarlo sin decir nada sería peor que pedir treinta
+segundos de trabajo. Lo mismo si la foto no se parece a ninguno de los tres
+papeles: se respeta la medida y no se fuerza a carta.
+
+### Una sola tubería
+
+El camino automático y el editor comparten el mismo código
+(`utils/componerDocumento.js`). Si cada uno tuviera el suyo, el archivo que el
+portal prepara solo y el que sale de tocar «Ajustar» y confirmar sin cambiar
+nada saldrían distintos, y nadie lo notaría hasta comparar dos archivos del
+mismo papel.
+
+### Sobre «reconocer lo que dice»
+
+Ya ocurre en el expediente y no cambió: al subir un documento se leen la fecha
+de vencimiento, la fecha de expedición y el número de la junta, y se escriben
+sólo en los campos vacíos; el DUI llena la ficha completa; el acuse del
+Ministerio detecta a quiénes nombra. Lo que sí mejora es la materia prima — esa
+lectura ahora corre sobre un documento **recortado, enderezado y realzado** en
+vez de una foto de teléfono con medio escritorio alrededor.
+
+## v2.849.4 — El faltante vuelve a avisar, y se puede decir después
+
+Las dos mitades que le faltaban al circuito de v2.849.0, las dos elegidas por el
+usuario al preguntar si quedaba todo terminado.
+
+### Un faltante abierto vuelve a sonar
+
+Se declaraba, salía el aviso, y si nadie lo miraba se quedaba abierto para
+siempre. La regla ya estaba escrita en el repo —*una alarma que espera a que
+alguien mire no cierra el circuito*— y el modelo hecho.
+
+`avisar_faltantes_sin_resolver` corre a las **15:10 UTC**, diez minutos después
+del aviso de envíos sin decidir y no a la misma hora: son dos avisos del mismo
+módulo, y llegar juntos los vuelve un solo bloque que se descarta entero.
+
+**Dos escalones, no uno por corrida**: al pasar 1 día y otra vez al pasar 3. El
+número ya avisado se guarda en la fila (`recordado_dias`), que es lo que evita
+repetirlo cada mañana — una alarma que suena en cada corrida es ruido que se
+aprende a ignorar, y una que suena una sola vez se pierde entre lo del día.
+
+Es un cron de **SQL puro**: cero peticiones al sistema de origen.
+
+### Y se puede declarar después de recibir, con 48 horas
+
+Se declaraba sólo al recibir, y el caso real es el otro: se aprieta «ya llegó» y
+se cuenta diez minutos después. Sin esa puerta, quien contaba después no tenía
+dónde decirlo y el hueco volvía a ser invisible — justo lo que el circuito vino
+a cerrar.
+
+**Con plazo, y el plazo tiene motivo.** Un faltante se declara para que alguien
+vaya a BUSCAR la caja: la sala de origen mira su mostrador, quien hizo el
+recorrido revisa lo que lleva. Pasados unos días eso ya no se puede hacer y lo
+que queda es un reclamo sin caja — un número que nadie puede confirmar ni
+desmentir, apuntado contra una sala. 48 horas cubre el turno siguiente y el día
+después. Lo que se descubra más tarde tiene su lugar y no es éste: el conteo.
+
+Vive en el **escaneo**, que es donde el papel está en la mano. Escanear una
+bolsa ya recibida deja de ser un callejón: dice en qué terminó y, si queda
+plazo, ofrece anotar lo que faltó. De paso se cerró un callejón real — escanear
+la bolsa de un envío ya contestado pintaba la tarjeta de decidir **vacía y con
+el botón apagado**.
+
+### Un error que la migración no podía delatar
+
+El techo del faltante —no se puede declarar más de lo que viajó— bajó a la base
+para que los dos caminos lo tengan. La primera versión lo leía con un `HAVING`
+sin `GROUP BY` sobre una columna no agregada:
+
+```sql
+SELECT d->>'cantidad' INTO v_techo … HAVING count(*) = 1;
+```
+
+Postgres eso lo rechaza —*column "x.value" must appear in the GROUP BY clause*—
+pero **el cuerpo de una función `plpgsql` no se planifica al crearla**, así que
+la migración entró en verde y el error habría salido recién con alguien
+declarando un faltante de solicitud, con la caja en la mano. Se cazó probando la
+expresión suelta contra la base antes de darla por buena: la forma vieja falla,
+la nueva devuelve el número con un solo renglón del producto y `NULL` cuando se
+repite. Corregido en la migración siguiente (`20260829155319`).
+
+Y la lista de destinatarios del aviso se escribió **una sola vez**
+(`destinatarios_de_faltante`): estaba adentro del aviso original y el
+recordatorio habría sido la segunda copia — dos listas que se separan es cómo un
+aviso le llega a alguien y su recordatorio a otro.
+
 ## v2.849.3 — Corrección: el código de barra no tumbaba la tanda, MySQL lo recortaba
 
 **Corrige lo que dijo v2.841.0 y v2.845.1.** Ahí se afirmó que los 21 códigos de

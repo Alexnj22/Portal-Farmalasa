@@ -14,7 +14,7 @@
 //    le pide a alguien un trámite que no puede hacer.
 
 import { describe, it, expect } from 'vitest';
-import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
+import { definicionDelDocumento, BASICO_DEL_REGLAMENTO, paginaDelCarne, INDUCCION, orientacionPrevisional, nombreDelArchivo } from '../../src/utils/documentoDeBienvenida';
 
 const textoDe = (def) => JSON.stringify(def.content);
 
@@ -158,5 +158,55 @@ describe('las dos páginas', () => {
         const t = textoDe(con());
         expect(t).toMatch(/no caduca/);
         expect(t).toMatch(/puede marcar por ti/);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El carné DE PIE, con marcas de corte, y la inducción debajo
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El usuario eligió la variante F de los seis bocetos: tarjeta de pie, blanca,
+// con el canto verde y el ícono de la farmacia. Y pidió dos cosas más — marcas
+// de corte, y partir la segunda hoja para meter «una pequeña inducción del
+// portal» en la mitad de abajo.
+
+describe('el carné de pie y la inducción', () => {
+    const hoja2 = () => JSON.stringify(paginaDelCarne({
+        nombre: 'Carlos Antonio Renderos Mejía', cargo: 'Dependiente de Farmacia',
+        sala: 'Salud 3', fechaDeInicio: '2026-09-01',
+        barrasPng: 'data:image/png;base64,AAAA', retratoPng: 'data:image/png;base64,BBBB',
+        iconoPng: 'data:image/png;base64,CCCC',
+    }));
+
+    /* La tarjeta va de pie y no acostada, y la diferencia no es de gusto: con la
+     * tarjeta parada el retrato entra a casi el doble de tamaño, que es lo que
+     * hace reconocible a alguien desde el otro lado del mostrador. */
+    it('la tarjeta es ID-1 DE PIE, no acostada', () => {
+        const t = hoja2();
+        // 53.98 × 85.6 mm en puntos: 153 de ancho, 242.6 de alto.
+        expect(t).toMatch(/"w":153/);
+        expect(t).toMatch(/"h":242\.6/);
+    });
+
+    /* Sin marcas hay que adivinar dónde termina la tarjeta —el borde impreso es
+     * del mismo color que el papel de alrededor— y una recortada torcida no
+     * entra en la funda. */
+    it('lleva marcas de corte en las cuatro esquinas', () => {
+        const lineas = (hoja2().match(/"type":"line"/g) || []).length;
+        expect(lineas).toBeGreaterThanOrEqual(8);   // dos por esquina
+    });
+
+    it('la mitad de abajo es la inducción al portal', () => {
+        const t = hoja2();
+        expect(t).toMatch(/El portal, en cinco minutos/);
+        expect(t).toMatch(/portal\.farmasalud\.lat/);
+        expect(INDUCCION.length).toBeGreaterThanOrEqual(5);
+        for (const b of INDUCCION) expect(b.titulo && b.texto).toBeTruthy();
+    });
+
+    // Lo que ve cada quien depende de su cargo: prometer un menú completo haría
+    // que la primera ausencia se leyera como una falla del portal.
+    it('avisa que lo que se ve depende del cargo', () => {
+        expect(hoja2()).toMatch(/tu cargo todavía no lo tiene habilitado/);
     });
 });

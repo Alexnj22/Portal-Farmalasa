@@ -77,11 +77,60 @@ export const MARCA = {
     tenue:   '#F3E9F3',
 };
 
-/* ── El carné mide lo que mide una tarjeta ──────────────────────────────────
+/* ── El carné mide lo que mide una tarjeta, y va DE PIE ─────────────────────
+ *
  * ID-1: 85.6 × 53.98 mm. En puntos de PDF (1 pt = 1/72 in) son 242.6 × 153.
- * No es una proporción elegida: es para que salga de la impresora del tamaño
- * de la funda donde va a ir. */
-const CARNE = { ancho: 242.6, alto: 153 };
+ * No es una proporción elegida: es para que salga de la impresora del tamaño de
+ * la funda donde va a ir.
+ *
+ * De pie y no acostado —lo eligió el usuario sobre los seis bocetos— y el
+ * motivo se ve al mirarlos: con la tarjeta parada el retrato entra a casi el
+ * doble de tamaño, que es lo que hace reconocible a alguien desde el otro lado
+ * del mostrador. */
+const CARNE = { ancho: 153, alto: 242.6 };
+
+/**
+ * El ícono de la farmacia: el arco verde y la cruz morada.
+ *
+ * Se DIBUJA en un lienzo en vez de incrustar el archivo del logo, y no es un
+ * capricho: `public/Logo.png` pesa 3096 × 3186 px, o sea que meterlo en un PDF
+ * que se genera en el navegador de una sala costaría más que todo el resto del
+ * documento junto. Acá sale a 240 px, que es de sobra para 20 pt impresos.
+ *
+ * Las dos figuras salen del logo, no de una interpretación: el arco abierto
+ * arriba a la derecha y la cruz griega centrada.
+ */
+export async function iconoDeLaFarmaciaPng(lado = 240) {
+    if (typeof document === 'undefined') return null;
+    try {
+        const c = document.createElement('canvas');
+        c.width = lado; c.height = lado;
+        const x = c.getContext('2d');
+        const r = lado * 0.38;
+        const grosor = lado * 0.14;
+
+        /* El arco: casi una vuelta entera, con la abertura arriba a la derecha,
+         * que es donde la tiene el logo. Los ángulos van en el sentido del
+         * reloj desde la abertura. */
+        x.strokeStyle = MARCA.verde;
+        x.lineWidth = grosor;
+        x.lineCap = 'butt';
+        x.beginPath();
+        x.arc(lado / 2, lado / 2, r, -Math.PI * 0.22, Math.PI * 1.16);
+        x.stroke();
+
+        // La cruz griega, centrada: dos barras del mismo largo. Ocupa la mitad
+        // del ícono — más chica se lee como un punto y se pierde el símbolo.
+        const brazo = lado * 0.50;       // largo total de cada barra
+        const ancho = lado * 0.185;      // grosor de cada barra
+        x.fillStyle = MARCA.magenta;
+        x.fillRect(lado / 2 - brazo / 2, lado / 2 - ancho / 2, brazo, ancho);
+        x.fillRect(lado / 2 - ancho / 2, lado / 2 - brazo / 2, ancho, brazo);
+        return c.toDataURL('image/png');
+    } catch {
+        return null;
+    }
+}
 
 /**
  * El avatar cuando todavía no hay foto: las iniciales sobre el magenta.
@@ -90,20 +139,21 @@ const CARNE = { ancho: 242.6, alto: 153 };
  * sobre el color de la empresa se leen como una decisión — y el día que llegue
  * la foto, ocupa exactamente el mismo lugar.
  */
-export async function avatarComoPng(nombre, lado = 220) {
+export async function avatarComoPng(nombre, lado = 260, alto = null) {
     if (typeof document === 'undefined') return null;
     try {
+        const H = alto || lado;
         const c = document.createElement('canvas');
-        c.width = lado; c.height = lado;
+        c.width = lado; c.height = H;
         const x = c.getContext('2d');
         x.fillStyle = MARCA.magenta;
-        x.fillRect(0, 0, lado, lado);
+        x.fillRect(0, 0, lado, H);
         // El arco del logo, insinuado: la misma curva verde, abajo a la
         // derecha, para que el hueco pertenezca a la marca y no sea un cuadro
         // de color cualquiera.
         x.fillStyle = MARCA.verde;
         x.beginPath();
-        x.arc(lado * 0.92, lado * 1.02, lado * 0.42, 0, Math.PI * 2);
+        x.arc(lado * 0.92, H * 1.02, lado * 0.42, 0, Math.PI * 2);
         x.fill();
         /* La primera y la ÚLTIMA palabra: «Carlos Antonio Renderos Mejía» da
          * CM y no CA. Con las dos primeras salían dos nombres de pila, que es
@@ -117,7 +167,7 @@ export async function avatarComoPng(nombre, lado = 220) {
             x.font = `bold ${Math.round(lado * 0.38)}px Helvetica, Arial, sans-serif`;
             x.textAlign = 'center';
             x.textBaseline = 'middle';
-            x.fillText(iniciales, lado / 2, lado * 0.52);
+            x.fillText(iniciales, lado / 2, H * 0.52);
         }
         return c.toDataURL('image/png');
     } catch {
@@ -133,7 +183,7 @@ export async function avatarComoPng(nombre, lado = 220) {
  * lados. Se recorta del centro, que es donde está la cara en toda foto de
  * carné.
  */
-export async function fotoCuadradaComoPng(src, lado = 220) {
+export async function fotoCuadradaComoPng(src, lado = 220, alto = null) {
     if (!src || typeof document === 'undefined') return null;
     try {
         const img = await new Promise((res, rej) => {
@@ -143,13 +193,19 @@ export async function fotoCuadradaComoPng(src, lado = 220) {
             el.crossOrigin = 'anonymous';
             el.src = src;
         });
+        const H = alto || lado;
         const c = document.createElement('canvas');
-        c.width = lado; c.height = lado;
+        c.width = lado; c.height = H;
         const x = c.getContext('2d');
-        const corto = Math.min(img.naturalWidth, img.naturalHeight);
+        /* Se recorta la mayor porción que quepa con la proporción del hueco, y
+         * desde el CENTRO. Con la tarjeta de pie el hueco ya no es cuadrado
+         * (26 × 32 mm), así que un recorte cuadrado dejaría franjas arriba y
+         * abajo — que es exactamente lo que se venía a evitar. */
+        const escala = Math.min(img.naturalWidth / lado, img.naturalHeight / H);
+        const rw = lado * escala, rh = H * escala;
         x.drawImage(img,
-            (img.naturalWidth - corto) / 2, (img.naturalHeight - corto) / 2, corto, corto,
-            0, 0, lado, lado);
+            (img.naturalWidth - rw) / 2, (img.naturalHeight - rh) / 2, rw, rh,
+            0, 0, lado, H);
         return c.toDataURL('image/jpeg', 0.9);
     } catch {
         // Una foto que no se pudo leer no puede tumbar el carné: sale con el
@@ -191,7 +247,7 @@ const soloFecha = (v) => {
     const soloDia = /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
     const d = soloDia ? new Date(`${v}T12:00:00`) : new Date(v);
     if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
+    return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 /**
@@ -305,33 +361,52 @@ export const BASICO_DEL_REGLAMENTO = [
  * la impresora del tamaño de la funda.
  */
 export function paginaDelCarne({
-    nombre, cargo = '', sala = '', fechaDeInicio = null, barrasPng = null, retratoPng = null,
+    nombre, cargo = '', sala = '', fechaDeInicio = null,
+    barrasPng = null, retratoPng = null, iconoPng = null,
 }) {
-    // La tarjeta se dibuja en coordenadas absolutas sobre la hoja: es la única
-    // forma de que mida exactamente lo que tiene que medir. Centrada al ancho
-    // de una carta (612 pt) y arriba, donde la impresora es más fiel.
+    /* La tarjeta se dibuja en coordenadas absolutas sobre la hoja: es la única
+     * forma de que mida exactamente lo que tiene que medir. Centrada al ancho de
+     * una carta (612 pt) y en la MITAD DE ARRIBA — la de abajo lleva la
+     * inducción al portal, que es la otra cosa que hace falta el primer día. */
     const x0 = Math.round((612 - CARNE.ancho) / 2);
-    const y0 = 150;
-    const P = 12;                       // el margen interno de la tarjeta
-    const bandaAlto = 30;
-    const fotoLado = 66;
+    const y0 = 112;
+    const P = 10;                     // el margen interno de la tarjeta
+    const canto = 6.2;                // el canto verde: 2.2 mm
+    const fotoW = 74, fotoH = 91;     // 26 × 32 mm
 
     const abs = (x, y) => ({ absolutePosition: { x: x0 + x, y: y0 + y } });
+    const centrado = (y, texto, style) => ({
+        ...abs(canto, y),
+        columns: [{ width: CARNE.ancho - canto, alignment: 'center', text: texto, style }],
+    });
+
+    /* ── Las marcas de corte ────────────────────────────────────────────────
+     * Pedido del usuario. No es decoración de imprenta: sin ellas hay que
+     * adivinar dónde termina la tarjeta —el borde impreso es del mismo color
+     * que el papel de alrededor— y una tarjeta recortada torcida no entra en la
+     * funda. Van SEPARADAS de la tarjeta y hacia afuera, para que la tijera
+     * pase por donde se cruzan y ninguna quede dentro del carné terminado. */
+    const SEP = 5, LARGO = 14;
+    const A = CARNE.ancho, B = CARNE.alto;
+    const marcas = [];
+    for (const [ex, ey] of [[0, 0], [A, 0], [0, B], [A, B]]) {
+        const hx = ex === 0 ? -SEP - LARGO : SEP;
+        const vy = ey === 0 ? -SEP - LARGO : SEP;
+        marcas.push({ type: 'line', x1: ex + hx, y1: ey, x2: ex + hx + LARGO, y2: ey });
+        marcas.push({ type: 'line', x1: ex, y1: ey + vy, x2: ex, y2: ey + vy + LARGO });
+    }
 
     return [
         { text: '', pageBreak: 'before' },
-        /* El encabezado va en un `columns` con ancho, por lo mismo que el
-         * nombre de adentro: un `width` sobre un texto absoluto no se respeta y
-         * la línea se estiraba hasta el margen de la hoja, empezando en un sitio
-         * y terminando en otro. */
+
         {
-            ...abs(0, -52),
+            ...abs(0, -58),
             columns: [{
-                width: CARNE.ancho,
+                width: CARNE.ancho + 120,
                 stack: [
                     { text: 'Tu carné', style: 'seccion', margin: [0, 0, 0, 2] },
-                    { text: 'Recórtalo por la línea y guárdalo en una funda. Con él marcas tu entrada '
-                          + 'y tu salida y entras al portal.', style: 'nota' },
+                    { text: 'Recórtalo por las marcas y guárdalo en una funda. Con él marcas tu '
+                          + 'entrada y tu salida, y entras al portal.', style: 'nota' },
                 ],
             }],
         },
@@ -340,83 +415,132 @@ export function paginaDelCarne({
         {
             ...abs(0, 0),
             canvas: [
-                // La línea de corte, por fuera: se recorta POR ELLA, así que no
-                // puede quedar dentro del carné terminado.
-                { type: 'rect', x: -6, y: -6, w: CARNE.ancho + 12, h: CARNE.alto + 12,
-                  lineWidth: 0.5, lineColor: '#C9C9C9', dash: { length: 3 } },
-                // El cartón, blanco con borde tenue.
-                { type: 'rect', x: 0, y: 0, w: CARNE.ancho, h: CARNE.alto, r: 8,
-                  color: '#FFFFFF', lineWidth: 0.6, lineColor: '#D9D9D9' },
-                // La banda superior, en el magenta del logo.
-                { type: 'rect', x: 0, y: 0, w: CARNE.ancho, h: bandaAlto, r: 8, color: MARCA.magenta },
-                // El cuadrado tapa el radio inferior de la banda: pdfmake no
-                // sabe redondear sólo dos esquinas.
-                { type: 'rect', x: 0, y: bandaAlto - 8, w: CARNE.ancho, h: 8, color: MARCA.magenta },
-                // El filo verde: el arco del logo, dicho en una línea.
-                { type: 'rect', x: 0, y: bandaAlto, w: CARNE.ancho, h: 2.5, color: MARCA.verde },
+                { type: 'rect', x: 0, y: 0, w: CARNE.ancho, h: CARNE.alto, r: 9,
+                  color: '#FFFFFF', lineWidth: 0.6, lineColor: '#DDDDDD' },
+                // El canto verde. El rectángulo de la derecha le tapa el radio
+                // de ese lado: pdfmake no sabe redondear sólo dos esquinas.
+                { type: 'rect', x: 0, y: 0, w: canto, h: CARNE.alto, r: 9, color: MARCA.verde },
+                { type: 'rect', x: canto - 9, y: 0, w: 9, h: CARNE.alto, color: MARCA.verde },
+                ...marcas.map(m => ({ ...m, lineWidth: 0.6, lineColor: '#9A9A9A' })),
             ],
         },
-        { text: EMPRESA.razonSocial.toUpperCase(), style: 'carneEmpresa', ...abs(P, 10) },
 
-        // ── El retrato ─────────────────────────────────────────────────────
-        ...(retratoPng ? [{
-            image: retratoPng, width: fotoLado, height: fotoLado,
-            ...abs(P, bandaAlto + 12),
-        }] : []),
+        // ── El ícono de la farmacia y el nombre de la empresa ──────────────
+        ...(iconoPng ? [{ image: iconoPng, width: 20, height: 20, ...abs(canto + P, P + 1) }] : []),
         {
-            ...abs(P, bandaAlto + 12),
-            canvas: [{ type: 'rect', x: 0, y: 0, w: fotoLado, h: fotoLado, r: 4,
-                       lineWidth: 0.8, lineColor: MARCA.magenta }],
-        },
-
-        /* ── Quién es ───────────────────────────────────────────────────────
-         * En un `columns` con ancho FIJO y no como textos sueltos: un `width`
-         * sobre un texto con `absolutePosition` pdfmake lo ignora, y el nombre
-         * se salía del cartón por la derecha. Medido: «Carlos Antonio Renderos
-         * Mejía» cruzaba el borde. */
-        {
-            ...abs(P * 2 + fotoLado, bandaAlto + 11),
+            ...abs(canto + P + (iconoPng ? 26 : 0), P + 1),
             columns: [{
-                width: CARNE.ancho - fotoLado - P * 3,
+                width: CARNE.ancho - canto - P * 2 - (iconoPng ? 26 : 0),
                 stack: [
-                    { text: nombre || '', style: 'carneNombre' },
-                    { text: cargo || '', style: 'carneCargo', margin: [0, 3, 0, 0] },
-                    { text: sala ? `Sala · ${sala}` : '', style: 'carneDato', margin: [0, 4, 0, 0] },
-                    { text: fechaDeInicio ? `Desde ${soloFecha(fechaDeInicio) || fechaDeInicio}` : '',
-                      style: 'carneDato', margin: [0, 1, 0, 0] },
+                    { text: 'Farmacias', style: 'carneEmpresa' },
+                    { text: 'La Popular y La Salud', style: 'carneEmpresa' },
                 ],
             }],
         },
+
+        // ── El retrato ─────────────────────────────────────────────────────
+        ...(retratoPng ? [{
+            image: retratoPng, width: fotoW, height: fotoH,
+            ...abs(canto + (CARNE.ancho - canto - fotoW) / 2, 40),
+        }] : []),
+        {
+            ...abs(canto + (CARNE.ancho - canto - fotoW) / 2, 40),
+            canvas: [{ type: 'rect', x: 0, y: 0, w: fotoW, h: fotoH, r: 4,
+                       lineWidth: 0.8, lineColor: '#DDDDDD' }],
+        },
+
+        // ── Quién es ───────────────────────────────────────────────────────
+        centrado(140, nombre || '', 'carneNombre'),
+        centrado(168, cargo || '', 'carneCargo'),
+        centrado(182, sala ? `Sala · ${sala}` : '', 'carneDato'),
+        centrado(193, fechaDeInicio ? `Desde ${soloFecha(fechaDeInicio) || fechaDeInicio}` : '',
+            'carneDato'),
 
         // ── El código, que es lo que lee la máquina ────────────────────────
         // Sin el número en texto: es la credencial que abre el portal y marca
         // asistencia, y en claro basta una foto desde el otro lado del
         // mostrador. Instrucción del usuario sobre el carné de papel.
         ...(barrasPng ? [{
-            image: barrasPng, width: CARNE.ancho - P * 2, height: 26,
-            ...abs(P, CARNE.alto - 38),
+            image: barrasPng, width: CARNE.ancho - canto - P * 2, height: 20,
+            ...abs(canto + P, CARNE.alto - 30),
         }] : []),
 
         /* ── Lo que vale este pedazo de papel, DICHO ─────────────────────────
-         * Vivía en la página 1, con el carné. Al mudarlo acá casi se pierde, y
-         * es lo que no puede faltar: el código no caduca y es el mismo del
-         * plástico, así que quien le tome una foto puede marcar y entrar por
-         * esta persona. Un carné que no se explica se deja sobre un mostrador. */
+         * El código no caduca y es el mismo del plástico, así que quien le tome
+         * una foto puede marcar y entrar por esta persona. Un carné que no se
+         * explica se deja sobre un mostrador. */
         {
-            ...abs(0, CARNE.alto + 22),
+            ...abs(-30, CARNE.alto + 20),
             columns: [{
                 width: CARNE.ancho + 60,
                 stack: [
-                    { text: 'Es el mismo código que va a llevar tu carné de plástico y no caduca: '
-                          + 'sigue sirviendo cuando te entreguen la tarjeta.', style: 'nota' },
-                    { text: 'Cuídalo como cuidarías el carné: cualquiera que le tome una foto puede '
+                    { text: 'Es el mismo código que va a llevar tu carné de plástico y no caduca. '
+                          + 'Cuídalo como cuidarías el carné: cualquiera que le tome una foto puede '
                           + 'marcar por ti y entrar al portal como tú. Si lo pierdes, avísale a '
-                          + 'Talento Humano y se cambia el código.', style: 'nota', margin: [0, 4, 0, 0] },
+                          + 'Talento Humano y se cambia el código.', style: 'nota', alignment: 'center' },
                 ],
             }],
         },
+
+        /* ── La mitad de abajo: la inducción al portal ───────────────────────
+         *
+         * Pedido del usuario: dividir la segunda hoja y usar la otra mitad para
+         * «una pequeña inducción del portal». Va acá y no en la primera página
+         * porque la primera se guarda o se destruye —tiene la contraseña— y esto
+         * es lo que conviene que quede a mano.
+         *
+         * En FLUJO y no en posición absoluta: son párrafos que crecen, y el
+         * margen de arriba es lo que los deja debajo de la tarjeta. */
+        {
+            margin: [0, 372, 0, 0],
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0,
+                       lineWidth: 0.5, lineColor: '#E5E7EB' }],
+        },
+        { text: 'El portal, en cinco minutos', style: 'seccion', margin: [0, 14, 0, 2] },
+        {
+            text: `Entra desde el teléfono o la computadora en ${DIRECCION_DEL_PORTAL}. `
+                + 'Es la misma dirección en los dos, y en el teléfono se puede dejar '
+                + 'instalada como una aplicación más.',
+            style: 'texto', margin: [0, 0, 0, 8],
+        },
+        {
+            columnGap: 18,
+            columns: [
+                { width: '*', stack: INDUCCION.slice(0, 3).map(bloqueDeInduccion) },
+                { width: '*', stack: INDUCCION.slice(3).map(bloqueDeInduccion) },
+            ],
+        },
+        {
+            text: 'Si algo no te aparece, es porque tu cargo todavía no lo tiene habilitado — '
+                + 'pídeselo a Talento Humano.',
+            style: 'nota', margin: [0, 8, 0, 0],
+        },
     ];
 }
+
+/* ── Qué encuentra en el portal quien entra por primera vez ─────────────────
+ *
+ * Cinco cosas, y son las que un dependiente usa de verdad: no es un índice del
+ * menú. Lo que ve cada quien depende de su cargo, y por eso la nota del final
+ * dice que faltar algo no es una falla.
+ */
+export const INDUCCION = [
+    { titulo: 'Marcar entrada y salida',
+      texto: 'Con tu carné, en el kiosco de tu sala. Es lo que prueba tus horas.' },
+    { titulo: 'Mis avisos',
+      texto: 'Lo que la empresa comunica a tu sala y a ti. Revísalo al entrar.' },
+    { titulo: 'Mi perfil',
+      texto: 'Tus datos y tu foto. Si cambias de teléfono o de dirección, avisa para actualizarlo.' },
+    { titulo: 'Mis documentos',
+      texto: 'Los papeles de tu expediente, para consultarlos cuando los necesites.' },
+    { titulo: 'Solicitudes personales',
+      texto: 'Vacaciones y permisos se piden desde aquí, y desde aquí ves en qué van.' },
+];
+
+const bloqueDeInduccion = (b) => ({
+    text: [{ text: `${b.titulo}. `, bold: true }, { text: b.texto }],
+    style: 'reglaBreve', margin: [0, 0, 0, 5],
+});
 
 /**
  * Arma el documento. Devuelve la definición de pdfmake, sin descargar nada.
@@ -426,7 +550,7 @@ export function paginaDelCarne({
  */
 export function definicionDelDocumento({
     nombre, cargo = '', sala = '', usuario, contrasenaTemporal,
-    barrasPng = null, barrasCarnePng = null, retratoPng = null, previsional = [],
+    barrasPng = null, barrasCarnePng = null, retratoPng = null, iconoPng = null, previsional = [],
     fechaDeInicio = null,
 }) {
     const gris = '#6B7280';
@@ -510,7 +634,7 @@ export function definicionDelDocumento({
     });
 
     cuerpo.push(...paginaDelCarne({ nombre, cargo, sala, fechaDeInicio,
-        barrasPng: barrasCarnePng || barrasPng, retratoPng }));
+        barrasPng: barrasCarnePng || barrasPng, retratoPng, iconoPng }));
 
     return {
         pageSize: 'LETTER',
@@ -531,7 +655,10 @@ export function definicionDelDocumento({
             // El carné. Tamaños chicos y medidos: en 242 pt de ancho, un
             // nombre largo con 12 pt se parte en tres renglones.
             reglaBreve: { fontSize: 8.5, lineHeight: 1.25 },
-            carneEmpresa: { fontSize: 7.5, bold: true, color: '#FFFFFF', characterSpacing: 1.1 },
+            /* Morado y no blanco: heredaba el color de cuando vivía sobre una
+             * banda de color, y en la tarjeta blanca de la variante F quedaba
+             * invisible — el nombre de la empresa sencillamente no salía. */
+            carneEmpresa: { fontSize: 6.6, bold: true, color: MARCA.magenta, characterSpacing: .9, lineHeight: 1.15 },
             carneNombre:  { fontSize: 11.5, bold: true, color: MARCA.tinta, lineHeight: 1.05 },
             carneCargo:   { fontSize: 8.5, color: MARCA.magenta, bold: true },
             carneDato:    { fontSize: 7.5, color: MARCA.gris },
@@ -560,14 +687,16 @@ export async function descargarDocumentoDeBienvenida(datos) {
         /* El retrato: la foto si la hay, y si no las iniciales sobre el
          * magenta. Nunca un hueco — un carné con un cuadro vacío se lee como un
          * carné a medio hacer, y el día que llegue la foto ocupa el mismo sitio. */
-        const [pdfMake, barrasPng, foto] = await Promise.all([
+        const [pdfMake, barrasPng, foto, iconoPng] = await Promise.all([
             getPdfMake(),
             barrasComoPng(datos?.valorDelCarne),
-            fotoCuadradaComoPng(datos?.foto),
+            // 26 × 32 mm es el hueco del carné de pie: se le pide con esa forma.
+            fotoCuadradaComoPng(datos?.foto, 260, 320),
+            iconoDeLaFarmaciaPng(),
         ]);
-        const retratoPng = foto || await avatarComoPng(datos?.nombre);
+        const retratoPng = foto || await avatarComoPng(datos?.nombre, 260, 320);
         const def = definicionDelDocumento({
-            ...datos, barrasPng, retratoPng,
+            ...datos, barrasPng, retratoPng, iconoPng,
             previsional: orientacionPrevisional(datos),
         });
         pdfMake.createPdf(def).download(nombreDelArchivo(datos?.nombre));

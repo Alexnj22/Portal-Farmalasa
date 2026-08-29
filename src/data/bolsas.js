@@ -913,3 +913,19 @@ export async function fetchMovimientosDelPortal(sala) {
 export async function pedirCorreccion({ sala, movimiento, que, motivo, montoNuevo = null }) {
     return operar({ accion: 'corregir', sala, movimiento, que, motivo, monto_nuevo: montoNuevo });
 }
+
+/**
+ * Las salas que tienen caja, según lo que se ha visto abrirse.
+ *
+ * NO es la lista de sucursales: Administración y Bodega no tienen caja, y la
+ * ficha de quien supervisa vive justamente en Administración — con la lista
+ * completa, «Mi caja» le ofrecía una sala sin caja y le escondía las seis que sí
+ * la tienen. Sale de las aperturas capturadas, así que se mantiene sola: una
+ * sala nueva aparece la primera vez que abre.
+ */
+export async function fetchSalasConCaja() {
+    const { data, error } = await supabase
+        .from('cortes_caja_aperturas').select('branch_id');
+    if (error) { console.error('caja: salas con caja:', error.message); return []; }
+    return [...new Set((data || []).map((r) => r.branch_id))];
+}

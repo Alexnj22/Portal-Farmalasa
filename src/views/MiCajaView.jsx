@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
-    fetchMovimientosDelPortal, fetchSaldos, fetchValesPendientes, hacerCorte,
+    fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchValesPendientes, hacerCorte,
     leerBoleta, pedirCorreccion, subirComprobante,
 } from '../data/bolsas';
 
@@ -54,12 +54,15 @@ export default function MiCajaView() {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
     // los `useMemo` que dependen de él.
     const branches = useStaff((s) => s.branches) ?? VACIO;
-    const { user, hasPermission, getScope } = useAuth();
+    const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeOperar = hasPermission('caja_vales', 'can_edit');
-    const alcanceTodas = getScope('cortes_caja') === 'ALL';
 
-    const [sala, setSala] = useState(() => user?.branch_id ?? null);
+    // Arranca SIN sala y la elige quien mira. La ficha de quien supervisa vive
+    // en **Administración**, que no tiene caja: tomarla de ahí ofrecía la sala
+    // equivocada y escondía las seis que sí la tienen.
+    const [sala, setSala] = useState(null);
+    const [conCaja, setConCaja] = useState(VACIO);
     const [estado, setEstado] = useState(null);
     const [pendientes, setPendientes] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -69,6 +72,24 @@ export default function MiCajaView() {
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);
     const [corrigiendo, setCorrigiendo] = useState(null);
+
+    // Cuáles tienen caja, y cuál corresponde por omisión.
+    useEffect(() => {
+        let vivo = true;
+        fetchSalasConCaja().then((ids) => {
+            if (!vivo) return;
+            setConCaja(ids);
+            // La propia si tiene caja; si no, ninguna: que la elija. Elegir una
+            // por alguien sería decidir en qué sala opera.
+            setSala((actual) => actual ?? (ids.includes(user?.branch_id) ? user.branch_id : null));
+        });
+        return () => { vivo = false; };
+    }, [user?.branch_id]);
+
+    const salas = useMemo(
+        () => branches.filter((b) => conCaja.includes(b.id)),
+        [branches, conCaja],
+    );
 
     const nombreSala = useMemo(
         () => branches.find((b) => String(b.id) === String(sala))?.name || '',
@@ -109,12 +130,35 @@ export default function MiCajaView() {
         return r;
     };
 
+    /* El selector se arma acá y no dentro del cuerpo porque tiene que pintarse
+     * SIEMPRE, incluso sin sala elegida.
+     *
+     * Estaba debajo del vacío «sin sala», o sea que quien no tiene sala propia
+     * —justamente quien supervisa, cuya ficha está en Administración— veía el
+     * cartel y ninguna forma de elegir. Un vacío que esconde su propia salida es
+     * peor que un error: parece que la pantalla no es para vos. */
+    const selector = salas.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+            {salas.map((b) => (
+                <Button key={b.id} size="sm"
+                    variant={String(b.id) === String(sala) ? 'primary' : 'secondary'}
+                    onClick={() => setSala(b.id)}>
+                    {b.name}
+                </Button>
+            ))}
+        </div>
+    );
+
     if (!sala) {
         return (
             <GlassViewLayout icon={Wallet} title="Mi caja">
-                <div className="p-4 md:p-6">
-                    <EmptyState compact icon={Wallet} title="Sin sala"
-                        subtitle="Tu ficha no tiene una sala asignada, así que no hay caja que mostrar." />
+                <div className="p-4 md:p-6 space-y-6">
+                    {selector}
+                    <EmptyState compact icon={Wallet}
+                        title={salas.length ? 'Elige una sala' : 'Sin salas con caja'}
+                        subtitle={salas.length
+                            ? 'Tu ficha no está en una sala con caja, así que elige cuál quieres mirar.'
+                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
                 </div>
             </GlassViewLayout>
         );
@@ -124,17 +168,7 @@ export default function MiCajaView() {
         <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
             <div className="p-4 md:p-6 space-y-6">
 
-                {alcanceTodas && branches.length > 1 && (
-                    <div className="flex gap-2 flex-wrap">
-                        {branches.map((b) => (
-                            <Button key={b.id} size="sm"
-                                variant={String(b.id) === String(sala) ? 'primary' : 'secondary'}
-                                onClick={() => setSala(b.id)}>
-                                {b.name}
-                            </Button>
-                        ))}
-                    </div>
-                )}
+                {selector}
 
                 {cargando && <LoadingState label="Mirando la caja" />}
 

@@ -23,7 +23,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.858.1 — Mi caja deja elegir la sala
 
-_(pendiente de redactar)_
+«Mi caja» abría en **«Sin sala»** para quien supervisa, y sin ninguna forma de
+salir de ahí. Dos errores encadenados:
+
+1. La pantalla tomaba la sala de la ficha, y la ficha de quien supervisa está en
+   **Administración**, que no tiene caja. Ni siquiera es una sala equivocada: es
+   una que no puede tener nada que mostrar.
+2. El selector de sala estaba **debajo** del vacío, así que quien caía en ese
+   estado veía el cartel y ningún camino. Un vacío que esconde su propia salida
+   es peor que un error: parece que la pantalla no es para uno.
+
+Ahora arranca sin sala y la elige quien mira, con los botones arriba. La lista
+sale de **las salas que se han visto abrir caja** —no del catálogo de
+sucursales— así que Administración y Bodega no aparecen, y una sala nueva se
+suma sola la primera vez que abra.
 
 ## v2.858.0 — La ficha del cliente ya tiene fecha de nacimiento
 

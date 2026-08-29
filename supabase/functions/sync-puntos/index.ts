@@ -30,7 +30,17 @@
 //     una que entrara tarde quedaba debajo del número y no se mandaba nunca.
 //     Acá la bitácora es por factura.
 //   · Un código de barra en el campo del vendedor (21 de 358,263, hasta 17
-//     dígitos) no cabe en un `INT` y no falla una fila: falla la tanda entera.
+//     dígitos) no cabe en un `INT`.
+//     ⚠️ CORRECCIÓN del 2026-08-29. Este comentario decía que eso «falla la
+//     tanda entera» y que era candidato a por qué venía fallando la hoja. Se
+//     comprobó mirando las 21 filas del otro lado y es FALSO: MySQL no rechaza
+//     un entero que no cabe, lo RECORTA. Las 21 están allá con
+//     `cod_vendedor = 2147483647` —el tope del entero—, o sea acreditadas a un
+//     vendedor que no existe. El defecto es real y se lee peor: no falla nada,
+//     sólo le da los puntos a nadie.
+//     El filtro `^[0-9]{1,9}$` sigue haciendo falta acá igual, y por un motivo
+//     distinto: en Postgres el `::int` SÍ lanza, y ahí sí se cae la consulta
+//     entera. Dos bases, dos comportamientos, y el de MySQL es el silencioso.
 //
 // ── Por qué a la IP y no al dominio ─────────────────────────────────────────
 // `farmalasa.com:3306` da `timeout` (resuelve a un intermediario que no expone

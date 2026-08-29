@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.852.0 — La caja mueve el dinero: salidas del cajón, la bolsa, y corregir se pide
+
+Tres huecos que la versión anterior dejó abiertos, y el primero era el que
+importaba: **Mi caja tenía «anotar un ingreso» y no tenía la salida.**
+
+**La salida del CAJÓN.** No la de una bolsa —ésa vive en Bolsas, con su bolsa
+elegida y su vale consolidado— sino la otra: el gasto pagado con la plata del
+cajón, «compra de agua fría», «pago coca». Están en los movimientos reales de
+todas las salas y hasta hoy se tecleaban en la otra pantalla; desde el lunes no
+se va a poder. Entra y sale por el mismo camino porque es el mismo acto con el
+signo dado vuelta.
+
+**Sacar de una bolsa, también desde la caja.** Es el MISMO componente que ya
+usa Bolsas, no una copia: arrastra su catálogo de motivos, la lectura de la
+boleta, la identidad de quien retira y el reparto entre bolsas. Y **sigue
+estando en Bolsas** hasta que las salas tengan acceso a la caja.
+
+**La foto llena el monto y el número.** La misma lectura de la boleta que ya usa
+la salida de bolsa, ahora en los ingresos y salidas del cajón. Se dispara al
+elegir la foto: pedir además que alguien apriete un botón para que la lean es
+pedirle el trabajo dos veces.
+
+**Corregir es una SOLICITUD, no un botón.** Anular un movimiento o cambiarle el
+monto crea una solicitud con su motivo, y la resuelve quien aprueba — por la
+misma bandeja donde el portal ya resuelve las anulaciones de factura, con su
+enrutador, sus avisos y su bitácora. Una segunda cola sería un lugar más donde
+algo se queda esperando sin que nadie lo mire.
+
+Lo que se anota queda con **su respaldo del lado del portal** —la boleta, la
+foto, quién lo anotó— que es justo lo que la caja no guarda: allá el concepto
+son 50 caracteres y nada más. Y la fila del portal se escribe ANTES de mandar el
+movimiento: al revés, una caja que acepta y un portal que no llega a anotarlo
+deja un movimiento sin respaldo y sin forma de corregirlo.
+
+Sin borrador y con su motivo escrito en el gate: los seis campos están repartidos
+en cuatro diálogos que se abren y se cierran frente a la caja, y el efectivo
+contado **no debe restaurarse** — un conteo viejo devuelto media hora después es
+un número que nadie contó, justo donde todo el control es que ese número sea
+real.
+
 ## v2.851.0 — Mi caja: abrir, anotar, cortar a ciegas y cerrar el día
 
 Hasta hoy el portal **miraba** la caja; operarla se hacía en la otra pantalla.

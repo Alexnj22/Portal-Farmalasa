@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Scale, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
 import LiquidModal from '../components/common/LiquidModal';
 import Notice from '../components/common/Notice';
+import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
 import StatCard from '../components/common/StatCard';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
@@ -12,8 +13,18 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import {
-    abrirCaja, anotarIngreso, cerrarElDia, estadoDeCaja, fetchValesPendientes, hacerCorte,
+    abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, fetchBolsas,
+    fetchMovimientosDelPortal, fetchSaldos, fetchValesPendientes, hacerCorte,
+    leerBoleta, pedirCorreccion, subirComprobante,
 } from '../data/bolsas';
+
+/* Sacar dinero de una bolsa se mudó acá desde Bolsas (pedido del usuario,
+ * 29-ago): todo lo que mueve efectivo vive en la caja. Es el MISMO componente,
+ * no una copia — arrastra su catálogo de motivos, la lectura de la boleta, la
+ * identidad de quien retira y el reparto entre bolsas. Va diferido porque
+ * arrastra el editor de fotos, y la mayoría de las visitas a esta pantalla no
+ * sacan dinero de una bolsa. */
+const SalidaDeBolsa = lazy(() => import('../components/bolsas/SalidaDeBolsa'));
 import { formatMoney } from '../utils/formatNumber';
 import { mensajeAmigable } from '../utils/errorMessages';
 
@@ -55,6 +66,9 @@ export default function MiCajaView() {
     const [ocupado, setOcupado] = useState(false);
     const [dialogo, setDialogo] = useState(null);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
     const [resultado, setResultado] = useState(null);
+    const [bolsas, setBolsas] = useState(VACIO);
+    const [movimientos, setMovimientos] = useState(VACIO);
+    const [corrigiendo, setCorrigiendo] = useState(null);
 
     const nombreSala = useMemo(
         () => branches.find((b) => String(b.id) === String(sala))?.name || '',
@@ -64,9 +78,19 @@ export default function MiCajaView() {
     const cargar = useCallback(async () => {
         if (!sala) { setCargando(false); return; }
         setCargando(true);
-        const [e, v] = await Promise.all([estadoDeCaja(sala), fetchValesPendientes()]);
+        const [e, v, abiertas, movs] = await Promise.all([
+            estadoDeCaja(sala), fetchValesPendientes(),
+            fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'CONTADA'] }),
+            fetchMovimientosDelPortal(sala),
+        ]);
+        setMovimientos(movs);
         setEstado(e.error ? null : e);
         setPendientes((v.filas || []).filter((p) => String(p.branch_id) === String(sala)));
+        // Sólo las de esta sala y con su saldo: `SalidaDeBolsa` elige la más
+        // vieja que alcance sola, y sin el saldo no puede elegir.
+        const mias = (abiertas || []).filter((b) => String(b.branch_id) === String(sala));
+        const saldos = await fetchSaldos(mias.map((b) => b.id));
+        setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setCargando(false);
     }, [sala]);
 
@@ -157,6 +181,16 @@ export default function MiCajaView() {
                                         <Button variant="secondary" icon={ArrowDownLeft} onClick={() => setDialogo('ingreso')}>
                                             Anotar un ingreso
                                         </Button>
+                                        {/* La salida del CAJÓN, no la de una bolsa: ésa vive en
+                                            Bolsas, con su bolsa elegida y su vale consolidado. */}
+                                        <Button variant="secondary" icon={ArrowUpRight} onClick={() => setDialogo('salida')}>
+                                            Anotar una salida
+                                        </Button>
+                                        {bolsas.length > 0 && (
+                                            <Button variant="secondary" icon={Landmark} onClick={() => setDialogo('bolsa')}>
+                                                Sacar de una bolsa
+                                            </Button>
+                                        )}
                                         <Button variant="primary" icon={Scale} onClick={() => { setResultado(null); setDialogo('corte'); }}>
                                             Hacer el corte
                                         </Button>
@@ -165,6 +199,39 @@ export default function MiCajaView() {
                                         </Button>
                                     </>
                                 )}
+                            </div>
+                        )}
+
+                        {movimientos.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                    Anotado hoy desde el portal
+                                </h3>
+                                {movimientos.map((m) => (
+                                    <div key={m.id} data-surface="card"
+                                        className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                                        <div className="min-w-0">
+                                            <p className={`text-body-sm font-medium ${m.anulado_at ? 'text-content-3 line-through' : 'text-content'}`}>
+                                                {m.concepto}
+                                            </p>
+                                            <p className="text-caption text-content-3">
+                                                {m.tipo === 'ENTRADA' ? 'Entró' : 'Salió'}
+                                                {m.numero_boleta ? ` · boleta ${m.numero_boleta}` : ''}
+                                                {m.erp_movimiento_id ? '' : ' · sin llegar a la caja'}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`tabular-nums font-bold ${m.tipo === 'ENTRADA' ? 'text-success-text' : 'text-warning-text'}`}>
+                                                {m.tipo === 'SALIDA' ? '−' : ''}{formatMoney(m.monto)}
+                                            </span>
+                                            {puedeOperar && !m.anulado_at && (
+                                                <Button variant="ghost" size="sm" onClick={() => setCorrigiendo(m)}>
+                                                    Corregir
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
@@ -181,9 +248,13 @@ export default function MiCajaView() {
                 onClose={() => setDialogo(null)}
                 onAbrir={(monto) => correr(() => abrirCaja({ sala, montoApertura: monto }), 'La caja quedó abierta.')} />
 
-            <DialogoIngreso abierto={dialogo === 'ingreso'} ocupado={ocupado}
+            <DialogoMovimiento abierto={dialogo === 'ingreso' || dialogo === 'salida'}
+                entra={dialogo === 'ingreso'} ocupado={ocupado} sala={sala} userId={user?.id}
                 onClose={() => setDialogo(null)}
-                onAnotar={(monto, concepto) => correr(() => anotarIngreso({ sala, monto, concepto }), 'Ingreso anotado.')} />
+                onAnotar={(datos) => correr(
+                    () => (dialogo === 'ingreso' ? anotarIngreso : anotarSalida)({ sala, ...datos }),
+                    dialogo === 'ingreso' ? 'Ingreso anotado.' : 'Salida anotada.',
+                )} />
 
             <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
                 pendientes={pendientes.length}
@@ -196,6 +267,21 @@ export default function MiCajaView() {
                     setResultado(r);
                     cargar();
                 }} />
+
+            {dialogo === 'bolsa' && (
+                <Suspense fallback={null}>
+                    <SalidaDeBolsa abierto bolsas={bolsas} saldos={null}
+                        onClose={() => setDialogo(null)}
+                        onHecho={() => { setDialogo(null); cargar(); }} />
+                </Suspense>
+            )}
+
+            <DialogoCorregir movimiento={corrigiendo} ocupado={ocupado}
+                onClose={() => setCorrigiendo(null)}
+                onPedir={(que, motivo, montoNuevo) => correr(
+                    () => pedirCorreccion({ sala, movimiento: corrigiendo.id, que, motivo, montoNuevo }),
+                    'Queda pedido. Alguien tiene que aprobarlo.',
+                ).then(() => setCorrigiendo(null))} />
 
             <DialogoCerrar abierto={dialogo === 'cerrar'} ocupado={ocupado}
                 onClose={() => setDialogo(null)}
@@ -237,22 +323,80 @@ function DialogoAbrir({ abierto, ocupado, onClose, onAbrir }) {
     );
 }
 
-function DialogoIngreso({ abierto, ocupado, onClose, onAnotar }) {
+/**
+ * Un movimiento del cajón: entra o sale. Un solo diálogo para los dos porque es
+ * el mismo acto con el signo dado vuelta — y dos diálogos gemelos se separan el
+ * día que alguien mejora uno.
+ *
+ * ── La foto manda sobre lo tecleado ────────────────────────────────────────
+ * Si el papel es una boleta —el pago de un recibo, una remesa del POS—, la foto
+ * llena el monto y el número. Es la misma lectura que usa la salida de bolsa, y
+ * el criterio es el de allá: lo que dice el papel gana, porque el papel es la
+ * verdad de la operación y un número tecleado encima sólo puede alejarse de él.
+ */
+function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, onClose, onAnotar }) {
     const [monto, setMonto] = useState('');
     const [concepto, setConcepto] = useState('');
+    const [boleta, setBoleta] = useState('');
+    const [foto, setFoto] = useState(null);
+    const [leyendo, setLeyendo] = useState(false);
+    const [aviso, setAviso] = useState(null);
     const valido = Number(monto) > 0 && concepto.trim().length > 2;
+
+    // Al elegir la foto se lee sola: pedirle a alguien que además apriete un
+    // botón para que la lean es pedirle que haga el trabajo dos veces.
+    const alElegirFoto = async (f) => {
+        setFoto(f);
+        setAviso(null);
+        if (!f) return;
+        setLeyendo(true);
+        const r = await leerBoleta(f, {
+            entidad: null,
+            numeroBoleta: boleta.trim() || null,
+            monto: Number(monto) || null,
+        });
+        setLeyendo(false);
+        if (r?.error) { setAviso('No se pudo leer la foto. Puedes escribir el monto a mano.'); return; }
+        const leido = r?.leido || {};
+        const llenados = [];
+        if (Number.isFinite(Number(leido.monto)) && Number(leido.monto) > 0) {
+            setMonto(String(leido.monto)); llenados.push('el monto');
+        }
+        if (leido.numero) { setBoleta(String(leido.numero)); llenados.push('el número'); }
+        setAviso(llenados.length
+            ? `La foto llenó ${llenados.join(' y ')}.`
+            : 'La foto no traía monto ni número legibles.');
+    };
+
+    const guardar = async () => {
+        let fotoUrl = null;
+        if (foto) {
+            try { fotoUrl = await subirComprobante(foto, { salaId: sala, userId }); } catch { fotoUrl = null; }
+        }
+        onAnotar({ monto: Number(monto), concepto: concepto.trim(), boleta: boleta.trim() || null, fotoUrl });
+    };
+
     return (
-        <Marco abierto={abierto} onClose={onClose} titulo="Anotar un ingreso"
-            bajada="Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.">
+        <Marco abierto={abierto} onClose={onClose}
+            titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
+            bajada={entra
+                ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
+                : 'Dinero que sale del cajón. Si sale de una bolsa, se registra en Bolsas y no aquí.'}>
+            <FileField label="Foto de la boleta" accept="image/*" value={foto}
+                onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+            {aviso && <p className="text-caption text-content-2">{aviso}</p>}
             <PortalInput label="Monto" inputMode="decimal" value={monto}
                 onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
+            <PortalInput label="Número de boleta" value={boleta}
+                onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
             <PortalInput label="Concepto" value={concepto} maxLength={50}
                 onChange={(e) => setConcepto(e.target.value)}
-                placeholder="Pago de CAESS, boleta 000375" />
+                placeholder={entra ? 'Pago de CAESS' : 'Compra de agua fría'} />
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado || !valido}
-                    onClick={() => onAnotar(Number(monto), concepto.trim())}>Anotar</Button>
+                <Button variant="primary" disabled={ocupado || leyendo || !valido} onClick={guardar}>
+                    Anotar
+                </Button>
             </div>
         </Marco>
     );
@@ -319,6 +463,49 @@ function DialogoCerrar({ abierto, ocupado, onClose, onCerrar }) {
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado} onClick={onCerrar}>Cerrar el día</Button>
+            </div>
+        </Marco>
+    );
+}
+
+/**
+ * Pedir que se anule o se corrija un movimiento ya anotado.
+ *
+ * Pide, no cambia: lo que ya está del otro lado lo corrige quien aprueba. Es la
+ * misma decisión que el portal ya toma para anular una factura, y por eso va por
+ * la misma bandeja en vez de tener una cola propia donde algo se quede esperando
+ * sin que nadie lo mire.
+ */
+function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
+    const [que, setQue] = useState('ANULAR');
+    const [motivo, setMotivo] = useState('');
+    const [montoNuevo, setMontoNuevo] = useState('');
+    if (!movimiento) return null;
+    const valido = motivo.trim().length >= 5
+        && (que === 'ANULAR' || Number(montoNuevo) > 0);
+
+    return (
+        <Marco abierto onClose={onClose} titulo="Pedir una corrección"
+            bajada={`${movimiento.concepto} · ${formatMoney(movimiento.monto)}`}>
+            <div className="flex gap-2">
+                <Button size="sm" variant={que === 'ANULAR' ? 'primary' : 'secondary'}
+                    onClick={() => setQue('ANULAR')}>Anularlo</Button>
+                <Button size="sm" variant={que === 'MONTO' ? 'primary' : 'secondary'}
+                    onClick={() => setQue('MONTO')}>Corregir el monto</Button>
+            </div>
+            {que === 'MONTO' && (
+                <PortalInput label="Monto correcto" inputMode="decimal" value={montoNuevo}
+                    onChange={(e) => setMontoNuevo(e.target.value)} placeholder="0.00" />
+            )}
+            <PortalInput label="Motivo" value={motivo} maxLength={200}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder="Se anotó dos veces" />
+            <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado || !valido}
+                    onClick={() => onPedir(que, motivo.trim(), que === 'MONTO' ? Number(montoNuevo) : null)}>
+                    Pedir
+                </Button>
             </div>
         </Marco>
     );

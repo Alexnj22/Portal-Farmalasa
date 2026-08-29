@@ -96,6 +96,15 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+  'src/views/MiCajaView.jsx':
+    'Los 6 controles NO son un formulario: están repartidos en CUATRO diálogos ' +
+    'distintos —abrir, anotar un movimiento, cortar, cerrar— y el más largo tiene ' +
+    'cuatro campos. Cada uno se abre y se cierra en menos de un minuto, con la ' +
+    'persona parada frente a la caja: no hay nada que sobreviva a una pausa. ' +
+    'Y el campo que importa, el efectivo contado, NO DEBE restaurarse: un conteo ' +
+    'viejo devuelto media hora después es un número que nadie contó, justo en el ' +
+    'lugar donde todo el control consiste en que ese número sea real. Un borrador ' +
+    'acá no protegería trabajo, fabricaría un dato.',
   'src/views/dashboard/PedirTrasladoModal.jsx':
     'Lo que se puede perder acá NO vive en el modal: los renglones ya agregados ' +
     'y la causa viven en `store/composicionTraslado.js`, porque agregar un ' +

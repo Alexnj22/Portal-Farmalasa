@@ -4,8 +4,8 @@ import {
 } from "../_shared/security.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Los tres actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO y
-// CERRAR el día. El corte vive aparte, en `hacer-corte-caja`, porque tiene su
+// Los actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO o una
+// SALIDA del cajón, y CERRAR el día. El corte vive aparte, en `hacer-corte-caja`, porque tiene su
 // propia regla —el conteo a ciegas— y mezclarlos escondería esa regla adentro
 // de un `switch`.
 //
@@ -25,7 +25,13 @@ import {
 // esto no empeora el papel: usa el mismo número de siempre y agrega el nombre
 // verificado que antes no existía en ningún lado.
 //
-// ── INGRESO: por qué no ofrece «abono a crédito» ───────────────────────────
+// ── INGRESO y SALIDA: el CAJÓN, no la bolsa ────────────────────────────────
+// Lo que sale de una BOLSA vive en Bolsas, con su bolsa elegida, su foto y su
+// vale consolidado. Acá va lo que entra y sale del cajón sin pasar por ninguna
+// bolsa —el pago de un recibo, la compra de agua fría—, que hasta hoy se
+// tecleaba en la otra pantalla y desde el lunes no se puede.
+//
+// ── Por qué el ingreso no ofrece «abono a crédito» ─────────────────────────
 // El tiquete del corte tiene DOS líneas para lo que entra: INGRESOS y COBROS
 // CRÉDITO, y lo que las separa es el `id_tipo` del movimiento. Ese catálogo no
 // se pudo leer —la pantalla que lo lista sólo se abre para el usuario que tiene
@@ -48,6 +54,7 @@ const SESION_URL = `${BASE}cambio_sesion.php`;
 const CORTE_URL  = `${BASE}admin_corte.php`;
 const APERTURA   = `${BASE}apertura_caja.php`;
 const INGRESO    = `${BASE}agregar_ingreso_caja.php`;
+const SALIDA     = `${BASE}agregar_salida_caja.php`;
 
 /** El único tipo ejercido de verdad (28-ago, movimiento 43260). */
 const ID_TIPO = "1";
@@ -127,7 +134,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const accion = String(body.accion ?? "");
     const sala = Number(body.sala);
-    if (!["abrir", "ingreso", "cerrar", "estado"].includes(accion)) {
+    if (!["abrir", "ingreso", "salida", "cerrar", "estado", "corregir", "aplicar_correccion"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
@@ -146,6 +153,46 @@ Deno.serve(async (req) => {
     );
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para operar la caja desde el portal." }, 403);
+
+    // ── PEDIR UNA CORRECCIÓN ────────────────────────────────────────────────
+    //
+    // No toca la caja: crea la solicitud y se acabó. Corregir un movimiento ya
+    // escrito es una decisión de otra persona —pedido del usuario— y por eso va
+    // por la misma bandeja donde el portal ya resuelve las anulaciones de
+    // factura, con su aprobador, sus avisos y su bitácora.
+    if (accion === "corregir") {
+      const movId = Number(body.movimiento);
+      const que = String(body.que ?? "");          // 'ANULAR' | 'MONTO'
+      const motivo = String(body.motivo ?? "").trim();
+      if (!Number.isFinite(movId)) return json({ ok: false, error: "Falta el movimiento." }, 400);
+      if (!["ANULAR", "MONTO"].includes(que)) return json({ ok: false, error: "Falta qué corregir." }, 400);
+      if (motivo.length < 5) return json({ ok: false, error: "Escribe el motivo." }, 400);
+
+      // El movimiento se RELEE de la base, no se recibe: el navegador manda un
+      // id y nada más, así que no puede pedir una corrección sobre un monto que
+      // él mismo inventó.
+      const { data: mov, error: errMov } = await supabase
+        .from("caja_movimientos_portal")
+        .select("id, branch_id, tipo, monto, concepto, erp_movimiento_id, anulado_at")
+        .eq("id", movId).maybeSingle();
+      if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
+      if (!mov) return json({ ok: false, error: "Ese movimiento no existe." }, 404);
+      if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento ya está anulado." }, 409);
+
+      const { data: sol, error: errSol } = await supabase.from("approval_requests").insert({
+        type: "CAJA_MOVIMIENTO_CHANGE",
+        employee_id: quien.id,
+        status: "PENDING",
+        note: motivo,
+        metadata: {
+          movimiento_portal: mov.id, branch_id: mov.branch_id,
+          que, monto_actual: mov.monto, monto_nuevo: que === "MONTO" ? Number(body.monto_nuevo) : null,
+          concepto: mov.concepto, erp_movimiento_id: mov.erp_movimiento_id,
+        },
+      }).select("id").single();
+      if (errSol) throw new Error(`creando la solicitud: ${errSol.message}`);
+      return json({ ok: true, solicitud: sol.id });
+    }
 
     const entrada = getErpBranchMap().find((e) => e.branchId === sala);
     if (!entrada) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
@@ -204,33 +251,78 @@ Deno.serve(async (req) => {
     // De acá para abajo hace falta una caja abierta.
     if (!estado.abierta) return json({ ok: false, error: "Esa sala no tiene una caja abierta." }, 409);
 
-    // ── INGRESO ─────────────────────────────────────────────────────────────
-    if (accion === "ingreso") {
+    // ── INGRESO y SALIDA del cajón ──────────────────────────────────────────
+    //
+    // Los dos por el mismo camino porque son el mismo acto con el signo dado
+    // vuelta, y separarlos duplicaría el freno de no escribir dos veces.
+    //
+    // NO es la salida de una bolsa: eso vive en Bolsas, con su bolsa elegida y
+    // su vale consolidado. Esto es lo que entra y sale del CAJÓN —el pago de un
+    // recibo, la compra de agua fría— que hasta hoy se tecleaba en la otra
+    // pantalla.
+    if (accion === "ingreso" || accion === "salida") {
+      const esEntrada = accion === "ingreso";
       const monto = Number(body.monto);
       const concepto = String(body.concepto ?? "").trim();
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
       if (!concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
 
-      const resp = await (await fetch(INGRESO, {
+      const dia = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+      // La fila del portal se escribe ANTES: si la caja lo acepta y el portal no
+      // llega a anotarlo, queda un movimiento sin respaldo y sin forma de
+      // corregirlo. Al revés, una fila sin `erp_movimiento_id` es un intento
+      // visible que se puede reintentar.
+      const { data: fila, error: errFila } = await supabase
+        .from("caja_movimientos_portal")
+        .insert({
+          branch_id: sala, tipo: esEntrada ? "ENTRADA" : "SALIDA",
+          monto: Number(dosDecimales(monto)), concepto,
+          numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
+          foto_url: body.foto_url ? String(body.foto_url) : null,
+          fecha: dia, erp_apertura_id: Number(estado.aper),
+          registrado_por: quien.id,
+        })
+        .select("id").single();
+      if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
+
+      // El concepto lleva el número del portal adelante: es lo único que ata
+      // las dos filas cuando alguien mira del otro lado, y el campo trunca a 50.
+      const conceptoCaja = `P${fila.id} ${concepto}`.slice(0, 50);
+      const resp = await (await fetch(esEntrada ? INGRESO : SALIDA, {
         method: "POST",
         headers: {
           Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
           "X-Requested-With": "XMLHttpRequest",
         },
-        body: new URLSearchParams({
-          process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
-          turno: estado.turno!, monto: dosDecimales(monto),
-          // El campo trunca a 50: se recorta acá para que el recorte sea
-          // deliberado y no una sorpresa del otro lado.
-          concepto: concepto.slice(0, 50), id_tipo: ID_TIPO,
-        }).toString(),
+        body: new URLSearchParams(esEntrada
+          ? {
+            process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
+            turno: estado.turno!, monto: dosDecimales(monto),
+            concepto: conceptoCaja, id_tipo: ID_TIPO,
+          }
+          : {
+            process: "salida", id_apertura: estado.aper!, id_empleado: estado.emp!,
+            turno: estado.turno!, monto: dosDecimales(monto), concepto: conceptoCaja,
+            proveedor: "", tipo_doc: "", n_doc: String(body.boleta ?? ""),
+            recibe: "PORTAL", id_tipo: ID_TIPO,
+          }).toString(),
         signal: AbortSignal.timeout(45_000),
       })).text();
 
-      if (!exito(resp)) return json({ ok: false, error: `La caja no aceptó el ingreso: ${resp.slice(0, 200)}` }, 502);
+      if (!exito(resp)) {
+        return json({
+          ok: false, movimiento_del_portal: fila.id,
+          error: `La caja no aceptó el movimiento: ${resp.slice(0, 200)}`,
+        }, 502);
+      }
       let idMov: number | null = null;
       try { idMov = Number(JSON.parse(resp)?.id_mov) || null; } catch { idMov = null; }
-      return json({ ok: true, movimiento_en_caja: idMov });
+      await supabase.from("caja_movimientos_portal")
+        .update({ erp_movimiento_id: idMov, updated_at: new Date().toISOString() })
+        .eq("id", fila.id);
+
+      return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov });
     }
 
     // ── CERRAR EL DÍA ───────────────────────────────────────────────────────

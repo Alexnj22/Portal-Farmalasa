@@ -840,8 +840,19 @@ export async function abrirCaja({ sala, montoApertura = 0, turno = 1 }) {
     return operar({ accion: 'abrir', sala, monto_apertura: montoApertura, turno });
 }
 
-export async function anotarIngreso({ sala, monto, concepto }) {
-    return operar({ accion: 'ingreso', sala, monto, concepto });
+export async function anotarIngreso({ sala, monto, concepto, boleta = null, fotoUrl = null }) {
+    return operar({ accion: 'ingreso', sala, monto, concepto, boleta, foto_url: fotoUrl });
+}
+
+/**
+ * Dinero que sale del CAJÓN, no de una bolsa.
+ *
+ * La salida de una bolsa vive en Bolsas —elige la bolsa, reimprime su etiqueta y
+ * entra al vale consolidado—. Ésta es la otra: un gasto pagado con la plata del
+ * cajón, que hasta hoy se tecleaba en la otra pantalla.
+ */
+export async function anotarSalida({ sala, monto, concepto, boleta = null, fotoUrl = null }) {
+    return operar({ accion: 'salida', sala, monto, concepto, boleta, foto_url: fotoUrl });
 }
 
 export async function cerrarElDia(sala) {
@@ -879,4 +890,26 @@ export async function hacerCorte({ sala, efectivo, observaciones = null, simular
     } catch (err) {
         return { error: err };
     }
+}
+
+/** Los movimientos del cajón que escribió el portal hoy en esta sala. */
+export async function fetchMovimientosDelPortal(sala) {
+    const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+    const { data, error } = await supabase.from('caja_movimientos_portal')
+        .select('id, tipo, monto, concepto, numero_boleta, erp_movimiento_id, anulado_at, registrado_at')
+        .eq('branch_id', sala).eq('fecha', hoy)
+        .order('registrado_at', { ascending: false });
+    if (error) { console.error('caja: movimientos del portal:', error.message); return []; }
+    return data || [];
+}
+
+/**
+ * Pedir que se anule o se corrija un movimiento ya escrito.
+ *
+ * NO lo cambia: crea la solicitud. Corregir algo que la caja ya contó es una
+ * decisión de otra persona, así que va por la misma bandeja donde el portal ya
+ * resuelve las anulaciones de factura.
+ */
+export async function pedirCorreccion({ sala, movimiento, que, motivo, montoNuevo = null }) {
+    return operar({ accion: 'corregir', sala, movimiento, que, motivo, monto_nuevo: montoNuevo });
 }

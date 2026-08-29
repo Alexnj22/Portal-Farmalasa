@@ -147,6 +147,53 @@ Deno.serve(async (req) => {
       }, fallidasSiembra.length ? 500 : 200);
     }
 
+    // ── Probar que la devolución SE PUEDE escribir, sin escribirla ──────────
+    // Existe porque la resta todavía no corrió ni una vez, y una función nueva
+    // no prueba que la tabla la acepte: puede haber un CHECK, un trigger o un
+    // NOT NULL que no se ve leyendo el esquema. Hace el INSERT y el UPDATE de
+    // verdad y después los DESHACE, así que dice si entran sin dejar rastro.
+    // Es la única forma honesta de verificarlo antes de que ocurra el primer
+    // caso real sobre el saldo de una persona.
+    if (body?.probar_devolucion) {
+      const idCliente = Number(body.probar_devolucion.idCliente);
+      const [[c0]] = await conn.query(
+        'SELECT idCliente, Puntos FROM Clientes WHERE idCliente = ?', [idCliente],
+      ) as any;
+      if (!c0) return json({ ok: false, error: 'ese cliente no existe' }, 400);
+      const [[v0]] = await conn.query(
+        'SELECT idVendedor, idSucursal FROM Ventas WHERE idCliente = ? LIMIT 1', [idCliente],
+      ) as any;
+      if (!v0) return json({ ok: false, error: 'ese cliente no tiene ventas' }, 400);
+
+      const prueba: Record<string, unknown> = { saldo_antes: Number(c0.Puntos) };
+      try {
+        await conn.beginTransaction();
+        await conn.query(
+          'INSERT INTO Canjes (idCliente, idVendedor, idSucursal, PuntosCanjeados, TKT, Tipo) ' +
+          'VALUES (?, ?, ?, ?, ?, ?)',
+          [idCliente, v0.idVendedor, v0.idSucursal, 1, 'Anul 0000000000_COF', 'C'],
+        );
+        await conn.query('UPDATE Clientes SET Puntos = Puntos - 1 WHERE idCliente = ?', [idCliente]);
+        const [[c1]] = await conn.query(
+          'SELECT Puntos FROM Clientes WHERE idCliente = ?', [idCliente],
+        ) as any;
+        prueba.saldo_dentro_de_la_transaccion = Number(c1.Puntos);
+        prueba.acepta = true;
+      } catch (err) {
+        prueba.acepta = false;
+        prueba.error = err instanceof Error ? err.message : String(err);
+      } finally {
+        // SIEMPRE se deshace: esta prueba no puede dejar ni un punto movido.
+        try { await conn.rollback(); } catch { /* nada que deshacer */ }
+      }
+      const [[c2]] = await conn.query(
+        'SELECT Puntos FROM Clientes WHERE idCliente = ?', [idCliente],
+      ) as any;
+      prueba.saldo_despues = Number(c2.Puntos);
+      prueba.quedo_igual = prueba.saldo_antes === prueba.saldo_despues;
+      return json({ ok: prueba.acepta === true && prueba.quedo_igual === true, prueba });
+    }
+
     // ── 1. Lo que hay que mandar ────────────────────────────────────────────
     const { data: pendientes, error: e1 } = await supabase.rpc('ventas_para_puntos', {
       p_desde: desde, p_hasta: hasta, p_margen: margen, p_tope: tope,
@@ -322,7 +369,7 @@ Deno.serve(async (req) => {
       if (yaCobradas.length && !simular) {
         const claves = yaCobradas.map((c) => [c.sucursal, String(c.erp_invoice_id)]);
         const [ligas] = await conn.query(
-          `SELECT af.sucursal, af.id, v.idVenta, v.idCliente, v.PuntosVenta
+          `SELECT af.sucursal, af.id, v.idVenta, v.idCliente, v.idVendedor, v.idSucursal, v.PuntosVenta
              FROM admin_factura af
              JOIN Sucursales s ON s.Abreviatura = af.sucursal
              JOIN Ventas v ON v.TicketFactura = af.id AND v.idSucursal = s.idSucursal
@@ -340,16 +387,62 @@ Deno.serve(async (req) => {
           const v = porClave2.get(`${c.sucursal}|${c.erp_invoice_id}`) ?? [];
           // Ni cero ni dos: sólo el vínculo inequívoco se resta solo.
           if (v.length !== 1) { ambiguas.push(c); continue; }
-          const { idVenta, idCliente, PuntosVenta } = v[0];
+          const { idVenta, idCliente, idVendedor, idSucursal, PuntosVenta } = v[0];
           try {
             await conn.beginTransaction();
-            await conn.query('DELETE FROM Ventas WHERE idVenta = ?', [idVenta]);
-            await conn.query('UPDATE Clientes SET Puntos = Puntos - ? WHERE idCliente = ?',
-                             [PuntosVenta, idCliente]);
+
+            // El saldo se lee DENTRO de la transacción y con `FOR UPDATE`: entre
+            // leerlo y restarlo, el mostrador puede haber canjeado. Sin el
+            // candado, dos operaciones a la vez dejarían el saldo mal — y acá el
+            // saldo es dinero para el cliente.
+            const [[saldoFila]] = await conn.query(
+              'SELECT Puntos FROM Clientes WHERE idCliente = ? FOR UPDATE', [idCliente],
+            ) as any;
+            const saldo     = Number(saldoFila?.Puntos ?? 0);
+            const aRestar   = Math.max(0, Math.min(Number(PuntosVenta), saldo));
+            const sinCubrir = Number(PuntosVenta) - aRestar;
+
+            if (aRestar > 0) {
+              // Un CANJE con el motivo, no un borrado ni un negativo (decisión
+              // del usuario: «así se usa eso, y el motivo es por anulación»).
+              //
+              // Encaja con cómo está hecha esa base y con lo que se midió en
+              // ella: el saldo sale de `registrados − redimidos`, así que un
+              // canje lo baja por el camino previsto; `PuntosCanjeados` es
+              // UNSIGNED, o sea que un asiento negativo ni siquiera cabría; y en
+              // tres años no hay un solo número negativo en ninguna de las dos
+              // tablas. La venta original queda intacta y el cliente ve la baja
+              // como una línea propia en su estado de cuenta (`VW_CardexPuntos`,
+              // que une compras y canjes), en vez de que sus puntos se esfumen.
+              //
+              // ⚠️ `TKT` es varchar(20): el motivo entra justo con el correlativo
+              // («Anul 0000066182_COF» son 19). Se recorta por las dudas — un
+              // texto más largo lo truncaría MySQL en silencio.
+              await conn.query(
+                'INSERT INTO Canjes (idCliente, idVendedor, idSucursal, PuntosCanjeados, TKT, Tipo) ' +
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                [idCliente, idVendedor, idSucursal, aRestar,
+                 `Anul ${c.correlativo ?? c.erp_invoice_id}`.slice(0, 20), 'C'],
+              );
+              await conn.query('UPDATE Clientes SET Puntos = Puntos - ? WHERE idCliente = ?',
+                               [aRestar, idCliente]);
+            }
+            // El ticket sale del registro pase lo que pase con el saldo: la
+            // venta no existe, así que no puede volver a canjearse.
             await conn.query('DELETE FROM admin_factura WHERE sucursal = ? AND id = ?',
                              [c.sucursal, String(c.erp_invoice_id)]);
             await conn.commit();
-            restadas.push({ invoice_id: c.invoice_id, puntos: Number(PuntosVenta), idCliente });
+
+            const { error: eDev } = await supabase.rpc('puntos_anotar_devolucion', {
+              p_invoice_id: c.invoice_id, p_devueltos: aRestar, p_no_recuperados: sinCubrir,
+            });
+            if (eDev) fallidas.push(`anotar devolución ${c.correlativo}: ${eDev.message}`);
+
+            restadas.push({ invoice_id: c.invoice_id, puntos: aRestar, sinCubrir, idCliente });
+            // Lo que no se pudo recuperar NO es un fallo del circuito: el cliente
+            // ya gastó esos puntos y nadie queda debiendo. Pero alguien lo tiene
+            // que saber, así que va al aviso de la sala.
+            if (sinCubrir > 0) ambiguas.push({ ...c, sin_cubrir: sinCubrir });
           } catch (err) {
             try { await conn.rollback(); } catch { /* la transacción ya cayó */ }
             fallidas.push(`restar ${c.correlativo}: ${err instanceof Error ? err.message : String(err)}`);
@@ -428,7 +521,9 @@ Deno.serve(async (req) => {
           // verificarlo. Nunca el sistema de origen: la pantalla habla del
           // portal. Y se dice POR QUÉ no se corrigió solo, que es lo que
           // convierte el aviso en algo accionable en vez de una queja.
-          p_body: `${c.correlativo ?? 'Una factura'} por $${Number(c.total).toFixed(2)}. No se pudo devolver sola porque el ticket no identifica a una sola persona: hay que revisarlo.`,
+          p_body: c.sin_cubrir
+            ? `${c.correlativo ?? 'Una factura'} por $${Number(c.total).toFixed(2)}. Se devolvieron los puntos que el cliente tenía, pero ${c.sin_cubrir} ya los había gastado y no se pudieron recuperar.`
+            : `${c.correlativo ?? 'Una factura'} por $${Number(c.total).toFixed(2)}. No se pudo devolver sola porque el ticket no identifica a una sola persona: hay que revisarlo.`,
           p_link: '/ventas',
           p_metadata: { check_key: `puntos_anulada:${c.invoice_id}`, invoice_id: c.invoice_id },
         });
@@ -475,6 +570,7 @@ Deno.serve(async (req) => {
       anuladas_con_puntos_ya_dados: yaCobradas.length,
       anuladas_restadas: restadas.length,
       puntos_restados: restadas.reduce((s, r) => s + r.puntos, 0),
+      puntos_no_recuperados: restadas.reduce((s, r) => s + (r.sinCubrir || 0), 0),
       anuladas_sin_vinculo_claro: ambiguas.length,
       anuladas_que_no_estaban: noEstaban.length,
       avisadas,

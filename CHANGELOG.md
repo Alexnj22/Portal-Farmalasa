@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.3 — La boleta manda sobre lo escrito, y lo dice
+
+El monto y el número de boleta **se cierran en cuanto la foto los detecta** —
+eso ya pasaba, pero sólo cuando el campo estaba vacío. Ese hueco costó la remesa
+trabada de Salud 4: alguien escribió el número primero, el campo quedó editable,
+y el portal terminó discutiéndole a quien tenía razón.
+
+Ahora **el papel gana siempre**. Si el papel lo dice, ése es el dato.
+
+Con dos cosas que no se negocian:
+
+- **Lo que se pisa se dice.** Un dato escrito que cambia solo y en silencio es
+  la forma más rápida de que nadie vuelva a confiar en el que quedó. Sale un
+  aviso: «La boleta dice otra cosa: se corrigió el número que habías escrito».
+- **Quitar la foto devuelve los campos.** Si el lector se equivoca —le pasó con
+  la referencia de Promerica— nadie puede quedar encerrado con un número que no
+  es.
 ## v2.857.2 — Las que decían Sin enviar y sí tenían sus puntos
 
 **Lo preguntó el usuario: «¿por qué hay varios sin enviar?»** Eran 39,696, y la

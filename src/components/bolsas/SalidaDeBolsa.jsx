@@ -148,6 +148,10 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * pantalla —nadie confía en un campo que se llenó solo si no sabe de dónde
      * salió— y para no volver a pisarlos si se elige otra foto. */
     const [deLaFoto, setDeLaFoto] = useState([]);
+    // Lo que la foto CAMBIÓ sobre algo ya escrito. Aparte de `deLaFoto`
+    // porque son dos hechos distintos: uno llena un hueco y el otro corrige
+    // a una persona, y sólo el segundo hay que decirlo.
+    const [pisadosPorLaFoto, setPisadosPorLaFoto] = useState([]);
     /* Con qué operación choca el número de boleta, si choca con alguna. */
     const [repetida, setRepetida] = useState([]);
     // 'FORMULARIO' → 'IDENTIDAD'. El segundo paso sólo existe para los motivos
@@ -332,7 +336,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
      * hay que devolver, y recortar primero volvería el recuadro un sinsentido.
      */
     const alElegirFoto = useCallback(async (f) => {
-        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); return; }
+        if (!f) { setFoto(null); setLectura(null); setDeLaFoto([]); setPisadosPorLaFoto([]); return; }
         setLeyendo(true);
         setLectura(null);
         const r = await leerBoleta(f, {
@@ -363,12 +367,35 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
          * que es la mitad «a no ser que no se distinga bien» del pedido. */
         const l = r?.leido || {};
         const puestos = [];
+        const pisados = [];
         if (l.es_boleta) {
-            if (!monto.trim() && Number.isFinite(Number(l.monto)) && Number(l.monto) > 0) {
+            /* ── El papel GANA, y por eso los campos se cierran ──────────────
+             *
+             * Pedido del usuario (2026-08-29): «la boleta y el monto que no se
+             * puedan modificar si al subir la foto se detecta». Hasta hoy la
+             * foto sólo llenaba lo VACÍO, y eso dejaba un hueco que costó una
+             * remesa: en Salud 4 alguien escribió el número primero, el campo
+             * quedó editable, y el portal terminó discutiéndole a quien tenía
+             * razón. Si el papel lo dice, el papel manda.
+             *
+             * Lo que se pisa se DICE. Un dato escrito que cambia solo y en
+             * silencio es la forma más rápida de que nadie vuelva a confiar en
+             * el que quedó. Y quitar la foto devuelve los campos: si el lector
+             * se equivocó —le pasó con la referencia de Promerica— nadie puede
+             * quedar encerrado con un número que no es. */
+            const montoLeido = Number(l.monto);
+            if (Number.isFinite(montoLeido) && montoLeido > 0) {
+                const habia = monto.trim();
+                if (habia && Math.abs(Number(habia) - montoLeido) > 0.005) pisados.push('el monto');
                 setMonto(String(l.monto));
                 puestos.push('el monto');
             }
-            if (!boleta.trim() && l.numero_boleta) {
+            if (l.numero_boleta) {
+                const habia = boleta.trim();
+                const distinto = habia
+                    && habia.replace(/\D+/g, '').replace(/^0+/, '')
+                       !== String(l.numero_boleta).replace(/\D+/g, '').replace(/^0+/, '');
+                if (distinto) pisados.push('el número');
                 setBoleta(String(l.numero_boleta));
                 puestos.push('el número');
             }
@@ -397,6 +424,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
             }
         }
         setDeLaFoto(puestos);
+        setPisadosPorLaFoto(pisados);
 
         setPorEditar(f);
     }, [entidad, boleta, monto, n, opciones, t, tipo]);
@@ -1012,6 +1040,14 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                         {/* Qué campos llenó la foto. Un campo que se llena solo
                             y no dice de dónde salió no se revisa: o se cree sin
                             mirar, o se desconfía y se vuelve a escribir. */}
+                        {!leyendo && pisadosPorLaFoto.length > 0 && (
+                            <Notice variant="warning" compact icon={AlertTriangle}>
+                                {pisadosPorLaFoto.length === 1
+                                    ? `La boleta dice otra cosa: se corrigió ${pisadosPorLaFoto[0]} que habías escrito.`
+                                    : `La boleta dice otra cosa: se corrigieron ${juntarConY(pisadosPorLaFoto)} que habías escrito.`}
+                                {' '}Si el papel no dice eso, quita la foto y vuelve a tomarla.
+                            </Notice>
+                        )}
                         {!leyendo && deLaFoto.length > 0 && (
                             <Notice variant="info" compact icon={ScanLine}>
                                 {deLaFoto.length === 1

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.854.1 — Retirados y Devueltos no son lo mismo
+
+**Lo levantó el usuario mirando la lista**: vio «DEVUELTOS» en una pantalla llena
+de ventas anuladas y preguntó si se le habían quitado puntos a clientes que nunca
+los canjearon.
+
+**No se le quitó un punto a nadie** —las 796 eran retiros de tickets sin canjear,
+y las restas de verdad son cero— **pero la pantalla daba a entender que sí**. Un
+rótulo que obliga a preguntar «¿le sacamos algo a alguien?» ya falló, aunque la
+respuesta sea que no.
+
+Ahora son dos estados distintos:
+
+- **Retirados** — la venta se anuló y sus puntos nunca se canjearon. El ticket
+  dejó de ser canjeable y ningún saldo cambió.
+- **Devueltos** — los puntos YA se habían entregado y se le restaron al cliente.
+
+Son 796 retirados y **cero devueltos**.
+
 ## v2.854.0 — El documento de bienvenida: a elección, en dos páginas, con carné
 
 **Ahora se elige.** Al crear un empleado hay una casilla —«Descargar el documento

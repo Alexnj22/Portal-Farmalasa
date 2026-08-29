@@ -75,7 +75,12 @@ export async function fetchPuntosDeCliente(customerId) {
 export const ROTULO_PUNTOS = {
     acumulado:   { label: 'Acumulados', variante: 'success', ayuda: 'El cliente ya presentó el ticket y se le dieron sus puntos.' },
     pendiente:   { label: 'Pendientes', variante: 'neutral', ayuda: 'La venta está registrada y sus puntos se pueden reclamar.' },
-    devuelto:    { label: 'Devueltos',  variante: 'warning', ayuda: 'La venta se anuló y sus puntos se quitaron.' },
+    /* «Retirados» y «Devueltos» decían lo mismo hasta el 2026-08-29 y NO son lo
+       mismo. Se separaron porque el usuario vio «Devueltos» en ventas anuladas y
+       preguntó si se le habían quitado puntos a alguien que nunca los canjeó. No
+       —las 796 eran retiros— pero la pantalla daba a entender que sí. */
+    retirado:    { label: 'Retirados',  variante: 'neutral', ayuda: 'La venta se anuló y sus puntos nunca se canjearon: el ticket dejó de ser canjeable. Ningún cliente perdió puntos.' },
+    devuelto:    { label: 'Devueltos',  variante: 'warning', ayuda: 'La venta se anuló con los puntos YA entregados: se le restaron al cliente.' },
     por_revisar: { label: 'Por revisar', variante: 'danger', ayuda: 'La venta se anuló con los puntos ya entregados y no se pudieron quitar solos.' },
     sin_enviar:  { label: 'Sin enviar', variante: 'neutral', ayuda: 'Esta venta no acumula puntos.' },
 };
@@ -91,6 +96,6 @@ export const ROTULO_PUNTOS = {
  */
 export const OPCIONES_FILTRO_PUNTOS = [
     { value: '', label: 'Todos los puntos' },
-    ...['acumulado', 'pendiente', 'devuelto', 'por_revisar', 'sin_enviar']
+    ...['acumulado', 'pendiente', 'retirado', 'devuelto', 'por_revisar', 'sin_enviar']
         .map(k => ({ value: k, label: ROTULO_PUNTOS[k].label })),
 ];

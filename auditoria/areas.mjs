@@ -442,7 +442,7 @@ export const AREAS = [
                  'bolsas', 'bancos', 'bolsas_conteos', 'bolsas_entidades', 'bolsas_entregas',
                  'bolsas_eventos', 'bolsas_movimientos',
                  'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios'],
-        edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja'],
+        edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja'],
         crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv'],
         docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],

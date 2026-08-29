@@ -227,14 +227,35 @@ Deno.serve(async (req) => {
         movVale = Number(JSON.parse(resp)?.id_mov) || null;
       }
 
+      /* ── Estas DOS escrituras pasan DESPUÉS de mover dinero ─────────────
+       *
+       * El vale ya está escrito en el sistema de origen. Si el `update` falla y
+       * su error se descarta, el vale queda en PENDIENTE con la plata ya
+       * movida: la próxima corrida lo vuelve a intentar y sólo el freno de
+       * «¿ya está escrito?» evita el duplicado. Y el segundo deja salidas de
+       * bolsa sin vale que las cubra, que es justo lo que el corte tiene que
+       * poder demostrar.
+       *
+       * Lanzar acá es lo correcto y no una molestia: quien llama recibe el
+       * error, el vale queda pendiente A PROPÓSITO y alguien lo mira — en vez
+       * de un corte que se declara completo sobre una anotación que no ocurrió.
+       */
       const ahora = new Date().toISOString();
-      await supabase.from("caja_vales_portal").update({
+      const { error: errVale } = await supabase.from("caja_vales_portal").update({
         erp_movimiento_id: movVale, monto: Number(montoVale.toFixed(2)),
         estado: "ANOTADO", anotado_at: ahora, updated_at: ahora,
       }).eq("id", valeId);
-      await supabase.from("bolsas_movimientos")
+      if (errVale) {
+        throw new Error(`el vale se escribió en el sistema (${movVale}) pero no se pudo`
+          + ` anotar en el portal: ${errVale.message}`);
+      }
+      const { error: errLigar } = await supabase.from("bolsas_movimientos")
         .update({ caja_vale_id: valeId })
         .in("id", mias.map((p: { movimiento_id: number }) => p.movimiento_id));
+      if (errLigar) {
+        throw new Error(`el vale quedó anotado pero no se pudo ligar a sus salidas:`
+          + ` ${errLigar.message}`);
+      }
     }
 
     // ── 2. La pantalla del corte, YA con el vale adentro ────────────────────

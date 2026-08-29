@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.857.2 — Las que decían Sin enviar y sí tenían sus puntos
+
+**Lo preguntó el usuario: «¿por qué hay varios sin enviar?»** Eran 39,696, y la
+mayoría estaba mal contada.
+
+**32,837 eran de La Popular y sí tenían sus puntos.** Esa sala **tuvo otro
+código**: en la base de puntos hay 41,078 filas bajo `FLP` —su documento más alto
+es el 240,699, ahí paró— y desde marzo de 2026 usa `FLP1`. La siembra buscaba
+sólo por el código nuevo, así que no encontró ni una de las viejas y las dio por
+no enviadas. Se verificó sobre 300: las 300 estaban allá. El código anterior pasó
+a ser un dato de la sala, no una constante escondida en una función.
+
+**Y quedó a la vista un defecto que yo mismo había introducido.** Al sembrar una
+fila por cada venta, `ventas_para_puntos` —que descartaba todo lo que ya tuviera
+fila— dejaba excluidas **para siempre** a las marcadas «sin enviar», aunque
+cumplieran las tres reglas. Eran 613 ventas que la hoja de cálculo nunca mandó
+(su marca de agua avanzaba por número de correlativo y se saltaba las que
+entraban tarde — justo el defecto que este circuito vino a corregir). Ahora
+manda la REGLA y no la bitácora: **se recuperaron 235**, repartidas en los 16
+meses. Las 378 restantes no cumplen la regla del precio, que es lo correcto.
+
+**Dos hallazgos del otro sistema, que nadie estaba mirando:**
+
+- **2,142 facturas existen bajo los dos códigos** a la vez, con montos idénticos
+  — filas que duplicó el cambio de código.
+- De ésas, **27 tienen sus puntos cobrados bajo AMBOS**: el mismo ticket acreditó
+  puntos dos veces. No se tocó nada; queda anotado para decidir.
+
+De 39,696 «sin enviar» quedaron **559**, y ahora el número dice la verdad.
+
 ## v2.857.1 — Las cuatro esquinas del carné
 
 El carné salía con **dos esquinas redondas y dos cuadradas** — lo vio el usuario

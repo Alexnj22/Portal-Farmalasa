@@ -171,7 +171,11 @@ const EXCEPTIONS = {
   // configurada la pantalla quien lo subió.
   // (Se llamaba `bitacoras/EditorDeReceta.jsx` hasta el 2026-08-20, cuando la
   // salida de dinero necesitó el mismo editor y pasó a `common/`.)
+  // (El relleno se mudó a `utils/componerDocumento.js` el 2026-08-29, cuando
+  // el camino automático y el editor pasaron a compartir la misma tubería: el
+  // motivo es el mismo y ahora vive donde está el píxel.)
   'src/components/common/EditorDeDocumento.jsx': ['hex'],
+  'src/utils/componerDocumento.js': ['hex'],
   // `carril-pildora` en ClientesView es la EXCEPCIÓN MEDIDA, no deuda — y estaba
   // contando como ratchet, que es al revés de lo que hay que decir. El motivo
   // está escrito en la propia vista: a 1440px el área de contenido son ~1110px,

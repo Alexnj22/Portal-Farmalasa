@@ -54,11 +54,11 @@ import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import LienzoDeEncuadre from './LienzoDeEncuadre';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
-import { ESQUINAS_ENTERAS, girarEsquinas, medidaDelPapel, rectificar } from '../../utils/perspectiva';
+import { ESQUINAS_ENTERAS, girarEsquinas } from '../../utils/perspectiva';
+import { aEscala, aArchivo, rectificarPapel } from '../../utils/componerDocumento';
 import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../utils/tratamientoDeFoto';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 
-const CALIDAD = 0.92;
 // El lado con el que se revisa la foto antes de guardarla. 800 alcanza para
 // medir papel, tinta y color, y corre sin trabar un teléfono.
 const LADO_ANALISIS = 800;
@@ -78,19 +78,6 @@ function esquinasDelRecuadro(r) {
     const x0 = Math.max(0, r.x), y0 = Math.max(0, r.y);
     const x1 = Math.min(1, r.x + r.w), y1 = Math.min(1, r.y + r.h);
     return [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
-}
-
-/** Escala un lienzo a su tamaño final. Nunca agranda: estirar no agrega nada. */
-function aEscala(fuente, escala) {
-    const salida = document.createElement('canvas');
-    salida.width = Math.max(1, Math.round(fuente.width * escala));
-    salida.height = Math.max(1, Math.round(fuente.height * escala));
-    const ctx = salida.getContext('2d');
-    ctx.imageSmoothingQuality = 'high';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, salida.width, salida.height);
-    ctx.drawImage(fuente, 0, 0, salida.width, salida.height);
-    return { canvas: salida, ctx };
 }
 
 /**
@@ -115,6 +102,7 @@ export default function EditorDeDocumento({
     const [puntos, setPuntos] = useState(yaRecortado ? ESQUINAS_ENTERAS : ESQUINAS_CON_MARGEN);
     const [acabado, setAcabado] = useState(acabadoPorDefecto(doc));
     const [enderezada, setEnderezada] = useState(null);   // el lienzo rectificado
+    const [formato, setFormato] = useState(null);         // a qué papel se pareció
     const [vista, setVista] = useState(null);             // su vista previa con acabado
     const [miniaturas, setMiniaturas] = useState({});
     const [medidas, setMedidas] = useState(null);
@@ -169,23 +157,30 @@ export default function EditorDeDocumento({
         else setPuntos(listas);
     }, [propuesta, giroSugerido]);
 
+    /* `tocado` es un ref porque lo LEE un efecto que no lo tiene por dependencia
+     * —el que decide si la propuesta se adopta—, y con estado ahí leería el
+     * valor de cuando el efecto corrió, no el de ahora. `mostrarAyuda` es estado
+     * aparte porque eso sí se PINTA, y un ref leído en el render no vuelve a
+     * dibujar nada. No son dos versiones del mismo dato: uno decide y el otro
+     * se muestra. */
+    const [mostrarAyuda, setMostrarAyuda] = useState(true);
     const cambiarPuntos = useCallback((nuevos) => {
         tocado.current = true;
+        setMostrarAyuda(false);
         setPuntos(nuevos);
     }, []);
 
     // ── Paso 1 → 2: enderezar con las cuatro esquinas ───────────────────────
     const enderezar = useCallback(() => {
         if (!imagen) return;
-        const enPx = puntos.map(p => ({ x: p.x * imagen.naturalWidth, y: p.y * imagen.naturalHeight }));
-        const medida = medidaDelPapel(enPx);
-        if (!medida) { setFallo('Ese encuadre no forma un documento. Mueve las esquinas.'); return; }
-        // `yaOrdenadas`: el orden ES la orientación elegida, y volver a
-        // ordenarlo desharía el botón de girar en silencio.
-        const lienzo = rectificar(imagen, enPx, medida.ancho, medida.alto, { yaOrdenadas: true });
-        if (!lienzo) { setFallo('No se pudo enderezar. Prueba moviendo las esquinas.'); return; }
+        // La MISMA tubería que usa el camino automático: si cada uno tuviera la
+        // suya, corregir el encuadre y confirmar sin cambiar nada daría un
+        // archivo distinto del que el portal había preparado solo.
+        const r = rectificarPapel(imagen, puntos);
+        if (!r) { setFallo('Ese encuadre no forma un documento. Mueve las esquinas.'); return; }
         setFallo(null);
-        setEnderezada(lienzo);
+        setEnderezada(r.canvas);
+        setFormato(r.formato);
         setPaso('acabado');
     }, [imagen, puntos]);
 
@@ -242,12 +237,7 @@ export default function EditorDeDocumento({
         if (!enderezada) return;
         setGuardando(true);
         try {
-            const escala = escalaDeSalida(enderezada.width, enderezada.height, doc);
-            const { canvas, ctx } = aEscala(enderezada, escala);
-            aplicarAcabado(ctx, canvas.width, canvas.height, acabado);
-            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', CALIDAD));
-            const base = String(file?.name || doc?.archivo || 'documento').replace(/\.[^.]+$/, '');
-            onConfirm(new File([blob], `${base}.jpg`, { type: 'image/jpeg' }));
+            onConfirm(await aArchivo(enderezada, { doc, acabado, nombre: file?.name }));
         } catch (e) {
             console.error('EditorDeDocumento:', e);
             setFallo('No se pudo preparar el archivo. Intenta de nuevo.');
@@ -303,7 +293,15 @@ export default function EditorDeDocumento({
                                 foto: son dos preguntas distintas y mezclarlas en
                                 un renglón deja las dos a medias. */}
                             {enEncuadre ? doc.bajada
-                                : 'Elige cómo se ve. Puedes volver y corregir el encuadre.'}
+                                : (formato?.seguro
+                                    /* El nombre del papel SÓLO cuando no hay
+                                       duda: un oficio de pie y una cédula parada
+                                       se llevan un 3.6 %, y poner el nombre
+                                       equivocado se lee como que el portal
+                                       entendió el documento. Ver
+                                       `utils/formatosDePapel.js`. */
+                                    ? `Se ajustó a tamaño ${formato.nombre.toLowerCase()} ${formato.orientacion}. Elige cómo se ve.`
+                                    : 'Elige cómo se ve. Puedes volver y corregir el encuadre.')}
                         </p>
                     )}
                 </div>
@@ -323,7 +321,7 @@ export default function EditorDeDocumento({
                                 imagen={imagen}
                                 esquinas={puntos}
                                 alCambiarEsquinas={cambiarPuntos}
-                                ayuda={tocado.current ? null : (conElDedo
+                                ayuda={!mostrarAyuda ? null : (conElDedo
                                     ? 'Arrastra las esquinas · pellizca para acercar · gira con dos dedos'
                                     : 'Arrastra las cuatro esquinas del papel · rueda para acercar')}
                             />
@@ -404,12 +402,12 @@ export default function EditorDeDocumento({
                     <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
                         <Button variant="secondary" size="sm" icon={RotateCw}
                             iconOnly={conElDedo} title="Girar un cuarto de vuelta"
-                            onClick={() => { tocado.current = true; setPuntos(girarEsquinas); }}>
+                            onClick={() => { tocado.current = true; setMostrarAyuda(false); setPuntos(girarEsquinas); }}>
                             {conElDedo ? null : 'Girar'}
                         </Button>
                         <Button variant="secondary" size="sm" icon={Maximize2}
                             iconOnly={conElDedo} title="Marcar la foto entera"
-                            onClick={() => { tocado.current = true; setPuntos(ESQUINAS_ENTERAS); }}>
+                            onClick={() => { tocado.current = true; setMostrarAyuda(false); setPuntos(ESQUINAS_ENTERAS); }}>
                             {conElDedo ? null : 'Todo'}
                         </Button>
                         {/* La propuesta que llegó mientras alguien trabajaba: no
@@ -431,7 +429,7 @@ export default function EditorDeDocumento({
                     <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
                         <Button variant="secondary" size="sm" icon={ArrowLeft}
                             iconOnly={conElDedo} title="Volver al encuadre"
-                            onClick={() => { setPaso('encuadre'); setEnderezada(null); }}
+                            onClick={() => { setPaso('encuadre'); setEnderezada(null); setFormato(null); }}
                             disabled={guardando}>
                             {conElDedo ? null : 'Volver al encuadre'}
                         </Button>

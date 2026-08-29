@@ -207,7 +207,11 @@ describe('el giro sale del orden de las esquinas', () => {
     });
 
     it('y el enderezado respeta ese orden', () => {
-        expect(codigo).toMatch(/yaOrdenadas:\s*true/);
+        // Vive en la tubería compartida desde que el camino automático y el
+        // editor tienen que producir el mismo archivo.
+        const componer = fs.readFileSync(
+            path.join(process.cwd(), 'src/utils/componerDocumento.js'), 'utf8');
+        expect(componer).toMatch(/yaOrdenadas:\s*true/);
     });
 
     it('ya no queda ningún recuadro de proporción fija', () => {

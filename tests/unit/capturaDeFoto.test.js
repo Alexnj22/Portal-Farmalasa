@@ -168,7 +168,7 @@ describe('las cuatro esquinas del papel', () => {
         path.join(process.cwd(), 'src/views/CapturaDeFotoView.jsx'), 'utf8');
 
     it('el adjunto se las pasa al editor', () => {
-        expect(field).toMatch(/esquinas=\{sugerido\?\.esquinas \|\| null\}/);
+        expect(field).toMatch(/esquinas=\{ajustando \? preparado_\?\.esquinas : \(sugerido\?\.esquinas \|\| null\)\}/);
     });
 
     /* Desde la reestructuración del 2026-08-29 las esquinas NO son un desvío:
@@ -184,11 +184,16 @@ describe('las cuatro esquinas del papel', () => {
         // El enderezado ocurre al CONFIRMAR, no antes: mientras se marcan, lo
         // que se ve es la foto original. Marcar sobre una ya enderezada sería
         // corregir encima del error que se viene a corregir.
-        expect(editor).toMatch(/rectificar\(imagen, enPx/);
+        expect(editor).toMatch(/rectificarPapel\(imagen, puntos\)/);
     });
 
     it('el resultado sale de la medida del papel, no de una lista de formas', () => {
-        expect(editor).toMatch(/medidaDelPapel\(enPx\)/);
+        const componer = fs.readFileSync(
+            path.join(process.cwd(), 'src/utils/componerDocumento.js'), 'utf8');
+        expect(componer).toMatch(/medidaDelPapel\(enPx\)/);
+        // Y se ajusta al papel real cuando se lo reconoce: carta, oficio o
+        // cédula. Sin eso, la hoja sale «casi carta».
+        expect(componer).toMatch(/medidaAjustada\(crudo\.ancho, crudo\.alto\)/);
         expect(editor).not.toMatch(/doc\.formas/);
     });
 
@@ -216,5 +221,63 @@ describe('las cuatro esquinas del papel', () => {
     it('el teléfono abre el editor en vez de mandar la foto tal cual', () => {
         expect(telefono).toMatch(/lazy\(\(\) => import\('\.\.\/components\/common\/EditorDeDocumento'\)\)/);
         expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{ setPorAjustar\(null\); mandar\(listo\); \}\}/);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El documento se prepara SOLO al elegir el archivo
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Pedido del usuario (2026-08-29): «al subir la foto, automáticamente detectar
+// las esquinas, cuadrar y mejorar perspectiva, aplicar filtro». Antes esas
+// cuatro cosas existían pero como un TRABAJO —abrir el editor, esperar la
+// propuesta, confirmar—, y quien adjunta seis documentos de un expediente decía
+// que sí seis veces. Un paso que siempre se confirma sin mirar no protege nada.
+//
+// Lo que hace aceptable el automatismo es lo que se ancla acá: se ve qué pasó y
+// corregirlo cuesta un toque.
+
+describe('preparar el documento solo', () => {
+    const field = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/FileField.jsx'), 'utf8');
+    const auto = fs.readFileSync(
+        path.join(process.cwd(), 'src/data/prepararDocumento.js'), 'utf8');
+    const editor = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+
+    it('elegir una imagen dispara la preparación, no el editor', () => {
+        expect(field).toMatch(/prepararAutomatico\(archivo, tipoDeDocumento\)/);
+    });
+
+    // Si la lectura no encuentra las cuatro esquinas NO se inventa un recorte:
+    // recortar por donde no va y adjuntarlo en silencio es peor que pedir
+    // treinta segundos de trabajo.
+    it('si no se reconoce el documento, se abre el editor como antes', () => {
+        expect(auto).toMatch(/no se reconoció el documento/);
+        expect(field).toMatch(/} else \{\s*\n\s*setPorEditar\(archivo\);/);
+    });
+
+    it('lo que hizo se DICE, y «Ajustar» lo reabre donde estaba', () => {
+        expect(field).toMatch(/Recortado y enderezado/);
+        expect(field).toMatch(/setAjustando\(true\); setSugerido\(null\); setPorEditar\(preparado_\.original\)/);
+        // Con las esquinas ya detectadas: reabrir en el encuadre por defecto
+        // haría perder el trabajo que el portal ya hizo bien.
+        expect(field).toMatch(/esquinas=\{ajustando \? preparado_\?\.esquinas/);
+    });
+
+    // Dos tuberías para el mismo resultado se separan sin avisar: el archivo que
+    // el portal prepara solo y el que sale de «Ajustar» y confirmar sin cambiar
+    // nada tienen que ser el mismo.
+    it('el automático y el editor usan la MISMA tubería', () => {
+        for (const fuente of [auto, editor]) {
+            expect(fuente).toMatch(/rectificarPapel\(/);
+            expect(fuente).toMatch(/aArchivo\(/);
+        }
+    });
+
+    it('y al ajustar no se vuelve a preguntar por las esquinas', () => {
+        // Una respuesta distinta le cambiaría el encuadre a quien vino justo a
+        // corregirlo.
+        expect(field).toMatch(/if \(!porEditar \|\| ajustando\) return undefined;/);
     });
 });

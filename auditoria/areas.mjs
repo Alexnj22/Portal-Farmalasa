@@ -215,6 +215,12 @@ export const AREAS = [
             'src/utils/carneDeDependiente.js', 'src/components/common/CarneDeDependiente.jsx',
             'src/utils/nupAfp.js',
             'src/data/recorteSugerido.js',
+            // Preparar el documento SOLO al elegirlo: detectar las esquinas,
+            // enderezar, ajustar al papel (carta, oficio o cédula) y dar el
+            // acabado. `componerDocumento` es la tubería que comparten el
+            // camino automático y el editor.
+            'src/data/prepararDocumento.js', 'src/utils/componerDocumento.js',
+            'src/utils/formatosDePapel.js',
             'src/utils/perspectiva.js',
             'src/utils/leerQrDeImagen.js',
             'src/components/common/VisorDeDocumento.jsx',

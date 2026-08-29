@@ -28,6 +28,9 @@ const traspaso = () => import('../../data/capturaDeFoto');
 /* Preguntar dónde está el papel dentro de la foto. Por `await import()` como
    todo lo demás: sólo corre cuando alguien eligió una imagen. */
 const sugerencia = () => import('../../data/recorteSugerido');
+/* La tubería automática: detectar las esquinas, enderezar, ajustar al papel y
+   dar el acabado, sin preguntarle nada a nadie. */
+const preparado = () => import('../../data/prepararDocumento');
 
 /**
  * FileField — adjuntar un archivo a un formulario.
@@ -185,6 +188,20 @@ const FileField = memo(({
     // archivo» y «se lo entrego al formulario»: cancelar acá deja el campo como
     // estaba, sin nada a medio guardar.
     const [porEditar, setPorEditar] = useState(null);
+    /* ── Lo que el portal preparó solo ──────────────────────────────────────
+     *
+     * Pedido del usuario (2026-08-29): «al subir la foto, automáticamente
+     * detectar las esquinas, cuadrar y mejorar perspectiva, aplicar filtro».
+     * Antes eso era un TRABAJO —abrir el editor, esperar la propuesta,
+     * confirmar—, y para quien adjunta seis documentos de un expediente son
+     * seis diálogos que decir que sí. Un paso que siempre se confirma sin mirar
+     * no protege nada.
+     *
+     * Se guarda la foto ORIGINAL y las esquinas detectadas para que «Ajustar»
+     * reabra el editor donde estaba, en vez de volver a empezar. */
+    const [preparando, setPreparando] = useState(false);
+    const [preparado_, setPreparado] = useState(null);   // {original, esquinas, formato}
+    const [ajustando, setAjustando] = useState(false);
     /* El recorte que propuso la lectura, si llegó a tiempo. Ver el efecto de
        más abajo: el editor NO espera por esto. */
     const [sugerido, setSugerido] = useState(null);
@@ -225,15 +242,34 @@ const FileField = memo(({
             return;
         }
         setRechazo(null);
-        // Una IMAGEN pasa primero por el editor; un PDF va derecho. Recortar un
-        // PDF exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
+        /* Una IMAGEN se prepara sola; un PDF va derecho. Recortar un PDF
+         * exigiría rasterizarlo para no ganar nada: ya viene encuadrado.
+         *
+         * Si la lectura no encuentra las cuatro esquinas NO se inventa un
+         * recorte: se abre el editor, como antes. Recortar por donde no va y
+         * adjuntarlo sin decir nada es peor que pedir treinta segundos. */
         if (conEditor && archivo.type?.startsWith('image/')) {
             setSugerido(null);
-            setPorEditar(archivo);
+            setPreparado(null);
+            setPreparando(true);
+            (async () => {
+                let r = { ok: false };
+                try {
+                    const { prepararAutomatico } = await preparado();
+                    r = await prepararAutomatico(archivo, tipoDeDocumento);
+                } catch { /* abajo se abre el editor */ }
+                setPreparando(false);
+                if (r.ok) {
+                    setPreparado({ original: archivo, esquinas: r.esquinas, formato: r.formato });
+                    onChange?.(r.archivo);
+                } else {
+                    setPorEditar(archivo);
+                }
+            })();
             return;
         }
         onChange?.(archivo);
-    }, [accept, maxSizeMB, onChange, conEditor]);
+    }, [accept, maxSizeMB, onChange, conEditor, tipoDeDocumento]);
 
     const alEntrar = useCallback(e => {
         if (inactivo || !traeArchivos(e)) return;
@@ -269,6 +305,7 @@ const FileField = memo(({
     const limpiar = useCallback(e => {
         e.preventDefault(); e.stopPropagation();
         setRechazo(null);
+        setPreparado(null);
         onChange?.(null);
         if (inputRef.current) inputRef.current.value = '';
     }, [onChange]);
@@ -291,7 +328,10 @@ const FileField = memo(({
      * nada: el editor sigue como siempre. Una ayuda que se cae no puede impedir
      * adjuntar un papel. */
     useEffect(() => {
-        if (!porEditar) return undefined;
+        // Al ajustar algo que el portal ya preparó, las esquinas ya se conocen:
+        // volver a preguntarlas cuesta una llamada y puede llegar una respuesta
+        // distinta que le cambie el encuadre a quien vino justo a corregirlo.
+        if (!porEditar || ajustando) return undefined;
         let vivo = true;
         setBuscandoRecorte(true);
         (async () => {
@@ -304,7 +344,7 @@ const FileField = memo(({
             if (vivo && r) setSugerido(prev => (prev === null ? r : prev));
         })();
         return () => { vivo = false; setBuscandoRecorte(false); };
-    }, [porEditar]);
+    }, [porEditar, ajustando]);
 
     // ── Tomar la foto con el teléfono ──────────────────────────────────────
     const cerrarCaptura = useCallback(() => setCaptura(null), []);
@@ -386,6 +426,11 @@ const FileField = memo(({
                 </label>
             )}
 
+            {/* ── Lo que el portal hizo solo, DICHO y con vuelta atrás ───────
+                Un recorte automático que nadie mira sería peor que uno manual;
+                lo que lo vuelve aceptable es que se vea qué pasó y que corregir
+                cueste un toque. Por eso esto no es un aviso que se va: queda
+                mientras el archivo esté puesto. */}
             <ListRow
                 density={density}
                 disabled={disabled || busy}
@@ -394,17 +439,18 @@ const FileField = memo(({
                 // inválido —el navegador desarma el marcado y el clic queda
                 // impredecible—. `ListRow` ya resuelve esto solo: sin `onClick`
                 // se dibuja como `div`.
-                onClick={(hayArchivo || busy) ? undefined : abrirSelector}
-                icon={busy ? Loader2 : (hayArchivo ? FileCheck2 : UploadCloud)}
-                iconClass={busy ? 'text-brand-text animate-spin'
+                onClick={(hayArchivo || busy || preparando) ? undefined : abrirSelector}
+                icon={(busy || preparando) ? Loader2 : (hayArchivo ? FileCheck2 : UploadCloud)}
+                iconClass={(busy || preparando) ? 'text-brand-text animate-spin'
                     : (hayArchivo ? 'text-success' : VACIO[emptyState].icono)}
-                iconBoxClass={busy ? 'bg-brand/10 border-brand/20'
+                iconBoxClass={(busy || preparando) ? 'bg-brand/10 border-brand/20'
                     : (hayArchivo ? 'bg-success/12 border-success/25' : VACIO[emptyState].caja)}
-                title={busy ? busyLabel
+                title={preparando ? 'Recortando y enderezando el documento…'
+                    : busy ? busyLabel
                     : (file ? file.name
                         : (url ? (name || 'Documento guardado') : VACIO[emptyState].titulo))}
-                subtitle={busy ? null : (peso || (hayArchivo ? null : ayuda))}
-                trailing={busy ? null : hayArchivo ? (
+                subtitle={(busy || preparando) ? null : (peso || (hayArchivo ? null : ayuda))}
+                trailing={(busy || preparando) ? null : hayArchivo ? (
                     <>
                         <button type="button" onClick={ver} title="Ver archivo"
                             className="w-8 h-8 rounded-btn flex items-center justify-center text-content-3
@@ -503,18 +549,25 @@ const FileField = memo(({
                         file={porEditar}
                         // Que la espera SE VEA: el editor abre antes de que la
                         // lectura conteste, y sin decirlo parece terminado.
-                        analizando={!sugerido && buscandoRecorte}
+                        analizando={!sugerido && !ajustando && buscandoRecorte}
                         recuadro={sugerido?.recuadro || null}
-                        giroSugerido={sugerido?.giro || 0}
+                        giroSugerido={ajustando ? 0 : (sugerido?.giro || 0)}
                         /* Las esquinas del papel — sin esto el enderezado de
                            perspectiva NUNCA corría desde un adjunto. La lectura
                            las devolvía, el editor sabía usarlas, y acá se
                            perdían: una función entera muerta sin dar error, que
                            es exactamente por qué «lo de las esquinas no
                            funciona del todo bien». */
-                        esquinas={sugerido?.esquinas || null}
-                        onCancel={() => { setPorEditar(null); setSugerido(null); }}
-                        onConfirm={(listo) => { setPorEditar(null); setSugerido(null); entregar(listo); }}
+                        /* Al ajustar algo YA preparado, las esquinas son las que
+                           se detectaron —y ya vienen giradas—: reabrir en el
+                           encuadre por defecto sería hacer perder el trabajo que
+                           el portal ya hizo bien. */
+                        esquinas={ajustando ? preparado_?.esquinas : (sugerido?.esquinas || null)}
+                        onCancel={() => { setPorEditar(null); setSugerido(null); setAjustando(false); }}
+                        onConfirm={(listo) => {
+                            setPorEditar(null); setSugerido(null); setAjustando(false);
+                            entregar(listo);
+                        }}
                     />
                 </Suspense>
             )}
@@ -549,6 +602,26 @@ const FileField = memo(({
                 tabIndex={-1}
                 aria-hidden="true"
             />
+
+            {preparado_ && hayArchivo && !preparando && (
+                <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    <p className="text-micro text-content-3 font-medium leading-snug">
+                        {preparado_.formato?.seguro
+                            /* El nombre del papel SÓLO cuando no hay duda: un
+                               oficio de pie y una cédula parada se llevan un
+                               3.6 %, y nombrar mal se lee como que el portal
+                               entendió el documento. */
+                            ? `Recortado y enderezado · tamaño ${preparado_.formato.nombre.toLowerCase()} ${preparado_.formato.orientacion}`
+                            : 'Recortado y enderezado automáticamente'}
+                    </p>
+                    <button type="button"
+                        onClick={() => { setAjustando(true); setSugerido(null); setPorEditar(preparado_.original); }}
+                        className="text-micro font-black text-brand-text underline
+                                   min-h-[var(--tap-min)] px-1">
+                        Ajustar
+                    </button>
+                </div>
+            )}
 
             {rechazo && (
                 <p role="status" className="mt-1.5 ml-1 text-label font-bold text-danger-text">

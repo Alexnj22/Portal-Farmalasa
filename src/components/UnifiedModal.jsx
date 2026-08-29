@@ -519,11 +519,29 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             20000
                         );
                     } else if (showToast) {
+                        // Al enlazar con alguien que ya eligió su contraseña no
+                        // hay temporal que entregar, y esa ausencia se lee como
+                        // que algo falló. Se dice: la conserva, a propósito.
+                        const conserva = created?.contrasenaConservada
+                            ? `Entra igual que siempre, con el usuario ${created.username} y la contraseña que ya tenía.`
+                            : null;
                         showToast(
                             enlazado ? "Expediente Enlazado" : "Personal Registrado",
-                            enlazado || "La ficha del empleado se guardó exitosamente.",
+                            [enlazado, conserva].filter(Boolean).join(' ') || "La ficha del empleado se guardó exitosamente.",
                             "success",
                             enlazado ? 12000 : undefined
+                        );
+                    }
+
+                    // El usuario ES la credencial. Si no se pudo mover, la ficha
+                    // quedó guardada y la persona sigue entrando con el de
+                    // antes: hay que decir cuál, no dejarlo en la consola.
+                    if (created?.avisoDeUsuario && showToast) {
+                        showToast(
+                            "El usuario quedó como estaba",
+                            `La ficha se guardó, pero esa persona sigue entrando como ${created.username}: ${created.avisoDeUsuario}`,
+                            "warning",
+                            15000
                         );
                     }
 

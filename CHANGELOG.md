@@ -21,26 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.854.3 — Cada papel de la caja se llama por su nombre
-
-Lo destapó una pregunta sobre el flujograma: *«no veo la parte de hacer un vale
-y sacar dinero de una bolsa»*. No faltaba sólo un paso — **la misma palabra
-nombraba tres cosas**, y por eso el circuito no se entendía:
-
-| se llama | cuántos | dónde va | ¿mueve lo que la caja espera? |
-|---|---|---|---|
-| **Vale de papel** | uno por operación, aunque toque cuatro bolsas | se archiva | no |
-| **Etiqueta** | una por bolsa | pegada a la bolsa, con la resta | no |
-| **Vale de caja** | uno por corte | al sistema de la caja | **sí** |
-
-Las pantallas ahora dicen «vale de caja» sólo cuando es el tercero, y el concepto
-que se escribe del otro lado también: antes decía `VALES DEL PORTAL`, que a quien
-lo lee allá no le distinguía nada.
-
-Y explica lo que parecía una contradicción: **una salida de una bolsa de un día
-ya cerrado igual imprime su vale de papel y rehace su etiqueta, y aun así no se
-anota en la caja.** Los dos primeros son respaldo; el tercero es contabilidad.
-## v2.854.2 — La contraseña de quien ya trabajaba acá no se reinicia al enlazar
+## v2.854.4 — La contraseña de quien ya trabajaba acá no se reinicia al enlazar
 
 **Lo levantó el usuario con nombre y apellido**: «al crear un nuevo usuario y
 seleccionar de la lista a uno ya creado, si ese empleado ya asignó su
@@ -81,6 +62,25 @@ de antes (el que sigue dejando entrar) y el aviso dice cuál es.
 **A Carlos hay que darle una contraseña nueva**: la anterior se sobrescribió el
 28-ago y no se puede recuperar. Sale de «Restablecer contraseña» en su ficha.
 
+## v2.854.3 — Cada papel de la caja se llama por su nombre
+
+Lo destapó una pregunta sobre el flujograma: *«no veo la parte de hacer un vale
+y sacar dinero de una bolsa»*. No faltaba sólo un paso — **la misma palabra
+nombraba tres cosas**, y por eso el circuito no se entendía:
+
+| se llama | cuántos | dónde va | ¿mueve lo que la caja espera? |
+|---|---|---|---|
+| **Vale de papel** | uno por operación, aunque toque cuatro bolsas | se archiva | no |
+| **Etiqueta** | una por bolsa | pegada a la bolsa, con la resta | no |
+| **Vale de caja** | uno por corte | al sistema de la caja | **sí** |
+
+Las pantallas ahora dicen «vale de caja» sólo cuando es el tercero, y el concepto
+que se escribe del otro lado también: antes decía `VALES DEL PORTAL`, que a quien
+lo lee allá no le distinguía nada.
+
+Y explica lo que parecía una contradicción: **una salida de una bolsa de un día
+ya cerrado igual imprime su vale de papel y rehace su etiqueta, y aun así no se
+anota en la caja.** Los dos primeros son respaldo; el tercero es contabilidad.
 ## v2.854.1 — Retirados y Devueltos no son lo mismo
 
 **Lo levantó el usuario mirando la lista**: vio «DEVUELTOS» en una pantalla llena

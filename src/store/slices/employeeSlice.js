@@ -628,6 +628,24 @@ export const createEmployeeSlice = (set, get) => ({
                 throw new Error('La ficha que quieres enlazar ya no está en la lista. Recarga la pantalla y vuelve a elegirla.');
             }
 
+            // ── Al enlazar, el usuario no es una columna: es la CREDENCIAL ──
+            //
+            // Esa persona ya entra al portal. Su cuenta de Auth se llama
+            // `<usuario>@farmalasa.app`, así que escribir la columna a secas
+            // deja la ficha diciendo una cosa y la puerta pidiendo otra: no
+            // hay error, no falta ninguna fila, la persona simplemente no
+            // entra. Y en el alta el usuario SE REESCRIBE SOLO con el nombre
+            // (`handleChange` lo regenera mientras no haya `id`), así que
+            // corregirle el apellido a la ficha que se está absorbiendo
+            // alcanza para producirlo.
+            //
+            // Por eso, cuando cambia, lo mueve `renombrar-usuario-empleado`
+            // —que cambia la columna y el correo juntos o no cambia ninguno— y
+            // el `UPDATE` de acá deja el que ya tenía.
+            const usuarioPedido = formData.username ? formData.username.trim().toLowerCase() : null;
+            const usuarioAnterior = (fichaAbsorbida?.username || '').toLowerCase() || null;
+            const renombraUsuario = !!absorbeA && !!usuarioPedido && usuarioPedido !== usuarioAnterior;
+
             // El código es la credencial del carné: SOLO números (regla de negocio,
             // también validada por trigger en BD) y único entre empleados.
             const cleanCode = String(formData.code ?? '').trim() || null;
@@ -656,7 +674,7 @@ export const createEmployeeSlice = (set, get) => ({
             const dbPayload = {
                 first_names: fNames,
                 last_names: lNames,
-                username: formData.username ? formData.username.trim().toLowerCase() : null,
+                username: renombraUsuario ? usuarioAnterior : usuarioPedido,
                 code: cleanCode,
                 
                 role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
@@ -885,16 +903,60 @@ export const createEmployeeSlice = (set, get) => ({
                 );
             }
 
+            // ── El usuario nuevo se MUEVE, no se escribe ───────────────────
+            //
+            // Va acá —después del `UPDATE` y antes de la contraseña— porque
+            // `set-employee-password` busca al empleado POR usuario: tiene que
+            // encontrar el que ya quedó escrito en la ficha.
+            //
+            // Y si falla NO se lanza: la ficha ya está guardada, así que decir
+            // «no se pudo guardar» sobre un expediente que sí se guardó manda a
+            // rehacerlo. Queda el usuario de antes, que es justamente el que
+            // sigue dejando entrar a esa persona; el aviso lo dice.
+            let usuarioEfectivo = dbPayload.username;
+            let avisoDeUsuario = null;
+            if (renombraUsuario) {
+                try {
+                    const { data: ren, error: errRen } = await supabase.functions.invoke('renombrar-usuario-empleado', {
+                        body: { employee_id: newEmp.id, username: usuarioPedido },
+                    });
+                    if (errRen) throw errRen;
+                    if (ren?.ok) {
+                        usuarioEfectivo = usuarioPedido;
+                        newEmp.username = usuarioPedido;
+                    } else {
+                        avisoDeUsuario = ren?.details || ren?.error || 'No se pudo cambiar el usuario.';
+                    }
+                } catch (errRen) {
+                    avisoDeUsuario = errRen?.message || 'No se pudo cambiar el usuario.';
+                }
+                if (avisoDeUsuario) console.warn('renombrar-usuario-empleado:', avisoDeUsuario);
+            }
+
             // Crear usuario Auth automáticamente (no bloquea la creación si falla).
             // La edge function genera una temporal aleatoria y la devuelve — hay que
             // capturarla aquí para mostrársela al admin (antes se descartaba y el
             // primer login era imposible sin un reset manual).
+            //
+            // ── Al enlazar, `conservarLaSuya` ──────────────────────────────
+            // El '1234' es el sentinel de «reseteala a una temporal», y sobre
+            // una ficha que ya existe eso le cambia la contraseña a alguien que
+            // hace meses eligió la suya: le pasó a una persona real el 28-ago,
+            // sin un solo error a la vista. La bandera dice que este llamado
+            // viene a asegurar que TENGA cuenta, no a repartir una nueva.
+            //
+            // Quién decide es la función y no esta pantalla: acá no se sabe si
+            // esa cuenta existe ni si la contraseña la eligió la persona. Si
+            // nunca la eligió —sigue con una temporal que ya nadie recuerda—
+            // devuelve una nueva, que es lo que quien da de alta necesita para
+            // entregarla.
             let tempPassword = null;
-            if (dbPayload.username) {
+            let contrasenaConservada = false;
+            if (usuarioEfectivo) {
                 try {
                     const { data: authResult, error: authError } =
                         await supabase.functions.invoke('set-employee-password', {
-                            body: { username: dbPayload.username, password: '1234' }
+                            body: { username: usuarioEfectivo, password: '1234', conservarLaSuya: !!absorbeA }
                         });
                     if (authError) {
                         console.warn('Auth creation error:', authError);
@@ -902,6 +964,7 @@ export const createEmployeeSlice = (set, get) => ({
                         console.warn('Auth creation failed:', authResult);
                     } else {
                         tempPassword = authResult.tempPassword || null;
+                        contrasenaConservada = authResult.conservada === true;
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);
@@ -943,6 +1006,12 @@ export const createEmployeeSlice = (set, get) => ({
                 ...newEmp,
                 first_names: dbPayload.first_names,
                 last_names: dbPayload.last_names,
+                // `DEVUELVE` no trae el usuario, y al enlazar `base` traería el
+                // de antes: la copia en memoria diría que esa persona entra con
+                // un usuario que ya no es el suyo. `employees_safe` sí lo
+                // publica, así que copiarlo no devuelve nada al disco que esa
+                // lista no tuviera ya.
+                username: usuarioEfectivo,
                 branchId: newEmp.branch_id,
                 hireDate: dbPayload.hire_date,
                 birthDate: dbPayload.birth_date,
@@ -965,7 +1034,11 @@ export const createEmployeeSlice = (set, get) => ({
                 persistEmployees(next);
                 return { employees: next };
             });
-            return { id: appEmp.id, username: dbPayload.username, tempPassword, enlazadoCon: fichaAbsorbida?.name || null };
+            return {
+                id: appEmp.id, username: usuarioEfectivo, tempPassword,
+                enlazadoCon: fichaAbsorbida?.name || null,
+                contrasenaConservada, avisoDeUsuario,
+            };
         } catch (err) {
             console.error("Fallo al crear empleado:", err);
             throw err; // Re-lanzar el error original sin modificarlo

@@ -71,6 +71,13 @@ Deno.serve(async (req: Request) => {
 
     // password === '1234' es el sentinel de "resetear a temporal".
     const isResetRequest = password === '1234';
+    // Y esto es el freno: «si ya la eligió ella, no la toques».
+    //
+    // Lo manda el alta cuando ENLAZA con una ficha que ya existe — ahí el
+    // sentinel '1234' no significa «reseteala», significa «asegurate de que
+    // tenga cuenta». Quién decide se resuelve ACÁ y no en el navegador: el
+    // navegador no sabe si la cuenta existe ni quién eligió esa contraseña.
+    const conservarLaSuya = body?.conservarLaSuya === true;
     if (!username || !password) return json({ ok: false, error: "MISSING_FIELDS" });
     if (!isResetRequest && password.length < 8) {
         return json({ ok: false, error: "PASSWORD_TOO_SHORT", details: "Mínimo 8 caracteres." });
@@ -92,6 +99,30 @@ Deno.serve(async (req: Request) => {
     const { data: existingAuth } = await admin.auth.admin.getUserById(employee.id);
 
     if (existingAuth?.user) {
+      const metaAnterior = (existingAuth.user.user_metadata ?? {}) as Record<string, unknown>;
+      // ── Quien ya eligió su contraseña se la queda ────────────────────────
+      //
+      // `must_change_password === false` lo escribe la PERSONA al cambiarla en
+      // su primer acceso (LoginView), y es el mismo valor con el que el portal
+      // decide si la obliga a cambiarla otra vez. O sea: es el único registro
+      // de que la contraseña de esa cuenta la eligió ella.
+      //
+      // Enlazar un alta con su ficha se la reseteaba igual, porque el alta
+      // manda el sentinel. Le pasó a una persona real el 28-ago: entró a las
+      // 14:32 y a las 22:34 su cuenta volvió a una temporal que sólo vio quien
+      // la dio de alta. No hubo error en ningún lado — el alta hizo lo que
+      // decía su código.
+      //
+      // La metadata SÍ se refresca: el usuario y el código pueden haber
+      // cambiado en el alta, y dejarlos viejos es el desfase de siempre. Lo
+      // único que no se toca es la contraseña.
+      if (conservarLaSuya && metaAnterior.must_change_password === false) {
+        const { error: metaErr } = await admin.auth.admin.updateUserById(employee.id, {
+          user_metadata: { ...metaAnterior, username, code: employee.code },
+        });
+        if (metaErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: metaErr.message });
+        return json({ ok: true, conservada: true });
+      }
       const effectivePassword = isResetRequest ? tempPassword : password;
       const { error: updErr } = await admin.auth.admin.updateUserById(employee.id, {
         password: effectivePassword, user_metadata: { username, code: employee.code, must_change_password: isResetRequest },

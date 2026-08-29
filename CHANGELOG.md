@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.852.1 — Bloquear a una persona vuelve a funcionar: la ficha se resuelve desde su identidad
+
+Reportado desde la pantalla: quitarle el acceso a alguien contestaba **«No se
+pudo bloquear — no existe esa persona»**. No era el caso de esa persona: fallaba
+para **todo el mundo**, y llevaba así desde el 17 de agosto.
+
+Adentro chocaban dos cosas que por separado están bien. La lista de conexiones
+identifica a la gente por su **identidad de acceso** —la puerta por la que
+entró—, y lo hace a propósito: cerrar conexiones se hace por esa puerta. La
+acción de bloquear, en cambio, escribe en la **ficha** de la persona. La pantalla
+le pasaba a la segunda lo que le había dado la primera, y no son el mismo número:
+en las 45 fichas con cuenta, coinciden en **cero**.
+
+Y no se arregla eligiendo una de las dos, porque **21 personas tienen dos
+puertas** —la del correo y la del carné—. Así que ahora se traduce: la acción
+recibe a la persona dicha como sea y resuelve su ficha. El bloqueo sigue
+escribiéndose en la ficha, que es lo que cierra **las dos puertas de una vez**.
+
+Tres cosas más que salieron a la luz al mirarlo, y que nadie podía ver:
+
+- **Quitar el bloqueo no daba error: no hacía nada.** La pantalla decía «Ya puede
+  volver a entrar» sin haber tocado una fila, porque la función contestaba con un
+  sí/no que nadie miraba. Ahora avisa.
+- **El freno de bloquearse a uno mismo nunca disparó.** Comparaba la ficha contra
+  la identidad, o sea dos números que jamás iban a ser iguales. La pantalla apaga
+  el botón en la tarjeta donde estás conectado — pero quien tiene dos puertas
+  tiene otra tarjeta, con el botón vivo y sin freno detrás.
+- **Al bloquear se cerraban sólo las conexiones de una puerta.** Ahora se cierran
+  las de todas: bloquear y dejarle una sesión viva por la otra puerta es no
+  bloquear.
+
 ## v2.852.0 — La caja mueve el dinero: salidas del cajón, la bolsa, y corregir se pide
 
 Tres huecos que la versión anterior dejó abiertos, y el primero era el que

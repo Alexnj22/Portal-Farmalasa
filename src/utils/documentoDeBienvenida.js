@@ -176,6 +176,137 @@ export async function avatarComoPng(nombre, lado = 260, alto = null) {
 }
 
 /**
+ * El FONDO de marca del retrato: el morado, el arco verde y el ícono al agua.
+ *
+ * Se dibuja aparte de la persona porque quien lo mira tiene que reconocer la
+ * empresa sin leer nada — y porque el fondo de una foto de teléfono (una
+ * pared, un estante, medio pasillo) es exactamente lo que hace que dos carnés
+ * de la misma empresa no se parezcan entre sí.
+ */
+function fondoDeMarca(x, ancho, alto) {
+    const g = x.createLinearGradient(0, 0, 0, alto);
+    g.addColorStop(0, MARCA.magenta);
+    g.addColorStop(1, '#7A167A');
+    x.fillStyle = g;
+    x.fillRect(0, 0, ancho, alto);
+
+    // El arco del logo, asomando por abajo a la derecha — el mismo gesto que
+    // el avatar de iniciales, para que con foto y sin foto se vean hermanos.
+    x.save();
+    x.globalAlpha = 0.92;
+    x.fillStyle = MARCA.verde;
+    x.beginPath();
+    x.arc(ancho * 0.94, alto * 1.01, ancho * 0.46, 0, Math.PI * 2);
+    x.fill();
+    x.restore();
+
+    // La cruz al agua, arriba a la izquierda. Muy tenue: es una marca de agua,
+    // no un segundo logo compitiendo con la cara.
+    x.save();
+    x.globalAlpha = 0.13;
+    x.fillStyle = '#FFFFFF';
+    const cx = ancho * 0.24, cy = alto * 0.20;
+    const brazo = ancho * 0.30, grosor = ancho * 0.11;
+    x.fillRect(cx - brazo / 2, cy - grosor / 2, brazo, grosor);
+    x.fillRect(cx - grosor / 2, cy - brazo / 2, grosor, brazo);
+    x.restore();
+}
+
+/**
+ * El retrato con la persona RECORTADA sobre el fondo de la empresa.
+ *
+ * ── Por qué se le quita el fondo a la foto ──────────────────────────────────
+ *
+ * Pedido del usuario (2026-08-29): «un efecto o algo que quede detrás de la
+ * foto (la haces transparente sólo sacando a la persona) con los colores o
+ * ícono de la empresa».
+ *
+ * Y resuelve un problema real, no sólo estético: la foto de un carné se toma
+ * donde se puede —contra una pared, un estante, medio pasillo—, así que dos
+ * carnés de la misma empresa salen con dos fondos distintos y ninguno dice
+ * nada. Con el fondo de marca, todos los carnés se parecen entre sí y el
+ * único que cambia es quien está adelante.
+ *
+ * ── Si no se puede, se sigue ────────────────────────────────────────────────
+ *
+ * El recorte lo hace un modelo que se descarga la primera vez (`@imgly`, el
+ * mismo que ya usa el editor de fotos del portal). Sin red, o si el modelo no
+ * reconoce a nadie, se devuelve `null` y el carné sale con la foto tal cual:
+ * una mejora que se cae no puede dejar a alguien sin carné.
+ */
+export async function retratoDeMarcaPng(src, ancho = 260, alto = 320) {
+    if (!src || typeof document === 'undefined') return null;
+    try {
+        const { removeBackground } = await import('@imgly/background-removal');
+        const recortada = await removeBackground(src, {
+            // El modelo chico: es el que ya usa `PhotoEditorModal` y el que hace
+            // que esto tarde segundos y no minutos en una computadora de sala.
+            model: 'small',
+            output: { format: 'image/png', quality: 1 },
+        });
+        const url = URL.createObjectURL(recortada);
+        // La URL se suelta al final y no en un `finally`: lo que pueda lanzar
+        // entre medio lo atrapa el `catch` de abajo —que además AVISA—, y un
+        // `finally` sin `catch` propio se lee como que el fallo se traga.
+        {
+            const img = await new Promise((res, rej) => {
+                const el = new Image();
+                el.onload = () => res(el); el.onerror = rej; el.src = url;
+            });
+            /* ── Encuadrar a la PERSONA, no a la foto ────────────────────────
+             *
+             * Después de quitar el fondo, casi toda la imagen es transparente:
+             * cuánto ocupa la persona depende de a qué distancia se tomó la
+             * foto. Si se dibujara la imagen entera, uno saldría enorme y otro
+             * diminuto en el mismo carné — y eso no lo decide nadie, lo decide
+             * quién sostenía el teléfono.
+             *
+             * Se busca la caja de lo que NO es transparente y se encuadra eso.
+             * Así todos los carnés salen con la persona del mismo tamaño. */
+            const medida = document.createElement('canvas');
+            medida.width = img.naturalWidth; medida.height = img.naturalHeight;
+            const mx = medida.getContext('2d', { willReadFrequently: true });
+            mx.drawImage(img, 0, 0);
+            const d = mx.getImageData(0, 0, medida.width, medida.height).data;
+            let x0 = medida.width, y0 = medida.height, x1 = 0, y1 = 0;
+            for (let py = 0; py < medida.height; py++) {
+                for (let px = 0; px < medida.width; px++) {
+                    // 40 y no 0: el recorte deja un halo casi transparente, y
+                    // medirlo agrandaría la caja con aire que no es nadie.
+                    if (d[(py * medida.width + px) * 4 + 3] > 40) {
+                        if (px < x0) x0 = px; if (px > x1) x1 = px;
+                        if (py < y0) y0 = py; if (py > y1) y1 = py;
+                    }
+                }
+            }
+            const hay = x1 > x0 && y1 > y0;
+            const bw = hay ? x1 - x0 : img.naturalWidth;
+            const bh = hay ? y1 - y0 : img.naturalHeight;
+            if (!hay) { x0 = 0; y0 = 0; }
+
+            const c = document.createElement('canvas');
+            c.width = ancho; c.height = alto;
+            const x = c.getContext('2d');
+            fondoDeMarca(x, ancho, alto);
+
+            /* Un poco de aire arriba y a los lados, y apoyada ABAJO: sin fondo,
+             * centrar verticalmente deja una cabeza flotando. Apoyada al pie se
+             * lee como un retrato. */
+            const AIRE = 0.90;
+            const escala = Math.min((ancho * AIRE) / bw, (alto * AIRE) / bh);
+            const w = bw * escala, h = bh * escala;
+            x.drawImage(img, x0, y0, bw, bh, (ancho - w) / 2, alto - h, w, h);
+            const salida = c.toDataURL('image/jpeg', 0.92);
+            URL.revokeObjectURL(url);
+            return salida;
+        }
+    } catch (e) {
+        console.warn('retratoDeMarcaPng:', e?.message || e);
+        return null;
+    }
+}
+
+/**
  * La foto de la persona, recortada CUADRADA y como PNG.
  *
  * Cuadrada porque el hueco del carné lo es: dejar que la imagen se estire para
@@ -375,11 +506,6 @@ export function paginaDelCarne({
     const fotoW = 74, fotoH = 91;     // 26 × 32 mm
 
     const abs = (x, y) => ({ absolutePosition: { x: x0 + x, y: y0 + y } });
-    const centrado = (y, texto, style) => ({
-        ...abs(canto, y),
-        columns: [{ width: CARNE.ancho - canto, alignment: 'center', text: texto, style }],
-    });
-
     /* ── Las marcas de corte ────────────────────────────────────────────────
      * Pedido del usuario. No es decoración de imprenta: sin ellas hay que
      * adivinar dónde termina la tarjeta —el borde impreso es del mismo color
@@ -449,12 +575,25 @@ export function paginaDelCarne({
                        lineWidth: 0.8, lineColor: '#DDDDDD' }],
         },
 
-        // ── Quién es ───────────────────────────────────────────────────────
-        centrado(140, nombre || '', 'carneNombre'),
-        centrado(168, cargo || '', 'carneCargo'),
-        centrado(182, sala ? `Sala · ${sala}` : '', 'carneDato'),
-        centrado(193, fechaDeInicio ? `Desde ${soloFecha(fechaDeInicio) || fechaDeInicio}` : '',
-            'carneDato'),
+        /* ── Quién es ───────────────────────────────────────────────────────
+         * Los cuatro renglones en UN bloque apilado y no en cuatro posiciones
+         * fijas: con posiciones fijas hay que suponer cuántas líneas ocupa el
+         * nombre, y «Edwin Núñez» —que entra en una— dejaba un hueco delante
+         * del cargo mientras que un nombre de cuatro palabras se le encimaba. */
+        {
+            ...abs(canto, 140),
+            columns: [{
+                width: CARNE.ancho - canto,
+                alignment: 'center',
+                stack: [
+                    { text: nombre || '', style: 'carneNombre' },
+                    { text: cargo || '', style: 'carneCargo', margin: [0, 3, 0, 0] },
+                    { text: sala ? `Sala · ${sala}` : '', style: 'carneDato', margin: [0, 4, 0, 0] },
+                    { text: fechaDeInicio ? `Desde ${soloFecha(fechaDeInicio) || fechaDeInicio}` : '',
+                      style: 'carneDato', margin: [0, 1, 0, 0] },
+                ],
+            }],
+        },
 
         // ── El código, que es lo que lee la máquina ────────────────────────
         // Sin el número en texto: es la credencial que abre el portal y marca
@@ -687,14 +826,20 @@ export async function descargarDocumentoDeBienvenida(datos) {
         /* El retrato: la foto si la hay, y si no las iniciales sobre el
          * magenta. Nunca un hueco — un carné con un cuadro vacío se lee como un
          * carné a medio hacer, y el día que llegue la foto ocupa el mismo sitio. */
-        const [pdfMake, barrasPng, foto, iconoPng] = await Promise.all([
+        const [pdfMake, barrasPng, iconoPng] = await Promise.all([
             getPdfMake(),
             barrasComoPng(datos?.valorDelCarne),
-            // 26 × 32 mm es el hueco del carné de pie: se le pide con esa forma.
-            fotoCuadradaComoPng(datos?.foto, 260, 320),
             iconoDeLaFarmaciaPng(),
         ]);
-        const retratoPng = foto || await avatarComoPng(datos?.nombre, 260, 320);
+        /* El retrato, en tres intentos y cada uno peor que el anterior:
+         *   1. la persona recortada sobre el fondo de la empresa;
+         *   2. la foto tal cual, encuadrada al hueco (si el recorte no se pudo);
+         *   3. las iniciales sobre el morado (si no hay foto).
+         * Nunca un hueco: un carné con un cuadro vacío se lee como uno a medio
+         * hacer. 26 × 32 mm es el hueco del carné de pie. */
+        const retratoPng = (datos?.foto && await retratoDeMarcaPng(datos.foto, 260, 320))
+            || (datos?.foto && await fotoCuadradaComoPng(datos.foto, 260, 320))
+            || await avatarComoPng(datos?.nombre, 260, 320);
         const def = definicionDelDocumento({
             ...datos, barrasPng, retratoPng, iconoPng,
             previsional: orientacionPrevisional(datos),

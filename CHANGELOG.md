@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.856.5 — El retrato del carné va recortado sobre los colores de la empresa
+
+Pedido del usuario: *«un efecto o algo que quede detrás de la foto (la haces
+transparente sólo sacando a la persona) con los colores o ícono de la empresa»*.
+
+Al generar el carné, la foto pasa por el **recortador de fondo que el portal ya
+tenía** —el mismo `@imgly` del editor de fotos— y la persona queda sobre un
+fondo de la empresa: degradado morado, el arco verde asomando por abajo a la
+derecha y la cruz al agua arriba a la izquierda, muy tenue.
+
+Y no es sólo estético. La foto de un carné se toma donde se puede —contra una
+pared, un estante, medio pasillo—, así que dos carnés de la misma empresa salían
+con dos fondos distintos y ninguno decía nada. Ahora todos se parecen entre sí y
+el único que cambia es quien está adelante.
+
+**Se encuadra a la PERSONA, no a la foto.** Después de quitar el fondo casi toda
+la imagen es transparente, y cuánto ocupa alguien depende de a qué distancia se
+tomó la foto: dibujar la imagen entera haría que uno saliera enorme y otro
+diminuto, y eso no lo decide nadie — lo decide quién sostenía el teléfono. Se
+busca la caja de lo que **no** es transparente y se encuadra eso, con un poco de
+aire y apoyada abajo: sin fondo, centrar verticalmente deja una cabeza flotando.
+
+**Tres intentos, cada uno peor que el anterior, y nunca un hueco:** la persona
+recortada sobre el fondo de la empresa; si el recorte no se pudo —sin red, o el
+modelo no reconoció a nadie—, la foto tal cual encuadrada al hueco; y si no hay
+foto, las iniciales sobre el morado. Una mejora que se cae no puede dejar a
+alguien sin carné.
+
+De paso: los cuatro renglones de identidad pasaron a un solo bloque apilado. Con
+posiciones fijas había que suponer cuántas líneas ocupa el nombre, y uno corto
+—«Edwin Núñez», que entra en una— dejaba un hueco delante del cargo.
+
 ## v2.856.4 — El carné de pie, con el ícono, marcas de corte e inducción
 
 El usuario eligió la **variante F** de los seis bocetos y pidió tres cosas más.

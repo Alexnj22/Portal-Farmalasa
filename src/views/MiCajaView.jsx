@@ -3,6 +3,7 @@ import { ArrowDownLeft, ArrowUpRight, DoorOpen, Landmark, Lock, Scale, Wallet } 
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
+import FilterBar from '../components/common/FilterBar';
 import LiquidModal from '../components/common/LiquidModal';
 import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
@@ -130,35 +131,63 @@ export default function MiCajaView() {
         return r;
     };
 
-    /* El selector se arma acá y no dentro del cuerpo porque tiene que pintarse
-     * SIEMPRE, incluso sin sala elegida.
-     *
-     * Estaba debajo del vacío «sin sala», o sea que quien no tiene sala propia
-     * —justamente quien supervisa, cuya ficha está en Administración— veía el
-     * cartel y ninguna forma de elegir. Un vacío que esconde su propia salida es
-     * peor que un error: parece que la pantalla no es para vos. */
-    const selector = salas.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
-            {salas.map((b) => (
-                <Button key={b.id} size="sm"
-                    variant={String(b.id) === String(sala) ? 'primary' : 'secondary'}
-                    onClick={() => setSala(b.id)}>
-                    {b.name}
-                </Button>
-            ))}
-        </div>
+    const opcionesDeSala = useMemo(
+        () => salas.map((b) => ({ value: b.id, label: b.name })),
+        [salas],
     );
+
+    /* Las acciones de la vista son un DESCRIPTOR, no botones a mano (§15.5): la
+     * vista dice qué se puede hacer y `FilterBar` decide cómo se dibuja en cada
+     * tamaño — píldora en escritorio, barra flotante en táctil. Escritas a mano
+     * quedaban como una fila suelta en el cuerpo, que es justo lo que §17 saca
+     * de ahí.
+     *
+     * Una sola primaria: el corte con la caja abierta, abrirla cuando no. Con
+     * dos, ninguna es la acción principal. */
+    const acciones = useMemo(() => {
+        if (!puedeOperar || !sala) return [];
+        if (!estado?.abierta) {
+            return [{ key: 'abrir', icon: DoorOpen, label: 'Abrir la caja', rotulo: 'Abrir',
+                variant: 'primary', onClick: () => setDialogo('abrir') }];
+        }
+        return [
+            { key: 'corte', icon: Scale, label: 'Hacer el corte', rotulo: 'Corte',
+                variant: 'primary', onClick: () => { setResultado(null); setDialogo('corte'); } },
+            { key: 'ingreso', icon: ArrowDownLeft, label: 'Anotar un ingreso', rotulo: 'Ingreso',
+                onClick: () => setDialogo('ingreso') },
+            // La salida del CAJÓN. La de una bolsa es otra cosa y por eso es
+            // otra acción, que sólo aparece si hay bolsas en la sala.
+            { key: 'salida', icon: ArrowUpRight, label: 'Anotar una salida', rotulo: 'Salida',
+                onClick: () => setDialogo('salida') },
+            ...(bolsas.length
+                ? [{ key: 'bolsa', icon: Landmark, label: 'Sacar de una bolsa', rotulo: 'Bolsa',
+                    onClick: () => setDialogo('bolsa') }]
+                : []),
+            { key: 'cerrar', icon: Lock, label: 'Cerrar el día', rotulo: 'Cerrar',
+                onClick: () => setDialogo('cerrar') },
+        ];
+    }, [puedeOperar, sala, estado, bolsas.length]);
 
     if (!sala) {
         return (
             <GlassViewLayout icon={Wallet} title="Mi caja">
                 <div className="p-4 md:p-6 space-y-6">
-                    {selector}
+                    {/* La salida del vacío va DENTRO del vacío y no arriba: quien
+                        no tiene sala propia —quien supervisa, cuya ficha está en
+                        Administración— veía el cartel y ningún camino. */}
                     <EmptyState compact icon={Wallet}
                         title={salas.length ? 'Elige una sala' : 'Sin salas con caja'}
                         subtitle={salas.length
                             ? 'Tu ficha no está en una sala con caja, así que elige cuál quieres mirar.'
-                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
+                            : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'}
+                        action={salas.length ? (
+                            <div className="flex gap-2 flex-wrap justify-center">
+                                {salas.map((b) => (
+                                    <Button key={b.id} size="sm" variant="secondary"
+                                        onClick={() => setSala(b.id)}>{b.name}</Button>
+                                ))}
+                            </div>
+                        ) : undefined} />
                 </div>
             </GlassViewLayout>
         );
@@ -168,72 +197,67 @@ export default function MiCajaView() {
         <GlassViewLayout icon={Wallet} title={`Mi caja${nombreSala ? ` · ${nombreSala}` : ''}`}>
             <div className="p-4 md:p-6 space-y-6">
 
-                {selector}
+                {/* El carril y la píldora comparten UNA fila (§17.0). Las dos
+                    mitades —`lg:flex-row` acá y `flex-1` en el carril— son
+                    obligatorias: `useMedidaFila` busca el carril en el abuelo de
+                    la píldora y le descuenta 314px lo tenga al lado o no, así
+                    que en renglones separados roba ancho en silencio. */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    {/* Cuatro números fijos, no un desglose de largo variable
+                        (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el
+                        dato»). El estado de la caja es el primero porque es la
+                        pregunta con la que alguien entra a esta pantalla. */}
+                    <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
+                        <StatCard icon={estado?.abierta ? DoorOpen : Lock}
+                            label={estado?.abierta ? 'Caja abierta' : 'Caja cerrada'}
+                            value={estado?.abierta ? `Turno ${estado.turno}` : 'Sin turno'}
+                            sub={estado?.abierta ? `Caja ${estado.caja}` : 'Nadie puede vender'}
+                            iconBg={estado?.abierta ? 'bg-success/10' : 'bg-warning/10'}
+                            iconCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
+                            valueCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
+                            loading={cargando} />
+                        <StatCard icon={ArrowUpRight} label="Salidas por anotar"
+                            value={pendientes.length}
+                            sub={pendientes.length ? 'entran al vale del corte' : undefined}
+                            iconBg="bg-warning/10" iconCls="text-warning-text"
+                            valueCls={pendientes.length ? 'text-warning-text' : undefined}
+                            loading={cargando} />
+                        <StatCard icon={Landmark} label="Suman"
+                            value={formatMoney(totalPendiente)} loading={cargando} />
+                        <StatCard icon={ArrowDownLeft} label="Anotado hoy"
+                            value={movimientos.length}
+                            sub={bolsas.length ? `${bolsas.length} bolsa${bolsas.length === 1 ? '' : 's'} en sala` : undefined}
+                            iconBg="bg-brand/10" iconCls="text-brand-text"
+                            loading={cargando} />
+                    </CarrilCards>
+
+                    {/* La sala y las acciones van en la píldora, no sueltas en el
+                        cuerpo: es el lugar único donde se mira qué recorta la
+                        vista y qué se puede hacer (§17, §15.5). Una sola primaria
+                        por barra — el corte cuando la caja está abierta, abrirla
+                        cuando no. */}
+                    <div className="flex justify-end min-w-0">
+                        <FilterBar acciones={acciones}>
+                            {salas.length > 1 && (
+                                <FilterBar.Section active label="sucursal">
+                                    <FilterBar.Sucursal value={sala} onChange={setSala}
+                                        options={opcionesDeSala} />
+                                </FilterBar.Section>
+                            )}
+                        </FilterBar>
+                    </div>
+                </div>
 
                 {cargando && <LoadingState label="Mirando la caja" />}
 
                 {!cargando && (
                     <>
-                        <Notice variant={estado?.abierta ? 'success' : 'info'}
-                            icon={estado?.abierta ? DoorOpen : Lock}>
-                            <span className="font-bold">
-                                {estado?.abierta ? 'La caja está abierta' : 'La caja está cerrada'}
-                            </span>
-                            <span className="block mt-0.5 font-normal text-content-2">
-                                {estado?.abierta
-                                    ? `Caja ${estado.caja} · turno ${estado.turno}`
-                                    : 'Nadie puede vender hasta abrirla.'}
-                            </span>
-                        </Notice>
-
-                        <CarrilCards ariaLabel="Lo que falta anotarle a la caja">
-                            <StatCard icon={ArrowUpRight} label="Salidas por anotar"
-                                value={pendientes.length}
-                                iconBg="bg-warning/10" iconCls="text-warning-text"
-                                valueCls={pendientes.length ? 'text-warning-text' : undefined} />
-                            <StatCard icon={Landmark} label="Suman"
-                                value={formatMoney(totalPendiente)} />
-                        </CarrilCards>
-
                         {pendientes.length > 0 && (
                             <Notice variant="warning" icon={Landmark}>
                                 Al hacer el corte se anota <b>un solo vale de caja</b> con estas {pendientes.length} salidas.
                                 Salieron de una bolsa del día que la caja tiene abierto, así que sigue
                                 esperando ese dinero.
                             </Notice>
-                        )}
-
-                        {puedeOperar && (
-                            <div className="flex gap-2 flex-wrap">
-                                {!estado?.abierta && (
-                                    <Button variant="primary" icon={DoorOpen} onClick={() => setDialogo('abrir')}>
-                                        Abrir la caja
-                                    </Button>
-                                )}
-                                {estado?.abierta && (
-                                    <>
-                                        <Button variant="secondary" icon={ArrowDownLeft} onClick={() => setDialogo('ingreso')}>
-                                            Anotar un ingreso
-                                        </Button>
-                                        {/* La salida del CAJÓN, no la de una bolsa: ésa vive en
-                                            Bolsas, con su bolsa elegida y su vale consolidado. */}
-                                        <Button variant="secondary" icon={ArrowUpRight} onClick={() => setDialogo('salida')}>
-                                            Anotar una salida
-                                        </Button>
-                                        {bolsas.length > 0 && (
-                                            <Button variant="secondary" icon={Landmark} onClick={() => setDialogo('bolsa')}>
-                                                Sacar de una bolsa
-                                            </Button>
-                                        )}
-                                        <Button variant="primary" icon={Scale} onClick={() => { setResultado(null); setDialogo('corte'); }}>
-                                            Hacer el corte
-                                        </Button>
-                                        <Button variant="ghost" icon={Lock} onClick={() => setDialogo('cerrar')}>
-                                            Cerrar el día
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
                         )}
 
                         {movimientos.length > 0 && (

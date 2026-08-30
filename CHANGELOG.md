@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.3 — Mi caja usa la barra y el carril canónicos
+
+La pantalla estaba escrita a mano y se notaba: una fila de píldoras de sala
+sueltas arriba, dos tarjetas de distinto tamaño flotando, y cinco botones de
+acción tirados en el cuerpo. Ninguna de las tres cosas es como se hace acá.
+
+- **Las acciones son un descriptor de `FilterBar`** (§15.5), no botones
+  escritos: la vista dice qué se puede hacer y el canónico decide cómo se dibuja
+  en cada tamaño — píldora en escritorio, barra flotante en táctil. Escritas a
+  mano no llegaban nunca a la barra flotante, que es la única forma de operar
+  esto desde un teléfono.
+- **Una sola acción primaria**: el corte con la caja abierta, abrirla cuando no.
+  Con dos, ninguna es la principal.
+- **La sala es la ranura de ámbito** (`FilterBar.Sucursal`), la primera de §17,
+  y no seis píldoras de colores.
+- **Cuatro tarjetas fijas** (§17.0 — «cuántas tarjetas hay lo fija la vista,
+  nunca el dato»): el estado de la caja primero, porque es la pregunta con la
+  que alguien entra; después lo que falta anotar, cuánto suma y lo anotado hoy.
+- **El carril y la píldora comparten UNA fila.** No es estético: `useMedidaFila`
+  busca el carril en el abuelo de la píldora y le descuenta 314px lo tenga al
+  lado o no, así que en renglones separados robaba ancho en silencio.
+
+Y la salida del vacío ahora vive **dentro** del vacío: quien no tiene sala
+propia elige ahí mismo, en vez de ver un cartel con los botones fuera de foco.
+
 ## v2.858.2 — El recuadro cae sobre el documento
 
 El usuario mandó la foto de la pantalla con un DUI: *«el recorte no me sale

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.860.1 — El circuito de puntos, documentado
+
+`docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md` — el estado del circuito
+para quien lo retome: qué está vivo, qué no, y las trampas que ya costaron una
+corrección.
+
+Lo que más va a servir es la sección de trampas, porque **ninguna da error**: el
+código viejo de La Popular que dejó 32,837 ventas mal contadas, el entero que
+MySQL **recorta en vez de rechazar** (21 facturas acreditadas a un vendedor que
+no existe), y `TicketFactura` repitiéndose entre salas.
+
+Quedan anotados los cuatro problemas de datos del otro sistema que **no se
+tocaron** —2,142 facturas bajo dos códigos, 27 con puntos cobrados dos veces,
+50,025 de $1 o menos, y 26 anuladas sin restar— y los cuatro pasos para que los
+puntos vivan en el portal. El tercero es el que manda: **mientras el canje no
+exista en el portal, no se puede desconectar del otro sistema.**
+
 ## v2.860.0 — El cliente puede ver sus puntos con su DUI y su teléfono
 
 **`/mis-puntos` — la primera pantalla del portal para el CLIENTE**, sin sesión.

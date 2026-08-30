@@ -409,7 +409,8 @@ export const AREAS = [
                 'vacuum-sales-invoices',
                 'dte-resync-month-popular', 'dte-resync-month-salud1', 'dte-resync-month-salud2',
                 'dte-resync-month-salud3', 'dte-resync-month-salud4', 'dte-resync-month-salud5'],
-        docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md'],
+        docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md',
+               'docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md'],
     },
     {
         id: 'metas',

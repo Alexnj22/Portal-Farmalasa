@@ -45,7 +45,16 @@ Deno.serve(async (req) => {
     const { secreto, imagenBase64, tipo } = await req.json();
     if (!secreto || !imagenBase64) return json({ ok: false, error: 'FALTAN_DATOS' }, 400);
 
-    const mime = typeof tipo === 'string' && /^image\/(jpeg|png|webp)$/.test(tipo) ? tipo : 'image/jpeg';
+    /* También PDF, y no es un capricho: desde el 2026-08-30 el teléfono junta
+     * VARIAS hojas en un solo escaneo del QR y las manda como un PDF —«es
+     * incómodo ir subiendo foto por foto»—. Con una sola hoja sigue viajando
+     * como JPEG: envolver una foto suelta en un PDF le quitaría la vista previa
+     * y el «Ajustar» del editor sin darle nada a cambio.
+     *
+     * El bucket ya aceptaba `application/pdf` (verificado contra
+     * `storage.buckets`), así que esto no necesitó migración. */
+    const mime = typeof tipo === 'string' && /^(image\/(jpeg|png|webp)|application\/pdf)$/.test(tipo)
+      ? tipo : 'image/jpeg';
     const limpio = String(imagenBase64).replace(/^data:[^,]+,/, '');
     // El tamaño se mide ANTES de decodificar: decodificar para después
     // rechazar es pagar la memoria que se quería evitar.
@@ -63,7 +72,8 @@ Deno.serve(async (req) => {
     if (!vigente?.ok) return json({ ok: false, error: 'CODIGO_INVALIDO' }, 403);
 
     const bytes = Uint8Array.from(atob(limpio), (c) => c.charCodeAt(0));
-    const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+    const ext = mime === 'application/pdf' ? 'pdf'
+      : mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
     const ruta = `capturas/${vigente.id}.${ext}`;
 
     const { error: errSubida } = await admin.storage.from(BUCKET)

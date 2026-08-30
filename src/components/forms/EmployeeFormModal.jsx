@@ -471,6 +471,42 @@ const VARIAS_HOJAS = new Set([
     'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
 ]);
 
+/* Los papeles que NO vencen.
+ *
+ * *«hay documentos que no vencen, el CV no vence, sólo se puede actualizar»*
+ * (usuario, 2026-08-30). Hasta hoy el campo de vencimiento salía en TODOS menos
+ * los cuatro del DUI, que lo apagaban con una bandera en cada llamada — o sea
+ * que la respuesta vivía repartida en los sitios donde se dibuja el documento,
+ * y un documento nuevo nacía con el campo puesto sin que nadie lo decidiera.
+ *
+ * Acá está la lista entera, en un solo lugar, y el criterio con el que se armó:
+ * **se quita el campo sólo cuando el papel no puede traer una fecha**. Un campo
+ * opcional de más es ruido; uno de menos pierde un dato, y encima lo saca del
+ * aviso de documentos por vencer.
+ *
+ *   · CV, solicitud de empleo, acuse del Ministerio — son constancias de un
+ *     hecho que ya pasó. No caducan: se reemplazan por una versión nueva.
+ *   · NIT, tarjeta del ISSS, tarjeta de la AFP — son números de afiliación de
+ *     por vida. La tarjeta se repone, el número no vence.
+ *   · DUI (entero, frente, reverso, y el documento alterno del menor) — el DUI
+ *     sí vence, pero su fecha vive en la FICHA (`dui_expiry`) al lado del
+ *     número, no en cada archivo.
+ *   · Contrato de trabajo — un contrato a plazo termina, y esa fecha ya es
+ *     `contract_end_date` de la ficha, con sus prórrogas. Pedirla otra vez acá
+ *     crearía dos verdades para el mismo hecho, que es exactamente lo que se
+ *     corrigió con el rótulo de los cargos.
+ *
+ * Los que SÍ quedan con campo son los que traen la fecha impresa: las dos
+ * licencias, los cuatro carnés de junta, las dos anualidades, la acreditación
+ * de dependiente, la certificación de discapacidad, el contrato de regencia y
+ * los dos exámenes médicos —el anual y el del menor—, que son justamente los
+ * que el aviso de vencimientos tiene que ver. */
+const SIN_VENCIMIENTO = new Set([
+    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS',
+    'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP',
+    'DOCUMENTO_IDENTIDAD', 'DUI_COMPLETO', 'DUI_FRENTE', 'DUI_REVERSO',
+]);
+
 const FIXED_DOCUMENT_CATEGORIES = [
     // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
     // certificados de estudio y las referencias van adentro, y por eso no se
@@ -1838,7 +1874,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const rotuloDelDoc = (category) =>
         documentCategories.find(c => c.key === category)?.label || category;
 
-    const renderDocUploadArea = (category, { showExpiry = true } = {}) => {
+    /* `showExpiry` ya no se pasa por llamada: sale de `SIN_VENCIMIENTO`. La
+       bandera existía sólo para apagarlo en los cuatro del DUI, y con ella la
+       respuesta quedaba repartida entre los sitios que dibujan el documento —
+       así, un documento nuevo nacía con el campo puesto sin que nadie lo
+       hubiera decidido. */
+    const renderDocUploadArea = (category) => {
+        const showExpiry = !SIN_VENCIMIENTO.has(category);
         const doc = getDocEntry(category);
         const isAnalyzing = !!analyzingDocs[category];
         const hasFile = !!doc.url;
@@ -2521,14 +2563,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
 
                             {isMinor ? (
-                                renderDocUploadArea('DOCUMENTO_IDENTIDAD', { showExpiry: false })
+                                renderDocUploadArea('DOCUMENTO_IDENTIDAD')
                             ) : duiEnUnArchivo ? (
                                 <div>
                                     <label className={rotuloCampo('text-content-2', { denso: true })}>
                                         <span>Documento completo (las dos caras)</span>
                                         {!getDocEntry('DUI_COMPLETO').url && <span className="text-warning font-black">Pendiente</span>}
                                     </label>
-                                    {renderDocUploadArea('DUI_COMPLETO', { showExpiry: false })}
+                                    {renderDocUploadArea('DUI_COMPLETO')}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2537,14 +2579,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Frente</span>
                                             {!getDocEntry('DUI_FRENTE').url && <span className="text-warning font-black">Pendiente</span>}
                                         </label>
-                                        {renderDocUploadArea('DUI_FRENTE', { showExpiry: false })}
+                                        {renderDocUploadArea('DUI_FRENTE')}
                                     </div>
                                     <div>
                                         <label className={rotuloCampo('text-content-2', { denso: true })}>
                                             <span>Reverso</span>
                                             {!getDocEntry('DUI_REVERSO').url && <span className="text-warning font-black">Pendiente</span>}
                                         </label>
-                                        {renderDocUploadArea('DUI_REVERSO', { showExpiry: false })}
+                                        {renderDocUploadArea('DUI_REVERSO')}
                                     </div>
                                 </div>
                             )}

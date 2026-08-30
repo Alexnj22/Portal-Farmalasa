@@ -65,8 +65,13 @@ export function esperarFoto(capturaId, alLlegar) {
 
     const tic = setInterval(async () => {
         if (!vivo) return;
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('capturas_de_foto').select('foto_url').eq('id', capturaId).maybeSingle();
+        /* El error no corta el sondeo —el canal en vivo sigue siendo el camino
+           principal y esto es su red— pero tampoco se descarta: si falla
+           siempre, la red no existe y la única señal sería que la foto «no
+           llega», que manda a mirar el teléfono. */
+        if (error) { console.warn('sondeo de captura:', error.message); return; }
         listo(data?.foto_url);
     }, 3000);
 
@@ -89,5 +94,15 @@ export async function fotoComoArchivo(url, nombre = 'foto.jpg') {
     const r = await fetch(url);
     if (!r.ok) throw new Error('No se pudo traer la foto.');
     const blob = await r.blob();
-    return new File([blob], nombre, { type: blob.type || 'image/jpeg' });
+    const tipo = blob.type || 'image/jpeg';
+    /* La EXTENSIÓN sale del tipo real, no del nombre que pidió quien llama.
+     *
+     * Desde que el teléfono puede mandar varias hojas juntas, lo que llega
+     * puede ser un PDF — y un PDF llamado `foto.jpg` pasa por todos los
+     * chequeos de extensión del formulario como si fuera una imagen. No falla
+     * nada: se guarda, y después no abre. */
+    const ext = tipo === 'application/pdf' ? 'pdf'
+        : tipo === 'image/png' ? 'png' : tipo === 'image/webp' ? 'webp' : 'jpg';
+    const base = String(nombre).replace(/\.[^.]+$/, '');
+    return new File([blob], `${base}.${ext}`, { type: tipo });
 }

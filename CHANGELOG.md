@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.864.0 — Un solo QR para todas las hojas, y el vencimiento sólo donde existe
+
+**Un escaneo, las hojas que hagan falta.** *«Es incómodo ir subiendo foto por
+foto: un solo escáner de QR, y desde el teléfono dar en agregar otra foto; al
+finalizar sube todas convertido en un PDF.»* Un currículum con sus atestados son
+ocho hojas, y hasta hoy eran ocho códigos, ocho escaneos y ocho esperas.
+
+Las hojas se juntan **en el teléfono** y se mandan de una sola vez al final, así
+que el código sigue sirviendo una vez y no hubo que tocar ni el esquema ni el
+circuito. Cada hoja pasa por el editor como siempre; al confirmarla se suma a la
+tira, se puede quitar la que salió mal, y el número que lleva encima es el orden
+en que va a quedar en el PDF.
+
+Con **una sola hoja se manda la foto**, no un PDF de una página: envolverla le
+quitaría la vista previa y el «Ajustar» en la computadora sin darle nada a
+cambio.
+
+**El PDF se arma sin ninguna librería.** `pdfmake` ya está en el proyecto, pero
+pesa 939 kB con sus fuentes y acá no hay una sola letra que dibujar — el 100% de
+ese peso serían fuentes sin usar, bajadas por datos móviles en la página que se
+abre con el QR. Un PDF de puras imágenes es un formato chico y cerrado, así que
+`utils/hojasEnPdf.js` lo escribe a mano: los bytes del JPEG entran enteros, sin
+recomprimir, y el archivo pesa lo que pesan las fotos más un kilobyte.
+
+Se verificó de punta a punta —dos fotos de cámara → reducir → PDF → subir con el
+secreto del QR → bajar la URL firmada— y lo que llega a la computadora es
+`foto.pdf`, `application/pdf`, dos páginas. `npm run medir:pdf` deja esa
+comprobación corriendo, y lo lee **pdfjs**, que no participó en escribirlo.
+
+Un detalle que ese medidor enseñó: su primera versión daba verde con las tres
+páginas **negras**, porque comprobaba que la lista de operadores incluyera
+«pintar una imagen» y eso no dice CUÁL. Al pintarlas se vio. Y las páginas
+estaban negras porque el propio fixture pasaba `'rojo'` como color CSS, que no
+existe — o sea que el instrumento estaba roto y acusaba al código que sí
+funcionaba.
+
+**Y el campo de vencimiento sólo donde el papel puede traer una fecha.** *«Hay
+documentos que no vencen: el CV no vence, sólo se puede actualizar.»* Salía en
+todos menos los cuatro del DUI, que lo apagaban con una bandera en cada llamada
+— o sea que la respuesta vivía repartida por los sitios donde se dibuja el
+documento, y un documento nuevo nacía con el campo puesto sin que nadie lo
+decidiera. Ahora hay una lista, en un lugar, con el criterio escrito.
+
+Sin campo: currículum, contrato de trabajo, solicitud de empleo, acuse del
+Ministerio, NIT, tarjeta del ISSS, tarjeta de la AFP y el DUI. Los tres primeros
+son constancias de algo que ya pasó; el NIT y las dos tarjetas son números de
+por vida; el DUI sí vence, pero su fecha vive en la ficha al lado del número; y
+el contrato a plazo ya tiene `contract_end_date` con sus prórrogas — pedirla otra
+vez crearía dos verdades para el mismo hecho.
+
+Con campo quedan los que traen la fecha impresa: las dos licencias, los cuatro
+carnés de junta, las dos anualidades, la acreditación de dependiente, la
+certificación de discapacidad, el contrato de regencia y los dos exámenes
+médicos. Que son exactamente los que el aviso de vencimientos tiene que ver.
+
 ## v2.863.1 — Cerrar el día: una sola confirmación
 
 **El segundo paso —teclear `CERRAR`— se cayó.** Lo pidió el usuario apenas lo

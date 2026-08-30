@@ -65,13 +65,42 @@ export async function reducirParaMandar(file, ladoMaximo = 1600) {
     return { base64: canvas.toDataURL('image/jpeg', 0.85), tipo: 'image/jpeg' };
 }
 
-/** El teléfono manda la foto. */
+/** El mismo reductor, pero devolviendo un archivo — para armar el PDF. */
+export async function hojaReducida(file, nombre = 'hoja.jpg') {
+    const { base64 } = await reducirParaMandar(file);
+    const crudo = atob(base64.replace(/^data:[^,]+,/, ''));
+    const bytes = new Uint8Array(crudo.length);
+    for (let i = 0; i < crudo.length; i++) bytes[i] = crudo.charCodeAt(i);
+    return new File([bytes], nombre, { type: 'image/jpeg' });
+}
+
+/**
+ * El teléfono manda lo que armó: una foto, o el PDF con todas las hojas.
+ *
+ * El PDF **no pasa por el reductor**: `reducirParaMandar` lo abre como `Image`
+ * y un PDF no es una imagen, así que fallaría con «No se pudo abrir la foto» —
+ * un mensaje que manda a mirar la cámara cuando el problema sería el tipo de
+ * archivo. Sus páginas ya vienen reducidas de una por una, que además es donde
+ * hay que hacerlo: reducir el PDF entero después de armarlo no se puede.
+ */
 export async function mandarFoto(secreto, file) {
+    const esPdf = file?.type === 'application/pdf';
     let reducida;
-    try {
-        reducida = await reducirParaMandar(file);
-    } catch (e) {
-        return { ok: false, motivo: e?.message || 'No se pudo preparar la foto.' };
+    if (esPdf) {
+        const b = new Uint8Array(await file.arrayBuffer());
+        // En tandas: `String.fromCharCode(...todo)` revienta la pila con un
+        // archivo de varios megas, y eso se vería como «no se pudo enviar».
+        let bin = '';
+        for (let i = 0; i < b.length; i += 0x8000) {
+            bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+        }
+        reducida = { base64: btoa(bin), tipo: 'application/pdf' };
+    } else {
+        try {
+            reducida = await reducirParaMandar(file);
+        } catch (e) {
+            return { ok: false, motivo: e?.message || 'No se pudo preparar la foto.' };
+        }
     }
 
     const { data, error } = await supabase.functions.invoke('subir-foto-de-captura', {
@@ -81,7 +110,7 @@ export async function mandarFoto(secreto, file) {
     if (!data?.ok) {
         const porQue = {
             CODIGO_INVALIDO: 'Ese código ya se usó o venció. Pide uno nuevo en la computadora.',
-            MUY_GRANDE: 'La foto pesa demasiado.',
+            MUY_GRANDE: 'Pesa demasiado. Quita alguna hoja e intenta de nuevo.',
         };
         return { ok: false, motivo: porQue[data?.error] || 'No se pudo guardar la foto.' };
     }

@@ -43,7 +43,8 @@
     "auditoria:desbloquear": "node scripts/auditoria-cli.mjs desbloquear",
     "auditoria:sellar": "node scripts/auditoria-cli.mjs sellar",
     "auditoria:recalcular": "node scripts/auditoria-cli.mjs recalcular",
-    "auditoria:sincronizar": "node scripts/auditoria-cli.mjs sincronizar"
+    "auditoria:sincronizar": "node scripts/auditoria-cli.mjs sincronizar",
+    "medir:papel": "node scripts/medir-deteccion-de-papel.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

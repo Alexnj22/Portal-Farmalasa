@@ -109,7 +109,13 @@ Deno.serve(async (req) => {
     if (!cli) return json(noEncontrado);
 
     // Acertó: se anota para que los fallos previos no lo sigan penalizando.
-    await admin.rpc("puntos_consulta_registrar", { p_ip: ip, p_huella_dui: h, p_acerto: true });
+    // El error no corta la consulta —quien acertó tiene derecho a su saldo— pero
+    // tampoco se descarta: si esta anotación falla en silencio, el contador de
+    // fallos nunca se limpia y a la tercera consulta buena lo empieza a frenar
+    // el freno que existe para los intentos a ciegas.
+    const { error: eAcierto } = await admin.rpc("puntos_consulta_registrar",
+      { p_ip: ip, p_huella_dui: h, p_acerto: true });
+    if (eAcierto) console.error("no se pudo anotar el acierto:", eAcierto.message);
 
     const mysql = await import("npm:mysql2@3.11.0/promise");
     conn = await mysql.createConnection(cfg);

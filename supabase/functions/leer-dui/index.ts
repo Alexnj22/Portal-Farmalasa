@@ -133,25 +133,42 @@ REGLAS QUE NO PUEDES ROMPER:
 - Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.
 - "caras" tiene EXACTAMENTE tantas entradas como archivos recibiste, en orden. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
 
-const PROMPT_RECUADRO = `En esta foto hay UN documento de identidad o un papel apoyado sobre una superficie.
+/* Se pregunta SÓLO por las cuatro esquinas, y el recuadro se calcula acá.
+ *
+ * Medido el 2026-08-29 sobre una foto sintética —un papel en trapecio marcado,
+ * cuyas esquinas verdaderas se conocen porque la dibujamos nosotros—: mientras
+ * el prompt pedía primero `x/y/w/h` y las esquinas al final, el modelo
+ * devolvía las cuatro esquinas DEL RECUADRO. O sea un rectángulo casi perfecto
+ * (0.23/0.77 en x, 0.09/0.87 en y) sobre un papel cuya esquina de arriba a la
+ * derecha estaba en y=0.235 y la de abajo a la izquierda en y=0.735. Desvíos
+ * de 17% y 24% en dos de las cuatro.
+ *
+ * Y no se leía como una detección mala: se leía como el portal no enderezando
+ * nada, porque cuatro puntos en rectángulo hacen que rectificar sea un recorte
+ * y ya. Pedir la caja primero era darle al modelo la respuesta con la que
+ * después contestaba la otra pregunta.
+ *
+ * El recuadro no se perdió: es la caja que encierra a las cuatro esquinas, y
+ * calcularlo es exacto — al revés no lo es, que es justamente el problema. */
+const PROMPT_RECUADRO = `En esta foto hay UN papel apoyado sobre una superficie: puede ser un documento de identidad, un carné, una factura, un recibo, una constancia, un título o cualquier hoja impresa.
+
+Tu única tarea es ubicar las CUATRO ESQUINAS de ese papel.
 
 Devuelve ÚNICAMENTE un JSON válido, sin markdown, con esta forma exacta:
 {
-  "x": la fracción del ANCHO donde empieza el documento, de 0 a 1.
-  "y": la fracción del ALTO donde empieza, de 0 a 1.
-  "w": cuánto del ANCHO ocupa, de 0 a 1.
-  "h": cuánto del ALTO ocupa, de 0 a 1.
-  "giro": cuántos grados hay que girar la FOTO para que el texto del documento quede derecho y legible. Sólo 0, 90, 180 o 270.
-  "esquinas": [{"x":..,"y":..}, ...] las CUATRO esquinas del documento, en fracciones de 0 a 1 del ancho y del alto. En el orden que sea.
+  "esquinas": [{"x":..,"y":..}, {"x":..,"y":..}, {"x":..,"y":..}, {"x":..,"y":..}],
+  "giro": cuántos grados hay que girar la FOTO para que el texto del papel quede derecho y legible. Sólo 0, 90, 180 o 270.
 }
 
+Cada "x" es la fracción del ANCHO de la foto, de 0 a 1. Cada "y", la fracción del ALTO. Puedes darlas en el orden que quieras.
+
 REGLAS QUE NO PUEDES ROMPER:
-- El recuadro es el del DOCUMENTO, no el de la foto: si el documento ocupa un tercio de la imagen, w y h valen alrededor de 0.33.
-- Ajústate a los bordes del documento, incluyendo su borde impreso. No dejes fuera ninguna esquina.
-- Si en la foto no hay ningún documento reconocible, devuelve los cuatro números en null.
+- Son las esquinas del PAPEL, no las de un rectángulo que lo contenga. Casi nunca forman un rectángulo: una foto tomada de pie deja el borde de arriba más corto que el de abajo, y una tomada de costado convierte el papel en un trapecio. Si tus cuatro puntos salen alineados de a dos en la misma "x" y en la misma "y", te equivocaste: estás describiendo la caja y no el papel.
+- Mira los bordes reales, uno por uno: dónde termina el blanco del papel y empieza la mesa. Cada esquina es donde se cruzan dos de esos bordes.
+- Ajústate al borde del papel. No dejes fuera ninguna esquina ni incluyas mesa de más.
+- Si una esquina queda tapada por un dedo, por una sombra o por el borde de la foto, estima dónde estaría prolongando los dos bordes que llegan hasta ella. Un papel siempre tiene cuatro.
 - "giro" mira cómo está el TEXTO: si para leerlo hay que inclinar la cabeza a la derecha, son 90.
-- "esquinas" son las esquinas REALES del papel en la foto, no las del recuadro: si el documento está apoyado de costado y se ve como un trapecio, los cuatro puntos forman ese trapecio. Es lo que permite enderezarlo.
-- Si no puedes ubicar las cuatro con seguridad, devuelve "esquinas": null. Cuatro puntos aproximados deforman la imagen más de lo que la arreglan.`
+- Devuelve "esquinas": null SÓLO si en la foto no hay ningún papel. Si lo hay, devuelve siempre las cuatro: aunque queden a unos milímetros, quien las revisa las corrige arrastrando; un null lo obliga a marcar las cuatro a mano.`
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "POST, OPTIONS" }
@@ -170,21 +187,48 @@ Deno.serve(async (req: Request) => {
     if (!supabaseUrl || !serviceKey) return json({ ok: false, error: "MISSING_ENV" })
     const admin = createClient(supabaseUrl, serviceKey)
 
-    // Quién llama y si puede, los DOS desde la base. El JWT sirve para lo único
-    // que no se puede falsificar —quién sos, que lo firma Supabase—; el permiso
-    // lo resuelve la base. Ver `set-employee-password` y la Fase 0 del plan de
-    // blindaje.
-    const caller = await requireActiveEmployeeUser(req, admin)
-    if (!caller) return json({ ok: false, error: "INVALID_TOKEN" })
-
-    const permiso = await permisoDeModulo(admin, caller.id, "staff_list", "can_edit")
-    // `roto` es «no se pudo averiguar» y NO es «no podés»: decirle «no tenés
-    // permiso» a quien sí lo tiene lo manda por el camino equivocado y el
-    // problema real no se reporta nunca.
-    if (permiso.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: permiso.roto })
-    if (!permiso.puede) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS" })
-
     const body = await req.json().catch(() => ({}))
+
+    /* ── Quién puede preguntar ──────────────────────────────────────────────
+     *
+     * El camino normal es el JWT: sirve para lo único que no se puede falsificar
+     * —quién sos, que lo firma Supabase— y el permiso lo resuelve la base. Ver
+     * `set-employee-password` y la Fase 0 del plan de blindaje.
+     *
+     * Y hay un segundo camino, SÓLO para «dónde está el papel»: el secreto de
+     * una captura por QR. La página del teléfono se abre sin sesión —ése es el
+     * punto del QR, que quien saca la foto no tenga que iniciar sesión en el
+     * teléfono— así que no tiene JWT que presentar. Sin este camino, el teléfono
+     * es el único lugar donde el portal NO detecta las esquinas, que es
+     * justamente donde la foto sale más torcida.
+     *
+     * El secreto se comprueba igual que en `subir-foto-de-captura`, con la misma
+     * función de la base y sin quemarlo (quemarlo es guardar la foto, y esto
+     * pasa ANTES). Lo que abre es proporcionado a lo que ya podía hacer: quien
+     * tiene el secreto puede subir una foto, y esto sólo le dice dónde hay un
+     * rectángulo dentro de una imagen que ya tiene en la mano. No devuelve
+     * ningún dato del documento ni toca la base.
+     */
+    const secretoDeCaptura = typeof body?.secretoDeCaptura === 'string' ? body.secretoDeCaptura : ''
+    if (body?.soloRecuadro && secretoDeCaptura) {
+      const { data: vigente, error: errVigente } = await admin.rpc(
+        'captura_de_foto_vigente', { p_secreto: secretoDeCaptura })
+      // El error se distingue del «no vale»: si la comprobación no se pudo
+      // hacer, decirle «código inválido» a quien tiene uno bueno lo manda a
+      // pedir otro QR y el problema real no se reporta nunca.
+      if (errVigente) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: errVigente.message })
+      if (!vigente?.ok) return json({ ok: false, error: "CODIGO_INVALIDO" })
+    } else {
+      const caller = await requireActiveEmployeeUser(req, admin)
+      if (!caller) return json({ ok: false, error: "INVALID_TOKEN" })
+
+      const permiso = await permisoDeModulo(admin, caller.id, "staff_list", "can_edit")
+      // `roto` es «no se pudo averiguar» y NO es «no podés»: decirle «no tenés
+      // permiso» a quien sí lo tiene lo manda por el camino equivocado y el
+      // problema real no se reporta nunca.
+      if (permiso.roto) return json({ ok: false, error: "PERMISSION_CHECK_FAILED", details: permiso.roto })
+      if (!permiso.puede) return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS" })
+    }
 
     /* ── Modo «sólo dónde está el papel» ────────────────────────────────────
      *
@@ -200,11 +244,23 @@ Deno.serve(async (req: Request) => {
      * Es una pregunta mucho más barata que la lectura completa: un prompt corto
      * y una respuesta de cinco números.
      *
-     * Y lo que devuelve es una SUGERENCIA. El editor la aplica como punto de
-     * partida y la persona la confirma o la corrige — un recorte automático
-     * equivocado que nadie mira es peor que uno manual, y eso no cambia porque
-     * lo proponga un modelo. Está escrito así desde que se evaluó la primera
-     * vez, en `EditorDeDocumento`.
+     * ── Por qué el prompt ya NO prefiere no contestar ─────────────────────
+     *
+     * Acá estaba escrito que «un recorte automático equivocado que nadie mira es
+     * peor que uno manual», y de ahí salía la regla que le decía al modelo que
+     * ante la duda devolviera `esquinas: null`. Era cierto cuando el recorte se
+     * aplicaba y se guardaba sin que nadie viera el resultado.
+     *
+     * Dejó de serlo el 2026-08-29, cuando `data/prepararDocumento.js` puso el
+     * resultado a la vista: el archivo queda adjunto, se puede abrir, y
+     * «Ajustar» reabre el editor sobre la foto ORIGINAL con las esquinas
+     * detectadas. Con revisión, los dos errores dejaron de costar lo mismo —
+     * unas esquinas a unos milímetros se corrigen arrastrando, y un `null`
+     * obliga a marcar las cuatro a mano. Así que hoy el prompt pide siempre las
+     * cuatro y sólo acepta `null` cuando en la foto no hay ningún papel.
+     *
+     * Sigue siendo una SUGERENCIA: lo que cambió es cuándo se decide, no que se
+     * decida.
      */
     if (body?.soloRecuadro) {
       const b64 = String(body?.imagenBase64 || '').replace(/^data:[^,]+,/, '')
@@ -222,33 +278,39 @@ Deno.serve(async (req: Request) => {
       })
       const r = parseGeminiJson<Record<string, unknown>>(crudoR)
       const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
-      const x = num(r?.x), y = num(r?.y), w = num(r?.w), h = num(r?.h)
-      // Sin los cuatro números no hay recuadro. Devolver uno a medias sería
-      // proponer un recorte que corta el documento.
-      if (x === null || y === null || w === null || h === null || w <= 0 || h <= 0) {
-        return json({ ok: true, recuadro: null, giro: 0 })
-      }
       const acotar = (v: number) => Math.min(1, Math.max(0, v))
-      const gx = acotar(x), gy = acotar(y)
 
-      /* Las cuatro esquinas del papel, para poder ENDEREZAR la perspectiva.
-       *
-       * O están las cuatro y son números, o no hay ninguna: con tres puntos
-       * buenos y uno inventado la imagen sale más deformada de lo que estaba, y
-       * eso se ve como un defecto del portal y no como una foto de costado. */
+      /* O están las CUATRO esquinas y son números, o no hay ninguna: con tres
+       * puntos buenos y uno inventado la imagen sale más deformada de lo que
+       * estaba, y eso se ve como un defecto del portal y no como una foto de
+       * costado. */
       const crudas = Array.isArray(r?.esquinas) ? r.esquinas : []
       const esquinas = crudas.length === 4
         ? crudas.map((p: any) => ({ x: num(p?.x), y: num(p?.y) }))
         : []
       const sirven = esquinas.length === 4 && esquinas.every(p => p.x !== null && p.y !== null)
+      if (!sirven) return json({ ok: true, recuadro: null, esquinas: null, giro: 0 })
+
+      const puntos = esquinas.map(p => ({ x: acotar(p.x!), y: acotar(p.y!) }))
+
+      /* El recuadro es la caja que encierra a las cuatro, calculada acá. Antes
+       * lo contestaba el modelo y era lo primero que se le pedía — y con la caja
+       * ya dicha, las «esquinas» le salían las de la caja. Ver el comentario del
+       * prompt: se midió. */
+      const xs = puntos.map(p => p.x), ys = puntos.map(p => p.y)
+      const gx = Math.min(...xs), gy = Math.min(...ys)
+      const recuadro = { x: gx, y: gy, w: Math.max(...xs) - gx, h: Math.max(...ys) - gy }
+      if (recuadro.w <= 0 || recuadro.h <= 0) {
+        return json({ ok: true, recuadro: null, esquinas: null, giro: 0 })
+      }
 
       return json({
         ok: true,
-        recuadro: { x: gx, y: gy, w: Math.min(1 - gx, w), h: Math.min(1 - gy, h) },
-        esquinas: sirven ? esquinas.map(p => ({ x: acotar(p.x!), y: acotar(p.y!) })) : null,
+        recuadro,
+        esquinas: puntos,
         // Cuartos de vuelta, y sólo los cuatro válidos: un valor cualquiera
         // giraría la foto a un ángulo que nadie pidió.
-        giro: [0, 90, 180, 270].includes(Number(r?.giro)) ? Number(r?.giro) : 0,
+        giro: [0, 90, 180, 270].includes(num(r?.giro) as number) ? (r.giro as number) : 0,
       })
     }
 

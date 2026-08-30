@@ -345,8 +345,8 @@ const FileField = memo(({
         let vivo = true;
         setBuscandoRecorte(true);
         (async () => {
-            const { sugerirRecorte } = await sugerencia();
-            const r = await sugerirRecorte(porEditar);
+            const { buscarEsquinas } = await sugerencia();
+            const r = await buscarEsquinas(porEditar);
             if (vivo) setBuscandoRecorte(false);
             // Se comprueba que siga siendo LA MISMA foto: alguien pudo cancelar
             // y elegir otra mientras la pregunta viajaba, y aplicar el recuadro

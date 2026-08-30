@@ -16,7 +16,7 @@
  * «tomá la foto», «mandando», «lista». Un botón que no acusa recibo en un
  * teléfono es indistinguible de uno roto.
  */
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { capturaVigente, mandarFoto } from '../data/capturaDesdeElTelefono';
@@ -47,6 +47,12 @@ export default function CapturaDeFotoView() {
     const [vista, setVista] = useState(null);
     // La foto recién tomada, esperando que la persona la ajuste o la mande.
     const [porAjustar, setPorAjustar] = useState(null);
+    // Dónde está el papel dentro de esa foto, según la lectura.
+    const [sugerido, setSugerido] = useState(null);
+    const [buscando, setBuscando] = useState(false);
+    // Para no escribir estado después de que la pantalla se fue.
+    const vivoRef = useRef(true);
+    useEffect(() => () => { vivoRef.current = false; }, []);
 
     useEffect(() => {
         let vivo = true;
@@ -79,10 +85,29 @@ export default function CapturaDeFotoView() {
      * sería mandar dos veces la misma foto, y quien la tomó torcida no quiere
      * que la torcida llegue igual. Si no hay nada que arreglar, el editor se
      * confirma con un toque. */
+    /* ── Las esquinas se buscan también acá ────────────────────────────────
+     *
+     * Hasta el 2026-08-29 el editor del teléfono abría con su recuadro de
+     * siempre —un margen del 8%— y había que marcar las cuatro esquinas a mano
+     * SIEMPRE. No es que la detección fallara: no se le preguntaba a nadie. La
+     * ayuda vivía en `FileField`, o sea en la computadora, que es justo donde
+     * las fotos vienen mejor encuadradas.
+     *
+     * La pregunta va con el secreto del QR, porque esta página no tiene sesión.
+     * Y si no contesta —sin red, secreto vencido, una foto sin ningún papel— el
+     * editor abre igual: una ayuda que se cae no puede impedir mandar la foto.
+     */
     const tomar = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setPorAjustar(file);
+        setSugerido(null);
+        setBuscando(true);
+        import('../data/recorteSugerido')
+            .then(m => m.buscarEsquinas(file, { secretoDeCaptura: secreto }))
+            .then(r => { if (vivoRef.current) setSugerido(r); })
+            .catch(() => {})
+            .finally(() => { if (vivoRef.current) setBuscando(false); });
         // El `input` se limpia para que volver a elegir el MISMO archivo
         // dispare el evento otra vez: sin esto, cancelar el editor y reintentar
         // con la misma foto no hace nada.
@@ -150,8 +175,12 @@ export default function CapturaDeFotoView() {
                     <EditorDeDocumento
                         tipo="documento"
                         file={porAjustar}
-                        onCancel={() => setPorAjustar(null)}
-                        onConfirm={(listo) => { setPorAjustar(null); mandar(listo); }}
+                        analizando={buscando && !sugerido}
+                        recuadro={sugerido?.recuadro || null}
+                        giroSugerido={sugerido?.giro || 0}
+                        esquinas={sugerido?.esquinas || null}
+                        onCancel={() => { setPorAjustar(null); setSugerido(null); }}
+                        onConfirm={(listo) => { setPorAjustar(null); setSugerido(null); mandar(listo); }}
                     />
                 </Suspense>
             )}

@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.861.0 — Las esquinas del papel las encuentra el portal, no el modelo
+
+Reportado así: *«al subirla pongo las esquinas (porque automáticamente no las
+detecta a pesar que se ven claras)»*. Eran tres cosas distintas, y ninguna era
+que el documento se viera mal.
+
+**En el teléfono no se detectaba nada, porque no se preguntaba.** La página que
+se abre con el QR levantaba el editor con su margen de siempre y había que
+marcar las cuatro esquinas a mano SIEMPRE. La ayuda vivía en la computadora, que
+es justo donde las fotos vienen mejor encuadradas. Ahora también pregunta, con
+el secreto del QR —esa página no tiene sesión, ése es el punto del QR— y lo que
+se abre es sólo la geometría: dónde hay un rectángulo en una imagen que quien
+pregunta ya tiene en la mano.
+
+**Y lo que contestaba el modelo no servía.** Se midió contra una foto sintética
+—las esquinas verdaderas se conocen porque la foto la dibujamos nosotros, así el
+error se mide en vez de opinarse—: pidiéndole primero el recuadro devolvía las
+cuatro esquinas DE LA CAJA sobre un papel claramente en trapecio; pidiéndole sólo
+las esquinas devolvía un trapecio inclinado al REVÉS, con 10% a 15% de desvío en
+cada una. Un 13% del ancho son 150 px en una foto de 1200: enderezar con eso deja
+el documento torcido y con mesa adentro.
+
+**Así que ahora lo contestan los píxeles.** `detectarPapel` hace lo que hace
+cualquier escáner —umbral de Otsu, la mancha clara más grande, su casco convexo,
+el cuadrilátero de mayor área—: **0.1% a 0.6% de desvío en 5 a 13 ms**, sin red,
+sin permiso y sin señal. El modelo queda de respaldo para lo único que el umbral
+no puede decidir: un papel que no contrasta con la mesa.
+
+Tres rejas, y las tres salieron de fabricarle al detector los casos donde tiene
+que fallar limpio: sin contraste suficiente no contesta (Otsu SIEMPRE parte la
+imagen en dos, así que sobre pura madera devolvía un papel inexistente); el
+cuadro entero no es una respuesta; y el umbral sale de una tabla de siete
+mediciones, no de un número elegido a mano.
+
+**Y una que ya estaba mal antes de todo esto:** el camino automático rectificaba
+con las esquinas EN EL ORDEN EN QUE LLEGARAN. `rectificarPapel` toma ese orden
+como la orientación elegida, así que una detección perfecta salía acostada o
+espejada según cómo vinieran los puntos — y eso no se lee como «el modelo se
+equivocó» sino como «el portal me dio vuelta el papel». El editor ya las
+ordenaba; el camino que corre solo, no.
+
+`npm run medir:papel` deja la medición corriendo: once fotos con la verdad
+conocida, cuatro de ellas esperando `null`. Existe como script y no como prueba
+de unidad porque en jsdom no hay `getImageData` — una prueba ahí mediría el mock
+y daría verde sobre nada, que es exactamente lo que costó la matriz afín
+invertida de `perspectiva.js`.
+
 ## v2.860.1 — El circuito de puntos, documentado
 
 `docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md` — el estado del circuito

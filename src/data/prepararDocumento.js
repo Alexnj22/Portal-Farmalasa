@@ -30,6 +30,7 @@
  * nada es peor que pedir treinta segundos de trabajo.
  */
 import { DOCS } from '../utils/fotoDocumento';
+import { girarEsquinas, ordenarEsquinas } from '../utils/perspectiva';
 import { rectificarPapel, aArchivo } from '../utils/componerDocumento';
 import { acabadoPorDefecto } from '../utils/tratamientoDeFoto';
 
@@ -55,8 +56,8 @@ function cargar(file) {
 export async function prepararAutomatico(file, tipo = 'documento') {
     const doc = DOCS[tipo] || DOCS.documento;
     try {
-        const { sugerirRecorte } = await import('./recorteSugerido');
-        const propuesta = await sugerirRecorte(file);
+        const { buscarEsquinas } = await import('./recorteSugerido');
+        const propuesta = await buscarEsquinas(file);
         const esquinas = propuesta?.esquinas;
         if (!Array.isArray(esquinas) || esquinas.length !== 4) {
             return { ok: false, motivo: 'no se reconoció el documento' };
@@ -64,12 +65,27 @@ export async function prepararAutomatico(file, tipo = 'documento') {
 
         const { imagen, soltar } = await cargar(file);
 
-        /* El giro que propuso la lectura se aplica rotando el ORDEN de las
-         * esquinas —cuál es la de arriba a la izquierda—, no girando la foto:
-         * así no cuesta ninguna interpolación. */
-        let orden = esquinas.map(p => ({ x: p.x, y: p.y }));
+        /* Primero se ORDENAN, y no es un detalle de estilo.
+         *
+         * El prompt pide las cuatro esquinas «en el orden que sea» —a
+         * propósito: exigirle un orden a un modelo es pedirle que además
+         * acierte cuál llama «arriba a la izquierda» en una foto torcida—. Pero
+         * `rectificarPapel` va con `yaOrdenadas: true`, o sea que toma el orden
+         * recibido COMO la orientación elegida. Sin este paso, una detección
+         * perfecta sale acostada o espejada según en qué orden vinieran los
+         * puntos, y eso no se lee como «el modelo se equivocó» sino como «el
+         * portal me dio vuelta el papel».
+         *
+         * El editor ya lo hacía (`EditorDeDocumento`, al enderezar); acá
+         * faltaba, y este camino es el que corre SIEMPRE y sin que nadie mire.
+         *
+         * Después el giro que propuso la lectura se aplica rotando ese orden
+         * —cuál es la de arriba a la izquierda—, no girando la foto: así no
+         * cuesta ninguna interpolación. */
+        const crudas = esquinas.map(p => ({ x: p.x, y: p.y }));
+        let orden = ordenarEsquinas(crudas) || crudas;
         const cuartos = ((Math.round((propuesta.giro || 0) / 90) % 4) + 4) % 4;
-        for (let i = 0; i < cuartos; i++) orden = [orden[3], orden[0], orden[1], orden[2]];
+        for (let i = 0; i < cuartos; i++) orden = girarEsquinas(orden);
 
         const r = rectificarPapel(imagen, orden);
         const archivo = r ? await aArchivo(r.canvas, {

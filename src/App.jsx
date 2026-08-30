@@ -31,6 +31,7 @@ import AppLayout from "./components/layout/AppLayout";
 const UnifiedModal = lazy(() => import("./components/UnifiedModal"));
 // Diferida como las vistas: la abre un teléfono que llegó por un QR, no el arranque.
 const CapturaDeFotoView = lazy(() => import("./views/CapturaDeFotoView"));
+const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 
@@ -671,6 +672,21 @@ function MainApp() {
                     <GlobalBackground />
                     <div className="relative z-base">
                         <Suspense fallback={null}><CapturaDeFotoView /></Suspense>
+                    </div>
+                </div>
+            } />
+
+            {/* Mis puntos — la pantalla del CLIENTE, sin sesión.
+                Fuera del layout y de `isAuthenticated` a propósito: quien llega
+                acá no es del personal y no tiene con qué iniciar sesión. La
+                llave son sus DOS datos (documento y teléfono), que la función
+                del servidor exige juntos y con freno por intentos — un teléfono
+                solo no es una llave: sale en el ticket y se puede recorrer. */}
+            <Route path="/mis-puntos" element={
+                <div className="relative min-h-[100dvh] w-full bg-surface-page">
+                    <GlobalBackground />
+                    <div className="relative z-base">
+                        <Suspense fallback={null}><MisPuntosView /></Suspense>
                     </div>
                 </div>
             } />

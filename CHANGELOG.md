@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.860.0 — El cliente puede ver sus puntos con su DUI y su teléfono
+
+**`/mis-puntos` — la primera pantalla del portal para el CLIENTE**, sin sesión.
+Entra su DUI y su teléfono y ve cuánto tiene, en dólares, con sus últimos
+movimientos.
+
+**Pide dos datos y no uno, a propósito.** Con sólo el teléfono, cualquiera que
+vea un ticket —o que recorra números— vería el nombre y el saldo de esa persona.
+Un teléfono no es una contraseña: lo sabe la familia y sale impreso. Exigir que
+los dos coincidan en la MISMA ficha convierte «probar números» en «adivinar un
+par».
+
+No es autenticación fuerte y no se pretende que lo sea. Por eso la puerta muestra
+el saldo y los movimientos, y **nada que no se pueda deshacer**: no canjea, no
+edita la ficha, y no devuelve el documento con el que se entró.
+
+**Tres reglas la hacen publicable, y las tres se probaron:**
+
+- **Freno por IP** — ocho fallos en quince minutos y deja de contestar.
+  Verificado disparando once intentos seguidos: bloquea desde el octavo, y
+  bloquea también a quien acierta el par. Un freno que nunca se probó no es un
+  freno.
+- **La respuesta es idéntica** cuando el par no existe, cuando el DUI no existe y
+  cuando el DUI existe pero el teléfono no coincide. Verificado con los tres
+  casos: el mismo texto. Distinguirlos convertiría esto en un detector de «este
+  documento es cliente».
+- **El documento no se guarda** en el registro de intentos, sólo su huella. Un
+  registro de accesos que archiva DUIs es una filtración esperando a pasar.
+
+**Habla en dólares.** «Tenés 420 puntos» no le dice nada a nadie; «$4.20 de
+descuento» sí. El número de puntos queda abajo, como el detalle que explica la
+cifra. Y la pantalla dice la razón social de la empresa, nunca el nombre del
+portal — el cliente no tiene por qué saber que existe.
+
 ## v2.859.1 — Girar donde se ve el resultado, y la mano deja de acostar el documento
 
 *«Ahora sí, pero ¿por qué la acuesta? No me permite rotar»* — con una factura de

@@ -462,7 +462,7 @@ export const AREAS = [
                   'facturacion_tab_saltos', 'facturacion_tab_no_efectivo', 'facturacion_tab_observaciones',
                   'facturacion_ver_montos', 'clientes', 'clientes_ver_montos',
                   'cotizaciones', 'cotizaciones_descargar'],
-        rutas: ['/facturacion', '/clientes', '/cotizaciones'],
+        rutas: ['/facturacion', '/clientes', '/cotizaciones', '/mis-puntos'],
         archivos: [
             'src/views/FacturacionView.jsx', 'src/views/ClientesView.jsx', 'src/views/clientes/',
             'src/views/CotizacionesView.jsx',
@@ -474,14 +474,18 @@ export const AREAS = [
             'src/utils/svCatalogs.js',
             'src/components/forms/FormClienteDetail.jsx', 'src/components/forms/FormSalesDteViewer.jsx',
             'scripts/migracion-clientes/',
+            // La pantalla del CLIENTE, sin sesión. Va acá y no en Ventas porque
+            // lo que muestra es el dato de una persona, y su puerta es la ficha.
+            'src/views/MisPuntosView.jsx', 'src/data/misPuntos.js',
         ],
         tablas: ['customers', 'customers_changelog', 'customer_activity', 'clientes_por_revisar',
                  'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido',
                  'dte_datos_pedidos',
-                 'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos'],
+                 'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos',
+                 'puntos_consulta_intentos'],
         edge: ['regularizar-dte', 'sincronizar-fichas-clientes', 'push-cliente-erp',
                'aplicar-solicitud-facturacion', 'sync-sales-dte', 'sync-numero-control',
-               'backfill-dte-related-docs', 'leer-dte-json',
+               'backfill-dte-related-docs', 'leer-dte-json', 'mis-puntos',
                // La dispara una sala desde Inicio, pero el EFECTO es fiscal:
                // escribe el correo en la ficha de origen y retransmite el DTE.
                'responder-dato-pedido'],

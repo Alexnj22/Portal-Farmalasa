@@ -749,29 +749,19 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, onClose, onCort
 }
 
 /**
- * Cerrar el día. Dos pasos, y el segundo no es una formalidad.
+ * Cerrar el día. Una confirmación, con el aviso adentro.
  *
  * El cierre emite el cierre del día y **no se deshace**: esa caja no se vuelve a
- * abrir. Un botón de un solo toque para algo irreversible es el diseño que
- * produce el «se me fue el dedo», y acá el dedo cuesta un día de caja.
+ * abrir. Por eso el diálogo no pregunta «¿estás seguro?» a secas — dice qué
+ * queda del otro lado del botón, que es lo único que puede hacer que alguien se
+ * detenga.
  *
- * El primer paso explica QUÉ pasa; el segundo pide escribirlo. Escribir la
- * palabra obliga a leer, que es exactamente lo que un segundo «¿Estás seguro?»
- * no consigue.
- *
- * Lo monta el llamador sólo cuando está abierto, así que vuelve al primer paso
- * solo: dejarlo montado y blanquearlo con un efecto es la vía por la que un
- * diálogo se reabre en el paso dos, o sea el botón de un toque que vino a
- * evitar.
+ * Lo monta el llamador sólo cuando está abierto.
  */
 function DialogoCerrar({ ocupado, sinCorte, onClose, onCerrar }) {
-    const [paso, setPaso] = useState(1);
-    const [palabra, setPalabra] = useState('');
-
-    /* Sin corte no se cierra, y se dice ANTES de dejar avanzar. El servidor lo
-     * rechaza igual —ahí está el candado— pero enterarse al final, después de
-     * escribir la palabra, es hacer perder el tiempo por una condición que la
-     * pantalla ya conocía. */
+    /* Sin corte no se cierra, y se dice ANTES. El servidor lo rechaza igual
+     * —ahí está el candado— pero enterarse recién al apretar es hacer perder el
+     * tiempo por una condición que la pantalla ya conocía al pintar. */
     if (sinCorte) {
         return (
             <Marco abierto onClose={onClose} titulo="Falta el corte"
@@ -787,35 +777,21 @@ function DialogoCerrar({ ocupado, sinCorte, onClose, onCerrar }) {
         );
     }
 
-    if (paso === 1) {
-        return (
-            <Marco abierto onClose={onClose} titulo="Cerrar el día"
-                bajada="Esto cierra la caja de hoy y emite el cierre del día.">
-                <Notice variant="danger" icon={AlertTriangle}>
-                    <span className="font-bold">No se puede deshacer.</span>
-                    <span className="block mt-0.5 font-normal">
-                        La caja de este día no se vuelve a abrir: lo que quede sin anotar ya no se
-                        podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
-                    </span>
-                </Notice>
-                <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <Button variant="primary" onClick={() => setPaso(2)}>Continuar</Button>
-                </div>
-            </Marco>
-        );
-    }
-
     return (
-        <Marco abierto onClose={onClose} titulo="Confirma el cierre"
-            bajada="Escribe CERRAR para confirmar que la caja de este día no se vuelve a abrir.">
-            <PortalInput label="Escribe CERRAR" value={palabra}
-                onChange={(e) => setPalabra(e.target.value.toUpperCase())}
-                placeholder="CERRAR" autoFocus />
+        <Marco abierto onClose={onClose} titulo="Cerrar el día"
+            bajada="Esto cierra la caja de hoy y emite el cierre del día.">
+            <Notice variant="danger" icon={AlertTriangle}>
+                <span className="font-bold">No se puede deshacer.</span>
+                <span className="block mt-0.5 font-normal">
+                    La caja de este día no se vuelve a abrir: lo que quede sin anotar ya no se
+                    podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
+                </span>
+            </Notice>
             <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setPaso(1)}>Atrás</Button>
-                <Button variant="primary" disabled={ocupado || palabra.trim() !== 'CERRAR'}
-                    onClick={onCerrar}>Cerrar el día</Button>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" disabled={ocupado} onClick={onCerrar}>
+                    Cerrar el día
+                </Button>
             </div>
         </Marco>
     );

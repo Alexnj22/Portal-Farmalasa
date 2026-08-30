@@ -21,7 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.863.0 — Mi caja: el día en una tarjeta, los movimientos con su origen, y cerrar pide corte y doble confirmación
+## v2.863.1 — Cerrar el día: una sola confirmación
+
+**El segundo paso —teclear `CERRAR`— se cayó.** Lo pidió el usuario apenas lo
+vio: con la confirmación alcanza. Queda el diálogo único con el aviso adentro
+(«no se puede deshacer», la caja de ese día no se vuelve a abrir) y sus dos
+botones.
+
+El freno que importa no se tocó: **sin un corte del día no se cierra**, y eso
+lo rechaza el servidor, no la pantalla.
+
+## v2.863.0 — Mi caja: el día en una tarjeta, los movimientos con su origen, y cerrar pide corte y confirmación
 
 **Cerrar el día ya no se puede hacer de un toque, ni sin haber contado.** Eran
 dos huecos del mismo acto, que es el único de esta pantalla que **no se
@@ -32,9 +42,10 @@ deshace**: la caja de ese día no se vuelve a abrir.
    El candado está en el servidor —que es donde vale— y además la pantalla lo
    dice antes, en vez de dejar que alguien lea el aviso y escriba la palabra
    para enterarse al final de una condición que ya se conocía al pintar.
-2. **Doble confirmación, y la segunda se escribe.** El primer paso explica qué
-   pasa; el segundo pide teclear `CERRAR`. Escribir obliga a leer, que es
-   justamente lo que un segundo «¿Estás seguro?» no consigue.
+2. **Y pide confirmación, con el aviso adentro.** No un «¿estás seguro?» a
+   secas: el diálogo dice qué queda del otro lado del botón —la caja de ese día
+   no se vuelve a abrir, lo que quede sin anotar ya no se anota— que es lo
+   único que puede hacer que alguien se detenga.
 
 **El día de la caja tiene su tarjeta:** qué caja y qué turno, desde qué hora,
 quién la abrió, con cuánto, y **lo vendido por todas las formas de pago** con

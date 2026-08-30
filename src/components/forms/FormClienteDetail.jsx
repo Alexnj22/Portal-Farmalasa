@@ -219,23 +219,42 @@ function PanelPuntos({ customerId }) {
         );
     }
 
-    const { cliente, movimientos } = datos;
-    const acumulados = movimientos.filter(m => m.tipo === 'acumulacion').reduce((s, m) => s + Number(m.puntos || 0), 0);
-    const canjeados  = movimientos.filter(m => m.tipo === 'canje').reduce((s, m) => s + Math.abs(Number(m.puntos || 0)), 0);
+    const { cliente, movimientos, hay_mas: hayMas } = datos;
+    // Los totales vienen SUMADOS de la historia completa, no de la lista. Antes
+    // se calculaban sobre los 200 visibles y se rotulaban «en pantalla» para no
+    // mentir; un total que sólo cuenta lo visible no es un total.
+    const cuadra = cliente.acumulados - cliente.canjeados === cliente.saldo;
 
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-3 gap-3">
-                <Dato label="Saldo" value={cliente.saldo.toLocaleString()}
+                <Dato label="Puntos disponibles" value={cliente.saldo.toLocaleString()}
                     valueCls={cliente.saldo > 0 ? 'text-success-text' : 'text-content-2'} />
-                {/* «En pantalla» y no «Total»: son los últimos 200 movimientos,
-                    no la historia entera. Rotularlos «Total» diría un número que
-                    no cuadra con el saldo y nadie sabría por qué. */}
-                <Dato label="Acumulados en pantalla" value={acumulados.toLocaleString()} />
-                <Dato label="Canjeados en pantalla" value={canjeados.toLocaleString()} />
+                <Dato label="Acumulados (total)" value={cliente.acumulados.toLocaleString()} />
+                <Dato label="Canjeados (total)" value={cliente.canjeados.toLocaleString()} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <Dato label="Compras que sumaron" value={cliente.n_compras.toLocaleString()} />
+                <Dato label="Canjes" value={cliente.n_canjes.toLocaleString()} />
             </div>
 
+            {/* Si acumulados − canjeados no da el saldo, el saldo guardado y su
+                historia no coinciden. Se DICE en vez de mostrar tres números que
+                no cierran y dejar que quien mire crea que se equivocó al sumar. */}
+            {!cuadra && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    Los puntos disponibles no coinciden con la resta de acumulados menos
+                    canjeados ({(cliente.acumulados - cliente.canjeados).toLocaleString()}).
+                    El saldo puede tener un ajuste hecho a mano.
+                </Notice>
+            )}
+
             <SectionHeader icon={Star}>Movimientos</SectionHeader>
+            {hayMas && (
+                <p className="text-caption text-content-3">
+                    Se muestran los 200 más recientes. Los totales de arriba sí incluyen todo.
+                </p>
+            )}
             {movimientos.length === 0 ? (
                 <p className="text-body-sm text-content-3">La cuenta existe pero todavía no tiene movimientos.</p>
             ) : (

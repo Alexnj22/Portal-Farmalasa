@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.858.4 — Los totales de puntos del cliente son los de verdad
+
+La ficha del cliente mostraba «acumulados» y «canjeados» calculados sobre los 200
+movimientos visibles, rotulados «en pantalla» para no mentir. Ahora se **suman de
+la historia completa** del otro lado: un total que sólo cuenta lo visible no es
+un total.
+
+Se agregan cuántas compras sumaron y cuántos canjes hubo, y un aviso cuando
+*acumulados − canjeados* no da el saldo — señal de que alguien ajustó el saldo a
+mano. Sin ese aviso, quien mire tres números que no cierran va a creer que se
+equivocó al sumar.
+
 ## v2.858.3 — Mi caja usa la barra y el carril canónicos
 
 La pantalla estaba escrita a mano y se notaba: una fila de píldoras de sala

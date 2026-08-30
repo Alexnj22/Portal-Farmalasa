@@ -100,6 +100,19 @@ Deno.serve(async (req) => {
       if (cuentas.length > 1) return json({ ok: true, motivo: "duplicado", cliente: null, movimientos: [] });
 
       const c = cuentas[0];
+
+      // Los totales se SUMAN del otro lado, no se calculan sobre los 200
+      // movimientos que se muestran. La primera versión los sacaba de la lista y
+      // los rotulaba «en pantalla» para no mentir; el usuario pidió los totales
+      // de verdad, y un total que sólo cuenta lo visible no es un total.
+      const [[tot]] = await conn.query(
+        'SELECT (SELECT COALESCE(SUM(PuntosVenta),0)     FROM Ventas WHERE idCliente = ?) acumulados, ' +
+        '       (SELECT COALESCE(SUM(PuntosCanjeados),0) FROM Canjes WHERE idCliente = ?) canjeados, ' +
+        '       (SELECT COUNT(*) FROM Ventas WHERE idCliente = ?) n_compras, ' +
+        '       (SELECT COUNT(*) FROM Canjes WHERE idCliente = ?) n_canjes',
+        [c.idCliente, c.idCliente, c.idCliente, c.idCliente],
+      ) as any;
+
       const [movs] = await conn.query(
         `SELECT * FROM (
            SELECT 'acumulacion' AS tipo, v.Fecha_ingreso AS fecha, v.PuntosVenta AS puntos,
@@ -117,7 +130,17 @@ Deno.serve(async (req) => {
 
       return json({
         ok: true,
-        cliente: { id_puntos: c.idCliente, nombre: c.nombre, saldo: Number(c.saldo ?? 0) },
+        cliente: {
+          id_puntos: c.idCliente, nombre: c.nombre, saldo: Number(c.saldo ?? 0),
+          acumulados: Number(tot?.acumulados ?? 0),
+          canjeados:  Number(tot?.canjeados ?? 0),
+          n_compras:  Number(tot?.n_compras ?? 0),
+          n_canjes:   Number(tot?.n_canjes ?? 0),
+        },
+        // `true` cuando la lista NO alcanza para toda la historia. La pantalla lo
+        // dice: sin eso, alguien sumaría los movimientos visibles y no le daría
+        // el saldo, sin entender por qué.
+        hay_mas: (movs?.length ?? 0) >= 200,
         movimientos: movs ?? [],
       });
     }

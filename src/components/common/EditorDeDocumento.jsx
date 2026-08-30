@@ -32,9 +32,11 @@
  *   trabajar cómodo. La perspectiva se corrige con esas esquinas, así que un
  *   papel en trapecio sale rectangular de verdad.
  *
- *   **2 · Acabado** — el documento ya enderezado, grande, y una tira de
- *   miniaturas donde cada acabado se VE aplicado sobre esta foto antes de
- *   elegirlo. Arranca en «Nítida», que mejora sin descartar color.
+ *   **2 · Acabado** — el documento ya enderezado, lo más grande que entre, y
+ *   debajo una barra con los tres acabados y el giro. El acabado elegido se
+ *   dibuja de verdad sobre esa vista al instante, así que se ve a tamaño
+ *   completo lo que se va a guardar. Arranca en «Nítida», que mejora sin
+ *   descartar color.
  *
  * La proporción del resultado sale del papel medido, así que la lista de formas
  * desapareció: era el remiendo de no poder marcar las esquinas.
@@ -48,7 +50,7 @@
  * el problema.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Check, Loader2, Maximize2, RotateCw, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Contrast, ImageIcon, Loader2, Maximize2, RotateCw, Sparkles, Wand2, X } from 'lucide-react';
 import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
@@ -58,13 +60,16 @@ import { ESQUINAS_ENTERAS, girarEsquinas, ordenarEsquinas } from '../../utils/pe
 import { aEscala, aArchivo, rectificarPapel } from '../../utils/componerDocumento';
 import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../utils/tratamientoDeFoto';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
+import SegmentedControl from './SegmentedControl';
 
 // El lado con el que se revisa la foto antes de guardarla. 800 alcanza para
 // medir papel, tinta y color, y corre sin trabar un teléfono.
 const LADO_ANALISIS = 800;
-// Las miniaturas de la tira de acabados. Chicas a propósito: se recalculan cada
-// vez que cambia el recorte y tienen que salir en un parpadeo.
-const LADO_MINIATURA = 132;
+/* El ícono de cada acabado.
+ *
+ * Vive acá y no en `tratamientoDeFoto.js` a propósito: ese archivo es de
+ * píxeles y no debe arrastrar `lucide-react` a todo el que lo importe. */
+const ICONO_DE_ACABADO = { original: ImageIcon, nitida: Wand2, aclarada: Contrast };
 
 /** Las cuatro esquinas por defecto: un margen adentro, no la foto entera. */
 const ESQUINAS_CON_MARGEN = [
@@ -117,7 +122,6 @@ export default function EditorDeDocumento({
      * puesto— y el giro que se APLICA es el que alguien pidió, contado aparte. */
     const [cuartos, setCuartos] = useState(0);
     const [vista, setVista] = useState(null);             // su vista previa con acabado
-    const [miniaturas, setMiniaturas] = useState({});
     const [medidas, setMedidas] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
@@ -213,7 +217,7 @@ export default function EditorDeDocumento({
         enderezarCon(q);
     }, [cuartos, enderezarCon]);
 
-    /* ── Paso 2: la vista previa y las miniaturas ────────────────────────────
+    /* ── Paso 2: la vista previa ─────────────────────────────────────────────
      *
      * Cada acabado se dibuja DE VERDAD sobre esta foto, no se imita con un
      * filtro del navegador. La versión anterior lo imitaba, y eso significa dos
@@ -227,19 +231,6 @@ export default function EditorDeDocumento({
         // eslint-disable-next-line react-hooks/set-state-in-effect -- nace del recorte confirmado
         setVista(canvas.toDataURL('image/jpeg', 0.9));
     }, [enderezada, acabado]);
-
-    useEffect(() => {
-        if (!enderezada) return;
-        const escala = Math.min(1, LADO_MINIATURA / Math.max(enderezada.width, enderezada.height));
-        const nuevas = {};
-        for (const op of opciones) {
-            const { canvas, ctx } = aEscala(enderezada, escala);
-            aplicarAcabado(ctx, canvas.width, canvas.height, op.value);
-            nuevas[op.value] = canvas.toDataURL('image/jpeg', 0.8);
-        }
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- nacen del recorte confirmado
-        setMiniaturas(nuevas);
-    }, [enderezada, opciones]);
 
     /* La revisión que avisa: se mide sobre el recorte SIN acabado —«aclarada»
      * lleva todo a gris y borraría justo el color del que se quiere hablar— y
@@ -288,7 +279,12 @@ export default function EditorDeDocumento({
             maxWidth="max-w-[min(1600px,96vw)]"
             className="h-[96dvh] max-h-none!"
             ariaLabel={doc.titulo}>
-            <LiquidModal.Header className="flex items-start gap-2 px-3! py-2! md:px-6! md:py-4!">
+            {/* `items-center` y `py-1.5` con el dedo: la cabecera del paso 2 no
+                lleva bajada —el título es una palabra— así que alinear arriba
+                dejaba el título y la X a distinta altura, y el relleno vertical
+                sumaba alto que le falta al documento. Reportada como *«el header
+                es demasiado grande»* (2026-08-30). En escritorio no cambia. */}
+            <LiquidModal.Header className="flex items-center gap-2 px-3! py-1.5! md:px-6! md:py-4!">
                 {/* ── La cabecera y el pie son ALTO QUE NO ES DOCUMENTO ───────
                     Medido en un iPhone 13: la cabecera se llevaba 94 px y el
                     pie **237** —los cuatro botones se apilaban en cuatro
@@ -300,7 +296,7 @@ export default function EditorDeDocumento({
                     van sin rótulo con el dedo, y «Cancelar» se mudó acá arriba
                     como una X: es una salida, no una acción del trabajo. */}
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-body font-bold text-content">
+                    <h3 className={`font-bold text-content ${conElDedo ? 'text-body-sm' : 'text-body'}`}>
                         {enEncuadre ? doc.titulo : 'Acabado'}
                     </h3>
                     {/* Lo que está por llegar SE VE llegando: sin esto el editor
@@ -360,42 +356,62 @@ export default function EditorDeDocumento({
                             </div>
                         )
                     ) : (
-                        <div className="w-full h-full grid place-items-center
-                                        bg-surface-card-hover rounded-card overflow-hidden p-2">
+                        <div className="w-full h-full min-h-0 flex items-center justify-center
+                                        bg-surface-card-hover rounded-card overflow-hidden p-1">
+                            {/* La vista previa toma TODO el hueco: `h-full w-full` con
+                                `object-contain` entra entera y a la vez usa el alto
+                                completo, en vez de quedarse en su tamaño natural con
+                                aire alrededor. El `min-h-0` es la condición para que
+                                eso valga —un hijo de flex sin él no baja de su
+                                contenido— y el `p-1` en vez de `p-2` devuelve 8 px:
+                                cada píxel de relleno es un píxel menos de documento.
+
+                                Lo que la agrandó de verdad, igual, fue sacar la tira
+                                de miniaturas de acá abajo (~46 px) y apretar la
+                                cabecera. */}
                             {vista
-                                ? <img src={vista} alt="" className="max-w-full max-h-full object-contain
+                                ? <img src={vista} alt="" className="w-full h-full object-contain
                                                                      rounded-card shadow-[var(--shadow-glass-2)]" />
                                 : <Loader2 size={22} className="animate-spin text-content-3" />}
                         </div>
                     )}
                 </div>
 
-                {/* ── La tira de acabados, sólo en el paso 2 ─────────────────
-                    Con la imagen aplicada en cada miniatura: un nombre como
-                    «Aclarada» no dice qué le va a pasar a ESTA foto, y probar
-                    uno por uno para ver es exactamente la torpeza que se vino a
-                    sacar. */}
+                {/* ── Los acabados y el giro, en UNA barra ───────────────────
+                    Antes eran miniaturas de 80×84 con la foto aplicada en cada
+                    una. El argumento era bueno —un nombre como «Aclarada» no
+                    dice qué le va a pasar a ESTA foto— pero se llevaba 90 px de
+                    alto, y en un teléfono ese alto sale del documento: *«para
+                    aplicar el filtro no me muestra la imagen completa»*
+                    (usuario, 2026-08-30).
+
+                    Y el argumento ya no aplicaba: el acabado elegido se dibuja
+                    de verdad sobre la vista GRANDE, al instante. O sea que la
+                    miniatura de 80 px competía con una vista previa del tamaño
+                    de la pantalla que muestra exactamente lo mismo, mejor.
+
+                    El control es `SegmentedControl` y no tres botones sueltos
+                    porque es literalmente lo que dice su canónico: una de N
+                    está seleccionada.
+
+                    **Y GIRAR va acá, no en el pie.** Estaba al lado de la
+                    flecha de volver, y ahí no se lee como lo que es: *«ahora
+                    que está a la par de retroceder parece que es para retomar
+                    la foto y no rotar»*. Junto a los acabados queda con las
+                    otras herramientas que cambian ESTA foto — el pie se queda
+                    con salir y guardar, que son las dos decisiones. */}
                 {!enEncuadre && (
-                    <div className="shrink-0 flex gap-2 overflow-x-auto pb-1">
-                        {opciones.map(op => (
-                            <button key={op.value} type="button"
-                                onClick={() => setAcabado(op.value)}
-                                title={op.pista}
-                                className={`shrink-0 rounded-card overflow-hidden border-2 transition-all
-                                            min-h-[var(--tap-min)] active:scale-[0.97]
-                                            ${acabado === op.value
-                                        ? 'border-brand shadow-[var(--shadow-glass-2)]'
-                                        : 'border-transparent opacity-80'}`}>
-                                {miniaturas[op.value]
-                                    ? <img src={miniaturas[op.value]} alt=""
-                                        className="w-20 h-14 object-cover" />
-                                    : <span className="block w-20 h-14 bg-surface-card-hover" />}
-                                <span className={`block px-2 py-1 text-micro font-black text-center
-                                                  ${acabado === op.value ? 'text-brand-text' : 'text-content-3'}`}>
-                                    {op.label}
-                                </span>
-                            </button>
-                        ))}
+                    <div className="shrink-0 flex items-center gap-2 overflow-x-auto pb-0.5">
+                        <SegmentedControl size="sm" label="Acabado"
+                            value={acabado} onChange={setAcabado}
+                            options={opciones.map(op => ({
+                                value: op.value, label: op.label,
+                                icon: ICONO_DE_ACABADO[op.value],
+                            }))} />
+                        <span className="flex-1 min-w-1" />
+                        <Button variant="secondary" size="sm" icon={RotateCw}
+                            iconOnly title="Girar un cuarto de vuelta"
+                            onClick={girarResultado} disabled={guardando} />
                     </div>
                 )}
 
@@ -481,11 +497,6 @@ export default function EditorDeDocumento({
                             onClick={() => { setPaso('encuadre'); setEnderezada(null); setFormato(null); }}
                             disabled={guardando}>
                             {conElDedo ? null : 'Volver al encuadre'}
-                        </Button>
-                        <Button variant="secondary" size="sm" icon={RotateCw}
-                            iconOnly={conElDedo} title="Girar un cuarto de vuelta"
-                            onClick={girarResultado} disabled={guardando}>
-                            {conElDedo ? null : 'Girar'}
                         </Button>
                         <span className="flex-1 min-w-2" />
                         <Button variant="primary" size="sm" icon={guardando ? Loader2 : Check}

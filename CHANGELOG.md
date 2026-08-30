@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.861.2 — El acabado: la foto grande, los filtros en una barra y girar con ellos
+
+Cuatro cosas del paso 2 del editor, reportadas desde el teléfono.
+
+**La foto no tenía lugar.** Las miniaturas de acabado eran tarjetas de 80×84 con
+la imagen aplicada en cada una, y se llevaban ~90 px de alto. En un teléfono ese
+alto sale del documento. El argumento para tenerlas era bueno —un nombre como
+«Aclarada» no dice qué le va a pasar a ESTA foto— pero **ya no aplicaba**: el
+acabado elegido se dibuja de verdad sobre la vista grande, al instante. O sea que
+una miniatura de 80 px competía con una vista previa del tamaño de la pantalla
+que muestra lo mismo, mejor y más grande.
+
+Ahora los tres acabados van en un `SegmentedControl` con su ícono — el canónico
+dice literalmente eso: «una de N está seleccionada» — y la vista previa se queda
+con el alto que sobra.
+
+**Girar se mudó junto a los acabados.** Estaba en el pie, al lado de la flecha de
+volver: *«ahora que está a la par de retroceder parece que es para retomar la
+foto y no rotar»*. Con los acabados queda entre las herramientas que cambian esta
+foto, y el pie se queda con las dos decisiones —salir y guardar—.
+
+**La cabecera, más compacta.** `items-center` en vez de `items-start` (el paso 2
+no lleva bajada, así que el título y la X quedaban a distinta altura), la mitad
+del relleno vertical con el dedo y el título un escalón más chico. En escritorio
+no cambia nada.
+
+**Y la vista previa toma todo el hueco**: `h-full w-full` con `object-contain`
+entra entera y usa el alto completo, en vez de quedarse en su tamaño natural con
+aire alrededor.
+
 ## v2.861.1 — «Todavía no tiene carné» se muda al documento de bienvenida
 
 Corregido por el usuario: *«esto de todavía no tiene carné debe estar en el de

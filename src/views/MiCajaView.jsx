@@ -182,33 +182,34 @@ export default function MiCajaView() {
                         (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el
                         dato»). El estado de la caja es el primero porque es la
                         pregunta con la que alguien entra a esta pantalla.
-                        Sin sala elegida no se pinta: no hay caja de la que
-                        hablar, y cuatro tarjetas en cero dirían algo falso. */}
-                    {sala && (
+                        Va SIEMPRE, también sin sala: cuántas tarjetas hay lo fija
+                        la vista y no el dato, y esconder el carril le descuenta
+                        314px a la píldora igual —`useMedidaFila` lo busca en el
+                        abuelo y reserva su ancho esté o no—. Sin sala dicen «—»,
+                        que es la respuesta honesta. */}
                     <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
                         <StatCard icon={estado?.abierta ? DoorOpen : Lock}
-                            label={estado?.abierta ? 'Caja abierta' : 'Caja cerrada'}
-                            value={estado?.abierta ? `Turno ${estado.turno}` : 'Sin turno'}
-                            sub={estado?.abierta ? `Caja ${estado.caja}` : 'Nadie puede vender'}
+                            label={!sala ? 'La caja' : estado?.abierta ? 'Caja abierta' : 'Caja cerrada'}
+                            value={!sala ? '—' : estado?.abierta ? `Turno ${estado.turno}` : 'Sin turno'}
+                            sub={!sala ? 'Elige una sala' : estado?.abierta ? `Caja ${estado.caja}` : 'Nadie puede vender'}
                             iconBg={estado?.abierta ? 'bg-success/10' : 'bg-warning/10'}
                             iconCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
                             valueCls={estado?.abierta ? 'text-success-text' : 'text-warning-text'}
                             loading={cargando} />
                         <StatCard icon={ArrowUpRight} label="Salidas por anotar"
-                            value={pendientes.length}
+                            value={sala ? pendientes.length : '—'}
                             sub={pendientes.length ? 'entran al vale del corte' : undefined}
                             iconBg="bg-warning/10" iconCls="text-warning-text"
                             valueCls={pendientes.length ? 'text-warning-text' : undefined}
                             loading={cargando} />
                         <StatCard icon={Landmark} label="Suman"
-                            value={formatMoney(totalPendiente)} loading={cargando} />
+                            value={sala ? formatMoney(totalPendiente) : '—'} loading={cargando} />
                         <StatCard icon={ArrowDownLeft} label="Anotado hoy"
-                            value={movimientos.length}
+                            value={sala ? movimientos.length : '—'}
                             sub={bolsas.length ? `${bolsas.length} bolsa${bolsas.length === 1 ? '' : 's'} en sala` : undefined}
                             iconBg="bg-brand/10" iconCls="text-brand-text"
                             loading={cargando} />
                     </CarrilCards>
-                    )}
 
                     {/* La sala y las acciones van en la píldora, no sueltas en el
                         cuerpo: es el lugar único donde se mira qué recorta la
@@ -218,7 +219,7 @@ export default function MiCajaView() {
                         La barra se pinta SIEMPRE, también sin sala elegida: es la
                         ranura donde se elige, y esconderla dejaría el vacío sin
                         salida — que fue el defecto que la trajo acá. */}
-                    <div className={`flex min-w-0 ${sala ? 'justify-end' : 'justify-start'}`}>
+                    <div className="flex justify-end min-w-0">
                         <FilterBar acciones={acciones}>
                             {salas.length > 1 && (
                                 <FilterBar.Section active={!!sala} label="sucursal">

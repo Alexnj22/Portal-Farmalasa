@@ -54,7 +54,7 @@ import LiquidModal from './LiquidModal';
 import Notice from './Notice';
 import LienzoDeEncuadre from './LienzoDeEncuadre';
 import { DOCS, avisosDeFoto, escalaDeSalida, medirDocumento, sePuedeGuardar } from '../../utils/fotoDocumento';
-import { ESQUINAS_ENTERAS, girarEsquinas } from '../../utils/perspectiva';
+import { ESQUINAS_ENTERAS, girarEsquinas, ordenarEsquinas } from '../../utils/perspectiva';
 import { aEscala, aArchivo, rectificarPapel } from '../../utils/componerDocumento';
 import { acabadoPorDefecto, acabadosDe, aplicarAcabado } from '../../utils/tratamientoDeFoto';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
@@ -103,6 +103,19 @@ export default function EditorDeDocumento({
     const [acabado, setAcabado] = useState(acabadoPorDefecto(doc));
     const [enderezada, setEnderezada] = useState(null);   // el lienzo rectificado
     const [formato, setFormato] = useState(null);         // a qué papel se pareció
+    /* ── El giro es un CONTADOR, no una permutación de las esquinas ─────────
+     *
+     * Antes «Girar» rotaba el orden de los cuatro puntos, y el enderezado
+     * confiaba en ese orden (`yaOrdenadas`). El problema es que el orden también
+     * lo puede cambiar la MANO: las manijas son cuatro blancos de 44 pt y
+     * arrastrar una por encima de otra las intercambia — y ahí el resultado sale
+     * acostado sin que nadie haya pedido girarlo. Fue lo que reportó el usuario
+     * con una factura: «ahora sí, pero ¿por qué la acuesta?».
+     *
+     * Ahora las esquinas se ordenan solas antes de enderezar —arriba-izquierda
+     * es la que está arriba a la izquierda, la haya puesto quien la haya
+     * puesto— y el giro que se APLICA es el que alguien pidió, contado aparte. */
+    const [cuartos, setCuartos] = useState(0);
     const [vista, setVista] = useState(null);             // su vista previa con acabado
     const [miniaturas, setMiniaturas] = useState({});
     const [medidas, setMedidas] = useState(null);
@@ -150,11 +163,9 @@ export default function EditorDeDocumento({
         /* El giro que propuso la lectura se aplica ROTANDO EL ORDEN de las
          * esquinas —no girando la foto—: es la misma operación que el botón de
          * un cuarto de vuelta, y así no cuesta ninguna interpolación. */
-        let listas = propuesta;
-        const cuartos = ((Math.round((giroSugerido || 0) / 90) % 4) + 4) % 4;
-        for (let i = 0; i < cuartos; i++) listas = girarEsquinas(listas);
-        if (tocado.current) setEnEspera(listas);
-        else setPuntos(listas);
+        const propuestos = ((Math.round((giroSugerido || 0) / 90) % 4) + 4) % 4;
+        if (tocado.current) setEnEspera(propuesta);
+        else { setPuntos(propuesta); setCuartos(propuestos); }
     }, [propuesta, giroSugerido]);
 
     /* `tocado` es un ref porque lo LEE un efecto que no lo tiene por dependencia
@@ -171,18 +182,36 @@ export default function EditorDeDocumento({
     }, []);
 
     // ── Paso 1 → 2: enderezar con las cuatro esquinas ───────────────────────
-    const enderezar = useCallback(() => {
+    const enderezarCon = useCallback((q) => {
         if (!imagen) return;
+        /* Se ORDENAN y después se giran los cuartos que se pidieron. Ordenar
+         * primero es lo que impide que arrastrar una manija por encima de otra
+         * acueste el documento; girar después es lo que hace que el botón siga
+         * sirviendo. */
+        let esq = ordenarEsquinas(puntos) || puntos;
+        for (let i = 0; i < q; i++) esq = girarEsquinas(esq);
         // La MISMA tubería que usa el camino automático: si cada uno tuviera la
         // suya, corregir el encuadre y confirmar sin cambiar nada daría un
         // archivo distinto del que el portal había preparado solo.
-        const r = rectificarPapel(imagen, puntos);
+        const r = rectificarPapel(imagen, esq);
         if (!r) { setFallo('Ese encuadre no forma un documento. Mueve las esquinas.'); return; }
         setFallo(null);
         setEnderezada(r.canvas);
         setFormato(r.formato);
         setPaso('acabado');
     }, [imagen, puntos]);
+
+    const enderezar = useCallback(() => enderezarCon(cuartos), [enderezarCon, cuartos]);
+
+    /* Girar DESPUÉS de ver el resultado, que es cuando se nota que salió
+     * acostado. Antes el botón sólo existía en el encuadre —donde lo que se ve
+     * es la foto original, no el resultado—, así que había que adivinar si hacía
+     * falta. «No me permite rotar» (usuario, sobre el paso del acabado). */
+    const girarResultado = useCallback(() => {
+        const q = (cuartos + 1) % 4;
+        setCuartos(q);
+        enderezarCon(q);
+    }, [cuartos, enderezarCon]);
 
     /* ── Paso 2: la vista previa y las miniaturas ────────────────────────────
      *
@@ -414,8 +443,11 @@ export default function EditorDeDocumento({
                     <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto">
                         <Button variant="secondary" size="sm" icon={RotateCw}
                             iconOnly={conElDedo} title="Girar un cuarto de vuelta"
-                            onClick={() => { tocado.current = true; setMostrarAyuda(false); setPuntos(girarEsquinas); }}>
-                            {conElDedo ? null : 'Girar'}
+                            onClick={() => { setMostrarAyuda(false); setCuartos(c => (c + 1) % 4); }}>
+                            {/* Dice cuánto se pidió: en el encuadre lo que se ve
+                                es la FOTO, no el resultado, así que sin el
+                                número el botón parece que no hace nada. */}
+                            {conElDedo ? null : (cuartos ? `Girar · ${cuartos * 90}°` : 'Girar')}
                         </Button>
                         <Button variant="secondary" size="sm" icon={Maximize2}
                             iconOnly={conElDedo} title="Marcar la foto entera"
@@ -449,6 +481,11 @@ export default function EditorDeDocumento({
                             onClick={() => { setPaso('encuadre'); setEnderezada(null); setFormato(null); }}
                             disabled={guardando}>
                             {conElDedo ? null : 'Volver al encuadre'}
+                        </Button>
+                        <Button variant="secondary" size="sm" icon={RotateCw}
+                            iconOnly={conElDedo} title="Girar un cuarto de vuelta"
+                            onClick={girarResultado} disabled={guardando}>
+                            {conElDedo ? null : 'Girar'}
                         </Button>
                         <span className="flex-1 min-w-2" />
                         <Button variant="primary" size="sm" icon={guardando ? Loader2 : Check}

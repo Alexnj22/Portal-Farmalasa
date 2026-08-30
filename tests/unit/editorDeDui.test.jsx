@@ -202,8 +202,15 @@ describe('el giro sale del orden de las esquinas', () => {
     // en `capturaDeFoto`.
     const codigo = fuente.split('\n').filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('/*')).join('\n');
 
-    it('el botón de girar rota el orden, no la imagen', () => {
-        expect(codigo).toMatch(/setPuntos\(girarEsquinas\)/);
+    /* Desde el 2026-08-29 el giro es un CONTADOR y no una permutación de los
+     * puntos: el orden también lo cambia la mano al arrastrar una manija sobre
+     * otra, y mezclando las dos cosas el documento salía acostado sin que nadie
+     * lo pidiera. Las esquinas se ordenan solas y el giro pedido se aplica
+     * encima — la imagen sigue sin rotarse, que es lo que esta prueba cuida. */
+    it('el botón de girar cuenta cuartos, no rota la imagen', () => {
+        expect(codigo).toMatch(/setCuartos\(c => \(c \+ 1\) % 4\)/);
+        expect(codigo).toMatch(/ordenarEsquinas\(puntos\)/);
+        expect(codigo).not.toMatch(/setPuntos\(girarEsquinas\)/);
     });
 
     it('y el enderezado respeta ese orden', () => {

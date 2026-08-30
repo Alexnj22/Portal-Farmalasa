@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.859.1 — Girar donde se ve el resultado, y la mano deja de acostar el documento
+
+*«Ahora sí, pero ¿por qué la acuesta? No me permite rotar»* — con una factura de
+pie que salió acostada.
+
+**El orden de las cuatro esquinas decidía la orientación, y ese orden lo podía
+cambiar la mano.** El editor usaba el orden de los puntos para saber cuál es la
+esquina de arriba a la izquierda, porque ese mismo orden era el que rotaba el
+botón «Girar». Pero las manijas son cuatro blancos de 44 pt: arrastrar una por
+encima de otra las intercambia — y el documento sale girado sin que nadie lo haya
+pedido.
+
+Ahora las esquinas **se ordenan solas** antes de enderezar —arriba-izquierda es
+la que está arriba a la izquierda, la haya puesto quien la haya puesto— y el giro
+que se pidió se cuenta **aparte**.
+
+**Y se puede girar en el acabado**, que es donde se ve el resultado. El botón sólo
+existía en el encuadre, donde lo que se ve es la foto: había que adivinar si hacía
+falta girar y confirmar para enterarse. En el encuadre además ahora dice cuánto se
+pidió («Girar · 90°»), porque ahí el giro no se ve.
+
+Medido en el navegador con un documento de pie y una marca roja en su esquina de
+arriba a la izquierda: con el orden normal y con el orden rotado el resultado es
+**idéntico** —850 × 1300, de pie, la marca donde va— y «Girar» lo pasa a
+1300 × 850.
+
 ## v2.859.0 — El recorte con perspectiva pintaba la porción equivocada
 
 *«Al subirla pongo las esquinas… al dar en continuar sale así. No entiendo»* —

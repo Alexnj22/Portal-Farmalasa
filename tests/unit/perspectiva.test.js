@@ -13,7 +13,7 @@
 // y no lo es. El dibujo por malla se mide aparte, en el navegador.
 
 import { describe, it, expect } from 'vitest';
-import { homografia, aplicar, ordenarEsquinas, deformacion } from '../../src/utils/perspectiva';
+import { homografia, aplicar, ordenarEsquinas, deformacion, girarEsquinas } from '../../src/utils/perspectiva';
 
 const cerca = (a, b, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThan(tol);
 
@@ -135,5 +135,49 @@ describe('la afín de cada triángulo de la malla', () => {
     it('un triángulo degenerado no revienta: devuelve null', () => {
         const enLinea = [{ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 20, y: 20 }];
         expect(afinDeTriangulos(enLinea, dest)).toBeNull();
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arrastrar una manija sobre otra NO puede acostar el documento
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// «Ahora sí, pero ¿por qué la acuesta? No me permite rotar» (usuario, con una
+// factura de pie que salió acostada).
+//
+// El editor confiaba en el ORDEN de los cuatro puntos para saber cuál es la
+// esquina de arriba a la izquierda, porque ese orden es también el que rota el
+// botón «Girar». Pero el orden lo puede cambiar la MANO: son cuatro blancos de
+// 44 pt y arrastrar uno por encima de otro los intercambia — y el documento sale
+// girado sin que nadie lo haya pedido.
+//
+// Ahora las esquinas se ordenan solas antes de enderezar y el giro pedido se
+// cuenta aparte. Medido en el navegador: con el orden normal y con el orden
+// rotado, el resultado es idéntico —850 × 1300, de pie, con la marca roja arriba
+// a la izquierda— y el botón «Girar» del acabado lo pasa a 1300 × 850.
+
+describe('el orden de las esquinas no depende de cómo se arrastraron', () => {
+    const enOrden = [{ x: 40, y: 20 }, { x: 300, y: 30 }, { x: 310, y: 240 }, { x: 30, y: 230 }];
+
+    it('rotar la lista de entrada da el MISMO orden', () => {
+        const base = ordenarEsquinas(enOrden);
+        for (let giros = 1; giros < 4; giros++) {
+            const rotada = enOrden.slice(giros).concat(enOrden.slice(0, giros));
+            expect(ordenarEsquinas(rotada)).toEqual(base);
+        }
+    });
+
+    it('e invertir el sentido, también', () => {
+        expect(ordenarEsquinas([...enOrden].reverse())).toEqual(ordenarEsquinas(enOrden));
+    });
+
+    /* La gemela que hace fiable a las de arriba: `girarEsquinas` SÍ cambia el
+     * orden. Si no, «ordenar siempre igual» se cumpliría con una función que
+     * devuelve cualquier cosa constante. */
+    it('y girar a propósito sí lo cambia', () => {
+        const o = ordenarEsquinas(enOrden);
+        expect(girarEsquinas(o)).not.toEqual(o);
+        // Cuatro cuartos vuelven al principio.
+        expect(girarEsquinas(girarEsquinas(girarEsquinas(girarEsquinas(o))))).toEqual(o);
     });
 });

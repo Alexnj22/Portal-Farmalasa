@@ -184,7 +184,9 @@ describe('las cuatro esquinas del papel', () => {
         // El enderezado ocurre al CONFIRMAR, no antes: mientras se marcan, lo
         // que se ve es la foto original. Marcar sobre una ya enderezada sería
         // corregir encima del error que se viene a corregir.
-        expect(editor).toMatch(/rectificarPapel\(imagen, puntos\)/);
+        // `esq` son los mismos `puntos`, ya ordenados y con el giro pedido
+        // aplicado — la foto sigue siendo la que llegó.
+        expect(editor).toMatch(/rectificarPapel\(imagen, esq\)/);
     });
 
     it('el resultado sale de la medida del papel, no de una lista de formas', () => {
@@ -395,5 +397,40 @@ describe('el pie del editor en un teléfono', () => {
     it('la acción principal crece sólo con el dedo', () => {
         const veces = (editor.match(/flex-1 md:flex-none/g) || []).length;
         expect(veces).toBe(2);          // «Continuar» y «Guardar»
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Girar donde SE VE el resultado
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// «No me permite rotar» — dicho sobre el paso del acabado, que es donde se nota
+// que el documento salió acostado. El botón sólo existía en el encuadre, donde
+// lo que se ve es la FOTO y no el resultado: había que adivinar si hacía falta.
+
+describe('el giro del editor', () => {
+    const editor = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+
+    it('se puede girar también en el acabado', () => {
+        expect(editor).toMatch(/const girarResultado = useCallback/);
+        expect(editor).toMatch(/onClick=\{girarResultado\}/);
+    });
+
+    /* El giro es un CONTADOR y no una permutación de los puntos: el orden de los
+     * puntos también lo cambia la mano al arrastrar una manija sobre otra, y
+     * mezclando las dos cosas el documento salía girado sin que nadie lo
+     * pidiera. */
+    it('el giro se cuenta aparte del orden de las esquinas', () => {
+        expect(editor).toMatch(/const \[cuartos, setCuartos\] = useState\(0\)/);
+        expect(editor).toMatch(/ordenarEsquinas\(puntos\) \|\| puntos/);
+        // Y ya no se permuta la lista de puntos para girar.
+        expect(editor).not.toMatch(/setPuntos\(girarEsquinas\)/);
+    });
+
+    // En el encuadre lo que se ve es la foto, así que sin el número el botón
+    // parece que no hace nada.
+    it('el botón del encuadre dice cuánto se pidió', () => {
+        expect(editor).toMatch(/Girar · \$\{cuartos \* 90\}°/);
     });
 });

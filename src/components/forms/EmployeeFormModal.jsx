@@ -4629,22 +4629,58 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     Sólo al CREAR: en una ficha que ya existe no hay
                                     contraseña temporal que entregar, y el carné se
                                     imprime desde su propia pantalla. */}
-                                {!formData?.id && (
-                                    <div className="mt-3 rounded-2xl border border-divider p-3">
+                                {/* Y «todavía no tiene carné» va ACÁ, pegado al
+                                    documento de bienvenida y no en Seguridad
+                                    Kiosko, porque las dos casillas deciden lo
+                                    mismo: qué papel se lleva esta persona el
+                                    primer día. Corregido por el usuario
+                                    (2026-08-30): *«esto de todavía no tiene
+                                    carné debe estar en el de bienvenida, ya que
+                                    ahí se imprime de no tener carné»*.
+
+                                    Seguridad Kiosko es dónde se define su
+                                    CÓDIGO y el PIN que va en las barras — o sea
+                                    su identidad en el kiosco. Que se imprima o
+                                    no un carné de papel no es parte de eso; era
+                                    vecindad por el tema «carné» y nada más. */}
+                                <div className="mt-3 rounded-2xl border border-divider p-3">
+                                    {!formData?.id && (
+                                        <>
+                                            <Checkbox
+                                                checked={formData.descargar_bienvenida !== false}
+                                                onChange={(v) => handleSelectChange('descargar_bienvenida', v)}
+                                                label={<span className="text-label font-black text-content">
+                                                    Descargar el documento de bienvenida
+                                                </span>}
+                                            />
+                                            <p className="text-micro text-content-3 font-medium leading-snug mt-1.5 ml-7">
+                                                Dos páginas: sus accesos al portal con lo básico del reglamento,
+                                                y su carné para recortar. Trae la contraseña temporal, que después
+                                                no se puede volver a ver.
+                                            </p>
+                                        </>
+                                    )}
+
+                                    {/* El carné de PAPEL, para el que todavía no tiene
+                                        el de plástico. La marca es lo que habilita
+                                        imprimirlo al dar de alta sin el permiso aparte
+                                        — el trámite del ingreso no se traba esperando
+                                        un permiso. */}
+                                    <div className={formData?.id ? '' : 'mt-3 pt-3 border-t border-divider'}>
                                         <Checkbox
-                                            checked={formData.descargar_bienvenida !== false}
-                                            onChange={(v) => handleSelectChange('descargar_bienvenida', v)}
+                                            checked={!!formData.carne_pendiente}
+                                            onChange={(v) => setFormData(p => ({ ...p, carne_pendiente: v }))}
                                             label={<span className="text-label font-black text-content">
-                                                Descargar el documento de bienvenida
+                                                Todavía no tiene carné
                                             </span>}
                                         />
                                         <p className="text-micro text-content-3 font-medium leading-snug mt-1.5 ml-7">
-                                            Dos páginas: sus accesos al portal con lo básico del reglamento,
-                                            y su carné para recortar. Trae la contraseña temporal, que después
-                                            no se puede volver a ver.
+                                            {isEditMode
+                                                ? 'Puedes imprimirle un carné de papel desde su perfil. Vale hasta medianoche.'
+                                                : 'Al guardar se le imprime un carné de papel en la ticketera. Vale hasta medianoche de hoy.'}
                                         </p>
                                     </div>
-                                )}
+                                </div>
 
                                 {!usuarioQuedoViejo && usuarioVaACambiar && (
                                     <Notice variant="warning" bloque className="mt-3"
@@ -4707,23 +4743,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                     )}
 
-                                    {/* El carné de PAPEL, para el que todavía no
-                                        tiene el de plástico. La marca es lo que
-                                        habilita imprimirlo al dar de alta sin el
-                                        permiso aparte — el trámite del ingreso no
-                                        se traba esperando un permiso. */}
-                                    <div className="mt-4 pt-4 border-t border-brand/20">
-                                        <Checkbox size="sm"
-                                            checked={!!formData.carne_pendiente}
-                                            onChange={(v) => setFormData(p => ({ ...p, carne_pendiente: v }))}
-                                            label={<span className="text-caption font-black uppercase tracking-widest text-content-2">Todavía no tiene carné</span>}
-                                        />
-                                        <p className="text-micro font-bold text-content-3 mt-1.5 ml-1">
-                                            {isEditMode
-                                                ? 'Puedes imprimirle un carné de papel desde su perfil. Vale hasta medianoche.'
-                                                : 'Al guardar se le imprime un carné de papel en la ticketera. Vale hasta medianoche de hoy.'}
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.861.1 — «Todavía no tiene carné» se muda al documento de bienvenida
+
+Corregido por el usuario: *«esto de todavía no tiene carné debe estar en el de
+bienvenida no aquí, ya que ahí se imprime de no tener carné»*.
+
+Estaba en **Seguridad Kiosko**, y ahí no le tocaba. Esa tarjeta define el
+**código** de la persona y el PIN que va dentro de las barras — o sea su
+identidad en el kiosco. Que se le imprima o no un carné de papel el primer día
+no es parte de eso: era vecindad por la palabra «carné» y nada más.
+
+Ahora va pegada a **Descargar el documento de bienvenida**, que es la otra
+casilla que decide lo mismo: qué papel se lleva esta persona el primer día. Las
+dos juntas y una debajo de la otra.
+
+Sigue disponible al **editar** una ficha, no sólo al crearla — el campo se guarda
+en los dos caminos, así que esconderlo al editar habría quitado un control que sí
+hace algo. Al crear aparece bajo su separador, debajo del documento de
+bienvenida; al editar, sola.
+
 ## v2.861.0 — Las esquinas del papel las encuentra el portal, no el modelo
 
 Reportado así: *«al subirla pongo las esquinas (porque automáticamente no las

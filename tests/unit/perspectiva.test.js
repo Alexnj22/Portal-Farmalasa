@@ -81,3 +81,59 @@ describe('cuánto se aparta de un rectángulo', () => {
         expect(d).toBeGreaterThan(0.5);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// La matriz del DIBUJO iba al revés — y por eso el recorte salía mal
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// El encabezado de este archivo decía «el dibujo por malla se mide aparte, en el
+// navegador». Esa medición nunca se hizo, y ahí estaba el defecto: la homografía
+// —que sí se probaba— era correcta, pero la afín de cada triángulo se instalaba
+// INVERTIDA. Cada celda se pintaba con una porción equivocada de la foto.
+//
+// `drawImage(imagen, 0, 0)` dibuja en el espacio de usuario actual: el píxel
+// (0,0) de la foto cae en el (0,0) de ese espacio. Entonces la matriz tiene que
+// llevar coordenadas de la FOTO a coordenadas del RESULTADO. La que estaba
+// instalada era la contraria — la que sirve para saber de dónde LEER cada píxel,
+// no para dibujarlo.
+//
+// Sobrevivió porque las pruebas usaban documentos de un color plano: con un
+// rectángulo uniforme, dibujar la porción equivocada se ve igual. Lo destapó el
+// usuario recortando la foto de una factura.
+//
+// Medido en el navegador después del arreglo, con marcas de color en las cuatro
+// esquinas del documento: las cuatro aparecen en el resultado, en Chromium y en
+// WebKit, con foto de 1600×1200 y de 3024×4032, en rectángulo y en trapecio.
+// Antes: NINGUNA.
+
+import { afinDeTriangulos } from '../../src/utils/perspectiva';
+
+describe('la afín de cada triángulo de la malla', () => {
+    const orig = [{ x: 120, y: 60 }, { x: 380, y: 40 }, { x: 460, y: 300 }];
+    const dest = [{ x: 0, y: 0 }, { x: 400, y: 0 }, { x: 400, y: 250 }];
+
+    it('lleva el triángulo de la FOTO al del RESULTADO, no al revés', () => {
+        const m = afinDeTriangulos(orig, dest);
+        expect(m).not.toBeNull();
+        orig.forEach((p, i) => {
+            cerca(m.a * p.x + m.b * p.y + m.tx, dest[i].x, 1e-6);
+            cerca(m.c * p.x + m.e * p.y + m.ty, dest[i].y, 1e-6);
+        });
+    });
+
+    /* La prueba que hace falta para creerle a la de arriba: la matriz invertida
+     * —la que estaba— NO lleva orig a dest. Sin esto, una matriz identidad
+     * pasaría la primera prueba si orig y dest coincidieran. */
+    it('y la contraria no lo hace: son matrices distintas', () => {
+        const m = afinDeTriangulos(orig, dest);
+        const alReves = afinDeTriangulos(dest, orig);
+        const p = orig[1];
+        const x = alReves.a * p.x + alReves.b * p.y + alReves.tx;
+        expect(Math.abs(x - dest[1].x)).toBeGreaterThan(1);
+    });
+
+    it('un triángulo degenerado no revienta: devuelve null', () => {
+        const enLinea = [{ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 20, y: 20 }];
+        expect(afinDeTriangulos(enLinea, dest)).toBeNull();
+    });
+});

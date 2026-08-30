@@ -162,14 +162,57 @@ export function rectificar(imagen, esquinas, ancho, alto, { yaOrdenadas = false 
  * costura de un píxel donde se ve el fondo — el antialias de cada recorte no
  * llega a cubrir el borde del vecino, y el resultado es una rejilla visible
  * sobre todo el documento. */
-function dibujarTriangulo(ctx, imagen, orig, dest) {
+/* ── La afín va del ORIGEN al DESTINO, no al revés ──────────────────────────
+ *
+ * `drawImage(imagen, 0, 0)` dibuja en el espacio de usuario ACTUAL: el píxel
+ * (0,0) de la foto cae en el (0,0) de ese espacio. Entonces la matriz que hay
+ * que instalar es la que lleva **coordenadas de la foto → coordenadas del
+ * resultado**.
+ *
+ * Estaba escrita al revés —la que lleva destino → origen, que es la que sirve
+ * para SABER de dónde sacar cada píxel, no para dibujarlo— así que cada triángulo
+ * se pintaba con una porción equivocada de la foto. El recorte salía con el
+ * documento corrido y agrandado, y con blanco donde el mapeo caía fuera.
+ *
+ * Sobrevivió porque las primeras pruebas usaban documentos de un color plano:
+ * con un rectángulo uniforme, dibujar la porción equivocada se ve igual. Lo
+ * destapó el usuario recortando la foto de una factura —«al dar en continuar
+ * sale así»— y se confirmó midiendo: se pintan cuatro marcas de color en las
+ * esquinas del documento y NINGUNA aparecía en el resultado.
+ *
+ * El clip sigue en coordenadas del destino: se aplica ANTES de instalar la
+ * matriz, que es donde el recorte tiene que estar.
+ */
+/**
+ * La afín que lleva el triángulo `orig` sobre el triángulo `dest`.
+ *
+ * Se exporta para poder PROBARLA sin un navegador. El comentario de la prueba de
+ * la homografía decía «el dibujo por malla se mide aparte, en el navegador», y
+ * esa medición nunca se hizo: la matemática de la homografía estaba bien y la
+ * matriz del dibujo estaba invertida, así que las pruebas pasaban y el recorte
+ * salía mal. Con la matriz como función pura, la dirección se comprueba en una
+ * línea: aplicarla a cada vértice de `orig` tiene que dar el de `dest`.
+ *
+ * @returns {{a,b,c,e,tx,ty}|null} — (x,y) → (a·x + b·y + tx, c·x + e·y + ty)
+ */
+export function afinDeTriangulos(orig, dest) {
     const [o0, o1, o2] = orig, [d0, d1, d2] = dest;
-    const den = (d1.x - d0.x) * (d2.y - d0.y) - (d2.x - d0.x) * (d1.y - d0.y);
-    if (!den) return;
-    const a = ((o1.x - o0.x) * (d2.y - d0.y) - (o2.x - o0.x) * (d1.y - d0.y)) / den;
-    const b = ((o2.x - o0.x) * (d1.x - d0.x) - (o1.x - o0.x) * (d2.x - d0.x)) / den;
-    const c = ((o1.y - o0.y) * (d2.y - d0.y) - (o2.y - o0.y) * (d1.y - d0.y)) / den;
-    const e = ((o2.y - o0.y) * (d1.x - d0.x) - (o1.y - o0.y) * (d2.x - d0.x)) / den;
+    const den = (o1.x - o0.x) * (o2.y - o0.y) - (o2.x - o0.x) * (o1.y - o0.y);
+    if (!den) return null;
+    const a = ((d1.x - d0.x) * (o2.y - o0.y) - (d2.x - d0.x) * (o1.y - o0.y)) / den;
+    const b = ((d2.x - d0.x) * (o1.x - o0.x) - (d1.x - d0.x) * (o2.x - o0.x)) / den;
+    const c = ((d1.y - d0.y) * (o2.y - o0.y) - (d2.y - d0.y) * (o1.y - o0.y)) / den;
+    const e = ((d2.y - d0.y) * (o1.x - o0.x) - (d1.y - d0.y) * (o2.x - o0.x)) / den;
+    return { a, b, c, e,
+        tx: d0.x - (a * o0.x + b * o0.y),
+        ty: d0.y - (c * o0.x + e * o0.y) };
+}
+
+function dibujarTriangulo(ctx, imagen, orig, dest) {
+    const [d0, d1, d2] = dest;
+    const m = afinDeTriangulos(orig, dest);
+    if (!m) return;
+    const { a, b, c, e, tx, ty } = m;
 
     ctx.save();
     ctx.beginPath();
@@ -182,7 +225,9 @@ function dibujarTriangulo(ctx, imagen, orig, dest) {
     ctx.moveTo(g0.x, g0.y); ctx.lineTo(g1.x, g1.y); ctx.lineTo(g2.x, g2.y);
     ctx.closePath();
     ctx.clip();
-    ctx.transform(a, c, b, e, o0.x - (a * d0.x + b * d0.y), o0.y - (c * d0.x + e * d0.y));
+    /* `ctx.transform(a,b,c,d,e,f)` mapea (x,y) → (a·x + c·y + e, b·x + d·y + f),
+     * así que los coeficientes van cruzados respecto de cómo se nombran acá. */
+    ctx.transform(a, c, b, e, tx, ty);
     ctx.drawImage(imagen, 0, 0);
     ctx.restore();
 }

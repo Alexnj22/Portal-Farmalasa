@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.859.0 — El recorte con perspectiva pintaba la porción equivocada
+
+*«Al subirla pongo las esquinas… al dar en continuar sale así. No entiendo»* —
+con las dos capturas: el documento bien marcado en el paso 1, y en el paso 2 una
+mancha blanca con la factura corrida y agrandada.
+
+**La matriz del dibujo estaba invertida.** El resultado se arma por una malla de
+24 × 24 celdas, y cada celda se pinta instalando una transformación afín antes de
+dibujar la foto. `drawImage(imagen, 0, 0)` dibuja en el espacio de usuario
+actual, así que esa matriz tiene que llevar **coordenadas de la foto →
+coordenadas del resultado**. La que estaba instalada era la contraria: la que
+sirve para saber de dónde *leer* cada píxel, no para dibujarlo. Cada celda se
+pintaba con una porción equivocada de la foto.
+
+**Por qué sobrevivió tanto.** La prueba de la homografía —la matemática— estaba
+y pasaba: ese cálculo era correcto. Y el encabezado de esa prueba decía «el
+dibujo por malla se mide aparte, en el navegador». Esa medición **nunca se
+hizo**. Encima, las fotos de prueba tenían el documento de un color plano, y con
+un rectángulo uniforme dibujar la porción equivocada **se ve igual**.
+
+Ahora la afín de cada triángulo es una función pura y exportada
+(`afinDeTriangulos`), así que la dirección se comprueba en una línea sin
+navegador: aplicarla a cada vértice del triángulo de la foto tiene que dar el del
+resultado. Con su gemela — la matriz contraria NO lo hace.
+
+**Medido en el navegador**, con marcas de color en las cuatro esquinas del
+documento: aparecen las cuatro, en Chromium y en WebKit, con fotos de 1600 × 1200
+y de 3024 × 4032, en rectángulo y en trapecio. **Antes no aparecía ninguna.**
+
+## v2.858.9 — El carril y la píldora, en la fila que manda el canon
+
+La versión anterior escondía el carril cuando no había sala elegida, con el
+argumento de que «cuatro tarjetas en cero dirían algo falso». Suena razonable y
+rompe dos reglas a la vez:
+
+- **§17.0 — cuántas tarjetas hay lo fija la vista, nunca el dato.** Esconderlas
+  según si ya elegiste sala es exactamente eso.
+- **Y no es estético.** `useMedidaFila` busca el carril en el *abuelo* de la
+  píldora y le descuenta 314px **esté o no** — así que al esconderlo, la píldora
+  quedaba sola, corrida a la izquierda y con el ancho robado. El documento marca
+  esto como trampa con todas las letras, y aun así caí en ella.
+
+El carril va siempre y la píldora siempre a la derecha. Sin sala, las tarjetas
+dicen **«—»**, que es la respuesta honesta: no es cero, es que todavía no hay
+caja de la que hablar.
+
 ## v2.858.8 — El pie del editor deja de desbordar en el teléfono
 
 *«El modal en móvil no se ve bien, el botón confirmar se sale y crea scroll»*,
